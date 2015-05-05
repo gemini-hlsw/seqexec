@@ -7,7 +7,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosSouth.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent._
+import scala.concurrent.Future
 
 /**
  * Created by jluhrs on 4/27/15.
@@ -23,12 +23,10 @@ object GMOS_S extends Instrument {
     val items = config.getAll(INSTRUMENT_KEY).itemEntries()
 
     Thread.sleep(2000)
-    Log.log(Level.INFO, name + " configured")
-    Log.log(Level.INFO, ItemEntryUtil.showItems(items))
-
+    Log.log(Level.INFO, name + " configured :" + ItemEntryUtil.showItems(items))
   }
 
-  override def observe(config: Config): Future[Unit] = future {
+  override def observe(config: Config): Future[Unit] = Future {
     Log.log(Level.INFO, name + ": starting observation")
     Thread.sleep(5000)
     Log.log(Level.INFO, name + ": observation completed")

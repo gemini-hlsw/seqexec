@@ -128,7 +128,7 @@ object Commands {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
           } yield Try(Await.result(Executor(seq).run, Duration.Inf)) match {
-              case Success(x: Int) => s"Completed $x steps"
+              case Success(x: Int) => s"Sequence $obsId completed ($x steps)"
               case Failure(e: Throwable) => "Sequence execution failed with error " + e.getMessage
             }).merge
 

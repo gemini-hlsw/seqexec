@@ -5,23 +5,19 @@ import edu.gemini.spModel.obscomp.InstConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Future
 
 /**
  * Created by jluhrs on 4/28/15.
  */
-sealed class Executor(sequenceConfig: ConfigSequence) {
+final class Executor(sequenceConfig: ConfigSequence) {
 
-  def run = runSequence(sequenceConfig.getAllSteps.toList)
+  def run: Future[Int] = runSequence(sequenceConfig.getAllSteps.toList)
 
   private def runSequence(config: List[Config]): Future[Int] = {
-    def chainStep(config: List[Config], prevFuture: Future[Int]): Future[Int] = config match {
-      case List() => prevFuture
-      case x :: ys => chainStep(ys, prevFuture flatMap (i => runStep(x, i)))
-    }
     config match {
-      case List() => Promise.failed(new Exception("Empty sequence configuration")).future
-      case x :: ys => chainStep(ys, runStep(x, 0))
+      case Nil => Future.failed(new Exception("Empty sequence configuration"))
+      case _ => config.foldLeft(Future(0))((f, s) => f.flatMap(runStep(s, _)))
     }
   }
 
@@ -36,11 +32,11 @@ sealed class Executor(sequenceConfig: ConfigSequence) {
 
       Future.sequence(systems map (x => x.configure(stepConfig))) flatMap
         (x => a.observe(stepConfig)) map (x => stepIdx + 1)
-    }) getOrElse Promise.failed(new Exception("Unrecognized instrument")).future
+    }) getOrElse Future.failed(new Exception("Unrecognized instrument"))
   }
 
 }
 
 object Executor {
-  def apply(sequenceConfig: ConfigSequence) = new Executor(sequenceConfig)
+  def apply(sequenceConfig: ConfigSequence): Executor = new Executor(sequenceConfig)
 }
