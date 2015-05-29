@@ -1,17 +1,15 @@
 package edu.gemini.seqexec.server.osgi
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.server.Executor
+import edu.gemini.seqexec.server.{SeqexecFailure, Executor, StepResult}
 import edu.gemini.seqexec.shared.{SeqExecService, SeqFailure}
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
 import edu.gemini.spModel.core.Peer
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
-import scalaz.Scalaz._
-import scalaz.\/
+import scalaz._
+import Scalaz._
+
 
 sealed trait Commands {
   def seq(cmd: String, args: Array[String]): String
@@ -63,7 +61,7 @@ object Commands {
 
       def showKeys(title: String, step: Int, ks: Array[ItemKey]): String = {
         val pad = width(ks)
-        ks.sorted.map { k =>
+        ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
           val paddedKey = s"%-${pad}s".format(k.toString)
           s"$paddedKey -> ${seqValue(cs.getItemValue(step, k))}"
         }.mkString(s"$title\n", "\n", "")
@@ -108,7 +106,6 @@ object Commands {
       }
     }
 
-
     def seq(cmd: String, args: Array[String]): String =
       cmd :: args.toList match {
         case List("host") =>
@@ -127,9 +124,10 @@ object Commands {
           (for {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
-          } yield Try(Await.result(Executor(seq).run, Duration.Inf)) match {
-              case Success(x: Int) => s"Sequence $obsId completed ($x steps)"
-              case Failure(e: Throwable) => "Sequence execution failed with error " + e.getMessage
+          } yield Executor(seq).run match {
+              case \/-(_) => s"Sequence $obsId completed"
+              case -\/(f: SeqexecFailure)   => "Sequence execution failed with error " + SeqexecFailure.explain(f)
+              case -\/(e: Throwable)        => "Sequence execution failed with error " + e.getMessage
             }).merge
 
         case _ =>

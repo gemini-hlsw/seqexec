@@ -7,7 +7,8 @@ import edu.gemini.spModel.gemini.gmos.InstGmosSouth.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scalaz.EitherT
+import scalaz.concurrent.Task
 
 /**
  * Created by jluhrs on 4/27/15.
@@ -18,17 +19,22 @@ object GMOS_S extends Instrument {
 
   val Log = Logger.getLogger(getClass.getName)
 
-  override def configure(config: Config): Future[Unit] = Future {
+  override def configure(config: Config): Task[ConfigResult] = Task {
 
     val items = config.getAll(INSTRUMENT_KEY).itemEntries()
 
+    Log.log(Level.INFO, "Configuring " + name + " with :" + ItemEntryUtil.showItems(items))
     Thread.sleep(2000)
-    Log.log(Level.INFO, name + " configured :" + ItemEntryUtil.showItems(items))
+    Log.log(Level.INFO, name + " configured")
+
+    ConfigResult(this)
   }
 
-  override def observe(config: Config): Future[Unit] = Future {
+  override def observe(config: Config): Task[ObserveResult] = Task {
     Log.log(Level.INFO, name + ": starting observation")
     Thread.sleep(5000)
     Log.log(Level.INFO, name + ": observation completed")
+
+    ObserveResult("S20150519S0001")
   }
 }
