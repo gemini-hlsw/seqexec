@@ -10,7 +10,7 @@ import scalaz.concurrent.Task
 trait System {
   val name: String
 
-  def configure(config: Config): Task[ConfigResult]
+  def configure(config: Config): SeqAction[ConfigResult]
 }
 
 //Placeholder for config response

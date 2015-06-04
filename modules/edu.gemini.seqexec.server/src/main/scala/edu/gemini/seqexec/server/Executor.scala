@@ -15,26 +15,27 @@ import scalaz.concurrent.Task
  */
 final class Executor(sequenceConfig: ConfigSequence) {
 
-  def run: \/[Throwable, List[StepResult]] = runSequence(sequenceConfig.getAllSteps.toList).attemptRun
+  def execute: TrySeq[List[StepResult]] =
+    executeSequence(sequenceConfig.getAllSteps.toList).runSeqAction
 
-  private def runSequence(config: List[Config]): Task[List[StepResult]] = {
-    (config map (runStep(_))).sequenceU
+  private def executeSequence(config: List[Config]): SeqAction[List[StepResult]] = {
+    config.traverseU(executeStep)
   }
 
-  private def runStep(stepConfig: Config): Task[StepResult] = {
+  private def executeStep(stepConfig: Config): SeqAction[StepResult] = {
     val instName = stepConfig.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
       case GMOS_S.name => Some(GMOS_S)
       case _           => None
     }
 
-    instrument map (a => {
+    instrument map { a =>
       val systems: List[System] = List(TCS, a)
       for {
-        r <- Task.gatherUnordered( systems map (x => x.configure(stepConfig)) , true)
+        r <- NondeterminismSeq.gather(systems.map(_.configure(stepConfig)))
         s <- a.observe(stepConfig)
       } yield StepResult(r, s)
-    }) getOrElse Task.fail(UnrecognizedInstrument(instName.toString))
+    } getOrElse SeqAction.fail(UnrecognizedInstrument(instName.toString))
   }
 }
 

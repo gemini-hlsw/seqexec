@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 /**
  * Created by jluhrs on 5/18/15.
  */
-sealed trait SeqexecFailure extends Throwable
+sealed trait SeqexecFailure
 
 object SeqexecFailure {
 

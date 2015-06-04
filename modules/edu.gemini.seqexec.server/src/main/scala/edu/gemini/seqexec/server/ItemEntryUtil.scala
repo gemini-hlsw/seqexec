@@ -17,16 +17,16 @@ object ItemEntryUtil {
 
     def seqValue(o: Object): String = o match {
       case s: SequenceableSpType => s.sequenceValue()
-      case d: DisplayableSpType => d.displayValue()
-      case l: LoggableSpType => l.logValue()
+      case d: DisplayableSpType  => d.displayValue()
+      case l: LoggableSpType     => l.logValue()
       case _ => o.toString
     }
 
     val pad = width(ks)
-    (ks.sortWith((u, v) => u.getKey.compareTo(v.getKey) < 0) map (p => {
+    (ks.sortWith((u, v) => u.getKey.compareTo(v.getKey) < 0) map { p =>
       val paddedKey = s"%-${pad}s".format(p.getKey.toString)
       s"$paddedKey -> ${seqValue(p.getItemValue)}"
-    })).mkString(s"\n", "\n", "")
+    }).mkString(s"\n", "\n", "")
   }
 
 }

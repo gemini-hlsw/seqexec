@@ -124,11 +124,10 @@ object Commands {
           (for {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
-          } yield Executor(seq).run match {
-              case \/-(_) => s"Sequence $obsId completed"
+          } yield Executor(seq).execute match {
+              case \/-(_)                   => s"Sequence $obsId completed"
               case -\/(f: SeqexecFailure)   => "Sequence execution failed with error " + SeqexecFailure.explain(f)
-              case -\/(e: Throwable)        => "Sequence execution failed with error " + e.getMessage
-            }).merge
+          }).merge
 
         case _ =>
           Usage

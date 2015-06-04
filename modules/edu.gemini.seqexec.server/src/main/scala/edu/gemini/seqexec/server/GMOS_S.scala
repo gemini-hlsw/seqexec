@@ -6,7 +6,6 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
@@ -19,22 +18,25 @@ object GMOS_S extends Instrument {
 
   val Log = Logger.getLogger(getClass.getName)
 
-  override def configure(config: Config): Task[ConfigResult] = Task {
+  override def configure(config: Config): SeqAction[ConfigResult] = EitherT(
+    Task {
+      val items = config.getAll(INSTRUMENT_KEY).itemEntries()
 
-    val items = config.getAll(INSTRUMENT_KEY).itemEntries()
+      Log.log(Level.INFO, "Configuring " + name + " with :" + ItemEntryUtil.showItems(items))
+      Thread.sleep(2000)
+      Log.log(Level.INFO, name + " configured")
 
-    Log.log(Level.INFO, "Configuring " + name + " with :" + ItemEntryUtil.showItems(items))
-    Thread.sleep(2000)
-    Log.log(Level.INFO, name + " configured")
+      TrySeq(ConfigResult(this))
+    }
+  )
 
-    ConfigResult(this)
-  }
+  override def observe(config: Config): SeqAction[ObserveResult] = EitherT(
+    Task {
+      Log.log(Level.INFO, name + ": starting observation")
+      Thread.sleep(5000)
+      Log.log(Level.INFO, name + ": observation completed")
 
-  override def observe(config: Config): Task[ObserveResult] = Task {
-    Log.log(Level.INFO, name + ": starting observation")
-    Thread.sleep(5000)
-    Log.log(Level.INFO, name + ": observation completed")
-
-    ObserveResult("S20150519S0001")
-  }
+      TrySeq(ObserveResult("S20150519S0001"))
+    }
+  )
 }
