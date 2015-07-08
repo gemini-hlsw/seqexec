@@ -15,15 +15,14 @@ object TCS extends System {
   override val name: String = TELESCOPE_CONFIG_NAME
   private val Log = Logger.getLogger(getClass.getName)
 
-  override def configure(config: Config): SeqAction[ConfigResult] = EitherT(
-    Task {
-      val items = config.getAll(TELESCOPE_KEY).itemEntries()
+  override def configure(config: Config): SeqAction[ConfigResult] = Task {
+    val items = config.getAll(TELESCOPE_KEY).itemEntries()
 
-      Log.log(Level.INFO, "Configuring TCS with:" + ItemEntryUtil.showItems(items))
-      Thread.sleep(2000)
-      Log.log(Level.INFO, "TCS configured:")
+//    Log.log(Level.INFO, "Configuring TCS with:" + ItemEntryUtil.showItems(items))
+    Log.log(Level.INFO, "Configuring TCS")
+    Thread.sleep(2000)
+    Log.log(Level.INFO, "TCS configured")
 
-      TrySeq(ConfigResult(this))
-    }
-  )
+    TrySeq(ConfigResult(this))
+  }
 }

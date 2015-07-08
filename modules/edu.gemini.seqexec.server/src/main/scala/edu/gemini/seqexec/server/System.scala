@@ -14,7 +14,4 @@ trait System {
 }
 
 //Placeholder for config response
-final class ConfigResult(val sys: System)
-object ConfigResult {
-  def apply(sys: System): ConfigResult = new ConfigResult(sys)
-}
+case class ConfigResult(sys: System)

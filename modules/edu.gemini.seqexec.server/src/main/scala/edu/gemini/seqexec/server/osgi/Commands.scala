@@ -124,9 +124,39 @@ object Commands {
           (for {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
-          } yield Executor(seq).execute match {
-              case \/-(_)                   => s"Sequence $obsId completed"
-              case -\/(f: SeqexecFailure)   => "Sequence execution failed with error " + SeqexecFailure.explain(f)
+          } yield {
+              Executor.startCmd(oid, seq)
+              s"Sequence $obsId started."
+          }).merge
+
+        case List("stop", obsId) =>
+          (for {
+            oid <- parseId(obsId)
+          } yield {
+              Executor.stopCmd(oid) match {
+                case -\/(f) => SeqexecFailure.explain(f)
+                case _ => s"Sequence $obsId is going to stop."
+              }
+            }).merge
+
+        case List("continue", obsId) =>
+          (for {
+            oid <- parseId(obsId)
+          } yield {
+              Executor.continueCmd(oid) match {
+                case -\/(f) => SeqexecFailure.explain(f)
+                case _      => s"Sequence $obsId resumed."
+              }
+          }).merge
+
+        case List("state", obsId) =>
+          (for {
+            oid <- parseId(obsId)
+          } yield {
+              Executor.getStateCmd(oid) match {
+                case -\/(f) => SeqexecFailure.explain(f)
+                case \/-(s) => Executor.stateDescription(s)
+              }
           }).merge
 
         case _ =>

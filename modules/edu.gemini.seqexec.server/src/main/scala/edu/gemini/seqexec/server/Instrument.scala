@@ -12,11 +12,5 @@ trait Instrument extends System {
 }
 
 //Placeholder for observe response
-final class ObserveResult(dataId: String)
-object ObserveResult {
-  def apply(dataId: String): ObserveResult = new ObserveResult(dataId)
-}
-
-
-
+case class ObserveResult(dataId: String)
 
