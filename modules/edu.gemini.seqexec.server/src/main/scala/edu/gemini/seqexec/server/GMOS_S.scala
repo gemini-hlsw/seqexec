@@ -17,6 +17,8 @@ object GMOS_S extends Instrument {
 
   val Log = Logger.getLogger(getClass.getName)
 
+  var imageCount = 0
+
   override def configure(config: Config): SeqAction[ConfigResult] = Task {
     val items = config.getAll(INSTRUMENT_KEY).itemEntries()
 
@@ -33,6 +35,7 @@ object GMOS_S extends Instrument {
     Thread.sleep(5000)
     Log.log(Level.INFO, name + ": observation completed")
 
-    TrySeq(ObserveResult("S20150519S0001"))
+    imageCount += 1
+    TrySeq(ObserveResult(f"S20150519S$imageCount%04d"))
   }
 }

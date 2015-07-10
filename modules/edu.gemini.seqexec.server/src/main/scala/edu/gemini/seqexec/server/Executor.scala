@@ -115,11 +115,11 @@ object Executor {
       EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](a)
 
     // Execute the next step, if any
-    def stepT(stateRef: AtomicReference[ExecState]): ExecActionF[StepResult] =
+    def stepT(saveState: ExecState => ExecState): ExecActionF[StepResult] =
       for {
         st <- liftA(gets(_.nextStep))
         ds <- st.cata(t => liftE(liftT(t.run)), fail(Unexpected("No current step")))
-        _  <- liftA(modify(s => recordState(s.ok(ds), stateRef))) // only happens on success above
+        _  <- liftA(modify(s => saveState(s.ok(ds)))) // only happens on success above
       } yield ds
 
     // Combine our boolean predicates ... we keep going as long as there is a next step AND the
@@ -129,18 +129,18 @@ object Executor {
 
 
     // Run to completion, or to error, as long as not cancelled or complete
-    def runT(go: Task[Boolean], stateRef: AtomicReference[ExecState]): ExecActionF[Unit] =
-      stepT(stateRef).whileM_(continue(go)) // cool eh?
+    def runT(go: Task[Boolean], saveState: ExecState => ExecState): ExecActionF[Unit] =
+      stepT(saveState).whileM_(continue(go)) // cool eh?
 
   }
 
   // Execute the next step, if any
-  def step(stateRef: AtomicReference[ExecState]): ExecAction[NonEmptyList[SeqexecFailure] \/ StepResult] =
-    WithEitherT.stepT(stateRef).run
+  def step(saveState: ExecState => ExecState): ExecAction[NonEmptyList[SeqexecFailure] \/ StepResult] =
+    WithEitherT.stepT(saveState).run
 
   // Run to completion, or to error, as long as not cancelled
-  def run(go: Task[Boolean], stateRef: AtomicReference[ExecState]): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
-    WithEitherT.runT(go, stateRef).run
+  def run(go: Task[Boolean], saveState: ExecState => ExecState): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
+    WithEitherT.runT(go, saveState).run
 
   // Skip some number of steps
   def skip(n: Int): ExecAction[Unit] =
@@ -150,7 +150,7 @@ object Executor {
   def position: ExecAction[(Int, Int)] =
     gets { case ExecState(cs, ss) => (cs.length + 1, cs.length + ss.length) }
 
-  def recordState(state: ExecState, ref: AtomicReference[ExecState]): ExecState = {
+  def recordState(ref: AtomicReference[ExecState])(state: ExecState): ExecState = {
     ref.set(state)
     state
   }
@@ -163,7 +163,7 @@ object Executor {
 
   def startSequence(stateRef: AtomicReference[ExecState], stopRef: AtomicBoolean): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
     stopRef.set(false)
-    Executor.run(go(stopRef), stateRef)(stateRef.get)
+    Executor.run(go(stopRef), recordState(stateRef))(stateRef.get)
   }
 
   def newSequence(sequenceConfig: ConfigSequence): Sequence = new Sequence(
@@ -198,7 +198,7 @@ object Executor {
   def stateDescription(state: ExecState): String =  {
     "Completed " + state.completed.length + " steps out of " + (state.completed.length + state.remaining.length) +
       ( state.completed.zipWithIndex.map(a => (a._1, a._2+1)) map {
-        case (Ok(StepResult(_,ObserveResult(label))), idx)      => s"Step $idx completed with label $label"
+        case (Ok(StepResult(_,ObserveResult(label))), idx) => s"Step $idx completed with label $label"
         case (Failed(result), idx) => s"Step $idx failed with error " + result.map(SeqexecFailure.explain).toList.mkString("\n", "\n", "")
         case (Skipped, idx)        => s"Step $idx skipped"
       }
