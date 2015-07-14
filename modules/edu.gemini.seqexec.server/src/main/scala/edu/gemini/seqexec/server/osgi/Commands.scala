@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.server.osgi
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.server.{SeqexecFailure, Executor, StepResult}
+import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.shared.{SeqExecService, SeqFailure}
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
@@ -125,7 +125,7 @@ object Commands {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
           } yield {
-              Executor.startCmd(oid, seq)
+              ExecutorImpl.unsafeStartCmd(oid, seq)
               s"Sequence $obsId started."
           }).merge
 
@@ -133,7 +133,7 @@ object Commands {
           (for {
             oid <- parseId(obsId)
           } yield {
-              Executor.stopCmd(oid) match {
+              ExecutorImpl.unsafeStopCmd(oid) match {
                 case -\/(f) => SeqexecFailure.explain(f)
                 case _ => s"Sequence $obsId is going to stop."
               }
@@ -143,7 +143,7 @@ object Commands {
           (for {
             oid <- parseId(obsId)
           } yield {
-              Executor.continueCmd(oid) match {
+              ExecutorImpl.unsafeContinueCmd(oid) match {
                 case -\/(f) => SeqexecFailure.explain(f)
                 case _      => s"Sequence $obsId resumed."
               }
@@ -153,9 +153,9 @@ object Commands {
           (for {
             oid <- parseId(obsId)
           } yield {
-              Executor.getStateCmd(oid) match {
+              ExecutorImpl.getStateCmd(oid) match {
                 case -\/(f) => SeqexecFailure.explain(f)
-                case \/-(s) => Executor.stateDescription(s)
+                case \/-(s) => ExecutorImpl.stateDescription(s)
               }
           }).merge
 

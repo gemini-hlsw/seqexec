@@ -49,7 +49,7 @@ object Step {
 
 }
 
-object Executor {
+trait Executor { self =>
   import Step._
 
   sealed trait Completion
@@ -106,7 +106,7 @@ object Executor {
     private type ExecActionF[+A] = EitherT[ExecAction, NonEmptyList[SeqexecFailure], A]
 
     def fail[A](e: SeqexecFailure): ExecActionF[A] =
-      EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](Executor.fail(e))
+      EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](self.fail(e))
 
     def liftA[A](a: ExecAction[A]): ExecActionF[A] =
       EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](a.map(_.right))
@@ -163,14 +163,21 @@ object Executor {
 
   def startSequence(stateRef: AtomicReference[ExecState], stopRef: AtomicBoolean): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
     stopRef.set(false)
-    Executor.run(go(stopRef), recordState(stateRef))(stateRef.get)
+    run(go(stopRef), recordState(stateRef))(stateRef.get)
   }
 
   def newSequence(sequenceConfig: ConfigSequence): Sequence = new Sequence(
       new AtomicReference(ExecState.initial(sequenceConfig.getAllSteps.toList.map(Step.step))),
       new AtomicBoolean(false))
 
-  def startCmd(obsId: SPObservationID, sequenceConfig: ConfigSequence): Unit = {
+}
+
+case class StepResult(configResults: List[ConfigResult], observeResult: ObserveResult)
+
+
+object ExecutorImpl extends Executor {
+
+  def unsafeStartCmd(obsId: SPObservationID, sequenceConfig: ConfigSequence): Unit = {
     val s = sequences.getOrElse(obsId, {
       val t = newSequence(sequenceConfig)
       sequences += ( (obsId, t) )
@@ -180,7 +187,7 @@ object Executor {
     startSequence(s.stateRef, s.stopRef).runAsync(_.void)
   }
 
-  def continueCmd(obsId: SPObservationID): TrySeq[Unit] = sequences.get(obsId) match {
+  def unsafeContinueCmd(obsId: SPObservationID): TrySeq[Unit] = sequences.get(obsId) match {
     case Some(Sequence(a,b)) => TrySeq(startSequence(a, b).runAsync(_.void))
     case _                  => TrySeq.fail(InvalidOp(s"Attempt to continue unexecuted sequence $obsId"))
   }
@@ -190,7 +197,7 @@ object Executor {
     case _                   => TrySeq.fail(InvalidOp(s"Attempt to retrieve execution state from unexecuted sequence $obsId"))
   }
 
-  def stopCmd(obsId: SPObservationID): TrySeq[Unit] = sequences.get(obsId) match {
+  def unsafeStopCmd(obsId: SPObservationID): TrySeq[Unit] = sequences.get(obsId) match {
       case Some(Sequence(_,b)) => TrySeq(b.set(true))
       case _                   => TrySeq.fail(InvalidOp(s"Attempt to stop unexecuted sequence $obsId"))
     }
@@ -204,7 +211,5 @@ object Executor {
       }
     ).mkString("\n", "\n", "")
   }
+
 }
-
-case class StepResult(configResults: List[ConfigResult], observeResult: ObserveResult)
-
