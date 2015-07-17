@@ -38,6 +38,9 @@ object Commands {
   def apply(): Commands = new Commands {
     var loc = new Peer("localhost", 8443, null)
 
+    val exec: ExecutorImpl = 
+      ExecutorImpl.newInstance.run
+
     def host(): String =
       s"Default seq host set to ${loc.host} ${loc.port}"
 
@@ -125,39 +128,29 @@ object Commands {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
           } yield {
-              ExecutorImpl.unsafeStartCmd(oid, seq)
-              s"Sequence $obsId started."
+            exec.start(oid, seq).runAsync(onComplete(oid))
+            s"Sequence $obsId started."
           }).merge
 
         case List("stop", obsId) =>
-          (for {
-            oid <- parseId(obsId)
-          } yield {
-              ExecutorImpl.unsafeStopCmd(oid) match {
-                case -\/(f) => SeqexecFailure.explain(f)
-                case _ => s"Sequence $obsId is going to stop."
-              }
-            }).merge
+          parseId(obsId).map { oid =>
+            exec.stop(oid).runAsync(onComplete(oid))
+            s"Stop requested for $obsId."
+          } .merge
 
         case List("continue", obsId) =>
-          (for {
-            oid <- parseId(obsId)
-          } yield {
-              ExecutorImpl.unsafeContinueCmd(oid) match {
-                case -\/(f) => SeqexecFailure.explain(f)
-                case _      => s"Sequence $obsId resumed."
-              }
-          }).merge
+          parseId(obsId).map { oid =>
+            exec.continue(oid).runAsync(onComplete(oid))
+            s"Resume requested for $obsId."
+          } .merge
 
         case List("state", obsId) =>
-          (for {
-            oid <- parseId(obsId)
-          } yield {
-              ExecutorImpl.getStateCmd(oid) match {
-                case -\/(f) => SeqexecFailure.explain(f)
-                case \/-(s) => ExecutorImpl.stateDescription(s)
-              }
-          }).merge
+          parseId(obsId).map { oid => 
+            exec.getState(oid).run match {
+              case -\/(f) => SeqexecFailure.explain(f)
+              case \/-(s) => exec.stateDescription(s)
+            }
+          } .merge
 
         case _ =>
           Usage
@@ -183,4 +176,9 @@ object Commands {
   implicit object KeyOrdering extends scala.Ordering[ItemKey] {
     override def compare(x: ItemKey, y: ItemKey) = x.compareTo(y)
   }
+
+  // TODO: this, better
+  def onComplete[A](id: SPObservationID)(result: Throwable \/ A): Unit =
+    println(id + ": " + result)
+
 }

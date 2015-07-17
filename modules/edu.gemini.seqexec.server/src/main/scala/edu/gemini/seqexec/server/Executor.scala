@@ -14,8 +14,6 @@ import Scalaz._
 
 import scalaz.concurrent.Task
 
-import scala.collection.concurrent.{TrieMap, Map}
-
 /**
  * Created by jluhrs on 4/28/15.
  */
@@ -24,8 +22,8 @@ object Step {
   type Step = EitherT[Task, NonEmptyList[SeqexecFailure], StepResult]
 
   def parConfig(config: List[Task[SeqexecFailure \/ ConfigResult]]):
-  EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
-    EitherT(Nondeterminism[Task].gather(config).map(_.map(_.validationNel).sequenceU.disjunction))
+    EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
+      EitherT(Nondeterminism[Task].gather(config).map(_.map(_.validationNel).sequenceU.disjunction))
 
   def step(config: List[Task[SeqexecFailure \/ ConfigResult]], observe: Task[SeqexecFailure \/ ObserveResult]): Step =
     for {
@@ -49,7 +47,7 @@ object Step {
 
 }
 
-trait Executor { self =>
+object Executor { self =>
   import Step._
 
   sealed trait Completion
@@ -115,11 +113,12 @@ trait Executor { self =>
       EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](a)
 
     // Execute the next step, if any
-    def stepT(saveState: ExecState => ExecState): ExecActionF[StepResult] =
+    def stepT(saveState: ExecState => Task[Unit]): ExecActionF[StepResult] =
       for {
         st <- liftA(gets(_.nextStep))
         ds <- st.cata(t => liftE(liftT(t.run)), fail(Unexpected("No current step")))
-        _  <- liftA(modify(s => saveState(s.ok(ds)))) // only happens on success above
+        _  <- liftA(modify(s => s.ok(ds))) // only happens on success above
+        _  <- liftA(get) >>= saveState.map(t => liftA(liftT(t)))
       } yield ds
 
     // Combine our boolean predicates ... we keep going as long as there is a next step AND the
@@ -127,19 +126,18 @@ trait Executor { self =>
     def continue(go: Task[Boolean]): ExecActionF[Boolean] =
       (liftA(liftT(go)) |@| liftA(gets(_.nextStep.nonEmpty)))(_ && _)
 
-
     // Run to completion, or to error, as long as not cancelled or complete
-    def runT(go: Task[Boolean], saveState: ExecState => ExecState): ExecActionF[Unit] =
+    def runT(go: Task[Boolean], saveState: ExecState => Task[Unit]): ExecActionF[Unit] =
       stepT(saveState).whileM_(continue(go)) // cool eh?
 
   }
 
   // Execute the next step, if any
-  def step(saveState: ExecState => ExecState): ExecAction[NonEmptyList[SeqexecFailure] \/ StepResult] =
+  def step(saveState: ExecState => Task[Unit]): ExecAction[NonEmptyList[SeqexecFailure] \/ StepResult] =
     WithEitherT.stepT(saveState).run
 
   // Run to completion, or to error, as long as not cancelled
-  def run(go: Task[Boolean], saveState: ExecState => ExecState): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
+  def run(go: Task[Boolean], saveState: ExecState => Task[Unit]): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
     WithEitherT.runT(go, saveState).run
 
   // Skip some number of steps
@@ -150,66 +148,7 @@ trait Executor { self =>
   def position: ExecAction[(Int, Int)] =
     gets { case ExecState(cs, ss) => (cs.length + 1, cs.length + ss.length) }
 
-  def recordState(ref: AtomicReference[ExecState])(state: ExecState): ExecState = {
-    ref.set(state)
-    state
-  }
-
-  def go(stop: AtomicBoolean): Task[Boolean] = Task.delay(!stop.get())
-
-  case class Sequence(stateRef: AtomicReference[ExecState], stopRef: AtomicBoolean)
-
-  val sequences: Map[SPObservationID, Sequence] = TrieMap.empty
-
-  def startSequence(stateRef: AtomicReference[ExecState], stopRef: AtomicBoolean): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
-    stopRef.set(false)
-    run(go(stopRef), recordState(stateRef))(stateRef.get)
-  }
-
-  def newSequence(sequenceConfig: ConfigSequence): Sequence = new Sequence(
-      new AtomicReference(ExecState.initial(sequenceConfig.getAllSteps.toList.map(Step.step))),
-      new AtomicBoolean(false))
-
 }
 
 case class StepResult(configResults: List[ConfigResult], observeResult: ObserveResult)
 
-
-object ExecutorImpl extends Executor {
-
-  def unsafeStartCmd(obsId: SPObservationID, sequenceConfig: ConfigSequence): Unit = {
-    val s = sequences.getOrElse(obsId, {
-      val t = newSequence(sequenceConfig)
-      sequences += ( (obsId, t) )
-      t
-    })
-
-    startSequence(s.stateRef, s.stopRef).runAsync(_.void)
-  }
-
-  def unsafeContinueCmd(obsId: SPObservationID): TrySeq[Unit] = sequences.get(obsId) match {
-    case Some(Sequence(a,b)) => TrySeq(startSequence(a, b).runAsync(_.void))
-    case _                  => TrySeq.fail(InvalidOp(s"Attempt to continue unexecuted sequence $obsId"))
-  }
-
-  def getStateCmd(obsId: SPObservationID): TrySeq[ExecState] = sequences.get(obsId) match {
-    case Some(Sequence(a,_)) => TrySeq(a.get)
-    case _                   => TrySeq.fail(InvalidOp(s"Attempt to retrieve execution state from unexecuted sequence $obsId"))
-  }
-
-  def unsafeStopCmd(obsId: SPObservationID): TrySeq[Unit] = sequences.get(obsId) match {
-      case Some(Sequence(_,b)) => TrySeq(b.set(true))
-      case _                   => TrySeq.fail(InvalidOp(s"Attempt to stop unexecuted sequence $obsId"))
-    }
-
-  def stateDescription(state: ExecState): String =  {
-    "Completed " + state.completed.length + " steps out of " + (state.completed.length + state.remaining.length) +
-      ( state.completed.zipWithIndex.map(a => (a._1, a._2+1)) map {
-        case (Ok(StepResult(_,ObserveResult(label))), idx) => s"Step $idx completed with label $label"
-        case (Failed(result), idx) => s"Step $idx failed with error " + result.map(SeqexecFailure.explain).toList.mkString("\n", "\n", "")
-        case (Skipped, idx)        => s"Step $idx skipped"
-      }
-    ).mkString("\n", "\n", "")
-  }
-
-}
