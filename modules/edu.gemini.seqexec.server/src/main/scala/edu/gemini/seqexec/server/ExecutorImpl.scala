@@ -22,7 +22,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
     stateRef.modify(_ + ((id -> s)))
 
   private def go(id: SPObservationID): Task[Boolean] = 
-    cancelRef.get.map(_(id))
+    cancelRef.get.map(!_(id))
 
   private def initialExecState(sequenceConfig: ConfigSequence): ExecState =
     ExecState.initial(sequenceConfig.getAllSteps.toList.map(Step.step))
