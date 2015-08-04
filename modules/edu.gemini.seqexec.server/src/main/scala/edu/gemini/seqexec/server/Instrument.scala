@@ -8,6 +8,7 @@ import scalaz.concurrent.Task
  * Created by jluhrs on 4/22/15.
  */
 trait Instrument extends System {
+  val sfName: String
   def observe(config: Config): SeqAction[ObserveResult]
 }
 

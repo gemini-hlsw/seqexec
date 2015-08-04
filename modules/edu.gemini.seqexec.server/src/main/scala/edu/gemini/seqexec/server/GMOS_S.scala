@@ -15,6 +15,8 @@ object GMOS_S extends Instrument {
 
   override val name: String = INSTRUMENT_NAME_PROP
 
+  override val sfName: String = "gmos"
+
   val Log = Logger.getLogger(getClass.getName)
 
   var imageCount = 0

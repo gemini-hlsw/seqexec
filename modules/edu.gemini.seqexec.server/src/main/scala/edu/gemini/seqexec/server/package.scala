@@ -32,18 +32,6 @@ package object server {
     def runSeqAction: TrySeq[A] = a.attemptRun.leftMap[SeqexecFailure](SeqexecException).join
   }
 
-//  val NondeterminismSeq: Nondeterminism[SeqAction] =
-//    new Nondeterminism[SeqAction] {
-//      def point[A](a: => A): SeqAction[A] = Monad[SeqAction].point(a)
-//      def bind[A, B](fa: SeqAction[A])(f: A => SeqAction[B]): SeqAction[B] = Monad[SeqAction].bind(fa)(f)
-//      def chooseAny[A](head: SeqAction[A], tail: Seq[SeqAction[A]]): SeqAction[(A, Seq[SeqAction[A]])] = {
-//        EitherT(Nondeterminism[Task].chooseAny(head.run, tail.map(_.run)).map {
-//          case (-\/(p), _) => -\/(p)
-//          case (\/-(a), s) => \/-((a, s.map(EitherT(_))))
-//        })
-//      }
-//    }
-
   implicit class MoreDisjunctionOps[A,B](ab: A \/ B) {
     def validationNel: ValidationNel[A, B] =
       ab match {
