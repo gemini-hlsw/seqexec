@@ -5,6 +5,8 @@ import java.util.logging.{Level, Logger}
 import edu.gemini.seqexec.server.TaskRef._
 import edu.gemini.seqexec.server.TcsController._
 
+import scalaz.concurrent.Task
+
 /**
  * Created by jluhrs on 8/3/15.
  */
@@ -25,27 +27,25 @@ object TcsControllerSim extends TcsController {
     e <- agState.flatMap(_.get)
   } yield TrySeq(TcsConfig(a, b, c, d, e))
 
-  override def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit] = {
-    Log.log(Level.INFO, "Applying TCS configuration")
-
-    Thread.sleep(2000)
+  override def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit] =
     for {
+      _ <- Task {
+        Log.log(Level.INFO, "Applying TCS configuration")
+        Thread.sleep(2000)
+      }
       _ <- telescopeState.flatMap(_.put(tc))
       _ <- guidersTrackState.flatMap(_.put(gtc))
       _ <- guidersActivityState.flatMap(_.put(ge))
       _ <- agState.flatMap(_.put(agc))
     } yield TrySeq(())
 
-  }
-
-  override def guide(gc: GuideConfig): SeqAction[Unit] = {
-    Log.log(Level.INFO, "Applying guiding configuration")
-
-    Thread.sleep(1000)
+  override def guide(gc: GuideConfig): SeqAction[Unit] =
     for {
+      _ <- Task {
+        Log.log(Level.INFO, "Applying guiding configuration")
+        Thread.sleep(1000)
+      }
       _ <- guideState.flatMap(_.put(gc))
     } yield TrySeq(())
-
-  }
 
 }
