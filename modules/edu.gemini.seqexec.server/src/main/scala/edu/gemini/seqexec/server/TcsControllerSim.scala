@@ -4,6 +4,7 @@ import java.util.logging.{Level, Logger}
 
 import edu.gemini.seqexec.server.TaskRef._
 import edu.gemini.seqexec.server.TcsController._
+import edu.gemini.spModel.core.{Wavelength, Offset}
 
 import scalaz.concurrent.Task
 
@@ -12,10 +13,25 @@ import scalaz.concurrent.Task
  */
 object TcsControllerSim extends TcsController {
 
-  val guideState = newTaskRef(GuideConfig(false, M1GuideOff, M2GuideOff))
-  val telescopeState = newTaskRef(TelescopeConfig(Offset.Null, Offset.Null, Offset.Null, 445e-9, 445e-9, 445e-9, Beam.A))
-  val guidersTrackState = newTaskRef(GuidersTrackingConfig(ProbeTrackingConfig.Parked, ProbeTrackingConfig.Parked, ProbeTrackingConfig.Parked, ProbeTrackingConfig.Parked))
-  val guidersActivityState = newTaskRef(GuidersEnabled(false, false, false, false))
+  val guideState = newTaskRef(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
+  val telescopeState = newTaskRef(TelescopeConfig(
+    OffsetA(Offset.zero),
+    OffsetB(Offset.zero),
+    OffsetC(Offset.zero),
+    WavelengthA(Wavelength.fromNanometers(445)),
+    WavelengthB(Wavelength.fromNanometers(445)),
+    WavelengthC(Wavelength.fromNanometers(445)),
+    Beam.A))
+  val guidersTrackState = newTaskRef(GuidersTrackingConfig(
+    ProbeTrackingConfigP1(ProbeTrackingConfig.Parked),
+    ProbeTrackingConfigP2(ProbeTrackingConfig.Parked),
+    ProbeTrackingConfigOI(ProbeTrackingConfig.Parked),
+    ProbeTrackingConfigAO(ProbeTrackingConfig.Parked)))
+  val guidersActivityState = newTaskRef(GuidersEnabled(
+    GuiderSensorOptionP1(GuiderSensorOff),
+    GuiderSensorOptionP2(GuiderSensorOff),
+    GuiderSensorOptionOI(GuiderSensorOff),
+    GuiderSensorOptionAO(GuiderSensorOff)))
   val agState = newTaskRef(AGConfig(ScienceFoldPosition.Parked, HrwfsPickupPosition.Parked))
   private val Log = Logger.getLogger(getClass.getName)
 

@@ -18,11 +18,12 @@ object TCS extends System {
   override def configure(config: Config): SeqAction[ConfigResult] = Task {
     val items = config.getAll(TELESCOPE_KEY).itemEntries()
 
-//    Log.log(Level.INFO, "Configuring TCS with:" + ItemEntryUtil.showItems(items))
     Log.log(Level.INFO, "Configuring TCS")
     Thread.sleep(2000)
     Log.log(Level.INFO, "TCS configured")
 
     TrySeq(ConfigResult(this))
   }
+
+
 }
