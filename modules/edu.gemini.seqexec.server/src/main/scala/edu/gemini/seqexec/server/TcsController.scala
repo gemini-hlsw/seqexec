@@ -1,6 +1,10 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.spModel.core.{Wavelength, Offset}
+import edu.gemini.spModel.core.Wavelength
+
+import scalaz.{\/-, \/}
+
+import squants.{Length, Angle}
 
 /**
  * Created by jluhrs on 7/30/15.
@@ -21,6 +25,8 @@ trait TcsController {
 }
 
 object TcsController {
+
+  case class Requested[T](self: T) extends AnyVal
 
   sealed trait TipTiltSource
 
@@ -45,21 +51,26 @@ object TcsController {
 
   }
 
-  sealed trait M2GuideConfig
+  sealed trait M2GuideConfig { val active: Boolean }
 
-  object M2GuideOff extends M2GuideConfig
+  object M2GuideOff extends M2GuideConfig { override val active = false}
   
-  sealed trait ComaOption
-  object ComaOn extends ComaOption
-  object ComaOff extends ComaOption
+  sealed trait ComaOption { val active: Boolean }
+  object ComaOn extends ComaOption { override val active = true}
+  object ComaOff extends ComaOption { override val active = false}
 
-  final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig
+  final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig {
+    override val active = true
+    def setComa(v: ComaOption) = M2GuideOn(v, source)
+    def setSource(v: Set[TipTiltSource]) = M2GuideOn(coma, v)
+  }
 
-  sealed trait M1GuideConfig
 
-  object M1GuideOff extends M1GuideConfig
+  sealed trait M1GuideConfig { val active: Boolean }
 
-  final case class M1GuideOn(source: M1Source) extends M2GuideConfig
+  object M1GuideOff extends M1GuideConfig { override val active = false }
+
+  final case class M1GuideOn(source: M1Source) extends M1GuideConfig  { override val active = true}
 
   sealed trait Beam
 
@@ -83,7 +94,7 @@ object TcsController {
     def get(nodchop: NodChop): NodChopTrackingOption
   }
 
-  // If x is of type ActiveNodChopTracking then ∃ a:NodChop ∍ x.get(a)
+  // If x is of type ActiveNodChopTracking then ∃ a:NodChop ∍ x.get(a) == NodChopTrackingOn
   // How could I reflect that in the code?
   sealed trait ActiveNodChopTracking extends NodChopTrackingConfig
 
@@ -174,36 +185,67 @@ object TcsController {
 
     import LightSource._
 
+    private val AO_PREFIX = "ao2"
+    private val GCAL_PREFIX = "gcal2"
+
     object Parked extends ScienceFoldPosition
 
     final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition {
       val sfPositionName: String = source match {
         case Sky => sink.sfName
-        case AO => "ao2" + sink.sfName
-        case GCAL => "gcal2" + sink.sfName
+        case AO => AO_PREFIX + sink.sfName
+        case GCAL => GCAL_PREFIX + sink.sfName
       }
+    }
+
+    private def findInstrument(name: String): Instrument =
+      List(GMOS_S).find(x => name.startsWith(x.sfName)).getOrElse(UnknownInstrument)
+
+    def fromPositionName(sfName: String): Position = {
+      if(sfName.startsWith(AO_PREFIX)) Position(AO, findInstrument(sfName.substring(AO_PREFIX.length)))
+      else if(sfName.startsWith(GCAL_PREFIX)) Position(GCAL, findInstrument(sfName.substring(GCAL_PREFIX.length)))
+      else Position(Sky, findInstrument(sfName.substring(GCAL_PREFIX.length)))
     }
 
   }
 
   // Offloading of tip/tilt corrections from M2 to mount
-  sealed trait MountGuideOption
-  object MountGuideOff extends MountGuideOption
-  object MountGuideOn extends MountGuideOption
+  sealed trait MountGuideOption { val active: Boolean }
+  object MountGuideOff extends MountGuideOption { override val active = false }
+  object MountGuideOn extends MountGuideOption { override val active = true }
 
-  final case class GuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig)
+  final case class GuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig) {
+    def setMountGuide(v: MountGuideOption) = GuideConfig(v, m1Guide, m2Guide)
+    def setM1Guide(v: M1GuideConfig) = GuideConfig(mountGuide, v, m2Guide)
+    def setM2Guide(v: M2GuideConfig) = GuideConfig(mountGuide, m1Guide, v)
+  }
 
-  final case class OffsetA(self: Offset) extends AnyVal
-  final case class OffsetB(self: Offset) extends AnyVal
-  final case class OffsetC(self: Offset) extends AnyVal
+  // TCS expects offsets as two length quantities (in millimeters) in the focal plane
+  final case class OffsetX(self: Length) extends AnyVal
+  final case class OffsetY(self: Length) extends AnyVal
+  final case class FocalPlaneOffset(x: OffsetX, y: OffsetY)
 
-  final case class WavelengthA(self: Wavelength) extends AnyVal
-  final case class WavelengthB(self: Wavelength) extends AnyVal
-  final case class WavelengthC(self: Wavelength) extends AnyVal
+  final case class OffsetA(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetB(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetC(self: FocalPlaneOffset) extends AnyVal
+
+  // The WavelengthX classes cannot be value classes, because Wavelength is now a value class, and they cannot be
+  // nested.
+  final case class WavelengthA(self: Wavelength)
+  final case class WavelengthB(self: Wavelength)
+  final case class WavelengthC(self: Wavelength)
 
   final case class TelescopeConfig(offsetA: OffsetA, offsetB: OffsetB, offsetC: OffsetC,
                                    wavelA: WavelengthA, wavelB: WavelengthB, wavelC: WavelengthC,
-                                   m2beam: Beam)
+                                   m2beam: Beam) {
+    def setOffsetA(v: FocalPlaneOffset) = TelescopeConfig(OffsetA(v), offsetB, offsetC, wavelA, wavelB, wavelC, m2beam)
+    def setOffsetB(v: FocalPlaneOffset) = TelescopeConfig(offsetA, OffsetB(v), offsetC, wavelA, wavelB, wavelC, m2beam)
+    def setOffsetC(v: FocalPlaneOffset) = TelescopeConfig(offsetA, offsetB, OffsetC(v), wavelA, wavelB, wavelC, m2beam)
+    def setWavelengthA(v: Wavelength) = TelescopeConfig(offsetA, offsetB, offsetC, WavelengthA(v), wavelB, wavelC, m2beam)
+    def setWavelengthB(v: Wavelength) = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, WavelengthB(v), wavelC, m2beam)
+    def setWavelengthC(v: Wavelength) = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, WavelengthC(v), m2beam)
+    def setBeam(v: Beam) = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, wavelC, v)
+  }
 
   final case class ProbeTrackingConfigP1(self: ProbeTrackingConfig) extends AnyVal
   final case class ProbeTrackingConfigP2(self: ProbeTrackingConfig) extends AnyVal
@@ -211,7 +253,12 @@ object TcsController {
   final case class ProbeTrackingConfigAO(self: ProbeTrackingConfig) extends AnyVal
 
   final case class GuidersTrackingConfig(pwfs1: ProbeTrackingConfigP1, pwfs2: ProbeTrackingConfigP2,
-                                         oiwfs: ProbeTrackingConfigOI, aowfs: ProbeTrackingConfigAO)
+                                         oiwfs: ProbeTrackingConfigOI, aowfs: ProbeTrackingConfigAO) {
+    def setPwfs1TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(ProbeTrackingConfigP1(v), pwfs2, oiwfs, aowfs)
+    def setPwfs2TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, ProbeTrackingConfigP2(v), oiwfs, aowfs)
+    def setOiwfsTrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, pwfs2, ProbeTrackingConfigOI(v), aowfs)
+    def setAowfsTrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, pwfs2, oiwfs, ProbeTrackingConfigAO(v))
+  }
 
   sealed trait GuiderSensorOption
   object GuiderSensorOff extends GuiderSensorOption
@@ -224,11 +271,86 @@ object TcsController {
 
   // A enabled guider means it is taking images and producing optical error measurements.
   final case class GuidersEnabled(pwfs1: GuiderSensorOptionP1, pwfs2: GuiderSensorOptionP2,
-                                  oiwfs: GuiderSensorOptionOI, aowfs: GuiderSensorOptionAO)
+                                  oiwfs: GuiderSensorOptionOI, aowfs: GuiderSensorOptionAO) {
+    def setPwfs1GuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(GuiderSensorOptionP1(v), pwfs2, oiwfs, aowfs)
+    def setPwfs2GuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, GuiderSensorOptionP2(v), oiwfs, aowfs)
+    def setOiwfsGuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, pwfs2, GuiderSensorOptionOI(v), aowfs)
+    def setAowfsGuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, pwfs2, oiwfs, GuiderSensorOptionAO(v))
+  }
 
   final case class AGConfig(sfPos: ScienceFoldPosition, hrwfsPos: HrwfsPickupPosition)
 
+  final case class InstrumentAlignAngle(self: Angle) extends AnyVal
+
   final case class TcsConfig(gc: GuideConfig, tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled,
-                             agc: AGConfig)
+                             agc: AGConfig, iaa: InstrumentAlignAngle) {
+    def setGuideConfig(v: GuideConfig) = TcsConfig(v, tc, gtc, ge, agc, iaa)
+    def setTelescopeConfig(v: TelescopeConfig) = TcsConfig(gc, v, gtc, ge, agc, iaa)
+    def setGuidersTrackingConfig(v: GuidersTrackingConfig) = TcsConfig(gc, tc, v, ge, agc, iaa)
+    def setGuidersEnabled(v: GuidersEnabled) = TcsConfig(gc, tc, gtc, v, agc, iaa)
+    def setAGConfig(v: AGConfig) = TcsConfig(gc, tc, gtc, ge, v, iaa)
+    def setIAA(v: InstrumentAlignAngle) = TcsConfig(gc, tc, gtc, ge, agc, v)
+  }
+
+  // Classes to describe configuration changes. They are used instead of comparing old and new values every time.
+  final case class GuideConfigDiff(mountGuide: ConfigDelta[MountGuideOption], m1Guide: ConfigDelta[M1GuideConfig],
+                                   m2Guide: ConfigDelta[M2GuideConfig])
+  final case class TelescopeConfigDiff(offsetA: ConfigDelta[OffsetA], offsetB: ConfigDelta[OffsetB],
+                                       offsetC: ConfigDelta[OffsetC],
+                                       wavelA: ConfigDelta[WavelengthA], wavelB: ConfigDelta[WavelengthB],
+                                       wavelC: ConfigDelta[WavelengthC],
+                                       m2beam: ConfigDelta[Beam])
+  final case class GuidersTrackingConfigDiff(pwfs1: ConfigDelta[ProbeTrackingConfigP1],
+                                             pwfs2: ConfigDelta[ProbeTrackingConfigP2],
+                                             oiwfs: ConfigDelta[ProbeTrackingConfigOI],
+                                             aowfs: ConfigDelta[ProbeTrackingConfigAO])
+  final case class GuidersEnabledDiff(pwfs1: ConfigDelta[GuiderSensorOptionP1],
+                                      pwfs2: ConfigDelta[GuiderSensorOptionP2],
+                                      oiwfs: ConfigDelta[GuiderSensorOptionOI],
+                                      aowfs: ConfigDelta[GuiderSensorOptionAO])
+  final case class AGConfigDiff(sfPos: ConfigDelta[ScienceFoldPosition], hrwfsPos: ConfigDelta[HrwfsPickupPosition])
+  final case class TcsConfigDiff(gc: GuideConfigDiff, tc: TelescopeConfigDiff, gtc: GuidersTrackingConfigDiff,
+                                 ge: GuidersEnabledDiff, agc: AGConfigDiff)
+
+
+  def guideConfigDelta(gc0: GuideConfig, gc1: GuideConfig): GuideConfigDiff = GuideConfigDiff(
+    ConfigDelta.compare(gc0.mountGuide, gc1.mountGuide),
+    ConfigDelta.compare(gc0.m1Guide, gc1.m1Guide),
+    ConfigDelta.compare(gc0.m2Guide, gc1.m2Guide)
+  )
+
+  def telescopeConfigDelta(tc0: TelescopeConfig, tc1: TelescopeConfig): TelescopeConfigDiff = TelescopeConfigDiff(
+    ConfigDelta.compare(tc0.offsetA, tc1.offsetA),
+    ConfigDelta.compare(tc0.offsetB, tc1.offsetB),
+    ConfigDelta.compare(tc0.offsetC, tc1.offsetC),
+    ConfigDelta.compare(tc0.wavelA, tc1.wavelA),
+    ConfigDelta.compare(tc0.wavelB, tc1.wavelB),
+    ConfigDelta.compare(tc0.wavelC, tc1.wavelC),
+    ConfigDelta.compare(tc0.m2beam, tc1.m2beam)
+  )
+
+  def guidersTrackingConfigDelta(gtc0: GuidersTrackingConfig, gtc1: GuidersTrackingConfig): GuidersTrackingConfigDiff =
+    GuidersTrackingConfigDiff(
+      ConfigDelta.compare(gtc0.pwfs1, gtc1.pwfs1),
+      ConfigDelta.compare(gtc0.pwfs2, gtc1.pwfs2),
+      ConfigDelta.compare(gtc0.oiwfs, gtc1.oiwfs),
+      ConfigDelta.compare(gtc0.aowfs, gtc1.aowfs)
+    )
+
+  def guidersEnabledDelta(ge0: GuidersEnabled, ge1: GuidersEnabled): GuidersEnabledDiff = GuidersEnabledDiff(
+    ConfigDelta.compare(ge0.pwfs1, ge1.pwfs1),
+    ConfigDelta.compare(ge0.pwfs2, ge1.pwfs2),
+    ConfigDelta.compare(ge0.oiwfs, ge1.oiwfs),
+    ConfigDelta.compare(ge0.aowfs, ge1.aowfs)
+  )
+
+  def agConfigDelta(agc0: AGConfig, agc1: AGConfig): AGConfigDiff = AGConfigDiff(
+    ConfigDelta.compare(agc0.sfPos, agc1.sfPos),
+    ConfigDelta.compare(agc0.hrwfsPos, agc1.hrwfsPos)
+  )
+
+  def tcsConfigDelta(s0: TcsConfig, s1: TcsConfig): TcsConfigDiff =
+    TcsConfigDiff(guideConfigDelta(s0.gc, s1.gc), telescopeConfigDelta(s0.tc, s1.tc),
+      guidersTrackingConfigDelta(s0.gtc, s1.gtc), guidersEnabledDelta(s0.ge, s1.ge), agConfigDelta(s0.agc, s1.agc))
 
 }

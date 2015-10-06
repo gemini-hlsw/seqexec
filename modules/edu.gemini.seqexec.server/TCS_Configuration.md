@@ -1,5 +1,5 @@
 # Step Execution
-The execution of a step in a secuence involves to stages:
+The execution of a step in a sequence involves two stages:
 1. The configuration of all the systems involved, normally the telescope, the instrument, and sometimes GCAL.
 2. The observation itself, that will produce the image.
 
@@ -14,7 +14,7 @@ Altair. The TCS configuration applied by Seqexec involves the elements described
 
 ## Guide Configuration
 * M2 tip-tilt guide: activates the processing of tip tilt corrections in M2.
-* M2 tip-tilt correction sources: defines wich guiders to use. The alternatives are PWFS1, PWFS2, OIWFS and GAOS (Gems
+* M2 tip-tilt correction sources: defines which guiders to use. The alternatives are PWFS1, PWFS2, OIWFS and GAOS (Gems
 or Altair)
 * M2 coma guide: activates the processing of coma corrections in M2.
 * M1 guide: activates the processing of high order corrections in M1.
@@ -71,7 +71,7 @@ Most of those behaviors depend on how the TCS configuration will change, which i
 set of changes before they are applied.
 
 # Structure of the TCS Configuration Code
-The code that configurates TCS will be separated in at least two layers. At the top layer is the code that translates
+The code that configures TCS will be separated in at least two layers. At the top layer is the code that translates
 the step parameters to a TCS configuration and deals with the details described above. The bottom layer deals the actual
 TCS, reading the its state and sending commands to it. The bottom layer behavior will be defined by an interface. A
 dummy implementation will be created for testing purposes.

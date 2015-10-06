@@ -4,7 +4,8 @@ import java.util.logging.{Level, Logger}
 
 import edu.gemini.seqexec.server.TaskRef._
 import edu.gemini.seqexec.server.TcsController._
-import edu.gemini.spModel.core.{Wavelength, Offset}
+import edu.gemini.spModel.core.Wavelength
+import squants.space.{Degrees, Nanometers, Millimeters}
 
 import scalaz.concurrent.Task
 
@@ -15,12 +16,12 @@ object TcsControllerSim extends TcsController {
 
   val guideState = newTaskRef(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
   val telescopeState = newTaskRef(TelescopeConfig(
-    OffsetA(Offset.zero),
-    OffsetB(Offset.zero),
-    OffsetC(Offset.zero),
-    WavelengthA(Wavelength.fromNanometers(445)),
-    WavelengthB(Wavelength.fromNanometers(445)),
-    WavelengthC(Wavelength.fromNanometers(445)),
+    OffsetA(FocalPlaneOffset(OffsetX(Millimeters(0.0)), OffsetY(Millimeters(0.0)))),
+    OffsetB(FocalPlaneOffset(OffsetX(Millimeters(0.0)), OffsetY(Millimeters(0.0)))),
+    OffsetC(FocalPlaneOffset(OffsetX(Millimeters(0.0)), OffsetY(Millimeters(0.0)))),
+    WavelengthA(Wavelength(Nanometers(445))),
+    WavelengthB(Wavelength(Nanometers(445))),
+    WavelengthC(Wavelength(Nanometers(445))),
     Beam.A))
   val guidersTrackState = newTaskRef(GuidersTrackingConfig(
     ProbeTrackingConfigP1(ProbeTrackingConfig.Parked),
@@ -33,6 +34,7 @@ object TcsControllerSim extends TcsController {
     GuiderSensorOptionOI(GuiderSensorOff),
     GuiderSensorOptionAO(GuiderSensorOff)))
   val agState = newTaskRef(AGConfig(ScienceFoldPosition.Parked, HrwfsPickupPosition.Parked))
+  val iaaState = newTaskRef(InstrumentAlignAngle(Degrees(0.0)))
   private val Log = Logger.getLogger(getClass.getName)
 
   override def getConfig: SeqAction[TcsConfig] = for {
@@ -41,7 +43,8 @@ object TcsControllerSim extends TcsController {
     c <- guidersTrackState.flatMap(_.get)
     d <- guidersActivityState.flatMap(_.get)
     e <- agState.flatMap(_.get)
-  } yield TrySeq(TcsConfig(a, b, c, d, e))
+    f <- iaaState.flatMap(_.get)
+  } yield TrySeq(TcsConfig(a, b, c, d, e, f))
 
   override def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit] =
     for {
