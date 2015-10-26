@@ -4,8 +4,9 @@
     <Top name="m2">m2</Top>
     <Top name="ag">ag</Top>
     <Top name="oiwfs">oiwfs</Top>
-    <Top name="bto">bto</Top>
     <Top name="ao">ao</Top>
+    <!--
+    <Top name="bto">bto</Top>
     <Apply name="btoFsaApply">
         <top>bto</top>
         <apply>apply</apply>
@@ -21,6 +22,7 @@
             </parameter>
         </command>
     </Apply>
+    -->
     <Apply name="tcsApply">
         <top>tcs</top>
         <apply>apply</apply>
@@ -30,7 +32,7 @@
             <description>Start P1</description>
             <parameter name="int">
                 <channel>pwfs1Observe.B</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>interval</description>
             </parameter>
             <parameter name="label">
@@ -45,7 +47,7 @@
             </parameter>
             <parameter name="noexp">
                 <channel>pwfs1Observe.A</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Exposures</description>
             </parameter>
             <parameter name="output">
@@ -60,6 +62,82 @@
             </parameter>
             <parameter name="name">
                 <channel>pwfs1Observe.G</channel>
+                <type>STRING</type>
+                <description>Filename</description>
+            </parameter>
+        </command>
+        <command name="pwfs2Observe">
+            <description>Start P2</description>
+            <parameter name="name">
+                <channel>pwfs2Observe.G</channel>
+                <type>STRING</type>
+                <description>Filename</description>
+            </parameter>
+            <parameter name="path">
+                <channel>pwfs2Observe.F</channel>
+                <type>STRING</type>
+                <description>Path</description>
+            </parameter>
+            <parameter name="noexp">
+                <channel>pwfs2Observe.A</channel>
+                <type>INTEGER</type>
+                <description>Exposures</description>
+            </parameter>
+            <parameter name="outopt">
+                <channel>pwfs2Observe.C</channel>
+                <type>STRING</type>
+                <description>Output options</description>
+            </parameter>
+            <parameter name="output">
+                <channel>pwfs2Observe.E</channel>
+                <type>STRING</type>
+                <description>DHS output</description>
+            </parameter>
+            <parameter name="int">
+                <channel>pwfs2Observe.B</channel>
+                <type>DOUBLE</type>
+                <description>interval</description>
+            </parameter>
+            <parameter name="label">
+                <channel>pwfs2Observe.D</channel>
+                <type>STRING</type>
+                <description>DHS label</description>
+            </parameter>
+        </command>
+        <command name="oiwfsObserve">
+            <description>Start OIWFS</description>
+            <parameter name="output">
+                <channel>oiwfsObserve.E</channel>
+                <type>STRING</type>
+                <description>DHS output</description>
+            </parameter>
+            <parameter name="int">
+                <channel>oiwfsObserve.B</channel>
+                <type>DOUBLE</type>
+                <description>interval</description>
+            </parameter>
+            <parameter name="path">
+                <channel>oiwfsObserve.F</channel>
+                <type>STRING</type>
+                <description>Path</description>
+            </parameter>
+            <parameter name="label">
+                <channel>oiwfsObserve.D</channel>
+                <type>STRING</type>
+                <description>DHS label</description>
+            </parameter>
+            <parameter name="outopt">
+                <channel>oiwfsObserve.C</channel>
+                <type>STRING</type>
+                <description>Output options</description>
+            </parameter>
+            <parameter name="noexp">
+                <channel>oiwfsObserve.A</channel>
+                <type>INTEGER</type>
+                <description>Exposures</description>
+            </parameter>
+            <parameter name="name">
+                <channel>oiwfsObserve.G</channel>
                 <type>STRING</type>
                 <description>Filename</description>
             </parameter>
@@ -257,44 +335,6 @@
                 <description>Grab radius</description>
             </parameter>
         </command>
-        <command name="pwfs2Observe">
-            <description>Start P2</description>
-            <parameter name="name">
-                <channel>pwfs2Observe.G</channel>
-                <type>STRING</type>
-                <description>Filename</description>
-            </parameter>
-            <parameter name="path">
-                <channel>pwfs2Observe.F</channel>
-                <type>STRING</type>
-                <description>Path</description>
-            </parameter>
-            <parameter name="noexp">
-                <channel>pwfs2Observe.A</channel>
-                <type>STRING</type>
-                <description>Exposures</description>
-            </parameter>
-            <parameter name="outopt">
-                <channel>pwfs2Observe.C</channel>
-                <type>STRING</type>
-                <description>Output options</description>
-            </parameter>
-            <parameter name="output">
-                <channel>pwfs2Observe.E</channel>
-                <type>STRING</type>
-                <description>DHS output</description>
-            </parameter>
-            <parameter name="int">
-                <channel>pwfs2Observe.B</channel>
-                <type>STRING</type>
-                <description>interval</description>
-            </parameter>
-            <parameter name="label">
-                <channel>pwfs2Observe.D</channel>
-                <type>STRING</type>
-                <description>DHS label</description>
-            </parameter>
-        </command>
         <command name="wavelG3">
             <description>G3 wavelength</description>
             <parameter name="wavel">
@@ -407,7 +447,7 @@
             <description>Position science fold</description>
             <parameter name="scfold">
                 <channel>scienceFold.A</channel>
-                <type>DOUBLE</type>
+                <type>STRING</type>
                 <description>Position</description>
             </parameter>
         </command>
@@ -718,44 +758,6 @@
                 <description>Nod C Chop A</description>
             </parameter>
         </command>
-        <command name="oiwfsObserve">
-            <description>Start OIWFS</description>
-            <parameter name="output">
-                <channel>oiwfsObserve.E</channel>
-                <type>STRING</type>
-                <description>DHS output</description>
-            </parameter>
-            <parameter name="int">
-                <channel>oiwfsObserve.B</channel>
-                <type>STRING</type>
-                <description>interval</description>
-            </parameter>
-            <parameter name="path">
-                <channel>oiwfsObserve.F</channel>
-                <type>STRING</type>
-                <description>Path</description>
-            </parameter>
-            <parameter name="label">
-                <channel>oiwfsObserve.D</channel>
-                <type>STRING</type>
-                <description>DHS label</description>
-            </parameter>
-            <parameter name="outopt">
-                <channel>oiwfsObserve.C</channel>
-                <type>STRING</type>
-                <description>Output options</description>
-            </parameter>
-            <parameter name="noexp">
-                <channel>oiwfsObserve.A</channel>
-                <type>STRING</type>
-                <description>Exposures</description>
-            </parameter>
-            <parameter name="name">
-                <channel>oiwfsObserve.G</channel>
-                <type>STRING</type>
-                <description>Filename</description>
-            </parameter>
-        </command>
         <command name="m2GuideReset">
             <record>m2GuideReset</record>
             <description>Reset M2 guide configuration</description>
@@ -993,6 +995,7 @@
             <description>Canopus probe 2 park</description>
         </command>
     </Apply>
+    <!--
     <Apply name="aolgsApply">
         <top>ao</top>
         <apply>wfcs:strap</apply>
@@ -1025,6 +1028,7 @@
             </parameter>
         </command>
     </Apply>
+    -->
     <Status name="tcsApply">
         <top>tcs</top>
         <attribute name="mess">
@@ -1035,6 +1039,7 @@
     </Status>
     <Status name="aolgs">
         <top>ao</top>
+        <!--
         <attribute name="strapTPStat">
             <channel>strapDevStatus.VALL</channel>
             <type>STRING</type>
@@ -1045,11 +1050,13 @@
             <type>STRING</type>
             <description>STRAP gate level</description>
         </attribute>
+        -->
         <attribute name="straploop">
             <channel>wfcs:strapCorrCtl.VALA</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>STRAP loop</description>
         </attribute>
+        <!--
         <attribute name="strapRTStat">
             <channel>strapDevStatus.VALO</channel>
             <type>STRING</type>
@@ -1065,12 +1072,13 @@
             <type>STRING</type>
             <description>Sfo loop</description>
         </attribute>
+        -->
     </Status>
     <Status name="tcsstate">
         <top>ao</top>
         <attribute name="aowfsOn">
             <channel>wfcs:loopRunning</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>AO loop on</description>
         </attribute>
         <attribute name="decson">
@@ -1091,12 +1099,50 @@
             <description>ISS port 1 label</description>
             <top>ag</top>
         </attribute>
+        <!--
+        <attribute name="ngs1Follow">
+            <channel>ngsPr1FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 1 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
         <attribute name="ngs2Follow">
             <channel>ngsPr2FollowStat.VAL</channel>
             <type>STRING</type>
             <description>Canopus 2 in follow mode</description>
             <top>tcs</top>
         </attribute>
+        <attribute name="ngs3Follow">
+            <channel>ngsPr3FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 3 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw1Follow">
+            <channel>odgw1FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 1 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw2Follow">
+            <channel>odgw2FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 2 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw3Follow">
+            <channel>odgw3FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 3 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw4Follow">
+            <channel>odgw4FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 4 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        -->
         <attribute name="p1nodachopa">
             <channel>configPwfs1.VALA</channel>
             <type>STRING</type>
@@ -1489,7 +1535,7 @@
         </attribute>
         <attribute name="agInPosition">
             <channel>agInPosCalc</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>A&amp;G in position</description>
             <top>tcs</top>
         </attribute>
@@ -1513,13 +1559,13 @@
         </attribute>
         <attribute name="aogsy">
             <channel>drives:driveAOS.VALB</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Guide star Y</description>
             <top>tcs</top>
         </attribute>
         <attribute name="oiParked">
             <channel>oi:probeParked</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>OI probe parked</description>
             <top>ag</top>
         </attribute>
@@ -1535,12 +1581,26 @@
             <description>Chop State</description>
             <top>tcs</top>
         </attribute>
+        <!--
+        <attribute name="ngs1Parked">
+            <channel>drives:ngsPr1Parked.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 1 probe parked</description>
+            <top>tcs</top>
+        </attribute>
         <attribute name="ngs2Parked">
             <channel>drives:ngsPr1Parked.VAL</channel>
             <type>STRING</type>
             <description>Canopus 2 probe parked</description>
             <top>tcs</top>
         </attribute>
+        <attribute name="ngs3Parked">
+            <channel>drives:ngsPr3Parked.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 3 probe parked</description>
+            <top>tcs</top>
+        </attribute>
+        -->
         <attribute name="port5Label">
             <channel>port:port5</channel>
             <type>STRING</type>
@@ -1549,13 +1609,13 @@
         </attribute>
         <attribute name="chopFreq">
             <channel>sad:chopFreq</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Chop Frequency</description>
             <top>tcs</top>
         </attribute>
         <attribute name="aoSettled">
             <channel>wfcs:settled</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>AO loop settled</description>
         </attribute>
         <attribute name="oiFollowS">
@@ -1576,12 +1636,14 @@
             <description>AcqCam pickoff</description>
             <top>tcs</top>
         </attribute>
+        <!--
         <attribute name="pwfs2On">
             <channel>drives:p2Integrating</channel>
             <type>STRING</type>
             <description>P2 integrating</description>
             <top>tcs</top>
         </attribute>
+        -->
         <attribute name="odgw4Parked">
             <channel>drives:odgw4Parked.VAL</channel>
             <type>STRING</type>
@@ -1612,16 +1674,15 @@
             <description>Object name</description>
             <top>tcs</top>
         </attribute>
+        <attribute name="conmatx">
+            <channel>conMatY</channel>
+            <type>DOUBLE</type>
+            <description>Control matrix star X</description>
+        </attribute>
         <attribute name="conmaty">
             <channel>conMatX</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Control matrix star Y</description>
-        </attribute>
-        <attribute name="odgw2Follow">
-            <channel>odgw2FollowStat.VAL</channel>
-            <type>STRING</type>
-            <description>ODGW 2 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p1FollowS">
             <channel>p1:followS</channel>
@@ -1633,12 +1694,6 @@
             <channel>drives:nodState</channel>
             <type>STRING</type>
             <description>Nod State</description>
-            <top>tcs</top>
-        </attribute>
-        <attribute name="ngs3Follow">
-            <channel>ngsPr3FollowStat.VAL</channel>
-            <type>STRING</type>
-            <description>Canopus 3 in follow mode</description>
             <top>tcs</top>
         </attribute>
         <attribute name="odgw1Parked">
@@ -1653,14 +1708,16 @@
             <description>TCS in position</description>
             <top>tcs</top>
         </attribute>
+        <!--
         <attribute name="cmprepBusy">
             <channel>prepareCm.BUSY</channel>
             <type>STRING</type>
             <description>PrepareCm busy</description>
         </attribute>
+        -->
         <attribute name="instrAA">
             <channel>sad:instrAA</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Instrument alignment angle</description>
             <top>tcs</top>
         </attribute>
@@ -1672,7 +1729,7 @@
         </attribute>
         <attribute name="chopDutyCycle">
             <channel>sad:chopDutyCycle</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Chop Duty Cycle</description>
             <top>tcs</top>
         </attribute>
@@ -1688,22 +1745,18 @@
             <description>OI guide signal output</description>
             <top>oiwfs</top>
         </attribute>
+        <!--
         <attribute name="oiwfsOn">
             <channel>drives:oiIntegrating</channel>
             <type>STRING</type>
             <description>OI integrating</description>
             <top>tcs</top>
         </attribute>
+        -->
         <attribute name="cmprepx">
             <channel>aoPrepareCm.VALB</channel>
             <type>STRING</type>
             <description>Prepared control matrix X</description>
-            <top>tcs</top>
-        </attribute>
-        <attribute name="ngs1Follow">
-            <channel>ngsPr1FollowStat.VAL</channel>
-            <type>STRING</type>
-            <description>Canopus 1 in follow mode</description>
             <top>tcs</top>
         </attribute>
         <attribute name="m2aoGuide">
@@ -1714,7 +1767,7 @@
         </attribute>
         <attribute name="p1Parked">
             <channel>p1:probeParked</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>P1 probe parked</description>
             <top>ag</top>
         </attribute>
@@ -1726,37 +1779,27 @@
         </attribute>
         <attribute name="aogsx">
             <channel>drives:driveAOS.VALC</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Guide star X</description>
             <top>tcs</top>
         </attribute>
+        <!--
         <attribute name="m1Guide">
             <channel>im:m1GuideOn</channel>
             <type>STRING</type>
             <description>M1 guide</description>
             <top>tcs</top>
         </attribute>
-        <attribute name="odgw4Follow">
-            <channel>odgw4FollowStat.VAL</channel>
-            <type>STRING</type>
-            <description>ODGW 4 in follow mode</description>
-            <top>tcs</top>
-        </attribute>
+        -->
         <attribute name="m2p1Guide">
             <channel>drives:p1GuideConfig</channel>
             <type>STRING</type>
             <description>M2 P1 guide config</description>
             <top>tcs</top>
         </attribute>
-        <attribute name="ngs1Parked">
-            <channel>drives:ngsPr1Parked.VAL</channel>
-            <type>STRING</type>
-            <description>Canopus 1 probe parked</description>
-            <top>tcs</top>
-        </attribute>
         <attribute name="lgsp1On">
             <channel>lgsttSource.VALA</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>LgsP1 mode</description>
         </attribute>
         <attribute name="agHwParked">
@@ -1767,15 +1810,9 @@
         </attribute>
         <attribute name="p2Parked">
             <channel>p2:probeParked</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>P2 probe parked</description>
             <top>ag</top>
-        </attribute>
-        <attribute name="ngs3Parked">
-            <channel>drives:ngsPr1Parked.VAL</channel>
-            <type>STRING</type>
-            <description>Canopus 3 probe parked</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="comaCorrect">
             <channel>comaCorrect</channel>
@@ -1815,26 +1852,17 @@
         </attribute>
         <attribute name="lgsoiOn">
             <channel>lgsttSource.VALB</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>LgsOI mode</description>
         </attribute>
-        <attribute name="conmatx">
-            <channel>conMatY</channel>
-            <type>STRING</type>
-            <description>Control matrix star X</description>
-        </attribute>
-        <attribute name="odgw3Follow">
-            <channel>odgw3FollowStat.VAL</channel>
-            <type>STRING</type>
-            <description>ODGW 3 in follow mode</description>
-            <top>tcs</top>
-        </attribute>
+        <!--
         <attribute name="pwfs1On">
             <channel>drives:p1Integrating</channel>
             <type>STRING</type>
             <description>P1 integrating</description>
             <top>tcs</top>
         </attribute>
+        -->
         <attribute name="sourceAWavelength">
             <channel>sad:sourceAWavelength.VAL</channel>
             <type>DOUBLE</type>
@@ -1867,13 +1895,13 @@
         </attribute>
         <attribute name="chopAngle">
             <channel>sad:chopPA</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Chop PA</description>
             <top>tcs</top>
         </attribute>
         <attribute name="chopThrow">
             <channel>sad:chopThrow</channel>
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Chop Throw</description>
             <top>tcs</top>
         </attribute>
@@ -1894,22 +1922,48 @@
             <type>STRING</type>
             <description>AO follow mode</description>
         </attribute>
-        <attribute name="odgw1Follow">
-            <channel>odgw1FollowStat.VAL</channel>
-            <type>STRING</type>
-            <description>ODGW 1 in follow mode</description>
-            <top>tcs</top>
-        </attribute>
+        <!--
         <attribute name="m2GuideState">
             <channel>om:m2GuideState</channel>
             <type>STRING</type>
             <description>M2 guiding state</description>
             <top>tcs</top>
         </attribute>
+        -->
+        <attribute name="xoffsetPoA1">
+            <channel>offsetPoA1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset source A</description>
+            <top>tcs</top>
+        </attribute>
         <attribute name="yoffsetPoA1">
             <channel>offsetPoA1.VALB</channel>
             <type>DOUBLE</type>
-            <description>Y offset</description>
+            <description>Y offset source A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="xoffsetPoB1">
+            <channel>offsetPoB1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset source B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="yoffsetPoB1">
+            <channel>offsetPoB1.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Y offset source B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="xoffsetPoC1">
+            <channel>offsetPoC1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset source C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="yoffsetPoC1">
+            <channel>offsetPoC1.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Y offset source C</description>
             <top>tcs</top>
         </attribute>
         <attribute name="m2oiGuide">
@@ -1920,7 +1974,7 @@
         </attribute>
         <attribute name="absorbTipTilt">
             <channel>absorbTipTiltFlag</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>Absorb Tip/Tilt</description>
             <top>tcs</top>
         </attribute>
@@ -1934,7 +1988,7 @@
             <channel>sad:chopBeam.VAL</channel>
             <type>STRING</type>
             <description>M2 beam</description>
-            <top>ag</top>
+            <top>tcs</top>
         </attribute>
     </Status>
 </Records>

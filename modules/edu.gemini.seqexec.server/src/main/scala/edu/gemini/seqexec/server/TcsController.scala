@@ -53,11 +53,11 @@ object TcsController {
 
   sealed trait M2GuideConfig { val active: Boolean }
 
-  object M2GuideOff extends M2GuideConfig { override val active = false}
+  object M2GuideOff extends M2GuideConfig { override val active = false }
   
-  sealed trait ComaOption { val active: Boolean }
-  object ComaOn extends ComaOption { override val active = true}
-  object ComaOff extends ComaOption { override val active = false}
+  sealed case class ComaOption(active: Boolean)
+  object ComaOn extends ComaOption(true)
+  object ComaOff extends ComaOption(false)
 
   final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig {
     override val active = true
@@ -65,12 +65,11 @@ object TcsController {
     def setSource(v: Set[TipTiltSource]) = M2GuideOn(coma, v)
   }
 
-
   sealed trait M1GuideConfig { val active: Boolean }
 
   object M1GuideOff extends M1GuideConfig { override val active = false }
 
-  final case class M1GuideOn(source: M1Source) extends M1GuideConfig  { override val active = true}
+  final case class M1GuideOn(source: M1Source) extends M1GuideConfig { override val active = true }
 
   sealed trait Beam
 
@@ -183,29 +182,10 @@ object TcsController {
 
   object ScienceFoldPosition {
 
-    import LightSource._
-
-    private val AO_PREFIX = "ao2"
-    private val GCAL_PREFIX = "gcal2"
 
     object Parked extends ScienceFoldPosition
 
-    final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition {
-      val sfPositionName: String = source match {
-        case Sky => sink.sfName
-        case AO => AO_PREFIX + sink.sfName
-        case GCAL => GCAL_PREFIX + sink.sfName
-      }
-    }
-
-    private def findInstrument(name: String): Instrument =
-      List(GMOS_S).find(x => name.startsWith(x.sfName)).getOrElse(UnknownInstrument)
-
-    def fromPositionName(sfName: String): Position = {
-      if(sfName.startsWith(AO_PREFIX)) Position(AO, findInstrument(sfName.substring(AO_PREFIX.length)))
-      else if(sfName.startsWith(GCAL_PREFIX)) Position(GCAL, findInstrument(sfName.substring(GCAL_PREFIX.length)))
-      else Position(Sky, findInstrument(sfName.substring(GCAL_PREFIX.length)))
-    }
+    final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
 
   }
 

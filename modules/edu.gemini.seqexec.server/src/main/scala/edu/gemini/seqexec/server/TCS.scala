@@ -11,6 +11,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{TELESCOPE_CONFIG_NAME, TELESCO
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
 import scala.reflect.ClassTag
+import scalaz.concurrent.Task
 import scalaz.{EitherT, \/}
 import squants.space.{Millimeters, LengthConversions}
 
@@ -22,7 +23,6 @@ case class TCS(tcsController: TcsController) extends System {
   import TCS._
 
   override val name: String = TELESCOPE_CONFIG_NAME
-  private val Log = Logger.getLogger(getClass.getName)
 
   private def computeGuideOff(s0: TcsConfig, s1: Requested[TcsConfig]): GuideConfig = {
 
@@ -34,7 +34,9 @@ case class TCS(tcsController: TcsController) extends System {
 
   private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
     TcsController.telescopeConfigDelta(s0.tc, s1.self.tc).offsetA match {
-      case Change(_, _) => tcsController.guide(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
+      case Change(_, _) => {
+        tcsController.guide(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
+      }
       case _            => tcsController.guide(computeGuideOff(s0, s1))
     }
 
@@ -54,6 +56,8 @@ case class TCS(tcsController: TcsController) extends System {
 }
 
 object TCS {
+  private val Log = Logger.getLogger(getClass.getName)
+
   // Shouldn't these be defined somewhere ?
   val GUIDE_WITH_PWFS1_PROP = "guideWithPWFS1"
   val GUIDE_WITH_PWFS2_PROP = "guideWithPWFS2"
@@ -103,24 +107,38 @@ object TCS {
       setGuidersEnabled(s0.ge.setOiwfsGuiderSensorOption(guideWithOIWFS))
   }
 
-  def buildOffsetConfig(p: Double, q: Double)(s0: TcsConfig): TcsConfig = {
+  def buildOffsetConfig(pstr: String, qstr: String)(s0: TcsConfig): TcsConfig = {
     // Is there a way to express this value with squants quantities ?
     val FOCAL_PLANE_SCALE = 1.61144; //[arcsec/mm]
 
-    val x = (-p*s0.iaa.self.cos - q*s0.iaa.self.sin) / FOCAL_PLANE_SCALE
-    val y = ( p*s0.iaa.self.sin - q*s0.iaa.self.cos) / FOCAL_PLANE_SCALE
-
-    s0.setTelescopeConfig(s0.tc.setOffsetA(FocalPlaneOffset(OffsetX(Millimeters(x)), OffsetY(Millimeters(y)))))
+    try {
+      val p = pstr.toDouble
+      val q = qstr.toDouble
+      val x = (-p * s0.iaa.self.cos - q * s0.iaa.self.sin) / FOCAL_PLANE_SCALE
+      val y = (p * s0.iaa.self.sin - q * s0.iaa.self.cos) / FOCAL_PLANE_SCALE
+      s0.setTelescopeConfig(s0.tc.setOffsetA(FocalPlaneOffset(OffsetX(Millimeters(x)), OffsetY(Millimeters(y)))))
+    } catch {
+      case _: Throwable => s0
+    }
   }
 
   def fromSequenceConfig(config: Config)(s0: TcsConfig): TcsConfig = {
-    List(
+    val a = new ItemKey(TELESCOPE_KEY, P_OFFSET_PROP)
+    val b = extract[String](config, a)
+    val c = new ItemKey(TELESCOPE_KEY, Q_OFFSET_PROP)
+    val d = extract[String](config, c)
+
+    val r = List(
       build(buildPwfs1Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS1_PROP), config),
       build(buildPwfs2Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS2_PROP), config),
       build(buildOiwfsConfig, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP), config),
       build(buildOffsetConfig, new ItemKey(TELESCOPE_KEY, P_OFFSET_PROP), new ItemKey(TELESCOPE_KEY, Q_OFFSET_PROP),
         config)
     ).foldLeft(s0)((b, f) => f(b))
+
+//    Log.info("TCS configuration: " + r.toString)
+
+    r
 
   }
 

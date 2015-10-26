@@ -72,6 +72,6 @@ set of changes before they are applied.
 
 # Structure of the TCS Configuration Code
 The code that configures TCS will be separated in at least two layers. At the top layer is the code that translates
-the step parameters to a TCS configuration and deals with the details described above. The bottom layer deals the actual
-TCS, reading the its state and sending commands to it. The bottom layer behavior will be defined by an interface. A
+the step parameters to a TCS configuration and deals with the details described above. The bottom layer deals with the
+actual TCS, reading its state and sending commands to it. The bottom layer behavior will be defined by an interface. A
 dummy implementation will be created for testing purposes.

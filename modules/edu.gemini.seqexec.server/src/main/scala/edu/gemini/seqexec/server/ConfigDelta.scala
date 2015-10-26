@@ -9,6 +9,6 @@ final case class Change[T](oldValue: T, newValue: T) extends ConfigDelta[T]
 
 object ConfigDelta {
   def compare[T](v0: T, v1: T) =
-    if (v0 == v1) Same(v0)
+    if (v0.equals(v1)) Same(v0)
     else          Change(v0, v1)
 }
