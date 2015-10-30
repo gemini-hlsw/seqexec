@@ -1,15 +1,19 @@
 package edu.gemini.seqexec.server
 
 import java.util
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
+import java.util.{Timer, TimerTask}
 import java.util.logging.Logger
 import edu.gemini.seqexec.server.TcsEpics._
 import edu.gemini.seqexec.server.tcs.{BinaryYesNo, BinaryOnOff}
 
 import collection.JavaConversions._
 
+import squants.Time
+
 import edu.gemini.epics.acm._
 
-import scala.concurrent.duration.Duration
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
@@ -222,26 +226,58 @@ final class TcsEpics private () {
   object pwfs2ProbeGuideConfig extends ProbeGuideConfig("p2", tcsState)
   object oiwfsProbeGuideConfig extends ProbeGuideConfig("oi", tcsState)
 
-  def waitInPosition: SeqAction[Unit] =
-    EpicsCommand.safe(Task.async((f) => {
-      val statusListener = new CaAttributeListener[String] {
+  def waitInPosition(timeout: Time): SeqAction[Unit] =
+    EpicsCommand.safe(EitherT(Task.async[TrySeq[Unit]]((f) => {
 
-        override def onValueChange(newVals: util.List[String]): Unit = {
-          TcsEpicsInitializer.Log.info("inPosition listener called")
-          if (!newVals.isEmpty && newVals.get(0) == "TRUE") {
-            TcsEpics().inPositionAttr.removeListener(this)
-            f(TrySeq(()).right)
-          }
+      val resultGuard = new AtomicInteger(1)
+      val lock = new ReentrantLock()
+      def locked(f: => Unit): Unit = {
+        lock.lock
+        try{
+          f
+        }finally {
+         lock.unlock()
         }
-
-
-        override def onValidityChange(newValidity: Boolean): Unit = {}
       }
 
-      //val timer = Timer(t.toMillis)
-      TcsEpics().inPositionAttr.addListener(statusListener)
+      if(!inPositionAttr.values().isEmpty && inPositionAttr.value == "TRUE") {
+        f(TrySeq(()).right)
+      } else {
 
-    } ) )
+        val timer = new Timer
+        val statusListener = new CaAttributeListener[String] {
+
+          override def onValueChange(newVals: util.List[String]): Unit = {
+            if (!newVals.isEmpty && newVals.get(0) == "TRUE" && resultGuard.getAndDecrement() == 1) {
+              locked {
+                inPositionAttr.removeListener(this)
+                timer.cancel()
+              }
+
+              f(TrySeq(()).right)
+            }
+          }
+
+          override def onValidityChange(newValidity: Boolean): Unit = {}
+        }
+
+        locked {
+          if (timeout.toMilliseconds.toLong > 0) {
+            timer.schedule(new TimerTask {
+              override def run(): Unit = if (resultGuard.getAndDecrement() == 1) {
+                locked {
+                  inPositionAttr.removeListener(statusListener)
+                }
+
+                f(TrySeq.fail(SeqexecFailure.Timeout("waiting for TCS inposition flag.")).right)
+
+              }
+            }, timeout.toMilliseconds.toLong)
+          }
+          inPositionAttr.addListener(statusListener)
+        }
+      }
+    } ) ) )
 
 }
 

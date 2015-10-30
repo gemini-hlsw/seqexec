@@ -6,6 +6,7 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
+import scalaz.EitherT
 import scalaz.concurrent.Task
 
 /**
@@ -28,12 +29,12 @@ object UnknownInstrument extends Instrument {
 
   var imageCount = 0
 
-  override def configure(config: Config): SeqAction[ConfigResult] = Task {
+  override def configure(config: Config): SeqAction[ConfigResult] = EitherT ( Task {
     TrySeq(ConfigResult(this))
-  }
+  } )
 
-  override def observe(config: Config): SeqAction[ObserveResult] = Task {
+  override def observe(config: Config): SeqAction[ObserveResult] = EitherT ( Task {
     imageCount += 1
     TrySeq(ObserveResult(f"S20150519S$imageCount%04d"))
-  }
+  } )
 }

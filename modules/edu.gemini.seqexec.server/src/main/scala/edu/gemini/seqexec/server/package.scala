@@ -3,6 +3,7 @@ package edu.gemini.seqexec
 import edu.gemini.seqexec.server.SeqexecFailure.{SeqexecException, Unexpected}
 import edu.gemini.seqexec.server.System
 
+import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
@@ -20,16 +21,15 @@ package object server {
     def fail[A](p: SeqexecFailure): TrySeq[A] = p.left[A]
   }
 
-  //type SeqAction[+A] = EitherT[Task, SeqexecFailure, A]
-  type SeqAction[+A] = Task[SeqexecFailure \/ A]
+  type SeqAction[+A] = EitherT[Task, SeqexecFailure, A]
 
   object SeqAction {
-    def apply[A](a: => A): SeqAction[A]          = Task(a.right)
-    def fail[A](p: SeqexecFailure): SeqAction[A] = Task(p.left)
+    def apply[A](a: => A): SeqAction[A]          = SeqAction(a)
+    def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(Task.delay(TrySeq.fail(p)))
   }
 
   implicit class SeqActionOps[A](a: SeqAction[A]) {
-    def runSeqAction: TrySeq[A] = a.attemptRun.leftMap[SeqexecFailure](SeqexecException).join
+    def runSeqAction: TrySeq[A] = a.run.attemptRun.leftMap[SeqexecFailure](SeqexecException).join
   }
 
   implicit class MoreDisjunctionOps[A,B](ab: A \/ B) {

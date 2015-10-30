@@ -7,6 +7,7 @@ import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.spModel.core.Wavelength
 import squants.space.{Degrees, Nanometers, Millimeters}
 
+import scalaz.EitherT
 import scalaz.concurrent.Task
 
 /**
@@ -37,34 +38,37 @@ object TcsControllerSim extends TcsController {
   val iaaState = newTaskRef(InstrumentAlignAngle(Degrees(0.0)))
   private val Log = Logger.getLogger(getClass.getName)
 
-  override def getConfig: SeqAction[TcsConfig] = for {
-    a <- guideState.flatMap(_.get)
-    b <- telescopeState.flatMap(_.get)
-    c <- guidersTrackState.flatMap(_.get)
-    d <- guidersActivityState.flatMap(_.get)
-    e <- agState.flatMap(_.get)
-    f <- iaaState.flatMap(_.get)
-  } yield TrySeq(TcsConfig(a, b, c, d, e, f))
+  override def getConfig: SeqAction[TcsConfig] = EitherT( for {
+      a <- guideState.flatMap(_.get)
+      b <- telescopeState.flatMap(_.get)
+      c <- guidersTrackState.flatMap(_.get)
+      d <- guidersActivityState.flatMap(_.get)
+      e <- agState.flatMap(_.get)
+      f <- iaaState.flatMap(_.get)
+    } yield TrySeq(TcsConfig(a, b, c, d, e, f))
+  )
 
   override def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit] =
-    for {
-      _ <- Task {
-        Log.log(Level.INFO, "Applying TCS configuration")
-        Thread.sleep(2000)
-      }
-      _ <- telescopeState.flatMap(_.put(tc))
-      _ <- guidersTrackState.flatMap(_.put(gtc))
-      _ <- guidersActivityState.flatMap(_.put(ge))
-      _ <- agState.flatMap(_.put(agc))
-    } yield TrySeq(())
+    EitherT ( for {
+        _ <- Task {
+          Log.log(Level.INFO, "Applying TCS configuration")
+          Thread.sleep(2000)
+        }
+        _ <- telescopeState.flatMap(_.put(tc))
+        _ <- guidersTrackState.flatMap(_.put(gtc))
+        _ <- guidersActivityState.flatMap(_.put(ge))
+        _ <- agState.flatMap(_.put(agc))
+      } yield TrySeq(())
+    )
 
   override def guide(gc: GuideConfig): SeqAction[Unit] =
-    for {
-      _ <- Task {
-        Log.log(Level.INFO, "Applying guiding configuration")
-        Thread.sleep(1000)
-      }
-      _ <- guideState.flatMap(_.put(gc))
-    } yield TrySeq(())
+    EitherT ( for {
+        _ <- Task {
+          Log.log(Level.INFO, "Applying guiding configuration")
+          Thread.sleep(1000)
+        }
+        _ <- guideState.flatMap(_.put(gc))
+      } yield TrySeq(())
+    )
 
 }

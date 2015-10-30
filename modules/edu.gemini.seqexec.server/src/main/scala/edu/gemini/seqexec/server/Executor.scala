@@ -9,6 +9,7 @@ import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
+import scala.language.{reflectiveCalls, higherKinds}
 import scalaz._
 import Scalaz._
 
@@ -21,14 +22,14 @@ import scalaz.concurrent.Task
 object Step {
   type Step = EitherT[Task, NonEmptyList[SeqexecFailure], StepResult]
 
-  def parConfig(config: List[Task[SeqexecFailure \/ ConfigResult]]):
+  def parConfig(config: List[SeqAction[ConfigResult]]):
     EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
-      EitherT(Nondeterminism[Task].gather(config).map(_.map(_.validationNel).sequenceU.disjunction))
+      EitherT(Nondeterminism[Task].gather(config.map(_.run)).map(_.map(_.validationNel).sequenceU.disjunction))
 
-  def step(config: List[Task[SeqexecFailure \/ ConfigResult]], observe: Task[SeqexecFailure \/ ObserveResult]): Step =
+  def step(config: List[SeqAction[ConfigResult]], observe: SeqAction[ObserveResult]): Step =
     for {
       p <- parConfig(config)
-      q <- EitherT(observe.map(_.leftMap(NonEmptyList(_))))
+      q <- observe.leftMap(NonEmptyList(_))
     } yield StepResult(p, q)
 
   def step(config: Config): Step = {

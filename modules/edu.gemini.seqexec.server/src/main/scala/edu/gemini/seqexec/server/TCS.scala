@@ -10,6 +10,7 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{TELESCOPE_CONFIG_NAME, TELESCOPE_KEY}
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scalaz.concurrent.Task
 import scalaz.{EitherT, \/}
@@ -34,9 +35,7 @@ case class TCS(tcsController: TcsController) extends System {
 
   private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
     TcsController.telescopeConfigDelta(s0.tc, s1.self.tc).offsetA match {
-      case Change(_, _) => {
-        tcsController.guide(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
-      }
+      case Change(_, _) => tcsController.guide(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
       case _            => tcsController.guide(computeGuideOff(s0, s1))
     }
 
@@ -47,11 +46,11 @@ case class TCS(tcsController: TcsController) extends System {
       _ <- guideOff(tcsState, Requested(tcsConfig))
       _ <- tcsController.applyConfig(tcsConfig.tc, tcsConfig.gtc, tcsConfig.ge, tcsConfig.agc)
       _ <- tcsController.guide(tcsConfig.gc)
-    } yield TrySeq(ConfigResult(this))
+    } yield ConfigResult(this)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] = {
-    EitherT(tcsController.getConfig).flatMap(c => EitherT(configure(config, c))).run
+    tcsController.getConfig.flatMap(configure(config, _))
   }
 }
 
@@ -128,17 +127,13 @@ object TCS {
     val c = new ItemKey(TELESCOPE_KEY, Q_OFFSET_PROP)
     val d = extract[String](config, c)
 
-    val r = List(
+    List(
       build(buildPwfs1Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS1_PROP), config),
       build(buildPwfs2Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS2_PROP), config),
       build(buildOiwfsConfig, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP), config),
       build(buildOffsetConfig, new ItemKey(TELESCOPE_KEY, P_OFFSET_PROP), new ItemKey(TELESCOPE_KEY, Q_OFFSET_PROP),
         config)
     ).foldLeft(s0)((b, f) => f(b))
-
-//    Log.info("TCS configuration: " + r.toString)
-
-    r
 
   }
 
