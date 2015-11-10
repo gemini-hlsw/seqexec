@@ -41,6 +41,7 @@ object Step {
 
     instrument map { a => {
         val systems = List(TCS(TcsControllerEpics), a)
+  //      val systems = List(TCS(TcsControllerSim), a)
         step(systems.map(_.configure(config)), a.observe(config))
       }
     } getOrElse EitherT(Task(NonEmptyList[SeqexecFailure](UnrecognizedInstrument(instName.toString)).left))

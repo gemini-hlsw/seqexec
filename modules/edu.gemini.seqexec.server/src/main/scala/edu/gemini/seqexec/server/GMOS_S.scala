@@ -22,23 +22,31 @@ object GMOS_S extends Instrument {
 
   var imageCount = 0
 
-  override def configure(config: Config): SeqAction[ConfigResult] = EitherT ( Task {
+  override def configure(config: Config): SeqAction[ConfigResult] = EitherT(Task {
     val items = config.getAll(INSTRUMENT_KEY).itemEntries()
 
-//    Log.log(Level.INFO, "Configuring " + name + " with :" + ItemEntryUtil.showItems(items))
+    //    Log.log(Level.INFO, "Configuring " + name + " with :" + ItemEntryUtil.showItems(items))
     Log.log(Level.INFO, "Configuring " + name)
     Thread.sleep(2000)
     Log.log(Level.INFO, name + " configured")
 
     TrySeq(ConfigResult(this))
-  } )
+  })
 
-  override def observe(config: Config): SeqAction[ObserveResult] = EitherT ( Task {
-    Log.log(Level.INFO, name + ": starting observation")
-    Thread.sleep(5000)
-    Log.log(Level.INFO, name + ": observation completed")
+  override def observe(config: Config): SeqAction[ObserveResult] = for {
+    id <- DhsClient.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
+    _ <- EitherT ( Task {
+      Log.log(Level.INFO, name + ": starting observation " + id)
+      Thread.sleep(5000)
+      Log.log(Level.INFO, name + ": observation completed")
+      TrySeq(())
+    } )
+    _ <- DhsClient.setKeywords(id, DhsClient.KeywordBag(
+      DhsClient.StringKeyword("instrument", "gmos"),
+      DhsClient.Int32Keyword("INPORT", 3),
+      DhsClient.DoubleKeyword("WAVELENG", 3.14159),
+      DhsClient.BooleanKeyword("PROP_MD", false)
+    ))
+  } yield ObserveResult(id)
 
-    imageCount += 1
-    TrySeq(ObserveResult(f"S20150519S$imageCount%04d"))
-  } )
 }
