@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="f2">f2</Top>
+    <Apply name="flamingos2::apply">
+        <top>f2</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>IS Primary Apply Record</description>
+        <command name="flamingos2::dcconfig">
+            <description>Setup a DC Configuration</description>
+            <parameter name="biasMode">
+                <channel>observationSetup.D</channel>
+                <type>STRING</type>
+                <description>Bias mode (Imaging | Long_Slit | Mos)</description>
+            </parameter>
+            <parameter name="numReads">
+                <channel>observationSetup.B</channel>
+                <type>INTEGER</type>
+                <description>Number of non-destructive reads</description>
+                <isCAD>false</isCAD>
+            </parameter>
+            <parameter name="readoutMode">
+                <channel>observationSetup.C</channel>
+                <type>STRING</type>
+                <description>Readout mode (SCI | ENG)</description>
+            </parameter>
+            <parameter name="exposureTime">
+                <channel>observationSetup.A</channel>
+                <type>DOUBLE</type>
+                <description>Integration time</description>
+                <isCAD>false</isCAD>
+            </parameter>
+        </command>
+        <command name="flamingos2::continue">
+            <record>continue</record>
+            <description>Continue observation</description>
+        </command>
+        <command name="flamingos2::abort">
+            <record>abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="flamingos2::config">
+            <description>Setup a Configuration</description>
+            <parameter name="useElectronicOffsetting">
+                <channel>wfs:followA.K</channel>
+                <type>INTEGER</type>
+                <description>0 Electronic Offsets</description>
+            </parameter>
+            <parameter name="filter">
+                <channel>instrumentSetup.F</channel>
+                <type>STRING</type>
+                <description>Discrete filter name</description>
+            </parameter>
+            <parameter name="windowCover">
+                <channel>instrumentSetup.C</channel>
+                <type>STRING</type>
+                <description>Window cover position (Open | Closed | Datum | Datum_Offset | Park)</description>
+            </parameter>
+            <parameter name="mos">
+                <channel>instrumentSetup.E</channel>
+                <type>STRING</type>
+                <description>Discrete MOS wheel position </description>
+            </parameter>
+            <parameter name="grism">
+                <channel>instrumentSetup.H</channel>
+                <type>STRING</type>
+                <description>Grism name</description>
+            </parameter>
+            <parameter name="mask">
+                <channel>instrumentSetup.J</channel>
+                <type>STRING</type>
+                <description>Mask name</description>
+            </parameter>
+            <parameter name="decker">
+                <channel>instrumentSetup.D</channel>
+                <type>STRING</type>
+                <description>Discrete decker wheel position (Open | Long_slit | MOS | Datum | Datum_Offset | Park)</description>
+            </parameter>
+            <parameter name="lyot">
+                <channel>instrumentSetup.G</channel>
+                <type>STRING</type>
+                <description>Lyot stop name</description>
+            </parameter>
+        </command>
+        <command name="flamingos2::stop">
+            <record>stop</record>
+            <description>Stop observation</description>
+        </command>
+        <command name="flamingos2::observe">
+            <description>Observe</description>
+            <parameter name="comment">
+                <channel>observe.G</channel>
+                <type>STRING</type>
+                <description>Comment</description>
+            </parameter>
+            <parameter name="label">
+                <channel>observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+            <parameter name="pixLUTFile">
+                <channel>observe.H</channel>
+                <type>STRING</type>
+                <description>Pixel re-ordering file.</description>
+            </parameter>
+        </command>
+        <command name="flamingos2::pause">
+            <record>pause</record>
+            <description>Pause observation</description>
+        </command>
+        <command name="flamingos2::endObserve">
+            <record>endObserve</record>
+            <description>End Observe</description>
+        </command>
+    </Apply>
+    <Status name="flamingos2::status">
+        <top>f2</top>
+        <description>flamingos2 status</description>
+        <!--
+        <attribute name="ANALOG">
+            <channel>sad:ANALOG</channel>
+            <type>STRING</type>
+            <description>LS-332 Channel B ON | OFF indicator</description>
+        </attribute>
+        <attribute name="BARCODE">
+            <channel>sad:BARCODE</channel>
+            <type>STRING</type>
+            <description>Barcode number</description>
+        </attribute>
+        -->
+        <attribute name="biasGate">
+            <channel>sad:BIASGATE</channel>
+            <type>STRING</type>
+            <description>Bias Gate (V)</description>
+        </attribute>
+        <attribute name="biasPower">
+            <channel>sad:BIASPWR</channel>
+            <type>STRING</type>
+            <description>Bias Power (V)</description>
+        </attribute>
+        <attribute name="biasVcc">
+            <channel>sad:BIASVCC</channel>
+            <type>STRING</type>
+            <description>Bias Vcc (V)</description>
+        </attribute>
+        <attribute name="biasVreset">
+            <channel>sad:BIASVRES</channel>
+            <type>STRING</type>
+            <description>Bias Vreset (V)</description>
+        </attribute>
+        <attribute name="CAMVAC">
+            <channel>sad:CAMVAC</channel>
+            <type>STRING</type>
+            <description>Camera Dewar Pressure</description>
+        </attribute>
+        <attribute name="CD1_1">
+            <channel>sad:CD1_1</channel>
+            <type>STRING</type>
+            <description>Element of CD matrix</description>
+        </attribute>
+        <attribute name="CD1_2">
+            <channel>sad:CD1_2</channel>
+            <type>STRING</type>
+            <description>Element of CD matrix</description>
+        </attribute>
+        <attribute name="CD2_1">
+            <channel>sad:CD2_1</channel>
+            <type>STRING</type>
+            <description>Element of CD matrix</description>
+        </attribute>
+        <attribute name="CD2_2">
+            <channel>sad:CD2_2</channel>
+            <type>STRING</type>
+            <description>Element of CD matrix</description>
+        </attribute>
+        <attribute name="CHA_APWR">
+            <channel>sad:CHA_APWR</channel>
+            <type>STRING</type>
+            <description>Applied Power for LS-332 Channel A</description>
+        </attribute>
+        <attribute name="CHA_HTPW">
+            <channel>sad:CHA_HTPW</channel>
+            <type>STRING</type>
+            <description>Manually Added Percentage of Heater Power for LS-332 Channel A</description>
+        </attribute>
+        <attribute name="CHA_PID">
+            <channel>sad:CHA_PID</channel>
+            <type>STRING</type>
+            <description>PID Parameters in use for LS-332 Channel A</description>
+        </attribute>
+        <attribute name="CHA_RANG">
+            <channel>sad:CHA_RANG</channel>
+            <type>STRING</type>
+            <description>Heater Power Range Setting for LS-332 Channel A</description>
+        </attribute>
+        <attribute name="CHA_SETP">
+            <channel>sad:CHA_SETP</channel>
+            <type>STRING</type>
+            <description>Set Point Temperature for LS-332 Channel A</description>
+        </attribute>
+        <attribute name="CHB_APWR">
+            <channel>sad:CHB_APWR</channel>
+            <type>STRING</type>
+            <description>Applied Power for LS-332 Channel B</description>
+        </attribute>
+        <attribute name="CHB_HTPW">
+            <channel>sad:CHB_HTPW</channel>
+            <type>STRING</type>
+            <description>Manually Added Percentage of Heater Power for LS-332 Channel B</description>
+        </attribute>
+        <attribute name="CHB_PID">
+            <channel>sad:CHB_PID</channel>
+            <type>STRING</type>
+            <description>PID Parameters in use for LS-332 Channel B</description>
+        </attribute>
+        <attribute name="CHB_SETP">
+            <channel>sad:CHB_SETP</channel>
+            <type>STRING</type>
+            <description>Set Point Temperature for LS-332 Channel B</description>
+        </attribute>
+        <attribute name="CRPIX1">
+            <channel>sad:CRPIX1</channel>
+            <type>STRING</type>
+            <description>Pixel at which CRVAL1 applies</description>
+        </attribute>
+        <attribute name="CRPIX2">
+            <channel>sad:CRPIX2</channel>
+            <type>STRING</type>
+            <description>Pixel at which CRVAL2 applies</description>
+        </attribute>
+        <attribute name="CRVAL1">
+            <channel>sad:CRVAL1</channel>
+            <type>STRING</type>
+            <description>Reference pixel value</description>
+        </attribute>
+        <attribute name="CRVAL2">
+            <channel>sad:CRVAL2</channel>
+            <type>STRING</type>
+            <description>Reference pixel value</description>
+        </attribute>
+        <attribute name="CTYPE1">
+            <channel>sad:CTYPE1</channel>
+            <type>STRING</type>
+            <description>Coordinate 1 type</description>
+        </attribute>
+        <attribute name="CTYPE2">
+            <channel>sad:CTYPE2</channel>
+            <type>STRING</type>
+            <description>Coordinate 2 type</description>
+        </attribute>
+        <!--
+        <attribute name="CWAVE">
+            <channel>sad:CWAVE</channel>
+            <type>STRING</type>
+            <description>Central wavelength (micron)</description>
+        </attribute>
+        -->
+        <attribute name="DCKRSTEP">
+            <channel>sad:DCKRSTEP</channel>
+            <type>STRING</type>
+            <description>Current Decker Wheel Motor Step Count</description>
+        </attribute>
+        <attribute name="decker">
+            <channel>sad:DECKER</channel>
+            <type>STRING</type>
+            <description>Decker wheel named position</description>
+        </attribute>
+        <attribute name="DETID">
+            <channel>sad:DETID</channel>
+            <type>STRING</type>
+            <description>Detector Serial Number</description>
+        </attribute>
+        <attribute name="DETTYPE">
+            <channel>sad:DETTYPE</channel>
+            <type>STRING</type>
+            <description>Description of detector array type</description>
+        </attribute>
+        <attribute name="exposureTime">
+            <channel>sad:EXPTIME</channel>
+            <type>STRING</type>
+            <description>Current detector single image integration time in seconds</description>
+        </attribute>
+        <attribute name="FIL1STEP">
+            <channel>sad:FIL1STEP</channel>
+            <type>STRING</type>
+            <description>Current Filter Wheel 1 Motor Step Count</description>
+        </attribute>
+        <attribute name="FIL2STEP">
+            <channel>sad:FIL2STEP</channel>
+            <type>STRING</type>
+            <description>Current Filter Wheel 2 Motor Step Count</description>
+        </attribute>
+        <attribute name="FILTER1">
+            <channel>sad:FILTER1</channel>
+            <type>STRING</type>
+            <description>Filter wheel 1 named position</description>
+        </attribute>
+        <attribute name="FILTER2">
+            <channel>sad:FILTER2</channel>
+            <type>STRING</type>
+            <description>Filter wheel 2 named position</description>
+        </attribute>
+        <attribute name="filter">
+            <channel>sad:FILTER</channel>
+            <type>STRING</type>
+            <description>Virtual filter wheel current position (by name)</description>
+        </attribute>
+        <!--
+        <attribute name="useElectronicOffsetting">
+            <channel>wfs:followA.K</channel>
+            <type>INTEGER</type>
+            <description>Electronic Offsets on/off </description>
+        </attribute>
+        -->
+        <attribute name="focus">
+            <channel>sad:FOCUS</channel>
+            <type>STRING</type>
+            <description>Detector focus position name</description>
+        </attribute>
+        <attribute name="FOCUSTEP">
+            <channel>sad:FOCUSTEP</channel>
+            <type>STRING</type>
+            <description>Current Detector Focus Motor Step Count</description>
+        </attribute>
+        <attribute name="grism">
+            <channel>sad:GRISM</channel>
+            <type>STRING</type>
+            <description>Grism name</description>
+        </attribute>
+        <attribute name="GRSMSTEP">
+            <channel>sad:GRSMSTEP</channel>
+            <type>STRING</type>
+            <description>Current Grism Wheel Motor Step Count</description>
+        </attribute>
+        <attribute name="INHEALTH">
+            <channel>health</channel>
+            <type>STRING</type>
+            <description>Instrument health (GOOD | WARNING | BAD)</description>
+        </attribute>
+        <!--
+        <attribute name="INPORT">
+            <channel>issPort</channel>
+            <type>STRING</type>
+            <description>ISS port number</description>
+        </attribute>
+        -->
+        <attribute name="INSTATE">
+            <channel>state</channel>
+            <type>STRING</type>
+            <description>Instrument state</description>
+        </attribute>
+        <attribute name="lnrs">
+            <channel>sad:LNRS</channel>
+            <type>STRING</type>
+            <description>Current number of non-destructive reads</description>
+        </attribute>
+        <attribute name="lyot">
+            <channel>sad:LYOT</channel>
+            <type>STRING</type>
+            <description>Lyot name</description>
+        </attribute>
+        <attribute name="LYOTSTEP">
+            <channel>sad:LYOTSTEP</channel>
+            <type>STRING</type>
+            <description>Current Lyot Wheel Motor Step Count</description>
+        </attribute>
+        <attribute name="mask">
+            <channel>sad:MASKNAME</channel>
+            <type>STRING</type>
+            <description>MOS mask name</description>
+        </attribute>
+        <attribute name="mos">
+            <channel>sad:MOSPOS</channel>
+            <type>STRING</type>
+            <description>MOS wheel position (by name)	</description>
+        </attribute>
+        <attribute name="MOSSTEP">
+            <channel>sad:MOSSTEP</channel>
+            <type>STRING</type>
+            <description>Current MOS Wheel Motor Step Count</description>
+        </attribute>
+        <attribute name="MOSVAC">
+            <channel>sad:MOSVAC</channel>
+            <type>STRING</type>
+            <description>Mos Dewar Pressure</description>
+        </attribute>
+        <attribute name="INSTRUME">
+            <channel>name</channel>
+            <type>STRING</type>
+            <description>Instrument name (Flamingos-2)</description>
+        </attribute>
+        <!--
+        <attribute name="PA">
+            <channel>sad:PA</channel>
+            <type>STRING</type>
+            <description>Instrument Position Angle</description>
+        </attribute>
+        -->
+        <attribute name="PIXSCALE">
+            <channel>sad:PIXSCALE</channel>
+            <type>STRING</type>
+            <description>Plate scale in arcseconds per pixel</description>
+        </attribute>
+        <attribute name="TEMP_CH1">
+            <channel>sad:TEMP_CH1</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 1 Coldhead Stage 1 Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH2">
+            <channel>sad:TEMP_CH2</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 2 Coldhead Stage 2 Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH3">
+            <channel>sad:TEMP_CH3</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 3 MOS Bench Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH4">
+            <channel>sad:TEMP_CH4</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 4 MOS Bench Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH5">
+            <channel>sad:TEMP_CH5</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 5 Coldhead Stage 1 Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH6">
+            <channel>sad:TEMP_CH6</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 6 Cold Finger Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH7">
+            <channel>sad:TEMP_CH7</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 7 Camera Bench Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CH8">
+            <channel>sad:TEMP_CH8</channel>
+            <type>STRING</type>
+            <description>LS-218 Channel 8 Camera Bench Temperature</description>
+        </attribute>
+        <attribute name="TEMP_CHA">
+            <channel>sad:TEMP_CHA</channel>
+            <type>STRING</type>
+            <description>Temperature reported by LS-332 Channel A</description>
+        </attribute>
+        <attribute name="TEMP_CHB">
+            <channel>sad:TEMP_CHB</channel>
+            <type>STRING</type>
+            <description>Temperature reported by LS-332 Channel B</description>
+        </attribute>
+        <attribute name="WCSDIM">
+            <channel>sad:WCSDIM</channel>
+            <type>STRING</type>
+            <description>Dimensionality of image</description>
+        </attribute>
+        <!--
+        <attribute name="WDELTA">
+            <channel>sad:WDELTA</channel>
+            <type>STRING</type>
+            <description>Dispersion</description>
+        </attribute>
+        -->
+        <attribute name="windowCover">
+            <channel>sad:WINDOW</channel>
+            <type>STRING</type>
+            <description>Window cover current position (by name)</description>
+        </attribute>
+        <attribute name="WINSTEP">
+            <channel>sad:WINSTEP</channel>
+            <type>STRING</type>
+            <description>Current Window Motor Step Count</description>
+        </attribute>
+        <!--
+        <attribute name="WREFPIX">
+            <channel>sad:WREFPIX</channel>
+            <type>STRING</type>
+            <description>Reference pixel for wavelength scale</description>
+        </attribute>
+        -->
+    </Status>
+</Records>

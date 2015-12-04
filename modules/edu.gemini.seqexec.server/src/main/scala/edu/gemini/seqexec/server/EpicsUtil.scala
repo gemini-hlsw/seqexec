@@ -44,3 +44,30 @@ object EpicsCommand {
     } ) )
 
 }
+
+object EpicsCodex {
+  //This code deals with decoding and encoding the EPICS values
+  trait EncodeEpicsValue[A, T] {
+    def encode(a: A): T
+  }
+
+  object EncodeEpicsValue {
+    def apply[A, T](f: A => T): EncodeEpicsValue[A, T] = new EncodeEpicsValue[A, T] {
+      override def encode(a: A): T = f(a)
+    }
+  }
+
+  def encode[A, T](a: A)(implicit e: EncodeEpicsValue[A, T]): T = e.encode(a)
+
+  trait DecodeEpicsValue[T, A] {
+    def decode(t: T): A
+  }
+
+  object DecodeEpicsValue {
+    def apply[T, A](f: T => A): DecodeEpicsValue[T, A] = new DecodeEpicsValue[T, A] {
+      override def decode(t: T): A = f(t)
+    }
+  }
+
+  def decode[T, A](t: T)(implicit e: DecodeEpicsValue[T, A]): A = e.decode(t)
+}

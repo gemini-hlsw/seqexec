@@ -19,7 +19,7 @@ import squants.space.{Millimeters, LengthConversions}
 /**
  * Created by jluhrs on 4/23/15.
  */
-case class TCS(tcsController: TcsController) extends System {
+final case class TCS(tcsController: TcsController) extends System {
 
   import TCS._
 
@@ -122,11 +122,6 @@ object TCS {
   }
 
   def fromSequenceConfig(config: Config)(s0: TcsConfig): TcsConfig = {
-    val a = new ItemKey(TELESCOPE_KEY, P_OFFSET_PROP)
-    val b = extract[String](config, a)
-    val c = new ItemKey(TELESCOPE_KEY, Q_OFFSET_PROP)
-    val d = extract[String](config, c)
-
     List(
       build(buildPwfs1Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS1_PROP), config),
       build(buildPwfs2Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS2_PROP), config),

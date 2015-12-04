@@ -36,6 +36,7 @@ object Step {
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
       case GMOS_S.name => Some(GMOS_S)
+      case FLAMINGOS2.name => Some(FLAMINGOS2(Flamingos2ControllerEpics))
       case _ => None
     }
 

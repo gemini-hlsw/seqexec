@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.server.osgi
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
+import edu.gemini.seqexec.server._
 import edu.gemini.seqexec.shared.{SeqExecService, SeqFailure}
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
@@ -23,7 +23,11 @@ object Commands {
       |  seq show obsId count
       |  seq show obsId static [calibration|instrument|telescope ...]
       |  seq show obsId dynamic step# [calibration|instrument|telescope ...]
-      |
+      |  seq run obsId
+      |  seq stop obsId
+      |  seq continue obsId
+      |  seq status obsId
+      |      |
       |  Example
       |    seq show GS-2014B-Q-2-355 static
       |    -> shows all static values for observation 355
@@ -128,7 +132,7 @@ object Commands {
             oid <- parseId(obsId)
             seq <- fetch(oid, loc)
           } yield {
-            exec.start(oid, seq).runAsync(onComplete(oid))
+            exec.start(oid, seq).runAsync(onCompleteRun(oid))
             s"Sequence $obsId started."
           }).merge
 
@@ -181,4 +185,21 @@ object Commands {
   def onComplete[A](id: SPObservationID)(result: Throwable \/ A): Unit =
     println(id + ": " + result)
 
+  // TODO: this, much, much better
+  def onCompleteRun (id: SPObservationID)(result: Throwable \/ (Executor.ExecState, \/[NonEmptyList[SeqexecFailure], Unit])): Unit = {
+    println(id + ": ")
+    result match {
+      case -\/(ex) => println(ex.getMessage)
+      case \/-((st, r)) => {
+        println(st.completed.map {
+          case Executor.Ok(StepResult(_, ObserveResult(id))) => id
+          case _ => ""
+        }.filter(!_.isEmpty).mkString("\n"))
+        r match {
+          case -\/(errs) => println(errs.toList.map(SeqexecFailure.explain(_)).mkString(","))
+        }
+      }
+    }
+
+  }
 }

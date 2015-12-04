@@ -378,10 +378,9 @@ object TcsEpicsInitializer {
 
       TrySeq(())
     } catch {
-      case c: Throwable => {
+      case c: Throwable =>
         Log.warning("TcsEpics: Problem initializing EPICS service: " + c.getMessage)
         SeqexecFailure.SeqexecException(c).left
-      }
     }
   }
 

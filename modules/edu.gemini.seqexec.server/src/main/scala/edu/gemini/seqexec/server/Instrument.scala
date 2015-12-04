@@ -2,6 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.{Level, Logger}
 
+import edu.gemini.seqexec.server.DhsClient.ObsId
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -19,7 +20,7 @@ trait Instrument extends System {
 }
 
 //Placeholder for observe response
-case class ObserveResult(dataId: String)
+case class ObserveResult(dataId: ObsId)
 
 object UnknownInstrument extends Instrument {
 
