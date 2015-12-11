@@ -34,9 +34,9 @@ final case class TCS(tcsController: TcsController) extends System {
   }
 
   private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
-    TcsController.telescopeConfigDelta(s0.tc, s1.self.tc).offsetA match {
-      case Change(_, _) => tcsController.guide(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
-      case _            => tcsController.guide(computeGuideOff(s0, s1))
+    tcsController.guide {
+      if (s0.tc.offsetA == s1.self.tc.offsetA) computeGuideOff(s0, s1)
+      else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
     }
 
   private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
