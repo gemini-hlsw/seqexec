@@ -190,15 +190,15 @@ object Commands {
     println(id + ": ")
     result match {
       case -\/(ex) => println(ex.getMessage)
-      case \/-((st, r)) => {
+      case \/-((st, r)) =>
         println(st.completed.map {
           case Executor.Ok(StepResult(_, ObserveResult(id))) => id
-          case _ => ""
+          case _                                             => ""
         }.filter(!_.isEmpty).mkString("\n"))
         r match {
-          case -\/(errs) => println(errs.toList.map(SeqexecFailure.explain(_)).mkString(","))
+          case -\/(errs) => println(errs.toList.map(SeqexecFailure.explain).mkString(","))
+          case _         => ()
         }
-      }
     }
 
   }

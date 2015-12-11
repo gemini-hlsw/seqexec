@@ -45,7 +45,7 @@ object GMOS_S extends Instrument {
       DhsClient.StringKeyword("instrument", "gmos"),
       DhsClient.Int32Keyword("INPORT", 3),
       DhsClient.DoubleKeyword("WAVELENG", 3.14159),
-      DhsClient.BooleanKeyword("PROP_MD", false)
+      DhsClient.BooleanKeyword("PROP_MD", value = true)
     ))
   } yield ObserveResult(id)
 

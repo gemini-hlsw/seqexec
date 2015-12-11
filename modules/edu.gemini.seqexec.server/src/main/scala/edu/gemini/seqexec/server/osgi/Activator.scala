@@ -37,8 +37,8 @@ class Activator extends BundleActivator {
   override def stop(ctx: BundleContext): Unit = {
     println("edu.gemini.seqexec.client stop")
 
-    TcsEpicsInitializer.cleanup
-    Flamingos2EpicsInitializer.cleanup
+    TcsEpicsInitializer.cleanup()
+    Flamingos2EpicsInitializer.cleanup()
 
     reg.foreach(_.unregister())
     reg = None

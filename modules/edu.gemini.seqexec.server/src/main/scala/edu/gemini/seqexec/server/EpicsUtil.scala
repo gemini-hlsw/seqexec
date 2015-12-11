@@ -27,7 +27,7 @@ trait EpicsCommand {
   ) ) )
 
   def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
-      cs.map(_.mark.right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
+      cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
     })
   )
 }

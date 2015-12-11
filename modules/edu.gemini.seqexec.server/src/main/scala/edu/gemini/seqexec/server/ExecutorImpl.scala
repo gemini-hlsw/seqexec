@@ -19,7 +19,7 @@ import scalaz.concurrent.Task
 class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: TaskRef[Map[SPObservationID, Executor.ExecState]]) {
 
   private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] =
-    stateRef.modify(_ + ((id -> s)))
+    stateRef.modify(_ + (id -> s))
 
   private def go(id: SPObservationID): Task[Boolean] = 
     cancelRef.get.map(!_(id))

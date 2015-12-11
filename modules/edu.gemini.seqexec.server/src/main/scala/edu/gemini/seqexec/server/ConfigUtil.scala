@@ -32,10 +32,10 @@ object ConfigUtil {
   // for the given key is not null and matches the type we expect.
   private def extractWithThrowable[A](c: Config, key: ItemKey)(implicit clazz: ClassTag[A]): Throwable \/ A = {
 
-    def missingKey[A](key: ItemKey): \/[Throwable, A] =
+    def missingKey(key: ItemKey): \/[Throwable, A] =
       new Error(s"Missing config value for key ${key.getPath}").left[A]
 
-    Option(c.getItemValue(key)).fold(missingKey[A](key)) { v =>
+    Option(c.getItemValue(key)).fold(missingKey(key)) { v =>
       \/.fromTryCatch(clazz.runtimeClass.cast(v).asInstanceOf[A])
     }
 

@@ -14,8 +14,9 @@ import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
-import squants.time.Seconds
 
+import scala.concurrent.duration.SECONDS
+import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
 import scalaz.{EitherT, \/, \/-}
 
@@ -38,10 +39,10 @@ final case class FLAMINGOS2(f2Controller: Flamingos2Controller) extends Instrume
   } yield ObserveResult(id)
 
   override def configure(config: Config): SeqAction[ConfigResult] =
-    fromSequenceConfig(config).flatMap(f2Controller.applyConfig(_)).map(_ => ConfigResult(this))
+    fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
 
   private def closeImage(id: ObsId): SeqAction[Unit] = DhsClient.setKeywords(id,
-    KeywordBag(StringKeyword("instrument", "flamingos2"), StringKeyword("OBSERVER", "Javier Luhrs")), true)
+    KeywordBag(StringKeyword("instrument", "flamingos2"), StringKeyword("OBSERVER", "Javier Luhrs")), finalFlag = true)
 
 }
 
@@ -106,7 +107,7 @@ object FLAMINGOS2 {
     } yield CCConfig(p, q, r, s, t, u) ).leftMap(SeqexecFailure.Unexpected)
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] = ( for {
-    p <- extract[java.lang.Double](config, new ItemKey(OBSERVE_KEY, EXPOSURE_TIME_PROP.getName)).map(x => Seconds(x.toDouble))
+    p <- extract[java.lang.Double](config, new ItemKey(OBSERVE_KEY, EXPOSURE_TIME_PROP.getName)).map(x => Duration(x, SECONDS))
     // Reads is usually inferred from the read mode, but it can be explicit.
     q <- extract[Reads](config, new ItemKey(OBSERVE_KEY, READS_PROP.getName)) match {
           case a: \/-[Reads] => a

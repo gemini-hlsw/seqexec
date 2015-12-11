@@ -59,7 +59,7 @@ object Executor { self =>
   case object Skipped extends Completion
 
   implicit val executor: ScheduledExecutorService = new ScheduledThreadPoolExecutor(10)
-  def shutdown(): Unit = executor.shutdown
+  def shutdown(): Unit = executor.shutdown()
 
   // Our current exec state is a list of completed steps and a list of remaining steps
   case class ExecState(completed: List[Completion], remaining: List[Step]) {

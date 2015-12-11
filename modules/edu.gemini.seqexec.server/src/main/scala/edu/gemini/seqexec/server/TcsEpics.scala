@@ -232,7 +232,7 @@ final class TcsEpics private () {
       val resultGuard = new AtomicInteger(1)
       val lock = new ReentrantLock()
       def locked(f: => Unit): Unit = {
-        lock.lock
+        lock.lock()
         try{
           f
         }finally {
