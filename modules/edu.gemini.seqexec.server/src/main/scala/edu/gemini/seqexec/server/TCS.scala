@@ -90,7 +90,8 @@ object TCS {
   }
 
   // Helper functions for incrementally building a TCS configuration
-  def buildWithConjunction[T, P, S](f: P => T => T)(p: S \/ P): T => T = p.map(f).getOrElse((t: T) => t)
+  def buildWithConjunction[T, P, S](f: P => T => T)(p: S \/ P): T => T = 
+    p.map(f).getOrElse((t: T) => t)
 
   def buildWithConjunction[T, P, Q, S](f: (P, Q) => T => T)(p: S \/ P, q: S \/ Q): T => T = ( for {
       r <- p
@@ -98,11 +99,11 @@ object TCS {
     } yield f(r, s)
   ).getOrElse((t: T) => t)
 
-  def build[T, P](f: P => T => T, k: ItemKey, config: Config)(implicit clazz: ClassTag[P]): T => T =
-    buildWithConjunction(f)(extract[P](config, k)(clazz))
+  def build[T, P: ClassTag](f: P => T => T, k: ItemKey, config: Config): T => T =
+    buildWithConjunction(f)(config.extract(k).as[P])
 
-  def build[T, P, Q](f: (P, Q) => T => T, k1: ItemKey, k2: ItemKey, config: Config)(implicit clazzp: ClassTag[P], clazzq: ClassTag[Q]): T => T =
-    buildWithConjunction(f)(extract[P](config, k1)(clazzp), extract[Q](config, k2)(clazzq))
+  def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => T => T, k1: ItemKey, k2: ItemKey, config: Config): T => T =
+    buildWithConjunction(f)(config.extract(k1).as[P], config.extract(k2).as[Q])
 
   // Parameter specific build functions
   def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value)(s0: TcsConfig): TcsConfig = {
@@ -137,13 +138,13 @@ object TCS {
 
   def fromSequenceConfig(config: Config)(s0: TcsConfig): TcsConfig = {
     List(
-      build(buildPwfs1Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS1_PROP), config),
-      build(buildPwfs2Config, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_PWFS2_PROP), config),
-      build(buildOiwfsConfig, new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP), config),
-      build(buildOffsetConfig, new ItemKey(TELESCOPE_KEY, P_OFFSET_PROP), new ItemKey(TELESCOPE_KEY, Q_OFFSET_PROP),
-        config)
+      build(buildPwfs1Config,  TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP, config),
+      build(buildPwfs2Config,  TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP, config),
+      build(buildOiwfsConfig,  TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP, config),
+      build(buildOffsetConfig, TELESCOPE_KEY / P_OFFSET_PROP, TELESCOPE_KEY / Q_OFFSET_PROP, config)
     ).foldLeft(s0)((b, f) => f(b))
 
   }
 
 }
+
