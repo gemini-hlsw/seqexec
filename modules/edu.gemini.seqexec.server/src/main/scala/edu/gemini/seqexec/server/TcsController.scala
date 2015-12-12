@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Wavelength
 
-import scalaz.{\/-, \/}
+import scalaz._, Scalaz._
 
 import squants.{Length, Angle}
 
@@ -14,7 +14,6 @@ import squants.{Length, Angle}
  */
 
 trait TcsController {
-
   import TcsController._
 
   def getConfig: SeqAction[TcsConfig]
@@ -22,101 +21,108 @@ trait TcsController {
   def guide(gc: GuideConfig): SeqAction[Unit]
 
   def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit]
+
 }
 
 object TcsController {
 
   case class Requested[T](self: T) extends AnyVal
 
+  /** Enumerated type for Tip/Tilt Source. */
   sealed trait TipTiltSource
-
   object TipTiltSource {
-
-    object PWFS1 extends TipTiltSource
-    object PWFS2 extends TipTiltSource
-    object OIWFS extends TipTiltSource
-    object GAOS extends TipTiltSource
-
+    case object PWFS1 extends TipTiltSource
+    case object PWFS2 extends TipTiltSource
+    case object OIWFS extends TipTiltSource
+    case object GAOS  extends TipTiltSource
   }
 
+  /** Enumerated type for M1 Source. */
   sealed trait M1Source
-
   object M1Source {
-
-    object PWFS1 extends M1Source
-    object PWFS2 extends M1Source
-    object OIWFS extends M1Source
-    object GAOS extends M1Source
-    object HRWFS extends M1Source
-
+    case object PWFS1 extends M1Source
+    case object PWFS2 extends M1Source
+    case object OIWFS extends M1Source
+    case object GAOS  extends M1Source
+    case object HRWFS extends M1Source
   }
 
-  sealed trait M2GuideConfig { val active: Boolean }
+  /** Enumerated type for Coma option. */
+  sealed trait ComaOption
+  object ComaOption {
+    case object ComaOn  extends ComaOption
+    case object ComaOff extends ComaOption
+  }
 
-  object M2GuideOff extends M2GuideConfig { override val active = false }
-  
-  sealed case class ComaOption(active: Boolean)
-  object ComaOn extends ComaOption(true)
-  object ComaOff extends ComaOption(false)
-
+  /** Data type for M2 guide config. */
+  sealed trait M2GuideConfig
+  case object M2GuideOff extends M2GuideConfig
   final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig {
-    override val active = true
     def setComa(v: ComaOption) = M2GuideOn(v, source)
     def setSource(v: Set[TipTiltSource]) = M2GuideOn(coma, v)
   }
 
-  sealed trait M1GuideConfig { val active: Boolean }
+  /** Data type for M2 guide config. */
+  sealed trait M1GuideConfig
+  case object M1GuideOff extends M1GuideConfig
+  final case class M1GuideOn(source: M1Source) extends M1GuideConfig
 
-  object M1GuideOff extends M1GuideConfig { override val active = false }
-
-  final case class M1GuideOn(source: M1Source) extends M1GuideConfig { override val active = true }
-
+  /** Enumerated type for beams A, B, and C. */
   sealed trait Beam
-
   object Beam {
-
-    object A extends Beam
-    object B extends Beam
-    object C extends Beam
-
+    case object A extends Beam
+    case object B extends Beam
+    case object C extends Beam
   }
 
-  // Combined configuration of nod position (telescope orientation) and chop position (M2 orientation)
+  /** 
+   * Data type for combined configuration of nod position (telescope orientation) and chop position 
+   * (M2 orientation)
+   */
   final case class NodChop(nod: Beam, chop: Beam)
-  
+  object NodChop {
+    implicit def EqualNodChop: Equal[NodChop] = 
+      Equal.equalA
+  }
+
+  /** Enumerated type for nod/chop tracking. */
   sealed trait NodChopTrackingOption
-  object NodChopTrackingOn extends NodChopTrackingOption
-  object NodChopTrackingOff extends NodChopTrackingOption
+  object NodChopTrackingOption {
+    
+    case object NodChopTrackingOn  extends NodChopTrackingOption
+    case object NodChopTrackingOff extends NodChopTrackingOption
+
+    def fromBoolean(on: Boolean): NodChopTrackingOption =
+      if (on) NodChopTrackingOn else NodChopTrackingOff
+
+  }
+  import NodChopTrackingOption._ // needed below
 
   // TCS can be configured to update a guide probe position only for certain nod-chop positions.
   sealed trait NodChopTrackingConfig {
     def get(nodchop: NodChop): NodChopTrackingOption
   }
+  sealed trait ActiveNodChopTracking extends NodChopTrackingConfig {
+  
+    // If x is of type ActiveNodChopTracking then ∃ a:NodChop ∍ x.get(a) == NodChopTrackingOn
+    // How could I reflect that in the code?
 
-  // If x is of type ActiveNodChopTracking then ∃ a:NodChop ∍ x.get(a) == NodChopTrackingOn
-  // How could I reflect that in the code?
-  sealed trait ActiveNodChopTracking extends NodChopTrackingConfig
-
+  }
   object NodChopTrackingConfig {
 
     object None extends NodChopTrackingConfig {
-      def get(nodchop: NodChop): NodChopTrackingOption = NodChopTrackingOff
+      def get(nodchop: NodChop): NodChopTrackingOption = 
+        NodChopTrackingOff
     }
 
     object Normal extends ActiveNodChopTracking {
-      def get(nodchop: NodChop): NodChopTrackingOption = {
-        if (nodchop.nod == nodchop.chop) NodChopTrackingOn
-        else NodChopTrackingOff
-      }
+      def get(nodchop: NodChop): NodChopTrackingOption =
+        NodChopTrackingOption.fromBoolean(nodchop.nod == nodchop.chop)
     }
 
-    // Must be a non-empty set
-    final case class Special(s: Set[NodChop]) extends ActiveNodChopTracking {
-      require(s.nonEmpty)
-      def get(nodchop: NodChop): NodChopTrackingOption = {
-        if(s(nodchop)) NodChopTrackingOn
-        else NodChopTrackingOff
-      }
+    final case class Special(s: OneAnd[Set, NodChop]) extends ActiveNodChopTracking {
+      def get(nodchop: NodChop): NodChopTrackingOption =
+        NodChopTrackingOption.fromBoolean(s.element(nodchop))
     }
 
   }
@@ -126,74 +132,57 @@ object TcsController {
   // followed by the probe, and the second tells the probe if it must follow
   // the target track.
 
+  /** Enumerated type for follow on/off. */
   sealed trait FollowOption
-  object FollowOff extends FollowOption
-  object FollowOn extends FollowOption
-
-  sealed trait ProbeTrackingConfig {
-    def follow: FollowOption
-
-    def getNodChop: NodChopTrackingConfig
+  object FollowOption {
+    object FollowOff extends FollowOption
+    object FollowOn  extends FollowOption
   }
+  import FollowOption._
 
+  /** Data type for probe tracking config. */
+  sealed abstract class ProbeTrackingConfig(
+    val follow: FollowOption,
+    val getNodChop: NodChopTrackingConfig
+  )
   object ProbeTrackingConfig {
-
-    object Parked extends ProbeTrackingConfig {
-      override def follow: FollowOption = FollowOff
-
-      override def getNodChop: NodChopTrackingConfig = NodChopTrackingConfig.None
-    }
-
-    object Off extends ProbeTrackingConfig {
-      override def follow: FollowOption = FollowOff
-
-      override def getNodChop: NodChopTrackingConfig = NodChopTrackingConfig.None
-    }
-
-    final case class On(ndconfig: ActiveNodChopTracking) extends ProbeTrackingConfig {
-      override def follow: FollowOption = FollowOn
-
-      override def getNodChop: NodChopTrackingConfig = ndconfig
-    }
-
+    object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
+    object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
+    final case class On(ndconfig: ActiveNodChopTracking) extends ProbeTrackingConfig(FollowOn, ndconfig)
   }
 
+  /** Enumerated type for HRWFS pickup position. */
   sealed trait HrwfsPickupPosition
-
   object HrwfsPickupPosition {
-
-    object IN extends HrwfsPickupPosition
-    object OUT extends HrwfsPickupPosition
-    object Parked extends HrwfsPickupPosition
-
+    case object IN     extends HrwfsPickupPosition
+    case object OUT    extends HrwfsPickupPosition
+    case object Parked extends HrwfsPickupPosition
   }
 
+  /** Enumerated type for light source. */
   sealed trait LightSource
-
   object LightSource {
-
-    object Sky extends LightSource
-    object AO extends LightSource
-    object GCAL extends LightSource
-
+    case object Sky  extends LightSource
+    case object AO   extends LightSource
+    case object GCAL extends LightSource
   }
 
+  /** Data type for science fold position. */
   sealed trait ScienceFoldPosition
-
   object ScienceFoldPosition {
-
-
-    object Parked extends ScienceFoldPosition
-
+    case object Parked extends ScienceFoldPosition
     final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
-
   }
 
-  // Offloading of tip/tilt corrections from M2 to mount
-  sealed trait MountGuideOption { val active: Boolean }
-  object MountGuideOff extends MountGuideOption { override val active = false }
-  object MountGuideOn extends MountGuideOption { override val active = true }
+  /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
+  sealed trait MountGuideOption
+  object MountGuideOption {
+    case object MountGuideOff extends MountGuideOption
+    case object MountGuideOn  extends MountGuideOption
+  }
+  import MountGuideOption._
 
+  /** Data type for guide config. */
   final case class GuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig) {
     def setMountGuide(v: MountGuideOption) = GuideConfig(v, m1Guide, m2Guide)
     def setM1Guide(v: M1GuideConfig) = GuideConfig(mountGuide, v, m2Guide)
@@ -215,9 +204,13 @@ object TcsController {
   final case class WavelengthB(self: Wavelength)
   final case class WavelengthC(self: Wavelength)
 
-  final case class TelescopeConfig(offsetA: OffsetA, offsetB: OffsetB, offsetC: OffsetC,
-                                   wavelA: WavelengthA, wavelB: WavelengthB, wavelC: WavelengthC,
-                                   m2beam: Beam) {
+  final case class TelescopeConfig(
+    offsetA: OffsetA, offsetB: OffsetB, offsetC: OffsetC,
+    wavelA:  WavelengthA, wavelB: WavelengthB, wavelC: WavelengthC,
+    m2beam: Beam
+  ) {
+
+    // TODO: these in terms of .copy
     def setOffsetA(v: FocalPlaneOffset) = TelescopeConfig(OffsetA(v), offsetB, offsetC, wavelA, wavelB, wavelC, m2beam)
     def setOffsetB(v: FocalPlaneOffset) = TelescopeConfig(offsetA, OffsetB(v), offsetC, wavelA, wavelB, wavelC, m2beam)
     def setOffsetC(v: FocalPlaneOffset) = TelescopeConfig(offsetA, offsetB, OffsetC(v), wavelA, wavelB, wavelC, m2beam)
@@ -232,8 +225,12 @@ object TcsController {
   final case class ProbeTrackingConfigOI(self: ProbeTrackingConfig) extends AnyVal
   final case class ProbeTrackingConfigAO(self: ProbeTrackingConfig) extends AnyVal
 
-  final case class GuidersTrackingConfig(pwfs1: ProbeTrackingConfigP1, pwfs2: ProbeTrackingConfigP2,
-                                         oiwfs: ProbeTrackingConfigOI, aowfs: ProbeTrackingConfigAO) {
+  final case class GuidersTrackingConfig(
+    pwfs1: ProbeTrackingConfigP1, 
+    pwfs2: ProbeTrackingConfigP2,
+    oiwfs: ProbeTrackingConfigOI, 
+    aowfs: ProbeTrackingConfigAO
+  ) {
     def setPwfs1TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(ProbeTrackingConfigP1(v), pwfs2, oiwfs, aowfs)
     def setPwfs2TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, ProbeTrackingConfigP2(v), oiwfs, aowfs)
     def setOiwfsTrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, pwfs2, ProbeTrackingConfigOI(v), aowfs)
@@ -250,8 +247,12 @@ object TcsController {
   final case class GuiderSensorOptionAO(self: GuiderSensorOption) extends AnyVal
 
   // A enabled guider means it is taking images and producing optical error measurements.
-  final case class GuidersEnabled(pwfs1: GuiderSensorOptionP1, pwfs2: GuiderSensorOptionP2,
-                                  oiwfs: GuiderSensorOptionOI, aowfs: GuiderSensorOptionAO) {
+  final case class GuidersEnabled(
+    pwfs1: GuiderSensorOptionP1, 
+    pwfs2: GuiderSensorOptionP2,
+    oiwfs: GuiderSensorOptionOI, 
+    aowfs: GuiderSensorOptionAO
+  ) {
     def setPwfs1GuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(GuiderSensorOptionP1(v), pwfs2, oiwfs, aowfs)
     def setPwfs2GuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, GuiderSensorOptionP2(v), oiwfs, aowfs)
     def setOiwfsGuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, pwfs2, GuiderSensorOptionOI(v), aowfs)
@@ -262,8 +263,14 @@ object TcsController {
 
   final case class InstrumentAlignAngle(self: Angle) extends AnyVal
 
-  final case class TcsConfig(gc: GuideConfig, tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled,
-                             agc: AGConfig, iaa: InstrumentAlignAngle) {
+  final case class TcsConfig(
+    gc:  GuideConfig, 
+    tc:  TelescopeConfig, 
+    gtc: GuidersTrackingConfig, 
+    ge:  GuidersEnabled,
+    agc: AGConfig, 
+    iaa: InstrumentAlignAngle
+  ) {
     def setGuideConfig(v: GuideConfig) = TcsConfig(v, tc, gtc, ge, agc, iaa)
     def setTelescopeConfig(v: TelescopeConfig) = TcsConfig(gc, v, gtc, ge, agc, iaa)
     def setGuidersTrackingConfig(v: GuidersTrackingConfig) = TcsConfig(gc, tc, v, ge, agc, iaa)

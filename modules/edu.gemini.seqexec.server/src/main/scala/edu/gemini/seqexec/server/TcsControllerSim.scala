@@ -14,6 +14,7 @@ import scalaz.concurrent.Task
  * Created by jluhrs on 8/3/15.
  */
 object TcsControllerSim extends TcsController {
+  import MountGuideOption._
 
   val guideState = newTaskRef(GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff))
   val telescopeState = newTaskRef(TelescopeConfig(
