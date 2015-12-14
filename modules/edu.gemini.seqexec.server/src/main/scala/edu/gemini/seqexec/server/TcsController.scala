@@ -135,8 +135,8 @@ object TcsController {
   /** Enumerated type for follow on/off. */
   sealed trait FollowOption
   object FollowOption {
-    object FollowOff extends FollowOption
-    object FollowOn  extends FollowOption
+    case object FollowOff extends FollowOption
+    case object FollowOn  extends FollowOption
   }
   import FollowOption._
 
@@ -146,8 +146,8 @@ object TcsController {
     val getNodChop: NodChopTrackingConfig
   )
   object ProbeTrackingConfig {
-    object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
-    object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
+    case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
+    case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
     final case class On(ndconfig: ActiveNodChopTracking) extends ProbeTrackingConfig(FollowOn, ndconfig)
   }
 
