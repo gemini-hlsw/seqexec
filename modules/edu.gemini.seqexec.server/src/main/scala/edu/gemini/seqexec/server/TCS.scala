@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scalaz.concurrent.Task
 import scalaz._, Scalaz._
-import squants.space.{Millimeters, LengthConversions}
+import squants.space.{ Millimeters, LengthConversions } 
 
 /**
  * Created by jluhrs on 4/23/15.
@@ -89,39 +89,29 @@ object TCS {
     else GuiderSensorOff
   }
 
-  // Helper functions for incrementally building a TCS configuration
-  def buildWithConjunction[T, P, S](f: P => T => T)(p: S \/ P): T => T = 
-    p.map(f).getOrElse((t: T) => t)
+  def build[T, P: ClassTag](f: P => Endo[T], k: ItemKey, config: Config): Endo[T] =
+    config.extract(k).as[P].foldMap(f)
 
-  def buildWithConjunction[T, P, Q, S](f: (P, Q) => T => T)(p: S \/ P, q: S \/ Q): T => T = ( for {
-      r <- p
-      s <- q
-    } yield f(r, s)
-  ).getOrElse((t: T) => t)
-
-  def build[T, P: ClassTag](f: P => T => T, k: ItemKey, config: Config): T => T =
-    buildWithConjunction(f)(config.extract(k).as[P])
-
-  def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => T => T, k1: ItemKey, k2: ItemKey, config: Config): T => T =
-    buildWithConjunction(f)(config.extract(k1).as[P], config.extract(k2).as[Q])
+  def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => Endo[T], k1: ItemKey, k2: ItemKey, config: Config): Endo[T] =
+    (config.extract(k1).as[P] tuple config.extract(k2).as[Q]).foldMap(f.tupled)
 
   // Parameter specific build functions
-  def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value)(s0: TcsConfig): TcsConfig = {
+  def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value): Endo[TcsConfig] = Endo { s0 =>
     s0.setGuidersTrackingConfig(s0.gtc.setPwfs1TrackingConfig(guideWithPWFS1)).
       setGuidersEnabled(s0.ge.setPwfs1GuiderSensorOption(guideWithPWFS1))
   }
 
-  def buildPwfs2Config(guideWithPWFS2: StandardGuideOptions.Value)(s0: TcsConfig): TcsConfig = {
+  def buildPwfs2Config(guideWithPWFS2: StandardGuideOptions.Value): Endo[TcsConfig] = Endo { s0 =>
     s0.setGuidersTrackingConfig(s0.gtc.setPwfs2TrackingConfig(guideWithPWFS2)).
       setGuidersEnabled(s0.ge.setPwfs1GuiderSensorOption(guideWithPWFS2))
   }
 
-  def buildOiwfsConfig(guideWithOIWFS: StandardGuideOptions.Value)(s0: TcsConfig): TcsConfig = {
+  def buildOiwfsConfig(guideWithOIWFS: StandardGuideOptions.Value): Endo[TcsConfig] = Endo { s0 =>
     s0.setGuidersTrackingConfig(s0.gtc.setOiwfsTrackingConfig(guideWithOIWFS)).
       setGuidersEnabled(s0.ge.setOiwfsGuiderSensorOption(guideWithOIWFS))
   }
 
-  def buildOffsetConfig(pstr: String, qstr: String)(s0: TcsConfig): TcsConfig = {
+  def buildOffsetConfig(pstr: String, qstr: String): Endo[TcsConfig] = Endo { s0 =>
     // Is there a way to express this value with squants quantities ?
     val FOCAL_PLANE_SCALE = 1.61144; //[arcsec/mm]
 
@@ -136,15 +126,13 @@ object TCS {
     }
   }
 
-  def fromSequenceConfig(config: Config)(s0: TcsConfig): TcsConfig = {
+  def fromSequenceConfig(config: Config)(s0: TcsConfig): TcsConfig =
     List(
       build(buildPwfs1Config,  TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP, config),
       build(buildPwfs2Config,  TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP, config),
       build(buildOiwfsConfig,  TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP, config),
       build(buildOffsetConfig, TELESCOPE_KEY / P_OFFSET_PROP, TELESCOPE_KEY / Q_OFFSET_PROP, config)
-    ).foldLeft(s0)((b, f) => f(b))
-
-  }
+    ).suml.apply(s0)
 
 }
 
