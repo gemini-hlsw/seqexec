@@ -13,7 +13,7 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scalaz.concurrent.Task
-import scalaz.{EitherT, \/}
+import scalaz._, Scalaz._
 import squants.space.{Millimeters, LengthConversions}
 
 /**
@@ -49,7 +49,7 @@ final case class TCS(tcsController: TcsController) extends System {
 
   private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
     tcsController.guide {
-      if (s0.tc.offsetA == s1.self.tc.offsetA) computeGuideOff(s0, s1)
+      if (s0.tc.offsetA === s1.self.tc.offsetA) computeGuideOff(s0, s1)
       else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
     }
 

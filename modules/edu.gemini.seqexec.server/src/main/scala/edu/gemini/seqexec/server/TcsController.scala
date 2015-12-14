@@ -191,12 +191,40 @@ object TcsController {
 
   // TCS expects offsets as two length quantities (in millimeters) in the focal plane
   final case class OffsetX(self: Length) extends AnyVal
+  object OffsetX {
+    implicit val EqualOffsetX: Equal[OffsetX] =
+      Equal.equalA // natural equality here
+  }
+
   final case class OffsetY(self: Length) extends AnyVal
+  object OffsetY {
+    implicit val EqualOffsetY: Equal[OffsetY] =
+      Equal.equalA // natural equality here
+  }
+
   final case class FocalPlaneOffset(x: OffsetX, y: OffsetY)
+  object FocalPlaneOffset {
+    implicit val EqualFocalPlaneOffset: Equal[FocalPlaneOffset] =
+      Equal.equalBy(o => (o.x, o.y))
+  }
 
   final case class OffsetA(self: FocalPlaneOffset) extends AnyVal
+  object OffsetA {
+    implicit val EqualOffsetA: Equal[OffsetA] =
+      Equal.equalBy(_.self)
+  }
+
   final case class OffsetB(self: FocalPlaneOffset) extends AnyVal
+  object OffsetB {
+    implicit val EqualOffsetB: Equal[OffsetB] =
+      Equal.equalBy(_.self)
+  }
+
   final case class OffsetC(self: FocalPlaneOffset) extends AnyVal
+  object OffsetC {
+    implicit val EqualOffsetC: Equal[OffsetC] =
+      Equal.equalBy(_.self)
+  }
 
   // The WavelengthX classes cannot be value classes, because Wavelength is now a value class, and they cannot be
   // nested.
