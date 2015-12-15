@@ -10,7 +10,7 @@ import edu.gemini.epics.acm.{XMLBuilder, CaService}
 /**
  * Created by jluhrs on 11/13/15.
  */
-final class Flamingos2Epics private () {
+object Flamingos2Epics {
 
   import EpicsCommand.setParameter
 
@@ -97,12 +97,6 @@ final class Flamingos2Epics private () {
 
   def windowCover: Option[String] = Option(f2State.getStringAttribute("windowCover").value)
 
-}
-
-object Flamingos2Epics {
-  lazy val instance = new Flamingos2Epics
-
-  def apply(): Flamingos2Epics = instance
 }
 
 object Flamingos2EpicsInitializer {
