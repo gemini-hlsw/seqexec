@@ -25,7 +25,7 @@ import scalaz.concurrent.Task
  * Created by jluhrs on 10/1/15.
  */
 
-final class TcsEpics private () {
+object TcsEpics {
   import TcsEpics._
   import EpicsCommand.setParameter
 
@@ -279,16 +279,8 @@ final class TcsEpics private () {
       }
     } ) ) )
 
-}
-
-object TcsEpics {
-  import EpicsCommand.setParameter
 
   val TCS_TOP = "tc1:"
-
-  lazy val instance = new TcsEpics
-
-  def apply(): TcsEpics = instance
 
   sealed class ProbeGuideCmd(csName: String) extends EpicsCommand {
     override val cs = Option(CaService.getInstance().getCommandSender(csName))

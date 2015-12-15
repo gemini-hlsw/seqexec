@@ -54,15 +54,15 @@ object TcsControllerEpics extends TcsController {
 
   private def getGuideConfig: TrySeq[GuideConfig] = {
     for {
-      mountGuide <- TcsEpics().absorbTipTilt.map(decode[Integer, MountGuideOption])
-      m1Source <- TcsEpics().m1GuideSource.map(decode[String, M1Source])
-      m1Guide <- TcsEpics().m1Guide.map(decodeM1Guide(_, m1Source))
-      m2p1Guide <- TcsEpics().m2p1Guide.map(decodeGuideSourceOption)
-      m2p2Guide <- TcsEpics().m2p2Guide.map(decodeGuideSourceOption)
-      m2oiGuide <- TcsEpics().m2oiGuide.map(decodeGuideSourceOption)
-      m2aoGuide <- TcsEpics().m2aoGuide.map(decodeGuideSourceOption)
-      m2Coma <- TcsEpics().comaCorrect.map(decode[String, ComaOption])
-      m2Guide <- TcsEpics().m2GuideState.map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
+      mountGuide <- TcsEpics.absorbTipTilt.map(decode[Integer, MountGuideOption])
+      m1Source <- TcsEpics.m1GuideSource.map(decode[String, M1Source])
+      m1Guide <- TcsEpics.m1Guide.map(decodeM1Guide(_, m1Source))
+      m2p1Guide <- TcsEpics.m2p1Guide.map(decodeGuideSourceOption)
+      m2p2Guide <- TcsEpics.m2p2Guide.map(decodeGuideSourceOption)
+      m2oiGuide <- TcsEpics.m2oiGuide.map(decodeGuideSourceOption)
+      m2aoGuide <- TcsEpics.m2aoGuide.map(decodeGuideSourceOption)
+      m2Coma <- TcsEpics.comaCorrect.map(decode[String, ComaOption])
+      m2Guide <- TcsEpics.m2GuideState.map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
         (m2p2Guide, TipTiltSource.PWFS2), (m2oiGuide, TipTiltSource.OIWFS),
         (m2aoGuide, TipTiltSource.GAOS)).foldLeft(Set[TipTiltSource]())((s: Set[TipTiltSource], v: (Boolean, TipTiltSource)) => if (v._1) s + v._2 else s)))
     } yield TrySeq(GuideConfig(mountGuide, m1Guide, m2Guide))
@@ -79,16 +79,16 @@ object TcsControllerEpics extends TcsController {
 
   private def getTelescopeConfig: TrySeq[TelescopeConfig] = {
     for {
-      xOffsetA <- TcsEpics().xoffsetPoA1
-      yOffsetA <- TcsEpics().yoffsetPoA1
-      xOffsetB <- TcsEpics().xoffsetPoB1
-      yOffsetB <- TcsEpics().yoffsetPoB1
-      xOffsetC <- TcsEpics().xoffsetPoC1
-      yOffsetC <- TcsEpics().yoffsetPoC1
-      wavelengthA <- TcsEpics().sourceAWavelength
-      wavelengthB <- TcsEpics().sourceBWavelength
-      wavelengthC <- TcsEpics().sourceCWavelength
-      m2Beam <- TcsEpics().chopBeam.map(decode[String, Beam])
+      xOffsetA <- TcsEpics.xoffsetPoA1
+      yOffsetA <- TcsEpics.yoffsetPoA1
+      xOffsetB <- TcsEpics.xoffsetPoB1
+      yOffsetB <- TcsEpics.yoffsetPoB1
+      xOffsetC <- TcsEpics.xoffsetPoC1
+      yOffsetC <- TcsEpics.yoffsetPoC1
+      wavelengthA <- TcsEpics.sourceAWavelength
+      wavelengthB <- TcsEpics.sourceBWavelength
+      wavelengthC <- TcsEpics.sourceCWavelength
+      m2Beam <- TcsEpics.chopBeam.map(decode[String, Beam])
     } yield TrySeq(TelescopeConfig(
       OffsetA(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetA)), OffsetY(Millimeters[Double](yOffsetA)))),
       OffsetB(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetB)), OffsetY(Millimeters[Double](yOffsetB)))),
@@ -146,12 +146,12 @@ object TcsControllerEpics extends TcsController {
 
   private def getGuidersTrackingConfig: TrySeq[GuidersTrackingConfig] = {
     for {
-      p1 <- getNodChopTrackingConfig(TcsEpics().pwfs1ProbeGuideConfig)
-      p2 <- getNodChopTrackingConfig(TcsEpics().pwfs2ProbeGuideConfig)
-      oi <- getNodChopTrackingConfig(TcsEpics().oiwfsProbeGuideConfig)
-      p1Follow <- TcsEpics().p1FollowS.map(decode[String, FollowOption])
-      p2Follow <- TcsEpics().p2FollowS.map(decode[String, FollowOption])
-      oiFollow <- TcsEpics().oiFollowS.map(decode[String, FollowOption])
+      p1 <- getNodChopTrackingConfig(TcsEpics.pwfs1ProbeGuideConfig)
+      p2 <- getNodChopTrackingConfig(TcsEpics.pwfs2ProbeGuideConfig)
+      oi <- getNodChopTrackingConfig(TcsEpics.oiwfsProbeGuideConfig)
+      p1Follow <- TcsEpics.p1FollowS.map(decode[String, FollowOption])
+      p2Follow <- TcsEpics.p2FollowS.map(decode[String, FollowOption])
+      oiFollow <- TcsEpics.oiFollowS.map(decode[String, FollowOption])
     } yield TrySeq(GuidersTrackingConfig(ProbeTrackingConfigP1(calcProbeTrackingConfig(p1Follow, p1)),
       ProbeTrackingConfigP2(calcProbeTrackingConfig(p2Follow, p2)),
       ProbeTrackingConfigOI(calcProbeTrackingConfig(oiFollow, oi)),
@@ -165,10 +165,10 @@ object TcsControllerEpics extends TcsController {
 
   private def getGuidersEnabled: TrySeq[GuidersEnabled] = {
     for {
-      p1On <- TcsEpics().pwfs1On.map(decode[BinaryYesNo, GuiderSensorOption])
-      p2On <- TcsEpics().pwfs2On.map(decode[BinaryYesNo, GuiderSensorOption])
-      oiOn <- TcsEpics().oiwfsOn.map(decode[BinaryYesNo, GuiderSensorOption])
-      aoOn <- TcsEpics().aowfsOn.map(decode[Double, GuiderSensorOption])
+      p1On <- TcsEpics.pwfs1On.map(decode[BinaryYesNo, GuiderSensorOption])
+      p2On <- TcsEpics.pwfs2On.map(decode[BinaryYesNo, GuiderSensorOption])
+      oiOn <- TcsEpics.oiwfsOn.map(decode[BinaryYesNo, GuiderSensorOption])
+      aoOn <- TcsEpics.aowfsOn.map(decode[Double, GuiderSensorOption])
     } yield TrySeq(GuidersEnabled(GuiderSensorOptionP1(p1On), GuiderSensorOptionP2(p2On), GuiderSensorOptionOI(oiOn),
       GuiderSensorOptionAO(aoOn)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
@@ -204,8 +204,8 @@ object TcsControllerEpics extends TcsController {
   import CodexScienceFoldPosition._
 
   private def getScienceFoldPosition: Option[ScienceFoldPosition] = for {
-    sfPos <- TcsEpics().sfName.map(decode[String, ScienceFoldPosition.Position])
-    sfParked <- TcsEpics().sfParked.map {
+    sfPos <- TcsEpics.sfName.map(decode[String, ScienceFoldPosition.Position])
+    sfParked <- TcsEpics.sfParked.map {
       _ != 0
     }
   } yield if (sfParked) ScienceFoldPosition.Parked
@@ -216,8 +216,8 @@ object TcsControllerEpics extends TcsController {
     else HrwfsPickupPosition.OUT)
 
   private def getHrwfsPickupPosition: Option[HrwfsPickupPosition] = for {
-    hwPos <- TcsEpics().agHwName.map(decode[String, HrwfsPickupPosition])
-    hwParked <- TcsEpics().agHwParked.map {
+    hwPos <- TcsEpics.agHwName.map(decode[String, HrwfsPickupPosition])
+    hwParked <- TcsEpics.agHwParked.map {
       _ != 0
     }
   } yield if (hwParked) HrwfsPickupPosition.Parked
@@ -232,7 +232,7 @@ object TcsControllerEpics extends TcsController {
 
   private def getIAA: TrySeq[InstrumentAlignAngle] = {
     for {
-      iaa <- TcsEpics().instrAA
+      iaa <- TcsEpics.instrAA
     } yield TrySeq(InstrumentAlignAngle(Degrees[Double](iaa)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read IAA from TCS.")))
 
@@ -256,16 +256,16 @@ object TcsControllerEpics extends TcsController {
     })
 
   private def setTelescopeConfig(c: TelescopeConfig): SeqAction[Unit] = for {
-    _ <- TcsEpics().offsetACmd.setX(c.offsetA.self.x.self.toMillimeters)
-    _ <- TcsEpics().offsetACmd.setY(c.offsetA.self.y.self.toMillimeters)
-    _ <- TcsEpics().offsetBCmd.setX(c.offsetB.self.x.self.toMillimeters)
-    _ <- TcsEpics().offsetBCmd.setY(c.offsetB.self.y.self.toMillimeters)
-    _ <- TcsEpics().offsetCCmd.setX(c.offsetC.self.x.self.toMillimeters)
-    _ <- TcsEpics().offsetCCmd.setY(c.offsetC.self.y.self.toMillimeters)
-    _ <- TcsEpics().wavelSourceA.setWavel(c.wavelA.self.toMicrons)
-    _ <- TcsEpics().wavelSourceA.setWavel(c.wavelB.self.toMicrons)
-    _ <- TcsEpics().wavelSourceA.setWavel(c.wavelB.self.toMicrons)
-    _ <- TcsEpics().m2Beam.setBeam(encode(c.m2beam))
+    _ <- TcsEpics.offsetACmd.setX(c.offsetA.self.x.self.toMillimeters)
+    _ <- TcsEpics.offsetACmd.setY(c.offsetA.self.y.self.toMillimeters)
+    _ <- TcsEpics.offsetBCmd.setX(c.offsetB.self.x.self.toMillimeters)
+    _ <- TcsEpics.offsetBCmd.setY(c.offsetB.self.y.self.toMillimeters)
+    _ <- TcsEpics.offsetCCmd.setX(c.offsetC.self.x.self.toMillimeters)
+    _ <- TcsEpics.offsetCCmd.setY(c.offsetC.self.y.self.toMillimeters)
+    _ <- TcsEpics.wavelSourceA.setWavel(c.wavelA.self.toMicrons)
+    _ <- TcsEpics.wavelSourceA.setWavel(c.wavelB.self.toMicrons)
+    _ <- TcsEpics.wavelSourceA.setWavel(c.wavelB.self.toMicrons)
+    _ <- TcsEpics.m2Beam.setBeam(encode(c.m2beam))
   } yield TrySeq(())
 
   implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] = 
@@ -295,20 +295,20 @@ object TcsControllerEpics extends TcsController {
     }
 
   private def setGuidersWfs(c: GuidersEnabled): SeqAction[Unit] = for {
-    _ <- setGuiderWfs(TcsEpics().pwfs1ObserveCmd, TcsEpics().pwfs1StopObserveCmd, c.pwfs1.self)
-    _ <- setGuiderWfs(TcsEpics().pwfs2ObserveCmd, TcsEpics().pwfs2StopObserveCmd, c.pwfs2.self)
-    _ <- setGuiderWfs(TcsEpics().oiwfsObserveCmd, TcsEpics().oiwfsStopObserveCmd, c.oiwfs.self)
+    _ <- setGuiderWfs(TcsEpics.pwfs1ObserveCmd, TcsEpics.pwfs1StopObserveCmd, c.pwfs1.self)
+    _ <- setGuiderWfs(TcsEpics.pwfs2ObserveCmd, TcsEpics.pwfs2StopObserveCmd, c.pwfs2.self)
+    _ <- setGuiderWfs(TcsEpics.oiwfsObserveCmd, TcsEpics.oiwfsStopObserveCmd, c.oiwfs.self)
   } yield TrySeq(())
 
   private def setProbesTrackingConfig(c: GuidersTrackingConfig): SeqAction[Unit] = for {
-    _ <- setProbeTrackingConfig(TcsEpics().pwfs1ProbeGuideCmd, c.pwfs1.self)
-    _ <- setProbeTrackingConfig(TcsEpics().pwfs2ProbeGuideCmd, c.pwfs2.self)
-    _ <- setProbeTrackingConfig(TcsEpics().oiwfsProbeGuideCmd, c.oiwfs.self)
+    _ <- setProbeTrackingConfig(TcsEpics.pwfs1ProbeGuideCmd, c.pwfs1.self)
+    _ <- setProbeTrackingConfig(TcsEpics.pwfs2ProbeGuideCmd, c.pwfs2.self)
+    _ <- setProbeTrackingConfig(TcsEpics.oiwfsProbeGuideCmd, c.oiwfs.self)
   } yield TrySeq(())
 
   def setScienceFoldConfig(sfPos: ScienceFoldPosition): SeqAction[Unit] = sfPos match {
-    case ScienceFoldPosition.Parked => TcsEpics().scienceFoldParkCmd.mark
-    case p: ScienceFoldPosition.Position => TcsEpics().scienceFoldPosCmd.setScfold(encode(p))
+    case ScienceFoldPosition.Parked => TcsEpics.scienceFoldParkCmd.mark
+    case p: ScienceFoldPosition.Position => TcsEpics.scienceFoldPosCmd.setScfold(encode(p))
   }
 
   implicit private val encodeHrwfsPickupPosition: EncodeEpicsValue[HrwfsPickupPosition, String] = EncodeEpicsValue((op: HrwfsPickupPosition)
@@ -319,8 +319,8 @@ object TcsControllerEpics extends TcsController {
     })
 
   def setHRPickupConfig(hrwfsPos: HrwfsPickupPosition): SeqAction[Unit] = hrwfsPos match {
-    case HrwfsPickupPosition.Parked => TcsEpics().hrwfsParkCmd.mark
-    case _ => TcsEpics().hrwfsPosCmd.setHrwfsPos(encode(hrwfsPos))
+    case HrwfsPickupPosition.Parked => TcsEpics.hrwfsParkCmd.mark
+    case _ => TcsEpics.hrwfsPosCmd.setHrwfsPos(encode(hrwfsPos))
   }
 
   private def setAGConfig(c: AGConfig): SeqAction[Unit] = for {
@@ -335,7 +335,7 @@ object TcsControllerEpics extends TcsController {
       case MountGuideOff => "off"
     })
 
-  private def setMountGuide(c: MountGuideOption): SeqAction[Unit] = TcsEpics().mountGuideCmd.setMode(encode(c))
+  private def setMountGuide(c: MountGuideOption): SeqAction[Unit] = TcsEpics.mountGuideCmd.setMode(encode(c))
 
   implicit private val encodeM1GuideConfig: EncodeEpicsValue[M1GuideConfig, String] = EncodeEpicsValue((op: M1GuideConfig)
   => op match {
@@ -343,7 +343,7 @@ object TcsControllerEpics extends TcsController {
       case M1GuideOff => "off"
     })
 
-  private def setM1Guide(c: M1GuideConfig): SeqAction[Unit] = TcsEpics().m1GuideCmd.setState(encode(c))
+  private def setM1Guide(c: M1GuideConfig): SeqAction[Unit] = TcsEpics.m1GuideCmd.setState(encode(c))
 
   implicit private val encodeM2GuideConfig: EncodeEpicsValue[M2GuideConfig, String] = EncodeEpicsValue((op: M2GuideConfig)
   => op match {
@@ -351,7 +351,7 @@ object TcsControllerEpics extends TcsController {
       case M2GuideOff => "off"
     })
 
-  private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics().m2GuideCmd.setState(encode(c))
+  private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.m2GuideCmd.setState(encode(c))
 
   implicit private val decodeInPosition: DecodeEpicsValue[String, Boolean] = DecodeEpicsValue(x => x.trim == "TRUE")
 
@@ -361,9 +361,9 @@ object TcsControllerEpics extends TcsController {
       _ <- setProbesTrackingConfig(gtc)
       _ <- setGuidersWfs(ge)
       _ <- setAGConfig(agc)
-      _ <- TcsEpics().post
+      _ <- TcsEpics.post
       _ <- EitherT(Task(Log.info("TCS configuration command post").right))
-      _ <- TcsEpics().waitInPosition(Seconds(30))
+      _ <- TcsEpics.waitInPosition(Seconds(30))
       _ <- EitherT(Task(Log.info("TCS inposition").right))
     } yield TrySeq(())
 
@@ -371,7 +371,7 @@ object TcsControllerEpics extends TcsController {
     _ <- setMountGuide(gc.mountGuide)
     _ <- setM1Guide(gc.m1Guide)
     _ <- setM2Guide(gc.m2Guide)
-    _ <- TcsEpics().post
+    _ <- TcsEpics.post
   } yield TrySeq(())
 
 }
