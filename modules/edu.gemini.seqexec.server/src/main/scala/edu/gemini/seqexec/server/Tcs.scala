@@ -19,9 +19,9 @@ import squants.space.{ Millimeters, LengthConversions }
 /**
  * Created by jluhrs on 4/23/15.
  */
-final case class TCS(tcsController: TcsController) extends System {
+final case class Tcs(tcsController: TcsController) extends System {
 
-  import TCS._
+  import Tcs._
   import MountGuideOption._
 
   override val name: String = TELESCOPE_CONFIG_NAME
@@ -68,7 +68,7 @@ final case class TCS(tcsController: TcsController) extends System {
   }
 }
 
-object TCS {
+object Tcs {
   private val Log = Logger.getLogger(getClass.getName)
 
   // Shouldn't these be defined somewhere ?

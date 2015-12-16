@@ -185,7 +185,7 @@ object TcsControllerEpics extends TcsController {
 
     // I have the feeling this operation will be needed in other places
     private def findInstrument(name: String): Instrument =
-      List(GMOS_S).find(x => name.startsWith(x.sfName)).getOrElse(UnknownInstrument)
+      List(GmosSouth).find(x => name.startsWith(x.sfName)).getOrElse(UnknownInstrument)
 
     implicit val decodeScienceFoldPosition: DecodeEpicsValue[String, Position] = DecodeEpicsValue((t: String)
     => if (t.startsWith(AO_PREFIX)) Position(AO, findInstrument(t.substring(AO_PREFIX.length)))

@@ -35,13 +35,13 @@ object Step {
   def step(config: Config): Step = {
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
-      case GMOS_S.name => Some(GMOS_S)
-      case FLAMINGOS2.name => Some(FLAMINGOS2(Flamingos2ControllerEpics))
+      case GmosSouth.name => Some(GmosSouth)
+      case Flamingos2.name => Some(Flamingos2(Flamingos2ControllerEpics))
       case _ => None
     }
 
     instrument map { a => {
-        val systems = List(TCS(TcsControllerEpics), a)
+        val systems = List(Tcs(TcsControllerEpics), a)
   //      val systems = List(TCS(TcsControllerSim), a)
         step(systems.map(_.configure(config)), a.observe(config))
       }

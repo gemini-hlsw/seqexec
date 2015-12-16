@@ -12,7 +12,7 @@ import scalaz.concurrent.Task
 /**
  * Created by jluhrs on 4/27/15.
  */
-object GMOS_S extends Instrument {
+object GmosSouth extends Instrument {
 
   override val name: String = INSTRUMENT_NAME_PROP
 

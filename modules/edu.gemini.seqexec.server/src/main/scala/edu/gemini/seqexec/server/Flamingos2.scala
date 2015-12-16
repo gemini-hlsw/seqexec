@@ -24,13 +24,13 @@ import scalaz.{EitherT, \/, \/-}
 /**
  * Created by jluhrs on 11/16/15.
  */
-final case class FLAMINGOS2(f2Controller: Flamingos2Controller) extends Instrument {
+final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrument {
 
-  import FLAMINGOS2._
+  import Flamingos2._
 
-  override val name: String = FLAMINGOS2.name
+  override val name: String = Flamingos2.name
 
-  override val sfName: String = FLAMINGOS2.sfName
+  override val sfName: String = Flamingos2.sfName
 
   override def observe(config: Config): SeqAction[ObserveResult] = for {
     id <- DhsClient.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("flamingos2", "dhs-http")))
@@ -46,7 +46,7 @@ final case class FLAMINGOS2(f2Controller: Flamingos2Controller) extends Instrume
 
 }
 
-object FLAMINGOS2 {
+object Flamingos2 {
   val name: String = INSTRUMENT_NAME_PROP
 
   val sfName: String = "f2"
