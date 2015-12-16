@@ -2,6 +2,8 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.config2.{ItemKey, Config}
 
+import java.beans.PropertyDescriptor
+
 import scala.reflect.ClassTag
 import scalaz._
 import Scalaz._
@@ -15,7 +17,8 @@ object ConfigUtil {
 
   // key syntax: parent / child
   implicit class ItemKeyOps(k: ItemKey) {
-    def /(s: String) = new ItemKey(k, s)
+    def /(s: String): ItemKey = new ItemKey(k, s)
+    def /(p: PropertyDescriptor): ItemKey = /(p.getName)
   }
 
   // config syntax: cfg.extract(key).as[Type]

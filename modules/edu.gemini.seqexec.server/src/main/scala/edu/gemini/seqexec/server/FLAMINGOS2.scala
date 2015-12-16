@@ -77,8 +77,8 @@ object FLAMINGOS2 {
   }
 
   def fpuConfig(config: Config): \/[String, FocalPlaneUnit] = {
-    val a = new ItemKey(INSTRUMENT_KEY, FPU_PROP.getName)
-    val b = new ItemKey(INSTRUMENT_KEY, FPU_MASK_PROP.getName)
+    val a = INSTRUMENT_KEY / FPU_PROP
+    val b = INSTRUMENT_KEY / FPU_MASK_PROP
 
     config.extract(a).as[FPUnit].flatMap(x =>
       if(x != FPUnit.CUSTOM_MASK) \/-(fpuFromFPUnit(x))
@@ -93,30 +93,30 @@ object FLAMINGOS2 {
 
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] = ( for {
       // WINDOW_COVER_PROP is optional. If not present, then window cover position is inferred from observe type.
-      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP.getName).as[WindowCover] match {
+      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover] match {
             case a: \/-[WindowCover] => a
             case _         => config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
                               .map(windowCoverFromObserveType)
           }
-      q <- config.extract(INSTRUMENT_KEY / DECKER_PROP.getName).as[Decker]
+      q <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
       r <- fpuConfig(config)
-      s <- config.extract(INSTRUMENT_KEY / FILTER_PROP.getName).as[Filter]
-      t <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP.getName).as[LyotWheel]
-      u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP.getName).as[Disperser]
+      s <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
+      t <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP).as[LyotWheel]
+      u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
 
     } yield CCConfig(p, q, r, s, t, u) ).leftMap(SeqexecFailure.Unexpected)
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] = ( for {
-    p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP.getName).as[java.lang.Double].map(x => Duration(x, SECONDS))
+    p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Duration(x, SECONDS))
     // Reads is usually inferred from the read mode, but it can be explicit.
-    q <- config.extract(OBSERVE_KEY / READS_PROP.getName).as[Reads] match {
+    q <- config.extract(OBSERVE_KEY / READS_PROP).as[Reads] match {
           case a: \/-[Reads] => a
-          case _         => config.extract(INSTRUMENT_KEY / READMODE_PROP.getName).as[ReadMode]
+          case _         => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
                             .map(readsFromReadMode)
         }
     // Readout mode defaults to SCIENCE if not present.
-    r <- \/-(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP.getName).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE))
-    s <- config.extract(INSTRUMENT_KEY / DECKER_PROP.getName).as[Decker]
+    r <- \/-(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE))
+    s <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
   } yield DCConfig(p, q, r, s) ).leftMap(SeqexecFailure.Unexpected)
 
   def fromSequenceConfig(config: Config): SeqAction[Flamingos2Config] = EitherT( Task ( for {
