@@ -21,7 +21,7 @@ package object server {
     def fail[A](p: SeqexecFailure): TrySeq[A] = p.left[A]
   }
 
-  type SeqAction[+A] = EitherT[Task, SeqexecFailure, A]
+  type SeqAction[A] = EitherT[Task, SeqexecFailure, A]
 
   object SeqAction {
     def apply[A](a: => A): SeqAction[A]          = SeqAction(a)

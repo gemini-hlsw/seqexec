@@ -76,7 +76,7 @@ object Executor { self =>
     def empty: ExecState = initial(Nil)
   }
     // The type of execution actions.
-  type ExecAction[+A] = StateT[Task, ExecState, A]
+  type ExecAction[A] = StateT[Task, ExecState, A]
 
   // We now have the problem of lifting normal State/Task values into this transformer. The next
   // few definitions do this.
@@ -104,7 +104,7 @@ object Executor { self =>
   object WithEitherT {
 
     // This is isomorphic to the StateT above, but gives fast-fail semantics
-    private type ExecActionF[+A] = EitherT[ExecAction, NonEmptyList[SeqexecFailure], A]
+    private type ExecActionF[A] = EitherT[ExecAction, NonEmptyList[SeqexecFailure], A]
 
     def fail[A](e: SeqexecFailure): ExecActionF[A] =
       EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](self.fail(e))
