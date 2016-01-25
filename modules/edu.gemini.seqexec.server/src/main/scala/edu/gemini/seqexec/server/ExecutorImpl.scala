@@ -1,17 +1,12 @@
 package edu.gemini.seqexec.server
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import scalaz._
 import Scalaz._
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Executor._
 import edu.gemini.seqexec.server.SeqexecFailure._
-import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
-import edu.gemini.spModel.obscomp.InstConstants.INSTRUMENT_NAME_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import edu.gemini.spModel.config2.ConfigSequence
 
 import scalaz.concurrent.Task
 
@@ -24,15 +19,22 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
   private def go(id: SPObservationID): Task[Boolean] = 
     cancelRef.get.map(!_(id))
 
-  private def initialExecState(sequenceConfig: ConfigSequence): ExecState =
-    ExecState.initial(sequenceConfig.getAllSteps.toList.map(Step.step))
+  def sequence(sequenceConfig: ConfigSequence): (Set[System], List[Step.Step]) =
+    sequenceConfig.getAllSteps.toList.map(Step.step).unzip match {
+      case (s, l) => (Set(s: _*).flatMap(identity), l)
+    }
 
   // todo: it is an error to run a sequence with an existing ExecState != s
   private def runSeq(id: SPObservationID, s: ExecState): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] =
     cancelRef.modify(_ - id) *> recordState(id)(s) *> run(go(id), recordState(id))(s)
 
-  def start(id: SPObservationID, sequenceConfig: ConfigSequence): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] =
-    runSeq(id, initialExecState(sequenceConfig))
+  def start(id: SPObservationID, sequenceConfig: ConfigSequence): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
+    sequence(sequenceConfig) match {
+      case (s, l) =>
+        // TODO: We have the set of systems used by the sequence. Check that they are available.
+        runSeq(id, ExecState.initial(l))
+    }
+  }
 
   def continue(id: SPObservationID): Task[(Option[ExecState], NonEmptyList[SeqexecFailure] \/ Unit)] =
     getState(id) >>= {
