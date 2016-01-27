@@ -21,7 +21,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
   def sequence(sequenceConfig: ConfigSequence): (Set[System], List[Step.Step]) =
     sequenceConfig.getAllSteps.toList.map(Step.step).unzip match {
-      case (s, l) => (Set(s: _*).flatMap(identity), l)
+      case (s, l) => (s.suml, l)
     }
 
   // todo: it is an error to run a sequence with an existing ExecState != s
