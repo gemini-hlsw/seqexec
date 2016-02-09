@@ -55,6 +55,7 @@ final case class Tcs(tcsController: TcsController) extends System {
 
   private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
     val tcsConfig = fromSequenceConfig(config)(tcsState)
+    Log.info("Applying TCS configuration " + tcsConfig)
 
     for {
       _ <- guideOff(tcsState, Requested(tcsConfig))

@@ -1,5 +1,8 @@
 package edu.gemini.seqexec.server
 
+import edu.gemini.seqexec.shared.{SeqFailure, SeqExecService}
+import edu.gemini.spModel.core.Peer
+
 import scalaz._
 import Scalaz._
 
@@ -13,39 +16,56 @@ import scalaz.concurrent.Task
 /** An executor that maintains state in a pair of `TaskRef`s. */
 class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: TaskRef[Map[SPObservationID, Executor.ExecState]]) {
 
+  private var loc = new Peer("localhost", 8443, null)
+
+  def host(): Peer = loc
+  def host(l: Peer): Unit = { loc = l }
+
   private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] =
     stateRef.modify(_ + (id -> s))
 
   private def go(id: SPObservationID): Task[Boolean] = 
     cancelRef.get.map(!_(id))
 
-  def sequence(sequenceConfig: ConfigSequence): (Set[System], List[Step.Step]) =
-    sequenceConfig.getAllSteps.toList.map(Step.step).unzip match {
-      case (s, l) => (s.suml, l)
-    }
+  def read(oid: SPObservationID): SeqexecFailure \/ ConfigSequence =
+      SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError(_))
+
+  def sequence(sequenceConfig: ConfigSequence):  SeqexecFailure \/ (Set[System], List[Step.Step]) = {
+    val a = sequenceConfig.getAllSteps.toList.map(Step.step).sequenceU
+    a map { _.unzip match {
+      case (l, s) => (l.suml, s)
+    }}
+  }
 
   // todo: it is an error to run a sequence with an existing ExecState != s
   private def runSeq(id: SPObservationID, s: ExecState): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] =
     cancelRef.modify(_ - id) *> recordState(id)(s) *> run(go(id), recordState(id))(s)
 
-  def start(id: SPObservationID, sequenceConfig: ConfigSequence): Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
-    sequence(sequenceConfig) match {
+  def start(id: SPObservationID): SeqexecFailure \/ Unit = for {
+    a <- read(id)
+    b <- start(id, a)
+  } yield b.runAsync(_ => ())
+
+  private def start(id: SPObservationID, sequenceConfig: ConfigSequence): SeqexecFailure \/ Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
+    sequence(sequenceConfig) map {
       case (s, l) =>
         // TODO: We have the set of systems used by the sequence. Check that they are available.
         runSeq(id, ExecState.initial(l))
     }
   }
 
-  def continue(id: SPObservationID): Task[(Option[ExecState], NonEmptyList[SeqexecFailure] \/ Unit)] =
-    getState(id) >>= {
-      case -\/(e) => Task.now((None, NonEmptyList(e).left))
-      case \/-(s) => runSeq(id, s).map(_.leftMap(_.some))
-    }
+  def continue(id: SPObservationID): SeqexecFailure \/ Unit = continueTask(id) map (_.runAsync(???))
+  private def continueTask(id: SPObservationID): SeqexecFailure \/ Task[(Option[ExecState], NonEmptyList[SeqexecFailure] \/ Unit)] =
+    getState(id).run map {runSeq(id, _).map(_.leftMap(_.some))}
 
-  def getState(id: SPObservationID): Task[SeqexecFailure \/ ExecState] =
+  def state(id: SPObservationID): SeqexecFailure \/ ExecState = getState(id).run
+
+  private def getState(id: SPObservationID): Task[SeqexecFailure \/ ExecState] =
     stateRef.get.map(_.get(id) \/> InvalidOp("Sequence has not started."))
 
-  def stop(id: SPObservationID): Task[SeqexecFailure \/ Unit] =
+  def stop(id: SPObservationID): SeqexecFailure \/ Unit = stopTask(id).run
+
+  private def stopTask(id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     getState(id) >>= {
       case \/-(s) => cancelRef.modify(s => s + id).as(\/-(()))
       case -\/(e) => Task.now(-\/(e))
@@ -63,12 +83,4 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
 }
 
-object ExecutorImpl {
- 
-  def newInstance: Task[ExecutorImpl] =
-    for {
-      cancel <- TaskRef.newTaskRef[Set[SPObservationID]](Set.empty)
-      state  <- TaskRef.newTaskRef[Map[SPObservationID, Executor.ExecState]](Map.empty)
-    } yield new ExecutorImpl(cancel, state)
-
-}
+object ExecutorImpl extends ExecutorImpl(TaskRef.newTaskRef[Set[SPObservationID]](Set.empty).run, TaskRef.newTaskRef[Map[SPObservationID, Executor.ExecState]](Map.empty).run)

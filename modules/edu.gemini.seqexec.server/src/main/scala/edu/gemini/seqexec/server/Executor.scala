@@ -32,20 +32,20 @@ object Step {
       q <- observe.leftMap(NonEmptyList(_))
     } yield StepResult(p, q)
 
-  def step(config: Config): (Set[System], Step) = {
+  def step(config: Config): SeqexecFailure \/ (Set[System], Step) = {
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
       case GmosSouth.name => Some(GmosSouth)
-      case Flamingos2.name => Some(Flamingos2(Flamingos2ControllerEpics))
+      case Flamingos2.name => Some(Flamingos2(Flamingos2ControllerSim))
       case _ => None
     }
 
     instrument map { a => {
-        val systems = List(Tcs(TcsControllerEpics), a)
-  //      val systems = List(Tcs(TcsControllerSim), a)
-        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config)))
+//        val systems = List(Tcs(TcsControllerEpics), a)
+        val systems = List(Tcs(TcsControllerSim), a)
+        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config))).right
       }
-    } getOrElse((Set[System](), EitherT(Task(NonEmptyList[SeqexecFailure](UnrecognizedInstrument(instName.toString)).left[StepResult]))))
+    } getOrElse(UnrecognizedInstrument(instName.toString).left[(Set[System], Step)])
   }
 
 }

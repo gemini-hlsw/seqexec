@@ -40,16 +40,12 @@ object Commands {
     """.stripMargin
 
   def apply(): Commands = new Commands {
-    var loc = new Peer("localhost", 8443, null)
-
-    val exec: ExecutorImpl = 
-      ExecutorImpl.newInstance.run
 
     def host(): String =
-      s"Default seq host set to ${loc.host} ${loc.port}"
+      s"Default seq host set to ${ExecutorImpl.host.host} ${ExecutorImpl.host.port}"
 
     def host(loc0: Peer): String = {
-      loc = loc0
+      ExecutorImpl.host(loc0)
       host()
     }
 
@@ -78,7 +74,7 @@ object Commands {
         _.splitPath().get(0) == system
 
       def ifStepValid(step: String)(body: Int => String): String =
-        \/.fromTryCatch(step.toInt - 1).fold(
+        \/.fromTryCatchNonFatal(step.toInt - 1).fold(
         _ => s"Specify an integer step, not '$step'.", {
           case i if i < 0 => "Specify a positive step number."
           case i if i >= cs.size() => s"$oid only has ${cs.size} steps."
@@ -124,37 +120,32 @@ object Commands {
         case "show" :: obsId :: showArgs =>
           (for {
             oid <- parseId(obsId)
-            seq <- fetch(oid, loc)
+            seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailure.explain(_))
           } yield show(oid, seq, showArgs)).merge
 
         case List("run", obsId) =>
           (for {
             oid <- parseId(obsId)
-            seq <- fetch(oid, loc)
-          } yield {
-            exec.start(oid, seq).runAsync(onCompleteRun(oid))
-            s"Sequence $obsId started."
-          }).merge
+            _ <- ExecutorImpl.start(oid).leftMap(SeqexecFailure.explain(_))
+          } yield s"Sequence $obsId started." ) .merge
 
         case List("stop", obsId) =>
-          parseId(obsId).map { oid =>
-            exec.stop(oid).runAsync(onComplete(oid))
-            s"Stop requested for $obsId."
-          } .merge
+          (for {
+            oid <- parseId(obsId)
+            _ <- ExecutorImpl.stop(oid).leftMap(SeqexecFailure.explain(_))
+          } yield s"Stop requested for $obsId." ) .merge
 
-        case List("continue", obsId) =>
-          parseId(obsId).map { oid =>
-            exec.continue(oid).runAsync(onComplete(oid))
-            s"Resume requested for $obsId."
-          } .merge
+        case List("continue", obsId) => (
+          for {
+            oid <- parseId(obsId)
+            _ <- ExecutorImpl.continue(oid).leftMap(SeqexecFailure.explain(_))
+          } yield s"Resume requested for $obsId." ) .merge
 
-        case List("state", obsId) =>
-          parseId(obsId).map { oid => 
-            exec.getState(oid).run match {
-              case -\/(f) => SeqexecFailure.explain(f)
-              case \/-(s) => exec.stateDescription(s)
-            }
-          } .merge
+        case List("state", obsId) => (
+          for {
+            oid <- parseId(obsId)
+            s <- ExecutorImpl.state(oid).leftMap(SeqexecFailure.explain(_))
+          } yield ExecutorImpl.stateDescription(s) ) .merge
 
         case _ =>
           Usage
@@ -162,15 +153,12 @@ object Commands {
   }
 
   def parseId(s: String): String \/ SPObservationID =
-    \/.fromTryCatch {
+    \/.fromTryCatchNonFatal {
       new SPObservationID(s)
     }.leftMap(_ => s"Sorry, '$s' isn't a valid observation id.")
 
   def parseLoc(s: String): String \/ Peer =
     Option(Peer.tryParse(s)) \/> s"Sorry, expecting host:port not '$s'."
-
-  def fetch(oid: SPObservationID, loc: Peer): String \/ ConfigSequence =
-    SeqExecService.client(loc).sequence(oid).leftMap(SeqFailure.explain)
 
   // a better version of this available in the latest scalaz
   implicit class MergeOp[A](d: A \/ A) {

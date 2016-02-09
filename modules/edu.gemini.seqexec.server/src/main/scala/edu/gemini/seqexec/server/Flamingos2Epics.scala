@@ -10,14 +10,15 @@ import edu.gemini.epics.acm.{XMLBuilder, CaService}
 /**
  * Created by jluhrs on 11/13/15.
  */
-object Flamingos2Epics {
+final class Flamingos2Epics(epicsService: CaService) {
 
+  import Flamingos2Epics._
   import EpicsCommand.setParameter
 
   def post: SeqAction[Unit] = configCmd.post
 
   object dcConfigCmd extends EpicsCommand {
-    override val cs = Option(CaService.getInstance().getCommandSender("flamingos2::dcconfig"))
+    override val cs = Option(epicsService.getCommandSender("flamingos2::dcconfig"))
 
     val biasMode = cs.map(_.getString("biasMode"))
     def setBiasMode(v: String): SeqAction[Unit] = setParameter(biasMode, v)
@@ -34,22 +35,22 @@ object Flamingos2Epics {
   }
 
   object abortCmd extends EpicsCommand {
-    override val cs = Option(CaService.getInstance().getCommandSender("flamingos2::abort"))
+    override val cs = Option(epicsService.getCommandSender("flamingos2::abort"))
   }
 
   object stopCmd extends EpicsCommand {
-    override val cs = Option(CaService.getInstance().getCommandSender("flamingos2::stop"))
+    override val cs = Option(epicsService.getCommandSender("flamingos2::stop"))
   }
 
   object observeCmd extends EpicsCommand {
-    override val cs = Option(CaService.getInstance().getCommandSender("flamingos2::observe"))
+    override val cs = Option(epicsService.getCommandSender("flamingos2::observe"))
 
     val label = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
   }
 
   object configCmd extends EpicsCommand {
-    override val cs = Option(CaService.getInstance().getCommandSender("flamingos2::config"))
+    override val cs = Option(epicsService.getCommandSender("flamingos2::config"))
 
     val useElectronicOffsetting = cs.map(_.getInteger("useElectronicOffsetting"))
     def setUseElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
@@ -77,7 +78,7 @@ object Flamingos2Epics {
 
   }
 
-  val f2State = CaService.getInstance().getStatusAcceptor("flamingos2::dcstatus")
+  val f2State = epicsService.getStatusAcceptor("flamingos2::dcstatus")
 
   def exposureTime: Option[String] = Option(f2State.getStringAttribute("exposureTime").value)
 
@@ -99,26 +100,27 @@ object Flamingos2Epics {
 
 }
 
-object Flamingos2EpicsInitializer {
+object Flamingos2Epics extends EpicsSystem {
+  
   val Log = Logger.getLogger(getClass.getName)
   val CA_CONFIG_FILE = "/Flamingos2.xml"
+  
+  // Ugly use of null. But if it is used before initialization, then the application deserves to crash.
+  var instance: Flamingos2Epics = null
 
-  def init: TrySeq[Unit] = {
+  override def init(service: CaService): TrySeq[Unit] = {
     try {
       (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
         .buildAll()
 
-      val f2State = CaService.getInstance().getStatusAcceptor("flamingos2::status")
+      instance = new Flamingos2Epics(service)
 
       TrySeq(())
     } catch {
       case c: Throwable =>
-        Log.warning("Flamingos2Epics: Problem initializing EPICS service: " + c.getMessage)
+        Log.warning("Flamingos2Epics: Problem initializing EPICS service: " + c.getMessage + "\n"
+          + c.getStackTrace.mkString("\n"))
         SeqexecFailure.SeqexecException(c).left
     }
-  }
-
-  def cleanup(): Unit = {
-    CaService.getInstance().unbind()
   }
 }

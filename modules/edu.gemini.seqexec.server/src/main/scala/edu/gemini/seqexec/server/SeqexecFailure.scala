@@ -1,5 +1,8 @@
 package edu.gemini.seqexec.server
 
+import edu.gemini.seqexec.shared.SeqFailure
+import edu.gemini.seqexec.shared.SeqFailure._
+
 /**
  * Created by jluhrs on 5/18/15.
  */
@@ -25,6 +28,9 @@ object SeqexecFailure {
   /** Timeout */
   case class Timeout(msg: String) extends SeqexecFailure
 
+  /** Sequence loading errors */
+  case class ODBSeqError(fail: SeqFailure) extends SeqexecFailure
+
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error $errMsg"
@@ -32,6 +38,7 @@ object SeqexecFailure {
     case InvalidOp(msg)               => s"Invalid operation: $msg"
     case Unexpected(msg)              => s"Unexpected error: $msg"
     case Timeout(msg)                 => s"Timeout while waiting for $msg"
+    case ODBSeqError(fail)             => SeqFailure.explain(fail)
   }
 
 }

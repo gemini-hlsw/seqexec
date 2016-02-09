@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.epics.acm.{CaCommandListener, CaCommandSender, CaParameter}
+import edu.gemini.epics.acm.{CaService, CaCommandListener, CaCommandSender, CaParameter}
 import edu.gemini.seqexec.server.SeqexecFailure.{Timeout, SeqexecException}
 
 import scala.concurrent.TimeoutException
@@ -30,6 +30,10 @@ trait EpicsCommand {
       cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
     })
   )
+}
+
+trait EpicsSystem {
+  def init(service: CaService): TrySeq[Unit]
 }
 
 object EpicsCommand {

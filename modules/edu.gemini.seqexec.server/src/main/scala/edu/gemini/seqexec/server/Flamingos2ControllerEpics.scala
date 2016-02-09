@@ -41,10 +41,10 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   )
 
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
-    _ <- Flamingos2Epics.dcConfigCmd.setExposureTime(dc.t.toSeconds)
-    _ <- Flamingos2Epics.dcConfigCmd.setNumReads(dc.n.getCount)
-    _ <- Flamingos2Epics.dcConfigCmd.setReadoutMode(encode(dc.r))
-    _ <- Flamingos2Epics.dcConfigCmd.setBiasMode(encode(dc.b))
+    _ <- Flamingos2Epics.instance.dcConfigCmd.setExposureTime(dc.t.toSeconds)
+    _ <- Flamingos2Epics.instance.dcConfigCmd.setNumReads(dc.n.getCount)
+    _ <- Flamingos2Epics.instance.dcConfigCmd.setReadoutMode(encode(dc.r))
+    _ <- Flamingos2Epics.instance.dcConfigCmd.setBiasMode(encode(dc.b))
   } yield ()
 
   implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue((a: WindowCover)
@@ -119,13 +119,13 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = {
     val fpu = encode(cc.fpu)
     for {
-      _ <- Flamingos2Epics.configCmd.setWindowCover(encode(cc.w))
-      _ <- Flamingos2Epics.configCmd.setDecker(encode(cc.d))
-      _ <- Flamingos2Epics.configCmd.setMOS(fpu._1)
-      _ <- Flamingos2Epics.configCmd.setMask(fpu._2)
-      _ <- Flamingos2Epics.configCmd.setFilter(encode(cc.f))
-      _ <- Flamingos2Epics.configCmd.setLyot(encode(cc.l))
-      _ <- Flamingos2Epics.configCmd.setGrism(encode(cc.g))
+      _ <- Flamingos2Epics.instance.configCmd.setWindowCover(encode(cc.w))
+      _ <- Flamingos2Epics.instance.configCmd.setDecker(encode(cc.d))
+      _ <- Flamingos2Epics.instance.configCmd.setMOS(fpu._1)
+      _ <- Flamingos2Epics.instance.configCmd.setMask(fpu._2)
+      _ <- Flamingos2Epics.instance.configCmd.setFilter(encode(cc.f))
+      _ <- Flamingos2Epics.instance.configCmd.setLyot(encode(cc.l))
+      _ <- Flamingos2Epics.instance.configCmd.setGrism(encode(cc.g))
     } yield ()
   }
 
@@ -133,14 +133,14 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- EitherT(Task(Log.info("Start Flamingos2 configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
-    _ <- Flamingos2Epics.post
+    _ <- Flamingos2Epics.instance.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 configuration").right))
   } yield ()
 
   override def observe(obsid: ObsId): SeqAction[ObsId] = for {
     _ <- EitherT(Task(Log.info("Start Flamingos2 observation").right))
-    _ <- Flamingos2Epics.observeCmd.setLabel(obsid)
-    _ <- Flamingos2Epics.observeCmd.post
+    _ <- Flamingos2Epics.instance.observeCmd.setLabel(obsid)
+    _ <- Flamingos2Epics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 observation").right))
   } yield obsid
 }
