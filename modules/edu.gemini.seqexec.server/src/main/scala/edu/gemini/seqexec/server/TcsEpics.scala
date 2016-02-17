@@ -350,8 +350,12 @@ object TcsEpics extends EpicsSystem {
   val CA_CONFIG_FILE = "/Tcs.xml"
   val TCS_TOP = "tc1:"
 
-  // Ugly use of null. But if it is used before initialization, then the application deserves to crash.
-  var instance: TcsEpics = null
+
+  // Still using a var, but at least now it's hidden. Attempts to access the single instance will
+  // now result in an Exception with a meaningful message, instead of a NullPointerExecption
+  private var instanceInternal = Option.empty[TcsEpics]
+  lazy val instance: TcsEpics = instanceInternal.getOrElse(
+    throw new Exception("Attempt to reference TcsEpics single instance before initialization."))
 
   override def init(service: CaService): TrySeq[Unit] = {
     try {
@@ -364,7 +368,7 @@ object TcsEpics extends EpicsSystem {
         .withTop("oiwfs", "toiwfs:")
         .buildAll()
 
-        instance = new TcsEpics(service)
+        instanceInternal = Some(new TcsEpics(service))
 
         TrySeq(())
 

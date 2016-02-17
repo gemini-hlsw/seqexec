@@ -105,15 +105,18 @@ object Flamingos2Epics extends EpicsSystem {
   val Log = Logger.getLogger(getClass.getName)
   val CA_CONFIG_FILE = "/Flamingos2.xml"
   
-  // Ugly use of null. But if it is used before initialization, then the application deserves to crash.
-  var instance: Flamingos2Epics = null
+  // Still using a var, but at least now it's hidden. Attempts to access the single instance will
+  // now result in an Exception with a meaningful message, instead of a NullPointerException
+  private var instanceInternal = Option.empty[Flamingos2Epics]
+  lazy val instance: Flamingos2Epics = instanceInternal.getOrElse(
+    throw new Exception("Attempt to reference Flamingos2Epics single instance before initialization."))
 
   override def init(service: CaService): TrySeq[Unit] = {
     try {
       (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
         .buildAll()
 
-      instance = new Flamingos2Epics(service)
+      instanceInternal = Some(new Flamingos2Epics(service))
 
       TrySeq(())
     } catch {
