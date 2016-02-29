@@ -27,10 +27,10 @@ object ConfigUtil {
       def as[A](implicit clazz: ClassTag[A]): ExtractFailure \/ A =
         for {
           v <- Option(c.getItemValue(key)) \/> s"Missing config value for key ${key.getPath}"
-          b <- \/.fromTryCatch(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(_.getMessage)
+          b <- \/.fromTryCatchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(_.getMessage)
         } yield b
     }
-    def extract(key: ItemKey) = new Extracted(key)  
+    def extract(key: ItemKey) = new Extracted(key)
   }
 
 }
