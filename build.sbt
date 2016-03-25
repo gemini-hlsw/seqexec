@@ -5,6 +5,8 @@ version := Settings.Definitions.version
 
 scalaVersion in ThisBuild := Settings.LibraryVersions.scala
 
+scalacOptions in ThisBuild ++= Settings.Definitions.scalacOptions
+
 organization in Global := "edu.gemini.ocs"
 
 // Gemini repository

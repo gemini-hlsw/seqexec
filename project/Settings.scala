@@ -13,10 +13,16 @@ object Settings {
 
     /** Options for the scala compiler */
     val scalacOptions = Seq(
-      "-Xlint",
       "-unchecked",
       "-deprecation",
-      "-feature"
+      "-encoding", "UTF-8", // Keep on the same line
+      "-feature",
+      "-language:existentials",
+      "-language:higherKinds",
+      "-language:implicitConversions",
+      "-target:jvm-1.8",
+      "-Xlint",
+      "-Xlint:-stars-align"
     )
   }
 
