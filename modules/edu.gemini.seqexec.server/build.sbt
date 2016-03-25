@@ -11,6 +11,5 @@ libraryDependencies ++= Seq(
   // OCS bundles
   "edu.gemini.ocs"     %% "edu-gemini-spmodel-core"   % LibraryVersions.ocsVersion,
   "edu.gemini.ocs"     %% "edu-gemini-pot"            % LibraryVersions.ocsVersion,
-  "edu.gemini.ocs"     %% "edu-gemini-seqexec-shared" % LibraryVersions.ocsVersion,
   "edu.gemini.ocs"     %% "edu-gemini-epics-acm"      % LibraryVersions.ocsVersion
 )
