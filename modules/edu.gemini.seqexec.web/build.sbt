@@ -1,4 +1,7 @@
 import Settings._
+import Settings.LibrariesJVM._
+import Settings.LibrariesJS._
+import Settings.Libraries._
 
 name := "edu.gemini.seqexec.web"
 
@@ -8,19 +11,20 @@ lazy val edu_gemini_seqexec_web = project.in(file("."))
 lazy val commonSettings = Seq(
   // Common libraries
   libraryDependencies ++= Seq(
-    "com.lihaoyi"    %%% "upickle"     % "0.3.8",
-    // Turn it on when the project goes 7.2.1
+    "com.lihaoyi"    %%% "upickle"     % "0.3.8"
+    // TODO: Turn it on when the project goes scalaz 7.2.1
     //"org.scalaz"     %%% "scalaz-core" % "7.2.1",
-    "org.scalatest"  %%% "scalatest"   % "3.0.0-M15" % "test",
-    "org.scalacheck" %%% "scalacheck"  % "1.12.5" % "test"
-  )
+  ) ++ TestLibs.value
 )
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("edu.gemini.seqexec.web.shared"))
   .settings(commonSettings: _*)
   .jvmSettings(
-    name := "edu_gemini_seqexec_web_shared_JVM"
+    libraryDependencies += ScalaZCore
+  )
+  .jsSettings(
+    libraryDependencies += ScalaZCoreJS.value
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
@@ -32,6 +36,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
+      ScalaZCoreJS.value,
       "org.scala-js"                      %%% "scalajs-dom" % LibraryVersions.scalaDom,
       "com.github.japgolly.scalajs-react" %%% "core"        % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "extra"       % LibraryVersions.scalajsReact,
@@ -53,6 +58,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
+      ScalaZCore,
       // http4s
       "org.http4s"        %% "http4s-dsl"           % "0.12.0",
       "org.http4s"        %% "http4s-blaze-server"  % "0.12.0",

@@ -1,5 +1,5 @@
 import Settings._
-import Settings.Libraries._
+import Settings.LibrariesJVM._
 
 name := "edu.gemini.seqexec.server"
 

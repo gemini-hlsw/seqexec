@@ -1,4 +1,5 @@
 import sbt._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 /**
  * Application settings
@@ -33,13 +34,38 @@ object Settings {
     val scalajsReact = "0.10.4"
     val scalaCSS     = "0.4.0"
     val scalaZ       = "7.1.6"
+    val scalaZJS     = "7.2.1"
+
+    // test libraries
+    val scalaTest    = "3.0.0-M15"
+    val scalaCheck   = "1.12.5"
 
     val ocsVersion   = "2016001.1.1"
   }
 
-  /** Global libraries */
-  object Libraries {
-    val ScalaZCore       = "org.scalaz" %% "scalaz-core" % LibraryVersions.scalaZ
+  /** Global libraries on JVM */
+  object LibrariesJVM {
+    // ScalaZ
+    val ScalaZCore       = "org.scalaz" %% "scalaz-core"       % LibraryVersions.scalaZ
     val ScalaZConcurrent = "org.scalaz" %% "scalaz-concurrent" % LibraryVersions.scalaZ
+  }
+
+  /** Global libraries on JS */
+  object LibrariesJS {
+    import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+
+    // TODO Unify with the JVM version
+    val ScalaZCoreJS = Def.setting("org.scalaz" %%% "scalaz-core" % "7.2.1")
+  }
+
+  /** Global libraries common for JVM/JS */
+  object Libraries {
+    import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+
+    // Test Libraries
+    val TestLibs = Def.setting(Seq(
+      "org.scalatest"  %%% "scalatest"   % LibraryVersions.scalaTest  % "test",
+      "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
+    ))
   }
 }
