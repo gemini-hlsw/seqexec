@@ -9,7 +9,8 @@ lazy val commonSettings = Seq(
   // Common libraries
   libraryDependencies ++= Seq(
     "com.lihaoyi"    %%% "upickle"     % "0.3.8",
-    "org.scalaz"     %%% "scalaz-core" % "7.2.1",
+    // Turn it on when the project goes 7.2.1
+    //"org.scalaz"     %%% "scalaz-core" % "7.2.1",
     "org.scalatest"  %%% "scalatest"   % "3.0.0-M15" % "test",
     "org.scalacheck" %%% "scalacheck"  % "1.12.5" % "test"
   )
@@ -58,9 +59,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web
 
       // Play
       "com.typesafe.play" %% "play"                 % "2.4.6",
-      "com.typesafe.play" %% "play-netty-server"    % "2.4.6",
-
-      "org.scalaz"        %% "scalaz-concurrent"    % "7.1.6"
+      "com.typesafe.play" %% "play-netty-server"    % "2.4.6"
     ),
 
     // Settings to optimize the use of sbt-revolver

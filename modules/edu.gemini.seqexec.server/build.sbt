@@ -1,10 +1,11 @@
 import Settings._
+import Settings.Libraries._
 
 name := "edu.gemini.seqexec.server"
 
 libraryDependencies ++= Seq(
-  "org.scalaz"         %% "scalaz-core"               % "7.1.6",
-  "org.scalaz"         %% "scalaz-concurrent"         % "7.1.6",
+  ScalaZCore,
+  ScalaZConcurrent,
   "com.squants"        %% "squants"                   % "0.5.3",  // This needs to be replaced by our custom version
   "io.argonaut"        %% "argonaut"                  % "6.1",
   "commons-httpclient" % "commons-httpclient"         % "2.0",

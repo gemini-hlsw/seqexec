@@ -1,3 +1,5 @@
+import sbt._
+
 /**
  * Application settings
  */
@@ -20,11 +22,18 @@ object Settings {
 
   /** global dependency versions */
   object LibraryVersions {
-    val scala = "2.11.8"
-    val scalaDom = "0.9.0"
+    val scala        = "2.11.8"
+    val scalaDom     = "0.9.0"
     val scalajsReact = "0.10.4"
-    val scalaCSS = "0.4.0"
+    val scalaCSS     = "0.4.0"
+    val scalaZ       = "7.1.6"
 
-    val ocsVersion = "2016001.1.1"
+    val ocsVersion   = "2016001.1.1"
+  }
+
+  /** Global libraries */
+  object Libraries {
+    val ScalaZCore       = "org.scalaz" %% "scalaz-core" % LibraryVersions.scalaZ
+    val ScalaZConcurrent = "org.scalaz" %% "scalaz-concurrent" % LibraryVersions.scalaZ
   }
 }
