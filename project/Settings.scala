@@ -43,8 +43,7 @@ object Settings {
   }
 
   /**
-    * Global libraries common for JVM/JS
-    * Ideally all libraries would be available for both backends
+    * Global libraries
     */
   object Libraries {
     import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
@@ -54,6 +53,12 @@ object Settings {
       "org.scalatest"  %%% "scalatest"   % LibraryVersions.scalaTest  % "test",
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
+
+    // OCS Libraries, these should become modules in the future
+    val SpModelCore = "edu.gemini.ocs"     %% "edu-gemini-spmodel-core" % LibraryVersions.ocsVersion
+    val POT         = "edu.gemini.ocs"     %% "edu-gemini-pot"          % LibraryVersions.ocsVersion
+    val EpicsACM    = "edu.gemini.ocs"     %% "edu-gemini-epics-acm"    % LibraryVersions.ocsVersion
+    val TRPC        = "edu.gemini.ocs"     %% "edu-gemini-util-trpc"    % LibraryVersions.ocsVersion
   }
 
   /**

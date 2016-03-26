@@ -1,4 +1,5 @@
 import Settings._
+import Settings.Libraries._
 import Settings.LibrariesJVM._
 
 name := "edu.gemini.seqexec.server"
@@ -10,7 +11,7 @@ libraryDependencies ++= Seq(
   "io.argonaut"        %% "argonaut"                  % "6.1",
   "commons-httpclient" % "commons-httpclient"         % "2.0",
   // OCS bundles
-  "edu.gemini.ocs"     %% "edu-gemini-spmodel-core"   % LibraryVersions.ocsVersion,
-  "edu.gemini.ocs"     %% "edu-gemini-pot"            % LibraryVersions.ocsVersion,
-  "edu.gemini.ocs"     %% "edu-gemini-epics-acm"      % LibraryVersions.ocsVersion
+  SpModelCore,
+  POT,
+  EpicsACM
 )
