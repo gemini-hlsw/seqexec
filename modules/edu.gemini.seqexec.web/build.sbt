@@ -5,6 +5,7 @@ import Settings.Libraries._
 
 name := "edu.gemini.seqexec.web"
 
+// Root web project
 lazy val edu_gemini_seqexec_web = project.in(file("."))
   .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
 
@@ -31,6 +32,7 @@ lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
 
 lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
 
+// Client side project using Scala.js
 lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings: _*)
@@ -54,6 +56,7 @@ def includeInTrigger(f: java.io.File): Boolean =
     name.endsWith(".scala") || name.endsWith(".js")
   }
 
+// Project for the server side application
 lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web.server"))
   .settings(commonSettings: _*)
   .settings(

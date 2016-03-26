@@ -1,15 +1,14 @@
 import sbt._
-import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 /**
- * Application settings
+ * Application settings and dependencies
  */
 object Settings {
   object Definitions {
     /** The name of the application */
     val name = "ocs3"
 
-    /** Top level version */
+    /** Project version */
     val version = "2016001.1.1"
 
     /** Options for the scala compiler */
@@ -27,7 +26,7 @@ object Settings {
     )
   }
 
-  /** global dependency versions */
+  /** Library versions */
   object LibraryVersions {
     val scala        = "2.11.8"
     val scalaDom     = "0.9.0"
@@ -43,22 +42,10 @@ object Settings {
     val ocsVersion   = "2016001.1.1"
   }
 
-  /** Global libraries on JVM */
-  object LibrariesJVM {
-    // ScalaZ
-    val ScalaZCore       = "org.scalaz" %% "scalaz-core"       % LibraryVersions.scalaZ
-    val ScalaZConcurrent = "org.scalaz" %% "scalaz-concurrent" % LibraryVersions.scalaZ
-  }
-
-  /** Global libraries on JS */
-  object LibrariesJS {
-    import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
-
-    // TODO Unify with the JVM version
-    val ScalaZCoreJS = Def.setting("org.scalaz" %%% "scalaz-core" % "7.2.1")
-  }
-
-  /** Global libraries common for JVM/JS */
+  /**
+    * Global libraries common for JVM/JS
+    * Ideally all libraries would be available for both backends
+    */
   object Libraries {
     import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
@@ -68,4 +55,24 @@ object Settings {
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
   }
+
+  /**
+    * Global libraries only for JVM
+    */
+  object LibrariesJVM {
+    // ScalaZ
+    val ScalaZCore       = "org.scalaz" %% "scalaz-core"       % LibraryVersions.scalaZ
+    val ScalaZConcurrent = "org.scalaz" %% "scalaz-concurrent" % LibraryVersions.scalaZ
+  }
+
+  /**
+    * Global libraries only for JS
+    */
+  object LibrariesJS {
+    import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+
+    // TODO Unify with the JVM version
+    val ScalaZCoreJS = Def.setting("org.scalaz" %%% "scalaz-core" % "7.2.1")
+  }
+
 }

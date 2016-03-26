@@ -1,79 +1,65 @@
-# Seqexec
+# OCS3
 
-This a possible setup for a build for a standalone Seqexec application. This work has the following goals 
+This project aims to build the next generation Observatory Control System (OCS). At the time of this writing, only the Seqexec has been integrated. This setup has the following goals 
 
-- Try to adhere to the simplest possible sbt structure.
-- No OSGi support
+- Adhere to the simplest possible sbt structure.
+- No need for OSGi
 - Use managed dependencies
-- Support for a web application using scala.js
-- Support to include common shared bundles
+- Support of web applications using scala.js
+- Testing supported on both JVM and JS backends
 
-There are probably many improvements to this build and the whole issue of deploying is not presented, but this is a start.
+Some build-level tasks are still pending
+
+- [ ] Support deployable artifacts
+- [ ] Include modules cross-compiled to both JVM and JS backends
+- [ ] Enable travis
+- [ ] Unify JVM/JS scalaz versions
 
 ## Structure
-The project is structured with a root project containing 2 subtrees. One for common shared bundles and one for the web application. The latter has further division to have the server side and the client side compiled
+The project contains a single `modules` subtree. Inside that module each of the bundles is located. Web applications are further devided internally to have the server side, client side and shared code compiled to their respective backends
 
 ```
-root
+ocs3/
  |
- +-- common
+ +-- modules/
  |    |
- |    +-- edu.gemini.seqexec.server
- |
- +-- seqexec-web
-      |
-      +-- server
-      +-- client
-      +-- shared
+ |    +-- edu.gemini.seqexec.server/
+ |    +-- edu.gemini.seqexec.shared/
+ |    +-- edu.gemini.seqexec.web/
+ |           |
+ |           +-- edu.gemini.seqexec.web.shared/
+ |           +-- edu.gemini.seqexec.web.server/
+ |           +-- edu.gemini.seqexec.web.client/
+ +-- lib/
+ +-- project/
 ```
+`lib` contains only unmanaged dependencies where `project` includes sbt definitions
 
-Note that `seqexec-web/client` is compiled via `scala.js` and `seqexec-web/shared` is compiled to both `scala.js` and to the JVM
+## Settings
 
-## Versions
-
-Versions are defined in the file `project/Settings.scala`
+Settings and module versions are defined in the file `project/Settings.scala`
 
 ## Dependencies
 
-All dependencies are managed coming from either maven central or the Gemini repository
+Most dependencies are managed dependencies coming from either maven central or the Gemini repository.
 
-Internall, `seqexec-web/server` depends on `common/edu.gemini.seqexec.server`. The dependency is declared on `seqexec-web/build.sbt` but other ways to declare intra-module dependencies could be devised
-
-## Running
-On `seqexec-web/server` there is a standalone application that will launch a web server and the Seqexec server. All the static files and generated java script are served from here
-
-To launch you can do:
-
-```
-sbt
-project seqexec_web_server
-~re-start
-```
-
-Note that as part of this run command the scala.js application will be compiled to javascript. Modifying any file on server or client will make a restart of the server
+Intra-module dependencies are declared on `project/OcsBuild`. Being at the top level the project declarations can be used on each module's `build.sbt`
 
 ## Testing
 
-Sample tests using `scalatest` and `scalacheck` are included in each module. You can run `test` at the root level or per sub-project
+`ScalaTest` has been chosen as the test framework since it works in both scala.js and jvm. `ScalaCheck` is also supported running with `ScalaTest`. Sample tests using `scalatest` and `scalacheck` are included in some modules. You can run `test` at the root level or on a module basis.
 
 Note that IDEA doesn't support running tests on scala.js. See this [issue](https://github.com/scalatest/scalatest/issues/743)
 
-Testing of js code can be done on the browser with Selenium, running
-
-```
-firefox:test
-```
-or
-```
-chrome:test
-```
-
 ## IDEA
 
-IDEA can open directly the projepct's sbt. Go to 
+IDEA can open directly the project's sbt. Go to 
 
 ```
-File -> New -> Project from Existing Sources...
+File -> Open
 ```
 
-And open the root build.sbt. IDEA shows some warnings but the final result works just fine. Note that some files
+And find the file `ocs/build.sbt`. IDEA should show a dialog box to import the project. You may need to select the appropriate JVM version (1.8) and IDEA will import the project. `sbt` files may have highlight errors due to this [bug](https://youtrack.jetbrains.com/issue/SCL-9599). Otherwise, sbt import seems to work quite well.
+
+**Note:** Sbt import in IDEA changes very often. This has been tested on IDEA C 2016.1 and the Scala plugin version 3.0
+	
