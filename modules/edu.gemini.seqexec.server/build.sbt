@@ -7,11 +7,14 @@ name := "edu.gemini.seqexec.server"
 libraryDependencies ++= Seq(
   ScalaZCore,
   ScalaZConcurrent,
-  "com.squants"        %% "squants"                   % "0.5.3",  // This needs to be replaced by our custom version
   "io.argonaut"        %% "argonaut"                  % "6.1",
   "commons-httpclient" % "commons-httpclient"         % "2.0",
   // OCS bundles
   SpModelCore,
   POT,
   EpicsACM
+)
+
+unmanagedJars in Compile ++= Seq(
+  new File((baseDirectory in ThisBuild).value, "lib/squants_2.11-0.6.1.jar")
 )
