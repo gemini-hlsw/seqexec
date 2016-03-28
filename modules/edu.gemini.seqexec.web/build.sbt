@@ -35,6 +35,19 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings: _*)
   .settings(
+    // Write the generated js to the filename seqexec.js
+    artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
+    // JS dependencies from webjars
+    jsDependencies ++= Seq(
+      "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
+      "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-dom.js"         minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
+      "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js",
+      "org.webjars"       % "Semantic-UI" % LibraryVersions.semanticUI  / "semantic.js"          minified "semantic.min.js" dependsOn "jquery.js"
+    ),
+    // Build a js dependencies file
+    skip in packageJSDependencies := false,
+    // Put the jsdeps file on a place reachable for the server
+    crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       ScalaZCoreJS.value,
       "org.querki"                        %%% "jquery-facade" % LibraryVersions.scalaJQuery,
@@ -62,6 +75,8 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web
     
     // Allows to read the generated JS on client
     resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
+    // Lets the server read the jsdeps file
+    (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client, Compile, packageJSDependencies)).value,
     // Support stopping the running server
     mainClass in reStart := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
     // do a fastOptJS on reStart

@@ -39,6 +39,11 @@ object Settings {
     val scalaTest    = "3.0.0-M15"
     val scalaCheck   = "1.12.5"
 
+    // Pure JS libraries
+    val reactJS      = "0.14.7"
+    val jQuery       = "2.2.1"
+    val semanticUI   = "2.1.8"
+
     val ocsVersion   = "2016001.1.1"
   }
 
