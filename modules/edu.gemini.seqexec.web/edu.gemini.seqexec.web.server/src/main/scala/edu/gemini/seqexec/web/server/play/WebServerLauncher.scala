@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.server.play
 
-//import com.unboundid.ldap.sdk.{LDAPConnection, LDAPException, ResultCode, SimpleBindRequest}
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
@@ -36,28 +35,6 @@ object WebServerLauncher extends App {
             case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
           }
         }
-        /*case POST(p"/login") => Action(parse.text) { b =>
-          // TODO hide the server name
-          // TODO Make it asynchronous
-          // TODO Make the connection closeable
-          // TODO Use a connection pool
-          val c = new LDAPConnection("gs-dc6.gemini.edu", 3268)
-          try {
-            val u = read[UserCredentials](b.body)
-            val bindRequest = new SimpleBindRequest(u.username, u.password)
-            c.bind(bindRequest)
-            Results.Ok("ok")
-          } catch {
-            case e:LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS   =>
-              Results.Unauthorized("Bad credentials")
-            case e:LDAPException =>
-              Results.Unauthorized("Bad credentials")
-            case e:Exception =>
-              Results.InternalServerError(e.getMessage)
-          } finally {
-            c.close()
-          }
-        }*/
         case GET(p"/$f*") =>
           // Static files,
           CustomAssets.at("src/main/resources", f, "/")
