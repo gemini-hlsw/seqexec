@@ -75,6 +75,8 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web
     
     // Allows to read the generated JS on client
     resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
+    // Lets the backend to read the .map file for js
+    resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client, Compile)).value.map((x: sbt.File) => new File(x.getAbsolutePath + ".map")).data,
     // Lets the server read the jsdeps file
     (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client, Compile, packageJSDependencies)).value,
     // Support stopping the running server
