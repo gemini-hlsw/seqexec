@@ -11,11 +11,9 @@ lazy val edu_gemini_seqexec_web = project.in(file("."))
 
 lazy val commonSettings = Seq(
   // Common libraries
-  libraryDependencies ++= Seq(
-    "com.lihaoyi"    %%% "upickle"     % "0.3.8"
-    // TODO: Turn it on when the project goes scalaz 7.2.1
-    //"org.scalaz"     %%% "scalaz-core" % "7.2.1",
-  ) ++ TestLibs.value
+  libraryDependencies ++= UPickle.value +: TestLibs.value
+  // TODO: Turn it on when the project goes scalaz 7.2.1
+  //"org.scalaz"     %%% "scalaz-core" % "7.2.1",
 )
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -39,12 +37,9 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
   .settings(
     libraryDependencies ++= Seq(
       ScalaZCoreJS.value,
-      "org.scala-js"                      %%% "scalajs-dom" % LibraryVersions.scalaDom,
-      "com.github.japgolly.scalajs-react" %%% "core"        % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalajs-react" %%% "extra"       % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalacss"      %%% "core"        % LibraryVersions.scalaCSS,
-      "com.github.japgolly.scalacss"      %%% "ext-react"   % LibraryVersions.scalaCSS
-    )
+      ScalaCSS.value,
+      ScalaJSDom.value
+    ) ++ ReactScalaJS.value
   )
   .dependsOn(edu_gemini_seqexec_web_shared_JS)
 
@@ -60,16 +55,7 @@ def includeInTrigger(f: java.io.File): Boolean =
 lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web.server"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(
-      ScalaZCore,
-      // http4s
-      "org.http4s"        %% "http4s-dsl"           % "0.12.0",
-      "org.http4s"        %% "http4s-blaze-server"  % "0.12.0",
-
-      // Play
-      "com.typesafe.play" %% "play"                 % "2.4.6",
-      "com.typesafe.play" %% "play-netty-server"    % "2.4.6"
-    ),
+    libraryDependencies ++= ScalaZCore +: (Http4s ++ Play),
 
     // Settings to optimize the use of sbt-revolver
     

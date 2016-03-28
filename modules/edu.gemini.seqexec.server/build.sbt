@@ -7,8 +7,8 @@ name := "edu.gemini.seqexec.server"
 libraryDependencies ++= Seq(
   ScalaZCore,
   ScalaZConcurrent,
-  "io.argonaut"        %% "argonaut"                  % "6.1",
-  "commons-httpclient" % "commons-httpclient"         % "2.0",
+  Argonaut,
+  CommonsHttp,
   // OCS bundles
   SpModelCore,
   POT,
