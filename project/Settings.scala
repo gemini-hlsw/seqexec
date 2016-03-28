@@ -8,9 +8,6 @@ object Settings {
     /** The name of the application */
     val name = "ocs3"
 
-    /** Project version */
-    val version = "2016001.1.1"
-
     /** Options for the scala compiler */
     val scalacOptions = Seq(
       "-unchecked",
