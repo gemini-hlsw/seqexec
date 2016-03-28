@@ -9,12 +9,9 @@ libraryDependencies ++= Seq(
   ScalaZConcurrent,
   Argonaut,
   CommonsHttp,
+  Squants.value,
   // OCS bundles
   SpModelCore,
   POT,
   EpicsACM
-)
-
-unmanagedJars in Compile ++= Seq(
-  new File((baseDirectory in ThisBuild).value, "lib/squants_2.11-0.6.1.jar")
 )

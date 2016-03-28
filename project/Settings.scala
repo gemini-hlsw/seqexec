@@ -56,6 +56,7 @@ object Settings {
     val Argonaut    = "io.argonaut"        %% "argonaut"                  % "6.1"
     val CommonsHttp = "commons-httpclient" % "commons-httpclient"         % "2.0"
 
+    val Squants     = Def.setting("com.squants"    %%% "squants"     % "0.6.1-GEM")
     val UPickle     = Def.setting("com.lihaoyi"    %%% "upickle"     % "0.3.8")
 
     // Server side libraries
