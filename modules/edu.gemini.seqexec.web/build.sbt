@@ -23,6 +23,7 @@ lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure)
     libraryDependencies += ScalaZCore
   )
   .jsSettings(
+    scalaJSUseRhino := false,
     libraryDependencies += ScalaZCoreJS.value
   )
 
