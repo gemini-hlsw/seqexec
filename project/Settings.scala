@@ -33,6 +33,7 @@ object Settings {
     val scalaZJS     = "7.2.1"
     val http4S       = "0.12.0"
     val play         = "2.4.6"
+    val scalaJQuery  = "1.0-RC2"
 
     // test libraries
     val scalaTest    = "3.0.0-M15"
