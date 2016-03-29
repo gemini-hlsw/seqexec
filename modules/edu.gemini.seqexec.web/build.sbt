@@ -36,6 +36,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings: _*)
   .settings(
+    // Skip tests in module, Rhino doesn't play nice with jquery
+    test := {},
     // Write the generated js to the filename seqexec.js
     artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
     // JS dependencies from webjars
