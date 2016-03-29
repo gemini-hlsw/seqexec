@@ -7,14 +7,13 @@ import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import scalacss.ScalaCssReact._
 
 /**
-  * Component for the search form at the top of the page
+  * Component for the bar at the top of the page
   */
 object NavBar {
 
-  case class Props(searchStart: String => Callback)
-
-  val component = ReactComponentB[Props]("SeqexecAppBar")
-    .render(P =>
+  val component = ReactComponentB[Unit]("SeqexecAppBar")
+    .stateless
+    .render(_ =>
       <.div(
         SeqexecStyles.mainContainer,
         <.div(
@@ -34,12 +33,14 @@ object NavBar {
     )
     .componentDidMount(s =>
       Callback {
+        // Mount the Semantic component using jQuery
         import org.querki.jquery.$
 
+        // Pick the top bar and make it stay visible regardless of scrolling
         $(ReactDOM.findDOMNode(s)).visibility(JsVisiblityOptions.visibilityType("fixed"))
       }
     )
-    .build
+    .buildU
 
-  def apply(p: Props) = component(p)
+  def apply() = component()
 }

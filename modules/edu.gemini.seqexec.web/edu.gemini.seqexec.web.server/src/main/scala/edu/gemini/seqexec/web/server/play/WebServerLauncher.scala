@@ -15,6 +15,7 @@ import upickle.default._
 import scalaz._
 import Scalaz._
 
+
 object WebServerLauncher extends App {
 
   def launch(port: Int):NettyServerComponents = {

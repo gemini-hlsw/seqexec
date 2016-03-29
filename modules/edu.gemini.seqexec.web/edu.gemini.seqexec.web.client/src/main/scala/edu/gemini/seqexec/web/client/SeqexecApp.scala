@@ -11,12 +11,17 @@ import scalacss.ScalaCssReact._
 
 import org.scalajs.dom.document
 
+/**
+  * Seqexec WebApp entry point
+  */
 @JSExport("SeqexcApp")
 object SeqexecApp extends JSApp {
 
   def main(): Unit = {
+    // Register CSS styles
     SeqexecStyles.addToDocument()
 
+    // Render the UI using React
     ReactDOM.render(SeqexecUI(), document.getElementById("content"))
   }
 }

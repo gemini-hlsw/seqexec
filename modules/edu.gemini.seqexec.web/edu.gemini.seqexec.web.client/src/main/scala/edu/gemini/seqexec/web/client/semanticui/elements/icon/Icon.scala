@@ -3,6 +3,9 @@ package edu.gemini.seqexec.web.client.semanticui.elements.icon
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, ReactNode}
 
+/**
+  * Semantic UI Icon component
+  */
 object Icon {
   sealed trait Flipped
   case object NotFlipped extends Flipped

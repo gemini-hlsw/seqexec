@@ -5,6 +5,9 @@ import org.querki.jsext.{JSOptionBuilder, _}
 
 import scala.scalajs.js
 
+/**
+  * Facade for the SemanticUI javascript. Note that there are extensions to JQuery
+  */
 object SemanticUI {
 
   @js.native

@@ -2,6 +2,9 @@ package edu.gemini.seqexec.web.client.components
 
 import scalacss.Defaults._
 
+/**
+  * Custom CSS for the Seqexec UI
+  */
 object SeqexecStyles extends StyleSheet.Inline {
   import dsl._
 

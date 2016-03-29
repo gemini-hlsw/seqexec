@@ -3,6 +3,9 @@ package edu.gemini.seqexec.web.client.semanticui.elements.divider
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, ReactNode}
 
+/**
+  * Semantic UI Divider component
+  */
 object Divider {
   case class Props(vertical: Boolean = false,
                    horizontal: Boolean = false,

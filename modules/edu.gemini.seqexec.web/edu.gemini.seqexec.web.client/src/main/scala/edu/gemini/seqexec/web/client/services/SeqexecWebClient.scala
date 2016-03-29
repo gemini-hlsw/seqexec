@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
-  * Encapsulate remote calls to the Seqexec Web API
+  * Encapsulates remote calls to the Seqexec Web API
   */
 object SeqexecWebClient {
   val baseUrl = "/api"

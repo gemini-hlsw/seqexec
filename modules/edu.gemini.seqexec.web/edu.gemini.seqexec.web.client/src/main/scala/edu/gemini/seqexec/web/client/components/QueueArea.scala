@@ -5,6 +5,9 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 import scalacss.ScalaCssReact._
 
+/**
+  * Displays the elements on the queue
+  */
 object QueueArea {
 
   class Backend($: BackendScope[Unit, Unit]) {

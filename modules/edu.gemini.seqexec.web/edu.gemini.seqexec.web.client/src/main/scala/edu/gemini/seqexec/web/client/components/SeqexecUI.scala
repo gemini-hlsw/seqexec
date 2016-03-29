@@ -5,10 +5,12 @@ import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.AjaxException
-import edu.gemini.seqexec.web.client.mdl._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+/**
+  * Top level UI component
+  */
 object SeqexecUI {
 
   case class State(searching: Boolean, errorMessage: List[String], sequence: Option[Sequence], runningSequence: List[String])
@@ -39,10 +41,8 @@ object SeqexecUI {
 
     def render(s:State) = {
       <.div(
-        NavBar(NavBar.Props(searchStart)),
+        NavBar(),
         QueueArea()
-        //SideBar(SideBar.Props(s.runningSequence)),
-        //SeqexecBody(SeqexecBody.Props(s.searching, s.errorMessage, s.sequence, runSequence))
       )
     }
   }
