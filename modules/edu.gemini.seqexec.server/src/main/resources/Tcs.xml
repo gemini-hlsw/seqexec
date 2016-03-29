@@ -1,0 +1,1994 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="tcs">tcs</Top>
+    <Top name="m2">m2</Top>
+    <Top name="ag">ag</Top>
+    <Top name="oiwfs">oiwfs</Top>
+    <Top name="ao">ao</Top>
+    <!--
+    <Top name="bto">bto</Top>
+    <Apply name="btoFsaApply">
+        <top>bto</top>
+        <apply>apply</apply>
+        <car>FSALoopCtrlC</car>
+        <description>FSA controller</description>
+        <command name="btoFsaLoopCtrl">
+            <record>apply</record>
+            <description>Bto Loop control</description>
+            <parameter name="loop">
+                <channel>FSALoopCtrl.A</channel>
+                <type>STRING</type>
+                <description>Loop control loop</description>
+            </parameter>
+        </command>
+    </Apply>
+    -->
+    <Apply name="tcsApply">
+        <top>tcs</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>Primary TCS Apply Record</description>
+        <command name="pwfs1Observe">
+            <description>Start P1</description>
+            <parameter name="int">
+                <channel>pwfs1Observe.B</channel>
+                <type>DOUBLE</type>
+                <description>interval</description>
+            </parameter>
+            <parameter name="label">
+                <channel>pwfs1Observe.D</channel>
+                <type>STRING</type>
+                <description>DHS label</description>
+            </parameter>
+            <parameter name="path">
+                <channel>pwfs1Observe.F</channel>
+                <type>STRING</type>
+                <description>Path</description>
+            </parameter>
+            <parameter name="noexp">
+                <channel>pwfs1Observe.A</channel>
+                <type>INTEGER</type>
+                <description>Exposures</description>
+            </parameter>
+            <parameter name="output">
+                <channel>pwfs1Observe.E</channel>
+                <type>STRING</type>
+                <description>DHS output</description>
+            </parameter>
+            <parameter name="outopt">
+                <channel>pwfs1Observe.C</channel>
+                <type>STRING</type>
+                <description>Output options</description>
+            </parameter>
+            <parameter name="name">
+                <channel>pwfs1Observe.G</channel>
+                <type>STRING</type>
+                <description>Filename</description>
+            </parameter>
+        </command>
+        <command name="pwfs2Observe">
+            <description>Start P2</description>
+            <parameter name="name">
+                <channel>pwfs2Observe.G</channel>
+                <type>STRING</type>
+                <description>Filename</description>
+            </parameter>
+            <parameter name="path">
+                <channel>pwfs2Observe.F</channel>
+                <type>STRING</type>
+                <description>Path</description>
+            </parameter>
+            <parameter name="noexp">
+                <channel>pwfs2Observe.A</channel>
+                <type>INTEGER</type>
+                <description>Exposures</description>
+            </parameter>
+            <parameter name="outopt">
+                <channel>pwfs2Observe.C</channel>
+                <type>STRING</type>
+                <description>Output options</description>
+            </parameter>
+            <parameter name="output">
+                <channel>pwfs2Observe.E</channel>
+                <type>STRING</type>
+                <description>DHS output</description>
+            </parameter>
+            <parameter name="int">
+                <channel>pwfs2Observe.B</channel>
+                <type>DOUBLE</type>
+                <description>interval</description>
+            </parameter>
+            <parameter name="label">
+                <channel>pwfs2Observe.D</channel>
+                <type>STRING</type>
+                <description>DHS label</description>
+            </parameter>
+        </command>
+        <command name="oiwfsObserve">
+            <description>Start OIWFS</description>
+            <parameter name="output">
+                <channel>oiwfsObserve.E</channel>
+                <type>STRING</type>
+                <description>DHS output</description>
+            </parameter>
+            <parameter name="int">
+                <channel>oiwfsObserve.B</channel>
+                <type>DOUBLE</type>
+                <description>interval</description>
+            </parameter>
+            <parameter name="path">
+                <channel>oiwfsObserve.F</channel>
+                <type>STRING</type>
+                <description>Path</description>
+            </parameter>
+            <parameter name="label">
+                <channel>oiwfsObserve.D</channel>
+                <type>STRING</type>
+                <description>DHS label</description>
+            </parameter>
+            <parameter name="outopt">
+                <channel>oiwfsObserve.C</channel>
+                <type>STRING</type>
+                <description>Output options</description>
+            </parameter>
+            <parameter name="noexp">
+                <channel>oiwfsObserve.A</channel>
+                <type>INTEGER</type>
+                <description>Exposures</description>
+            </parameter>
+            <parameter name="name">
+                <channel>oiwfsObserve.G</channel>
+                <type>STRING</type>
+                <description>Filename</description>
+            </parameter>
+        </command>
+        <command name="m2GuideMode">
+            <description>M2 Guiding Mode</description>
+            <parameter name="coma">
+                <channel>m2GuideMode.B</channel>
+                <type>STRING</type>
+                <description>Apply Coma Correction</description>
+            </parameter>
+        </command>
+        <command name="offsetPoB1">
+            <description>Offset pointing origin B1</description>
+            <parameter name="y">
+                <channel>offsetPoB1.B</channel>
+                <type>DOUBLE</type>
+                <description>0 Y</description>
+            </parameter>
+            <parameter name="x">
+                <channel>offsetPoB1.A</channel>
+                <type>DOUBLE</type>
+                <description>0 X</description>
+            </parameter>
+        </command>
+        <command name="ngsPr3Park">
+            <record>ngsPr3Park</record>
+            <description>Canopus probe 3 park</description>
+        </command>
+        <command name="aoOiwfsSource">
+            <description>ALTAIR OIWFS source</description>
+            <parameter name="state">
+                <channel>aoOiwfsSource.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+            <parameter name="bandwidth">
+                <channel>aoOiwfsSource.B</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="aoFlatten">
+            <record>aoFlatten</record>
+            <description>Flatten AO light path</description>
+        </command>
+        <command name="aoFollow">
+            <description>GAOS probe following</description>
+            <parameter name="followState">
+                <channel>aoFollow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="aoPrepareCm">
+            <description>Prepare ALTAIR control matrix</description>
+            <parameter name="x">
+                <channel>aoPrepareCm.A</channel>
+                <type>STRING</type>
+                <description>Guide star x position</description>
+            </parameter>
+            <parameter name="seeing">
+                <channel>aoPrepareCm.C</channel>
+                <type>STRING</type>
+                <description>Seeing estimate</description>
+            </parameter>
+            <parameter name="windspeed">
+                <channel>aoPrepareCm.E</channel>
+                <type>STRING</type>
+                <description>Windspeed</description>
+            </parameter>
+            <parameter name="gsmag">
+                <channel>aoPrepareCm.D</channel>
+                <type>STRING</type>
+                <description>Guide star magnitude</description>
+            </parameter>
+            <parameter name="y">
+                <channel>aoPrepareCm.B</channel>
+                <type>STRING</type>
+                <description>Guide star y position</description>
+            </parameter>
+        </command>
+        <command name="tcs::continue">
+            <record>continue</record>
+            <description>Continue</description>
+        </command>
+        <command name="odgw3Park">
+            <description>ODGW 3 park</description>
+            <parameter name="command">
+                <channel>odgw3Park.A</channel>
+                <type>STRING</type>
+                <description>Park command</description>
+            </parameter>
+        </command>
+        <command name="ngsPr1Park">
+            <record>ngsPr1Park</record>
+            <description>Canopus probe 1 park</description>
+        </command>
+        <command name="pwfs2Guide">
+            <description>P2 guide configuration</description>
+            <parameter name="nodbchopb">
+                <channel>configPwfs2.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configPwfs2.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configPwfs2.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configPwfs2.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+            <parameter name="nodachopb">
+                <channel>configPwfs2.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodcchopb">
+                <channel>configPwfs2.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodcchopc">
+                <channel>configPwfs2.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configPwfs2.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configPwfs2.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+        </command>
+        <command name="pwfs2StopObserve">
+            <record>pwfs2StopObserve</record>
+            <description>Stop P2</description>
+        </command>
+        <command name="wavelG4">
+            <description>G4 wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelG4.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="odgw2Follow">
+            <description>ODGW 2 following</description>
+            <parameter name="followState">
+                <channel>odgw2Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="ngsPr2Follow">
+            <description>Canopus Guide Star 2 following</description>
+            <parameter name="followState">
+                <channel>ngs2Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="filter1">
+            <description>Target filter</description>
+            <parameter name="shortCircuit">
+                <channel>filter1.D</channel>
+                <type>STRING</type>
+                <description>shortCircuit</description>
+            </parameter>
+            <parameter name="bandwidth">
+                <channel>filter1.A</channel>
+                <type>STRING</type>
+                <description>Bandwidth</description>
+            </parameter>
+            <parameter name="maxv">
+                <channel>filter1.B</channel>
+                <type>STRING</type>
+                <description>Maximum velocity</description>
+            </parameter>
+            <parameter name="grab">
+                <channel>filter1.C</channel>
+                <type>STRING</type>
+                <description>Grab radius</description>
+            </parameter>
+        </command>
+        <command name="wavelG3">
+            <description>G3 wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelG3.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="odgw1Park">
+            <description>ODGW 1 park</description>
+            <parameter name="command">
+                <channel>odgw1Park.A</channel>
+                <type>STRING</type>
+                <description>Park command</description>
+            </parameter>
+        </command>
+        <command name="pwfs2Park">
+            <record>pwfs2Park</record>
+            <description>Park P2</description>
+        </command>
+        <command name="m1Guide">
+            <description>M1 Guiding</description>
+            <parameter name="state">
+                <channel>m1GuideMode.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="aoCorrect">
+            <description>ALTAIR Image correction</description>
+            <parameter name="matrix">
+                <channel>aoCorrect.B</channel>
+                <type>STRING</type>
+                <description>Matrix ID</description>
+            </parameter>
+            <parameter name="gains">
+                <channel>aoCorrect.C</channel>
+                <type>STRING</type>
+                <description>Re-use gains</description>
+            </parameter>
+            <parameter name="correct">
+                <channel>aoCorrect.A</channel>
+                <type>STRING</type>
+                <description>Correction On/OFF</description>
+            </parameter>
+        </command>
+        <command name="oiwfsPark">
+            <record>oiwfsPark</record>
+            <description>Park OIWFS</description>
+        </command>
+        <command name="m2Beam">
+            <description>Select M2 beam</description>
+            <parameter name="beam">
+                <channel>nod.A</channel>
+                <type>STRING</type>
+                <description>0 M2 Beam</description>
+            </parameter>
+        </command>
+        <command name="m2Guide">
+            <description>M2 Guiding</description>
+            <parameter name="state">
+                <channel>m2GuideControl.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="ngsPr1Follow">
+            <description>Canopus Guide Star 1 following</description>
+            <parameter name="followState">
+                <channel>ngs1Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="m2GuideConfig">
+            <description>M2 Guiding Config</description>
+            <parameter name="reset">
+                <channel>m2GuideConfig.G</channel>
+                <type>STRING</type>
+                <description>Reset</description>
+            </parameter>
+            <parameter name="beam">
+                <channel>m2GuideConfig.F</channel>
+                <type>STRING</type>
+                <description>Beam</description>
+            </parameter>
+            <parameter name="source">
+                <channel>m2GuideConfig.A</channel>
+                <type>STRING</type>
+                <description>Source</description>
+            </parameter>
+        </command>
+        <command name="wavelG1">
+            <description>G1 wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelG1.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="wavelSourceC">
+            <description>Source C wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelSourceC.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="scienceFold">
+            <description>Position science fold</description>
+            <parameter name="scfold">
+                <channel>scienceFold.A</channel>
+                <type>STRING</type>
+                <description>Position</description>
+            </parameter>
+        </command>
+        <command name="wavelSourceA">
+            <description>Source A wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelSourceA.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="p1Follow">
+            <description>PWFS1 probe following</description>
+            <parameter name="followState">
+                <channel>pwfs1Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="offsetPoA1">
+            <description>Offset pointing origin A1</description>
+            <parameter name="y">
+                <channel>offsetPoA1.B</channel>
+                <type>DOUBLE</type>
+                <description>0 Y</description>
+            </parameter>
+            <parameter name="x">
+                <channel>offsetPoA1.A</channel>
+                <type>DOUBLE</type>
+                <description>0 X</description>
+            </parameter>
+        </command>
+        <command name="odgw4Park">
+            <description>ODGW 4 park</description>
+            <parameter name="command">
+                <channel>odgw4Park.A</channel>
+                <type>STRING</type>
+                <description>Park command</description>
+            </parameter>
+        </command>
+        <command name="pwfs1StopObserve">
+            <record>pwfs1StopObserve</record>
+            <description>Stop P1</description>
+        </command>
+        <command name="chop">
+            <description>Chopping</description>
+            <parameter name="decs">
+                <channel>chop.B</channel>
+                <type>STRING</type>
+                <description>0 DECS On Off</description>
+            </parameter>
+            <parameter name="onoff">
+                <channel>chop.A</channel>
+                <type>STRING</type>
+                <description>0 Chop On Off</description>
+            </parameter>
+        </command>
+        <command name="mountGuide">
+            <description>Define mount guiding</description>
+            <parameter name="p2weight">
+                <channel>mountGuideMode.D</channel>
+                <type>DOUBLE</type>
+                <description>P2 weight</description>
+            </parameter>
+            <parameter name="source">
+                <channel>mountGuideMode.B</channel>
+                <type>STRING</type>
+                <description>Guide Source</description>
+            </parameter>
+            <parameter name="p1weight">
+                <channel>mountGuideMode.C</channel>
+                <type>DOUBLE</type>
+                <description>P1 weight</description>
+            </parameter>
+            <parameter name="mode">
+                <channel>mountGuideMode.A</channel>
+                <type>STRING</type>
+                <description>Mode</description>
+            </parameter>
+        </command>
+        <command name="tcs::endObserve">
+            <record>endObserve</record>
+            <description>End Observe</description>
+        </command>
+        <command name="chopConfig">
+            <description>Set Chop Config</description>
+            <parameter name="freq">
+                <channel>chopConfig.C</channel>
+                <type>STRING</type>
+                <description>0 Chop Frequency</description>
+            </parameter>
+            <parameter name="dutycycle">
+                <channel>chopConfig.D</channel>
+                <type>STRING</type>
+                <description>0 Chop Duty Cycle</description>
+            </parameter>
+        </command>
+        <command name="oiFollow">
+            <description>OIWFS probe following</description>
+            <parameter name="followState">
+                <channel>oiwfsFollow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="chopRelative">
+            <description>Set Chop Relative</description>
+            <parameter name="angle">
+                <channel>chopRelative.B</channel>
+                <type>STRING</type>
+                <description>0 Chop PA</description>
+            </parameter>
+            <parameter name="throw">
+                <channel>chopRelative.A</channel>
+                <type>STRING</type>
+                <description>0 Chop Throw</description>
+            </parameter>
+        </command>
+        <command name="wavelG2">
+            <description>G2 wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelG2.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="g4Guide">
+            <description>G4 guide configuration</description>
+            <parameter name="nodachopb">
+                <channel>configG4.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configG4.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configG4.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configG4.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+            <parameter name="nodcchopb">
+                <channel>configG4.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configG4.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodcchopc">
+                <channel>configG4.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodbchopb">
+                <channel>configG4.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configG4.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+        </command>
+        <command name="hrwfs">
+            <description>Position acqcam pickoff</description>
+            <parameter name="hrwfsPos">
+                <channel>hrwfs.A</channel>
+                <type>STRING</type>
+                <description>Position</description>
+            </parameter>
+        </command>
+        <command name="pwfs1Guide">
+            <description>P1 guide configuration</description>
+            <parameter name="nodachopb">
+                <channel>configPwfs1.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configPwfs1.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+            <parameter name="nodcchopc">
+                <channel>configPwfs1.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configPwfs1.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configPwfs1.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+            <parameter name="nodcchopb">
+                <channel>configPwfs1.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configPwfs1.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+            <parameter name="nodbchopb">
+                <channel>configPwfs1.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configPwfs1.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+        </command>
+        <command name="p2Follow">
+            <description>PWFS2 probe following</description>
+            <parameter name="followState">
+                <channel>pwfs2Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="tcs::pause">
+            <record>pause</record>
+            <description>Pause</description>
+        </command>
+        <command name="scienceFoldPark">
+            <record>scienceFoldPark</record>
+            <description>Park science fold</description>
+        </command>
+        <command name="wavelSourceB">
+            <description>Source B wavelength</description>
+            <parameter name="wavel">
+                <channel>wavelSourceB.A</channel>
+                <type>DOUBLE</type>
+                <description>Wavelength (mu)</description>
+            </parameter>
+        </command>
+        <command name="ngsPr3Follow">
+            <description>Canopus Guide Star 3 following</description>
+            <parameter name="followState">
+                <channel>ngs3Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="g3Guide">
+            <description>G3 guide configuration</description>
+            <parameter name="nodcchopc">
+                <channel>configG3.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodbchopb">
+                <channel>configG3.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configG3.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+            <parameter name="nodachopb">
+                <channel>configG3.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configG3.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodcchopb">
+                <channel>configG3.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configG3.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configG3.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configG3.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+        </command>
+        <command name="m2GuideReset">
+            <record>m2GuideReset</record>
+            <description>Reset M2 guide configuration</description>
+        </command>
+        <command name="aoStats">
+            <description>ALTAIR statistics</description>
+            <parameter name="trigtime">
+                <channel>aoStats.D</channel>
+                <type>STRING</type>
+                <description>Trigger time</description>
+            </parameter>
+            <parameter name="samples">
+                <channel>aoStats.B</channel>
+                <type>STRING</type>
+                <description>Samples</description>
+            </parameter>
+            <parameter name="filename">
+                <channel>aoStats.A</channel>
+                <type>STRING</type>
+                <description>DHS file name</description>
+            </parameter>
+            <parameter name="interval">
+                <channel>aoStats.C</channel>
+                <type>STRING</type>
+                <description>Interval</description>
+            </parameter>
+        </command>
+        <command name="oiwfsGuide">
+            <description>OIWFS guide configuration</description>
+            <parameter name="nodbchopb">
+                <channel>configOiwfs.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configOiwfs.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+            <parameter name="nodcchopb">
+                <channel>configOiwfs.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configOiwfs.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configOiwfs.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodachopb">
+                <channel>configOiwfs.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configOiwfs.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+            <parameter name="nodcchopc">
+                <channel>configOiwfs.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configOiwfs.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+        </command>
+        <command name="odgw3Follow">
+            <description>ODGW 3 following</description>
+            <parameter name="followState">
+                <channel>odgw3Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="odgw1Follow">
+            <description>ODGW 1 following</description>
+            <parameter name="followState">
+                <channel>odgw1Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="offsetPoC1">
+            <description>Offset pointing origin C1</description>
+            <parameter name="y">
+                <channel>offsetPoC1.B</channel>
+                <type>DOUBLE</type>
+                <description>0 Y</description>
+            </parameter>
+            <parameter name="x">
+                <channel>offsetPoC1.A</channel>
+                <type>DOUBLE</type>
+                <description>0 X</description>
+            </parameter>
+        </command>
+        <command name="oiwfsStopObserve">
+            <record>oiwfsStopObserve</record>
+            <description>Stop OIWFS</description>
+        </command>
+        <command name="g1Guide">
+            <description>G1 guide configuration</description>
+            <parameter name="nodcchopb">
+                <channel>configG1.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodcchopc">
+                <channel>configG1.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configG1.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+            <parameter name="nodachopb">
+                <channel>configG1.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configG1.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configG1.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+            <parameter name="nodbchopb">
+                <channel>configG1.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configG1.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configG1.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+        </command>
+        <command name="g2Guide">
+            <description>G2 guide configuration</description>
+            <parameter name="nodachopb">
+                <channel>configG2.B</channel>
+                <type>STRING</type>
+                <description>Nod A Chop B</description>
+            </parameter>
+            <parameter name="nodcchopa">
+                <channel>configG2.G</channel>
+                <type>STRING</type>
+                <description>Nod C Chop A</description>
+            </parameter>
+            <parameter name="nodbchopb">
+                <channel>configG2.E</channel>
+                <type>STRING</type>
+                <description>Nod B Chop B</description>
+            </parameter>
+            <parameter name="nodachopc">
+                <channel>configG2.C</channel>
+                <type>STRING</type>
+                <description>Nod A Chop C</description>
+            </parameter>
+            <parameter name="nodachopa">
+                <channel>configG2.A</channel>
+                <type>STRING</type>
+                <description>Nod A Chop A</description>
+            </parameter>
+            <parameter name="nodcchopc">
+                <channel>configG2.I</channel>
+                <type>STRING</type>
+                <description>Nod C Chop C</description>
+            </parameter>
+            <parameter name="nodbchopa">
+                <channel>configG2.D</channel>
+                <type>STRING</type>
+                <description>Nod B Chop A</description>
+            </parameter>
+            <parameter name="nodcchopb">
+                <channel>configG2.H</channel>
+                <type>STRING</type>
+                <description>Nod C Chop B</description>
+            </parameter>
+            <parameter name="nodbchopc">
+                <channel>configG2.F</channel>
+                <type>STRING</type>
+                <description>Nod B Chop C</description>
+            </parameter>
+        </command>
+        <command name="odgw2Park">
+            <description>ODGW 2 park</description>
+            <parameter name="command">
+                <channel>odgw2Park.A</channel>
+                <type>STRING</type>
+                <description>Park command</description>
+            </parameter>
+        </command>
+        <command name="hrwfsPark">
+            <record>hrwfsPark</record>
+            <description>Park acqcam pickoff</description>
+        </command>
+        <command name="tcs::observe">
+            <record>observe</record>
+            <description>Observe</description>
+        </command>
+        <command name="pwfs1Park">
+            <record>pwfs1Park</record>
+            <description>Park P1</description>
+        </command>
+        <command name="odgw4Follow">
+            <description>ODGW 4 following</description>
+            <parameter name="followState">
+                <channel>odgw4Follow.A</channel>
+                <type>STRING</type>
+                <description>State</description>
+            </parameter>
+        </command>
+        <command name="ngsPr2Park">
+            <record>ngsPr2Park</record>
+            <description>Canopus probe 2 park</description>
+        </command>
+    </Apply>
+    <!--
+    <Apply name="aolgsApply">
+        <top>ao</top>
+        <apply>wfcs:strap</apply>
+        <car>wfcs:strapGtCtl.BUSY</car>
+        <description>Strap controller</description>
+        <command name="strapCorrCtl">
+            <record>wfcs:strapCorrCtl</record>
+            <description>ALTAIR sfo</description>
+            <parameter name="onoff">
+                <channel>wfcs:strapCorrCtl.A</channel>
+                <type>STRING</type>
+                <description>Strap onoff loop control</description>
+            </parameter>
+        </command>
+        <command name="aoStrap">
+            <record>wfcs:strapGtCtl</record>
+            <description>ALTAIR strap</description>
+            <parameter name="gate">
+                <channel>wfcs:strapGtCtl.A</channel>
+                <type>STRING</type>
+                <description>Gate control</description>
+            </parameter>
+        </command>
+        <command name="aoSfoLoop">
+            <description>ALTAIR sfo</description>
+            <parameter name="onoff">
+                <channel>cc:lgszoomSfoLoop</channel>
+                <type>STRING</type>
+                <description>Sfo loop control</description>
+            </parameter>
+        </command>
+    </Apply>
+    -->
+    <Status name="tcsApply">
+        <top>tcs</top>
+        <attribute name="mess">
+            <channel>applyC.OMSS</channel>
+            <type>STRING</type>
+            <description>Command completion message</description>
+        </attribute>
+    </Status>
+    <Status name="aolgs">
+        <top>ao</top>
+        <!--
+        <attribute name="strapTPStat">
+            <channel>strapDevStatus.VALL</channel>
+            <type>STRING</type>
+            <description>STRAP Temp Ctl Status (1:OK, 0:not OK)</description>
+        </attribute>
+        <attribute name="strapgate">
+            <channel>strapDevStatus.VALH</channel>
+            <type>STRING</type>
+            <description>STRAP gate level</description>
+        </attribute>
+        -->
+        <attribute name="straploop">
+            <channel>wfcs:strapCorrCtl.VALA</channel>
+            <type>INTEGER</type>
+            <description>STRAP loop</description>
+        </attribute>
+        <!--
+        <attribute name="strapRTStat">
+            <channel>strapDevStatus.VALO</channel>
+            <type>STRING</type>
+            <description>STRAP RT Ctl Status (1:OK, 0:not OK)</description>
+        </attribute>
+        <attribute name="strapHVStat">
+            <channel>strapDevStatus.VALI</channel>
+            <type>STRING</type>
+            <description>STRAP HVolt Status (1:OK, 0:not OK)</description>
+        </attribute>
+        <attribute name="sfoloop">
+            <channel>cc:lgszoomSfoLoop</channel>
+            <type>STRING</type>
+            <description>Sfo loop</description>
+        </attribute>
+        -->
+    </Status>
+    <Status name="tcsstate">
+        <top>ao</top>
+        <attribute name="aowfsOn">
+            <channel>wfcs:loopRunning</channel>
+            <type>DOUBLE</type>
+            <description>AO loop on</description>
+        </attribute>
+        <attribute name="decson">
+            <channel>chopControl.VALB</channel>
+            <type>STRING</type>
+            <description>SCS DECS on flag</description>
+            <top>m2</top>
+        </attribute>
+        <attribute name="g3MapName">
+            <channel>guiderConfig.VALC</channel>
+            <type>STRING</type>
+            <description>Name of GeMS WFS for G3</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="port1Label">
+            <channel>port:port1</channel>
+            <type>STRING</type>
+            <description>ISS port 1 label</description>
+            <top>ag</top>
+        </attribute>
+        <!--
+        <attribute name="ngs1Follow">
+            <channel>ngsPr1FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 1 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="ngs2Follow">
+            <channel>ngsPr2FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 2 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="ngs3Follow">
+            <channel>ngsPr3FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 3 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw1Follow">
+            <channel>odgw1FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 1 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw2Follow">
+            <channel>odgw2FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 2 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw3Follow">
+            <channel>odgw3FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 3 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw4Follow">
+            <channel>odgw4FollowStat.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 4 in follow mode</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="p1nodachopa">
+            <channel>configPwfs1.VALA</channel>
+            <type>STRING</type>
+            <description>P1 nodachopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodachopb">
+            <channel>configPwfs1.VALB</channel>
+            <type>STRING</type>
+            <description>P1 nodachopb  </description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodachopc">
+            <channel>configPwfs1.VALC</channel>
+            <type>STRING</type>
+            <description>P1 nodachopc  </description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodbchopa">
+            <channel>configPwfs1.VALD</channel>
+            <type>STRING</type>
+            <description>P1 nodbchopa  </description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodbchopb">
+            <channel>configPwfs1.VALE</channel>
+            <type>STRING</type>
+            <description>P1 nodbchopb  </description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodbchopc">
+            <channel>configPwfs1.VALF</channel>
+            <type>STRING</type>
+            <description>P1 nodbchopc </description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodcchopa">
+            <channel>configPwfs1.VALG</channel>
+            <type>STRING</type>
+            <description>P1 nodcchopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodcchopb">
+            <channel>configPwfs1.VALH</channel>
+            <type>STRING</type>
+            <description>P1 nodcchopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1nodcchopc">
+            <channel>configPwfs1.VALI</channel>
+            <type>STRING</type>
+            <description>P1 nodcchopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodachopa">
+            <channel>configPwfs2.VALA</channel>
+            <type>STRING</type>
+            <description>P2 nodachopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodachopb">
+            <channel>configPwfs2.VALB</channel>
+            <type>STRING</type>
+            <description>P2 nodachopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodachopc">
+            <channel>configPwfs2.VALC</channel>
+            <type>STRING</type>
+            <description>P2 nodachopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodbchopa">
+            <channel>configPwfs2.VALD</channel>
+            <type>STRING</type>
+            <description>P2 nodbchopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodbchopb">
+            <channel>configPwfs2.VALE</channel>
+            <type>STRING</type>
+            <description>P2 nodbchopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodbchopc">
+            <channel>configPwfs2.VALF</channel>
+            <type>STRING</type>
+            <description>P2 nodbchopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodcchopa">
+            <channel>configPwfs2.VALG</channel>
+            <type>STRING</type>
+            <description>P2 nodcchopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodcchopb">
+            <channel>configPwfs2.VALH</channel>
+            <type>STRING</type>
+            <description>P2 nodcchopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2nodcchopc">
+            <channel>configPwfs2.VALI</channel>
+            <type>STRING</type>
+            <description>P2 nodcchopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodachopa">
+            <channel>configOiwfs.VALA</channel>
+            <type>STRING</type>
+            <description>OI nodachopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodachopb">
+            <channel>configOiwfs.VALB</channel>
+            <type>STRING</type>
+            <description>OI nodachopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodachopc">
+            <channel>configOiwfs.VALC</channel>
+            <type>STRING</type>
+            <description>OI nodachopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodbchopa">
+            <channel>configOiwfs.VALD</channel>
+            <type>STRING</type>
+            <description>OI nodbchopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodbchopb">
+            <channel>configOiwfs.VALE</channel>
+            <type>STRING</type>
+            <description>OI nodbchopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodbchopc">
+            <channel>configOiwfs.VALF</channel>
+            <type>STRING</type>
+            <description>OI nodbchopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodcchopa">
+            <channel>configOiwfs.VALG</channel>
+            <type>STRING</type>
+            <description>OI nodcchopa</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodcchopb">
+            <channel>configOiwfs.VALH</channel>
+            <type>STRING</type>
+            <description>OI nodcchopb</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oinodcchopc">
+            <channel>configOiwfs.VALI</channel>
+            <type>STRING</type>
+            <description>OI nodcchopc</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodachopa">
+            <channel>configG1.VALA</channel>
+            <type>STRING</type>
+            <description>G1 Nod A Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodachopb">
+            <channel>configG1.VALB</channel>
+            <type>STRING</type>
+            <description>G1 Nod A Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodachopc">
+            <channel>configG1.VALC</channel>
+            <type>STRING</type>
+            <description>G1 Nod A Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodbchopa">
+            <channel>configG1.VALD</channel>
+            <type>STRING</type>
+            <description>G1 Nod B Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodbchopb">
+            <channel>configG1.VALE</channel>
+            <type>STRING</type>
+            <description>G1 Nod B Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodbchopc">
+            <channel>configG1.VALF</channel>
+            <type>STRING</type>
+            <description>G1 Nod B Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodcchopa">
+            <channel>configG1.VALG</channel>
+            <type>STRING</type>
+            <description>G1 Nod C Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodcchopb">
+            <channel>configG1.VALH</channel>
+            <type>STRING</type>
+            <description>G1 Nod C Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1nodcchopc">
+            <channel>configG1.VALI</channel>
+            <type>STRING</type>
+            <description>G1 Nod C Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodachopa">
+            <channel>configG2.VALA</channel>
+            <type>STRING</type>
+            <description>G2 Nod A Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodachopb">
+            <channel>configG2.VALB</channel>
+            <type>STRING</type>
+            <description>G2 Nod A Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodachopc">
+            <channel>configG2.VALC</channel>
+            <type>STRING</type>
+            <description>G2 Nod A Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodbchopa">
+            <channel>configG2.VALD</channel>
+            <type>STRING</type>
+            <description>G2 Nod B Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodbchopb">
+            <channel>configG2.VALE</channel>
+            <type>STRING</type>
+            <description>G2 Nod B Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodbchopc">
+            <channel>configG2.VALF</channel>
+            <type>STRING</type>
+            <description>G2 Nod B Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodcchopa">
+            <channel>configG2.VALG</channel>
+            <type>STRING</type>
+            <description>G2 Nod C Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodcchopb">
+            <channel>configG2.VALH</channel>
+            <type>STRING</type>
+            <description>G2 Nod C Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2nodcchopc">
+            <channel>configG2.VALI</channel>
+            <type>STRING</type>
+            <description>G2 Nod C Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodachopa">
+            <channel>configG3.VALA</channel>
+            <type>STRING</type>
+            <description>G3 Nod A Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodachopb">
+            <channel>configG3.VALB</channel>
+            <type>STRING</type>
+            <description>G3 Nod A Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodachopc">
+            <channel>configG3.VALC</channel>
+            <type>STRING</type>
+            <description>G3 Nod A Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodbchopa">
+            <channel>configG3.VALD</channel>
+            <type>STRING</type>
+            <description>G3 Nod B Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodbchopb">
+            <channel>configG3.VALE</channel>
+            <type>STRING</type>
+            <description>G3 Nod B Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodbchopc">
+            <channel>configG3.VALF</channel>
+            <type>STRING</type>
+            <description>G3 Nod B Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodcchopa">
+            <channel>configG3.VALG</channel>
+            <type>STRING</type>
+            <description>G3 Nod C Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodcchopb">
+            <channel>configG3.VALH</channel>
+            <type>STRING</type>
+            <description>G3 Nod C Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3nodcchopc">
+            <channel>configG3.VALI</channel>
+            <type>STRING</type>
+            <description>G3 Nod C Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodachopa">
+            <channel>configG4.VALA</channel>
+            <type>STRING</type>
+            <description>G4 Nod A Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodachopb">
+            <channel>configG4.VALB</channel>
+            <type>STRING</type>
+            <description>G4 Nod A Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodachopc">
+            <channel>configG4.VALC</channel>
+            <type>STRING</type>
+            <description>G4 Nod A Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodbchopa">
+            <channel>configG4.VALD</channel>
+            <type>STRING</type>
+            <description>G4 Nod B Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodbchopb">
+            <channel>configG4.VALE</channel>
+            <type>STRING</type>
+            <description>G4 Nod B Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodbchopc">
+            <channel>configG4.VALF</channel>
+            <type>STRING</type>
+            <description>G4 Nod B Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodcchopa">
+            <channel>configG4.VALG</channel>
+            <type>STRING</type>
+            <description>G4 Nod C Chop A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodcchopb">
+            <channel>configG4.VALH</channel>
+            <type>STRING</type>
+            <description>G4 Nod C Chop B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g4nodcchopc">
+            <channel>configG4.VALI</channel>
+            <type>STRING</type>
+            <description>G4 Nod C Chop C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="chopon">
+            <channel>chopControl.VALA</channel>
+            <type>STRING</type>
+            <description>SCS Chop on flag</description>
+            <top>m2</top>
+        </attribute>
+        <attribute name="m2GuideCmdIn">
+            <channel>m2GuideControl.A</channel>
+            <type>STRING</type>
+            <description>M2 Guide control input</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="agInPosition">
+            <channel>agInPosCalc</channel>
+            <type>DOUBLE</type>
+            <description>A&amp;G in position</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="aoName">
+            <channel>aoName</channel>
+            <type>STRING</type>
+            <description>AO fold position</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="port3Label">
+            <channel>port:port3</channel>
+            <type>STRING</type>
+            <description>ISS port 3 label</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="cmprepy">
+            <channel>aoPrepareCm.VALA</channel>
+            <type>STRING</type>
+            <description>Prepared control matrix Y</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="aogsy">
+            <channel>drives:driveAOS.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Guide star Y</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oiParked">
+            <channel>oi:probeParked</channel>
+            <type>INTEGER</type>
+            <description>OI probe parked</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="m2p2Guide">
+            <channel>drives:p2GuideConfig</channel>
+            <type>STRING</type>
+            <description>M2 P2 guide config</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="chopState">
+            <channel>sad:chopState</channel>
+            <type>STRING</type>
+            <description>Chop State</description>
+            <top>tcs</top>
+        </attribute>
+        <!--
+        <attribute name="ngs1Parked">
+            <channel>drives:ngsPr1Parked.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 1 probe parked</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="ngs2Parked">
+            <channel>drives:ngsPr1Parked.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 2 probe parked</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="ngs3Parked">
+            <channel>drives:ngsPr3Parked.VAL</channel>
+            <type>STRING</type>
+            <description>Canopus 3 probe parked</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="port5Label">
+            <channel>port:port5</channel>
+            <type>STRING</type>
+            <description>ISS port 5 label</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="chopFreq">
+            <channel>sad:chopFreq</channel>
+            <type>DOUBLE</type>
+            <description>Chop Frequency</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="aoSettled">
+            <channel>wfcs:settled</channel>
+            <type>DOUBLE</type>
+            <description>AO loop settled</description>
+        </attribute>
+        <attribute name="oiFollowS">
+            <channel>oi:followS</channel>
+            <type>STRING</type>
+            <description>OI follow mode</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="g4MapName">
+            <channel>guiderConfig.VALD</channel>
+            <type>STRING</type>
+            <description>Name of GeMS WFS for G4</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="agHwName">
+            <channel>drives:agHwName</channel>
+            <type>STRING</type>
+            <description>AcqCam pickoff</description>
+            <top>tcs</top>
+        </attribute>
+        <!--
+        <attribute name="pwfs2On">
+            <channel>drives:p2Integrating</channel>
+            <type>STRING</type>
+            <description>P2 integrating</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="odgw4Parked">
+            <channel>drives:odgw4Parked.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 4 parked</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw3Parked">
+            <channel>drives:odgw3Parked.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 3 parked</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g2MapName">
+            <channel>guiderConfig.VALB</channel>
+            <type>STRING</type>
+            <description>Name of GeMS WFS for G2</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="xoffsetPoA1">
+            <channel>offsetPoA1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="sourceAObjectName">
+            <channel>sad:sourceAObjectName</channel>
+            <type>STRING</type>
+            <description>Object name</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="conmatx">
+            <channel>conMatY</channel>
+            <type>DOUBLE</type>
+            <description>Control matrix star X</description>
+        </attribute>
+        <attribute name="conmaty">
+            <channel>conMatX</channel>
+            <type>DOUBLE</type>
+            <description>Control matrix star Y</description>
+        </attribute>
+        <attribute name="p1FollowS">
+            <channel>p1:followS</channel>
+            <type>STRING</type>
+            <description>P1 follow mode</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="nodState">
+            <channel>drives:nodState</channel>
+            <type>STRING</type>
+            <description>Nod State</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw1Parked">
+            <channel>drives:odgw1Parked.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 1 parked</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="inPosition">
+            <channel>sad:inPosition</channel>
+            <type>STRING</type>
+            <description>TCS in position</description>
+            <top>tcs</top>
+        </attribute>
+        <!--
+        <attribute name="cmprepBusy">
+            <channel>prepareCm.BUSY</channel>
+            <type>STRING</type>
+            <description>PrepareCm busy</description>
+        </attribute>
+        -->
+        <attribute name="instrAA">
+            <channel>sad:instrAA</channel>
+            <type>DOUBLE</type>
+            <description>Instrument alignment angle</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g1Wavelength">
+            <channel>sad:g1Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G1 Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="chopDutyCycle">
+            <channel>sad:chopDutyCycle</channel>
+            <type>DOUBLE</type>
+            <description>Chop Duty Cycle</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="g3Wavelength">
+            <channel>sad:g3Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G3 Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="oiguideoutput">
+            <channel>dc:outGuide</channel>
+            <type>STRING</type>
+            <description>OI guide signal output</description>
+            <top>oiwfs</top>
+        </attribute>
+        <!--
+        <attribute name="oiwfsOn">
+            <channel>drives:oiIntegrating</channel>
+            <type>STRING</type>
+            <description>OI integrating</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="cmprepx">
+            <channel>aoPrepareCm.VALB</channel>
+            <type>STRING</type>
+            <description>Prepared control matrix X</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="m2aoGuide">
+            <channel>drives:aoGuideConfig</channel>
+            <type>STRING</type>
+            <description>M2 AO guide config</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p1Parked">
+            <channel>p1:probeParked</channel>
+            <type>INTEGER</type>
+            <description>P1 probe parked</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="sfName">
+            <channel>sfName</channel>
+            <type>STRING</type>
+            <description>Science fold position</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="aogsx">
+            <channel>drives:driveAOS.VALC</channel>
+            <type>DOUBLE</type>
+            <description>Guide star X</description>
+            <top>tcs</top>
+        </attribute>
+        <!--
+        <attribute name="m1Guide">
+            <channel>im:m1GuideOn</channel>
+            <type>STRING</type>
+            <description>M1 guide</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="m2p1Guide">
+            <channel>drives:p1GuideConfig</channel>
+            <type>STRING</type>
+            <description>M2 P1 guide config</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="lgsp1On">
+            <channel>lgsttSource.VALA</channel>
+            <type>INTEGER</type>
+            <description>LgsP1 mode</description>
+        </attribute>
+        <attribute name="agHwParked">
+            <channel>hwParked</channel>
+            <type>STRING</type>
+            <description>AcqCam parked      </description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="p2Parked">
+            <channel>p2:probeParked</channel>
+            <type>INTEGER</type>
+            <description>P2 probe parked</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="comaCorrect">
+            <channel>comaCorrect</channel>
+            <type>STRING</type>
+            <description>Apply Coma Corrections</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="odgw2Parked">
+            <channel>drives:odgw2Parked.VAL</channel>
+            <type>STRING</type>
+            <description>ODGW 2 parked</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="rotTrackFrame">
+            <channel>sad:rotTrackFrame</channel>
+            <type>STRING</type>
+            <description>Cass Rotator tracking frame</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="p2FollowS">
+            <channel>p2:followS</channel>
+            <type>STRING</type>
+            <description>P2 follow mode</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="g2Wavelength">
+            <channel>sad:g2Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G2 Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="m1GuideSource">
+            <channel>m1GuideConfig.VALB</channel>
+            <type>STRING</type>
+            <description>M1 guide source</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="lgsoiOn">
+            <channel>lgsttSource.VALB</channel>
+            <type>INTEGER</type>
+            <description>LgsOI mode</description>
+        </attribute>
+        <!--
+        <attribute name="pwfs1On">
+            <channel>drives:p1Integrating</channel>
+            <type>STRING</type>
+            <description>P1 integrating</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="sourceAWavelength">
+            <channel>sad:sourceAWavelength.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Source A Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="sourceBWavelength">
+            <channel>sad:sourceBWavelength.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Source B Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="sourceCWavelength">
+            <channel>sad:sourceCWavelength.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Source C Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="port2Label">
+            <channel>port:port2</channel>
+            <type>STRING</type>
+            <description>ISS port 2 label</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="g1MapName">
+            <channel>guiderConfig.VALA</channel>
+            <type>STRING</type>
+            <description>Name of GeMS WFS for G1</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="chopAngle">
+            <channel>sad:chopPA</channel>
+            <type>DOUBLE</type>
+            <description>Chop PA</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="chopThrow">
+            <channel>sad:chopThrow</channel>
+            <type>DOUBLE</type>
+            <description>Chop Throw</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="sfParked">
+            <channel>sfParked</channel>
+            <type>STRING</type>
+            <description>Science Fold parked</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="g4Wavelength">
+            <channel>sad:g4Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G4 Wavelength</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="aoFollowS">
+            <channel>followS</channel>
+            <type>STRING</type>
+            <description>AO follow mode</description>
+        </attribute>
+        <!--
+        <attribute name="m2GuideState">
+            <channel>om:m2GuideState</channel>
+            <type>STRING</type>
+            <description>M2 guiding state</description>
+            <top>tcs</top>
+        </attribute>
+        -->
+        <attribute name="xoffsetPoA1">
+            <channel>offsetPoA1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset source A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="yoffsetPoA1">
+            <channel>offsetPoA1.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Y offset source A</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="xoffsetPoB1">
+            <channel>offsetPoB1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset source B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="yoffsetPoB1">
+            <channel>offsetPoB1.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Y offset source B</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="xoffsetPoC1">
+            <channel>offsetPoC1.VALA</channel>
+            <type>DOUBLE</type>
+            <description>X offset source C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="yoffsetPoC1">
+            <channel>offsetPoC1.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Y offset source C</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="m2oiGuide">
+            <channel>drives:oiGuideConfig</channel>
+            <type>STRING</type>
+            <description>M2 OI guide config</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="absorbTipTilt">
+            <channel>absorbTipTiltFlag</channel>
+            <type>INTEGER</type>
+            <description>Absorb Tip/Tilt</description>
+            <top>tcs</top>
+        </attribute>
+        <attribute name="port4Label">
+            <channel>port:port4</channel>
+            <type>STRING</type>
+            <description>ISS port 4 label</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="chopBeam">
+            <channel>sad:chopBeam.VAL</channel>
+            <type>STRING</type>
+            <description>M2 beam</description>
+            <top>tcs</top>
+        </attribute>
+    </Status>
+</Records>
