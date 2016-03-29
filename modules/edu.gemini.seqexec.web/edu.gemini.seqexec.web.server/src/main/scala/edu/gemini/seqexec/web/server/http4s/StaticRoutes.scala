@@ -28,8 +28,10 @@ object StaticRoutes {
     }
   }
 
+  val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".woff", ".woff2", ".ttf")
+
   val service = HttpService {
-    case req if req.pathInfo == "/"                          => req.serve("/index.html")
-    case req if req.endsWith(".html", ".js", ".map", ".css") => req.serve()
+    case req if req.pathInfo == "/"                  => req.serve("/index.html")
+    case req if req.endsWith(supportedExtension: _*) => req.serve()
   }
 }
