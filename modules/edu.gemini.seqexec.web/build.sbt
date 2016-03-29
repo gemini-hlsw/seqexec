@@ -56,7 +56,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
       JQuery.value,
       ScalaCSS.value,
       ScalaJSDom.value
-    ) ++ ReactScalaJS.value
+    ) ++ ReactScalaJS.value ++ Diode.value
   )
   .dependsOn(edu_gemini_seqexec_web_shared_JS)
 

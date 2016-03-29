@@ -1,4 +1,4 @@
-
+  /* CSS used with the static version of the page, used for development only */
   body {
     background-color: #FFFFFF;
   }
@@ -26,13 +26,14 @@
     padding: 5em 0em;
   }
 
-@media only screen and ( max-width: 767px ) {
-  .not.mobile {
-    display: none !important;
+  @media only screen and ( max-width: 767px ) {
+    .not.mobile {
+      display: none !important;
+    }
   }
-}
-@media only screen and ( min-width: 768px ) {
-  .only.mobile {
-    display: none !important;
+
+  @media only screen and ( min-width: 768px ) {
+    .only.mobile {
+      display: none !important;
+    }
   }
-}

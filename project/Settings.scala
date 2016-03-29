@@ -33,6 +33,7 @@ object Settings {
     val scalaCSS     = "0.4.0"
     val scalaZJS     = "7.2.1"
     val uPickle      = "0.3.8"
+    val diode        = "0.5.0"
 
     // Java libraries
     val scalaZ       = "7.1.6"
@@ -88,6 +89,10 @@ object Settings {
       "com.github.japgolly.scalajs-react" %%% "core"      % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "extra"     % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalacss"      %%% "ext-react" % LibraryVersions.scalaCSS
+    ))
+    val Diode = Def.setting(Seq(
+      "me.chrons" %%% "diode"       % LibraryVersions.diode,
+      "me.chrons" %%% "diode-react" % LibraryVersions.diode
     ))
     val ScalaCSS   = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
     val ScalaJSDom = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)
