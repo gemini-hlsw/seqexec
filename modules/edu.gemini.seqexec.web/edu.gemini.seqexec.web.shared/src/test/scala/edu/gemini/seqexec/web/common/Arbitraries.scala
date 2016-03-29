@@ -21,4 +21,7 @@ trait Arbitraries {
       } yield Step(i, v)
     }
 
+  implicit val arbSequenceState: Arbitrary[SequenceState] =
+    Arbitrary(Gen.oneOf[SequenceState](SequenceState.Completed, SequenceState.Error, SequenceState.NotRunning, SequenceState.Running))
+
 }

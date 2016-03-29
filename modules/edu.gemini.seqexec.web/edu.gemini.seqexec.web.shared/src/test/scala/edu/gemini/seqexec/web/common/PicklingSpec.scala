@@ -25,4 +25,10 @@ class PicklingSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
       read[Sequence](write(sequence)) shouldEqual sequence
     }
   }
+  "SequenceInQueue" should "upickle/depickle" in {
+    forAll { (i: String, s: SequenceState, inst: String, e: Option[String]) =>
+      val sequenceInQueue = SequenceInQueue(i, s, inst, e)
+      read[SequenceInQueue](write(sequenceInQueue)) shouldEqual sequenceInQueue
+    }
+  }
 }
