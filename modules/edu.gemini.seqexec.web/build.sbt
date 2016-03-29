@@ -51,7 +51,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       ScalaZCoreJS.value,
-      "org.querki"                        %%% "jquery-facade" % LibraryVersions.scalaJQuery,
+      JQuery.value,
       ScalaCSS.value,
       ScalaJSDom.value
     ) ++ ReactScalaJS.value
