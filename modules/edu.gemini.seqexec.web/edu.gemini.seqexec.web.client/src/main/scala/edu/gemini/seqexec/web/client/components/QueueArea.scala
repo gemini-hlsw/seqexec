@@ -1,20 +1,114 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.react.ModelProxy
+
+import diode.data.Pot
+import diode.react.ReactPot._
+import diode.react._
 import edu.gemini.seqexec.web.client.model.RefreshQueue
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.common.SeqexecQueue
+import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
 import scalacss.ScalaCssReact._
 
+case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
+
+object QueueTableBody {
+  val component = ReactComponentB[Props]("QueueTableBody")
+    .stateless
+    .render_P( p =>
+      <.tbody(
+        p.queue().render( q =>
+          q.queue.map( s =>
+            <.tr(
+              ^.classSet(
+                "positive" -> (s.state == SequenceState.Running),
+                "negative" -> (s.state == SequenceState.Error)
+              ),
+              ^.key := s"item.queue.${s.id}",
+              <.td(
+                ^.cls := "collapsing",
+                s.id
+              ),
+              <.td(s.state.toString),
+              <.td(s.instrument),
+              <.td(
+                SeqexecStyles.notInMobile,
+                s.error.map(_ => <.p(Icon("attention"), " Error")).getOrElse(<.p("-"))
+              )
+            )
+          )
+        ),
+        <.tr(
+          <.td("\u00a0"),
+          <.td(" -- "),
+          <.td(" -- "),
+          <.td(
+            SeqexecStyles.notInMobile,
+            " ")
+        ),
+        <.tr(
+          <.td(
+            ^.cls := "collapsing",
+            "GS-2016A-Q-0-1"
+          ),
+          <.td("Not Started"),
+          <.td("GPI"),
+          <.td(
+            SeqexecStyles.notInMobile,
+            "-"
+          )
+        ),
+        <.tr(
+          ^.cls := "positive",
+          <.td("GS-2016A-Q-5-3"),
+          <.td("Running"),
+          <.td("GMOS-S"),
+          <.td(
+            SeqexecStyles.notInMobile,
+            "-"
+          )
+        ),
+        <.tr(
+          ^.cls := "negative",
+          <.td("GS-2016A-Q-4-1"),
+          <.td("Error"),
+          <.td("Flamingos 2"),
+          <.td(
+            SeqexecStyles.notInMobile,
+            Icon("attention"),
+            " Error"
+          )
+        ),
+        <.tr(
+          <.td("\u00a0"),
+          <.td(" "),
+          <.td(" "),
+          <.td(
+            SeqexecStyles.notInMobile,
+            " ")
+        ),
+        <.tr(
+          <.td("\u00a0"),
+          <.td(" "),
+          <.td(" "),
+          <.td(
+            SeqexecStyles.notInMobile,
+            " ")
+        )
+      )
+    )
+    .build
+
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
+
+}
+
 /**
   * Displays the elements on the queue
   */
 object QueueArea {
-
-  case class Props(queue: ModelProxy[Option[SeqexecQueue]])
 
   class Backend($: BackendScope[Props, Unit]) {
     def load(p: Props) =
@@ -68,57 +162,7 @@ object QueueArea {
                     )
                   )
                 ),
-                <.tbody(
-                  <.tr(
-                    <.td(
-                      ^.cls := "collapsing",
-                      "GS-2016A-Q-0-1"
-                    ),
-                    <.td("Not Started"),
-                    <.td("GPI"),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      "-"
-                    )
-                  ),
-                  <.tr(
-                    ^.cls := "positive",
-                    <.td("GS-2016A-Q-5-3"),
-                    <.td("Running"),
-                    <.td("GMOS-S"),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      "-"
-                    )
-                  ),
-                  <.tr(
-                    ^.cls := "negative",
-                    <.td("GS-2016A-Q-4-1"),
-                    <.td("Error"),
-                    <.td("Flamingos 2"),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      Icon("attention"),
-                      " Error"
-                    )
-                  ),
-                  <.tr(
-                    <.td("\u00a0"),
-                    <.td(" "),
-                    <.td(" "),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      " ")
-                  ),
-                  <.tr(
-                    <.td("\u00a0"),
-                    <.td(" "),
-                    <.td(" "),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      " ")
-                  )
-                ),
+                QueueTableBody(p.queue),
                 <.tfoot(
                   <.tr(
                     <.th(
@@ -159,6 +203,6 @@ object QueueArea {
     .componentDidMount($ => $.backend.load($.props))
     .build
 
-  def apply(p: ModelProxy[Option[SeqexecQueue]]) = component(Props(p))
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
 
 }
