@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
+import edu.gemini.seqexec.web.client.model.RefreshQueue
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.SeqexecQueue
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -16,7 +17,11 @@ object QueueArea {
   case class Props(queue: ModelProxy[Option[SeqexecQueue]])
 
   class Backend($: BackendScope[Props, Unit]) {
-    def render() = {
+    def load(p: Props) =
+      // Request to load the queue if not present
+      Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(RefreshQueue))
+
+    def render(p: Props) = {
       <.div(
         ^.cls := "ui grid container",
         <.div(
@@ -151,6 +156,7 @@ object QueueArea {
   val component = ReactComponentB[Props]("QueueArea")
     .stateless
     .renderBackend[Backend]
+    .componentDidMount($ => $.backend.load($.props))
     .build
 
   def apply(p: ModelProxy[Option[SeqexecQueue]]) = component(Props(p))

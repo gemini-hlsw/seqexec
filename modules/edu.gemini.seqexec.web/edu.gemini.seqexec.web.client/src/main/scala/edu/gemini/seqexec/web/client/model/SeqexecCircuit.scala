@@ -1,11 +1,18 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot}
+import diode.data.{Empty, Pot, Ready}
 import diode.react.ReactConnector
-import diode.{ActionHandler, Circuit, ModelRW}
+import diode.{ActionHandler, Circuit, Effect, ModelRW}
+import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.SeqexecQueue
 
-case class UpdateQueue(queue: Pot[SeqexecQueue])
+import scala.concurrent.ExecutionContext.Implicits.global
+
+// Actions
+
+// Request loading the queue
+case object RefreshQueue
+case class UpdatedQueue(queue: SeqexecQueue)
 
 /**
   * Handles actions related to todos
@@ -14,7 +21,11 @@ case class UpdateQueue(queue: Pot[SeqexecQueue])
   */
 class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   override def handle = {
-    case UpdateQueue(queue) => updated(queue)
+    case RefreshQueue        =>
+      // Call the backend requesting the queue
+      effectOnly(Effect(SeqexecWebClient.readQueue().map(UpdatedQueue)))
+    case UpdatedQueue(queue) =>
+      updated(Ready(queue))
   }
 }
 
