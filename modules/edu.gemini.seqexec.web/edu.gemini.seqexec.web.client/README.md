@@ -22,7 +22,7 @@ The project requires some new libraries on the scala side. Here is a summary of 
 
 * [react.js](https://facebook.github.io/react/) Already described
 * [Diode](https://github.com/ochrons/diode) For data flow and organization of the application
-* [uPickle](https://github.com/japgolly/upickle): Used for json serialization. Even though we have Argonaut already, uPickle runs on both sides of the equation. We may decide to use [BooPickle](https://github.com/ochrons/boopickle) instead for better performance
+* [uPickle](https://github.com/lihaoyi/upickle-pprint): Used for json serialization. Even though we have Argonaut already, uPickle runs on both sides of the equation. We may decide to use [BooPickle](https://github.com/ochrons/boopickle) instead for better performance
 * [ScalaCSS](https://github.com/japgolly/scalacss/) Type safe css
 * [Scala.js DOM](https://github.com/scala-js/scala-js-dom) Must have
 * [JQuery Facade](https://github.com/jducoeur/jquery-facade) Required to integrate with [SemanticUI](http://semantic-ui.com/), other uses are discouraged
