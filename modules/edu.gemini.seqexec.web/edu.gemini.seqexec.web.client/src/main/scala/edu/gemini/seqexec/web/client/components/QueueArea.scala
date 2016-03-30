@@ -1,8 +1,11 @@
 package edu.gemini.seqexec.web.client.components
 
+import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.common.SeqexecQueue
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
+
 import scalacss.ScalaCssReact._
 
 /**
@@ -10,7 +13,9 @@ import scalacss.ScalaCssReact._
   */
 object QueueArea {
 
-  class Backend($: BackendScope[Unit, Unit]) {
+  case class Props(queue: ModelProxy[Option[SeqexecQueue]])
+
+  class Backend($: BackendScope[Props, Unit]) {
     def render() = {
       <.div(
         ^.cls := "ui grid container",
@@ -143,11 +148,11 @@ object QueueArea {
     }
   }
 
-  val component = ReactComponentB[Unit]("QueueArea")
+  val component = ReactComponentB[Props]("QueueArea")
     .stateless
     .renderBackend[Backend]
-    .buildU
+    .build
 
-  def apply() = component()
+  def apply(p: ModelProxy[Option[SeqexecQueue]]) = component(Props(p))
 
 }
