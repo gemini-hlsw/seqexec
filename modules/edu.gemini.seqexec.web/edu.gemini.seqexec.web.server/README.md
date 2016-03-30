@@ -56,9 +56,3 @@ Now every time a file is changed in either the server or the client, scala.js wi
 The page can be reached at
 
 [http://localhost:9090/](http://localhost:9090)
-
-## TODO
-
-* Authentication
-* Review the decision of which backend to use
-* Package as a regular application

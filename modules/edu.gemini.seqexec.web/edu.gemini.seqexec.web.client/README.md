@@ -26,10 +26,3 @@ The project requires some new libraries on the scala side. Here is a summary of 
 * [ScalaCSS](https://github.com/japgolly/scalacss/) Type safe css
 * [Scala.js DOM](https://github.com/scala-js/scala-js-dom) Must have
 * [JQuery Facade](https://github.com/jducoeur/jquery-facade) Required to integrate with [SemanticUI](http://semantic-ui.com/), other uses are discouraged
-
-
-## TODO
-
-* Package the application compressing with fullOptJS
-* Authentication
-* Testing

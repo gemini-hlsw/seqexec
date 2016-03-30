@@ -8,4 +8,4 @@ The recommended way with a shared package is to use the `crossProject` feature o
 
 ## Testing
 
-Tests are done using `ScalaTest` and should be executed in both backends for completness	
+Tests are done using `ScalaTest` and should be executed in both backends for completness
