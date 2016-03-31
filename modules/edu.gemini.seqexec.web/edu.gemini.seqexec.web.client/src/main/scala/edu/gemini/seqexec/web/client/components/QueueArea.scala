@@ -5,6 +5,7 @@ import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model.UpdatedQueue
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
 import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
@@ -119,14 +120,7 @@ object QueueArea {
                   "Loading")
               )),
               p.queue().renderFailed(_ =>
-                <.div(
-                  ^.cls := "ui negative message",
-                  Icon("close"),
-                  <.div(
-                    ^.cls := "header",
-                    "Sorry, there was an error reading the queue from the server"
-                  )
-                )
+                CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
               ),
               <.table(
                 ^.cls := "ui selectable compact celled table unstackable",
