@@ -18,8 +18,9 @@ object QueueTableBody {
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
-  val emptyRow =
+  def emptyRow(k: String) =
     <.tr(
+      ^.key := k, // React requires unique keys
       <.td("\u00a0"),
       <.td("\u00a0"),
       <.td("\u00a0"),
@@ -32,6 +33,7 @@ object QueueTableBody {
     .stateless
     .render_P( p =>
       <.tbody(
+        // Render after data arrives
         p.queue().render( q =>
           q.queue.map(Some.apply).padTo(minRows, None).collect {
             case Some(s) =>
@@ -53,7 +55,7 @@ object QueueTableBody {
                 )
               )
             case _ =>
-              emptyRow
+              emptyRow(s"time.queue." + (1000*math.random).toInt)
           }
         )
       )
