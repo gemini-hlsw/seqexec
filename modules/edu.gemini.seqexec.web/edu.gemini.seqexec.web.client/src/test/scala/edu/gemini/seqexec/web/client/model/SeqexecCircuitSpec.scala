@@ -12,7 +12,7 @@ class SeqexecCircuitSpec extends FlatSpec with Matchers with PropertyChecks with
 
   "SeqexecCircuit" should "support queue updates" in {
     forAll { (sequences: List[SequenceInQueue]) =>
-      val result = build.handle(UpdateQueue(Ready(SeqexecQueue(sequences))))
+      val result = build.handle(UpdatedQueue(Ready(SeqexecQueue(sequences))))
       result should matchPattern {
         case ModelUpdate(Ready(SeqexecQueue(q))) if q == sequences =>
       }

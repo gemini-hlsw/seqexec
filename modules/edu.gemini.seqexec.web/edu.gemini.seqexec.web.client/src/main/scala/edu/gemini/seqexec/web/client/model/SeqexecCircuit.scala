@@ -31,7 +31,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
   override def handle = {
     case action: UpdatedQueue =>
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
-      action.handleWith(this, loadEffect)(PotAction.handler(100.milli))
+      action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
   }
 }
 

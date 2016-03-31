@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.client.components
 
-
 import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
@@ -112,6 +111,12 @@ object QueueArea {
             ),
             <.div(
               ^.cls := "ui secondary segment",
+              p.queue().renderPending(_ => <.div(
+                ^.cls := "ui active dimmer",
+                <.div(
+                  ^.cls := "ui text loader large",
+                  "Loading")
+              )),
               <.table(
                 ^.cls := "ui selectable compact celled table unstackable",
                 <.thead(
