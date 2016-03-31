@@ -60,6 +60,12 @@
               <div class="ui dimmer">
                 <div class="ui text loader large">Loading</div>
               </div>
+              <div class="ui negative message">
+                <i class="close icon"></i>
+                <div class="header">
+                  Sorry, there was an error reading the queue from the server
+                </div>
+              </div>
               <table class="ui selectable compact celled table unstackable">
                 <thead>
                   <tr>
@@ -301,7 +307,15 @@
         $(".main.menu .ui.dropdown").dropdown();
         $(".tabular.menu .item").tab();
         $(".ui.dropdown").dropdown();
-        });
+        $('.message .close')
+          .on('click', function() {
+            $(this)
+              .closest('.message')
+              .transition('fade')
+            ;
+          })
+        ;
+      });
     </script>
   </body>
 </html>

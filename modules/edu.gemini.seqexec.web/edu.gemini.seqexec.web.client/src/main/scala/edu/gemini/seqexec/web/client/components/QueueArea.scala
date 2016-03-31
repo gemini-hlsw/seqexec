@@ -11,8 +11,6 @@ import japgolly.scalajs.react._
 
 import scalacss.ScalaCssReact._
 
-case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
-
 object QueueTableBody {
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
@@ -28,7 +26,7 @@ object QueueTableBody {
         "\u00a0")
     )
 
-  val component = ReactComponentB[Props]("QueueTableBody")
+  val component = ReactComponentB[QueueArea.Props]("QueueTableBody")
     .stateless
     .render_P( p =>
       <.tbody(
@@ -58,12 +56,14 @@ object QueueTableBody {
           }
         ),
         // Render some rows when pending
-        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"time.queue.$i")))
+        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"time.queue.$i"))),
+        // Render some rows even if it failed
+        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"time.queue.$i")))
       )
     )
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(QueueArea.Props(p))
 
 }
 
@@ -71,6 +71,7 @@ object QueueTableBody {
   * Displays the elements on the queue
   */
 object QueueArea {
+  case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
 
   class Backend($: BackendScope[Props, Unit]) {
     def load(p: Props) =
@@ -117,6 +118,16 @@ object QueueArea {
                   ^.cls := "ui text loader large",
                   "Loading")
               )),
+              p.queue().renderFailed(_ =>
+                <.div(
+                  ^.cls := "ui negative message",
+                  Icon("close"),
+                  <.div(
+                    ^.cls := "header",
+                    "Sorry, there was an error reading the queue from the server"
+                  )
+                )
+              ),
               <.table(
                 ^.cls := "ui selectable compact celled table unstackable",
                 <.thead(
