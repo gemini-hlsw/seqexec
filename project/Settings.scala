@@ -26,17 +26,33 @@ object Settings {
   /** Library versions */
   object LibraryVersions {
     val scala        = "2.11.8"
+
+    // ScalaJS libraries
     val scalaDom     = "0.9.0"
     val scalajsReact = "0.10.4"
     val scalaCSS     = "0.4.0"
-    val scalaZ       = "7.1.6"
     val scalaZJS     = "7.2.1"
+    val uPickle      = "0.3.8"
+    val diode        = "0.5.0"
+
+    // Java libraries
+    val scalaZ       = "7.1.6"
+
     val http4S       = "0.12.0"
     val play         = "2.4.6"
+    val scalaJQuery  = "1.0-RC2"
+    val squants      = "0.6.1-GEM" // GEM Denotes our gemini built package
+    val argonaut     = "6.1"
+    val commonsHttp  = "2.0"
 
     // test libraries
     val scalaTest    = "3.0.0-M15"
     val scalaCheck   = "1.12.5"
+
+    // Pure JS libraries
+    val reactJS      = "0.14.7"
+    val jQuery       = "2.2.1"
+    val semanticUI   = "2.1.8"
 
     val ocsVersion   = "2016001.1.1"
   }
@@ -53,20 +69,20 @@ object Settings {
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
 
-    val Argonaut    = "io.argonaut"        %% "argonaut"                  % "6.1"
-    val CommonsHttp = "commons-httpclient" % "commons-httpclient"         % "2.0"
+    val Argonaut    = "io.argonaut"        %% "argonaut"          % LibraryVersions.argonaut
+    val CommonsHttp = "commons-httpclient" % "commons-httpclient" % LibraryVersions.commonsHttp
 
-    val Squants     = Def.setting("com.squants"    %%% "squants"     % "0.6.1-GEM")
-    val UPickle     = Def.setting("com.lihaoyi"    %%% "upickle"     % "0.3.8")
+    val Squants     = Def.setting("com.squants"    %%% "squants" % LibraryVersions.squants)
+    val UPickle     = Def.setting("com.lihaoyi"    %%% "upickle" % LibraryVersions.uPickle)
 
     // Server side libraries
     val Http4s  = Seq(
-      "org.http4s" %% "http4s-dsl"          % "0.12.0",
-      "org.http4s" %% "http4s-blaze-server" % "0.12.0")
+      "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4S,
+      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4S)
 
     val Play = Seq(
-      "com.typesafe.play" %% "play"              % "2.4.6",
-      "com.typesafe.play" %% "play-netty-server" % "2.4.6")
+      "com.typesafe.play" %% "play"              % LibraryVersions.play,
+      "com.typesafe.play" %% "play-netty-server" % LibraryVersions.play)
 
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(
@@ -74,8 +90,13 @@ object Settings {
       "com.github.japgolly.scalajs-react" %%% "extra"     % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalacss"      %%% "ext-react" % LibraryVersions.scalaCSS
     ))
-    val ScalaCSS   = Def.setting("com.github.japgolly.scalacss"      %%% "core"        % LibraryVersions.scalaCSS)
-    val ScalaJSDom = Def.setting("org.scala-js"                      %%% "scalajs-dom" % LibraryVersions.scalaDom)
+    val Diode = Def.setting(Seq(
+      "me.chrons" %%% "diode"       % LibraryVersions.diode,
+      "me.chrons" %%% "diode-react" % LibraryVersions.diode
+    ))
+    val ScalaCSS   = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
+    val ScalaJSDom = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)
+    val JQuery     = Def.setting("org.querki"                   %%% "jquery-facade" % LibraryVersions.scalaJQuery)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"     %% "edu-gemini-spmodel-core" % LibraryVersions.ocsVersion
