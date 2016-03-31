@@ -113,12 +113,14 @@ object QueueArea {
             ),
             <.div(
               ^.cls := "ui secondary segment",
+              // Show a loading indicator if we are waiting for server data
               p.queue().renderPending(_ => <.div(
                 ^.cls := "ui active dimmer",
                 <.div(
                   ^.cls := "ui text loader large",
                   "Loading")
               )),
+              // If there was an error on the process display a message
               p.queue().renderFailed(_ =>
                 CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
               ),

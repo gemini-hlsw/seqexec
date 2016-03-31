@@ -21,15 +21,14 @@ case class UpdatedQueue(potResult: Pot[SeqexecQueue]) extends PotAction[SeqexecQ
 }
 
 /**
-  * Handles actions related to todos
-  *
-  * @param modelRW Reader/Writer to access the model
+  * Handles actions related to the queue like loading and adding new elements
   */
 class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case action: UpdatedQueue =>
+      // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
   }
