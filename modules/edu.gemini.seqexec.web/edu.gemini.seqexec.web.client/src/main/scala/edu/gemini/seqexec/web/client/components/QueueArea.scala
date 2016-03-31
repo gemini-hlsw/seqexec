@@ -15,87 +15,46 @@ import scalacss.ScalaCssReact._
 case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
 
 object QueueTableBody {
+  // Minimum rows to display, pad with empty rows if needed
+  val minRows = 5
+
+  val emptyRow =
+    <.tr(
+      <.td("\u00a0"),
+      <.td("\u00a0"),
+      <.td("\u00a0"),
+      <.td(
+        SeqexecStyles.notInMobile,
+        "\u00a0")
+    )
+
   val component = ReactComponentB[Props]("QueueTableBody")
     .stateless
     .render_P( p =>
       <.tbody(
         p.queue().render( q =>
-          q.queue.map( s =>
-            <.tr(
-              ^.classSet(
-                "positive" -> (s.state == SequenceState.Running),
-                "negative" -> (s.state == SequenceState.Error)
-              ),
-              ^.key := s"item.queue.${s.id}",
-              <.td(
-                ^.cls := "collapsing",
-                s.id
-              ),
-              <.td(s.state.toString),
-              <.td(s.instrument),
-              <.td(
-                SeqexecStyles.notInMobile,
-                s.error.map(_ => <.p(Icon("attention"), " Error")).getOrElse(<.p("-"))
+          q.queue.map(Some.apply).padTo(minRows, None).collect {
+            case Some(s) =>
+              <.tr(
+                ^.classSet(
+                  "positive" -> (s.state == SequenceState.Running),
+                  "negative" -> (s.state == SequenceState.Error)
+                ),
+                ^.key := s"item.queue.${s.id}",
+                <.td(
+                  ^.cls := "collapsing",
+                  s.id
+                ),
+                <.td(s.state.toString),
+                <.td(s.instrument),
+                <.td(
+                  SeqexecStyles.notInMobile,
+                  s.error.map(_ => <.p(Icon("attention"), " Error")).getOrElse(<.p("-"))
+                )
               )
-            )
-          )
-        ),
-        <.tr(
-          <.td("\u00a0"),
-          <.td(" -- "),
-          <.td(" -- "),
-          <.td(
-            SeqexecStyles.notInMobile,
-            " ")
-        ),
-        <.tr(
-          <.td(
-            ^.cls := "collapsing",
-            "GS-2016A-Q-0-1"
-          ),
-          <.td("Not Started"),
-          <.td("GPI"),
-          <.td(
-            SeqexecStyles.notInMobile,
-            "-"
-          )
-        ),
-        <.tr(
-          ^.cls := "positive",
-          <.td("GS-2016A-Q-5-3"),
-          <.td("Running"),
-          <.td("GMOS-S"),
-          <.td(
-            SeqexecStyles.notInMobile,
-            "-"
-          )
-        ),
-        <.tr(
-          ^.cls := "negative",
-          <.td("GS-2016A-Q-4-1"),
-          <.td("Error"),
-          <.td("Flamingos 2"),
-          <.td(
-            SeqexecStyles.notInMobile,
-            Icon("attention"),
-            " Error"
-          )
-        ),
-        <.tr(
-          <.td("\u00a0"),
-          <.td(" "),
-          <.td(" "),
-          <.td(
-            SeqexecStyles.notInMobile,
-            " ")
-        ),
-        <.tr(
-          <.td("\u00a0"),
-          <.td(" "),
-          <.td(" "),
-          <.td(
-            SeqexecStyles.notInMobile,
-            " ")
+            case _ =>
+              emptyRow
+          }
         )
       )
     )
