@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.server.play
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
+import edu.gemini.seqexec.web.server.model.CannedModel
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Mode}
 import play.core.server.{NettyServerComponents, ServerConfig}
@@ -29,6 +30,9 @@ object WebServerLauncher extends App {
         case GET(p"/") =>
           // Index
           CustomAssets.at("./src/main/resources", "index.html", "/")
+        case GET(p"/api/seqexec/current/queue") => Action {
+          Results.Ok(write(CannedModel.currentQueue))
+        }
         case GET(p"/api/sequence/$id<.*-[0-9]+>") => Action {
           val obsId = new SPObservationID(id)
           ExecutorImpl.read(obsId) match {
