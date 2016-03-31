@@ -74,12 +74,13 @@ object QueueTableBody {
 object QueueArea {
   case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
 
-  class Backend($: BackendScope[Props, Unit]) {
-    def load(p: Props) =
-      // Request to load the queue if not present
-      Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
+  def load(p: Props) =
+    // Request to load the queue if not present
+    Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
 
-    def render(p: Props) = {
+  val component = ReactComponentB[Props]("QueueArea")
+    .stateless
+    .render_P(p =>
       <.div(
         ^.cls := "ui grid container",
         <.div(
@@ -169,13 +170,8 @@ object QueueArea {
           )
         )
       )
-    }
-  }
-
-  val component = ReactComponentB[Props]("QueueArea")
-    .stateless
-    .renderBackend[Backend]
-    .componentDidMount($ => $.backend.load($.props))
+    )
+    .componentDidMount($ => load($.props))
     .build
 
   def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
