@@ -1,18 +1,23 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot, Ready}
+import diode.data.PotState._
+import diode.data.{Empty, Pot, PotAction}
 import diode.react.ReactConnector
-import diode.{ActionHandler, Circuit, Effect, ModelRW}
+import diode.util.RunAfterJS
+import diode.{ActionHandler, Circuit, ModelRW}
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.SeqexecQueue
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 // Actions
 
 // Request loading the queue
-case object RefreshQueue
-case class UpdatedQueue(queue: SeqexecQueue)
+case class UpdatedQueue(potResult: Pot[SeqexecQueue]) extends PotAction[SeqexecQueue, UpdatedQueue] {
+  override def next(newResult: Pot[SeqexecQueue]) = {
+    UpdatedQueue(newResult)
+  }
+}
 
 /**
   * Handles actions related to todos
@@ -20,12 +25,24 @@ case class UpdatedQueue(queue: SeqexecQueue)
   * @param modelRW Reader/Writer to access the model
   */
 class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
   override def handle = {
-    case RefreshQueue        =>
-      // Call the backend requesting the queue
-      effectOnly(Effect(SeqexecWebClient.readQueue().map(UpdatedQueue)))
-    case UpdatedQueue(queue) =>
-      updated(Ready(queue))
+    case action: UpdatedQueue =>
+      val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
+      //action.handleWith(this, loadEffect)(PotAction.handler())
+      action.handle {
+        case PotEmpty =>
+          updated(value.pending(), loadEffect)
+        case PotPending =>
+          noChange
+        case PotReady =>
+          updated(action.potResult)
+        case PotUnavailable =>
+          updated(value.unavailable())
+        case PotFailed =>
+          updated(value.fail(new RuntimeException("ambc")))
+      }
   }
 }
 

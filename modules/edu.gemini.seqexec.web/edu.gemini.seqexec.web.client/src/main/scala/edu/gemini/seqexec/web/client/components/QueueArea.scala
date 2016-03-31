@@ -1,10 +1,10 @@
 package edu.gemini.seqexec.web.client.components
 
 
-import diode.data.Pot
+import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
-import edu.gemini.seqexec.web.client.model.RefreshQueue
+import edu.gemini.seqexec.web.client.model.UpdatedQueue
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -57,7 +57,9 @@ object QueueTableBody {
             case _ =>
               emptyRow(s"time.queue." + (1000*math.random).toInt)
           }
-        )
+        ),
+        // Render some rows when empty
+        p.queue().renderEmpty((0 until minRows).map(i => emptyRow(s"time.queue.$i")))
       )
     )
     .build
@@ -74,7 +76,7 @@ object QueueArea {
   class Backend($: BackendScope[Props, Unit]) {
     def load(p: Props) =
       // Request to load the queue if not present
-      Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(RefreshQueue))
+      Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
 
     def render(p: Props) = {
       <.div(
