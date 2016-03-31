@@ -1,13 +1,14 @@
 package edu.gemini.seqexec.web.client.model
 
 import diode.data.PotState._
-import diode.data.{Empty, Pot, PotAction}
+import diode.data.{Empty, Pot, PotAction, PotState}
 import diode.react.ReactConnector
-import diode.util.RunAfterJS
-import diode.{ActionHandler, Circuit, ModelRW}
+import diode.util.{RunAfter, RunAfterJS}
+import diode._
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.SeqexecQueue
 
+import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 // Actions
@@ -30,19 +31,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
   override def handle = {
     case action: UpdatedQueue =>
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
-      //action.handleWith(this, loadEffect)(PotAction.handler())
-      action.handle {
-        case PotEmpty =>
-          updated(value.pending(), loadEffect)
-        case PotPending =>
-          noChange
-        case PotReady =>
-          updated(action.potResult)
-        case PotUnavailable =>
-          updated(value.unavailable())
-        case PotFailed =>
-          updated(value.fail(new RuntimeException("ambc")))
-      }
+      action.handleWith(this, loadEffect)(PotAction.handler(100.milli))
   }
 }
 

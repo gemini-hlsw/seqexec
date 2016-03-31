@@ -58,8 +58,8 @@ object QueueTableBody {
               emptyRow(s"time.queue." + (1000*math.random).toInt)
           }
         ),
-        // Render some rows when empty
-        p.queue().renderEmpty((0 until minRows).map(i => emptyRow(s"time.queue.$i")))
+        // Render some rows when pending
+        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"time.queue.$i")))
       )
     )
     .build
