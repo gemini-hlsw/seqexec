@@ -65,6 +65,11 @@ It is possible to directly call commands on the seqexec using a web api. The fol
 
 Returns the ODB host
 
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/host  ||
+
+
 ```
 $: curl  http://localhost:9090/api/seqexec/commands/host
 {"command":"host","response":"Default seq host set to localhost 8443"}
@@ -74,7 +79,24 @@ $: curl  http://localhost:9090/api/seqexec/commands/host
 
 Sets the ODB host and port. The parameter `host` must be passed with the format `hostname:port`
 
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| POST  | /api/seqexec/commands/host  |host|
+
 ```
 $: curl -X POST -d "host=localhost:8443" http://localhost:9090/api/seqexec/commands/host
 {"command":"host localhost:8443","response":"Default seq host set to localhost 8443"}
+```
+
+# Get sequence count
+
+Returns the amount of steps of a sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/count  ||
+
+```
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
+{"command":"show","response":"GS-2016A-Q-0-1 sequence has 20 steps."}
 ```

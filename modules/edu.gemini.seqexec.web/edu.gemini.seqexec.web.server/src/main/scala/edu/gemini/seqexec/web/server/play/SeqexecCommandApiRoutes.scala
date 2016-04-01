@@ -27,6 +27,10 @@ object SeqexecCommandApiRoutes {
         Results.Ok(write(CommandResponse(s"host $h", commands.seq("host", Array(h)))))
       }.getOrElse(Results.BadRequest)
     }
+    // Get obs id count
+    case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/count") => Action { request =>
+      Results.Ok(write(CommandResponse("show", commands.seq("show", Array(obsId, "count")))))
+    }
   }
 
 }

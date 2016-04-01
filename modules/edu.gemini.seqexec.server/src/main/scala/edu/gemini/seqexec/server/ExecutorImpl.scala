@@ -28,7 +28,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
     cancelRef.get.map(!_(id))
 
   def read(oid: SPObservationID): SeqexecFailure \/ ConfigSequence =
-      SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError(_))
+      SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
 
   def sequence(sequenceConfig: ConfigSequence):  SeqexecFailure \/ (Set[System], List[Step.Step]) = {
     val a = sequenceConfig.getAllSteps.toList.map(Step.step).sequenceU
