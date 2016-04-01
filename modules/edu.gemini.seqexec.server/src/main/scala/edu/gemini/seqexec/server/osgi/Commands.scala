@@ -2,7 +2,6 @@ package edu.gemini.seqexec.server.osgi
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server._
-import edu.gemini.seqexec.shared.{SeqExecService, SeqFailure}
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
 import edu.gemini.spModel.core.Peer
@@ -10,12 +9,20 @@ import edu.gemini.spModel.core.Peer
 import scalaz._
 import Scalaz._
 
-
 sealed trait Commands {
-  def seq(cmd: String, args: Array[String]): String
+  def seq(cmd: String, args: List[String]): Commands.CommandError \/ String
 }
 
 object Commands {
+  sealed trait CommandError {
+    val msg: String
+  }
+  case class BadParameter(msg: String) extends CommandError
+  case class ObsIdNotFound(msg: String) extends CommandError
+  case class SeqexecFailureError(e: SeqexecFailure) extends CommandError {
+    val msg = SeqexecFailure.explain(e)
+  }
+
   val Usage =
     "Usage: seq host [host:port] | show obsId count|static|dynamic | run obsId"
   val ShowUsage =
@@ -41,15 +48,15 @@ object Commands {
 
   def apply(): Commands = new Commands {
 
-    def host(): String =
-      s"Default seq host set to ${ExecutorImpl.host().host} ${ExecutorImpl.host().port}"
+    def host(): CommandError \/ String =
+      \/.right(s"Default seq host set to ${ExecutorImpl.host().host} ${ExecutorImpl.host().port}")
 
-    def host(loc0: Peer): String = {
+    def host(loc0: Peer): CommandError \/ String = {
       ExecutorImpl.host(loc0)
       host()
     }
 
-    def show(oid: SPObservationID, cs: ConfigSequence, args: List[String]): String = {
+    def show(oid: SPObservationID, cs: ConfigSequence, args: List[String]): CommandError \/ String = {
       def seqValue(o: Object): String = o match {
         case s: SequenceableSpType => s.sequenceValue()
         case d: DisplayableSpType => d.displayValue()
@@ -65,7 +72,7 @@ object Commands {
       def showKeys(title: String, step: Int, ks: Array[ItemKey]): String = {
         val pad = width(ks)
         ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
-          val paddedKey = s"%-${pad}s".format(k.toString)
+          val paddedKey = s"%-${pad}s".format(k)
           s"$paddedKey -> ${seqValue(cs.getItemValue(step, k))}"
         }.mkString(s"$title\n", "\n", "")
       }
@@ -73,92 +80,96 @@ object Commands {
       def sysFilter(system: String): ItemKey => Boolean =
         _.splitPath().get(0) == system
 
-      def ifStepValid(step: String)(body: Int => String): String =
+      def ifStepValid(step: String)(body: Int => CommandError \/ String): CommandError \/ String =
         \/.fromTryCatchNonFatal(step.toInt - 1).fold(
-        _ => s"Specify an integer step, not '$step'.", {
-          case i if i < 0 => "Specify a positive step number."
-          case i if i >= cs.size() => s"$oid only has ${cs.size} steps."
-          case i => body(i)
+        _ => \/.left(BadParameter(s"Specify an integer step, not '$step'.")), {
+          case i if i < 0          => \/.left(BadParameter("Specify a positive step number."))
+          case i if i >= cs.size() => \/.left(BadParameter(s"$oid only has ${cs.size} steps."))
+          case i                   => body(i)
         })
-
 
       args match {
         case List("count") =>
-          s"$oid sequence has ${cs.size()} steps."
+          \/.right(s"$oid sequence has ${cs.size()} steps.")
 
         case List("static") =>
-          showKeys(s"$oid Static Values", 0, cs.getStaticKeys)
+          \/.right(showKeys(s"$oid Static Values", 0, cs.getStaticKeys))
 
         case List("static", system) =>
           val ks = cs.getStaticKeys.filter(sysFilter(system))
-          showKeys(s"$oid Static Values ($system only)", 0, ks)
+          \/.right(showKeys(s"$oid Static Values ($system only)", 0, ks))
 
         case List("dynamic", step) =>
           ifStepValid(step) { s =>
-            showKeys(s"$oid Dynamic Values (Step ${s + 1})", s, cs.getIteratedKeys)
+            \/.right(showKeys(s"$oid Dynamic Values (Step ${s + 1})", s, cs.getIteratedKeys))
           }
 
         case List("dynamic", step, system) =>
           ifStepValid(step) { s =>
             val ks = cs.getIteratedKeys.filter(sysFilter(system))
-            showKeys(s"$oid Dynamic Values (Step ${s + 1}, $system only)", s, ks)
+            \/.right(showKeys(s"$oid Dynamic Values (Step ${s + 1}, $system only)", s, ks))
           }
 
         case _ =>
-          ShowUsage
+          \/.right(ShowUsage)
       }
     }
 
-    def seq(cmd: String, args: Array[String]): String =
-      cmd :: args.toList match {
+    override def seq(cmd: String, args: List[String]): CommandError \/ String =
+      cmd :: args match {
         case List("host") =>
           host()
 
         case List("host", peer) =>
-          parseLoc(peer).map(host).merge
+          parseLoc(peer).flatMap(host)
 
         case "show" :: obsId :: showArgs =>
-          (for {
+          for {
             oid <- parseId(obsId)
-            seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailure.explain)
-          } yield show(oid, seq, showArgs)).merge
+            seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+            r   <- show(oid, seq, showArgs)
+          } yield r
 
         case List("run", obsId) =>
-          (for {
+          for {
             oid <- parseId(obsId)
-            _ <- ExecutorImpl.start(oid).leftMap(SeqexecFailure.explain)
-          } yield s"Sequence $obsId started." ) .merge
+            _   <- ExecutorImpl.start(oid).leftMap(SeqexecFailureError.apply)
+            r   <- \/.right(s"Sequence $obsId started.")
+          } yield r
 
         case List("stop", obsId) =>
-          (for {
-            oid <- parseId(obsId)
-            _ <- ExecutorImpl.stop(oid).leftMap(SeqexecFailure.explain)
-          } yield s"Stop requested for $obsId." ) .merge
-
-        case List("continue", obsId) => (
           for {
             oid <- parseId(obsId)
-            _ <- ExecutorImpl.continue(oid).leftMap(SeqexecFailure.explain)
-          } yield s"Resume requested for $obsId." ) .merge
+            _   <- ExecutorImpl.stop(oid).leftMap(SeqexecFailureError.apply)
+            r   <- \/.right(s"Stop requested for $obsId.")
+          } yield r
 
-        case List("state", obsId) => (
+        case List("continue", obsId) =>
           for {
             oid <- parseId(obsId)
-            s <- ExecutorImpl.state(oid).leftMap(SeqexecFailure.explain)
-          } yield ExecutorImpl.stateDescription(s) ) .merge
+            _   <- ExecutorImpl.continue(oid).leftMap(SeqexecFailureError.apply)
+            r   <- \/.right(s"Resume requested for $obsId.")
+          } yield r
+
+        case List("state", obsId) =>
+          for {
+            oid <- parseId(obsId)
+            s   <- ExecutorImpl.state(oid).leftMap(SeqexecFailureError.apply)
+            r   <- \/.right(ExecutorImpl.stateDescription(s))
+          } yield r
 
         case _ =>
-          Usage
+          \/.right(Usage)
       }
   }
 
-  def parseId(s: String): String \/ SPObservationID =
+  def parseId(s: String): CommandError \/ SPObservationID =
     \/.fromTryCatchNonFatal {
       new SPObservationID(s)
-    }.leftMap(_ => s"Sorry, '$s' isn't a valid observation id.")
+    }.leftMap(_ => BadParameter(s"Sorry, '$s' isn't a valid observation id."))
 
-  def parseLoc(s: String): String \/ Peer =
-    Option(Peer.tryParse(s)) \/> s"Sorry, expecting host:port not '$s'."
+  def parseLoc(s: String): CommandError \/ Peer =
+    Option(Peer.tryParse(s)) \/> BadParameter(s"Sorry, expecting host:port not '$s'.")
 
   // a better version of this available in the latest scalaz
   implicit class MergeOp[A](d: A \/ A) {
@@ -180,8 +191,8 @@ object Commands {
       case -\/(ex) => println(ex.getMessage)
       case \/-((st, r)) =>
         println(st.completed.map {
-          case Executor.Ok(StepResult(_, ObserveResult(id))) => id
-          case _                                             => ""
+          case Executor.Ok(StepResult(_, ObserveResult(i))) => i
+          case _                                            => ""
         }.filter(!_.isEmpty).mkString("\n"))
         r match {
           case -\/(errs) => println(errs.toList.map(SeqexecFailure.explain).mkString(","))

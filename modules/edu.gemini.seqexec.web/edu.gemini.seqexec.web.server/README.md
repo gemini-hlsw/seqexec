@@ -72,7 +72,7 @@ Returns the ODB host
 
 ```
 $: curl  http://localhost:9090/api/seqexec/commands/host
-{"command":"host","response":"Default seq host set to localhost 8443"}
+{"command":"host",error:false,"response":"Default seq host set to localhost 8443"}
 ```
 
 # Set host
@@ -85,7 +85,14 @@ Sets the ODB host and port. The parameter `host` must be passed with the format 
 
 ```
 $: curl -X POST -d "host=localhost:8443" http://localhost:9090/api/seqexec/commands/host
-{"command":"host localhost:8443","response":"Default seq host set to localhost 8443"}
+{"command":"host localhost:8443",error:false,"response":"Default seq host set to localhost 8443"}
+```
+
+*error case:*
+
+```
+$: curl -X POST -d "host=localhost8443" http://localhost:9090/api/seqexec/commands/host
+{"command":"host localhost8443","error":true,"response":"Sorry, expecting host:port not 'localhost8443'."}
 ```
 
 # Get sequence count
@@ -97,6 +104,21 @@ Returns the amount of steps of a sequence
 | GET  | /api/seqexec/commands/\<obsid>/count  ||
 
 ```
-$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
-{"command":"show","response":"GS-2016A-Q-0-1 sequence has 20 steps."}
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
+{"command":"show","error":false,"response":"GS-2016A-Q-0-1 sequence has 20 steps."}
+```
+
+*error case:*
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-2/count
+{"command":"show","error":true,"response":"The database doesn't have observation GS-2016A-Q-0-2"}
+```
+# Get static configuration
+
+Returns a list with the static configuration of the observation
+
+```
+ $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static
+{"command":"show","error":false,"response":"GS-2016A-Q-0-1 Static Values\ninstrument:customSlitWidth         -> OTHER\ninstrument:decker                  -> IMAGING\ninstrument:disperser               -> NONE\ninstrument:exposureTime            -> 85.0\ninstrument:filter                  -> OPEN\ninstrument:fpu                     -> FPU_NONE\ninstrument:instrument              -> Flamingos2\ninstrument:issPort                 -> Side-looking\ninstrument:lyotWheel               -> OPEN\ninstrument:mosPreimaging           -> No\ninstrument:observingWavelength     -> 1.6\ninstrument:posAngle                -> 0.0\ninstrument:readMode                -> FAINT_OBJECT_SPEC\ninstrument:useElectronicOffsetting -> false\ninstrument:version                 -> 2009A-1\nobserve:class                      -> science\nobserve:exposureTime               -> 85.0\nobserve:headerVisibility           -> PUBLIC\nobserve:object                     -> Untitled\nobserve:observeType                -> OBJECT\nobserve:proprietaryMonths          -> 18\nobserve:sciBand                    -> 1\nobserve:status                     -> ready\nocs:obsConditions:CloudCover       -> 100\nocs:obsConditions:ImageQuality     -> 100\nocs:obsConditions:SkyBackground    -> 100\nocs:obsConditions:WaterVapor       -> 100\nocs:observationId                  -> GS-2016A-Q-0-1\nocs:programId                      -> GS-2016A-Q-0\ntelescope:Base:name                -> Untitled\ntelescope:guideWithOIWFS           -> park\ntelescope:guideWithPWFS1           -> park\ntelescope:guideWithPWFS2           -> park\ntelescope:version                  -> 2009B-1"}
 ```
