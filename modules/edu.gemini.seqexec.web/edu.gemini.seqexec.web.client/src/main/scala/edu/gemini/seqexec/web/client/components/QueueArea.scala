@@ -1,17 +1,86 @@
 package edu.gemini.seqexec.web.client.components
 
+import diode.data.{Empty, Pot}
+import diode.react.ReactPot._
+import diode.react._
+import edu.gemini.seqexec.web.client.model.UpdatedQueue
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
+import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
+
 import scalacss.ScalaCssReact._
+
+object QueueTableBody {
+  // Minimum rows to display, pad with empty rows if needed
+  val minRows = 5
+
+  def emptyRow(k: String) =
+    <.tr(
+      ^.key := k, // React requires unique keys
+      <.td("\u00a0"),
+      <.td("\u00a0"),
+      <.td("\u00a0"),
+      <.td(
+        SeqexecStyles.notInMobile,
+        "\u00a0")
+    )
+
+  val component = ReactComponentB[QueueArea.Props]("QueueTableBody")
+    .stateless
+    .render_P( p =>
+      <.tbody(
+        // Render after data arrives
+        p.queue().render( q =>
+          q.queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
+            case (Some(s), i) =>
+              <.tr(
+                ^.classSet(
+                  "positive" -> (s.state == SequenceState.Running),
+                  "negative" -> (s.state == SequenceState.Error)
+                ),
+                ^.key := s"item.queue.$i",
+                <.td(
+                  ^.cls := "collapsing",
+                  s.id
+                ),
+                <.td(s.state.toString),
+                <.td(s.instrument),
+                <.td(
+                  SeqexecStyles.notInMobile,
+                  s.error.map(_ => <.p(Icon("attention"), " Error")).getOrElse(<.p("-"))
+                )
+              )
+            case (_, i) =>
+              emptyRow(s"item.queue.$i")
+          }
+        ),
+        // Render some rows when pending
+        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i"))),
+        // Render some rows even if it failed
+        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i")))
+      )
+    )
+    .build
+
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(QueueArea.Props(p))
+
+}
 
 /**
   * Displays the elements on the queue
   */
 object QueueArea {
+  case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
 
-  class Backend($: BackendScope[Unit, Unit]) {
-    def render() = {
+  def load(p: Props) =
+    // Request to load the queue if not present
+    Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
+
+  val component = ReactComponentB[Props]("QueueArea")
+    .stateless
+    .render_P(p =>
       <.div(
         ^.cls := "ui grid container",
         <.div(
@@ -45,6 +114,17 @@ object QueueArea {
             ),
             <.div(
               ^.cls := "ui secondary segment",
+              // Show a loading indicator if we are waiting for server data
+              p.queue().renderPending(_ => <.div(
+                ^.cls := "ui active dimmer",
+                <.div(
+                  ^.cls := "ui text loader large",
+                  "Loading")
+              )),
+              // If there was an error on the process display a message
+              p.queue().renderFailed(_ =>
+                CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
+              ),
               <.table(
                 ^.cls := "ui selectable compact celled table unstackable",
                 <.thead(
@@ -58,57 +138,7 @@ object QueueArea {
                     )
                   )
                 ),
-                <.tbody(
-                  <.tr(
-                    <.td(
-                      ^.cls := "collapsing",
-                      "GS-2016A-Q-0-1"
-                    ),
-                    <.td("Not Started"),
-                    <.td("GPI"),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      "-"
-                    )
-                  ),
-                  <.tr(
-                    ^.cls := "positive",
-                    <.td("GS-2016A-Q-5-3"),
-                    <.td("Running"),
-                    <.td("GMOS-S"),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      "-"
-                    )
-                  ),
-                  <.tr(
-                    ^.cls := "negative",
-                    <.td("GS-2016A-Q-4-1"),
-                    <.td("Error"),
-                    <.td("Flamingos 2"),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      Icon("attention"),
-                      " Error"
-                    )
-                  ),
-                  <.tr(
-                    <.td("\u00a0"),
-                    <.td(" "),
-                    <.td(" "),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      " ")
-                  ),
-                  <.tr(
-                    <.td("\u00a0"),
-                    <.td(" "),
-                    <.td(" "),
-                    <.td(
-                      SeqexecStyles.notInMobile,
-                      " ")
-                  )
-                ),
+                QueueTableBody(p.queue),
                 <.tfoot(
                   <.tr(
                     <.th(
@@ -140,14 +170,10 @@ object QueueArea {
           )
         )
       )
-    }
-  }
+    )
+    .componentDidMount($ => load($.props))
+    .build
 
-  val component = ReactComponentB[Unit]("QueueArea")
-    .stateless
-    .renderBackend[Backend]
-    .buildU
-
-  def apply() = component()
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
 
 }

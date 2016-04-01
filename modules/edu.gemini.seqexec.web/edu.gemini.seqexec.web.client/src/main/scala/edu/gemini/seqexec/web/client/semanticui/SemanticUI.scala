@@ -26,6 +26,8 @@ object SemanticUI {
     def dropdown(): this.type = js.native
 
     def tab(): this.type = js.native
+
+    def transition(s: String): this.type = js.native
   }
 
   implicit def jq2Semantic(jq: JQuery): SemanticCommands = jq.asInstanceOf[SemanticCommands]

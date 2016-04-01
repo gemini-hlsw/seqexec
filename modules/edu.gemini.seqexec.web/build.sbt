@@ -58,7 +58,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
       ScalaJSDom.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )
-  .dependsOn(edu_gemini_seqexec_web_shared_JS)
+  .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test")
 
 // This function allows triggered compilation to run only when scala files changes
 // It lets change static files freely

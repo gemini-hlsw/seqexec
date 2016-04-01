@@ -57,6 +57,15 @@
               </div>
             </div>
             <div class="ui secondary segment">
+              <div class="ui dimmer">
+                <div class="ui text loader large">Loading</div>
+              </div>
+              <div class="ui negative message">
+                <i class="close icon"></i>
+                <div class="header">
+                  Sorry, there was an error reading the queue from the server
+                </div>
+              </div>
               <table class="ui selectable compact celled table unstackable">
                 <thead>
                   <tr>
@@ -287,8 +296,8 @@
 
     </div>
 
-    <script src="edu-gemini-seqexec-web-client-jsdeps.js"></script>
-    <script src="seqexec-opt.js"></script>
+    <script src="edu_gemini_seqexec_web_client-jsdeps.js"></script>
+    <script src="seqexec.js"></script>
     <script type="text/javascript">
       $(document)
       .ready(function() {
@@ -298,7 +307,15 @@
         $(".main.menu .ui.dropdown").dropdown();
         $(".tabular.menu .item").tab();
         $(".ui.dropdown").dropdown();
-        });
+        $('.message .close')
+          .on('click', function() {
+            $(this)
+              .closest('.message')
+              .transition('fade')
+            ;
+          })
+        ;
+      });
     </script>
   </body>
 </html>
