@@ -1,9 +1,8 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.PotState._
-import diode.data.{Empty, Pot, PotAction, PotState}
+import diode.data.{Empty, Pot, PotAction}
 import diode.react.ReactConnector
-import diode.util.{RunAfter, RunAfterJS}
+import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.SeqexecQueue

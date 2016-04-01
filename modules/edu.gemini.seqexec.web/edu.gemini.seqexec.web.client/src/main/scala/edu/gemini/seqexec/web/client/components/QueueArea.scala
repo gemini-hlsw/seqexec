@@ -33,14 +33,14 @@ object QueueTableBody {
       <.tbody(
         // Render after data arrives
         p.queue().render( q =>
-          q.queue.map(Some.apply).padTo(minRows, None).collect {
-            case Some(s) =>
+          q.queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
+            case (Some(s), i) =>
               <.tr(
                 ^.classSet(
                   "positive" -> (s.state == SequenceState.Running),
                   "negative" -> (s.state == SequenceState.Error)
                 ),
-                ^.key := s"item.queue.${s.id}",
+                ^.key := s"item.queue.$i",
                 <.td(
                   ^.cls := "collapsing",
                   s.id
@@ -52,14 +52,14 @@ object QueueTableBody {
                   s.error.map(_ => <.p(Icon("attention"), " Error")).getOrElse(<.p("-"))
                 )
               )
-            case _ =>
-              emptyRow(s"time.queue." + (1000*math.random).toInt)
+            case (_, i) =>
+              emptyRow(s"item.queue.$i")
           }
         ),
         // Render some rows when pending
-        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"time.queue.$i"))),
+        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i"))),
         // Render some rows even if it failed
-        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"time.queue.$i")))
+        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i")))
       )
     )
     .build
