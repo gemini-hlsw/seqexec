@@ -1,13 +1,12 @@
 package edu.gemini.seqexec.web.server.play
 
-import edu.gemini.seqexec.server.osgi.Commands
+import edu.gemini.seqexec.server.osgi.{CommandError, CommandResponse, Commands}
 import play.api.mvc.{Action, Results}
 import play.api.routing.Router.Routes
 import play.api.routing.sird._
-
 import upickle.default._
 
-case class CommandResponse(command: String, error: Boolean, response: String)
+case class CommandResult(command: String, error: Boolean, response: String, keys: List[String])
 
 import scalaz._
 import Scalaz._
@@ -18,10 +17,10 @@ import Scalaz._
 object SeqexecCommandApiRoutes {
   val commands = Commands()
 
-  def toCommandResponse(s: String, r: Commands.CommandError \/ String): CommandResponse = {
+  def toCommandResponse(s: String, r: CommandError \/ CommandResponse): CommandResult = {
     r.fold(
-      l => CommandResponse(s, error = true, l.msg),
-      r => CommandResponse(s, error = false, r)
+      l => CommandResult(s, error = true, l.msg, Nil),
+      m => CommandResult(s, error = false, m.msg, m.keys)
     )
   }
 
