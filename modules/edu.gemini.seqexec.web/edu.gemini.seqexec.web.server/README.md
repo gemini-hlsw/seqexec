@@ -56,3 +56,25 @@ Now every time a file is changed in either the server or the client, scala.js wi
 The page can be reached at
 
 [http://localhost:9090/](http://localhost:9090)
+
+## Calling commands
+
+It is possible to directly call commands on the seqexec using a web api. The following commands are supported and include a sample curl command to execute them with the json response
+ 
+# Get host
+
+Returns the ODB host
+
+```
+$: curl  http://localhost:9090/api/seqexec/commands/host
+{"command":"host","response":"Default seq host set to localhost 8443"}
+```
+
+# Set host
+
+Sets the ODB host and port. The parameter `host` must be passed with the format `hostname:port`
+
+```
+$: curl -X POST -d "host=localhost:8443" http://localhost:9090/api/seqexec/commands/host
+{"command":"host localhost:8443","response":"Default seq host set to localhost 8443"}
+```
