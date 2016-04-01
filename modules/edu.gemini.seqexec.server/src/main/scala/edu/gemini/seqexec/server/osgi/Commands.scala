@@ -120,31 +120,31 @@ object Commands {
         case "show" :: obsId :: showArgs =>
           (for {
             oid <- parseId(obsId)
-            seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailure.explain(_))
+            seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailure.explain)
           } yield show(oid, seq, showArgs)).merge
 
         case List("run", obsId) =>
           (for {
             oid <- parseId(obsId)
-            _ <- ExecutorImpl.start(oid).leftMap(SeqexecFailure.explain(_))
+            _ <- ExecutorImpl.start(oid).leftMap(SeqexecFailure.explain)
           } yield s"Sequence $obsId started." ) .merge
 
         case List("stop", obsId) =>
           (for {
             oid <- parseId(obsId)
-            _ <- ExecutorImpl.stop(oid).leftMap(SeqexecFailure.explain(_))
+            _ <- ExecutorImpl.stop(oid).leftMap(SeqexecFailure.explain)
           } yield s"Stop requested for $obsId." ) .merge
 
         case List("continue", obsId) => (
           for {
             oid <- parseId(obsId)
-            _ <- ExecutorImpl.continue(oid).leftMap(SeqexecFailure.explain(_))
+            _ <- ExecutorImpl.continue(oid).leftMap(SeqexecFailure.explain)
           } yield s"Resume requested for $obsId." ) .merge
 
         case List("state", obsId) => (
           for {
             oid <- parseId(obsId)
-            s <- ExecutorImpl.state(oid).leftMap(SeqexecFailure.explain(_))
+            s <- ExecutorImpl.state(oid).leftMap(SeqexecFailure.explain)
           } yield ExecutorImpl.stateDescription(s) ) .merge
 
         case _ =>
