@@ -42,7 +42,7 @@ object Commands {
   def apply(): Commands = new Commands {
 
     def host(): String =
-      s"Default seq host set to ${ExecutorImpl.host.host} ${ExecutorImpl.host.port}"
+      s"Default seq host set to ${ExecutorImpl.host().host} ${ExecutorImpl.host().port}"
 
     def host(loc0: Peer): String = {
       ExecutorImpl.host(loc0)
