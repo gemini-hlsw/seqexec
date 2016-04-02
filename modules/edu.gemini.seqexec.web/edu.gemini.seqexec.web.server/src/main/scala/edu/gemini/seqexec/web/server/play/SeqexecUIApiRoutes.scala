@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.server.play
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.Sequence
+import edu.gemini.seqexec.web.server.model.CannedModel
 import play.api.mvc.{Action, Results}
 import play.api.routing.Router._
 import play.api.routing.sird._
@@ -22,6 +23,9 @@ object SeqexecUIApiRoutes {
         case \/-(s) => Results.Ok(write(Sequence(obsId.stringValue(), s.toSequenceSteps)))
         case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
       }
+    }
+    case GET(p"/api/seqexec/current/queue") => Action {
+      Results.Ok(write(CannedModel.currentQueue))
     }
   }
 }
