@@ -40,6 +40,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
       "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
       "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-dom.js"         minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
       "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js",
+      "org.webjars"       % "jquery.terminal" % "0.9.1" / "jquery.terminal.js" minified "jquery.terminal.min.js" dependsOn "jquery.js",
       "org.webjars"       % "Semantic-UI" % LibraryVersions.semanticUI  / "semantic.js"          minified "semantic.min.js" dependsOn "jquery.js"
     ),
     // Build a js dependencies file
