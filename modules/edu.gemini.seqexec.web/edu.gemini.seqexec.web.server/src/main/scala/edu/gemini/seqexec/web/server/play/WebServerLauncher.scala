@@ -14,7 +14,10 @@ object WebServerLauncher extends App {
         address = "0.0.0.0"
       ).copy(mode = Mode.Dev)
 
-      lazy val router = Router.from(SeqexecUIApiRoutes.routes.orElse(SeqexecCommandApiRoutes.routes).orElse(StaticAssetsRoutes.routes))
+      lazy val router = Router.from(
+        SeqexecUIApiRoutes.routes.orElse(
+        SeqexecCommandApiRoutes.routes).orElse(
+        StaticAssetsRoutes.routes))
   }}
 
   launch(9090).server

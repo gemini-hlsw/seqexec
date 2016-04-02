@@ -18,7 +18,7 @@ case class SeqexecFailureError(e: SeqexecFailure) extends CommandError {
   val msg = SeqexecFailure.explain(e)
 }
 
-case class CommandResponse(msg: String, keys: List[String])
+case class CommandResponse(msg: String, keys: List[(String, String)])
 
 object CommandResponse {
   def apply(msg: String): CommandResponse = CommandResponse(msg, Nil)
@@ -84,9 +84,9 @@ object Commands {
         }.mkString(s"$title\n", "\n", "")
       }
 
-      def keys(step: Int, ks: Array[ItemKey]): List[String] = {
+      def keys(step: Int, ks: Array[ItemKey]): List[(String, String)] = {
         ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
-          s"$k -> ${seqValue(cs.getItemValue(step, k))}"
+          k.getName -> seqValue(cs.getItemValue(step, k))
         }.toList
       }
 

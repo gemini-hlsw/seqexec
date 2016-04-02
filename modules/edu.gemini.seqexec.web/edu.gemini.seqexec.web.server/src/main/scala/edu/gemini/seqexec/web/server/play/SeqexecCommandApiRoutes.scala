@@ -1,15 +1,15 @@
 package edu.gemini.seqexec.web.server.play
 
 import edu.gemini.seqexec.server.osgi.{CommandError, CommandResponse, Commands}
+import edu.gemini.seqexec.web.common.StepConfig
 import play.api.mvc.{Action, Results}
 import play.api.routing.Router.Routes
 import play.api.routing.sird._
 import upickle.default._
 
-case class CommandResult(command: String, error: Boolean, response: String, keys: List[String])
+import scalaz.\/
 
-import scalaz._
-import Scalaz._
+case class CommandResult(command: String, error: Boolean, response: String, keys: List[StepConfig])
 
 /**
   * Define routes for command-line utilities that want to talk to the seqexec server
@@ -20,7 +20,7 @@ object SeqexecCommandApiRoutes {
   def toCommandResponse(s: String, r: CommandError \/ CommandResponse): CommandResult = {
     r.fold(
       l => CommandResult(s, error = true, l.msg, Nil),
-      m => CommandResult(s, error = false, m.msg, m.keys)
+      m => CommandResult(s, error = false, m.msg, m.keys.map(Function.tupled(StepConfig.apply)))
     )
   }
 

@@ -72,7 +72,12 @@ Returns the ODB host
 
 ```
 $: curl  http://localhost:9090/api/seqexec/commands/host
-{"command":"host",error:false,"response":"Default seq host set to localhost 8443"}
+{
+  "command": "host",
+  "error": false,
+  "response": "Default seq host set to localhost 8443",
+  "keys": []
+}
 ```
 
 # Set host
@@ -85,14 +90,25 @@ Sets the ODB host and port. The parameter `host` must be passed with the format 
 
 ```
 $: curl -X POST -d "host=localhost:8443" http://localhost:9090/api/seqexec/commands/host
-{"command":"host localhost:8443",error:false,"response":"Default seq host set to localhost 8443"}
+{
+  "command": "host localhost:8443",
+  "error": false,
+  "response": "Default seq host set to localhost 8443",
+  "keys": []
+}
 ```
 
 *error case:*
 
 ```
 $: curl -X POST -d "host=localhost8443" http://localhost:9090/api/seqexec/commands/host
-{"command":"host localhost8443","error":true,"response":"Sorry, expecting host:port not 'localhost8443'."}
+{
+  "command": "host localhost8443",
+  "error": true,
+  "response": "Sorry, expecting host:port not 'localhost8443'.",
+  "keys": []
+}
+
 ```
 
 # Get sequence count
@@ -104,21 +120,75 @@ Returns the amount of steps of a sequence
 | GET  | /api/seqexec/commands/\<obsid>/count  ||
 
 ```
-curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
-{"command":"show","error":false,"response":"GS-2016A-Q-0-1 sequence has 20 steps."}
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 sequence has 20 steps.",
+  "keys": []
+}
 ```
 
 *error case:*
 
 ```
-curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-2/count
-{"command":"show","error":true,"response":"The database doesn't have observation GS-2016A-Q-0-2"}
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-2/count
+{
+  "command": "show",
+  "error": true,
+  "response": "The database doesn't have observation GS-2016A-Q-0-2",
+  "keys": []
+}
 ```
 # Get static configuration
 
 Returns a list with the static configuration of the observation
 
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/static  ||
+
 ```
 $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static
-{"command":"show","error":false,"response":"GS-2016A-Q-0-1 Static Values","keys":["instrument:customSlitWidth -> OTHER","instrument:decker -> IMAGING","instrument:disperser -> NONE","instrument:exposureTime -> 85.0","instrument:filter -> OPEN","instrument:fpu -> FPU_NONE","instrument:instrument -> Flamingos2","instrument:issPort -> Side-looking","instrument:lyotWheel -> OPEN","instrument:mosPreimaging -> No","instrument:observingWavelength -> 1.6","instrument:posAngle -> 0.0","instrument:readMode -> FAINT_OBJECT_SPEC","instrument:useElectronicOffsetting -> false","instrument:version -> 2009A-1","observe:class -> science","observe:exposureTime -> 85.0","observe:headerVisibility -> PUBLIC","observe:object -> Untitled","observe:observeType -> OBJECT","observe:proprietaryMonths -> 18","observe:sciBand -> 1","observe:status -> ready","ocs:obsConditions:CloudCover -> 100","ocs:obsConditions:ImageQuality -> 100","ocs:obsConditions:SkyBackground -> 100","ocs:obsConditions:WaterVapor -> 100","ocs:observationId -> GS-2016A-Q-0-1","ocs:programId -> GS-2016A-Q-0","telescope:Base:name -> Untitled","telescope:guideWithOIWFS -> park","telescope:guideWithPWFS1 -> park","telescope:guideWithPWFS2 -> park","telescope:version -> 2009B-1"]}
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Static Values",
+  "keys": [
+    {"key": "customSlitWidth", "value": "OTHER"},
+    {"key": "decker", "value": "IMAGING"},
+    {"key": "disperser", "value": "NONE"},
+    {"key": "exposureTime", "value": "85.0"},
+    {"key": "filter", "value": "OPEN"},
+    {"key": "fpu", "value": "FPU_NONE"},
+    {"key": "instrument", "value": "Flamingos2"},
+    {"key": "issPort", "value": "Side-looking"},
+    {"key": "lyotWheel", "value": "OPEN"},
+    {"key": "mosPreimaging", "value": "No"},
+    {"key": "observingWavelength", "value": "1.6"},
+    {"key": "posAngle", "value": "0.0"},
+    {"key": "readMode", "value": "FAINT_OBJECT_SPEC"},
+    {"key": "useElectronicOffsetting", "value": "false"},
+    {"key": "version", "value": "2009A-1"},
+    {"key": "class", "value": "science"},
+    {"key": "exposureTime", "value": "85.0"},
+    {"key": "headerVisibility", "value": "PUBLIC"},
+    {"key": "object", "value": "Untitled"},
+    {"key": "observeType", "value": "OBJECT"},
+    {"key": "proprietaryMonths", "value": "18"},
+    {"key": "sciBand", "value": "1"},
+    {"key": "status", "value": "ready"},
+    {"key": "CloudCover", "value": "100"},
+    {"key": "ImageQuality", "value": "100"},
+    {"key": "SkyBackground", "value": "100"},
+    {"key": "WaterVapor", "value": "100"},
+    {"key": "observationId", "value": "GS-2016A-Q-0-1"},
+    {"key": "programId", "value": "GS-2016A-Q-0"},
+    {"key": "name", "value": "Untitled"},
+    {"key": "guideWithOIWFS", "value": "park"},
+    {"key": "guideWithPWFS1", "value": "park"},
+    {"key": "guideWithPWFS2", "value": "park"},
+    {"key": "version", "value": "2009B-1"}
+  ]
+}
 ```
