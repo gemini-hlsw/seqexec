@@ -17,12 +17,18 @@ object JQueryTerminal {
 
   class JsTerminalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTerminalOptions, JsTerminalOptionBuilder](new JsTerminalOptionBuilder(_)) {
     def prompt(t: String) = jsOpt("prompt", t)
+    def greeting(t: Boolean) = jsOpt("greeting", t)
+    def completion(t: Boolean) = jsOpt("completion", t)
   }
 
+  @js.native
+  trait Terminal extends js.Object {
+    def echo(s: String):js.Any = js.native
+  }
 
   @js.native
     trait TerminalCommands extends JQuery {
-    def terminal(o: JsTerminalOptions): this.type = js.native
+    def terminal(c: js.Function2[String, Terminal, js.Any], o: JsTerminalOptions): this.type = js.native
   }
 
   implicit def jq2Semantic(jq: JQuery): TerminalCommands = jq.asInstanceOf[TerminalCommands]
