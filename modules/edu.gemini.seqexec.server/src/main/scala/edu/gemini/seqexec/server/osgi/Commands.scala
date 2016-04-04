@@ -86,7 +86,7 @@ object Commands {
 
       def keys(step: Int, ks: Array[ItemKey]): List[(String, String)] = {
         ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
-          k.getName -> seqValue(cs.getItemValue(step, k))
+          k.getPath -> seqValue(cs.getItemValue(step, k))
         }.toList
       }
 
@@ -120,7 +120,7 @@ object Commands {
         case List("dynamic", step, system) =>
           ifStepValid(step) { s =>
             val ks = cs.getIteratedKeys.filter(sysFilter(system))
-            \/.right(CommandResponse(showKeys(s"$oid Dynamic Values (Step ${s + 1}, $system only)", s, ks)))
+            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(s, ks)))
           }
 
         case _ =>

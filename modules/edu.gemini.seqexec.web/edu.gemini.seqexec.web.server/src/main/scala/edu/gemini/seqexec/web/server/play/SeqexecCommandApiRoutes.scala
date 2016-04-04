@@ -44,13 +44,17 @@ object SeqexecCommandApiRoutes {
     case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/static") => Action { request =>
       Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "static")))))
     }
-    // Get obs static description with a component
+    // Get obs static description for a given system
     case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/static/$component") => Action { request =>
       Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "static", component)))))
     }
     // Get obs dynamic config for step
     case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/dynamic/$step") => Action { request =>
       Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "dynamic", step)))))
+    }
+    // Get obs static description for a given system
+    case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/dynamic/$step/$component") => Action { request =>
+      Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "dynamic", step, component)))))
     }
   }
 

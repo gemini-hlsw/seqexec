@@ -155,40 +155,40 @@ $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static
   "error": false,
   "response": "GS-2016A-Q-0-1 Static Values",
   "keys": [
-    {"key": "customSlitWidth", "value": "OTHER"},
-    {"key": "decker", "value": "IMAGING"},
-    {"key": "disperser", "value": "NONE"},
-    {"key": "exposureTime", "value": "85.0"},
-    {"key": "filter", "value": "OPEN"},
-    {"key": "fpu", "value": "FPU_NONE"},
-    {"key": "instrument", "value": "Flamingos2"},
-    {"key": "issPort", "value": "Side-looking"},
-    {"key": "lyotWheel", "value": "OPEN"},
-    {"key": "mosPreimaging", "value": "No"},
-    {"key": "observingWavelength", "value": "1.6"},
-    {"key": "posAngle", "value": "0.0"},
-    {"key": "readMode", "value": "FAINT_OBJECT_SPEC"},
-    {"key": "useElectronicOffsetting", "value": "false"},
-    {"key": "version", "value": "2009A-1"},
-    {"key": "class", "value": "science"},
-    {"key": "exposureTime", "value": "85.0"},
-    {"key": "headerVisibility", "value": "PUBLIC"},
-    {"key": "object", "value": "Untitled"},
-    {"key": "observeType", "value": "OBJECT"},
-    {"key": "proprietaryMonths", "value": "18"},
-    {"key": "sciBand", "value": "1"},
-    {"key": "status", "value": "ready"},
-    {"key": "CloudCover", "value": "100"},
-    {"key": "ImageQuality", "value": "100"},
-    {"key": "SkyBackground", "value": "100"},
-    {"key": "WaterVapor", "value": "100"},
-    {"key": "observationId", "value": "GS-2016A-Q-0-1"},
-    {"key": "programId", "value": "GS-2016A-Q-0"},
-    {"key": "name", "value": "Untitled"},
-    {"key": "guideWithOIWFS", "value": "park"},
-    {"key": "guideWithPWFS1", "value": "park"},
-    {"key": "guideWithPWFS2", "value": "park"},
-    {"key": "version", "value": "2009B-1"}
+    { "key": "instrument:customSlitWidth", "value": "OTHER" },
+    { "key": "instrument:decker", "value": "IMAGING" },
+    { "key": "instrument:disperser", "value": "NONE" },
+    { "key": "instrument:exposureTime", "value": "85.0" },
+    { "key": "instrument:filter", "value": "OPEN" },
+    { "key": "instrument:fpu", "value": "FPU_NONE" },
+    { "key": "instrument:instrument", "value": "Flamingos2" },
+    { "key": "instrument:issPort", "value": "Side-looking" },
+    { "key": "instrument:lyotWheel", "value": "OPEN" },
+    { "key": "instrument:mosPreimaging", "value": "No" },
+    { "key": "instrument:observingWavelength", "value": "1.6" },
+    { "key": "instrument:posAngle", "value": "0.0" },
+    { "key": "instrument:readMode", "value": "FAINT_OBJECT_SPEC" },
+    { "key": "instrument:useElectronicOffsetting", "value": "false" },
+    { "key": "instrument:version", "value": "2009A-1" },
+    { "key": "observe:class", "value": "science" },
+    { "key": "observe:exposureTime", "value": "85.0" },
+    { "key": "observe:headerVisibility", "value": "PUBLIC" },
+    { "key": "observe:object", "value": "Untitled" },
+    { "key": "observe:observeType", "value": "OBJECT" },
+    { "key": "observe:proprietaryMonths", "value": "18" },
+    { "key": "observe:sciBand", "value": "1" },
+    { "key": "observe:status", "value": "ready" },
+    { "key": "ocs:obsConditions:CloudCover", "value": "100" },
+    { "key": "ocs:obsConditions:ImageQuality", "value": "100" },
+    { "key": "ocs:obsConditions:SkyBackground", "value": "100" },
+    { "key": "ocs:obsConditions:WaterVapor", "value": "100" },
+    { "key": "ocs:observationId", "value": "GS-2016A-Q-0-1" },
+    { "key": "ocs:programId", "value": "GS-2016A-Q-0" },
+    { "key": "telescope:Base:name", "value": "Untitled" },
+    { "key": "telescope:guideWithOIWFS", "value": "park" },
+    { "key": "telescope:guideWithPWFS1", "value": "park" },
+    { "key": "telescope:guideWithPWFS2", "value": "park" },
+    { "key": "telescope:version", "value": "2009B-1" }
   ]
 }
 ```
@@ -201,7 +201,7 @@ Returns a list with the static configuration of the observation for a particular
 | :------------- | :------------- | :-- |
 | GET  | /api/seqexec/commands/\<obsid>/static/<system>  ||
 
-system = calibration|instrument|telescope
+**system = calibration | instrument | telescope | ...**
 
 ```
 curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static/telescope
@@ -210,22 +210,22 @@ curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static/telescope
   "error": false,
   "response": "GS-2016A-Q-0-1 Static Values (telescope only)",
   "keys": [
-    { "key": "name", "value": "Untitled" },
-    { "key": "guideWithOIWFS", "value": "park" },
-    { "key": "guideWithPWFS1", "value": "park" },
-    { "key": "guideWithPWFS2", "value": "park" },
-    { "key": "version", "value": "2009B-1" }
+    { "key": "telescope:Base:name", "value": "Untitled" },
+    { "key": "telescope:guideWithOIWFS", "value": "park" },
+    { "key": "telescope:guideWithPWFS1", "value": "park" },
+    { "key": "telescope:guideWithPWFS2", "value": "park" },
+    { "key": "telescope:version", "value": "2009B-1" }
   ]
 }
 ```
 
 ## Get dynamic configuration per step
 
-Returns a list with the static configuration of the observation for a particular system
+Returns a list with the dynamic configuration of the observation for a particular step
 
 | Type  | url | parameters |
 | :------------- | :------------- | :-- |
-| GET  | /api/seqexec/commands/\<obsid>/dynamic/step  ||
+| GET  | /api/seqexec/commands/\<obsid>/dynamic/<step>  ||
 
 Returns the dynamic configuration for a given observation and step
 
@@ -236,7 +236,29 @@ curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/2
   "error": false,
   "response": "GS-2016A-Q-0-1 Dynamic Values (Step 2)",
   "keys": [
-    { "key": "dataLabel", "value": "GS-2016A-Q-0-1-002" }
+    { "key": "observe:dataLabel", "value": "GS-2016A-Q-0-1-002" }
+  ]
+}
+```
+
+## Get dynamic configuration per step
+
+Returns a list with the dynamic configuration of the observation for a particular step and subsytem
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/dynamic/<step>/<system>  ||
+
+**system = calibration | instrument | telescope | ...**
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/1/observe
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Dynamic Values (Step 1)",
+  "keys": [
+    { "key": "observe:dataLabel", "value": "GS-2016A-Q-0-1-001" }
   ]
 }
 ```
