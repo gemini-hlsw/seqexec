@@ -272,8 +272,7 @@ curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/run
 {
   "command": "run",
   "error": false,
-  "response": "Sequence GS-2016A-Q-0-1 started.",
-  "keys": []
+  "response": "Sequence GS-2016A-Q-0-1 started."
 }
 ```
 
@@ -290,8 +289,7 @@ curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/stop
 {
   "command": "stop",
   "error": false,
-  "response": "Stop requested for GS-2016A-Q-0-1.",
-  "keys": []
+  "response": "Stop requested for GS-2016A-Q-0-1."
 }
 ```
 

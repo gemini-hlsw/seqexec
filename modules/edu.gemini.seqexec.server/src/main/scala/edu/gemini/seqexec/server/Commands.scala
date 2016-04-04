@@ -24,7 +24,17 @@ object CommandResponse {
 }
 
 sealed trait Commands {
-  def seq(cmd: String, args: List[String]): CommandError \/ CommandResponse
+  def host(): CommandError \/ CommandResponse
+  def host(s: String): CommandError \/ CommandResponse
+  def showCount(obsId: String): CommandError \/ CommandResponse
+  def showStatic(obsId: String): CommandError \/ CommandResponse
+  def showStatic(obsId: String, system: String): CommandError \/ CommandResponse
+  def showDynamic(obsId: String, step: String): CommandError \/ CommandResponse
+  def showDynamic(obsId: String, step: String, system: String): CommandError \/ CommandResponse
+  def run(obsId: String): CommandError \/ CommandResponse
+  def stop(obsId: String): CommandError \/ CommandResponse
+  def continue(obsId: String): CommandError \/ CommandResponse
+  def state(obsId: String): CommandError \/ CommandResponse
 }
 
 object Commands {
@@ -54,126 +64,101 @@ object Commands {
 
   def apply(): Commands = new Commands {
 
-    def host(): CommandError \/ CommandResponse =
+    override def host(): CommandError \/ CommandResponse =
       \/.right(CommandResponse(s"Default seq host set to ${ExecutorImpl.host().host} ${ExecutorImpl.host().port}"))
 
-    def host(loc0: Peer): CommandError \/ CommandResponse = {
-      ExecutorImpl.host(loc0)
-      host()
+    override def host(peer: String): CommandError \/ CommandResponse =
+      parseLoc(peer).flatMap { h =>
+        ExecutorImpl.host(h)
+        host()
+      }
+
+    override def showCount(obsId: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+      } yield CommandResponse(s"$oid sequence has ${seq.size()} steps.")
+
+    override def showStatic(obsId: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+      } yield CommandResponse(s"$oid Static Values", keys(seq, 0, seq.getStaticKeys), Nil)
+
+    override def showStatic(obsId: String, system: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        ks  = seq.getStaticKeys.filter(sysFilter(system))
+      } yield CommandResponse(s"$oid Static Values ($system only)", keys(seq, 0, ks), Nil)
+
+    override def showDynamic(obsId: String, step: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        s   <- ifStepValid(oid, seq, step)
+      } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(seq, s, seq.getIteratedKeys), Nil)
+
+    override def showDynamic(obsId: String, step: String, system: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        s   <- ifStepValid(oid, seq, step)
+        ks  = seq.getStaticKeys.filter(sysFilter(system))
+      } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(seq, s, ks), Nil)
+
+    override def run(obsId: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        _   <- ExecutorImpl.start(oid).leftMap(SeqexecFailureError.apply)
+      } yield CommandResponse(s"Sequence $obsId started.")
+
+    override def stop(obsId: String): CommandError \/ CommandResponse = {
+      for {
+        oid <- parseId(obsId)
+        _   <- ExecutorImpl.stop(oid).leftMap(SeqexecFailureError.apply)
+      } yield CommandResponse(s"Stop requested for $obsId.")
     }
 
-    def show(oid: SPObservationID, cs: ConfigSequence, args: List[String]): CommandError \/ CommandResponse = {
-      def seqValue(o: Object): String = o match {
-        case s: SequenceableSpType => s.sequenceValue()
-        case d: DisplayableSpType => d.displayValue()
-        case l: LoggableSpType => l.logValue()
-        case _ => o.toString
-      }
+    override def continue(obsId: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        _   <- ExecutorImpl.continue(oid).leftMap(SeqexecFailureError.apply)
+        r   <- \/.right(CommandResponse(s"Resume requested for $obsId."))
+      } yield r
 
-      def width(ks: Array[ItemKey]): Int = ks match {
-        case Array() => 0
-        case _ => ks.maxBy(_.toString.length).toString.length
-      }
+    override def state(obsId: String): CommandError \/ CommandResponse =
+      for {
+        oid <- parseId(obsId)
+        s   <- ExecutorImpl.state(oid).leftMap(SeqexecFailureError.apply)
+        d   = ExecutorImpl.stateDescription(s)
+        r   <- \/.right(CommandResponse(d._1, Nil, d._2))
+      } yield r
 
-      def showKeys(title: String, step: Int, ks: Array[ItemKey]): String = {
-        val pad = width(ks)
-        ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
-          val paddedKey = s"%-${pad}s".format(k)
-          s"$paddedKey -> ${seqValue(cs.getItemValue(step, k))}"
-        }.mkString(s"$title\n", "\n", "")
-      }
-
-      def keys(step: Int, ks: Array[ItemKey]): List[(String, String)] = {
-        ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
-          k.getPath -> seqValue(cs.getItemValue(step, k))
-        }.toList
-      }
-
-      def sysFilter(system: String): ItemKey => Boolean =
-        _.splitPath().get(0) == system
-
-      def ifStepValid(step: String)(body: Int => CommandError \/ CommandResponse): CommandError \/ CommandResponse =
-        \/.fromTryCatchNonFatal(step.toInt - 1).fold(
-        _ => \/.left(BadParameter(s"Specify an integer step, not '$step'.")), {
-          case i if i < 0          => \/.left(BadParameter("Specify a positive step number."))
-          case i if i >= cs.size() => \/.left(BadParameter(s"$oid only has ${cs.size} steps."))
-          case i                   => body(i)
-        })
-
-      args match {
-        case List("count") =>
-          \/.right(CommandResponse(s"$oid sequence has ${cs.size()} steps."))
-
-        case List("static") =>
-          \/.right(CommandResponse(s"$oid Static Values", keys(0, cs.getStaticKeys), Nil))
-
-        case List("static", system) =>
-          val ks = cs.getStaticKeys.filter(sysFilter(system))
-          \/.right(CommandResponse(s"$oid Static Values ($system only)", keys(0, ks), Nil))
-
-        case List("dynamic", step) =>
-          ifStepValid(step) { s =>
-            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(s, cs.getIteratedKeys), Nil))
-          }
-
-        case List("dynamic", step, system) =>
-          ifStepValid(step) { s =>
-            val ks = cs.getIteratedKeys.filter(sysFilter(system))
-            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(s, ks), Nil))
-          }
-
-        case _ =>
-          \/.right(CommandResponse(ShowUsage))
-      }
+    def seqValue(o: Object): String = o match {
+      case s: SequenceableSpType => s.sequenceValue()
+      case d: DisplayableSpType  => d.displayValue()
+      case l: LoggableSpType     => l.logValue()
+      case _                     => o.toString
     }
 
-    override def seq(cmd: String, args: List[String]): CommandError \/ CommandResponse =
-      cmd :: args match {
-        case List("host") =>
-          host()
+    def keys(cs: ConfigSequence, step: Int, ks: Array[ItemKey]): List[(String, String)] = {
+      ks.sortWith((u, v) => u.compareTo(v) < 0).map { k =>
+        k.getPath -> seqValue(cs.getItemValue(step, k))
+      }.toList
+    }
 
-        case List("host", peer) =>
-          parseLoc(peer).flatMap(host)
+    def sysFilter(system: String): ItemKey => Boolean =
+      _.splitPath().get(0) == system
 
-        case "show" :: obsId :: showArgs =>
-          for {
-            oid <- parseId(obsId)
-            seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
-            r   <- show(oid, seq, showArgs)
-          } yield r
 
-        case List("run", obsId) =>
-          for {
-            oid <- parseId(obsId)
-            _   <- ExecutorImpl.start(oid).leftMap(SeqexecFailureError.apply)
-            r   <- \/.right(CommandResponse(s"Sequence $obsId started."))
-          } yield r
-
-        case List("stop", obsId) =>
-          for {
-            oid <- parseId(obsId)
-            _   <- ExecutorImpl.stop(oid).leftMap(SeqexecFailureError.apply)
-            r   <- \/.right(CommandResponse(s"Stop requested for $obsId."))
-          } yield r
-
-        case List("continue", obsId) =>
-          for {
-            oid <- parseId(obsId)
-            _   <- ExecutorImpl.continue(oid).leftMap(SeqexecFailureError.apply)
-            r   <- \/.right(CommandResponse(s"Resume requested for $obsId."))
-          } yield r
-
-        case List("state", obsId) =>
-          for {
-            oid <- parseId(obsId)
-            s   <- ExecutorImpl.state(oid).leftMap(SeqexecFailureError.apply)
-            d   = ExecutorImpl.stateDescription(s)
-            r   <- \/.right(CommandResponse(d._1, Nil, d._2))
-          } yield r
-
-        case _ =>
-          \/.right(CommandResponse(Usage))
-      }
+    def ifStepValid(oid: SPObservationID, cs: ConfigSequence, step: String): CommandError \/ Int =
+      \/.fromTryCatchNonFatal(step.toInt - 1).fold(
+      _ => \/.left(BadParameter(s"Specify an integer step, not '$step'.")), {
+        case i if i < 0          => \/.left(BadParameter("Specify a positive step number."))
+        case i if i >= cs.size() => \/.left(BadParameter(s"$oid only has ${cs.size} steps."))
+        case i                   => \/.right(i)
+      })
   }
 
   def parseId(s: String): CommandError \/ SPObservationID =
@@ -184,34 +169,4 @@ object Commands {
   def parseLoc(s: String): CommandError \/ Peer =
     Option(Peer.tryParse(s)) \/> BadParameter(s"Sorry, expecting host:port not '$s'.")
 
-  // a better version of this available in the latest scalaz
-  implicit class MergeOp[A](d: A \/ A) {
-    def merge: A = d.fold(identity, identity)
-  }
-
-  implicit object KeyOrdering extends scala.Ordering[ItemKey] {
-    override def compare(x: ItemKey, y: ItemKey) = x.compareTo(y)
-  }
-
-  // TODO: this, better
-  def onComplete[A](id: SPObservationID)(result: Throwable \/ A): Unit =
-    println(id + ": " + result)
-
-  // TODO: this, much, much better
-  def onCompleteRun (id: SPObservationID)(result: Throwable \/ (Executor.ExecState, \/[NonEmptyList[SeqexecFailure], Unit])): Unit = {
-    println(id + ": ")
-    result match {
-      case -\/(ex) => println(ex.getMessage)
-      case \/-((st, r)) =>
-        println(st.completed.map {
-          case Executor.Ok(StepResult(_, ObserveResult(i))) => i
-          case _                                            => ""
-        }.filter(!_.isEmpty).mkString("\n"))
-        r match {
-          case -\/(errs) => println(errs.toList.map(SeqexecFailure.explain).mkString(","))
-          case _         => ()
-        }
-    }
-
-  }
 }
