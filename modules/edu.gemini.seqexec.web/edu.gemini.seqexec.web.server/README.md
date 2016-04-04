@@ -299,10 +299,10 @@ Returns the status of a currently running sequence
 
 | Type  | url | parameters |
 | :------------- | :------------- | :-- |
-| GET  | /api/seqexec/commands/\<obsid>/status  ||
+| GET  | /api/seqexec/commands/\<obsid>/state  ||
 
 ```
-$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/status
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/state
 {
   "command": "status",
   "error": false,

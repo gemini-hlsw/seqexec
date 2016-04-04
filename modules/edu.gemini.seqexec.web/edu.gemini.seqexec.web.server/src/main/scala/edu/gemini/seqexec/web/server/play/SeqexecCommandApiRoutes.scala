@@ -1,44 +1,17 @@
 package edu.gemini.seqexec.web.server.play
 
-import edu.gemini.seqexec.server.{CommandError, CommandResponse, Commands}
-import edu.gemini.seqexec.web.common.StepConfig
+import edu.gemini.seqexec.server.Commands
+import edu.gemini.seqexec.web.server.model.CommandsModel._
 import play.api.mvc.{Action, Results}
 import play.api.routing.Router.Routes
 import play.api.routing.sird._
 import upickle.default._
-
-import scalaz.\/
-
-case class CommandResult(command: String, error: Boolean, response: String)
-case class SequenceConfig(command: String, error: Boolean, response: String, keys: List[StepConfig])
-case class SequenceStatus(command: String, error: Boolean, response: String, steps: List[String])
 
 /**
   * Define routes for command-line utilities that want to talk to the seqexec server
   */
 object SeqexecCommandApiRoutes {
   val commands = Commands()
-
-  def toCommandResult(s: String, r: CommandError \/ CommandResponse): CommandResult = {
-    r.fold(
-      l => CommandResult(s, error = true, l.msg),
-      m => CommandResult(s, error = false, m.msg)
-    )
-  }
-
-  def toSequenceConfig(s: String, r: CommandError \/ CommandResponse): SequenceConfig = {
-    r.fold(
-      l => SequenceConfig(s, error = true, l.msg, Nil),
-      m => SequenceConfig(s, error = false, m.msg, m.keys.map(Function.tupled(StepConfig.apply)))
-    )
-  }
-
-  def toSequenceStatus(s: String, r: CommandError \/ CommandResponse): SequenceStatus = {
-    r.fold(
-      l => SequenceStatus(s, error = true, l.msg, Nil),
-      m => SequenceStatus(s, error = false, m.msg, m.steps)
-    )
-  }
 
   val routes: Routes = {
     // Get Seqexec host
@@ -88,7 +61,7 @@ object SeqexecCommandApiRoutes {
     // Gets the status of a sequence
     case GET(p"/api/seqexec/commands/$obsId/state") => Action { request =>
       // Not implemented at lower levels
-      Results.Ok(write(toSequenceStatus("status", commands.state(obsId))))
+      Results.Ok(write(toSequenceStatus("state", commands.state(obsId))))
     }
 
   }
