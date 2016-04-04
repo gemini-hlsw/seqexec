@@ -95,21 +95,7 @@ object QueueArea {
               ),
               <.div(
                 ^.cls := "right menu",
-                <.div(
-                  ^.cls := "ui right aligned category search item",
-                  <.div(
-                    ^.cls := "ui transparent icon input",
-                    <.input(
-                      ^.cls := "prompt",
-                      ^.`type` := "text",
-                      ^.placeholder := "Search..."
-                    ),
-                    Icon("search link")
-                  ),
-                  <.div(
-                    ^.cls := "results"
-                  )
-                )
+                SequenceSearch()
               )
             ),
             <.div(

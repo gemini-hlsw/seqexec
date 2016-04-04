@@ -47,12 +47,15 @@
             <div class="ui top attached text menu">
               <div class="ui header item">Queue</div>
               <div class="right menu">
-                <div class="ui right aligned category search item">
+                <div class="ui right aligned category search dropdown item">
                   <div class="ui transparent icon input">
                     <input class="prompt" type="text" placeholder="Search...">
                     <i class="search link icon"></i>
                   </div>
-                  <div class="results"></div>
+                  <div class="menu">
+                    <!--div class="item" data-value="af"><i class="af flag"></i>GS-2016A-Q-0</div>
+                    <div class="item" data-value="ax"><i class="ax flag"></i>GS-2016A-Q-1</div-->
+                  </div>
                 </div>
               </div>
             </div>
@@ -306,6 +309,7 @@
          });
         $(".main.menu .ui.dropdown").dropdown();
         $(".tabular.menu .item").tab();
+        //$(".ui.dropdown").dropdown({onChange: function (val) { alert(val); }});
         $(".ui.dropdown").dropdown();
         $('.message .close')
           .on('click', function() {
