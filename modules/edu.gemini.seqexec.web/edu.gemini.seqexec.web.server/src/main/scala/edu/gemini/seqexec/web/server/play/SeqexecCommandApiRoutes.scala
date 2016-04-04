@@ -56,6 +56,20 @@ object SeqexecCommandApiRoutes {
     case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/dynamic/$step/$component") => Action { request =>
       Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "dynamic", step, component)))))
     }
+    // Runs a particular sequence
+    case POST(p"/api/seqexec/commands/$obsId/run") => Action { request =>
+      Results.Ok(write(toCommandResponse("run", commands.seq(s"run", List(obsId)))))
+    }
+    // Stops a particular sequence
+    case POST(p"/api/seqexec/commands/$obsId/stop") => Action { request =>
+      Results.Ok(write(toCommandResponse("stop", commands.seq(s"stop", List(obsId)))))
+    }
+    // Continues a particular sequence
+    case POST(p"/api/seqexec/commands/$obsId/continue") => Action { request =>
+      // Not implemented at lower levels
+      Results.Ok(write(toCommandResponse("continue", commands.seq(s"continue", List(obsId)))))
+    }
+
   }
 
 }

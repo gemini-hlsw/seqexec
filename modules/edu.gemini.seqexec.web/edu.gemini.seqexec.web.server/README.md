@@ -262,3 +262,35 @@ curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/1/observe
   ]
 }
 ```
+
+## Run a sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| POST  | /api/seqexec/commands/\<obsid>/run  ||
+
+```
+curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/run
+{
+  "command": "run",
+  "error": false,
+  "response": "Sequence GS-2016A-Q-0-1 started.",
+  "keys": []
+}
+```
+
+## Stop a sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| POST  | /api/seqexec/commands/\<obsid>/stop  ||
+
+```
+curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/stop
+{
+  "command": "stop",
+  "error": false,
+  "response": "Stop requested for GS-2016A-Q-0-1.",
+  "keys": []
+}
+```
