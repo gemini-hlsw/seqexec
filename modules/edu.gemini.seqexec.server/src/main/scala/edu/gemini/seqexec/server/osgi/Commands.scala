@@ -114,7 +114,7 @@ object Commands {
 
         case List("dynamic", step) =>
           ifStepValid(step) { s =>
-            \/.right(CommandResponse(showKeys(s"$oid Dynamic Values (Step ${s + 1})", s, cs.getIteratedKeys)))
+            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(s, cs.getIteratedKeys)))
           }
 
         case List("dynamic", step, system) =>

@@ -48,6 +48,10 @@ object SeqexecCommandApiRoutes {
     case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/static/$component") => Action { request =>
       Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "static", component)))))
     }
+    // Get obs dynamic config for step
+    case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/dynamic/$step") => Action { request =>
+      Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "dynamic", step)))))
+    }
   }
 
 }

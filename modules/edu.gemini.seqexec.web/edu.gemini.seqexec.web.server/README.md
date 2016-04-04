@@ -195,7 +195,7 @@ $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static
 
 ## Get static configuration per system
 
-Returns a list with the static configuration of the observation
+Returns a list with the static configuration of the observation for a particular system
 
 | Type  | url | parameters |
 | :------------- | :------------- | :-- |
@@ -215,6 +215,28 @@ curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static/telescope
     { "key": "guideWithPWFS1", "value": "park" },
     { "key": "guideWithPWFS2", "value": "park" },
     { "key": "version", "value": "2009B-1" }
+  ]
+}
+```
+
+## Get dynamic configuration per step
+
+Returns a list with the static configuration of the observation for a particular system
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/dynamic/step  ||
+
+Returns the dynamic configuration for a given observation and step
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/2
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Dynamic Values (Step 2)",
+  "keys": [
+    { "key": "dataLabel", "value": "GS-2016A-Q-0-1-002" }
   ]
 }
 ```
