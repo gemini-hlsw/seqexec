@@ -110,7 +110,7 @@ object Commands {
 
         case List("static", system) =>
           val ks = cs.getStaticKeys.filter(sysFilter(system))
-          \/.right(CommandResponse(showKeys(s"$oid Static Values ($system only)", 0, ks)))
+          \/.right(CommandResponse(s"$oid Static Values ($system only)", keys(0, ks)))
 
         case List("dynamic", step) =>
           ifStepValid(step) { s =>

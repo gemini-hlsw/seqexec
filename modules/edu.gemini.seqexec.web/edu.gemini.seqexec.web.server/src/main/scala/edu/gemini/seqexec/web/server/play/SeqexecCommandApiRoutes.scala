@@ -44,6 +44,10 @@ object SeqexecCommandApiRoutes {
     case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/static") => Action { request =>
       Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "static")))))
     }
+    // Get obs static description with a component
+    case GET(p"/api/seqexec/commands/$obsId<.*-[0-9]+>/static/$component") => Action { request =>
+      Results.Ok(write(toCommandResponse("show", commands.seq(s"show", List(obsId, "static", component)))))
+    }
   }
 
 }

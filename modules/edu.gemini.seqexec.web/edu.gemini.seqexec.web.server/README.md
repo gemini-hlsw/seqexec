@@ -192,3 +192,29 @@ $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static
   ]
 }
 ```
+
+## Get static configuration per system
+
+Returns a list with the static configuration of the observation
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/static/<system>  ||
+
+system = calibration|instrument|telescope
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static/telescope
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Static Values (telescope only)",
+  "keys": [
+    { "key": "name", "value": "Untitled" },
+    { "key": "guideWithOIWFS", "value": "park" },
+    { "key": "guideWithPWFS1", "value": "park" },
+    { "key": "guideWithPWFS2", "value": "park" },
+    { "key": "version", "value": "2009B-1" }
+  ]
+}
+```
