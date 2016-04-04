@@ -75,8 +75,7 @@ $: curl  http://localhost:9090/api/seqexec/commands/host
 {
   "command": "host",
   "error": false,
-  "response": "Default seq host set to localhost 8443",
-  "keys": []
+  "response": "Default seq host set to localhost 8443"
 }
 ```
 
@@ -93,8 +92,7 @@ $: curl -X POST -d "host=localhost:8443" http://localhost:9090/api/seqexec/comma
 {
   "command": "host localhost:8443",
   "error": false,
-  "response": "Default seq host set to localhost 8443",
-  "keys": []
+  "response": "Default seq host set to localhost 8443"
 }
 ```
 
@@ -105,8 +103,7 @@ $: curl -X POST -d "host=localhost8443" http://localhost:9090/api/seqexec/comman
 {
   "command": "host localhost8443",
   "error": true,
-  "response": "Sorry, expecting host:port not 'localhost8443'.",
-  "keys": []
+  "response": "Sorry, expecting host:port not 'localhost8443'."
 }
 
 ```
@@ -124,8 +121,7 @@ $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
 {
   "command": "show",
   "error": false,
-  "response": "GS-2016A-Q-0-1 sequence has 20 steps.",
-  "keys": []
+  "response": "GS-2016A-Q-0-1 sequence has 20 steps."
 }
 ```
 
@@ -136,10 +132,10 @@ $: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-2/count
 {
   "command": "show",
   "error": true,
-  "response": "The database doesn't have observation GS-2016A-Q-0-2",
-  "keys": []
+  "response": "The database doesn't have observation GS-2016A-Q-0-2"
 }
 ```
+
 # Get static configuration
 
 Returns a list with the static configuration of the observation

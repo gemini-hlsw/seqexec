@@ -1,13 +1,12 @@
-package edu.gemini.seqexec.server.osgi
+package edu.gemini.seqexec.server
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.server._
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
 import edu.gemini.spModel.core.Peer
 
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 sealed trait CommandError {
   val msg: String
