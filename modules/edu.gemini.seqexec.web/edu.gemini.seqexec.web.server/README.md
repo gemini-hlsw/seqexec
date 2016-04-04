@@ -56,3 +56,263 @@ Now every time a file is changed in either the server or the client, scala.js wi
 The page can be reached at
 
 [http://localhost:9090/](http://localhost:9090)
+
+## Calling commands
+
+It is possible to directly call commands on the seqexec using a web api. The following commands are supported and include a sample curl command to execute them with the json response
+ 
+# Get host
+
+Returns the ODB host
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/host  ||
+
+
+```
+$: curl  http://localhost:9090/api/seqexec/commands/host
+{
+  "command": "host",
+  "error": false,
+  "response": "Default seq host set to localhost 8443"
+}
+```
+
+# Set host
+
+Sets the ODB host and port. The parameter `host` must be passed with the format `hostname:port`
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| POST  | /api/seqexec/commands/host  |host|
+
+```
+$: curl -X POST -d "host=localhost:8443" http://localhost:9090/api/seqexec/commands/host
+{
+  "command": "host localhost:8443",
+  "error": false,
+  "response": "Default seq host set to localhost 8443"
+}
+```
+
+*error case:*
+
+```
+$: curl -X POST -d "host=localhost8443" http://localhost:9090/api/seqexec/commands/host
+{
+  "command": "host localhost8443",
+  "error": true,
+  "response": "Sorry, expecting host:port not 'localhost8443'."
+}
+
+```
+
+# Get sequence count
+
+Returns the amount of steps of a sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/count  ||
+
+```
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/count
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 sequence has 20 steps."
+}
+```
+
+*error case:*
+
+```
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-2/count
+{
+  "command": "show",
+  "error": true,
+  "response": "The database doesn't have observation GS-2016A-Q-0-2"
+}
+```
+
+# Get static configuration
+
+Returns a list with the static configuration of the observation
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/static  ||
+
+```
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Static Values",
+  "keys": [
+    { "key": "instrument:customSlitWidth", "value": "OTHER" },
+    { "key": "instrument:decker", "value": "IMAGING" },
+    { "key": "instrument:disperser", "value": "NONE" },
+    { "key": "instrument:exposureTime", "value": "85.0" },
+    { "key": "instrument:filter", "value": "OPEN" },
+    { "key": "instrument:fpu", "value": "FPU_NONE" },
+    { "key": "instrument:instrument", "value": "Flamingos2" },
+    { "key": "instrument:issPort", "value": "Side-looking" },
+    { "key": "instrument:lyotWheel", "value": "OPEN" },
+    { "key": "instrument:mosPreimaging", "value": "No" },
+    { "key": "instrument:observingWavelength", "value": "1.6" },
+    { "key": "instrument:posAngle", "value": "0.0" },
+    { "key": "instrument:readMode", "value": "FAINT_OBJECT_SPEC" },
+    { "key": "instrument:useElectronicOffsetting", "value": "false" },
+    { "key": "instrument:version", "value": "2009A-1" },
+    { "key": "observe:class", "value": "science" },
+    { "key": "observe:exposureTime", "value": "85.0" },
+    { "key": "observe:headerVisibility", "value": "PUBLIC" },
+    { "key": "observe:object", "value": "Untitled" },
+    { "key": "observe:observeType", "value": "OBJECT" },
+    { "key": "observe:proprietaryMonths", "value": "18" },
+    { "key": "observe:sciBand", "value": "1" },
+    { "key": "observe:status", "value": "ready" },
+    { "key": "ocs:obsConditions:CloudCover", "value": "100" },
+    { "key": "ocs:obsConditions:ImageQuality", "value": "100" },
+    { "key": "ocs:obsConditions:SkyBackground", "value": "100" },
+    { "key": "ocs:obsConditions:WaterVapor", "value": "100" },
+    { "key": "ocs:observationId", "value": "GS-2016A-Q-0-1" },
+    { "key": "ocs:programId", "value": "GS-2016A-Q-0" },
+    { "key": "telescope:Base:name", "value": "Untitled" },
+    { "key": "telescope:guideWithOIWFS", "value": "park" },
+    { "key": "telescope:guideWithPWFS1", "value": "park" },
+    { "key": "telescope:guideWithPWFS2", "value": "park" },
+    { "key": "telescope:version", "value": "2009B-1" }
+  ]
+}
+```
+
+## Get static configuration per system
+
+Returns a list with the static configuration of the observation for a particular system
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/static/<system>  ||
+
+**system = calibration | instrument | telescope | ...**
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/static/telescope
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Static Values (telescope only)",
+  "keys": [
+    { "key": "telescope:Base:name", "value": "Untitled" },
+    { "key": "telescope:guideWithOIWFS", "value": "park" },
+    { "key": "telescope:guideWithPWFS1", "value": "park" },
+    { "key": "telescope:guideWithPWFS2", "value": "park" },
+    { "key": "telescope:version", "value": "2009B-1" }
+  ]
+}
+```
+
+## Get dynamic configuration per step
+
+Returns a list with the dynamic configuration of the observation for a particular step
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/dynamic/<step>  ||
+
+Returns the dynamic configuration for a given observation and step
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/2
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Dynamic Values (Step 2)",
+  "keys": [
+    { "key": "observe:dataLabel", "value": "GS-2016A-Q-0-1-002" }
+  ]
+}
+```
+
+## Get dynamic configuration per step
+
+Returns a list with the dynamic configuration of the observation for a particular step and subsytem
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/dynamic/<step>/<system>  ||
+
+**system = calibration | instrument | telescope | ...**
+
+```
+curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/1/observe
+{
+  "command": "show",
+  "error": false,
+  "response": "GS-2016A-Q-0-1 Dynamic Values (Step 1)",
+  "keys": [
+    { "key": "observe:dataLabel", "value": "GS-2016A-Q-0-1-001" }
+  ]
+}
+```
+
+## Run a sequence
+
+Starts running a sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| POST  | /api/seqexec/commands/\<obsid>/run  ||
+
+```
+curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/run
+{
+  "command": "run",
+  "error": false,
+  "response": "Sequence GS-2016A-Q-0-1 started."
+}
+```
+
+## Stop a sequence
+
+Stops/Pauses a running sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| POST  | /api/seqexec/commands/\<obsid>/stop  ||
+
+```
+curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/stop
+{
+  "command": "stop",
+  "error": false,
+  "response": "Stop requested for GS-2016A-Q-0-1."
+}
+```
+
+## Get sequence status
+
+Returns the status of a currently running sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/state  ||
+
+```
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/state
+{
+  "command": "status",
+  "error": false,
+  "response": "Completed 5 steps out of 20",
+  "steps": [
+    "Step 1 completed with label S20160404S0042",
+    "Step 2 completed with label S20160404S0043",
+    "Step 3 completed with label S20160404S0044",
+    "Step 4 completed with label S20160404S0045",
+    "Step 5 completed with label S20160404S0046"
+  ]
+}
+```
