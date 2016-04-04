@@ -18,10 +18,10 @@ case class SeqexecFailureError(e: SeqexecFailure) extends CommandError {
   val msg = SeqexecFailure.explain(e)
 }
 
-case class CommandResponse(msg: String, keys: List[(String, String)])
+case class CommandResponse(msg: String, keys: List[(String, String)], steps: List[String])
 
 object CommandResponse {
-  def apply(msg: String): CommandResponse = CommandResponse(msg, Nil)
+  def apply(msg: String): CommandResponse = CommandResponse(msg, Nil, Nil)
 }
 
 sealed trait Commands {
@@ -106,21 +106,21 @@ object Commands {
           \/.right(CommandResponse(s"$oid sequence has ${cs.size()} steps."))
 
         case List("static") =>
-          \/.right(CommandResponse(s"$oid Static Values", keys(0, cs.getStaticKeys)))
+          \/.right(CommandResponse(s"$oid Static Values", keys(0, cs.getStaticKeys), Nil))
 
         case List("static", system) =>
           val ks = cs.getStaticKeys.filter(sysFilter(system))
-          \/.right(CommandResponse(s"$oid Static Values ($system only)", keys(0, ks)))
+          \/.right(CommandResponse(s"$oid Static Values ($system only)", keys(0, ks), Nil))
 
         case List("dynamic", step) =>
           ifStepValid(step) { s =>
-            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(s, cs.getIteratedKeys)))
+            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(s, cs.getIteratedKeys), Nil))
           }
 
         case List("dynamic", step, system) =>
           ifStepValid(step) { s =>
             val ks = cs.getIteratedKeys.filter(sysFilter(system))
-            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(s, ks)))
+            \/.right(CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(s, ks), Nil))
           }
 
         case _ =>
@@ -168,7 +168,8 @@ object Commands {
           for {
             oid <- parseId(obsId)
             s   <- ExecutorImpl.state(oid).leftMap(SeqexecFailureError.apply)
-            r   <- \/.right(CommandResponse(ExecutorImpl.stateDescription(s)))
+            d   = ExecutorImpl.stateDescription(s)
+            r   <- \/.right(CommandResponse(d._1, Nil, d._2))
           } yield r
 
         case _ =>

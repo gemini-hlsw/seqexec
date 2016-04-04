@@ -265,6 +265,8 @@ curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/dynamic/1/observe
 
 ## Run a sequence
 
+Starts running a sequence
+
 | Type  | url | parameters |
 | :------------- | :------------- | :-- |
 | POST  | /api/seqexec/commands/\<obsid>/run  ||
@@ -281,6 +283,8 @@ curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/run
 
 ## Stop a sequence
 
+Stops/Pauses a running sequence
+
 | Type  | url | parameters |
 | :------------- | :------------- | :-- |
 | POST  | /api/seqexec/commands/\<obsid>/stop  ||
@@ -292,5 +296,29 @@ curl -X POST http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/stop
   "error": false,
   "response": "Stop requested for GS-2016A-Q-0-1.",
   "keys": []
+}
+```
+
+## Get sequence status
+
+Returns the status of a currently running sequence
+
+| Type  | url | parameters |
+| :------------- | :------------- | :-- |
+| GET  | /api/seqexec/commands/\<obsid>/status  ||
+
+```
+$: curl http://localhost:9090/api/seqexec/commands/GS-2016A-Q-0-1/status
+{
+  "command": "status",
+  "error": false,
+  "response": "Completed 5 steps out of 20",
+  "steps": [
+    "Step 1 completed with label S20160404S0042",
+    "Step 2 completed with label S20160404S0043",
+    "Step 3 completed with label S20160404S0044",
+    "Step 4 completed with label S20160404S0045",
+    "Step 5 completed with label S20160404S0046"
+  ]
 }
 ```

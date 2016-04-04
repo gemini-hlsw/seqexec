@@ -71,14 +71,14 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
       case -\/(e) => Task.now(-\/(e))
     }
 
-  def stateDescription(state: ExecState): String = {
-    "Completed " + state.completed.length + " steps out of " + (state.completed.length + state.remaining.length) +
+  def stateDescription(state: ExecState): (String, List[String]) = {
+    ("Completed " + state.completed.length + " steps out of " + (state.completed.length + state.remaining.length),
       ( state.completed.zipWithIndex.map(a => (a._1, a._2+1)) map {
         case (Ok(StepResult(_,ObserveResult(label))), idx) => s"Step $idx completed with label $label"
         case (Failed(result), idx) => s"Step $idx failed with error " + result.map(SeqexecFailure.explain).toList.mkString("\n", "\n", "")
         case (Skipped, idx)        => s"Step $idx skipped"
       }
-    ).mkString("\n", "\n", "")
+    ))
   }
 
 }
