@@ -43,7 +43,7 @@ object SeqexecUI {
     def render(s:State) = {
       <.div(
         NavBar(),
-        SeqexecCircuit.connect(_.queue)(QueueArea(_))
+        SeqexecCircuit.connect(a => a)(a => QueueArea(a.zoom(_.queue), a.zoom(_.searchResults)))
       )
     }
   }

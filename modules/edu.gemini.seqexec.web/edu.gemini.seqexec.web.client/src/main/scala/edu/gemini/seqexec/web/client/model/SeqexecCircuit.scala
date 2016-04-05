@@ -5,7 +5,7 @@ import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
-import edu.gemini.seqexec.web.common.SeqexecQueue
+import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -36,7 +36,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue])
+case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchResults: Pot[List[Sequence]])
 
 /**
   * Contains the model for Diode
@@ -45,7 +45,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val queueHandler = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
 
-  override protected def initialModel = SeqexecAppRootModel(Empty)
+  override protected def initialModel = SeqexecAppRootModel(Empty, Empty)
 
   override protected def actionHandler = combineHandlers(queueHandler)
 }

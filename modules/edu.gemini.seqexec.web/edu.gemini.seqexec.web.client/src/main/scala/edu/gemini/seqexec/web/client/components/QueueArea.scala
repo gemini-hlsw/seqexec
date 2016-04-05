@@ -6,13 +6,15 @@ import diode.react._
 import edu.gemini.seqexec.web.client.model.UpdatedQueue
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
-import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
+import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
 import scalacss.ScalaCssReact._
 
 object QueueTableBody {
+  case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
+
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
@@ -27,7 +29,7 @@ object QueueTableBody {
         "\u00a0")
     )
 
-  val component = ReactComponentB[QueueArea.Props]("QueueTableBody")
+  val component = ReactComponentB[Props]("QueueTableBody")
     .stateless
     .render_P( p =>
       <.tbody(
@@ -64,7 +66,7 @@ object QueueTableBody {
     )
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(QueueArea.Props(p))
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
 
 }
 
@@ -72,7 +74,7 @@ object QueueTableBody {
   * Displays the elements on the queue
   */
 object QueueArea {
-  case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
+  case class Props(queue: ModelProxy[Pot[SeqexecQueue]], s: ModelProxy[Pot[List[Sequence]]])
 
   def load(p: Props) =
     // Request to load the queue if not present
@@ -160,6 +162,6 @@ object QueueArea {
     .componentDidMount($ => load($.props))
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
+  def apply(p: ModelProxy[Pot[SeqexecQueue]], s: ModelProxy[Pot[List[Sequence]]]) = component(Props(p, s))
 
 }
