@@ -74,7 +74,7 @@ object QueueTableBody {
   * Displays the elements on the queue
   */
 object QueueArea {
-  case class Props(queue: ModelProxy[Pot[SeqexecQueue]], s: ModelProxy[Pot[List[Sequence]]])
+  case class Props(queue: ModelProxy[Pot[SeqexecQueue]], searchResults: ModelProxy[Pot[List[Sequence]]])
 
   def load(p: Props) =
     // Request to load the queue if not present
@@ -97,7 +97,7 @@ object QueueArea {
               ),
               <.div(
                 ^.cls := "right menu",
-                SequenceSearch()
+                SequenceSearch(p.searchResults)
               )
             ),
             <.div(

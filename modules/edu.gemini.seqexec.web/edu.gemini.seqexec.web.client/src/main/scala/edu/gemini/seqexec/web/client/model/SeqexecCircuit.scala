@@ -18,6 +18,12 @@ case class UpdatedQueue(potResult: Pot[SeqexecQueue]) extends PotAction[SeqexecQ
     UpdatedQueue(newResult)
   }
 }
+// Request a search
+case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Empty) extends PotAction[List[Sequence], SearchSequence] {
+  override def next(newResult: Pot[List[Sequence]]) = {
+    SearchSequence(criteria, newResult)
+  }
+}
 
 /**
   * Handles actions related to the queue like loading and adding new elements
@@ -34,6 +40,20 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
 }
 
 /**
+  * Handles actions related to search
+  */
+class SearchHandler[M](modelRW: ModelRW[M, Pot[List[Sequence]]]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case action: SearchSequence =>
+      // Request loading the queue with ajax
+      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(List(_))
+      action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
+  }
+}
+
+/**
   * Root of the UI Model of the application
   */
 case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchResults: Pot[List[Sequence]])
@@ -44,8 +64,9 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchResults: Pot[List
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
 
   val queueHandler = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
+  val searchHandler = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
 
   override protected def initialModel = SeqexecAppRootModel(Empty, Empty)
 
-  override protected def actionHandler = combineHandlers(queueHandler)
+  override protected def actionHandler = combineHandlers(queueHandler, searchHandler)
 }
