@@ -43,7 +43,12 @@ object SeqexecTerminal extends js.JSApp {
     commands.get(command).map { h =>
       h.handler.handle(Nil, terminal)
     }.getOrElse {
-      terminal.error(s"Command '$command' unknown")
+      // if it is help show a list of the commands
+      if (command == "help") {
+        terminal.echo(s"Commands available: ${commands.keys.mkString(" ")}")
+      } else {
+        terminal.error(s"Command '$command' unknown")
+      }
     }
   }
 
