@@ -15,15 +15,10 @@ case class Sequence(id: String, steps: SequenceSteps)
 sealed trait SequenceState
 
 object SequenceState {
-
   case object NotRunning extends SequenceState
-
   case object Running extends SequenceState
-
   case object Error extends SequenceState
-
   case object Completed extends SequenceState
-
 }
 
 case class SequenceInQueue(id: String, state: SequenceState, instrument: String, error: Option[String])

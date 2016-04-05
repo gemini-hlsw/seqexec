@@ -24,7 +24,7 @@ object SeqexecUI {
 
       Callback.future(
         SeqexecWebClient.read(id).collect {
-          case u: Sequence => $.modState(s => s.copy(searching = false, Nil, Some(u)))
+          case u: List[Sequence] => $.modState(s => s.copy(searching = false, Nil, u.headOption))
         }.recover {
           case e: AjaxException if e.xhr.status == 404 => handleSearchError(s"Sequence '$id' not found")
           case e                                       => handleSearchError(e.getMessage)

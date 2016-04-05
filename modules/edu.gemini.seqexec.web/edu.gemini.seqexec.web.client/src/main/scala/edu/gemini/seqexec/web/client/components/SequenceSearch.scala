@@ -8,6 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
+import org.scalajs.dom.ext.KeyCode
 
 object SequenceSearch {
   case class Props(searchResults: ModelProxy[Pot[List[Sequence]]])
@@ -15,7 +16,7 @@ object SequenceSearch {
   case class State(searchText: String)
 
   class Backend($: BackendScope[Props, State]) {
-    def onEnter(e: ReactKeyboardEventI): Callback = Callback.ifTrue(e.charCode == 13, search)
+    def onEnter(e: ReactKeyboardEventI): Callback = Callback.ifTrue(e.charCode == KeyCode.Enter, search)
 
     def search: Callback = $.state >>= {s => $.props >>= {_.searchResults.dispatch(SearchSequence(s.searchText))}}
 

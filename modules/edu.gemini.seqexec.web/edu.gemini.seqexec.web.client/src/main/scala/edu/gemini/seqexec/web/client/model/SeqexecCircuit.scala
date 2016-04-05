@@ -48,7 +48,7 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[List[Sequence]]]) extends ActionH
   override def handle = {
     case action: SearchSequence =>
       // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(List(_))
+      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
   }
 }

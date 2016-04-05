@@ -17,10 +17,10 @@ import scalaz.{-\/, \/-}
   */
 object SeqexecUIApiRoutes {
   val routes: Routes = {
-    case GET(p"/api/sequence/$id<.*-[0-9]+>") => Action {
+    case GET(p"/api/seqexec/sequence/$id<.*-[0-9]+>") => Action {
       val obsId = new SPObservationID(id)
       ExecutorImpl.read(obsId) match {
-        case \/-(s) => Results.Ok(write(Sequence(obsId.stringValue(), s.toSequenceSteps)))
+        case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), s.toSequenceSteps))))
         case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
       }
     }
