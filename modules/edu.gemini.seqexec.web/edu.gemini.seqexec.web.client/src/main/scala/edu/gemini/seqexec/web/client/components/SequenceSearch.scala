@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.data.Pot
+import diode.react.ReactPot._
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model.SearchSequence
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
@@ -40,7 +41,10 @@ object SequenceSearch {
         ),
         <.div(
           ^.cls := "results"
-        )
+        ),
+        p.searchResults().render(_ => <.p("ok")),
+        p.searchResults().renderPending(_ => <.p("pending")),
+        p.searchResults().renderFailed(_ => <.p("failed"))
       )
   }
 

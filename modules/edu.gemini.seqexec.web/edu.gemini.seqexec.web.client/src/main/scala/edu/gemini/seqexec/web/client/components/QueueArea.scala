@@ -3,10 +3,10 @@ package edu.gemini.seqexec.web.client.components
 import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
-import edu.gemini.seqexec.web.client.model.UpdatedQueue
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, UpdatedQueue}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
-import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
+import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
@@ -29,8 +29,11 @@ object QueueTableBody {
         "\u00a0")
     )
 
+  def load(p: Props) =
+      // Request to load the queue if not present
+      Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
+
   val component = ReactComponentB[Props]("QueueTableBody")
-    .stateless
     .render_P( p =>
       <.tbody(
         // Render after data arrives
@@ -64,23 +67,53 @@ object QueueTableBody {
         p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i")))
       )
     )
+    .componentDidMount($ => load($.props))
     .build
 
   def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
 
 }
 
+object LoadingIndicator {
+  val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingIndicator")
+    .stateless
+    .render_P( p =>
+      <.div(
+        p().renderPending(_ => <.div(
+          ^.cls := "ui active dimmer",
+          <.div(
+            ^.cls := "ui text loader large",
+            "Loading")
+          )
+        )
+      )
+    )
+    .build
+
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(p)
+}
+
+object LoadingErrorMsg {
+  val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingIndicator")
+    .stateless
+    .render_P( p =>
+      <.div(
+        p().renderFailed(_ =>
+          CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
+        )
+      )
+    )
+    .build
+
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(p)
+}
+
 /**
   * Displays the elements on the queue
   */
 object QueueArea {
-  case class Props(queue: ModelProxy[Pot[SeqexecQueue]], searchResults: ModelProxy[Pot[List[Sequence]]])
 
-  def load(p: Props) =
-    // Request to load the queue if not present
-    Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
-
-  val component = ReactComponentB[Props]("QueueArea")
+  val component = ReactComponentB[Unit]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -97,22 +130,15 @@ object QueueArea {
               ),
               <.div(
                 ^.cls := "right menu",
-                SequenceSearch(p.searchResults)
+                SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
               )
             ),
             <.div(
               ^.cls := "ui secondary segment",
               // Show a loading indicator if we are waiting for server data
-              p.queue().renderPending(_ => <.div(
-                ^.cls := "ui active dimmer",
-                <.div(
-                  ^.cls := "ui text loader large",
-                  "Loading")
-              )),
+              SeqexecCircuit.connect(_.queue)(LoadingIndicator(_)),
               // If there was an error on the process display a message
-              p.queue().renderFailed(_ =>
-                CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
-              ),
+              SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
               <.table(
                 ^.cls := "ui selectable compact celled table unstackable",
                 <.thead(
@@ -126,7 +152,7 @@ object QueueArea {
                     )
                   )
                 ),
-                QueueTableBody(p.queue),
+                SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
                 <.tfoot(
                   <.tr(
                     <.th(
@@ -159,9 +185,8 @@ object QueueArea {
         )
       )
     )
-    .componentDidMount($ => load($.props))
-    .build
+    .buildU
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]], s: ModelProxy[Pot[List[Sequence]]]) = component(Props(p, s))
+  def apply() = component()
 
 }

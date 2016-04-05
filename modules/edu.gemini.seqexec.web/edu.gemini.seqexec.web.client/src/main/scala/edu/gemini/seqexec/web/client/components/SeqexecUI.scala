@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.client.components
 
-import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB}
@@ -43,7 +42,7 @@ object SeqexecUI {
     def render(s:State) = {
       <.div(
         NavBar(),
-        SeqexecCircuit.connect(a => a)(a => QueueArea(a.zoom(_.queue), a.zoom(_.searchResults)))
+        QueueArea()
       )
     }
   }

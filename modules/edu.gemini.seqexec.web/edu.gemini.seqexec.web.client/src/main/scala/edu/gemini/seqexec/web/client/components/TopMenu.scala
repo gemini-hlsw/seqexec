@@ -13,6 +13,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 object TopMenu {
 
   val component = ReactComponentB[Unit]("SeqexecTopMenu")
+    .stateless
     .render(P =>
       <.a(
         ^.href :="#",
