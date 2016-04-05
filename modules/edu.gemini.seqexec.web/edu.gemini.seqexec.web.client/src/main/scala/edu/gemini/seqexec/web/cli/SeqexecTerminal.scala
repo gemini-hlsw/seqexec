@@ -56,7 +56,7 @@ object SeqexecTerminal extends js.JSApp {
   override def main(): Unit = {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
-      .greeting(false)
+      .greetings("Seqexec terminal\n================")
       .completion(true))
   }
 }

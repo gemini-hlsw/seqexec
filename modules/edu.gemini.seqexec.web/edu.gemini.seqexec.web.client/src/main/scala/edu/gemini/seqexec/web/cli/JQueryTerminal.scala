@@ -18,6 +18,7 @@ object JQueryTerminal {
   class JsTerminalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTerminalOptions, JsTerminalOptionBuilder](new JsTerminalOptionBuilder(_)) {
     def prompt(t: String) = jsOpt("prompt", t)
     def greeting(t: Boolean) = jsOpt("greeting", t)
+    def greetings(s: String) = jsOpt("greetings", s)
     def completion(t: Boolean) = jsOpt("completion", t)
   }
 
