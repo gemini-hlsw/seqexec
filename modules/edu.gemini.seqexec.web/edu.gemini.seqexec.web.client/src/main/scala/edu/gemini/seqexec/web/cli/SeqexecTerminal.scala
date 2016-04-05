@@ -13,6 +13,9 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 import upickle.default._
 
+import scalaz._
+import Scalaz._
+
 @JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
   type CommandFunction = (List[String], Terminal) => js.Any
@@ -40,15 +43,13 @@ object SeqexecTerminal extends js.JSApp {
   )
 
   val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
-    commands.get(command).map { h =>
-      h.handler.handle(Nil, terminal)
-    }.getOrElse {
-      // if it is help show a list of the commands
-      if (command == "help") {
-        terminal.echo(s"Commands available: ${commands.keys.mkString(" ")}")
-      } else {
-        terminal.error(s"Command '$command' unknown")
-      }
+    val tokens = command.split(" ").toList
+    tokens match {
+      case cmd :: args if commands.contains(cmd)         => commands.get(command).foreach(_.handler.handle(args, terminal))
+      case "help" :: Nil                                 => terminal.echo(s"Commands available: ${commands.keys.mkString(" ")}")
+      case "help" :: cmd :: _  if commands.contains(cmd) => terminal.echo(s"help: ${~commands.get(cmd).map(_.description)}")
+      case "" :: Nil                                     => // Ignore
+      case cmd :: _                                      => terminal.error(s"Command '$command' unknown")
     }
   }
 
