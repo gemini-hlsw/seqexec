@@ -34,6 +34,7 @@ lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
 // Client side project using Scala.js
 lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
     // Skip tests in module, Rhino doesn't play nice with jquery
@@ -57,6 +58,11 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
       ScalaCSS.value,
       ScalaJSDom.value
     ) ++ ReactScalaJS.value ++ Diode.value
+  )
+  .settings(
+    buildInfoUsePackageAsPath := true,
+    buildInfoKeys := Seq(name, version),
+    buildInfoPackage := "edu.gemini.seqexec.web.client"
   )
   .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test")
 
