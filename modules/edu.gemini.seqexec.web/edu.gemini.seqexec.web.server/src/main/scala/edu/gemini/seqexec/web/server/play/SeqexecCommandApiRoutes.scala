@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server.play
 
 import edu.gemini.seqexec.server.Commands
-import edu.gemini.seqexec.web.server.model.CommandsModel._
+import edu.gemini.seqexec.web.server.model.CommandsConversions._
 import play.api.mvc.{Action, Results}
 import play.api.routing.Router.Routes
 import play.api.routing.sird._
