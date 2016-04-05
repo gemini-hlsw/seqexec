@@ -19,7 +19,7 @@ object SeqexecWebClient {
     )
     .map(s => default.read[List[Sequence]](s.responseText))
     .recover {
-      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound => Nil // If not found, we'll consider it like an empty response
+      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }
   }
 

@@ -24,6 +24,7 @@ object SemanticUI {
     def visibility(o: JsVisiblityOptions): this.type = js.native
 
     def dropdown(): this.type = js.native
+    def dropdown(cmd: String): this.type = js.native
 
     def tab(): this.type = js.native
 
