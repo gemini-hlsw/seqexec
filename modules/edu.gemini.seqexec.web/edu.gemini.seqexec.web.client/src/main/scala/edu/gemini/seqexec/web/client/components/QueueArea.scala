@@ -108,6 +108,26 @@ object LoadingErrorMsg {
   def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(p)
 }
 
+object QueueAreaTitle {
+  val component = ReactComponentB[Unit]("")
+    .stateless
+    .render(_ =>
+      <.div(
+        ^.cls := "ui top attached text menu segment",
+        <.div(
+          ^.cls := "ui header item",
+          "Queue"
+        ),
+        <.div(
+          ^.cls := "right menu",
+          SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
+        )
+      )
+    ).buildU
+
+  def apply() = component()
+}
+
 /**
   * Displays the elements on the queue
   */
@@ -117,63 +137,92 @@ object QueueArea {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui grid container",
+        ^.cls := "ui raised segments container",
+        QueueAreaTitle(),
         <.div(
-          ^.cls := "sixteen wide column",
+          ^.cls := "ui attached segment",
           <.div(
-            ^.cls := "ui raised segments",
+            ^.cls := "ui divided grid",
             <.div(
-              ^.cls := "ui top attached text menu",
+              ^.cls := "row",
               <.div(
-                ^.cls := "ui header item",
-                "Queue"
-              ),
-              <.div(
-                ^.cls := "right menu",
-                SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
-              )
-            ),
-            <.div(
-              ^.cls := "ui secondary segment",
-              // Show a loading indicator if we are waiting for server data
-              SeqexecCircuit.connect(_.queue)(LoadingIndicator(_)),
-              // If there was an error on the process display a message
-              SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
-              <.table(
-                ^.cls := "ui selectable compact celled table unstackable",
-                <.thead(
-                  <.tr(
-                    <.th("Obs ID"),
-                    <.th("State"),
-                    <.th("Instrument"),
-                    <.th(
-                      SeqexecStyles.notInMobile,
-                      "Notes"
+                ^.cls := "ten wide column",
+                // Show a loading indicator if we are waiting for server data
+                SeqexecCircuit.connect(_.queue)(LoadingIndicator(_)),
+                // If there was an error on the process display a message
+                SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
+                <.table(
+                  ^.cls := "ui selectable compact celled table unstackable",
+                  <.thead(
+                    <.tr(
+                      <.th("Obs ID"),
+                      <.th("State"),
+                      <.th("Instrument"),
+                      <.th(
+                        SeqexecStyles.notInMobile,
+                        "Notes"
+                      )
+                    )
+                  ),
+                  SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
+                  <.tfoot(
+                    <.tr(
+                      <.th(
+                        ^.colSpan := "4",
+                        <.div(
+                          ^.cls := "ui right floated pagination menu",
+                          <.a(
+                            ^.cls := "icon item",
+                            Icon("left chevron")
+                          ),
+                          <.a(
+                            ^.cls := "item","1"),
+                          <.a(
+                            ^.cls := "item","2"),
+                          <.a(
+                            ^.cls := "item","3"),
+                          <.a(
+                            ^.cls := "item","4"),
+                          <.a(
+                            ^.cls := "icon item",
+                            Icon("right chevron")
+                          )
+                        )
+                      )
                     )
                   )
+                )
+              ),
+              <.div(
+                ^.cls := "six wide column",
+                <.div(
+                  ^.cls := "ui top attached segment header",
+                  "Found"
                 ),
-                SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
-                <.tfoot(
-                  <.tr(
-                    <.th(
-                      ^.colSpan := "4",
-                      <.div(
-                        ^.cls := "ui right floated pagination menu",
-                        <.a(
-                          ^.cls := "icon item",
-                          Icon("left chevron")
+                <.div(
+                  ^.cls := "ui scroll pane attached segment",
+                  <.table(
+                    ^.cls := "ui selectable compact table unstackable",
+                    <.thead(
+                      <.tr(
+                        <.th("Obs ID"),
+                        <.th("Instrument"),
+                        <.th("\u00a0")
+                      )
+                    ),
+                    <.tbody(
+                      <.tr(
+                        <.td(
+                          ^.cls := "collapsing",
+                          "GS-2016A-Q-0-1"
                         ),
-                        <.a(
-                          ^.cls := "item","1"),
-                        <.a(
-                          ^.cls := "item","2"),
-                        <.a(
-                          ^.cls := "item","3"),
-                        <.a(
-                          ^.cls := "item","4"),
-                        <.a(
-                          ^.cls := "icon item",
-                          Icon("right chevron")
+                        <.td("GPI"),
+                        <.td(
+                          ^.cls := "collapsing",
+                          <.button(
+                            ^.cls := "circular ui icon button",
+                            Icon("plus")
+                          )
                         )
                       )
                     )
