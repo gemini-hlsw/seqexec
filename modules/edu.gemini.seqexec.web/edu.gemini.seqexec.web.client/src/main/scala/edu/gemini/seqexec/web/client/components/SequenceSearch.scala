@@ -17,6 +17,7 @@ object SequenceSearchResults {
     .render_P(p =>
       <.div(
         ^.cls := "six wide column",
+        LoadingIndicator("Searching...", p),
         <.div(
           ^.cls := "ui top attached segment header",
           "Found"

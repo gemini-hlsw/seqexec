@@ -74,25 +74,6 @@ object QueueTableBody {
 
 }
 
-object LoadingIndicator {
-  val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingIndicator")
-    .stateless
-    .render_P( p =>
-      <.div(
-        p().renderPending(_ => <.div(
-          ^.cls := "ui active dimmer",
-          <.div(
-            ^.cls := "ui text loader large",
-            "Loading")
-          )
-        )
-      )
-    )
-    .build
-
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(p)
-}
-
 object LoadingErrorMsg {
   val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingIndicator")
     .stateless
@@ -149,7 +130,7 @@ object QueueArea {
                 ^.cls := "ten wide column",
                 // TODO These Divs occupy space even when empty, We may need to set the table margin manually
                 // Show a loading indicator if we are waiting for server data
-                SeqexecCircuit.connect(_.queue)(LoadingIndicator(_)),
+                SeqexecCircuit.connect(_.queue)(LoadingIndicator("Loading", _)),
                 // If there was an error on the process display a message
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
                 <.table(
