@@ -19,7 +19,7 @@ object JQueryTerminal {
     def prompt(t: String) = jsOpt("prompt", t)
     def greeting(t: Boolean) = jsOpt("greeting", t)
     def greetings(s: String) = jsOpt("greetings", s)
-    def completion(t: Boolean) = jsOpt("completion", t)
+    def completion(t: Array[String]) = jsOpt("completion", t)
   }
 
   @js.native

@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.cli
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import org.querki.jquery.$
-import org.scalajs.dom.document
+import org.scalajs.dom.{document, FormData}
 import org.scalajs.dom.ext.Ajax
 import JQueryTerminal.{Terminal, _}
 import edu.gemini.seqexec.web.common.RegularCommand
@@ -31,12 +31,13 @@ object SeqexecTerminal extends js.JSApp {
   def pause(t: Terminal): Future[Unit] = Future.apply(t.pause())
   def resume(t: Terminal): Future[Unit] = Future.apply(t.resume())
   def runInBackground[A](a: => Future[A], t: Terminal): Future[A] =
-    for {
+    (for {
       _ <- pause(t)
       f <- a
-      _ <- resume(t)
-    } yield f
-  
+    } yield f).andThen {
+      case _ => resume(t)
+    }
+
   object HostHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Any = {
       runInBackground(Ajax.get(s"$baseUrl/host"), terminal).onComplete {
@@ -48,14 +49,26 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
+  object SetHostHandler extends CommandHandler {
+    override def handle(args: List[String], terminal: Terminal): Any = {
+      runInBackground(Ajax.post(s"$baseUrl/host", s"host=${args(0)}"), terminal).onComplete {
+        case Success(s) =>
+          val r = read[RegularCommand](s.responseText)
+          if (r.error) terminal.error(r.response) else terminal.echo(r.response)
+        case Failure(s) => terminal.error(s.toString)
+      }
+    }
+  }
+
   val commands: Map[String, Command] = Map(
-    "host" -> Command(HostHandler, "Returns the odb host used by the seqexec")
+    "host" -> Command(HostHandler, "Returns the odb host used by the seqexec"),
+    "shost" -> Command(SetHostHandler, "Returns the odb host used by the seqexec")
   )
 
   val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
     val tokens = command.split(" ").toList
     tokens match {
-      case cmd :: args if commands.contains(cmd)         => commands.get(command).foreach(_.handler.handle(args, terminal))
+      case cmd :: args if commands.contains(cmd)         => commands.get(cmd).foreach(a => a.handler.handle(args, terminal))
       case "help" :: Nil                                 => terminal.echo(s"Commands available: ${commands.keys.mkString(" ")}")
       case "help" :: cmd :: _  if commands.contains(cmd) => terminal.echo(s"help: ${~commands.get(cmd).map(_.description)}")
       case "" :: Nil                                     => // Ignore
@@ -67,6 +80,6 @@ object SeqexecTerminal extends js.JSApp {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
       .greetings("Seqexec terminal\n================")
-      .completion(true))
+      .completion(Array("help", "exit", "host")))
   }
 }
