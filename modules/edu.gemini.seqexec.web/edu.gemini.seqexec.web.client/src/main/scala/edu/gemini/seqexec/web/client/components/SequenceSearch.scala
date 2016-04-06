@@ -11,6 +11,53 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.KeyCode
 
+
+object SequenceSearchResults {
+  val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResult")
+    .render_P(p =>
+      <.div(
+        ^.cls := "six wide column",
+        <.div(
+          ^.cls := "ui top attached segment header",
+          "Found"
+        ),
+        <.div(
+          ^.cls := "ui scroll pane attached segment",
+          <.table(
+            ^.cls := "ui selectable compact table unstackable",
+            <.thead(
+              <.tr(
+                <.th("Obs ID"),
+                <.th("Instrument"),
+                <.th("\u00a0")
+              )
+            ),
+            <.tbody(
+              p().renderReady(s => s.map( u =>
+                <.tr(
+                  <.td(
+                    ^.cls := "collapsing",
+                    u.id
+                  ),
+                  <.td("GPI"),
+                  <.td(
+                    ^.cls := "collapsing",
+                    <.button(
+                      ^.cls := "circular ui icon button",
+                      Icon("plus")
+                    )
+                  )
+                )
+              ))
+            )
+          )
+        )
+      )
+    )
+    .build
+
+  def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
+}
 object SequenceSearch {
   case class Props(searchResults: ModelProxy[Pot[List[Sequence]]])
 

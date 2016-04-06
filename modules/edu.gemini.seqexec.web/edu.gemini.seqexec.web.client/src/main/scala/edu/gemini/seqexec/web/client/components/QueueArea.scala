@@ -147,6 +147,7 @@ object QueueArea {
               ^.cls := "row",
               <.div(
                 ^.cls := "ten wide column",
+                // TODO These Divs occupy space even when empty, We may need to set the table margin manually
                 // Show a loading indicator if we are waiting for server data
                 SeqexecCircuit.connect(_.queue)(LoadingIndicator(_)),
                 // If there was an error on the process display a message
@@ -193,42 +194,7 @@ object QueueArea {
                   )
                 )
               ),
-              <.div(
-                ^.cls := "six wide column",
-                <.div(
-                  ^.cls := "ui top attached segment header",
-                  "Found"
-                ),
-                <.div(
-                  ^.cls := "ui scroll pane attached segment",
-                  <.table(
-                    ^.cls := "ui selectable compact table unstackable",
-                    <.thead(
-                      <.tr(
-                        <.th("Obs ID"),
-                        <.th("Instrument"),
-                        <.th("\u00a0")
-                      )
-                    ),
-                    <.tbody(
-                      <.tr(
-                        <.td(
-                          ^.cls := "collapsing",
-                          "GS-2016A-Q-0-1"
-                        ),
-                        <.td("GPI"),
-                        <.td(
-                          ^.cls := "collapsing",
-                          <.button(
-                            ^.cls := "circular ui icon button",
-                            Icon("plus")
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
+              SeqexecCircuit.connect(_.searchResults)(SequenceSearchResults(_))
             )
           )
         )
