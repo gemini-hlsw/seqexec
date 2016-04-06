@@ -20,7 +20,7 @@ object SequenceSearchResults {
         LoadingIndicator("Searching...", p),
         <.div(
           ^.cls := "ui top attached segment header",
-          "Found"
+          "Found " + p().map(_.size).getOrElse(0)
         ),
         <.div(
           ^.cls := "ui scroll pane attached segment",
@@ -34,22 +34,24 @@ object SequenceSearchResults {
               )
             ),
             <.tbody(
-              p().renderReady(s => s.map( u =>
-                <.tr(
-                  <.td(
-                    ^.cls := "collapsing",
-                    u.id
-                  ),
-                  <.td("GPI"),
-                  <.td(
-                    ^.cls := "collapsing",
-                    <.button(
-                      ^.cls := "circular ui icon button",
-                      Icon("plus")
+              p().renderReady(s => s.zipWithIndex.collect { case (u, i) =>
+                  <.tr(
+                    ^.key := i,
+                    <.td(
+                      ^.cls := "collapsing",
+                      u.id
+                    ),
+                    <.td("GPI"),
+                    <.td(
+                      ^.cls := "collapsing",
+                      <.button(
+                        ^.cls := "circular ui icon button",
+                        Icon("plus")
+                      )
                     )
                   )
-                )
-              ))
+                }
+              )
             )
           )
         )
