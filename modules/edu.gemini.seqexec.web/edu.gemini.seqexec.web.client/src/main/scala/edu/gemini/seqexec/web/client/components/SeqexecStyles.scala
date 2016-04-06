@@ -30,6 +30,20 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   ))
 
+  // TODO I think the parent-child relation sholud be better encoded in this case
+  val scrollPane = style(unsafeRoot(".ui.scroll.pane")(
+    overflow.auto,
+    maxHeight(20.em) // TODO This size may need to be calculated on the fly
+  ))
+
+  val scrollPaneSegment = style(unsafeRoot(".ui.scroll.pane.attached.segment")(
+    padding(0.px),
+    height(100.%%),
+    unsafeChild("> .ui.table")(
+      border(0.px)
+    )
+  ))
+
   // Media queries to hide/display items for mobile
   val notInMobile = style(
     media.only.screen.maxWidth(767.px)(
