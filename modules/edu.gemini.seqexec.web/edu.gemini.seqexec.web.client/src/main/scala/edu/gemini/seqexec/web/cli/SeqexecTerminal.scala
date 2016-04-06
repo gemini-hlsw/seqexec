@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.common.RegularCommand
 import scala.scalajs.js.Any
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import upickle.default._
 
 import scalaz._
@@ -27,9 +28,18 @@ object SeqexecTerminal extends js.JSApp {
 
   case class Command(handler: CommandHandler, description: String)
 
+  def pause(t: Terminal): Future[Unit] = Future.apply(t.pause())
+  def resume(t: Terminal): Future[Unit] = Future.apply(t.resume())
+  def runInBackground[A](a: => Future[A], t: Terminal): Future[A] =
+    for {
+      _ <- pause(t)
+      f <- a
+      _ <- resume(t)
+    } yield f
+  
   object HostHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Any = {
-      Ajax.get(s"$baseUrl/host").onComplete {
+      runInBackground(Ajax.get(s"$baseUrl/host"), terminal).onComplete {
         case Success(s) =>
           val r = read[RegularCommand](s.responseText)
           if (r.error) terminal.error(r.response) else terminal.echo(r.response)

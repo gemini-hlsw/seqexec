@@ -26,6 +26,8 @@ object JQueryTerminal {
   trait Terminal extends js.Object {
     def echo(s: String):js.Any = js.native
     def error(s: String):js.Any = js.native
+    def pause():js.Any = js.native
+    def resume():js.Any = js.native
   }
 
   @js.native
