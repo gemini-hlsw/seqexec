@@ -114,10 +114,6 @@ object QueueAreaTitle {
   * Displays the elements on the queue
   */
 object QueueArea {
-  implicit object ExtDataEq extends FastEq[Pot[SeqexecQueue]] {
-    override def eqv(a: Pot[SeqexecQueue], b: Pot[SeqexecQueue]): Boolean = a.state == b.state
-  }
-
   val component = ReactComponentB[ModelProxy[SearchAreaState]]("QueueArea")
     .stateless
     .render_P(p =>
@@ -138,7 +134,10 @@ object QueueArea {
                 ),
                 // TODO These Divs occupy space even when empty, We may need to set the table margin manually
                 // Show a loading indicator if we are waiting for server data
-                SeqexecCircuit.connect(_.queue)(LoadingIndicator("Loading", _)),
+                {
+                  implicit val eq = PotEq.seqexecQueueEq
+                  SeqexecCircuit.connect(_.queue)(LoadingIndicator("Loading", _))
+                },
                 // If there was an error on the process display a message
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
                 <.table(

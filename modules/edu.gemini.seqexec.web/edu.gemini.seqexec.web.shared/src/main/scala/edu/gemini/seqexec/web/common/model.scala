@@ -6,20 +6,18 @@ import Scalaz._
 /**
   * Minimal models to be exchanged between client and server
   */
-
 case class StepConfig(key: String, value: String)
 case class Step(id: Int, config: List[StepConfig])
 case class SequenceSteps(steps: List[Step])
-case class Sequence(id: String, state: SequenceState, instrument: String, steps: SequenceSteps)
+case class Sequence(id: String, state: SequenceState, instrument: String, steps: SequenceSteps, error: Option[Int])
 
 sealed trait SequenceState
 
 object SequenceState {
   case object NotRunning extends SequenceState
-  case object Running extends SequenceState
-  case object Error extends SequenceState
-  case object Completed extends SequenceState
+  case object Running    extends SequenceState
+  case object Error      extends SequenceState
+  case object Completed  extends SequenceState
 }
 
-case class SequenceInQueue(id: String, state: SequenceState, instrument: String, error: Option[String])
-case class SeqexecQueue(queue: List[SequenceInQueue])
+case class SeqexecQueue(queue: List[Sequence])

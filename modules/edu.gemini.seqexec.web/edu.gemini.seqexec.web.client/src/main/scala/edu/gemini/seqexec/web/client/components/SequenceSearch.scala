@@ -4,7 +4,7 @@ import diode.FastEq
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.model.{OpenSearchArea, SearchSequence, SeqexecCircuit}
+import edu.gemini.seqexec.web.client.model.{AddToQueue, OpenSearchArea, SearchSequence, SeqexecCircuit}
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.Sequence
@@ -17,7 +17,7 @@ object SequenceSearchResultsHeader {
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
-        s"Found ${p().map(_.size).getOrElse(0)}"
+        s"Found ${p().map(_.size).getOrElse(0)} sequence(s)"
       )
     )
     .build
@@ -25,8 +25,11 @@ object SequenceSearchResultsHeader {
   def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
 }
 
-object SequenceSearchResultsBody{
+object SequenceSearchResultsBody {
+  def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(AddToQueue(u))
+
   val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResultBody")
+    .stateless
     .render_P(p =>
       <.tbody(
         p().renderReady(s => s.zipWithIndex.collect { case (u, i) =>
@@ -41,7 +44,7 @@ object SequenceSearchResultsBody{
                 ^.cls := "collapsing",
                 <.button(
                   ^.cls := "circular ui icon button",
-                  Icon("plus")
+                  Icon(Icon.Props("plus", onClick = addToQueue(p, u)))
                 )
               )
             )

@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot, PotAction}
+import diode.data.{Empty, Pot, PotAction, Ready}
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
@@ -29,6 +29,11 @@ case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Emp
 case object OpenSearchArea
 case object CloseSearchArea
 
+case class AddToQueue(s: Sequence)
+
+// End Actions
+
+// Action Handlers
 /**
   * Handles actions related to the queue like loading and adding new elements
   */
@@ -40,17 +45,17 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
+    case AddToQueue(s) =>
+      // Append to the current queue if not in the queue already
+      val u = value.map(u => u.copy((s :: u.queue.filter(_.id != s.id)).reverse))
+      updated(u)
   }
 }
-
-sealed trait SearchAreaState
-case object SearchAreaOpen extends SearchAreaState
-case object SearchAreaClosed extends SearchAreaState
 
 /**
   * Handles actions related to search
   */
-class SearchHandler[M](modelRW: ModelRW[M, Pot[List[Sequence]]]) extends ActionHandler(modelRW) {
+class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
@@ -75,6 +80,21 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionH
 }
 
 /**
+  * Generates Eq comparisions for Pot[A], it is useful for state indicators
+  */
+object PotEq {
+  def potStateEq[A]: FastEq[Pot[A]] = new FastEq[Pot[A]] {
+    override def eqv(a: Pot[A], b: Pot[A]): Boolean = a.state == b.state
+  }
+
+  val seqexecQueueEq = potStateEq[SeqexecQueue]
+}
+
+sealed trait SearchAreaState
+case object SearchAreaOpen extends SearchAreaState
+case object SearchAreaClosed extends SearchAreaState
+
+/**
   * Root of the UI Model of the application
   */
 case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchArea: SearchAreaState, searchResults: Pot[List[Sequence]])
@@ -83,6 +103,7 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchArea: SearchAreaS
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
+  type SearchResults = List[Sequence]
 
   val queueHandler = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
