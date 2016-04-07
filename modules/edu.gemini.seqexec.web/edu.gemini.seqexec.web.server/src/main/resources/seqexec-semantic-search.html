@@ -60,18 +60,19 @@
 
         <div class="ui attached segment">
           <div class="ui divided grid">
-            <div class="row">
+            <div class="stretched row">
               <div class="ten wide column">
-                <!--div class="ui dimmer">
+                <div class="ui dimmer">
                   <div class="ui text loader large">Loading</div>
-                </div-->
+                </div>
                 <div class="ui negative message" style="display:none">
                   <i class="close icon"></i>
                   <div class="header">
                     Sorry, there was an error reading the queue from the server
                   </div>
                 </div>
-                <table class="ui selectable compact celled table unstackable">
+                <div class="segment">
+                  <table class="ui selectable compact celled table unstackable">
                   <thead>
                     <tr>
                       <th>Obs ID</th>
@@ -129,48 +130,78 @@
                       </th>
                     </tr></tfoot>
                 </table>
+                </div>
               </div>
               <div class="six wide column">
+                <div class="ui dimmer">
+                  <div class="ui text loader large">Loading</div>
+                </div>
+                <div class="ui negative message" style="display:none">
+                  <i class="close icon"></i>
+                  <div class="header">
+                    Sorry, there was an error reading the queue from the server
+                  </div>
+                </div>
+                <div class="segment">
                   <div class="ui top attached segment header">Found</div>
-                  <div class="ui scrollpane attached segment">
-                  <table class="ui selectable compact table unstackable">
-                    <thead>
-                      <tr>
-                        <th>Obs ID</th>
-                        <th>Instrument</th>
-                        <th>&nbsp</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td class="collapsing">GS-2016A-Q-0-1</td>
-                        <td>GPI</td>
-                        <td class="collapsing">
-                          <button class="circular ui icon button">
-                            <i class="icon plus"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>GS-2016A-Q-5-3</td>
-                        <td>GMOS-S</td>
-                        <td>
-                          <button class="circular ui icon button">
-                            <i class="icon plus"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>GS-2016A-Q-4-1</td>
-                        <td>Flamingos 2</td>
-                        <td>
-                          <button class="circular ui icon button">
-                            <i class="icon plus"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="ui scroll pane bottom attached segment">
+                    <table class="ui selectable compact table unstackable">
+                      <thead>
+                        <tr>
+                          <th>Obs ID</th>
+                          <th>Instrument</th>
+                          <th>&nbsp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="collapsing">GS-2016A-Q-0-1</td>
+                          <td>GPI</td>
+                          <td class="collapsing">
+                            <button class="circular ui icon button">
+                              <i class="icon plus"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>GS-2016A-Q-5-3</td>
+                          <td>GMOS-S</td>
+                          <td>
+                            <button class="circular ui icon button">
+                              <i class="icon plus"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>GS-2016A-Q-4-1</td>
+                          <td>Flamingos 2</td>
+                          <td>
+                            <button class="circular ui icon button">
+                              <i class="icon plus"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>GS-2016A-Q-4-1</td>
+                          <td>Flamingos 2</td>
+                          <td>
+                            <button class="circular ui icon button">
+                              <i class="icon plus"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>GS-2016A-Q-4-1</td>
+                          <td>Flamingos 2</td>
+                          <td>
+                            <button class="circular ui icon button">
+                              <i class="icon plus"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>

@@ -40,35 +40,11 @@
 
  .ui.scroll.pane {
    overflow: auto;
-   max-height: 20em;
+   max-height: 17.3em;
  }
- .ui.scroll.pane.mini {
-   max-height: 5em;
- }
- .ui.scroll.pane.tiny {
-   max-height: 10em;
- }
- .ui.scroll.pane.small {
-   max-height: 15em;
- }
- .ui.scroll.pane.medium {
-   max-height: 20em;
- }
- .ui.scroll.pane.large {
-   max-height: 25em;
- }
- .ui.scroll.pane.big {
-   max-height: 30em;
- }
- .ui.scroll.pane.huge {
-   max-height: 35em;
- }
- .ui.scroll.pane.massive {
-   max-height: 40em;
- }
+
  .ui.scroll.pane.attached.segment {
    padding: 0;
-   height: 100%;
  }
  .ui.scroll.pane.attached.segment > .ui.table {
    border: 0;
