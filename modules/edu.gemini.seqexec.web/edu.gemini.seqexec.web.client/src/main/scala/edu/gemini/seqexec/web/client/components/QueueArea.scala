@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.FastEq
 import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
@@ -75,6 +74,9 @@ object QueueTableBody {
 
 }
 
+/**
+  * Shows a message when there is an error loading the queue
+  */
 object LoadingErrorMsg {
   val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingErrorMessage")
     .stateless
@@ -90,6 +92,9 @@ object LoadingErrorMsg {
   def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(p)
 }
 
+/**
+  * Component for the title of the queue area, including the search component
+  */
 object QueueAreaTitle {
   val component = ReactComponentB[Unit]("")
     .stateless
@@ -132,9 +137,10 @@ object QueueArea {
                   "ten wide" -> (p() == SearchAreaOpen),
                   "sixteen wide" -> (p() == SearchAreaClosed)
                 ),
-                // TODO These Divs occupy space even when empty, We may need to set the table margin manually
+                // TODO These Divs occupy space even when empty, We may need to set the queue table margin-top to 0 manually
                 // Show a loading indicator if we are waiting for server data
                 {
+                  // Special equality check to avoid certain UI artifacts
                   implicit val eq = PotEq.seqexecQueueEq
                   SeqexecCircuit.connect(_.queue)(LoadingIndicator("Loading", _))
                 },
@@ -182,7 +188,7 @@ object QueueArea {
                   )
                 )
               ),
-              p() == SearchAreaOpen ?= SequenceSearchResults()
+              p() == SearchAreaOpen ?= SequenceSearchResults() // Display the search area if open
             )
           )
         )

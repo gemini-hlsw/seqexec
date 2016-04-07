@@ -102,7 +102,7 @@ case object SearchAreaClosed extends SearchAreaState
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchArea: SearchAreaState, searchResults: Pot[List[Sequence]])
+case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchAreaState: SearchAreaState, searchResults: Pot[List[Sequence]])
 
 /**
   * Contains the model for Diode
@@ -112,7 +112,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val queueHandler = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
-  val searchAreaHandler = new SearchAreaHandler(zoomRW(_.searchArea)((m, v) => m.copy(searchArea = v)))
+  val searchAreaHandler = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
 
   override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaClosed, Empty)
 

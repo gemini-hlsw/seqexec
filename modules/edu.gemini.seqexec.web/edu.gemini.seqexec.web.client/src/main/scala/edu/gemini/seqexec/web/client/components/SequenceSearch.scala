@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.FastEq
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
@@ -12,6 +11,9 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.KeyCode
 
+/**
+  * Header of the search area, it shows the amount of items found
+  */
 object SequenceSearchResultsHeader {
   val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResultHeader")
     .render_P(p =>
@@ -25,6 +27,9 @@ object SequenceSearchResultsHeader {
   def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
 }
 
+/**
+  * Displays the results of the search
+  */
 object SequenceSearchResultsBody {
   def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(AddToQueue(u))
 
@@ -61,6 +66,9 @@ object SequenceSearchResultsBody {
   def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
 }
 
+/**
+  * Shows a table with search results
+  */
 object SequenceSearchResults {
 
   val component = ReactComponentB[Unit]("SequenceSearchResult")
@@ -92,6 +100,10 @@ object SequenceSearchResults {
 
   def apply() = component()
 }
+
+/**
+  * Search field, it lets the user search for obs ids
+  */
 object SequenceSearch {
   case class Props(searchResults: ModelProxy[Pot[List[Sequence]]])
 
