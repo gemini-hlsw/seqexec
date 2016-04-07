@@ -179,7 +179,7 @@ object QueueArea {
                   )
                 )
               ),
-              SeqexecCircuit.connect(_.searchResults)(SequenceSearchResults(_))
+              SequenceSearchResults()
             )
           )
         )

@@ -1,26 +1,32 @@
 package edu.gemini.seqexec.web.client.components
 
+import diode.FastEq
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.model.SearchSequence
+import edu.gemini.seqexec.web.client.model.{SearchSequence, SeqexecCircuit}
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.common.Sequence
+import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.KeyCode
 
 
 object SequenceSearchResults {
-  val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResult")
+  implicit object ExtDataEq extends FastEq[Pot[List[Sequence]]] {
+    override def eqv(a: Pot[List[Sequence]], b: Pot[List[Sequence]]): Boolean = a.state == b.state
+  }
+
+  val component = ReactComponentB[Unit]("SequenceSearchResult")
+    .stateless
     .render_P(p =>
       <.div(
         ^.cls := "six wide column",
-        LoadingIndicator("Searching...", p),
+        SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _)),
         <.div(
           ^.cls := "ui top attached segment header",
-          "Found " + p().map(_.size).getOrElse(0)
+          "Found "// + p().map(_.size).getOrElse(0)
         ),
         <.div(
           ^.cls := "ui scroll pane attached segment",
@@ -33,7 +39,7 @@ object SequenceSearchResults {
                 <.th("\u00a0")
               )
             ),
-            <.tbody(
+            <.tbody(/*
               p().renderReady(s => s.zipWithIndex.collect { case (u, i) =>
                   <.tr(
                     ^.key := i,
@@ -51,15 +57,15 @@ object SequenceSearchResults {
                     )
                   )
                 }
-              )
+              )*/
             )
           )
         )
       )
     )
-    .build
+    .buildU
 
-  def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
+  def apply() = component()
 }
 object SequenceSearch {
   case class Props(searchResults: ModelProxy[Pot[List[Sequence]]])
