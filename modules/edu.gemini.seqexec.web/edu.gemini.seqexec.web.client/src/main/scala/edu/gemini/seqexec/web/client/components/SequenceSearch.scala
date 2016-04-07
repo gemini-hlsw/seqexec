@@ -21,6 +21,7 @@ object SequenceSearchResultsHeader {
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
+        p().renderEmpty("Sequence Search"),
         p().renderPending(_ => "Searching..."),
         p().render(u => s"Found ${u.size} sequence(s)"),
         p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
@@ -83,19 +84,22 @@ object SequenceSearchResults {
           implicit val eq = PotEq.searchResultsEq
           SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _))
         },
-        SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply),
         <.div(
-          ^.cls := "ui scroll pane attached segment",
-          <.table(
-            ^.cls := "ui selectable compact table unstackable",
-            <.thead(
-              <.tr(
-                <.th("Obs ID"),
-                <.th("Instrument"),
-                <.th("\u00a0")
-              )
-            ),
-            SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsBody.apply)
+          ^.cls := "segment",
+          SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply),
+          <.div(
+            ^.cls := "ui scroll pane bottom attached segment",
+            <.table(
+              ^.cls := "ui selectable compact table unstackable",
+              <.thead(
+                <.tr(
+                  <.th("Obs ID"),
+                  <.th("Instrument"),
+                  <.th("\u00a0")
+                )
+              ),
+              SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsBody.apply)
+            )
           )
         )
       )

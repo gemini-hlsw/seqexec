@@ -130,14 +130,13 @@ object QueueArea {
           <.div(
             ^.cls := "ui divided grid",
             <.div(
-              ^.cls := "row",
+              ^.cls := "stretched row",
               <.div(
                 ^.cls := "column",
                 ^.classSet(
                   "ten wide" -> (p() == SearchAreaOpen),
                   "sixteen wide" -> (p() == SearchAreaClosed)
                 ),
-                // TODO These Divs occupy space even when empty, We may need to set the queue table margin-top to 0 manually
                 // Show a loading indicator if we are waiting for server data
                 {
                   // Special equality check to avoid certain UI artifacts
@@ -146,41 +145,44 @@ object QueueArea {
                 },
                 // If there was an error on the process display a message
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
-                <.table(
-                  ^.cls := "ui selectable compact celled table unstackable",
-                  <.thead(
-                    <.tr(
-                      <.th("Obs ID "),
-                      <.th("State"),
-                      <.th("Instrument"),
-                      <.th(
-                        SeqexecStyles.notInMobile,
-                        "Notes"
+                <.div(
+                  ^.cls := "segment",
+                  <.table(
+                    ^.cls := "ui selectable compact celled table unstackable",
+                    <.thead(
+                      <.tr(
+                        <.th("Obs ID "),
+                        <.th("State"),
+                        <.th("Instrument"),
+                        <.th(
+                          SeqexecStyles.notInMobile,
+                          "Notes"
+                        )
                       )
-                    )
-                  ),
-                  SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
-                  <.tfoot(
-                    <.tr(
-                      <.th(
-                        ^.colSpan := "4",
-                        <.div(
-                          ^.cls := "ui right floated pagination menu",
-                          <.a(
-                            ^.cls := "icon item",
-                            Icon("left chevron")
-                          ),
-                          <.a(
-                            ^.cls := "item", "1"),
-                          <.a(
-                            ^.cls := "item", "2"),
-                          <.a(
-                            ^.cls := "item", "3"),
-                          <.a(
-                            ^.cls := "item", "4"),
-                          <.a(
-                            ^.cls := "icon item",
-                            Icon("right chevron")
+                    ),
+                    SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
+                    <.tfoot(
+                      <.tr(
+                        <.th(
+                          ^.colSpan := "4",
+                          <.div(
+                            ^.cls := "ui right floated pagination menu",
+                            <.a(
+                              ^.cls := "icon item",
+                              Icon("left chevron")
+                            ),
+                            <.a(
+                              ^.cls := "item", "1"),
+                            <.a(
+                              ^.cls := "item", "2"),
+                            <.a(
+                              ^.cls := "item", "3"),
+                            <.a(
+                              ^.cls := "item", "4"),
+                            <.a(
+                              ^.cls := "icon item",
+                              Icon("right chevron")
+                            )
                           )
                         )
                       )
