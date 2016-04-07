@@ -2,17 +2,22 @@ package edu.gemini.seqexec.web.client.model
 
 import diode.ActionResult.{ModelUpdate, ModelUpdateEffect}
 import diode.RootModelRW
-import diode.data.{Empty, Failed, Pot, Ready}
-import edu.gemini.seqexec.web.common.{Arbitraries, SeqexecQueue, SequenceInQueue}
+import diode.data._
+import edu.gemini.seqexec.web.common.{Arbitraries, SeqexecQueue, Sequence}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
 class SeqexecCircuitSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+
   def build = new QueueHandler(new RootModelRW(Empty))
+
+  // Reduce the space search as List[Sequence] can be pretty large
+  implicit override val generatorDrivenConfig =
+    PropertyCheckConfiguration(minSize = 10, sizeRange = 20)
 
   "SeqexecCircuit" should
     "support queue updates" in {
-    forAll { (sequences: List[SequenceInQueue]) =>
+    forAll { (sequences: List[Sequence]) =>
       val result = build.handle(UpdatedQueue(Ready(SeqexecQueue(sequences))))
       result should matchPattern {
         case ModelUpdate(Ready(SeqexecQueue(q))) if q == sequences =>
@@ -31,4 +36,5 @@ class SeqexecCircuitSpec extends FlatSpec with Matchers with PropertyChecks with
       case ModelUpdate(newValue: Pot[_]) if newValue.isFailed =>
     }
   }
+
 }

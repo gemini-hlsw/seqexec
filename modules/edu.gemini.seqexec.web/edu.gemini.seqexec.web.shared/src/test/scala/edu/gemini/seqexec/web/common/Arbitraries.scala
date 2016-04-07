@@ -24,14 +24,15 @@ trait Arbitraries {
   implicit val arbSequenceState: Arbitrary[SequenceState] =
     Arbitrary(Gen.oneOf[SequenceState](SequenceState.Completed, SequenceState.Error, SequenceState.NotRunning, SequenceState.Running))
 
-  implicit val arbSequenceInQueue: Arbitrary[SequenceInQueue] =
+  implicit val arbSequence: Arbitrary[Sequence] =
     Arbitrary {
       for {
+        id <- arbitrary[String]
+        st <- arbitrary[SequenceState]
         i  <- arbitrary[String]
-        s  <- arbitrary[SequenceState]
-        in <- arbitrary[String]
-        e  <- arbitrary[Option[String]]
-      } yield SequenceInQueue(i, s, in, e)
+        v  <- arbitrary[List[StepConfig]]
+      } yield Sequence(id, st, i, SequenceSteps(List(Step(0, v))), None)
     }
+
 
 }
