@@ -4,6 +4,7 @@ import diode.data.{Empty, Pot, PotAction, Ready}
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
+import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 
@@ -30,6 +31,7 @@ case object OpenSearchArea
 case object CloseSearchArea
 
 case class AddToQueue(s: Sequence)
+case class RemoveFromSearch(s: Sequence)
 
 // End Actions
 
@@ -63,6 +65,8 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
+    case RemoveFromSearch(s) =>
+      updated(value.map(_.filterNot(_ == s)))
   }
 }
 /**
@@ -88,6 +92,7 @@ object PotEq {
   }
 
   val seqexecQueueEq = potStateEq[SeqexecQueue]
+  val searchResultsEq = potStateEq[SearchResults]
 }
 
 sealed trait SearchAreaState

@@ -4,7 +4,7 @@ import diode.FastEq
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.model.{AddToQueue, OpenSearchArea, SearchSequence, SeqexecCircuit}
+import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.Sequence
@@ -28,6 +28,10 @@ object SequenceSearchResultsHeader {
 object SequenceSearchResultsBody {
   def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(AddToQueue(u))
 
+  def removeFromResults[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(RemoveFromSearch(u))
+
+  def onAdding[A](p: ModelProxy[A], u: Sequence):Callback = addToQueue(p, u) >> removeFromResults(p, u)
+
   val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResultBody")
     .stateless
     .render_P(p =>
@@ -44,7 +48,7 @@ object SequenceSearchResultsBody {
                 ^.cls := "collapsing",
                 <.button(
                   ^.cls := "circular ui icon button",
-                  Icon(Icon.Props("plus", onClick = addToQueue(p, u)))
+                  Icon(Icon.Props("plus", onClick = onAdding(p, u)))
                 )
               )
             )
@@ -58,16 +62,15 @@ object SequenceSearchResultsBody {
 }
 
 object SequenceSearchResults {
-  implicit object ExtDataEq extends FastEq[Pot[List[Sequence]]] {
-    override def eqv(a: Pot[List[Sequence]], b: Pot[List[Sequence]]): Boolean = a.state == b.state
-  }
 
   val component = ReactComponentB[Unit]("SequenceSearchResult")
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "six wide column",
-        SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _)),
+        ^.cls := "six wide column", {
+          implicit val eq = PotEq.searchResultsEq
+          SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _))
+        },
         SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply),
         <.div(
           ^.cls := "ui scroll pane attached segment",
