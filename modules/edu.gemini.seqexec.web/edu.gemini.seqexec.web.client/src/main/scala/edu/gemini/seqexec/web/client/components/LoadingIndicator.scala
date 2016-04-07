@@ -26,5 +26,5 @@ class LoadingIndicator[A] private (text: String) {
 }
 
 object LoadingIndicator {
-  def apply[A](text: String, p: ModelProxy[Pot[A]])(implicit feq: FastEq[_ >: Pot[A]]) = {println(feq);new LoadingIndicator(text).component(p)}
+  def apply[A](text: String, p: ModelProxy[Pot[A]])(implicit feq: FastEq[_ >: Pot[A]]) = new LoadingIndicator(text).component(p)
 }
