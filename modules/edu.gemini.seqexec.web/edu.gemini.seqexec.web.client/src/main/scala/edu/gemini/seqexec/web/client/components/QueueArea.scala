@@ -4,7 +4,7 @@ import diode.FastEq
 import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, UpdatedQueue}
+import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
 import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
@@ -76,7 +76,7 @@ object QueueTableBody {
 }
 
 object LoadingErrorMsg {
-  val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingIndicator")
+  val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingErrorMessage")
     .stateless
     .render_P( p =>
       <.div(
@@ -118,7 +118,7 @@ object QueueArea {
     override def eqv(a: Pot[SeqexecQueue], b: Pot[SeqexecQueue]): Boolean = a.state == b.state
   }
 
-  val component = ReactComponentB[Unit]("QueueArea")
+  val component = ReactComponentB[ModelProxy[SearchAreaState]]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -131,7 +131,11 @@ object QueueArea {
             <.div(
               ^.cls := "row",
               <.div(
-                ^.cls := "ten wide column",
+                ^.cls := "column",
+                ^.classSet(
+                  "ten wide" -> (p() == SearchAreaOpen),
+                  "sixteen wide" -> (p() == SearchAreaClosed)
+                ),
                 // TODO These Divs occupy space even when empty, We may need to set the table margin manually
                 // Show a loading indicator if we are waiting for server data
                 SeqexecCircuit.connect(_.queue)(LoadingIndicator("Loading", _)),
@@ -141,7 +145,7 @@ object QueueArea {
                   ^.cls := "ui selectable compact celled table unstackable",
                   <.thead(
                     <.tr(
-                      <.th("Obs ID"),
+                      <.th("Obs ID "),
                       <.th("State"),
                       <.th("Instrument"),
                       <.th(
@@ -162,13 +166,13 @@ object QueueArea {
                             Icon("left chevron")
                           ),
                           <.a(
-                            ^.cls := "item","1"),
+                            ^.cls := "item", "1"),
                           <.a(
-                            ^.cls := "item","2"),
+                            ^.cls := "item", "2"),
                           <.a(
-                            ^.cls := "item","3"),
+                            ^.cls := "item", "3"),
                           <.a(
-                            ^.cls := "item","4"),
+                            ^.cls := "item", "4"),
                           <.a(
                             ^.cls := "icon item",
                             Icon("right chevron")
@@ -179,14 +183,14 @@ object QueueArea {
                   )
                 )
               ),
-              SequenceSearchResults()
+              p() == SearchAreaOpen ?= SequenceSearchResults()
             )
           )
         )
       )
     )
-    .buildU
+    .build
 
-  def apply() = component()
+  def apply(p: ModelProxy[SearchAreaState]) = component(p)
 
 }

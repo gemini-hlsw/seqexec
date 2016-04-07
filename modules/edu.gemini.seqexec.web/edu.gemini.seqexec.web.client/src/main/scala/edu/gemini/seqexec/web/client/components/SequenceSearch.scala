@@ -4,7 +4,7 @@ import diode.FastEq
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.model.{SearchSequence, SeqexecCircuit}
+import edu.gemini.seqexec.web.client.model.{SearchAreaOpen, SearchSequence, SeqexecCircuit}
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.Sequence
@@ -95,7 +95,8 @@ object SequenceSearch {
     def onEnter(e: ReactKeyboardEventI): Callback = Callback.ifTrue(e.charCode == KeyCode.Enter, search)
 
     def search: Callback =
-      $.props.zip($.state) >>= {case (p, s) => p.searchResults.dispatch(SearchSequence(s.searchText))}
+      //$.props.zip($.state) >>= {case (p, s) => p.searchResults.dispatch(SearchSequence(s.searchText))}
+      $.props.zip($.state) >>= {case (p, s) => p.searchResults.dispatch(SearchAreaOpen)}
 
     def onChange(e: ReactEventI): Callback =
       // For some reason the simple call $.modState(_.copy(searchText = e.target.value)) gives an NPE on e.target

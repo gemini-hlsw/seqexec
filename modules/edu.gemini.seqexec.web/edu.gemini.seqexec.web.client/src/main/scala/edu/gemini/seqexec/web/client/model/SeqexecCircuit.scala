@@ -25,6 +25,10 @@ case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Emp
   }
 }
 
+// Actions to close and/open the search area
+case object OpenSearchArea
+case object CloseSearchArea
+
 /**
   * Handles actions related to the queue like loading and adding new elements
   */
@@ -39,6 +43,10 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
   }
 }
 
+sealed trait SearchAreaState
+case object SearchAreaOpen extends SearchAreaState
+case object SearchAreaClosed extends SearchAreaState
+
 /**
   * Handles actions related to search
   */
@@ -52,11 +60,24 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[List[Sequence]]]) extends ActionH
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
   }
 }
+/**
+  * Handles actions related to search
+  */
+class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case SearchAreaOpen =>
+      updated(SearchAreaOpen)
+    case SearchAreaOpen =>
+      updated(SearchAreaClosed)
+  }
+}
 
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchResults: Pot[List[Sequence]])
+case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchArea: SearchAreaState, searchResults: Pot[List[Sequence]])
 
 /**
   * Contains the model for Diode
@@ -65,8 +86,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val queueHandler = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
+  val searchAreaHandler = new SearchAreaHandler(zoomRW(_.searchArea)((m, v) => m.copy(searchArea = v)))
 
-  override protected def initialModel = SeqexecAppRootModel(Empty, Empty)
+  override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaClosed, Empty)
 
-  override protected def actionHandler = combineHandlers(queueHandler, searchHandler)
+  override protected def actionHandler = combineHandlers(queueHandler, searchHandler, searchAreaHandler)
 }
