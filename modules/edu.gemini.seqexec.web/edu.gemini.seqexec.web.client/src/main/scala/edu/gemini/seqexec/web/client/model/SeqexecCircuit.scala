@@ -67,9 +67,9 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionH
   implicit val runner = new RunAfterJS
 
   override def handle = {
-    case SearchAreaOpen =>
+    case OpenSearchArea =>
       updated(SearchAreaOpen)
-    case SearchAreaOpen =>
+    case CloseSearchArea =>
       updated(SearchAreaClosed)
   }
 }
