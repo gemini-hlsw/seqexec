@@ -36,7 +36,7 @@ object SequenceSearchResultsBody{
                 ^.cls := "collapsing",
                 u.id
               ),
-              <.td("GPI"),
+              <.td(u.instrument),
               <.td(
                 ^.cls := "collapsing",
                 <.button(

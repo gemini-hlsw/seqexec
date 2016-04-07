@@ -10,7 +10,7 @@ import Scalaz._
 case class StepConfig(key: String, value: String)
 case class Step(id: Int, config: List[StepConfig])
 case class SequenceSteps(steps: List[Step])
-case class Sequence(id: String, steps: SequenceSteps)
+case class Sequence(id: String, state: SequenceState, instrument: String, steps: SequenceSteps)
 
 sealed trait SequenceState
 
