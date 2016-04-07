@@ -11,6 +11,8 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.KeyCode
 
+import scalacss.ScalaCssReact._
+
 /**
   * Header of the search area, it shows the amount of items found
   */
@@ -19,7 +21,9 @@ object SequenceSearchResultsHeader {
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
-        s"Found ${p().map(_.size).getOrElse(0)} sequence(s)"
+        p().renderPending(_ => "Searching..."),
+        p().render(u => s"Found ${u.size} sequence(s)"),
+        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
       )
     )
     .build

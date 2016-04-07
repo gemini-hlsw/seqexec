@@ -54,4 +54,8 @@ object SeqexecStyles extends StyleSheet.Inline {
       display.none.important
     )
   )
+
+  var errorText = style(
+    color.red
+  )
 }
