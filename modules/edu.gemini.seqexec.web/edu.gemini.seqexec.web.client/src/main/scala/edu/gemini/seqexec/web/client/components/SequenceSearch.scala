@@ -120,7 +120,9 @@ object SequenceSearch {
   case class State(searchText: String)
 
   class Backend($: BackendScope[Props, State]) {
-    def onEnter(e: ReactKeyboardEventI): Callback = Callback.ifTrue(e.charCode == KeyCode.Enter, search)
+    def onEnter(e: ReactKeyboardEventI): Callback = CallbackOption.keyCodeSwitch(e)   {
+        case KeyCode.Enter => search
+      }
 
     def openResultsArea: Callback =
       $.props.zip($.state) >>= {case (p, s) => p.searchResults.dispatch(OpenSearchArea)}
