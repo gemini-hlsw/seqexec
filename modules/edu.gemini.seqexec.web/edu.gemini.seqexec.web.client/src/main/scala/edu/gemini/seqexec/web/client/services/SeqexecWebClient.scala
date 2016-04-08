@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.services
 
-import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceSteps}
-import org.scalajs.dom.ext.Ajax
+import edu.gemini.seqexec.web.common.{HttpStatusCodes, SeqexecQueue, Sequence, SequenceSteps}
+import org.scalajs.dom.ext.{Ajax, AjaxException}
 import upickle.default
 
 import scala.concurrent.Future
@@ -13,10 +13,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object SeqexecWebClient {
   val baseUrl = "/api/seqexec"
 
-  def read(id: String): Future[Sequence] = {
+  def read(id: String): Future[List[Sequence]] = {
     Ajax.get(
       url = s"$baseUrl/sequence/$id"
-    ).map(s => default.read[Sequence](s.responseText))
+    )
+    .map(s => default.read[List[Sequence]](s.responseText))
+    .recover {
+      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
+    }
   }
 
   def readQueue(): Future[SeqexecQueue] = {

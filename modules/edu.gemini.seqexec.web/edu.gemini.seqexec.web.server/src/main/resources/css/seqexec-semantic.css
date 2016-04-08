@@ -37,3 +37,15 @@
       display: none !important;
     }
   }
+
+ .ui.scroll.pane {
+   overflow: auto;
+   max-height: 17.3em;
+ }
+
+ .ui.scroll.pane.attached.segment {
+   padding: 0;
+ }
+ .ui.scroll.pane.attached.segment > .ui.table {
+   border: 0;
+ }

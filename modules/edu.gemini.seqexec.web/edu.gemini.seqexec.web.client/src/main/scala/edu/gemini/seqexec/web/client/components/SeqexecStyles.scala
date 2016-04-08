@@ -17,18 +17,30 @@ object SeqexecStyles extends StyleSheet.Inline {
     marginTop(0.em)
   )
 
-  val topLogo = style(unsafeRoot(".main.menu .item img.logo")(
+  val topLogo = style("main.menu .item img.logo")(
     marginRight(1.5.em)
-  ))
+  )
 
   // Media query to adjust the width of containers on mobile to the max allowed width
-  val deviceContainer = style(unsafeRoot(".ui.container")(
+  val deviceContainer = style("ui.container")(
     media.only.screen.maxWidth(767.px)(
       width(100.%%).important,
       marginLeft(0.px).important,
       marginRight(0.px).important
     )
-  ))
+  )
+
+  val scrollPane = style("ui.scroll.pane")(
+    overflow.auto,
+    maxHeight(17.3.em) // TODO This size may need to be calculated on the fly
+  )
+
+  val scrollPaneSegment = style("ui.scroll.pane.attached.segment")(
+    padding(0.px),
+    unsafeChild("> .ui.table")(
+      border(0.px)
+    )
+  )
 
   // Media queries to hide/display items for mobile
   val notInMobile = style(
@@ -40,5 +52,9 @@ object SeqexecStyles extends StyleSheet.Inline {
     media.only.screen.minWidth(767.px)(
       display.none.important
     )
+  )
+
+  var errorText = style(
+    color.red
   )
 }

@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.icon
 
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{ReactComponentB, ReactNode}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactNode}
 
 /**
   * Semantic UI Icon component
@@ -47,7 +47,8 @@ object Icon {
                    circular: Boolean = false,
                    bordered: Boolean = false,
                    inverted: Boolean = false,
-                   color: Option[String] = None)
+                   color: Option[String] = None,
+                   onClick: Callback = Callback.empty)
 
   def component = ReactComponentB[Props]("Icon")
     .stateless
@@ -75,6 +76,7 @@ object Icon {
           "bordered"                 -> p.bordered,
           "inverted"                 -> p.inverted
         ),
+        ^.onClick --> p.onClick,
         c
       )
     )

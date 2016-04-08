@@ -9,7 +9,7 @@ object WebServerLauncher extends App {
       Some(BlazeBuilder.bindHttp(port)
         .mountService(StaticRoutes.service, "/")
         .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
-        .mountService(RestRoutes.service, "/api")
+        .mountService(SeqexecUIApiRoutes.service, "/api")
         .run)
     } catch {
       case e: Throwable =>
