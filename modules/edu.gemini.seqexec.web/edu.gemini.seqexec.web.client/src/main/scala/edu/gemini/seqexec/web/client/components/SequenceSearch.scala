@@ -36,17 +36,19 @@ object SequenceSearchResultsHeader {
   * Displays the results of the search
   */
 object SequenceSearchResultsBody {
+  case class Props(searchResults: ModelProxy[Pot[List[Sequence]]])
+
   def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(AddToQueue(u))
 
   def removeFromResults[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(RemoveFromSearch(u))
 
   def onAdding[A](p: ModelProxy[A], u: Sequence):Callback = addToQueue(p, u) >> removeFromResults(p, u)
 
-  val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResultBody")
+  val component = ReactComponentB[Props]("SequenceSearchResultBody")
     .stateless
     .render_P(p =>
       <.tbody(
-        p().renderReady(s => s.zipWithIndex.collect { case (u, i) =>
+        p.searchResults().renderReady(s => s.zipWithIndex.collect { case (u, i) =>
             <.tr(
               ^.key := i,
               <.td(
@@ -58,7 +60,7 @@ object SequenceSearchResultsBody {
                 ^.cls := "collapsing",
                 <.button(
                   ^.cls := "circular ui icon button",
-                  Icon(Icon.Props("plus", onClick = onAdding(p, u)))
+                  Icon(Icon.Props("plus", onClick = onAdding(p.searchResults, u)))
                 )
               )
             )
@@ -68,7 +70,7 @@ object SequenceSearchResultsBody {
     )
     .build
 
-  def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
+  def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(Props(searchResults))
 }
 
 /**

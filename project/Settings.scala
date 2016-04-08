@@ -86,9 +86,10 @@ object Settings {
 
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(
-      "com.github.japgolly.scalajs-react" %%% "core"      % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalajs-react" %%% "extra"     % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalacss"      %%% "ext-react" % LibraryVersions.scalaCSS
+      "com.github.japgolly.scalajs-react" %%% "core"         % LibraryVersions.scalajsReact,
+      "com.github.japgolly.scalajs-react" %%% "extra"        % LibraryVersions.scalajsReact,
+      "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % LibraryVersions.scalajsReact,
+      "com.github.japgolly.scalacss"      %%% "ext-react"    % LibraryVersions.scalaCSS
     ))
     val Diode = Def.setting(Seq(
       "me.chrons" %%% "diode"       % LibraryVersions.diode,

@@ -18,16 +18,19 @@ object QueueTableBody {
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
-  def emptyRow(k: String) =
+  def emptyRow(k: String) = {
+    val nbsp = "\u00a0"
+
     <.tr(
       ^.key := k, // React requires unique keys
-      <.td("\u00a0"),
-      <.td("\u00a0"),
-      <.td("\u00a0"),
+      <.td(nbsp),
+      <.td(nbsp),
+      <.td(nbsp),
       <.td(
         SeqexecStyles.notInMobile,
-        "\u00a0")
+        nbsp)
     )
+  }
 
   def load(p: Props) =
       // Request to load the queue if not present
@@ -78,18 +81,20 @@ object QueueTableBody {
   * Shows a message when there is an error loading the queue
   */
 object LoadingErrorMsg {
-  val component = ReactComponentB[ModelProxy[Pot[SeqexecQueue]]]("LoadingErrorMessage")
+  case class Props(queue :ModelProxy[Pot[SeqexecQueue]])
+
+  val component = ReactComponentB[Props]("LoadingErrorMessage")
     .stateless
     .render_P( p =>
       <.div(
-        p().renderFailed(_ =>
+        p.queue().renderFailed(_ =>
           CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
         )
       )
     )
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(p)
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
 }
 
 /**
@@ -119,7 +124,9 @@ object QueueAreaTitle {
   * Displays the elements on the queue
   */
 object QueueArea {
-  val component = ReactComponentB[ModelProxy[SearchAreaState]]("QueueArea")
+  case class Props(searchArea: ModelProxy[SearchAreaState])
+
+  val component = ReactComponentB[Props]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -134,8 +141,8 @@ object QueueArea {
               <.div(
                 ^.cls := "column",
                 ^.classSet(
-                  "ten wide" -> (p() == SearchAreaOpen),
-                  "sixteen wide" -> (p() == SearchAreaClosed)
+                  "ten wide" -> (p.searchArea() == SearchAreaOpen),
+                  "sixteen wide" -> (p.searchArea() == SearchAreaClosed)
                 ),
                 // Show a loading indicator if we are waiting for server data
                 {
@@ -190,7 +197,7 @@ object QueueArea {
                   )
                 )
               ),
-              p() == SearchAreaOpen ?= SequenceSearchResults() // Display the search area if open
+              p.searchArea() == SearchAreaOpen ?= SequenceSearchResults() // Display the search area if open
             )
           )
         )
@@ -198,6 +205,6 @@ object QueueArea {
     )
     .build
 
-  def apply(p: ModelProxy[SearchAreaState]) = component(p)
+  def apply(p: ModelProxy[SearchAreaState]) = component(Props(p))
 
 }
