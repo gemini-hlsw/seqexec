@@ -53,6 +53,8 @@ Note that IDEA doesn't support running tests on scala.js. See this [issue](https
 
 ## IDEA
 
+Before opening the project in IDEA, run a top-level compile at least once to generate code that will be picked up by IDEA
+
 IDEA can open directly the project's sbt. Go to 
 
 ```
@@ -62,4 +64,6 @@ File -> Open
 And find the file `ocs/build.sbt`. IDEA should show a dialog box to import the project. You may need to select the appropriate JVM version (1.8) and IDEA will import the project. `sbt` files may have highlight errors due to this [bug](https://youtrack.jetbrains.com/issue/SCL-9599). Otherwise, sbt import seems to work quite well.
 
 **Note:** Sbt import in IDEA changes very often. This has been tested on IDEA C 2016.1 and the Scala plugin version 3.0
-	
+
+**Note:** If you need to re-generate the project, delete the `.idea` folder
+ 
