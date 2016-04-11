@@ -17,7 +17,7 @@ object SeqexecUI {
         SeqexecCircuit.connect(_.searchAreaState)(QueueArea(_))
       )
     )
-    .buildU
+    .build
 
   def apply() = component()
 }

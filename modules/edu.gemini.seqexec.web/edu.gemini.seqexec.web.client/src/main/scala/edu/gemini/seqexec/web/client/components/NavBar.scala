@@ -40,7 +40,7 @@ object NavBar {
         $(ReactDOM.findDOMNode(s)).visibility(JsVisiblityOptions.visibilityType("fixed"))
       }
     )
-    .buildU
+    .build
 
   def apply() = component()
 }

@@ -105,7 +105,7 @@ object SequenceSearchResults {
         )
       )
     )
-    .buildU
+    .build
 
   def apply() = component()
 }

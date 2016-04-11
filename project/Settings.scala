@@ -29,8 +29,8 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom     = "0.9.0"
-    val scalajsReact = "0.10.4"
-    val scalaCSS     = "0.4.0"
+    val scalajsReact = "0.11.0"
+    val scalaCSS     = "0.4.1"
     val scalaZJS     = "7.2.1"
     val uPickle      = "0.3.9"
     val diode        = "0.5.1"
@@ -50,7 +50,7 @@ object Settings {
     val scalaCheck   = "1.12.5"
 
     // Pure JS libraries
-    val reactJS      = "0.14.7"
+    val reactJS      = "15.0.0"
     val jQuery       = "2.2.1"
     val semanticUI   = "2.1.8"
 
