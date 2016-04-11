@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.cli
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
+import js.JSConverters._
 import org.querki.jquery.$
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
@@ -69,6 +70,9 @@ object SeqexecTerminal extends js.JSApp {
     Command("host", 1, SetHostHandler, "[[b;;]host] [[b;;]host:port]: Sets the odb host:port used by the seqexec")
   )
 
+  // Used for tab completion
+  val cmdStrings: Seq[String] = "help" :: commands.map(_.cmd).distinct
+
   val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
     val tokens = command.split(" ").toList
 
@@ -87,7 +91,7 @@ object SeqexecTerminal extends js.JSApp {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
       .greetings(banner + s"\nVersion: ${buildinfo.version}\n")
-      .completion(Array("help", "exit", "host")))
+      .completion((t: Terminal, c: String, n: CompletionCallback) => n(cmdStrings.toJSArray)))
   }
 
   val banner = """  ___

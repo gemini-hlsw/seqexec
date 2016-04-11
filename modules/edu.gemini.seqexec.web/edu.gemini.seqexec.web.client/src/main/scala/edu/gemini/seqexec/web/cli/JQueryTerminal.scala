@@ -15,11 +15,14 @@ object JQueryTerminal {
 
   object JsTerminalOptions extends JsTerminalOptionBuilder(noOpts)
 
+  type CompletionCallback = js.Function1[js.Array[_ >: String], js.Any]
+  type CompletionFunction = js.Function3[Terminal, String, CompletionCallback, js.Any]
+
   class JsTerminalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTerminalOptions, JsTerminalOptionBuilder](new JsTerminalOptionBuilder(_)) {
     def prompt(t: String) = jsOpt("prompt", t)
     def greeting(t: Boolean) = jsOpt("greeting", t)
     def greetings(s: String) = jsOpt("greetings", s)
-    def completion(t: Array[String]) = jsOpt("completion", t)
+    def completion(t: CompletionFunction) = jsOpt("completion", t)
   }
 
   @js.native
