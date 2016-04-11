@@ -49,7 +49,6 @@ object Button {
         <.button(
           ^.cls := "ui button",
           p.color.map(u => ^.cls := u),
-          ^.tabIndex := p.tabIndex,
           classSet(p),
           ^.onClick --> p.onClick,
           c
