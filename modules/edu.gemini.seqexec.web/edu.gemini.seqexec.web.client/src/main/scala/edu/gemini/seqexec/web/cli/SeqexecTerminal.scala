@@ -3,10 +3,11 @@ package edu.gemini.seqexec.web.cli
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import org.querki.jquery.$
-import org.scalajs.dom.{document, FormData}
+import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
 import JQueryTerminal.{Terminal, _}
 import edu.gemini.seqexec.web.common.RegularCommand
+import edu.gemini.seqexec.web.client.{BuildInfo => buildinfo}
 
 import scala.scalajs.js.Any
 import scala.util.{Failure, Success}
@@ -26,7 +27,7 @@ object SeqexecTerminal extends js.JSApp {
     def handle(args: List[String], terminal: Terminal):js.Any
   }
 
-  case class Command(handler: CommandHandler, description: String)
+  case class Command(cmd: String, args: Int, handler: CommandHandler, description: String)
 
   def pause(t: Terminal): Future[Unit] = Future.apply(t.pause())
   def resume(t: Terminal): Future[Unit] = Future.apply(t.resume())
@@ -51,7 +52,9 @@ object SeqexecTerminal extends js.JSApp {
 
   object SetHostHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Any = {
-      runInBackground(Ajax.post(s"$baseUrl/host", s"host=${args(0)}"), terminal).onComplete {
+      runInBackground(Ajax.post(s"$baseUrl/host",
+        data = s"host=${args.head}",
+        headers = Map("Content-Type" -> "application/x-www-form-urlencoded")), terminal).onComplete {
         case Success(s) =>
           val r = read[RegularCommand](s.responseText)
           if (r.error) terminal.error(r.response) else terminal.echo(r.response)
@@ -60,26 +63,36 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
-  val commands: Map[String, Command] = Map(
-    "host" -> Command(HostHandler, "Returns the odb host used by the seqexec"),
-    "shost" -> Command(SetHostHandler, "Returns the odb host used by the seqexec")
+  // Maps the command text and amount of args required to command handler
+  val commands: List[Command] = List(
+    Command("host", 0, HostHandler, "[[b;;]host]: Returns the odb host used by the seqexec"),
+    Command("host", 1, SetHostHandler, "[[b;;]host] [[b;;]host:port]: Sets the odb host:port used by the seqexec")
   )
 
   val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
     val tokens = command.split(" ").toList
+
+    def find(cmd: String, args: List[String]): Option[Command] = commands.find(c => c.cmd === cmd && c.args == args.size)
+
     tokens match {
-      case cmd :: args if commands.contains(cmd)         => commands.get(cmd).foreach(a => a.handler.handle(args, terminal))
-      case "help" :: Nil                                 => terminal.echo(s"Commands available: ${commands.keys.mkString(" ")}")
-      case "help" :: cmd :: _  if commands.contains(cmd) => terminal.echo(s"help: ${~commands.get(cmd).map(_.description)}")
-      case "" :: Nil                                     => // Ignore
-      case cmd :: _                                      => terminal.error(s"Command '$command' unknown")
+      case cmd :: args if find(cmd, args).isDefined              => find(cmd, args).foreach(_.handler.handle(args, terminal))
+      case "help" :: Nil                                         => terminal.echo(s"Commands available: ${commands.map(_.cmd).distinct.mkString(" ")}")
+      case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd === cmd).map(_.description).mkString("\n")}")
+      case "" :: Nil                                             => // Ignore
+      case cmd :: _                                              => terminal.error(s"Command '$command' unknown")
     }
   }
 
   override def main(): Unit = {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
-      .greetings("Seqexec terminal\n================")
+      .greetings(banner + s"\nVersion: ${buildinfo.version}\n")
       .completion(Array("help", "exit", "host")))
   }
+
+  val banner = """  ___
+                 | / __| ___ __ _ _____ _____ __
+                 | \__ \/ -_) _` / -_) \ / -_) _|
+                 | |___/\___\__, \___/_\_\___\__|
+                 |             |_|               """.stripMargin
 }
