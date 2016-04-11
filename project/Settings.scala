@@ -38,7 +38,7 @@ object Settings {
     // Java libraries
     val scalaZ       = "7.1.6"
 
-    val http4S       = "0.12.0"
+    val http4s       = "0.13.1"
     val play         = "2.5.1"
     val scalaJQuery  = "1.0-RC2"
     val squants      = "0.6.1-GEM" // GEM Denotes our gemini built package
@@ -77,8 +77,8 @@ object Settings {
 
     // Server side libraries
     val Http4s  = Seq(
-      "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4S,
-      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4S)
+      "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4s,
+      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
 
     val Play = Seq(
       "com.typesafe.play" %% "play"              % LibraryVersions.play,
