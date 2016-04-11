@@ -39,7 +39,7 @@ object Settings {
     val scalaZ       = "7.1.6"
 
     val http4S       = "0.12.0"
-    val play         = "2.4.6"
+    val play         = "2.5.1"
     val scalaJQuery  = "1.0-RC2"
     val squants      = "0.6.1-GEM" // GEM Denotes our gemini built package
     val argonaut     = "6.1"
