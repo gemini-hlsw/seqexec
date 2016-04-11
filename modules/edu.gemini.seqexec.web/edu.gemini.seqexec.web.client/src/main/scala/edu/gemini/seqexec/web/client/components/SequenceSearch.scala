@@ -5,6 +5,7 @@ import diode.react.ReactPot._
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
@@ -58,9 +59,8 @@ object SequenceSearchResultsBody {
               <.td(u.instrument),
               <.td(
                 ^.cls := "collapsing",
-                <.button(
-                  ^.cls := "circular ui icon button",
-                  Icon(Icon.Props("plus", onClick = onAdding(p.searchResults, u)))
+                Button(Button.Props(icon = true, circular = true, onClick = onAdding(p.searchResults, u)),
+                  Icon(Icon.Props("plus"))
                 )
               )
             )
