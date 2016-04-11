@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.button
 
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactNode}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 
 object Button {
@@ -22,7 +23,7 @@ object Button {
   case class Props(state: ButtonState = Inactive,
                    emphasis: Emphasis = NoEmphasis,
                    animated: Animated = NotAnimated,
-                   icon: Boolean = false,
+                   icon: Option[Icon] = None,
                    basic: Boolean = false,
                    inverted: Boolean = false,
                    circular: Boolean = false,
@@ -38,11 +39,12 @@ object Button {
       "animated"  -> (p.animated != NotAnimated),
       "vertical"  -> (p.animated == Vertical),
       "fade"      -> (p.animated == Fade),
-      "icon"      -> p.icon,
+      "icon"      -> p.icon.isDefined,
       "basic"     -> p.basic,
       "inverted"  -> p.inverted,
       "circular"  -> p.circular
     )
+
   def component = ReactComponentB[Props]("Button")
     .renderPC((_, p, c) =>
       if (p.animated == NotAnimated)
@@ -51,6 +53,7 @@ object Button {
           p.color.map(u => ^.cls := u),
           classSet(p),
           ^.onClick --> p.onClick,
+          p.icon,
           c
         )
       else {
@@ -59,6 +62,7 @@ object Button {
           ^.tabIndex := p.tabIndex,
           classSet(p),
           ^.onClick --> p.onClick,
+          p.icon,
           c
         )
       }

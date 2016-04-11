@@ -7,6 +7,7 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch}
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -59,9 +60,7 @@ object SequenceSearchResultsBody {
               <.td(u.instrument),
               <.td(
                 ^.cls := "collapsing",
-                Button(Button.Props(icon = true, circular = true, onClick = onAdding(p.searchResults, u)),
-                  Icon(Icon.Props("plus"))
-                )
+                Button(Button.Props(icon = Some(IconPlus), circular = true, onClick = onAdding(p.searchResults, u)))
               )
             )
           }
@@ -151,7 +150,7 @@ object SequenceSearch {
             ^.onChange ==> onChange,
             ^.value := s.searchText
           ),
-          Icon(Icon.Props("search", link = true, onClick = search))
+          IconSearch.copy(Icon.Props(id = IconSearch.p.id, link = true, onClick = search))
         ),
         <.div(
           ^.cls := "menu"

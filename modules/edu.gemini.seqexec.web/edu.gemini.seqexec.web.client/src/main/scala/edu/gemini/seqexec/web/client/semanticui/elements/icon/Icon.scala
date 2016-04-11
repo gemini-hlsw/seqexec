@@ -1,12 +1,12 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.icon
 
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactNode}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement, ReactNode}
 
 /**
   * Semantic UI Icon component
   */
-case class Icon private () {
+case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
   import Icon._
 
   def component = ReactComponentB[Props]("Icon")
@@ -39,7 +39,7 @@ case class Icon private () {
         c
       )
     )
-    .build
+    .build.apply(p, children)
 }
 
 object Icon {
@@ -645,6 +645,8 @@ object Icon {
                    color: Option[String] = None,
                    onClick: Callback = Callback.empty)
 
-  def apply(id: String, children: ReactNode*) = new Icon().component(Props(id), children: _*)
-  def apply(p: Props, children: ReactNode*) = new Icon().component(p, children: _*)
+  // Used to call Icon directly on a jsx component declaration
+  implicit def icon2TagMod(i: Icon):ReactElement = i.component
+
+  def apply(s: String, children: ReactNode*):Icon = Icon(Props(s), children)
 }
