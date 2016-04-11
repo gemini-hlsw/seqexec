@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconDropdown
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -19,7 +19,7 @@ object TopMenu {
         ^.href :="#",
         ^.cls := "ui right floated dropdown item",
         "Telops",
-        Icon("dropdown"),
+        IconDropdown,
         <.div(
           ^.cls := "menu",
           Item("Logout"),

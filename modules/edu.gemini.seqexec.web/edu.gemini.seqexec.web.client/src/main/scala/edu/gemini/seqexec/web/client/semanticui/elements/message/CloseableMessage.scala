@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.message
 
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconClose
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactNode}
 import japgolly.scalajs.react.vdom.prefix_<^._
 
@@ -35,7 +35,7 @@ object CloseableMessage {
           "negative" -> (p.style == Style.Negative),
           "error"    -> (p.style == Style.Error)
         ),
-        Icon("close"),
+        IconClose,
         p.header.map(h =>
           <.div(
             ^.cls := "header",

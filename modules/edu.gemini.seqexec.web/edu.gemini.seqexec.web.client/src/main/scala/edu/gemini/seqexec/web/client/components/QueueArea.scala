@@ -4,7 +4,7 @@ import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight, IconAttention}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
 import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -57,7 +57,7 @@ object QueueTableBody {
                 <.td(s.instrument),
                 <.td(
                   SeqexecStyles.notInMobile,
-                  s.error.map(_ => <.p(Icon("attention"), " Error")).getOrElse(<.p("-"))
+                  s.error.map(_ => <.p(IconAttention, " Error")).getOrElse(<.p("-"))
                 )
               )
             case (_, i) =>
@@ -176,7 +176,7 @@ object QueueArea {
                             ^.cls := "ui right floated pagination menu",
                             <.a(
                               ^.cls := "icon item",
-                              Icon("left chevron")
+                              IconChevronLeft
                             ),
                             <.a(
                               ^.cls := "item", "1"),
@@ -188,7 +188,7 @@ object QueueArea {
                               ^.cls := "item", "4"),
                             <.a(
                               ^.cls := "icon item",
-                              Icon("right chevron")
+                              IconChevronRight
                             )
                           )
                         )
