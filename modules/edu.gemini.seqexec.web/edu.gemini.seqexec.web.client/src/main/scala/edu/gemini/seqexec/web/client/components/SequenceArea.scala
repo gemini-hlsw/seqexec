@@ -5,7 +5,44 @@ import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCaretRight, IconPause}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconPause}
+
+object HeadersSideBar {
+  val component = ReactComponentB[Unit]("HeadersSideBar")
+    .stateless
+    .render(_ =>
+      <.div(
+        ^.cls := "ui raised secondary segment",
+        <.h4("Headers"),
+        <.div(
+          ^.cls := "ui form",
+          <.div(
+            ^.cls := "required field",
+            <.label("Observer"),
+            <.input(
+              ^.`type` :="text",
+              ^.autoComplete :="off"
+            )
+          ),
+          <.div(
+            ^.cls := "required field",
+            <.label("SOS"),
+            <.input(
+              ^.`type` :="text",
+              ^.autoComplete :="off"
+            )
+          ),
+          DropdownMenu(DropdownMenu.Props("Image Quality", "Select", List("IQ20", "IQ70", "IQ85", "Any"))),
+          DropdownMenu(DropdownMenu.Props("Cloud Cover", "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"))),
+          DropdownMenu(DropdownMenu.Props("Water Vapor", "Select", List("WV20", "WV50", "WV80", "Any"))),
+          DropdownMenu(DropdownMenu.Props("Sky Background", "Select", List("SB20", "SB50", "SB80", "Any")))
+        )
+      )
+    )
+    .build
+
+  def apply() = component()
+}
 
 object SequenceArea {
   val component = ReactComponentB[Unit]("QueueTableSection")
@@ -26,33 +63,7 @@ object SequenceArea {
                 ^.cls := "row",
                 <.div(
                   ^.cls := "four wide column tablet computer only",
-                  <.div(
-                    ^.cls := "ui raised secondary segment",
-                    <.h4("Headers"),
-                    <.div(
-                      ^.cls := "ui form",
-                      <.div(
-                        ^.cls := "required field",
-                        <.label("Observer"),
-                        <.input(
-                          ^.`type` :="text",
-                          ^.autoComplete :="off"
-                        )
-                      ),
-                      <.div(
-                        ^.cls := "required field",
-                        <.label("SOS"),
-                        <.input(
-                          ^.`type` :="text",
-                          ^.autoComplete :="off"
-                        )
-                      ),
-                      DropdownMenu(DropdownMenu.Props("Image Quality", "Select", List("IQ20", "IQ70", "IQ85", "Any"))),
-                      DropdownMenu(DropdownMenu.Props("Cloud Cover", "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"))),
-                      DropdownMenu(DropdownMenu.Props("Water Vapor", "Select", List("WV20", "WV50", "WV80", "Any"))),
-                      DropdownMenu(DropdownMenu.Props("Sky Background", "Select", List("SB20", "SB50", "SB80", "Any")))
-                    )
-                  )
+                  HeadersSideBar()
                 ),
                 <.div(
                   ^.cls := "twelve wide computer twelve wide tablet sixteen column",
@@ -139,33 +150,7 @@ object SequenceArea {
                 ^.cls := "row",
                 <.div(
                   ^.cls := "four wide column tablet computer only",
-                  <.div(
-                    ^.cls := "ui raised secondary segment",
-                    <.h4("Headers"),
-                    <.div(
-                      ^.cls := "ui form",
-                      <.div(
-                        ^.cls := "required field",
-                        <.label("Observer"),
-                        <.input(
-                          ^.`type` :="text",
-                          ^.autoComplete :="off"
-                        )
-                      ),
-                      <.div(
-                        ^.cls := "required field",
-                        <.label("SOS"),
-                        <.input(
-                          ^.`type` :="text",
-                          ^.autoComplete :="off"
-                        )
-                      ),
-                      DropdownMenu(DropdownMenu.Props("Image Quality", "Select", List("IQ20", "IQ70", "IQ85", "Any"))),
-                      DropdownMenu(DropdownMenu.Props("Cloud Cover", "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"))),
-                      DropdownMenu(DropdownMenu.Props("Water Vapor", "Select", List("WV20", "WV50", "WV80", "Any"))),
-                      DropdownMenu(DropdownMenu.Props("Sky Background", "Select", List("SB20", "SB50", "SB80", "Any")))
-                    )
-                  )
+                  HeadersSideBar()
                 ),
                 <.div(
                   ^.cls := "twelve wide computer twelve wide tablet sixteen column",
