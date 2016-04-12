@@ -44,6 +44,50 @@ object HeadersSideBar {
   def apply() = component()
 }
 
+object SequenceContainer {
+  val component = ReactComponentB[Unit]("HeadersSideBar")
+    .stateless
+    .render(_ =>
+      <.div(
+        ^.cls := "ui raised secondary segment",
+        <.div(
+          ^.cls := "row",
+          Button("Run"),
+          Button("Pause")
+        ),
+        <.div(
+          ^.cls := "ui divider"
+        ),
+        <.div(
+          ^.cls := "row",
+          <.table(
+            ^.cls := "ui selectable compact celled table",
+            <.thead(
+              <.tr(
+                <.th("Step"),
+                <.th("State"),
+                <.th("Config")
+              )
+            ),
+            <.tbody(
+              <.tr(
+                <.td("1"),
+                <.td("Done"),
+                <.td(
+                  ^.cls := "collapsing right aligned",
+                  IconCaretRight
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+    .build
+
+  def apply() = component()
+}
+
 object SequenceArea {
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
@@ -67,59 +111,7 @@ object SequenceArea {
                 ),
                 <.div(
                   ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                  <.div(
-                    ^.cls := "ui raised secondary segment",
-                    <.div(
-                      ^.cls := "row",
-                      Button("Run"),
-                      Button("Pause")
-                    ),
-                    <.div(
-                      ^.cls := "ui divider"
-                    ),
-                    <.div(
-                      ^.cls := "row",
-                      <.table(
-                        ^.cls := "ui selectable compact celled table",
-                        <.thead(
-                          <.tr(
-                            <.th("Step"),
-                            <.th("State"),
-                            <.th("Config")
-                          )
-                        ),
-                        <.tbody(
-                          <.tr(
-                            <.td("1"),
-                            <.td("Done"),
-                            <.td(
-                              ^.cls := "collapsing right aligned",
-                              IconCaretRight
-                            )
-                          ),
-                          <.tr(
-                            ^.cls := "positive",
-                            <.td("2"),
-                            <.td("Running"),
-                            <.td(
-                              ^.cls := "collapsing right aligned",
-                              IconCaretRight
-                            )
-                          ),
-                          <.tr(
-                            <.td("3"),
-                            <.td("Pending"),
-                            <.td(
-                              ^.cls := "collapsing right aligned",
-                              IconPause,
-                              " ",
-                              IconCaretRight
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
+                  SequenceContainer()
                 )
               ),
               <.div(
@@ -154,40 +146,7 @@ object SequenceArea {
                 ),
                 <.div(
                   ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                  <.div(
-                    ^.cls := "ui raised secondary segment",
-                    <.div(
-                      ^.cls := "row",
-                      Button("Run"),
-                      Button("Pause")
-                    ),
-                    <.div(
-                      ^.cls := "ui divider"
-                    ),
-                    <.div(
-                      ^.cls := "row",
-                      <.table(
-                        ^.cls := "ui selectable compact celled table",
-                        <.thead(
-                          <.tr(
-                            <.th("Step"),
-                            <.th("State"),
-                            <.th("Config")
-                          )
-                        ),
-                        <.tbody(
-                          <.tr(
-                            <.td("1"),
-                            <.td("Done"),
-                            <.td(
-                              ^.cls := "collapsing right aligned",
-                              IconCaretRight
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
+                  SequenceContainer()
                 )
               ),
               <.div(
