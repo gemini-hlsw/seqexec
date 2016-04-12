@@ -109,6 +109,46 @@ object LogArea {
   def apply() = component()
 }
 
+object SequenceTab {
+  case class Props(isActive: Boolean, dataTab: String)
+
+  val component = ReactComponentB[Props]("SequenceTab")
+    .stateless
+    .render_P(p =>
+      <.div(
+        ^.cls := "ui bottom attached active tab segment",
+        ^.classSet(
+          "active" -> p.isActive
+        ),
+        dataTab := p.dataTab,
+        <.div(
+          ^.cls := "ui grid",
+          <.div(
+            ^.cls := "row",
+            <.div(
+              ^.cls := "four wide column tablet computer only",
+              HeadersSideBar()
+            ),
+            <.div(
+              ^.cls := "twelve wide computer twelve wide tablet sixteen column",
+              SequenceContainer()
+            )
+          ),
+          <.div(
+            ^.cls := "row computer only",
+            <.div(
+              ^.cls := "sixteen wide column",
+              LogArea()
+            )
+          )
+        )
+      )
+    )
+    .build
+
+  def apply(p: Props) = component(p)
+}
+
 object SequenceArea {
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
@@ -119,56 +159,9 @@ object SequenceArea {
         <.div(
           ^.cls := "ui bottom attached segment",
           TabularMenu(List(TabItem("GPI (GS-2016A-Q-0-1)", isActive = true, "GPI"), TabItem("GMOS-S (GS-2016A-Q-5-3)", isActive = false, "GMOS_S"), TabItem("F2 (GS-2016A-Q-4-1)", isActive = false, "F2"))),
-          <.div(
-            ^.cls := "ui bottom attached active tab segment",
-            dataTab := "GPI",
-            <.div(
-              ^.cls := "ui grid",
-              <.div(
-                ^.cls := "row",
-                <.div(
-                  ^.cls := "four wide column tablet computer only",
-                  HeadersSideBar()
-                ),
-                <.div(
-                  ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                  SequenceContainer()
-                )
-              ),
-              <.div(
-                ^.cls := "row computer only",
-                <.div(
-                  ^.cls := "sixteen wide column",
-                  LogArea()
-                )
-              )
-            )
-          ),
-          <.div(
-            ^.cls := "ui bottom attached tab segment",
-            dataTab := "GMOS_S",
-            <.div(
-              ^.cls := "ui grid",
-              <.div(
-                ^.cls := "row",
-                <.div(
-                  ^.cls := "four wide column tablet computer only",
-                  HeadersSideBar()
-                ),
-                <.div(
-                  ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                  SequenceContainer()
-                )
-              ),
-              <.div(
-                ^.cls := "row computer only",
-                <.div(
-                  ^.cls := "sixteen wide column",
-                  LogArea()
-                )
-              )
-            )
-          )
+          SequenceTab(SequenceTab.Props(isActive = true, "GPI")),
+          SequenceTab(SequenceTab.Props(isActive = false, "GMOS_S")),
+          SequenceTab(SequenceTab.Props(isActive = false, "F2"))
         )
       )
     ).build
