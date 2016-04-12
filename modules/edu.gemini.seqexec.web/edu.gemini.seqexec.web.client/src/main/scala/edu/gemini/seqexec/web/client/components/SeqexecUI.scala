@@ -14,7 +14,8 @@ object SeqexecUI {
     .render(_ =>
       <.div(
         NavBar(),
-        SeqexecCircuit.connect(_.searchAreaState)(QueueArea(_))
+        SeqexecCircuit.connect(_.searchAreaState)(QueueArea(_)),
+        SequenceArea()
       )
     )
     .build
