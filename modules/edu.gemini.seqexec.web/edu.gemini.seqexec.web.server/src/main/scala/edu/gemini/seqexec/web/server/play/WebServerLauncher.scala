@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server.play
 
 import play.api.routing.Router
-import play.api.{BuiltInComponents, Mode}
+import play.api.{BuiltInComponents, Environment, Mode}
 import play.core.server.{NettyServerComponents, ServerConfig}
 import play.api.mvc._
 
@@ -17,7 +17,7 @@ object WebServerLauncher extends App {
       lazy val router = Router.from(
         SeqexecUIApiRoutes.routes.orElse(
         SeqexecCommandApiRoutes.routes).orElse(
-        StaticAssetsRoutes.routes))
+        new StaticAssetsRoutes(environment).routes))
   }}
 
   launch(9090).server

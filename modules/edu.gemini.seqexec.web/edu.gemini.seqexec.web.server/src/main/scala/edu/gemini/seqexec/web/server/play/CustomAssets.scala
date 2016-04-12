@@ -1,16 +1,10 @@
 package edu.gemini.seqexec.web.server.play
 
-import javax.inject.Inject
-
 import controllers.Assets
 import play.api._
 import play.api.mvc._
 
-import Play.current
-
 import java.io._
-
-object CustomAssets extends CustomAssets
 
 /**
  * Controller that serves static resources from file when possible, or defaults to the classpath
@@ -24,7 +18,7 @@ object CustomAssets extends CustomAssets
   * It combines the ExternalAssets and Assets controllers
  *
  */
-class CustomAssets @Inject() () extends Controller {
+class CustomAssets (environment: Environment) extends Controller {
 
   val AbsolutePath = """^(/|[a-zA-Z]:\\).*""".r
 
@@ -35,14 +29,14 @@ class CustomAssets @Inject() () extends Controller {
    * @param file the file part extracted from the URL
    */
   def at(rootPath: String, file: String, classPathRoot: String): Action[AnyContent] =
-    Play.mode match {
+    environment.mode match {
       case Mode.Prod => Action {
                           NotFound
                         }
       case _         =>
         val fileToServe = rootPath match {
           case AbsolutePath(_) => new File(rootPath, file)
-          case _               => new File(Play.application.getFile(rootPath), file)
+          case _               => new File(environment.getFile(rootPath), file)
         }
         // Try first a file (To read from the file system), if that fails go to the classpath
         if (fileToServe.exists) {

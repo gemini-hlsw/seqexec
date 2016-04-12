@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot, PotAction, Ready}
+import diode.data.{Empty, Pot, PotAction}
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
@@ -116,5 +116,5 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaClosed, Empty)
 
-  override protected def actionHandler = combineHandlers(queueHandler, searchHandler, searchAreaHandler)
+  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler)
 }

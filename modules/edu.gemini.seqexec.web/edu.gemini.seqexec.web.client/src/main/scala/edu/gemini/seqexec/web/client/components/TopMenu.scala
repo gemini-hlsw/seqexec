@@ -36,7 +36,7 @@ object TopMenu {
         $(ReactDOM.findDOMNode(s)).dropdown()
       }
     )
-    .buildU
+    .build
 
   def apply() = component()
 }

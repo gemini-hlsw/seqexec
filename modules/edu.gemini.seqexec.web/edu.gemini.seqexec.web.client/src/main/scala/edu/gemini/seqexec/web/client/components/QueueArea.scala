@@ -33,8 +33,8 @@ object QueueTableBody {
   }
 
   def load(p: Props) =
-      // Request to load the queue if not present
-      Callback.ifTrue(p.queue.value.isEmpty, p.queue.dispatch(UpdatedQueue(Empty)))
+    // Request to load the queue if not present
+    Callback.when(p.queue.value.isEmpty)(p.queue.dispatch(UpdatedQueue(Empty)))
 
   val component = ReactComponentB[Props]("QueueTableBody")
     .render_P( p =>
@@ -115,7 +115,7 @@ object QueueAreaTitle {
           SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
         )
       )
-    ).buildU
+    ).build
 
   def apply() = component()
 }
