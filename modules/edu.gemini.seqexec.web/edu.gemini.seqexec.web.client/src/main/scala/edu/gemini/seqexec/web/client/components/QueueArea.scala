@@ -121,6 +121,63 @@ object QueueAreaTitle {
 }
 
 /**
+  * Container for the queue table
+  */
+object QueueTableSection {
+  val component = ReactComponentB[Unit]("QueueTableSection")
+    .stateless
+    .render( _ =>
+      <.div(
+        ^.cls := "segment",
+        <.table(
+          ^.cls := "ui selectable compact celled table unstackable",
+          <.thead(
+            <.tr(
+              <.th("Obs ID "),
+              <.th("State"),
+              <.th("Instrument"),
+              <.th(
+                SeqexecStyles.notInMobile,
+                "Notes"
+              )
+            )
+          ),
+          SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
+          <.tfoot(
+            <.tr(
+              <.th(
+                ^.colSpan := "4",
+                <.div(
+                  ^.cls := "ui right floated pagination menu",
+                  <.a(
+                    ^.cls := "icon item",
+                    IconChevronLeft
+                  ),
+                  <.a(
+                    ^.cls := "item", "1"),
+                  <.a(
+                    ^.cls := "item", "2"),
+                  <.a(
+                    ^.cls := "item", "3"),
+                  <.a(
+                    ^.cls := "item", "4"),
+                  <.a(
+                    ^.cls := "icon item",
+                    IconChevronRight
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    ).build
+
+  def apply() = component()
+
+}
+
+/**
   * Displays the elements on the queue
   */
 object QueueArea {
@@ -152,50 +209,7 @@ object QueueArea {
                 },
                 // If there was an error on the process display a message
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
-                <.div(
-                  ^.cls := "segment",
-                  <.table(
-                    ^.cls := "ui selectable compact celled table unstackable",
-                    <.thead(
-                      <.tr(
-                        <.th("Obs ID "),
-                        <.th("State"),
-                        <.th("Instrument"),
-                        <.th(
-                          SeqexecStyles.notInMobile,
-                          "Notes"
-                        )
-                      )
-                    ),
-                    SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
-                    <.tfoot(
-                      <.tr(
-                        <.th(
-                          ^.colSpan := "4",
-                          <.div(
-                            ^.cls := "ui right floated pagination menu",
-                            <.a(
-                              ^.cls := "icon item",
-                              IconChevronLeft
-                            ),
-                            <.a(
-                              ^.cls := "item", "1"),
-                            <.a(
-                              ^.cls := "item", "2"),
-                            <.a(
-                              ^.cls := "item", "3"),
-                            <.a(
-                              ^.cls := "item", "4"),
-                            <.a(
-                              ^.cls := "icon item",
-                              IconChevronRight
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
+                QueueTableSection()
               ),
               p.searchArea() == SearchAreaOpen ?= SequenceSearchResults() // Display the search area if open
             )
