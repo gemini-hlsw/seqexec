@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.client.components
 
+import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCaretRight, IconPause}
@@ -10,14 +11,7 @@ object SequenceArea {
     .render( _ =>
       <.div(
         ^.cls := "ui raised segments container",
-        <.div(
-          ^.cls := "ui top attached text menu segment",
-          <.div(
-            ^.cls := "ui header item",
-            "Running Sequences"
-          )
-        ),
-
+        TextMenuSegment("Running Sequences"),
         <.div(
           ^.cls := "ui bottom attached segment",
           <.div(
@@ -50,7 +44,7 @@ object SequenceArea {
                     <.div(
                       ^.cls := "ui form",
                       <.div(
-                        ^.cls := "required field error",
+                        ^.cls := "required field",
                         <.label("Observer"),
                         <.input(
                           ^.`type` :="text",
@@ -78,14 +72,8 @@ object SequenceArea {
                     ^.cls := "ui raised secondary segment",
                     <.div(
                       ^.cls := "row",
-                      <.button(
-                        ^.cls := "ui button",
-                        "Run"
-                      ),
-                      <.button(
-                        ^.cls := "ui button",
-                        "Pause"
-                      )
+                      Button("Run"),
+                      Button("Pause")
                     ),
                     <.div(
                       ^.cls := "ui divider"

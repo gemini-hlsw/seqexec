@@ -101,17 +101,13 @@ object LoadingErrorMsg {
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
-  val component = ReactComponentB[Unit]("")
+  val component = ReactComponentB[Unit]("QueueAreaTitle")
     .stateless
     .render(_ =>
-      <.div(
-        ^.cls := "ui top attached text menu segment",
-        <.div(
-          ^.cls := "ui header item",
-          "Queue"
-        ),
+      TextMenuSegment("Queue",
         <.div(
           ^.cls := "right menu",
+          ^.key := "queue.area.title",
           SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
         )
       )
