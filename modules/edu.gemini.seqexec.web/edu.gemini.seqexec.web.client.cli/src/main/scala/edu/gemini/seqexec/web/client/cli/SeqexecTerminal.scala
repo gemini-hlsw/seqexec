@@ -7,10 +7,11 @@ import org.querki.jquery.$
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
 import JQueryTerminal.{Terminal, _}
-import edu.gemini.seqexec.web.common.RegularCommand
+import edu.gemini.seqexec.web.common.{CliCommand, RegularCommand}
+import org.scalajs.dom
 
 import scala.scalajs.js.Any
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import upickle.default._
@@ -20,46 +21,43 @@ import Scalaz._
 
 @JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
-  type CommandFunction = (List[String], Terminal) => js.Any
 
   trait CommandHandler {
     val baseUrl = "/api/seqexec/commands"
-    def handle(args: List[String], terminal: Terminal):js.Any
+    def handle(args: List[String], terminal: Terminal):Unit
+
+    def complete[A <: dom.XMLHttpRequest](terminal: Terminal): PartialFunction[Try[A], js.Any] = {
+      case Success(s) =>
+        val r = read[CliCommand](s.responseText)
+        if (r.error) terminal.error(r.response) else terminal.echo(r.response)
+      case Failure(s) => terminal.error(s.toString)
+    }
+
+    def pause(t: Terminal) = Future.apply(t.pause())
+    def resume(t: Terminal) = Future.apply(t.resume())
+
+    def runInBackground[A <: dom.XMLHttpRequest](a: => Future[A], t: Terminal): Unit =
+      (for {
+        _ <- pause(t)
+        f <- a.andThen(complete(t))
+      } yield f).andThen {
+        case u => resume(t) // resume regardless of whether there is an error
+      }
   }
 
   case class Command(cmd: String, args: Int, handler: CommandHandler, description: String)
 
-  def pause(t: Terminal): Future[Unit] = Future.apply(t.pause())
-  def resume(t: Terminal): Future[Unit] = Future.apply(t.resume())
-  def runInBackground[A](a: => Future[A], t: Terminal): Future[A] =
-    (for {
-      _ <- pause(t)
-      f <- a
-    } yield f).andThen {
-      case _ => resume(t)
-    }
-
   object HostHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Any = {
-      runInBackground(Ajax.get(s"$baseUrl/host"), terminal).onComplete {
-        case Success(s) =>
-          val r = read[RegularCommand](s.responseText)
-          if (r.error) terminal.error(r.response) else terminal.echo(r.response)
-        case Failure(s) => terminal.error(s.toString)
-      }
+    override def handle(args: List[String], terminal: Terminal): Unit = {
+      runInBackground(Ajax.get(s"$baseUrl/host"), terminal)
     }
   }
 
   object SetHostHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Any = {
+    override def handle(args: List[String], terminal: Terminal): Unit = {
       runInBackground(Ajax.post(s"$baseUrl/host",
         data = s"host=${args.head}",
-        headers = Map("Content-Type" -> "application/x-www-form-urlencoded")), terminal).onComplete {
-        case Success(s) =>
-          val r = read[RegularCommand](s.responseText)
-          if (r.error) terminal.error(r.response) else terminal.echo(r.response)
-        case Failure(s) => terminal.error(s.toString)
-      }
+        headers = Map("Content-Type" -> "application/x-www-form-urlencoded")), terminal)
     }
   }
 
