@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconDropdown, IconCaretRight, IconPause}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCaretRight, IconPause}
 
 object SequenceArea {
   val component = ReactComponentB[Unit]("QueueTableSection")
@@ -65,154 +65,10 @@ object SequenceArea {
                           ^.autoComplete :="off"
                         )
                       ),
-                      <.div(
-                        ^.cls := "field",
-                        <.label("Image Quality"),
-                        <.div(
-                          ^.cls := "ui fluid selection dropdown",
-                          <.div(
-                            ^.cls := "default text",
-                            "Select"
-                          ),
-                          IconDropdown,
-                          <.input(
-                            ^.`type` :="hidden",
-                            ^.name :="iq"
-                          ),
-                          <.div(
-                            ^.cls := "menu",
-                            <.div(
-                              ^.cls := "item",
-                              "IQ20"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "IQ70"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "IQ85"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "Any"
-                            )
-                          )
-                        )
-                      ),
-                      <.div(
-                        ^.cls := "field",
-                        <.label("Cloud Cover"),
-                        <.div(
-                          ^.cls := "ui fluid selection dropdown",
-                          <.div(
-                            ^.cls := "default text",
-                            "Select"
-                          ),
-                          IconDropdown,
-                          <.input(
-                            ^.`type` :="hidden",
-                            ^.name :="cc"
-                          ),
-                          <.div(
-                            ^.cls := "menu",
-                            <.div(
-                              ^.cls := "item",
-                              "CC20"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "CC50"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "CC70"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "CC80"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "CC90"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "Any"
-                            )
-                          )
-                        )
-                      ),
-                      <.div(
-                        ^.cls := "field",
-                        <.label("Water Vapor"),
-                        <.div(
-                          ^.cls := "ui fluid selection dropdown",
-                          <.div(
-                            ^.cls := "default text",
-                            "Select"
-                          ),
-                          IconDropdown,
-                          <.input(
-                            ^.`type` :="hidden",
-                            ^.name :="wv"
-                          ),
-                          <.div(
-                            ^.cls := "menu",
-                            <.div(
-                              ^.cls := "item",
-                              "WV20"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "WV50"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "WV80"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "Any"
-                            )
-                          )
-                        )
-                      ),
-                      <.div(
-                        ^.cls := "field",
-                        <.label("Sky Background"),
-                        <.div(
-                          ^.cls := "ui fluid selection dropdown",
-                          <.div(
-                            ^.cls := "default text",
-                            "Select"
-                          ),
-                          IconDropdown,
-                          <.input(
-                            ^.`type` :="hidden",
-                            ^.name :="sb"
-                          ),
-                          <.div(
-                            ^.cls := "menu",
-                            <.div(
-                              ^.cls := "item",
-                              "SB20"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "SB50"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "SB80"
-                            ),
-                            <.div(
-                              ^.cls := "item",
-                              "Any"
-                            )
-                          )
-                        )
-                      )
+                      DropdownMenu(DropdownMenu.Props("Image Quality", "Select", List("IQ20", "IQ70", "IQ85", "Any"))),
+                      DropdownMenu(DropdownMenu.Props("Cloud Cover", "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"))),
+                      DropdownMenu(DropdownMenu.Props("Water Vapor", "Select", List("WV20", "WV50", "WV80", "Any"))),
+                      DropdownMenu(DropdownMenu.Props("Sky Background", "Select", List("SB20", "SB50", "SB80", "Any")))
                     )
                   )
                 ),
