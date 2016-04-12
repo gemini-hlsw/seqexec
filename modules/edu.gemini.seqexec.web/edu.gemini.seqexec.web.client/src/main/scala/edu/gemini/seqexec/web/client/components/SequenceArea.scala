@@ -88,6 +88,27 @@ object SequenceContainer {
   def apply() = component()
 }
 
+object LogArea {
+  val component = ReactComponentB[Unit]("LogArea")
+    .stateless
+    .render(_ =>
+      <.div(
+        ^.cls := "ui raised secondary segment",
+        <.h4("Log"),
+        <.div(
+          ^.cls := "ui form",
+          <.div(
+            ^.cls := "field",
+            <.textarea()
+          )
+        )
+      )
+    )
+    .build
+
+  def apply() = component()
+}
+
 object SequenceArea {
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
@@ -118,17 +139,7 @@ object SequenceArea {
                 ^.cls := "row computer only",
                 <.div(
                   ^.cls := "sixteen wide column",
-                  <.div(
-                    ^.cls := "ui raised secondary segment",
-                    <.h4("Log"),
-                    <.div(
-                      ^.cls := "ui form",
-                      <.div(
-                        ^.cls := "field",
-                        <.textarea()
-                      )
-                    )
-                  )
+                  LogArea()
                 )
               )
             )
@@ -153,17 +164,7 @@ object SequenceArea {
                 ^.cls := "row computer only",
                 <.div(
                   ^.cls := "sixteen wide column",
-                  <.div(
-                    ^.cls := "ui raised secondary segment",
-                    <.h4("Log"),
-                    <.div(
-                      ^.cls := "ui form",
-                      <.div(
-                        ^.cls := "field",
-                        <.textarea()
-                      )
-                    )
-                  )
+                  LogArea()
                 )
               )
             )
