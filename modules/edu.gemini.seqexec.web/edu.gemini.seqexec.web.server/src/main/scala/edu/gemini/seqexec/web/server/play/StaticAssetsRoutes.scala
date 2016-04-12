@@ -14,6 +14,9 @@ class StaticAssetsRoutes(environment: Environment) {
     case GET(p"/") =>
       // Index
       customAssets.at("./src/main/resources", "index.html", "/")
+    case GET(p"/cli") =>
+      // Index
+      customAssets.at("./src/main/resources", "cli.html", "/")
     case GET(p"/$f*") =>
       // Static files,
       customAssets.at("src/main/resources", f, "/")
