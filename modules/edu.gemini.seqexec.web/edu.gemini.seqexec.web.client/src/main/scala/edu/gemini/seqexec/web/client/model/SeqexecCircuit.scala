@@ -45,8 +45,9 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
       updated(value.map(_.filterNot(_ == s)))
   }
 }
+
 /**
-  * Handles actions related to search
+  * Handles actions related to the search area, used to open/close the area
   */
 class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS

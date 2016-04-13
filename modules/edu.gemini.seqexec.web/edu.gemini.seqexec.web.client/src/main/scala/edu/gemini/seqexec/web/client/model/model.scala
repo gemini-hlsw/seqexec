@@ -22,7 +22,9 @@ case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Emp
 case object OpenSearchArea
 case object CloseSearchArea
 
+// Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
+// Action to remove a sequence from the search results
 case class RemoveFromSearch(s: Sequence)
 
 // End Actions

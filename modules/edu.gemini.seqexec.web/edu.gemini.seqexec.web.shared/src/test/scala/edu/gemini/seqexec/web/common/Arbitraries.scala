@@ -34,5 +34,4 @@ trait Arbitraries {
       } yield Sequence(id, st, i, SequenceSteps(List(Step(0, v))), None)
     }
 
-
 }
