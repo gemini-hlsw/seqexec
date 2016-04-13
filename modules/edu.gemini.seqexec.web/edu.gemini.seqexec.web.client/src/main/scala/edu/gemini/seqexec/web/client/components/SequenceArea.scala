@@ -1,6 +1,8 @@
 package edu.gemini.seqexec.web.client.components
 
+import diode.ModelR
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import japgolly.scalajs.react.ReactComponentB
@@ -150,6 +152,8 @@ object SequenceTab {
 }
 
 object SequenceArea {
+  val sequencesTabsR: ModelR[_, List[TabItem]] = SeqexecCircuit.zoom(d => {d.sequencesOnDisplay.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.sequencesOnDisplay.focus, a.instrument))})
+
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
     .render( _ =>
@@ -158,7 +162,7 @@ object SequenceArea {
         TextMenuSegment("Running Sequences"),
         <.div(
           ^.cls := "ui bottom attached segment",
-          TabularMenu(List(TabItem("GPI (GS-2016A-Q-0-1)", isActive = true, "GPI"), TabItem("GMOS-S (GS-2016A-Q-5-3)", isActive = false, "GMOS_S"), TabItem("F2 (GS-2016A-Q-4-1)", isActive = false, "F2"))),
+          SeqexecCircuit.connect(sequencesTabsR)(p => TabularMenu(p())),
           SequenceTab(SequenceTab.Props(isActive = true, "GPI")),
           SequenceTab(SequenceTab.Props(isActive = false, "GMOS_S")),
           SequenceTab(SequenceTab.Props(isActive = false, "F2"))

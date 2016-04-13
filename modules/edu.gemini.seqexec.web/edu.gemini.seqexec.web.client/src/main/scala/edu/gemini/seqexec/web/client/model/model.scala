@@ -32,11 +32,14 @@ sealed trait SearchAreaState
 case object SearchAreaOpen extends SearchAreaState
 case object SearchAreaClosed extends SearchAreaState
 
+case class SequenceTab(instrument: SeqexecAppRootModel.Instrument, sequence: Option[Sequence])
+
 // Model for the tabbed area of sequences
-case class SequencesOnDisplay(instrumentSequences: Map[SeqexecAppRootModel.Instrument, Option[Sequence]], freeSequences: List[Sequence], focus: Option[Sequence])
+case class SequencesOnDisplay(instrumentSequences: List[SequenceTab], freeSequences: List[SequenceTab], focus: SequenceTab) {
+}
 
 object SequencesOnDisplay {
-  val empty = SequencesOnDisplay(SeqexecAppRootModel.instruments.map(_ -> None).toMap, Nil, None)
+  val empty = SequencesOnDisplay(SeqexecAppRootModel.instruments.map(SequenceTab(_, None)), Nil, SeqexecAppRootModel.instruments.map(SequenceTab(_, None)).head)
 }
 
 /**
