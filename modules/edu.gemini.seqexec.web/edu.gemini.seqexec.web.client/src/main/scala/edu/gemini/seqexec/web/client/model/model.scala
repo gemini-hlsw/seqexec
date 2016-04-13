@@ -26,6 +26,8 @@ case object CloseSearchArea
 case class AddToQueue(s: Sequence)
 // Action to remove a sequence from the search results
 case class RemoveFromSearch(s: Sequence)
+// Action to select a sequence for display
+case class SelectToDisplay(s: Sequence)
 
 // End Actions
 
@@ -38,6 +40,9 @@ case class SequenceTab(instrument: SeqexecAppRootModel.Instrument, sequence: Opt
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: List[SequenceTab], freeSequences: List[SequenceTab], focus: SequenceTab) {
+  // Focus on the given sequence if it exists, otherwise ignore it
+  def select(s: Sequence):SequencesOnDisplay = (instrumentSequences ::: freeSequences).find(_.sequence.exists(_ == s))
+    .fold(this)(t => copy(focus = t))
 }
 
 object SequencesOnDisplay {

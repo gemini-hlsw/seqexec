@@ -7,7 +7,7 @@ import edu.gemini.seqexec.web.common._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
-class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebCommon {
 
   def emptyQueueHandler = new QueueHandler(new RootModelRW(Empty))
 

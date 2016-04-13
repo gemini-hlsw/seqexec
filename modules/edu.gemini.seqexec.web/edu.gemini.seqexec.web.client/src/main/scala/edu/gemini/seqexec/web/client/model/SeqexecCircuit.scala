@@ -61,6 +61,18 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionH
 }
 
 /**
+  * Handles actions related to the changing the selection of the displayed sequence
+  */
+class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case SelectToDisplay(s) =>
+      updated(value.select(s))
+  }
+}
+
+/**
   * Generates Eq comparisons for Pot[A], it is useful for state indicators
   */
 object PotEq {
