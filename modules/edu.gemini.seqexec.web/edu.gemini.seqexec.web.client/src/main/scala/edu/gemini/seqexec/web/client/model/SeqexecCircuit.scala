@@ -11,30 +11,6 @@ import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-// Actions
-
-// Request loading the queue
-case class UpdatedQueue(potResult: Pot[SeqexecQueue]) extends PotAction[SeqexecQueue, UpdatedQueue] {
-  override def next(newResult: Pot[SeqexecQueue]) = {
-    UpdatedQueue(newResult)
-  }
-}
-// Request a search
-case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Empty) extends PotAction[List[Sequence], SearchSequence] {
-  override def next(newResult: Pot[List[Sequence]]) = {
-    SearchSequence(criteria, newResult)
-  }
-}
-
-// Actions to close and/open the search area
-case object OpenSearchArea
-case object CloseSearchArea
-
-case class AddToQueue(s: Sequence)
-case class RemoveFromSearch(s: Sequence)
-
-// End Actions
-
 // Action Handlers
 /**
   * Handles actions related to the queue like loading and adding new elements
@@ -84,7 +60,7 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionH
 }
 
 /**
-  * Generates Eq comparisions for Pot[A], it is useful for state indicators
+  * Generates Eq comparisons for Pot[A], it is useful for state indicators
   */
 object PotEq {
   def potStateEq[A]: FastEq[Pot[A]] = new FastEq[Pot[A]] {
@@ -94,15 +70,6 @@ object PotEq {
   val seqexecQueueEq = potStateEq[SeqexecQueue]
   val searchResultsEq = potStateEq[SearchResults]
 }
-
-sealed trait SearchAreaState
-case object SearchAreaOpen extends SearchAreaState
-case object SearchAreaClosed extends SearchAreaState
-
-/**
-  * Root of the UI Model of the application
-  */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchAreaState: SearchAreaState, searchResults: Pot[List[Sequence]])
 
 /**
   * Contains the model for Diode
