@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.client.components
 
+import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
