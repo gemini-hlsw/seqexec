@@ -111,10 +111,10 @@ object LogArea {
   def apply() = component()
 }
 
-object SequenceTab {
+object SequenceTabContent {
   case class Props(isActive: Boolean, dataTab: String)
 
-  val component = ReactComponentB[Props]("SequenceTab")
+  val component = ReactComponentB[Props]("SequenceTabContent")
     .stateless
     .render_P(p =>
       <.div(
@@ -123,26 +123,27 @@ object SequenceTab {
           "active" -> p.isActive
         ),
         dataTab := p.dataTab,
-        <.div(
-          ^.cls := "ui grid",
+        p.isActive ?=
           <.div(
-            ^.cls := "row",
+            ^.cls := "ui grid",
             <.div(
-              ^.cls := "four wide column tablet computer only",
-              HeadersSideBar()
+              ^.cls := "row",
+              <.div(
+                ^.cls := "four wide column tablet computer only",
+                HeadersSideBar()
+              ),
+              <.div(
+                ^.cls := "twelve wide computer twelve wide tablet sixteen column",
+                SequenceContainer()
+              )
             ),
             <.div(
-              ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-              SequenceContainer()
+              ^.cls := "row computer only",
+              <.div(
+                ^.cls := "sixteen wide column",
+                LogArea()
+              )
             )
-          ),
-          <.div(
-            ^.cls := "row computer only",
-            <.div(
-              ^.cls := "sixteen wide column",
-              LogArea()
-            )
-          )
         )
       )
     )
@@ -151,22 +152,34 @@ object SequenceTab {
   def apply(p: Props) = component(p)
 }
 
-object SequenceArea {
-  val sequencesTabsR: ModelR[_, List[TabItem]] = SeqexecCircuit.zoom(d => {d.sequencesOnDisplay.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.sequencesOnDisplay.focus, a.instrument))})
+object SequenceTabs {
+  case class Props(sequences: SequencesOnDisplay)
 
+  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.focus, a.instrument))
+  def tabContents(d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.focus, a.instrument))
+
+  val component = ReactComponentB[Props]("SequenceTabs")
+    .stateless
+    .render_P( p =>
+      <.div(
+        ^.cls := "ui bottom attached segment",
+        TabularMenu(sequencesTabs(p.sequences)),
+        tabContents(p.sequences).map(SequenceTabContent(_))
+      )
+    )
+    .build
+
+  def apply(sequences: SequencesOnDisplay) = component(Props(sequences))
+}
+
+object SequenceArea {
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
     .render( _ =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences"),
-        <.div(
-          ^.cls := "ui bottom attached segment",
-          SeqexecCircuit.connect(sequencesTabsR)(p => TabularMenu(p())),
-          SequenceTab(SequenceTab.Props(isActive = true, "GPI")),
-          SequenceTab(SequenceTab.Props(isActive = false, "GMOS_S")),
-          SequenceTab(SequenceTab.Props(isActive = false, "F2"))
-        )
+        SeqexecCircuit.connect(_.sequencesOnDisplay)(p => SequenceTabs(p()))
       )
     ).build
 
