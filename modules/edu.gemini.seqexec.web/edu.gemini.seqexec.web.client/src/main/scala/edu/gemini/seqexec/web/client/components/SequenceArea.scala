@@ -1,13 +1,13 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.ModelR
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SequenceTab, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import japgolly.scalajs.react.ReactComponentB
+import japgolly.scalajs.react.{ReactComponentB, ReactElement}
 import japgolly.scalajs.react.vdom.prefix_<^._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconPause}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox}
+import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 
 object HeadersSideBar {
   val component = ReactComponentB[Unit]("HeadersSideBar")
@@ -112,7 +112,7 @@ object LogArea {
 }
 
 object SequenceTabContent {
-  case class Props(isActive: Boolean, dataTab: String)
+  case class Props(isActive: Boolean, st: SequenceTab)
 
   val component = ReactComponentB[Props]("SequenceTabContent")
     .stateless
@@ -122,7 +122,7 @@ object SequenceTabContent {
         ^.classSet(
           "active" -> p.isActive
         ),
-        dataTab := p.dataTab,
+        dataTab := p.st.instrument,
         p.isActive ?=
           <.div(
             ^.cls := "ui grid",
@@ -134,7 +134,7 @@ object SequenceTabContent {
               ),
               <.div(
                 ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                SequenceContainer()
+                p.st.sequence.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): ReactElement)(_ => SequenceContainer())
               )
             ),
             <.div(
@@ -156,7 +156,7 @@ object SequenceTabs {
   case class Props(sequences: SequencesOnDisplay)
 
   def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.focus, a.instrument))
-  def tabContents(d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.focus, a.instrument))
+  def tabContents(d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.focus, a))
 
   val component = ReactComponentB[Props]("SequenceTabs")
     .stateless

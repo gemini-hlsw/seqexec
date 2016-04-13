@@ -7,19 +7,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 /**
   * ReactComponent for a closeable message
   */
-object CloseableMessage {
-  sealed trait Style
-
-  object Style {
-    case object NotDefined extends Style
-    case object Warning extends Style
-    case object Info extends Style
-    case object Positive extends Style
-    case object Success extends Style
-    case object Negative extends Style
-    case object Error extends Style
-  }
-
+object CloseableMessage extends Message {
   case class Props(header: Option[String] = None, style: Style = Style.NotDefined)
 
   def component = ReactComponentB[Props]("Message")
