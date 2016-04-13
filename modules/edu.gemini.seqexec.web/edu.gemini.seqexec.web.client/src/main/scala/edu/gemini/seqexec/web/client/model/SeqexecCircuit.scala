@@ -81,7 +81,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
 
-  override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaClosed, Empty)
+  override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaClosed, Empty, SequencesOnDisplay.empty)
 
   override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler)
 }
