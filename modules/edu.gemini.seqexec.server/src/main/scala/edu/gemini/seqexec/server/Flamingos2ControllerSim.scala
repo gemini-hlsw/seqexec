@@ -8,9 +8,6 @@ import edu.gemini.seqexec.server.Flamingos2Controller.Flamingos2Config
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 11/24/15.
- */
 object Flamingos2ControllerSim extends Flamingos2Controller {
   private val Log = Logger.getLogger(getClass.getName)
 

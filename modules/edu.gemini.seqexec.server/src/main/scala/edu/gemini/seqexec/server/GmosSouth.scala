@@ -9,9 +9,6 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 4/27/15.
- */
 object GmosSouth extends Instrument {
 
   override val name: String = INSTRUMENT_NAME_PROP

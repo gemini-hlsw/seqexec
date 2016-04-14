@@ -1,10 +1,8 @@
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
-
 import argonaut._
 import Argonaut._
-import org.apache.commons.httpclient.{HttpMethod, HttpClient}
+import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PutMethod, PostMethod}
 
 import scala.io.Source
@@ -12,9 +10,6 @@ import scala.io.Source
 import scalaz.concurrent.Task
 import scalaz.EitherT
 
-/**
- * Created by jluhrs on 11/5/15.
- */
 object DhsClient {
 
   val baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
@@ -38,7 +33,7 @@ object DhsClient {
   }
 
   implicit def errorDecode: DecodeJson[Error] = DecodeJson[Error]( c => for {
-      t <- (c --\ "type").as[ErrorType]
+      t   <- (c --\ "type").as[ErrorType]
       msg <- (c --\ "message").as[String]
     } yield Error(t, msg)
   )

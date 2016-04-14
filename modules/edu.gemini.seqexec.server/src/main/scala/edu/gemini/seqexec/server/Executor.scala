@@ -1,11 +1,9 @@
 package edu.gemini.seqexec.server
 
 import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
-import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.SeqexecFailure._
-import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
+import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
@@ -14,10 +12,6 @@ import scalaz._
 import Scalaz._
 
 import scalaz.concurrent.Task
-
-/**
- * Created by jluhrs on 4/28/15.
- */
 
 object Step {
   type Step = EitherT[Task, NonEmptyList[SeqexecFailure], StepResult]
@@ -45,7 +39,7 @@ object Step {
         val systems = List(Tcs(TcsControllerSim), a)
         (systems.toSet, step(systems.map(_.configure(config)), a.observe(config))).right
       }
-    } getOrElse(UnrecognizedInstrument(instName.toString).left[(Set[System], Step)])
+    } getOrElse UnrecognizedInstrument(instName.toString).left[(Set[System], Step)]
   }
 
 }

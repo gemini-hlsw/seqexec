@@ -10,9 +10,6 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 4/22/15.
- */
 trait Instrument extends System {
   // The name used for this instrument in the science fold configuration
   val sfName: String

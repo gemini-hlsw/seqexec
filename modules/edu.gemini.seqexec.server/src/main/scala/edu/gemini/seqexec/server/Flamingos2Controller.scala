@@ -4,9 +4,6 @@ import edu.gemini.seqexec.server.DhsClient.ObsId
 
 import scala.concurrent.duration.Duration
 
-/**
- * Created by jluhrs on 11/16/15.
- */
 trait Flamingos2Controller {
   import Flamingos2Controller._
 

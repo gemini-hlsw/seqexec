@@ -20,10 +20,6 @@ import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
 import scalaz.{EitherT, \/, \/-}
 
-
-/**
- * Created by jluhrs on 11/16/15.
- */
 final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrument {
 
   import Flamingos2._
