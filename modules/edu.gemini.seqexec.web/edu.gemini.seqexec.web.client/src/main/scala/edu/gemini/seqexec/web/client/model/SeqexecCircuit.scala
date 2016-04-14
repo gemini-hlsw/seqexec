@@ -68,7 +68,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   override def handle = {
     case SelectToDisplay(s) =>
-      updated(value.select(s))
+      updated(value.sequenceForInstrument(s))
   }
 }
 
@@ -90,11 +90,12 @@ object PotEq {
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
 
-  val queueHandler = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
-  val searchHandler = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
-  val searchAreaHandler = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
+  val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
+  val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
+  val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
+  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
 
   override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaOpen, Empty, SequencesOnDisplay.empty)
 
-  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler)
+  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler, sequenceDisplayHandler)
 }

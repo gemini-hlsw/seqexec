@@ -29,7 +29,7 @@ trait ArbitrariesWebCommon {
       for {
         id <- arbitrary[String]
         st <- arbitrary[SequenceState]
-        i  <- arbitrary[String]
+        i  <- Gen.oneOf(Instrument.instruments.list)
         v  <- arbitrary[List[StepConfig]]
       } yield Sequence(id, st, i, SequenceSteps(List(Step(0, v))), None)
     }
