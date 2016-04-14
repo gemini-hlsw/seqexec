@@ -4,6 +4,9 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, ReactNode}
 
+/**
+  * React component for a message with a large icon
+  */
 object IconMessage extends Message {
 
   def component = ReactComponentB[IconMessage.Props]("Message")
