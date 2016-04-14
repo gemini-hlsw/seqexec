@@ -98,15 +98,15 @@ object SequenceTabContent {
 object SequenceTabs {
   case class Props(sequences: SequencesOnDisplay)
 
-  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.focus, a.instrument))
-  def tabContents(d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.focus, a))
+  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
+  def tabContents(d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, a)).toStream
 
   val component = ReactComponentB[Props]("SequenceTabs")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui bottom attached segment",
-        TabularMenu(sequencesTabs(p.sequences)),
+        TabularMenu(sequencesTabs(p.sequences).toStream.toList),
         tabContents(p.sequences).map(SequenceTabContent(_))
       )
     )

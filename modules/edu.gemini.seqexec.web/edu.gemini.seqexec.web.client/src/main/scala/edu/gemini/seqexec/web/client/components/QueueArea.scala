@@ -4,9 +4,9 @@ import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight, IconAttention}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconChevronLeft, IconChevronRight}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
-import edu.gemini.seqexec.web.common.{SeqexecQueue, SequenceState}
+import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
@@ -32,7 +32,7 @@ object QueueTableBody {
     )
   }
 
-  def load(p: Props) =
+  def load(p: Props):Callback =
     // Request to load the queue if not present
     Callback.when(p.queue.value.isEmpty)(p.queue.dispatch(UpdatedQueue(Empty)))
 

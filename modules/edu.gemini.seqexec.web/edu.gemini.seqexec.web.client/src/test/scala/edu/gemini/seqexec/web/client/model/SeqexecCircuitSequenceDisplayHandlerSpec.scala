@@ -1,11 +1,12 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.ActionResult.{ModelUpdate, ModelUpdateEffect}
+import diode.ActionResult.ModelUpdate
 import diode.RootModelRW
-import diode.data._
-import edu.gemini.seqexec.web.common.{ArbitrariesWebCommon, Sequence}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
+
+import scalaz._
+import Scalaz._
 
 class SeqexecCircuitSequenceDisplayHandlerSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebClient {
 
@@ -16,16 +17,19 @@ class SeqexecCircuitSequenceDisplayHandlerSpec extends FlatSpec with Matchers wi
   "SeqexecCircuit SequenceDisplayHandler" should "support focusing on a sequence" in {
     forAll { (sequenceTabs: List[SequenceTab]) =>
       whenever(sequenceTabs.nonEmpty) {
-        val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay(sequenceTabs, Nil, sequenceTabs.head)))
-        val last = sequenceTabs.last
+        val currentTabs = NonEmptyList(sequenceTabs.head, sequenceTabs.tail: _*)
+        val tabsZipper = currentTabs.toZipper
+        val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay(tabsZipper)))
+        tabsZipper.focus should equal(sequenceTabs.head)
+        val last = currentTabs.last
         // We can only focus if there is a sequence
         last match {
           case tab @ SequenceTab(_, Some(s)) =>
             val result = handler.handle(SelectToDisplay(s))
             result should matchPattern {
-              case ModelUpdate(SequencesOnDisplay(t, Nil, f)) if t == sequenceTabs && f == tab =>
+              case ModelUpdate(SequencesOnDisplay(t)) if t.focus == tab =>
             }
-          case _                             =>
+          case _                             => // In case there is no sequence for a tab, you can't focus it
         }
       }
     }

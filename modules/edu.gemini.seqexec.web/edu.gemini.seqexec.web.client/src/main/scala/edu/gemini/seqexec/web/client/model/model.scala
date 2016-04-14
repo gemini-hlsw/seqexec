@@ -3,6 +3,9 @@ package edu.gemini.seqexec.web.client.model
 import diode.data.{Empty, Pot, PotAction}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 
+import scalaz._
+import Scalaz._
+
 // Actions
 
 // Request loading the queue
@@ -39,14 +42,14 @@ case object SearchAreaClosed extends SearchAreaState
 case class SequenceTab(instrument: SeqexecAppRootModel.Instrument, sequence: Option[Sequence])
 
 // Model for the tabbed area of sequences
-case class SequencesOnDisplay(instrumentSequences: List[SequenceTab], freeSequences: List[SequenceTab], focus: SequenceTab) {
-  // Focus on the given sequence if it exists, otherwise ignore it
-  def select(s: Sequence):SequencesOnDisplay = (instrumentSequences ::: freeSequences).find(_.sequence.exists(_ == s))
-    .fold(this)(t => copy(focus = t))
+case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+  def select(s: Sequence):SequencesOnDisplay =
+    // Focus on the given sequence if it exists, otherwise ignore it
+    copy(instrumentSequences.findZor(_.sequence.exists(_ == s), instrumentSequences))
 }
 
 object SequencesOnDisplay {
-  val empty = SequencesOnDisplay(SeqexecAppRootModel.instruments.map(SequenceTab(_, None)), Nil, SeqexecAppRootModel.instruments.map(SequenceTab(_, None)).head)
+  val empty = SequencesOnDisplay(SeqexecAppRootModel.instruments.map(SequenceTab(_, None)).toZipper)
 }
 
 /**
@@ -60,5 +63,5 @@ object SeqexecAppRootModel {
 
   // TODO Replace these for  a real list of instruments
   // TODO This list should be site-specific
-  val instruments = List[Instrument]("F2", "GMOS-S", "GPI", "GSAOI")
+  val instruments = NonEmptyList[Instrument]("F2", List[Instrument]("GMOS-S", "GPI", "GSAOI"): _*)
 }
