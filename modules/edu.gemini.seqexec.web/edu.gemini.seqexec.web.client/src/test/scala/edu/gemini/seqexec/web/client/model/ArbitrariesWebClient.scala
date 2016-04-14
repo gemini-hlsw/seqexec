@@ -11,7 +11,7 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =
     Arbitrary {
       for {
-        i <- Gen.oneOf(Instrument.instruments)
+        i <- Gen.oneOf(Instrument.instruments.list.toList)
         s <- arbitrary[Option[Sequence]]
       } yield SequenceTab(i, s.map(_.copy(instrument = i)))
     }

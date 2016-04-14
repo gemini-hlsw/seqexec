@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.web.common
 
 import org.scalacheck.{Arbitrary, _}
-import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
 trait ArbitrariesWebCommon {
@@ -29,7 +28,7 @@ trait ArbitrariesWebCommon {
       for {
         id <- arbitrary[String]
         st <- arbitrary[SequenceState]
-        i  <- Gen.oneOf(Instrument.instruments.list)
+        i  <- Gen.oneOf(Instrument.instruments.list.toList)
         v  <- arbitrary[List[StepConfig]]
       } yield Sequence(id, st, i, SequenceSteps(List(Step(0, v))), None)
     }
