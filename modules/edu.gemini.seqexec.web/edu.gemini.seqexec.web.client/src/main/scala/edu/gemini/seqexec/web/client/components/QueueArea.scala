@@ -36,6 +36,10 @@ object QueueTableBody {
     // Request to load the queue if not present
     Callback.when(p.queue.value.isEmpty)(p.queue.dispatch(UpdatedQueue(Empty)))
 
+  def showSequence(p: Props,s: Sequence):Callback =
+    // Request to display the selected sequence
+    p.queue.dispatch(SelectToDisplay(s))
+
   val component = ReactComponentB[Props]("QueueTableBody")
     .render_P( p =>
       <.tbody(
@@ -49,6 +53,7 @@ object QueueTableBody {
                   "negative" -> (s.state == SequenceState.Error)
                 ),
                 ^.key := s"item.queue.$i",
+                ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
                   s.id

@@ -20,7 +20,7 @@ object SeqexecUIApiRoutes {
     case GET(p"/api/seqexec/sequence/$id<.*-[0-9]+>") => Action {
       val obsId = new SPObservationID(id)
       ExecutorImpl.read(obsId) match {
-        case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "Flamingos2", s.toSequenceSteps, None))))
+        case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
         case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
       }
     }
