@@ -37,7 +37,7 @@ object Step {
     instrument map { a => {
 //        val systems = List(Tcs(TcsControllerEpics), a)
         val systems = List(Tcs(TcsControllerSim), a)
-        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config))).right
+        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config).run(???))).right
       }
     } getOrElse UnrecognizedInstrument(instName.toString).left[(Set[System], Step)]
   }

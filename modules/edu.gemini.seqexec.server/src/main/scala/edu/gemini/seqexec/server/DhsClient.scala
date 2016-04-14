@@ -10,7 +10,13 @@ import scala.io.Source
 import scalaz.concurrent.Task
 import scalaz.EitherT
 
-object DhsClient {
+trait DhsClient {
+  def createImage(p: DhsClient.ImageParameters): SeqAction[DhsClient.ObsId]
+
+  def setKeywords(id: DhsClient.ObsId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
+}
+
+object DhsClient extends DhsClient {
 
   val baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
 

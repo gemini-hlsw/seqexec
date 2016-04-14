@@ -1,16 +1,15 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.server.DhsClient.{StringKeyword, KeywordBag, ObsId}
+import edu.gemini.seqexec.server.DhsClient.{KeywordBag, ObsId, StringKeyword}
 import edu.gemini.seqexec.server.Flamingos2Controller._
 import edu.gemini.seqexec.server.ConfigUtil._
-import edu.gemini.spModel.config2.{ItemKey, Config}
+import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadoutMode
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
@@ -18,7 +17,7 @@ import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
-import scalaz.{EitherT, \/, \/-}
+import scalaz._
 
 final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrument {
 
@@ -28,17 +27,19 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val sfName: String = Flamingos2.sfName
 
-  override def observe(config: Config): SeqAction[ObserveResult] = for {
-    id <- DhsClient.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("flamingos2", "dhs-http")))
-    _ <- f2Controller.observe(id)
-    _ <- closeImage(id)
-  } yield ObserveResult(id)
+  override def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]] = Reader { client =>
+    for {
+      id <- client.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("flamingos2", "dhs-http")))
+      _  <- f2Controller.observe(id)
+      _  <- closeImage(id, client)
+    } yield ObserveResult(id)
+  }
 
   override def configure(config: Config): SeqAction[ConfigResult] =
     fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
 
-  private def closeImage(id: ObsId): SeqAction[Unit] = DhsClient.setKeywords(id,
-    KeywordBag(StringKeyword("instrument", "flamingos2"), StringKeyword("OBSERVER", "Javier Luhrs")), finalFlag = true)
+  private def closeImage(id: ObsId, client: DhsClient): SeqAction[Unit] =
+    client.setKeywords(id, KeywordBag(StringKeyword("instrument", "flamingos2"), StringKeyword("OBSERVER", "Javier Luhrs")), finalFlag = true)
 
 }
 
