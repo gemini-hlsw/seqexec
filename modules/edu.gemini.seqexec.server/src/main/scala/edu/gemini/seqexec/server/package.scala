@@ -35,12 +35,5 @@ package object server {
         case \/-(b) => Success(b)
       }
   }
-
-  // This is built into scalaz 7.1
-  implicit class MoreMonadOps[M[+_], A](ma: M[A])(implicit M: Monad[M]) {
-    def whileM_(p: M[Boolean]): M[Unit] =
-      M.ifM(p, M.bind(ma)(_ => whileM_(p)), M.point(()))
-  }
-
 }
 
