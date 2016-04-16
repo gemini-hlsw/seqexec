@@ -1,26 +1,50 @@
 package edu.gemini.seqexec.server
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicInteger
+
 import argonaut._
 import Argonaut._
+import edu.gemini.seqexec.server.DhsClient.{ImageParameters, KeywordBag, ObsId}
 import org.apache.commons.httpclient.HttpClient
-import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PutMethod, PostMethod}
+import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
 
 import scala.io.Source
-
 import scalaz.concurrent.Task
 import scalaz.EitherT
 
 trait DhsClient {
+  /**
+    * Requests the DHS to create an image returning the obs id if applicable
+    */
   def createImage(p: DhsClient.ImageParameters): SeqAction[DhsClient.ObsId]
 
+  /**
+    * Set the keywords for an image
+    */
   def setKeywords(id: DhsClient.ObsId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
 }
 
-object DhsClient extends DhsClient {
+class DhsClientSim(date: LocalDate) extends DhsClient {
+  private val counter = new AtomicInteger(0)
+
+  val format = DateTimeFormatter.ofPattern("yyyyMMdd")
+
+  override def createImage(p: ImageParameters): SeqAction[ObsId] =
+    EitherT(Task.now(TrySeq(f"S${date.format(format)}${counter.incrementAndGet()}%04d")))
+
+  override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: JsonBoolean): SeqAction[Unit] =
+    EitherT(Task.now(TrySeq(())))
+}
+
+object DhsClientSim {
+  def apply(date: LocalDate) = new DhsClientSim(date)
+}
+
+object DhsClientHttp extends DhsClient {
 
   val baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
-
-  type ObsId = String
 
   sealed case class ErrorType(str: String)
   object BadRequest extends ErrorType("BAD_REQUEST")
@@ -35,7 +59,7 @@ object DhsClient extends DhsClient {
   )
 
   final case class Error(t: ErrorType, msg: String) {
-    override def toString = "(" + t.str + ") " + msg
+    override def toString = s"(${t.str}) $msg"
   }
 
   implicit def errorDecode: DecodeJson[Error] = DecodeJson[Error]( c => for {
@@ -64,6 +88,47 @@ object DhsClient extends DhsClient {
     }
   } )
 
+  implicit def imageParametersEncode: EncodeJson[DhsClient.ImageParameters] = EncodeJson[DhsClient.ImageParameters]( p =>
+    ("lifetime" := p.lifetime.str) ->: ("contributors" := p.contributors) ->: Json.jEmptyObject )
+
+  implicit def keywordEncode: EncodeJson[DhsClient.InternalKeyword] = EncodeJson[DhsClient.InternalKeyword]( k =>
+    ("name" := k.name) ->: ("type" := k.keywordType.str) ->: ("value" := k.value) ->: Json.jEmptyObject )
+
+  private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( Task.delay {
+      val client = new HttpClient()
+
+      method.addRequestHeader("Content-Type", "application/json")
+      method.setRequestBody(body.nospaces)
+
+      client.executeMethod(method)
+
+      val r = Source.fromInputStream(method.getResponseBodyAsStream).getLines().mkString.decodeOption[TrySeq[T]](decoder)
+
+      method.releaseConnection()
+
+      r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
+    } )
+
+  private def createImage(reqBody: Json): SeqAction[ObsId] =
+    sendRequest[ObsId](new PostMethod(baseURI), Json.jSingleObject("createImage", reqBody), "Unable to get label")
+
+  def createImage: SeqAction[ObsId] = createImage(Json.jEmptyObject)
+
+  override def createImage(p: ImageParameters): SeqAction[ObsId] = createImage(p.asJson)
+
+  def setParameters(id: ObsId, p: ImageParameters): SeqAction[Unit] =
+    sendRequest[Unit](new PutMethod(baseURI + "/" + id), Json.jSingleObject("setParameters", p.asJson), "Unable to set parameters for image " + id)
+
+  override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: Boolean = false): SeqAction[Unit] =
+    sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
+      Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
+      "Unable to write keywords for image " + id)
+}
+
+object DhsClient {
+
+  type ObsId = String
+
   type Contributor = String
 
   sealed case class Lifetime(str: String)
@@ -72,9 +137,6 @@ object DhsClient extends DhsClient {
   object Transient extends Lifetime("TRANSIENT")
 
   final case class ImageParameters(lifetime: Lifetime, contributors: List[Contributor])
-
-  implicit def imageParametersEncode: EncodeJson[ImageParameters] = EncodeJson[ImageParameters]( p =>
-    ("lifetime" := p.lifetime.str) ->: ("contributors" := p.contributors) ->: Json.jEmptyObject )
 
   // TODO: Implement the unsigned types, if needed.
   sealed case class KeywordType protected (str: String)
@@ -102,7 +164,7 @@ object DhsClient extends DhsClient {
   // use an internal representation, and offer a class to the developer (KeywordBag) to create the list from typed
   // keywords.
 
-  final protected case class InternalKeyword(name: String, keywordType: KeywordType, value: String)
+  final case class InternalKeyword(name: String, keywordType: KeywordType, value: String)
 
   protected implicit def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword = InternalKeyword(k.n, k.t, k.v.toString)
 
@@ -128,38 +190,5 @@ object DhsClient extends DhsClient {
       KeywordBag(List(internalKeywordConvert(k1), internalKeywordConvert(k2), internalKeywordConvert(k3),
         internalKeywordConvert(k4), internalKeywordConvert(k5), internalKeywordConvert(k6)))
   }
-
-  implicit def keywordEncode: EncodeJson[InternalKeyword] = EncodeJson[InternalKeyword]( k =>
-    ("name" := k.name) ->: ("type" := k.keywordType.str) ->: ("value" := k.value) ->: Json.jEmptyObject )
-
-  private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( Task.delay {
-      val client = new HttpClient()
-
-      method.addRequestHeader("Content-Type", "application/json")
-      method.setRequestBody(body.nospaces)
-
-      client.executeMethod(method)
-
-      val r = Source.fromInputStream(method.getResponseBodyAsStream).getLines().mkString.decodeOption[TrySeq[T]](decoder)
-
-      method.releaseConnection()
-
-      r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
-    } )
-
-  private def createImage(reqBody: Json): SeqAction[ObsId] =
-    sendRequest[ObsId](new PostMethod(baseURI), Json.jSingleObject("createImage", reqBody), "Unable to get label")
-
-  def createImage: SeqAction[ObsId] = createImage(Json.jEmptyObject)
-
-  def createImage(p: ImageParameters): SeqAction[ObsId] = createImage(p.asJson)
-
-  def setParameters(id: ObsId, p: ImageParameters): SeqAction[Unit] =
-    sendRequest[Unit](new PutMethod(baseURI + "/" + id), Json.jSingleObject("setParameters", p.asJson), "Unable to set parameters for image " + id)
-
-  def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: Boolean = false): SeqAction[Unit] =
-    sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
-      Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
-      "Unable to write keywords for image " + id)
 
 }

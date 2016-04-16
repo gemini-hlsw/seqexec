@@ -39,7 +39,7 @@ object GmosSouth extends Instrument {
              Log.log(Level.INFO, name + ": observation completed")
              TrySeq(())
            })
-      _ <- DhsClient.setKeywords(id, DhsClient.KeywordBag(
+      _ <- client.setKeywords(id, DhsClient.KeywordBag(
              DhsClient.StringKeyword("instrument", "gmos"),
              DhsClient.Int32Keyword("INPORT", 3),
              DhsClient.DoubleKeyword("WAVELENG", 3.14159),

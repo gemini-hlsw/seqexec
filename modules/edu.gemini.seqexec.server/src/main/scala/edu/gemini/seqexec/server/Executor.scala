@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.server
 
+import java.time.LocalDate
 import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
 
 import edu.gemini.seqexec.server.SeqexecFailure._
@@ -7,10 +8,9 @@ import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
-import scala.language.{reflectiveCalls, higherKinds}
+import scala.language.{higherKinds, reflectiveCalls}
 import scalaz._
 import Scalaz._
-
 import scalaz.concurrent.Task
 
 object Step {
@@ -34,12 +34,14 @@ object Step {
       case _ => None
     }
 
-    instrument map { a => {
+    instrument.map { a => {
 //        val systems = List(Tcs(TcsControllerEpics), a)
+        // TODO Find a proper way to inject the subsystems
         val systems = List(Tcs(TcsControllerSim), a)
-        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config).run(???))).right
+        val dhsClient = DhsClientSim(LocalDate.now())
+        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config).run(dhsClient))).right
       }
-    } getOrElse UnrecognizedInstrument(instName.toString).left[(Set[System], Step)]
+    }.getOrElse(UnrecognizedInstrument(instName.toString).left[(Set[System], Step)])
   }
 
 }

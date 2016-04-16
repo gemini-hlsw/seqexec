@@ -14,4 +14,4 @@ libraryDependencies ++= Seq(
   SpModelCore,
   POT,
   EpicsACM
-)
+) ++ TestLibs.value
