@@ -26,7 +26,7 @@ object HeadersSideBar {
           ),
           <.div(
             ^.cls := "required field",
-            <.label("SOS"),
+            <.label("Operator"),
             <.input(
               ^.`type` :="text",
               ^.autoComplete :="off"
