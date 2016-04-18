@@ -69,11 +69,21 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
+  object ShowHandler extends CommandHandler {
+    override def handle(args: List[String], terminal: Terminal): Unit = {
+      args match {
+        case obsId :: "count" :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
+        case _                       => terminal.error("Unknown show command")
+      }
+    }
+  }
+
   // Maps the command text and amount of args required to command handler
   val commands: List[Command] = List(
     Command("host", 0, HostHandler, "[[b;;]host]: Returns the odb host used by the seqexec"),
     Command("host", 1, SetHostHandler, "[[b;;]host] [[b;;]host:port]: Sets the odb host:port used by the seqexec"),
-    Command("run", 1, RunHandler, "[[b;;]run obsId]: Runs obs id")
+    Command("run", 1, RunHandler, "[[b;;]run] [[ig;;]obsId]: Runs obs id"),
+    Command("show", 2, ShowHandler, "[[b;;]show] [[ig;;]obsId count|static|dynamic] : Runs obs id")
   )
 
   // Used for tab completion
@@ -88,8 +98,8 @@ object SeqexecTerminal extends js.JSApp {
     tokens match {
       case cmd :: args if find(cmd, args).isDefined              => find(cmd, args).foreach(_.handler.handle(args, terminal))
       case cmd :: args if findSimilar(cmd).isDefined             => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command: Usage ${c.description}"))
-      case "help" :: Nil                                         => terminal.echo(s"Commands available: ${commands.map(_.cmd).distinct.mkString(" ")}")
-      case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\nexit clear ${commands.filter(_.cmd === cmd).map(_.description).mkString("\n")}")
+      case "help" :: Nil                                         => terminal.echo(s"Commands available: [[ig;;]exit] [[ig;;]clear] ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
+      case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd === cmd).map(_.description).mkString("\n")}")
       case "" :: Nil                                             => // Ignore
       case cmd :: _                                              => terminal.error(s"Command '$command' unknown")
     }
