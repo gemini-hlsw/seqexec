@@ -25,7 +25,7 @@ package object server {
   }
 
   implicit class SeqActionOps[A](a: SeqAction[A]) {
-    def runSeqAction: TrySeq[A] = a.run.attemptRun.leftMap[SeqexecFailure](SeqexecException).join
+    def runSeqAction: TrySeq[A] = a.run.unsafePerformSyncAttempt.leftMap[SeqexecFailure](SeqexecException).join
   }
 
   implicit class MoreDisjunctionOps[A,B](ab: A \/ B) {

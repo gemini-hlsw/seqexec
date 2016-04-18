@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.shared.{SeqFailure, SeqExecService}
+import edu.gemini.seqexec.shared.SeqExecService
 import edu.gemini.spModel.core.Peer
 
 import scalaz._
@@ -32,7 +32,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
   def sequence(sequenceConfig: ConfigSequence):  SeqexecFailure \/ (Set[System], List[Step.Step]) = {
     val a = sequenceConfig.getAllSteps.toList.map(Step.step).sequenceU
-    a map { _.unzip match {
+    a.map { _.unzip match {
       case (l, s) => (l.suml, s)
     }}
   }
@@ -44,7 +44,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
   def start(id: SPObservationID): SeqexecFailure \/ Unit = for {
     a <- read(id)
     b <- start(id, a)
-  } yield b.runAsync(_ => ())
+  } yield b.unsafePerformAsync(_ => ())
 
   private def start(id: SPObservationID, sequenceConfig: ConfigSequence): SeqexecFailure \/ Task[(ExecState, NonEmptyList[SeqexecFailure] \/ Unit)] = {
     sequence(sequenceConfig) map {
@@ -54,16 +54,16 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
     }
   }
 
-  def continue(id: SPObservationID): SeqexecFailure \/ Unit = continueTask(id) map (_.runAsync(???))
+  def continue(id: SPObservationID): SeqexecFailure \/ Unit = continueTask(id) map (_.unsafePerformAsync(???))
   private def continueTask(id: SPObservationID): SeqexecFailure \/ Task[(Option[ExecState], NonEmptyList[SeqexecFailure] \/ Unit)] =
-    getState(id).run map {runSeq(id, _).map(_.leftMap(_.some))}
+    getState(id).unsafePerformSync.map {runSeq(id, _).map(_.leftMap(_.some))}
 
-  def state(id: SPObservationID): SeqexecFailure \/ ExecState = getState(id).run
+  def state(id: SPObservationID): SeqexecFailure \/ ExecState = getState(id).unsafePerformSync
 
   private def getState(id: SPObservationID): Task[SeqexecFailure \/ ExecState] =
     stateRef.get.map(_.get(id) \/> InvalidOp("Sequence has not started."))
 
-  def stop(id: SPObservationID): SeqexecFailure \/ Unit = stopTask(id).run
+  def stop(id: SPObservationID): SeqexecFailure \/ Unit = stopTask(id).unsafePerformSync
 
   private def stopTask(id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     getState(id) >>= {
@@ -82,4 +82,4 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
 }
 
-object ExecutorImpl extends ExecutorImpl(TaskRef.newTaskRef[Set[SPObservationID]](Set.empty).run, TaskRef.newTaskRef[Map[SPObservationID, Executor.ExecState]](Map.empty).run)
+object ExecutorImpl extends ExecutorImpl(TaskRef.newTaskRef[Set[SPObservationID]](Set.empty).unsafePerformSync, TaskRef.newTaskRef[Map[SPObservationID, Executor.ExecState]](Map.empty).unsafePerformSync)

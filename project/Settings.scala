@@ -68,14 +68,14 @@ object Settings {
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
 
-    val Argonaut    = "io.argonaut"        %% "argonaut"          % LibraryVersions.argonaut
-    val CommonsHttp = "commons-httpclient" % "commons-httpclient" % LibraryVersions.commonsHttp
+    val Argonaut    = "io.argonaut"        %% "argonaut"           % LibraryVersions.argonaut
+    val CommonsHttp = "commons-httpclient" %  "commons-httpclient" % LibraryVersions.commonsHttp
     // ScalaZ
     val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"       % LibraryVersions.scalaZ)
-    val ScalaZConcurrent = "org.scalaz" %% "scalaz-concurrent" % LibraryVersions.scalaZ
+    val ScalaZConcurrent =             "org.scalaz" %%  "scalaz-concurrent" % LibraryVersions.scalaZ
 
-    val Squants     = Def.setting("com.squants"    %%% "squants" % LibraryVersions.squants)
-    val UPickle     = Def.setting("com.lihaoyi"    %%% "upickle" % LibraryVersions.uPickle)
+    val Squants     = Def.setting("com.squants" %%% "squants" % LibraryVersions.squants)
+    val UPickle     = Def.setting("com.lihaoyi" %%% "upickle" % LibraryVersions.uPickle)
 
     // Server side libraries
     val Http4s  = Seq(
