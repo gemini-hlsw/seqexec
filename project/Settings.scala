@@ -108,19 +108,4 @@ object Settings {
     val TRPC        = "edu.gemini.ocs"     %% "edu-gemini-util-trpc"    % LibraryVersions.ocsVersion
   }
 
-  /**
-    * Global libraries only for JVM
-    */
-  object LibrariesJVM {
-
-  }
-
-  /**
-    * Global libraries only for JS
-    */
-  object LibrariesJS {
-    //import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
-
-  }
-
 }
