@@ -6,12 +6,9 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
-import scalaz.EitherT
+import scalaz.{EitherT, Reader}
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 4/27/15.
- */
 object GmosSouth extends Instrument {
 
   override val name: String = INSTRUMENT_NAME_PROP
@@ -33,20 +30,22 @@ object GmosSouth extends Instrument {
     TrySeq(ConfigResult(this))
   })
 
-  override def observe(config: Config): SeqAction[ObserveResult] = for {
-    id <- DhsClient.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
-    _ <- EitherT ( Task {
-      Log.log(Level.INFO, name + ": starting observation " + id)
-      Thread.sleep(5000)
-      Log.log(Level.INFO, name + ": observation completed")
-      TrySeq(())
-    } )
-    _ <- DhsClient.setKeywords(id, DhsClient.KeywordBag(
-      DhsClient.StringKeyword("instrument", "gmos"),
-      DhsClient.Int32Keyword("INPORT", 3),
-      DhsClient.DoubleKeyword("WAVELENG", 3.14159),
-      DhsClient.BooleanKeyword("PROP_MD", value = true)
-    ))
-  } yield ObserveResult(id)
+  override def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]] = Reader { client =>
+    for {
+      id <- client.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
+      _ <- EitherT(Task {
+             Log.log(Level.INFO, name + ": starting observation " + id)
+             Thread.sleep(5000)
+             Log.log(Level.INFO, name + ": observation completed")
+             TrySeq(())
+           })
+      _ <- client.setKeywords(id, DhsClient.KeywordBag(
+             DhsClient.StringKeyword("instrument", "gmos"),
+             DhsClient.Int32Keyword("INPORT", 3),
+             DhsClient.DoubleKeyword("WAVELENG", 3.14159),
+             DhsClient.BooleanKeyword("PROP_MD", value = true)
+           ))
+    } yield ObserveResult(id)
+  }
 
 }

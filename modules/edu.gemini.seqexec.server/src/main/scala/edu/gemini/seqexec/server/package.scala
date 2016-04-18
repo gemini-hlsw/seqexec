@@ -1,7 +1,6 @@
 package edu.gemini.seqexec
 
-import edu.gemini.seqexec.server.SeqexecFailure.{SeqexecException, Unexpected}
-import edu.gemini.seqexec.server.System
+import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 
 import scala.language.higherKinds
 import scalaz._
@@ -9,9 +8,6 @@ import Scalaz._
 
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 5/18/15.
- */
 package object server {
 
   type TrySeq[A] = SeqexecFailure \/ A
@@ -39,12 +35,5 @@ package object server {
         case \/-(b) => Success(b)
       }
   }
-
-    // This is built into scalaz 7.1
-  implicit class MoreMonadOps[M[+_], A](ma: M[A])(implicit M: Monad[M]) {
-    def whileM_(p: M[Boolean]): M[Unit] =
-      M.ifM(p, M.bind(ma)(_ => whileM_(p)), M.point(()))
-  }
-
 }
 

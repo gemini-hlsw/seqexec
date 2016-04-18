@@ -7,16 +7,13 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
-import scalaz.EitherT
+import scalaz.{EitherT, Reader}
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 4/22/15.
- */
 trait Instrument extends System {
   // The name used for this instrument in the science fold configuration
   val sfName: String
-  def observe(config: Config): SeqAction[ObserveResult]
+  def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]]
 }
 
 //Placeholder for observe response
@@ -34,8 +31,10 @@ object UnknownInstrument extends Instrument {
     TrySeq(ConfigResult(this))
   } )
 
-  override def observe(config: Config): SeqAction[ObserveResult] = EitherT ( Task {
-    imageCount += 1
-    TrySeq(ObserveResult(f"S20150519S$imageCount%04d"))
-  } )
+  override def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]] = Reader { _ =>
+    EitherT(Task {
+      imageCount += 1
+      TrySeq(ObserveResult(f"S20150519S$imageCount%04d"))
+    })
+  }
 }
