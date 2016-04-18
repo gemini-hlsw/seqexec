@@ -31,18 +31,17 @@ object Settings {
     val scalaDom     = "0.9.0"
     val scalajsReact = "0.11.0"
     val scalaCSS     = "0.4.1"
-    val scalaZJS     = "7.2.1"
     val uPickle      = "0.3.9"
     val diode        = "0.5.1"
 
     // Java libraries
-    val scalaZ       = "7.1.6"
+    val scalaZ       = "7.2.2"
 
-    val http4s       = "0.13.1"
+    val http4s       = "0.13.2a"
     val play         = "2.5.1"
     val scalaJQuery  = "1.0-RC2"
     val squants      = "0.6.1-GEM" // GEM Denotes our gemini built package
-    val argonaut     = "6.1"
+    val argonaut     = "6.2-M1"
     val commonsHttp  = "2.0"
 
     // test libraries
@@ -69,11 +68,14 @@ object Settings {
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
 
-    val Argonaut    = "io.argonaut"        %% "argonaut"          % LibraryVersions.argonaut
-    val CommonsHttp = "commons-httpclient" % "commons-httpclient" % LibraryVersions.commonsHttp
+    val Argonaut    = "io.argonaut"        %% "argonaut"           % LibraryVersions.argonaut
+    val CommonsHttp = "commons-httpclient" %  "commons-httpclient" % LibraryVersions.commonsHttp
+    // ScalaZ
+    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"       % LibraryVersions.scalaZ)
+    val ScalaZConcurrent =             "org.scalaz" %%  "scalaz-concurrent" % LibraryVersions.scalaZ
 
-    val Squants     = Def.setting("com.squants"    %%% "squants" % LibraryVersions.squants)
-    val UPickle     = Def.setting("com.lihaoyi"    %%% "upickle" % LibraryVersions.uPickle)
+    val Squants     = Def.setting("com.squants" %%% "squants" % LibraryVersions.squants)
+    val UPickle     = Def.setting("com.lihaoyi" %%% "upickle" % LibraryVersions.uPickle)
 
     // Server side libraries
     val Http4s  = Seq(
@@ -104,25 +106,6 @@ object Settings {
     val POT         = "edu.gemini.ocs"     %% "edu-gemini-pot"          % LibraryVersions.ocsVersion
     val EpicsACM    = "edu.gemini.ocs"     %% "edu-gemini-epics-acm"    % LibraryVersions.ocsVersion
     val TRPC        = "edu.gemini.ocs"     %% "edu-gemini-util-trpc"    % LibraryVersions.ocsVersion
-  }
-
-  /**
-    * Global libraries only for JVM
-    */
-  object LibrariesJVM {
-    // ScalaZ
-    val ScalaZCore       = "org.scalaz" %% "scalaz-core"       % LibraryVersions.scalaZ
-    val ScalaZConcurrent = "org.scalaz" %% "scalaz-concurrent" % LibraryVersions.scalaZ
-  }
-
-  /**
-    * Global libraries only for JS
-    */
-  object LibrariesJS {
-    import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
-
-    // TODO Unify with the JVM version
-    val ScalaZCoreJS = Def.setting("org.scalaz" %%% "scalaz-core" % "7.2.1")
   }
 
 }
