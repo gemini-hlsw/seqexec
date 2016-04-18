@@ -16,11 +16,10 @@ import scalaz.concurrent.Task
 object Step {
   type Step = EitherT[Task, NonEmptyList[SeqexecFailure], StepResult]
 
-  def parConfig(config: List[SeqAction[ConfigResult]]):
-    EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
-      EitherT(Nondeterminism[Task].gather(config.map(_.run)).map(_.map(_.validationNel).sequenceU.disjunction))
+  private def parConfig(config: List[SeqAction[ConfigResult]]): EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
+    EitherT(Nondeterminism[Task].gather(config.map(_.run)).map(_.map(_.validationNel).sequenceU.disjunction))
 
-  def step(config: List[SeqAction[ConfigResult]], observe: SeqAction[ObserveResult]): Step =
+  private def step(config: List[SeqAction[ConfigResult]], observe: SeqAction[ObserveResult]): Step =
     for {
       p <- parConfig(config)
       q <- observe.leftMap(NonEmptyList(_))
@@ -29,18 +28,17 @@ object Step {
   def step(config: Config): SeqexecFailure \/ (Set[System], Step) = {
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
-      case GmosSouth.name => Some(GmosSouth)
+      case GmosSouth.name  => Some(GmosSouth)
       case Flamingos2.name => Some(Flamingos2(Flamingos2ControllerSim))
-      case _ => None
+      case _               => None
     }
 
-    instrument.map { a => {
+    instrument.map { a =>
 //        val systems = List(Tcs(TcsControllerEpics), a)
-        // TODO Find a proper way to inject the subsystems
-        val systems = List(Tcs(TcsControllerSim), a)
-        val dhsClient = DhsClientSim(LocalDate.now())
-        (systems.toSet, step(systems.map(_.configure(config)), a.observe(config).run(dhsClient))).right
-      }
+      // TODO Find a proper way to inject the subsystems
+      val systems = List(Tcs(TcsControllerSim), a)
+      val dhsClient = DhsClientSim(LocalDate.now())
+      (systems.toSet, step(systems.map(_.configure(config)), a.observe(config).run(dhsClient))).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[(Set[System], Step)])
   }
 
@@ -63,15 +61,18 @@ object Executor { self =>
       val (skipped, rest) = remaining.splitAt(n)
       ExecState(completed ++ skipped.as(Skipped), rest)
     }
+
     def ok(result: StepResult): ExecState =
       ExecState(completed :+ Ok(result), remaining.tail) // not quite right
     def nextStep: Option[Step] = remaining.headOption
   }
+
   object ExecState {
     def initial(seq: List[Step]): ExecState = apply(Nil, seq)
     def empty: ExecState = initial(Nil)
   }
-    // The type of execution actions.
+
+  // The type of execution actions.
   type ExecAction[A] = StateT[Task, ExecState, A]
 
   // We now have the problem of lifting normal State/Task values into this transformer. The next

@@ -4,12 +4,12 @@ import edu.gemini.spModel.config2.Config
 
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 4/22/15.
- */
 trait System {
   val name: String
 
+  /**
+    * Called to configure a system, returns a Task[SeqexecFailure \/ ConfigResult]
+    */
   def configure(config: Config): SeqAction[ConfigResult]
 }
 
