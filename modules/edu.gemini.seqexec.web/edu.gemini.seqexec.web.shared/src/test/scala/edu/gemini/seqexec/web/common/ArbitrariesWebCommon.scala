@@ -1,10 +1,9 @@
 package edu.gemini.seqexec.web.common
 
 import org.scalacheck.{Arbitrary, _}
-import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
-trait Arbitraries {
+trait ArbitrariesWebCommon {
   implicit val arbStepConfig: Arbitrary[StepConfig] =
     Arbitrary {
       for {
@@ -29,10 +28,8 @@ trait Arbitraries {
       for {
         id <- arbitrary[String]
         st <- arbitrary[SequenceState]
-        i  <- arbitrary[String]
+        i  <- Gen.oneOf(Instrument.instruments.list.toList)
         v  <- arbitrary[List[StepConfig]]
       } yield Sequence(id, st, i, SequenceSteps(List(Step(0, v))), None)
     }
-
-
 }

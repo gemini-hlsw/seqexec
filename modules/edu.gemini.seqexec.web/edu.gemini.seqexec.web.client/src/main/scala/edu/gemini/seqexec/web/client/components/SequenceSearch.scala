@@ -146,7 +146,7 @@ object SequenceSearch {
             ^.cls := "prompt",
             ^.`type` := "text",
             ^.placeholder := "Search...",
-            ^.onKeyPress ==> onEnter,
+            ^.onKeyDown ==> onEnter,
             ^.onChange ==> onChange,
             ^.value := s.searchText
           ),

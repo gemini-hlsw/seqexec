@@ -210,155 +210,268 @@
       </div>
 
 
-      <div class="ui grid container">
-        <div class="sixteen wide column">
-          <div class="ui raised segments">
-            <div class="ui top attached text menu">
-              <div class="ui header item">Running Sequences</div>
-            </div>
-            <div class="ui secondary segment">
-              <div class="ui top attached tabular menu">
-                <a class="active item" data-tab="first">GPI (GS-2016A-Q-0-1)</a>
-                <!--a class="item" data-tab="second">GMOS-S (GS-2016A-Q-5-3)</a>
-                <a class="item negative" data-tab="third"><i class="attention icon"></i> F2 (GS-2016A-Q-4-1)</a-->
-              </div>
-              <div class="ui bottom attached active tab segment" data-tab="first">
-                <div class="ui grid">
-                  <div class="row">
-                    <div class="four wide column tablet computer only">
-                      <div class="ui raised secondary segment">
-                        <h4>Headers</h4>
-                        <div class="ui form">
-                          <div class="required field error">
-                            <label>Observer</label>
-                            <input type="text" autocomplete="off">
-                          </div>
-                          <div class="required field">
-                            <label>SOS</label>
-                            <input type="text" autocomplete="off">
-                          </div>
-                          <div class="field">
-                            <label>Image Quality</label>
-                            <div class="ui fluid selection dropdown">
-                              <div class="default text">Select</div>
-                              <i class="dropdown icon"></i>
-                              <input type="hidden" name="iq">
-                              <div class="menu">
-                                <div class="item" data-value="male">IQ20</div>
-                                <div class="item" data-value="female">IQ70</div>
-                                <div class="item" data-value="female">IQ85</div>
-                                <div class="item" data-value="female">Any</div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="field">
-                            <label>Cloud Cover</label>
-                            <div class="ui fluid selection dropdown">
-                              <div class="default text">Select</div>
-                              <i class="dropdown icon"></i>
-                              <input type="hidden" name="iq">
-                              <div class="menu">
-                                <div class="item" data-value="male">CC20</div>
-                                <div class="item" data-value="female">CC50</div>
-                                <div class="item" data-value="female">CC70</div>
-                                <div class="item" data-value="female">CC80</div>
-                                <div class="item" data-value="female">CC90</div>
-                                <div class="item" data-value="female">Any</div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="field">
-                            <label>Water Vapor</label>
-                            <div class="ui selection dropdown">
-                              <div class="default text">Select</div>
-                              <i class="dropdown icon"></i>
-                              <input type="hidden" name="iq">
-                              <div class="menu">
-                                <div class="item" data-value="male">WV20</div>
-                                <div class="item" data-value="female">WV50</div>
-                                <div class="item" data-value="female">WV80</div>
-                                <div class="item" data-value="female">Any</div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="field">
-                            <label>Sky Background</label>
-                            <div class="ui selection dropdown">
-                              <div class="default text">Select</div>
-                              <i class="dropdown icon"></i>
-                              <input type="hidden" name="iq">
-                              <div class="menu">
-                                <div class="item" data-value="male">SB20</div>
-                                <div class="item" data-value="female">SB50</div>
-                                <div class="item" data-value="female">SB80</div>
-                                <div class="item" data-value="female">Any</div>
-                              </div>
-                            </div>
+      <div class="ui raised segments container">
+        <div class="ui top attached text menu segment">
+          <div class="ui header item">Running Sequences</div>
+        </div>
+
+        <div class="ui bottom attached segment">
+          <div class="ui attached tabular menu">
+            <a class="active item" data-tab="first">GPI (GS-2016A-Q-0-1)</a>
+            <a class="item" data-tab="second">GMOS-S (GS-2016A-Q-5-3)</a>
+            <a class="item negative" data-tab="third"><i class="attention icon"></i> F2 (GS-2016A-Q-4-1)</a>
+          </div>
+          <div class="ui bottom attached active tab segment" data-tab="first">
+            <div class="ui grid">
+              <div class="row">
+                <div class="four wide column tablet computer only">
+                  <div class="ui raised secondary segment">
+                    <h4>Headers</h4>
+                    <div class="ui form">
+                      <div class="required field error">
+                        <label>Observer</label>
+                        <input type="text" autocomplete="off">
+                      </div>
+                      <div class="required field">
+                        <label>SOS</label>
+                        <input type="text" autocomplete="off">
+                      </div>
+                      <div class="field">
+                        <label>Image Quality</label>
+                        <div class="ui fluid selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">IQ20</div>
+                            <div class="item" data-value="female">IQ70</div>
+                            <div class="item" data-value="female">IQ85</div>
+                            <div class="item" data-value="female">Any</div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    <div class="twelve wide computer twelve wide tablet sixteen column">
-                      <div class="ui raised secondary segment">
-                        <div class="row">
-                          <button class="ui button">
-                            Run
-                          </button>
-                          <button class="ui button">
-                            Pause
-                          </button>
-                        </div>
-                        <div class="ui divider"></div>
-                        <div class="row">
-                          <table class="ui selectable compact celled table">
-                            <thead>
-                              <tr>
-                                <th>Step</th>
-                                <th>State</th>
-                                <th>Config</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td>1</td>
-                                <td>Done</td>
-                                <td class="collapsing right aligned"><i class="caret right icon"></i></td>
-                              </tr>
-                              <tr class="positive">
-                                <td>2</td>
-                                <td>Running</td>
-                                <td class="collapsing right aligned"><i class="caret right icon"></i></td>
-                              </tr>
-                              <tr>
-                                <td>3</td>
-                                <td>Pending</td>
-                                <td class="collapsing right aligned"><i class="pause icon"></i> <i class="caret right icon"></i></td>
-                              </tr>
-                            </tbody>
-                          </table>
+                      <div class="field">
+                        <label>Cloud Cover</label>
+                        <div class="ui fluid selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">CC20</div>
+                            <div class="item" data-value="female">CC50</div>
+                            <div class="item" data-value="female">CC70</div>
+                            <div class="item" data-value="female">CC80</div>
+                            <div class="item" data-value="female">CC90</div>
+                            <div class="item" data-value="female">Any</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <div class="row computer only">
-                    <div class="sixteen wide column">
-                      <div class="ui raised secondary segment">
-                        <h4>Log</h4>
-                        <div class="ui form">
-                          <div class="field">
-                            <textarea></textarea>
+                      <div class="field">
+                        <label>Water Vapor</label>
+                        <div class="ui selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">WV20</div>
+                            <div class="item" data-value="female">WV50</div>
+                            <div class="item" data-value="female">WV80</div>
+                            <div class="item" data-value="female">Any</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="field">
+                        <label>Sky Background</label>
+                        <div class="ui selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">SB20</div>
+                            <div class="item" data-value="female">SB50</div>
+                            <div class="item" data-value="female">SB80</div>
+                            <div class="item" data-value="female">Any</div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+                <div class="twelve wide computer twelve wide tablet sixteen column">
+                  <div class="ui raised secondary segment">
+                    <div class="row">
+                      <button class="ui button">
+                        Run
+                      </button>
+                      <button class="ui button">
+                        Pause
+                      </button>
+                    </div>
+                    <div class="ui divider"></div>
+                    <div class="row">
+                      <table class="ui selectable compact celled table">
+                        <thead>
+                          <tr>
+                            <th>Step</th>
+                            <th>State</th>
+                            <th>Config</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>1</td>
+                            <td>Done</td>
+                            <td class="collapsing right aligned"><i class="caret right icon"></i></td>
+                          </tr>
+                          <tr class="positive">
+                            <td>2</td>
+                            <td>Running</td>
+                            <td class="collapsing right aligned"><i class="caret right icon"></i></td>
+                          </tr>
+                          <tr>
+                            <td>3</td>
+                            <td>Pending</td>
+                            <td class="collapsing right aligned"><i class="pause icon"></i> <i class="caret right icon"></i></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="ui bottom attached tab segment" data-tab="second">
-                Second
+              <div class="row computer only">
+                <div class="sixteen wide column">
+                  <div class="ui raised secondary segment">
+                    <h4>Log</h4>
+                    <div class="ui form">
+                      <div class="field">
+                        <textarea></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="ui bottom attached tab segment" data-tab="third">
-                Third
+            </div>
+          </div>
+          <div class="ui bottom attached tab segment" data-tab="second">
+            <div class="ui grid">
+              <div class="row">
+                <div class="four wide column tablet computer only">
+                  <div class="ui raised secondary segment">
+                    <h4>Headers</h4>
+                    <div class="ui form">
+                      <div class="required field error">
+                        <label>Observer</label>
+                        <input type="text" autocomplete="off">
+                      </div>
+                      <div class="required field">
+                        <label>SOS</label>
+                        <input type="text" autocomplete="off">
+                      </div>
+                      <div class="field">
+                        <label>Image Quality</label>
+                        <div class="ui fluid selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">IQ20</div>
+                            <div class="item" data-value="female">IQ70</div>
+                            <div class="item" data-value="female">IQ85</div>
+                            <div class="item" data-value="female">Any</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="field">
+                        <label>Cloud Cover</label>
+                        <div class="ui fluid selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">CC20</div>
+                            <div class="item" data-value="female">CC50</div>
+                            <div class="item" data-value="female">CC70</div>
+                            <div class="item" data-value="female">CC80</div>
+                            <div class="item" data-value="female">CC90</div>
+                            <div class="item" data-value="female">Any</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="field">
+                        <label>Water Vapor</label>
+                        <div class="ui selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">WV20</div>
+                            <div class="item" data-value="female">WV50</div>
+                            <div class="item" data-value="female">WV80</div>
+                            <div class="item" data-value="female">Any</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="field">
+                        <label>Sky Background</label>
+                        <div class="ui selection dropdown">
+                          <div class="default text">Select</div>
+                          <i class="dropdown icon"></i>
+                          <input type="hidden" name="iq">
+                          <div class="menu">
+                            <div class="item" data-value="male">SB20</div>
+                            <div class="item" data-value="female">SB50</div>
+                            <div class="item" data-value="female">SB80</div>
+                            <div class="item" data-value="female">Any</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="twelve wide computer twelve wide tablet sixteen column">
+                  <div class="ui raised secondary segment">
+                    <div class="row">
+                      <button class="ui button">
+                        Run
+                      </button>
+                      <button class="ui button">
+                        Pause
+                      </button>
+                    </div>
+                    <div class="ui divider"></div>
+                    <div class="row">
+                      <table class="ui selectable compact celled table">
+                        <thead>
+                          <tr>
+                            <th>Step</th>
+                            <th>State</th>
+                            <th>Config</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>1</td>
+                            <td>Done</td>
+                            <td class="collapsing right aligned"><i class="caret right icon"></i></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row computer only">
+                <div class="sixteen wide column">
+                  <div class="ui raised secondary segment">
+                    <h4>Log</h4>
+                    <div class="ui form">
+                      <div class="field">
+                        <textarea></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

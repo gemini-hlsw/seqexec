@@ -8,7 +8,7 @@ import upickle.default._
 /**
   * Tests Serialization/Deserialization using uPickle
   */
-class PicklingSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+class PicklingSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebCommon {
   "StepConfig" should "upickle/depickle" in {
     forAll { (a: StepConfig) =>
       read[StepConfig](write(a)) shouldEqual a
