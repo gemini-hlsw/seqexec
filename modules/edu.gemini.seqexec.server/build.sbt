@@ -6,6 +6,7 @@ name := "edu.gemini.seqexec.server"
 libraryDependencies ++= Seq(
   ScalaZCore.value,
   ScalaZConcurrent,
+  ScalaZStream,
   Argonaut,
   CommonsHttp,
   Squants.value,

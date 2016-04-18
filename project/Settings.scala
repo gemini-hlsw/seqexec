@@ -36,6 +36,8 @@ object Settings {
 
     // Java libraries
     val scalaZ       = "7.2.2"
+    val scalaZStream = "0.8a"
+
     val http4s       = "0.13.2a"
     val play         = "2.5.1"
     val scalaJQuery  = "1.0-RC2"
@@ -69,12 +71,15 @@ object Settings {
 
     val Argonaut    = "io.argonaut"        %% "argonaut"           % LibraryVersions.argonaut
     val CommonsHttp = "commons-httpclient" %  "commons-httpclient" % LibraryVersions.commonsHttp
-    // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"       % LibraryVersions.scalaZ)
-    val ScalaZConcurrent =             "org.scalaz" %%  "scalaz-concurrent" % LibraryVersions.scalaZ
 
     val Squants     = Def.setting("com.squants" %%% "squants" % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi" %%% "upickle" % LibraryVersions.uPickle)
+
+    // ScalaZ
+    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"       % LibraryVersions.scalaZ)
+    
+    val ScalaZConcurrent = "org.scalaz"        %% "scalaz-concurrent" % LibraryVersions.scalaZ
+    val ScalaZStream     = "org.scalaz.stream" %% "scalaz-stream"     % LibraryVersions.scalaZStream
 
     // Server side libraries
     val Http4s  = Seq(
