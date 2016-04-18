@@ -99,7 +99,7 @@ object DhsClient {
 }
 
 /**
-  * Implementation of DhsClient that interfaces with the real DHS oven the http interface
+  * Implementation of DhsClient that interfaces with the real DHS over the http interface
   */
 object DhsClientHttp extends DhsClient {
 
