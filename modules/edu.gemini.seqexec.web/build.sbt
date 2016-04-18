@@ -1,6 +1,4 @@
 import Settings._
-import Settings.LibrariesJVM._
-import Settings.LibrariesJS._
 import Settings.Libraries._
 
 name := "edu.gemini.seqexec.web"
@@ -11,20 +9,16 @@ lazy val edu_gemini_seqexec_web = project.in(file("."))
 
 lazy val commonSettings = Seq(
   // Common libraries
-  libraryDependencies ++= UPickle.value +: TestLibs.value
-  // TODO: Turn it on when the project goes scalaz 7.2.1
-  //"org.scalaz"     %%% "scalaz-core" % "7.2.1",
+  libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value) ++ TestLibs.value
 )
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("edu.gemini.seqexec.web.shared"))
   .settings(commonSettings: _*)
   .jvmSettings(
-    libraryDependencies += ScalaZCore
   )
   .jsSettings(
-    scalaJSUseRhino := false,
-    libraryDependencies += ScalaZCoreJS.value
+    scalaJSUseRhino := false
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
@@ -53,7 +47,6 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
     // Put the jsdeps file on a place reachable for the server
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
-      ScalaZCoreJS.value,
       JQuery.value,
       ScalaCSS.value,
       ScalaJSDom.value
@@ -78,7 +71,7 @@ def includeInTrigger(f: java.io.File): Boolean =
 lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web.server"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= ScalaZCore +: (Http4s ++ Play),
+    libraryDependencies ++= ScalaZCore.value +: (Http4s ++ Play),
 
     // Settings to optimize the use of sbt-revolver
     

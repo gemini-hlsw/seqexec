@@ -1,11 +1,10 @@
 import Settings._
 import Settings.Libraries._
-import Settings.LibrariesJVM._
 
 name := "edu.gemini.seqexec.server"
 
 libraryDependencies ++= Seq(
-  ScalaZCore,
+  ScalaZCore.value,
   ScalaZConcurrent,
   Argonaut,
   CommonsHttp,
