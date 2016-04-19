@@ -7,10 +7,9 @@ import org.querki.jquery.$
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
 import JQueryTerminal.{Terminal, _}
-import edu.gemini.seqexec.web.common.{CliCommand, RegularCommand}
+import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig, StepConfig}
 import org.scalajs.dom
 
-import scala.scalajs.js.Any
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -70,10 +69,25 @@ object SeqexecTerminal extends js.JSApp {
   }
 
   object ShowHandler extends CommandHandler {
+    def width(ks: List[StepConfig]): Int = ks match {
+      case Nil => 0
+      case _   => ks.map(_.key.length).max
+    }
+
+    def staticResponse(c: CliCommand) = c match {
+      case SequenceConfig(_, _, _, k) =>
+        val pad = width(k)
+        k.sortBy(_.key).map(s => {
+          val paddedKey = s"%-${pad}s".format(s.key)
+          s"$paddedKey -> ${s.value}"}).mkString("\n")
+      case _                          => defaultResponse(c)
+    }
+
     override def handle(args: List[String], terminal: Terminal): Unit = {
       args match {
-        case obsId :: "count" :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
-        case _                       => terminal.error("Unknown show command")
+        case obsId :: "count" :: Nil  => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
+        case obsId :: "static" :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
+        case _                        => terminal.error("Unknown show command")
       }
     }
   }
