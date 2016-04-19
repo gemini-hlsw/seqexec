@@ -81,7 +81,6 @@ lazy val edu_gemini_seqexec_web_client_cli = project.in(file("edu.gemini.seqexec
     // Put the jsdeps file on a place reachable for the server
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
-      ScalaZCoreJS.value,
       JQuery.value
     )
   )
