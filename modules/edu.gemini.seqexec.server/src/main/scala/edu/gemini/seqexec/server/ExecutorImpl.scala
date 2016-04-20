@@ -12,6 +12,7 @@ import edu.gemini.spModel.config2.ConfigSequence
 
 import scalaz.concurrent.Task
 import scalaz.stream.Process
+import scalaz.stream.async
 
 /** An executor that maintains state in a pair of `TaskRef`s. */
 class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: TaskRef[Map[SPObservationID, Executor.ExecState]]) {
@@ -20,12 +21,17 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
   private var loc = new Peer("localhost", 8443, null)
 
+  // Queue to store events generated when executing a queue
+  private val eventsQueue = async.boundedQueue[SeqexecEvent](10)
+
   def host(): Peer = loc
   def host(l: Peer): Unit = { loc = l }
 
-  private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] =
+  private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] = {
     // This marks the current state for observation id
+    eventsQueue.enqueueOne(NullEvent).unsafePerformSync
     stateRef.modify(_ + (id -> s))
+  }
 
   private def go(id: SPObservationID): Task[Boolean] =
     // It seems this will check cancelRef and return a Task with value true if the observation has not been cancelled
@@ -104,11 +110,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
   }
 
   // This is a mock data source, but could be a Process representing results from a database
-  def sequenceEvents: Process[Task, String] = {
-    val stream: Process[Task, String] = Process.emitAll(List("Abc", "cd"))
-
-    Process.emit(s"Starting stream intervals, taking results\n\n") ++ stream
-  }
+  def sequenceEvents: Process[Task, SeqexecEvent] = eventsQueue.dequeue
 
 }
 

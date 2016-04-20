@@ -17,6 +17,7 @@ import Scalaz._
   * Rest Endpoints under the /api route
   */
 object SeqexecUIApiRoutes {
+
   val service = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
@@ -31,7 +32,7 @@ object SeqexecUIApiRoutes {
         case -\/(e)      => NotFound(SeqexecFailure.explain(e))
       }
     case GET -> Root / "seqexec" / "events" =>
-      // Its also easy to stream responses to clients
-      Ok(ExecutorImpl.sequenceEvents)
+      // Stream seqexec events to clients
+      Ok(ExecutorImpl.sequenceEvents.map(t => write(t)))
   }
 }

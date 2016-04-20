@@ -64,6 +64,7 @@ object Executor { self =>
 
     def ok(result: StepResult): ExecState =
       ExecState(completed :+ Ok(result), remaining.tail) // not quite right
+
     def nextStep: Option[Step] = remaining.headOption
   }
 
