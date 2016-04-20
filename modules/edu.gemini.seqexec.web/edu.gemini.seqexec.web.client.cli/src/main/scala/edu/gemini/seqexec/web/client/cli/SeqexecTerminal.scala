@@ -46,7 +46,7 @@ object SeqexecTerminal extends js.JSApp {
 
   def defaultResponse(c: CliCommand) = c.response
 
-  case class Command(cmd: String, args: Int, handler: CommandHandler, description: String)
+  case class Command(cmd: String, args: Int, handler: CommandHandler, description: List[String])
 
   object HostHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Unit = {
@@ -94,10 +94,11 @@ object SeqexecTerminal extends js.JSApp {
 
   // Maps the command text and amount of args required to command handler
   val commands: List[Command] = List(
-    Command("host", 0, HostHandler, "[[b;;]host]: Returns the odb host used by the seqexec"),
-    Command("host", 1, SetHostHandler, "[[b;;]host] [[b;;]host:port]: Sets the odb host:port used by the seqexec"),
-    Command("run", 1, RunHandler, "[[b;;]run] [[ig;;]obsId]: Runs obs id"),
-    Command("show", 2, ShowHandler, "[[b;;]show] [[ig;;]obsId count|static|dynamic] : Runs obs id")
+    Command("host", 0, HostHandler, List("[[b;;]host]: Returns the odb host used by the seqexec")),
+    Command("host", 1, SetHostHandler, List("[[b;;]host] [[b;;]host:port]: Sets the odb host:port used by the seqexec")),
+    Command("run", 1, RunHandler, List("[[b;;]run] [[ig;;]obsId]: Runs obs id")),
+    Command("show", 2, ShowHandler, List("[[b;;]show] [[ig;;]obsId count]: Show obs id steps count", "[[b;;]show] [[ig;;]obsId static]: Runs obs id")),
+    Command("show", 3, ShowHandler, List("[[b;;]show] [[ig;;]obsId static|dynamic] subsystem: Runs obs id"))
   )
 
   // Used for tab completion
@@ -113,7 +114,7 @@ object SeqexecTerminal extends js.JSApp {
       case cmd :: args if find(cmd, args).isDefined              => find(cmd, args).foreach(_.handler.handle(args, terminal))
       case cmd :: args if findSimilar(cmd).isDefined             => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command: Usage ${c.description}"))
       case "help" :: Nil                                         => terminal.echo(s"Commands available: [[ig;;]exit] [[ig;;]clear] ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
-      case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd === cmd).map(_.description).mkString("\n")}")
+      case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd === cmd).flatMap(_.description).mkString("\n")}")
       case "" :: Nil                                             => // Ignore
       case cmd :: _                                              => terminal.error(s"Command '$command' unknown")
     }
