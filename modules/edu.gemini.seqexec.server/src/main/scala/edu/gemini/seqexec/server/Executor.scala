@@ -14,6 +14,8 @@ import Scalaz._
 import scalaz.concurrent.Task
 
 object Step {
+  val dhsClient = DhsClientSim(LocalDate.now())
+
   type Step = EitherT[Task, NonEmptyList[SeqexecFailure], StepResult]
 
   private def parConfig(config: List[SeqAction[ConfigResult]]): EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
@@ -37,7 +39,6 @@ object Step {
 //        val systems = List(Tcs(TcsControllerEpics), a)
       // TODO Find a proper way to inject the subsystems
       val systems = List(Tcs(TcsControllerSim), a)
-      val dhsClient = DhsClientSim(LocalDate.now())
       (systems.toSet, step(systems.map(_.configure(config)), a.observe(config).run(dhsClient))).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[(Set[System], Step)])
   }
