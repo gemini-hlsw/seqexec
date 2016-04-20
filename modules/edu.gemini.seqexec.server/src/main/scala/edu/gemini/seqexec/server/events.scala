@@ -5,4 +5,5 @@ package edu.gemini.seqexec.server
   */
 sealed trait SeqexecEvent
 case object NullEvent extends SeqexecEvent
-case class StepExecuted(s: String) extends SeqexecEvent
+case class SequenceStartEvent(id: String) extends SeqexecEvent
+case class StepExecutedEvent(id: String, completed: Int, remaning: Int, fileId: DhsClient.ObsId) extends SeqexecEvent

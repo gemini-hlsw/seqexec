@@ -27,10 +27,15 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
   def host(): Peer = loc
   def host(l: Peer): Unit = { loc = l }
 
-  private def recordState(id: SPObservationID)(s: ExecState): Task[ExecState] = {
-    // This marks the current state for observation id
-    eventsQueue.enqueueOne(NullEvent) >> stateRef.modify(_ + (id -> s)) >> Task.delay(s)
+  def stepEvent(id: SPObservationID, s: ExecState): SeqexecEvent = s.completed.reverse match {
+    case Nil        => SequenceStartEvent(id.toString)
+    case Ok(r) :: _ => StepExecutedEvent(id.toString, s.completed.size, s.remaining.size, r.observeResult.dataId)
+    case l          => NullEvent //Fallback
   }
+
+  private def recordState(id: SPObservationID)(s: ExecState): Task[ExecState] =
+    // This marks the current state for observation id
+    eventsQueue.enqueueOne(stepEvent(id, s)) >> stateRef.modify(_ + (id -> s)) >> Task.delay(s)
 
   private def go(id: SPObservationID): Task[Boolean] =
     // It seems this will check cancelRef and return a Task with value true if the observation has not been cancelled

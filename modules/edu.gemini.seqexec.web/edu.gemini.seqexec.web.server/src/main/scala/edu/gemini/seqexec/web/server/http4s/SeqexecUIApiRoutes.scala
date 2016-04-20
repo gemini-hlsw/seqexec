@@ -33,6 +33,6 @@ object SeqexecUIApiRoutes {
       }
     case GET -> Root / "seqexec" / "events" =>
       // Stream seqexec events to clients
-      Ok(ExecutorImpl.sequenceEvents.map(t => write(t)))
+      Ok(ExecutorImpl.sequenceEvents.map(write(_)))
   }
 }
