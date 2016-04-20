@@ -11,6 +11,7 @@ import edu.gemini.seqexec.server.SeqexecFailure._
 import edu.gemini.spModel.config2.ConfigSequence
 
 import scalaz.concurrent.Task
+import scalaz.stream.Process
 
 /** An executor that maintains state in a pair of `TaskRef`s. */
 class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: TaskRef[Map[SPObservationID, Executor.ExecState]]) {
@@ -100,6 +101,13 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
         case (Failed(result), idx) => s"Step $idx failed with error " + result.map(SeqexecFailure.explain).toList.mkString("\n", "\n", "")
         case (Skipped, idx) => s"Step $idx skipped"
       })
+  }
+
+  // This is a mock data source, but could be a Process representing results from a database
+  def sequenceEvents: Process[Task, String] = {
+    val stream: Process[Task, String] = Process.emitAll(List("Abc", "cd"))
+
+    Process.emit(s"Starting stream intervals, taking results\n\n") ++ stream
   }
 
 }
