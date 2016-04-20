@@ -27,10 +27,9 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
   def host(): Peer = loc
   def host(l: Peer): Unit = { loc = l }
 
-  private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] = {
+  private def recordState(id: SPObservationID)(s: ExecState): Task[ExecState] = {
     // This marks the current state for observation id
-    eventsQueue.enqueueOne(NullEvent).unsafePerformSync
-    stateRef.modify(_ + (id -> s))
+    eventsQueue.enqueueOne(NullEvent) >> stateRef.modify(_ + (id -> s)) >> Task.delay(s)
   }
 
   private def go(id: SPObservationID): Task[Boolean] =

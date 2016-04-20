@@ -114,7 +114,7 @@ object Executor { self =>
       EitherT[ExecAction, NonEmptyList[SeqexecFailure], A](a)
 
     // Execute the next step, if any
-    def stepT(saveState: ExecState => Task[Unit]): ExecActionF[StepResult] =
+    def stepT[A](saveState: ExecState => Task[A]): ExecActionF[StepResult] =
       for {
         st <- liftA(gets(_.nextStep))
         ds <- st.cata(t => liftE(liftT(t.run)), fail(Unexpected("No current step")))
@@ -128,8 +128,9 @@ object Executor { self =>
       (liftA(liftT(go)) |@| liftA(gets(_.nextStep.nonEmpty)))(_ && _)
 
     // Run to completion, or to error, as long as not cancelled or complete
-    def runT(go: Task[Boolean], saveState: ExecState => Task[Unit]): ExecActionF[Unit] =
+    def runT[A](go: Task[Boolean], saveState: ExecState => Task[A]): ExecActionF[Unit] = {
       stepT(saveState).whileM_(continue(go)) // cool eh?
+    }
 
   }
 
@@ -138,7 +139,7 @@ object Executor { self =>
     WithEitherT.stepT(saveState).run
 
   // Run to completion, or to error, as long as not cancelled
-  def run(go: Task[Boolean], saveState: ExecState => Task[Unit]): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
+  def run[A](go: Task[Boolean], saveState: ExecState => Task[A]): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
     WithEitherT.runT(go, saveState).run
 
   // Skip some number of steps
