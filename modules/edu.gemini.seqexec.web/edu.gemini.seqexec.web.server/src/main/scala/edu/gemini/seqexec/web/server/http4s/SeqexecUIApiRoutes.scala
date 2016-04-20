@@ -21,9 +21,9 @@ object SeqexecUIApiRoutes {
   val service = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
-    case req @ GET -> Root  / "seqexec" / "sequence" / id =>
+    case req @ GET -> Root  / "seqexec" / "sequence" / oid =>
       val r = for {
-        obsId <- \/.fromTryCatchNonFatal(new SPObservationID(id)).leftMap((t:Throwable) => Unexpected(t.getMessage))
+        obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
         s     <- ExecutorImpl.read(obsId)
       } yield (obsId, s)
 

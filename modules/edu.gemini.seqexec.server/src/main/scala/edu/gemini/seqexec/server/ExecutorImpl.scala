@@ -21,8 +21,8 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
   private var loc = new Peer("localhost", 8443, null)
 
-  // Queue to store events generated when executing a queue
-  private val eventsQueue = async.boundedQueue[SeqexecEvent](10)
+  // Queue to keep events generated when executing a sequence
+  private val eventsQueue = async.topic[SeqexecEvent]()
 
   def host(): Peer = loc
   def host(l: Peer): Unit = { loc = l }
@@ -35,7 +35,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
   private def recordState(id: SPObservationID)(s: ExecState): Task[ExecState] =
     // This marks the current state for observation id
-    eventsQueue.enqueueOne(stepEvent(id, s)) >> stateRef.modify(_ + (id -> s)) >> Task.delay(s)
+    eventsQueue.publishOne(stepEvent(id, s)) >> stateRef.modify(_ + (id -> s)) >> Task.delay(s)
 
   private def go(id: SPObservationID): Task[Boolean] =
     // It seems this will check cancelRef and return a Task with value true if the observation has not been cancelled
@@ -113,8 +113,8 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
       })
   }
 
-  // This is a mock data source, but could be a Process representing results from a database
-  def sequenceEvents: Process[Task, SeqexecEvent] = eventsQueue.dequeue
+  // Important, make it a def so each client gets a new one
+  def sequenceEvents: Process[Task, SeqexecEvent] = eventsQueue.subscribe
 
 }
 
