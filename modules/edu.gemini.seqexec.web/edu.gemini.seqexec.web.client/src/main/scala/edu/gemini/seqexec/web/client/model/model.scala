@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.model
 
 import diode.data.{Empty, Pot, PotAction}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
+import org.scalajs.dom.WebSocket
 
 import scalaz._
 import Scalaz._
@@ -34,6 +35,9 @@ case class AddToQueue(s: Sequence)
 case class RemoveFromSearch(s: Sequence)
 // Action to select a sequence for display
 case class SelectToDisplay(s: Sequence)
+
+// Actions related to web sockets
+case object OpenConnection
 
 // End Actions
 
@@ -72,4 +76,8 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
 
 object SeqexecAppRootModel {
   val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, Empty, SequencesOnDisplay.empty)
+}
+
+case class WebSocketHandler(socket: Option[WebSocket]) {
+
 }

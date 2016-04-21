@@ -7,6 +7,7 @@ import diode._
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
+import org.scalajs.dom.{Event, WebSocket}
 
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -103,6 +104,17 @@ object PotEq {
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
+
+  val webSocket = {
+
+    def onopen(e: Event): Unit = {
+      println("Open")
+    }
+
+    val ws = new WebSocket("ws://localhost:9090/api/seqexec/events")
+    ws.onopen = onopen _
+    Some(ws)
+  }
 
   val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
