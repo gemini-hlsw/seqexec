@@ -9,9 +9,13 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
+import org.http4s.server.websocket._
+import org.http4s.websocket.WebsocketBits._
 
 import scalaz._
 import Scalaz._
+
+import scalaz.stream.Exchange
 
 /**
   * Rest Endpoints under the /api route
@@ -33,6 +37,6 @@ object SeqexecUIApiRoutes {
       }
     case GET -> Root / "seqexec" / "events" =>
       // Stream seqexec events to clients
-      Ok(ExecutorImpl.sequenceEvents.map(write(_)))
+      WS(Exchange(ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
   }
 }
