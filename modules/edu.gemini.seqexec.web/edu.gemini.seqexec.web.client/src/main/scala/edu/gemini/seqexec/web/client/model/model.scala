@@ -64,7 +64,11 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchAreaState: SectionVisibilityState, devConsoleState: SectionVisibilityState, searchResults: Pot[List[Sequence]], sequencesOnDisplay: SequencesOnDisplay)
+case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
+                               searchAreaState: SectionVisibilityState,
+                               devConsoleState: SectionVisibilityState,
+                               searchResults: Pot[List[Sequence]],
+                               sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
   val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, Empty, SequencesOnDisplay.empty)
