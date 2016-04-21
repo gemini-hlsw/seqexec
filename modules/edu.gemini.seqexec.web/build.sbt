@@ -82,8 +82,8 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web
     // Lets the server read the jsdeps file
     (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client, Compile, packageJSDependencies)).value,
     // Support stopping the running server
-    mainClass in reStart := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
-    //mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
+    //mainClass in reStart := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
+    mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     // do a fastOptJS on reStart
     reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client, Compile)),
     // This settings makes reStart to rebuild if a scala.js file changes on the client

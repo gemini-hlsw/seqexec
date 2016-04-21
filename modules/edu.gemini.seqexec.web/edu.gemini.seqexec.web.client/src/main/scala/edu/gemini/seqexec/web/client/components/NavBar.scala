@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconTerminal
 
 import scalacss.ScalaCssReact._
 
@@ -26,6 +27,12 @@ object NavBar {
               ^.src :="images/launcher.png"
             ),
             "Seqexec"
+          ),
+          TagMod.devOnly(
+            <.div(
+              ^.cls := "header item",
+              IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback.log("display log console")))
+            )
           ),
           TopMenu()
         )
