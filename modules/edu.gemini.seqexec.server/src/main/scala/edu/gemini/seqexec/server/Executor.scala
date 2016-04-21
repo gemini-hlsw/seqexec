@@ -129,9 +129,8 @@ object Executor { self =>
       (liftA(liftT(go)) |@| liftA(gets(_.nextStep.nonEmpty)))(_ && _)
 
     // Run to completion, or to error, as long as not cancelled or complete
-    def runT[A](go: Task[Boolean], saveState: ExecState => Task[A]): ExecActionF[Unit] = {
+    def runT[A](go: Task[Boolean], saveState: ExecState => Task[A]): ExecActionF[Unit] =
       stepT(saveState).whileM_(continue(go)) // cool eh?
-    }
 
   }
 

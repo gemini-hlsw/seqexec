@@ -19,6 +19,8 @@ package object server {
 
   type SeqAction[A] = EitherT[Task, SeqexecFailure, A]
 
+  type SeqObserve[A, B] = Reader[A, SeqAction[B]]
+
   object SeqAction {
     def apply[A](a: => A): SeqAction[A]          = SeqAction(a)
     def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(Task.delay(TrySeq.fail(p)))

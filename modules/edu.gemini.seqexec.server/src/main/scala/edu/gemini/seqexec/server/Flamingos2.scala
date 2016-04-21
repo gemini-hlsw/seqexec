@@ -27,7 +27,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val sfName: String = Flamingos2.sfName
 
-  override def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]] = Reader { client =>
+  override def observe(config: Config): SeqObserve[DhsClient, ObserveResult] = Reader { client =>
     for {
       id <- client.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("flamingos2", "dhs-http")))
       _  <- f2Controller.observe(id)

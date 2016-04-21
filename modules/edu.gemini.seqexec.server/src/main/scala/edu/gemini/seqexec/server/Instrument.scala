@@ -13,7 +13,7 @@ import scalaz.concurrent.Task
 trait Instrument extends System {
   // The name used for this instrument in the science fold configuration
   val sfName: String
-  def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]]
+  def observe(config: Config): SeqObserve[DhsClient, ObserveResult]
 }
 
 //Placeholder for observe response
@@ -31,7 +31,7 @@ object UnknownInstrument extends Instrument {
     TrySeq(ConfigResult(this))
   } )
 
-  override def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]] = Reader { _ =>
+  override def observe(config: Config): SeqObserve[DhsClient, ObserveResult] = Reader { _ =>
     EitherT(Task {
       imageCount += 1
       TrySeq(ObserveResult(f"S20150519S$imageCount%04d"))

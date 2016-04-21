@@ -30,7 +30,7 @@ object GmosSouth extends Instrument {
     TrySeq(ConfigResult(this))
   })
 
-  override def observe(config: Config): Reader[DhsClient, SeqAction[ObserveResult]] = Reader { client =>
+  override def observe(config: Config): SeqObserve[DhsClient, ObserveResult] = Reader { client =>
     for {
       id <- client.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
       _ <- EitherT(Task {
