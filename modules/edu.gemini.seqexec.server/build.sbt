@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   Squants.value,
   // OCS bundles
   SpModelCore,
+  SeqexecOdb,
   POT,
   EpicsACM
 ) ++ TestLibs.value
