@@ -36,7 +36,6 @@ object Settings {
 
     // Java libraries
     val scalaZ       = "7.2.2"
-
     val http4s       = "0.13.2a"
     val play         = "2.5.1"
     val scalaJQuery  = "1.0-RC2"
@@ -103,6 +102,7 @@ object Settings {
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"     %% "edu-gemini-spmodel-core" % LibraryVersions.ocsVersion
+    val SeqexecOdb  = "edu.gemini.ocs"     %% "edu-gemini-seqexec-odb"  % LibraryVersions.ocsVersion
     val POT         = "edu.gemini.ocs"     %% "edu-gemini-pot"          % LibraryVersions.ocsVersion
     val EpicsACM    = "edu.gemini.ocs"     %% "edu-gemini-epics-acm"    % LibraryVersions.ocsVersion
     val TRPC        = "edu.gemini.ocs"     %% "edu-gemini-util-trpc"    % LibraryVersions.ocsVersion

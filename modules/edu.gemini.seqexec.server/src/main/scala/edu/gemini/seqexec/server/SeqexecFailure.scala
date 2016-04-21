@@ -1,11 +1,7 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.shared.SeqFailure
-import edu.gemini.seqexec.shared.SeqFailure._
+import edu.gemini.seqexec.odb.SeqFailure
 
-/**
- * Created by jluhrs on 5/18/15.
- */
 sealed trait SeqexecFailure
 
 object SeqexecFailure {

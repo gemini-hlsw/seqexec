@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.shared.SeqExecService
+import edu.gemini.seqexec.odb.SeqExecService
 import edu.gemini.spModel.core.Peer
 
 import scalaz._
