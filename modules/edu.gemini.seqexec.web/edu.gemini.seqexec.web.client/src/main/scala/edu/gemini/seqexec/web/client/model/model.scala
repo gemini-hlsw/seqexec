@@ -25,6 +25,9 @@ case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Emp
 case object OpenSearchArea
 case object CloseSearchArea
 
+// Actions to close and/open the dev console area
+case object ToggleDevConsole
+
 // Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
 // Action to remove a sequence from the search results
@@ -35,9 +38,9 @@ case class SelectToDisplay(s: Sequence)
 // End Actions
 
 // UI model
-sealed trait SearchAreaState
-case object SearchAreaOpen extends SearchAreaState
-case object SearchAreaClosed extends SearchAreaState
+sealed trait SectionVisibilityState
+case object SectionOpen extends SectionVisibilityState
+case object SectionClosed extends SectionVisibilityState
 
 case class SequenceTab(instrument: Instrument.Instrument, sequence: Option[Sequence])
 
@@ -61,4 +64,8 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchAreaState: SearchAreaState, searchResults: Pot[List[Sequence]], sequencesOnDisplay: SequencesOnDisplay)
+case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchAreaState: SectionVisibilityState, devConsoleState: SectionVisibilityState, searchResults: Pot[List[Sequence]], sequencesOnDisplay: SequencesOnDisplay)
+
+object SeqexecAppRootModel {
+  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, Empty, SequencesOnDisplay.empty)
+}

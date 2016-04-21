@@ -49,14 +49,28 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 /**
   * Handles actions related to the search area, used to open/close the area
   */
-class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionHandler(modelRW) {
+class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
-    case OpenSearchArea =>
-      updated(SearchAreaOpen)
+    case OpenSearchArea  =>
+      updated(SectionOpen)
     case CloseSearchArea =>
-      updated(SearchAreaClosed)
+      updated(SectionClosed)
+  }
+}
+
+/**
+  * Handles actions related to the development console
+  */
+class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case ToggleDevConsole if value == SectionOpen   =>
+      updated(SectionClosed)
+    case ToggleDevConsole if value == SectionClosed =>
+      updated(SectionOpen)
   }
 }
 
@@ -93,9 +107,10 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
+  val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
 
-  override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaOpen, Empty, SequencesOnDisplay.empty)
+  override protected def initialModel = SeqexecAppRootModel.initial
 
-  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler, sequenceDisplayHandler)
+  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler, devConsoleHandler, sequenceDisplayHandler)
 }

@@ -182,7 +182,7 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  case class Props(searchArea: ModelProxy[SearchAreaState])
+  case class Props(searchArea: ModelProxy[SectionVisibilityState])
 
   val component = ReactComponentB[Props]("QueueArea")
     .stateless
@@ -199,8 +199,8 @@ object QueueArea {
               <.div(
                 ^.cls := "column",
                 ^.classSet(
-                  "ten wide" -> (p.searchArea() == SearchAreaOpen),
-                  "sixteen wide" -> (p.searchArea() == SearchAreaClosed)
+                  "ten wide"     -> (p.searchArea() == SectionOpen),
+                  "sixteen wide" -> (p.searchArea() == SectionClosed)
                 ),
                 // Show a loading indicator if we are waiting for server data
                 {
@@ -212,7 +212,7 @@ object QueueArea {
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
                 QueueTableSection()
               ),
-              p.searchArea() == SearchAreaOpen ?= SequenceSearchResults() // Display the search area if open
+              p.searchArea() == SectionOpen ?= SequenceSearchResults() // Display the search area if open
             )
           )
         )
@@ -220,6 +220,6 @@ object QueueArea {
     )
     .build
 
-  def apply(p: ModelProxy[SearchAreaState]) = component(Props(p))
+  def apply(p: ModelProxy[SectionVisibilityState]) = component(Props(p))
 
 }

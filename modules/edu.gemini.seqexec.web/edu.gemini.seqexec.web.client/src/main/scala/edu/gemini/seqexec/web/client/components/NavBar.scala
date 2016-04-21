@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.client.components
 
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
@@ -31,7 +32,7 @@ object NavBar {
           TagMod.devOnly(
             <.div(
               ^.cls := "header item",
-              IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback.log("display log console")))
+              IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
             )
           ),
           TopMenu()
