@@ -36,7 +36,6 @@ object Settings {
 
     // Java libraries
     val scalaZ       = "7.2.2"
-
     val http4s       = "0.13.2a"
     val play         = "2.5.1"
     val scalaJQuery  = "1.0-RC2"
