@@ -1,11 +1,7 @@
 package edu.gemini.seqexec.server
 
-import java.util.logging.{Level, Logger}
-
-import edu.gemini.seqexec.server.DhsClient.ObsId
+import edu.gemini.seqexec.model.dhs.ObsId
 import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
 import scalaz.{EitherT, Reader}
 import scalaz.concurrent.Task

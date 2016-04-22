@@ -7,12 +7,8 @@ import Scalaz._
 
 import edu.gemini.epics.acm.{XMLBuilder, CaService}
 
-/**
- * Created by jluhrs on 11/13/15.
- */
 final class Flamingos2Epics(epicsService: CaService) {
 
-  import Flamingos2Epics._
   import EpicsCommand.setParameter
 
   def post: SeqAction[Unit] = configCmd.post

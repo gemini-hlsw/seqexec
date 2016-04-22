@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.server.DhsClient.ObsId
+import edu.gemini.seqexec.model.dhs.ObsId
 import edu.gemini.seqexec.server.Flamingos2Controller._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -11,13 +11,9 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 
 import scalaz.Scalaz._
-
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-/**
- * Created by jluhrs on 11/16/15.
- */
 object Flamingos2ControllerEpics extends Flamingos2Controller {
   private val Log = Logger.getLogger(getClass.getName)
 

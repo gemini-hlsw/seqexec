@@ -8,6 +8,7 @@ import edu.gemini.spModel.core.Peer
 import scalaz.{\/, _}
 import Scalaz._
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.Executor._
 import edu.gemini.seqexec.server.SeqexecFailure._
 import edu.gemini.spModel.config2.ConfigSequence

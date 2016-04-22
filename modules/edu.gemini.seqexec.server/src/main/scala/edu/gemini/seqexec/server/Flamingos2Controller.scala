@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.server.DhsClient.ObsId
+import edu.gemini.seqexec.model.dhs.ObsId
 
 import scala.concurrent.duration.Duration
 

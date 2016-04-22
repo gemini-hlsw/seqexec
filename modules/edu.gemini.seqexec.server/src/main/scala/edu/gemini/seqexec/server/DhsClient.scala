@@ -6,7 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import argonaut._
 import Argonaut._
-import edu.gemini.seqexec.server.DhsClient.{ImageParameters, KeywordBag, ObsId}
+import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.server.DhsClient.{ImageParameters, KeywordBag}
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
 
@@ -21,18 +22,15 @@ trait DhsClient {
   /**
     * Requests the DHS to create an image returning the obs id if applicable
     */
-  def createImage(p: DhsClient.ImageParameters): SeqAction[DhsClient.ObsId]
+  def createImage(p: DhsClient.ImageParameters): SeqAction[ObsId]
 
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: DhsClient.ObsId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
+  def setKeywords(id: ObsId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
 }
 
 object DhsClient {
-
-  // Common data types
-  type ObsId = String
 
   type Contributor = String
 

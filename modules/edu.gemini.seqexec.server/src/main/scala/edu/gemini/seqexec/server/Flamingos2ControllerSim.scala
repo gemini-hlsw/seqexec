@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.server.DhsClient.ObsId
+import edu.gemini.seqexec.model.dhs.ObsId
 import edu.gemini.seqexec.server.Flamingos2Controller.Flamingos2Config
 
 import scalaz.EitherT
