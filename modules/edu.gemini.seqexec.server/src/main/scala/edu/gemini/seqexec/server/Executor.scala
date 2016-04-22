@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.server
 
-import java.time.LocalDate
 import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
 
 import edu.gemini.seqexec.server.SeqexecFailure._
@@ -14,8 +13,6 @@ import Scalaz._
 import scalaz.concurrent.Task
 
 object Step {
-  val dhsClient = DhsClientSim(LocalDate.now())
-
   type Step = EitherT[Task, NonEmptyList[SeqexecFailure], StepResult]
 
   private def parConfig(config: List[SeqAction[ConfigResult]]): EitherT[Task, NonEmptyList[SeqexecFailure], List[ConfigResult]] =
@@ -27,7 +24,7 @@ object Step {
       q <- observe.leftMap(NonEmptyList(_))
     } yield StepResult(p, q)
 
-  def step(config: Config): SeqexecFailure \/ (Set[System], Step) = {
+  def step(dhsClient: DhsClient)(config: Config): SeqexecFailure \/ (Set[System], Step) = {
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
       case GmosSouth.name  => Some(GmosSouth)
@@ -129,7 +126,7 @@ object Executor { self =>
       (liftA(liftT(go)) |@| liftA(gets(_.nextStep.nonEmpty)))(_ && _)
 
     // Run to completion, or to error, as long as not cancelled or complete
-    def runT[A](go: Task[Boolean], saveState: ExecState => Task[A]): ExecActionF[Unit] =
+    def runT(go: Task[Boolean], saveState: ExecState => Task[Unit]): ExecActionF[Unit] =
       stepT(saveState).whileM_(continue(go)) // cool eh?
 
   }
@@ -139,7 +136,7 @@ object Executor { self =>
     WithEitherT.stepT(saveState).run
 
   // Run to completion, or to error, as long as not cancelled
-  def run[A](go: Task[Boolean], saveState: ExecState => Task[A]): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
+  def run(go: Task[Boolean], saveState: ExecState => Task[Unit]): ExecAction[NonEmptyList[SeqexecFailure] \/ Unit] =
     WithEitherT.runT(go, saveState).run
 
   // Skip some number of steps

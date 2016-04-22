@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.server
 
+import java.time.LocalDate
+
 import edu.gemini.seqexec.odb.SeqExecService
 import edu.gemini.spModel.core.Peer
 
@@ -13,16 +15,14 @@ import edu.gemini.spModel.config2.ConfigSequence
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 import scalaz.stream.async
+import scalaz.stream.async.mutable.Topic
 
 /** An executor that maintains state in a pair of `TaskRef`s. */
-class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: TaskRef[Map[SPObservationID, Executor.ExecState]]) {
+class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: TaskRef[Map[SPObservationID, Executor.ExecState]], private val eventsQueue: Topic[SeqexecEvent], dhsClient: DhsClient) {
   type ExecutionFailures = NonEmptyList[SeqexecFailure] \/ Unit
   type ExecutionResult = (ExecState, ExecutionFailures)
 
   private var loc = new Peer("localhost", 8443, null)
-
-  // Queue to keep events generated when executing a sequence
-  private val eventsQueue = async.topic[SeqexecEvent]()
 
   def host(): Peer = loc
   def host(l: Peer): Unit = { loc = l }
@@ -33,9 +33,9 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
     case l          => NullEvent //Fallback
   }
 
-  private def recordState(id: SPObservationID)(s: ExecState): Task[ExecState] =
+  private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] =
     // This marks the current state for observation id
-    eventsQueue.publishOne(stepEvent(id, s)) >> stateRef.modify(_ + (id -> s)) >> Task.delay(s)
+    eventsQueue.publishOne(stepEvent(id, s)) *> stateRef.modify(_ + (id -> s))
 
   private def go(id: SPObservationID): Task[Boolean] =
     // It seems this will check cancelRef and return a Task with value true if the observation has not been cancelled
@@ -51,7 +51,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
     * Reads a sequence returning either a failure or a list of systems and their steps
     */
   def sequence(sequenceConfig: ConfigSequence): SeqexecFailure \/ (Set[System], List[Step.Step]) = {
-    val a = sequenceConfig.getAllSteps.toList.map(Step.step).sequenceU
+    val a = sequenceConfig.getAllSteps.toList.map(Step.step(dhsClient)).sequenceU
     a.map { _.unzip match {
       case (l, s) => (l.suml, s)
     }}
@@ -119,4 +119,8 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 }
 
 // Initialize with no cancelled observation and no observations in execution
-object ExecutorImpl extends ExecutorImpl(TaskRef.newTaskRef[Set[SPObservationID]](Set.empty).unsafePerformSync, TaskRef.newTaskRef[Map[SPObservationID, Executor.ExecState]](Map.empty).unsafePerformSync)
+object ExecutorImpl extends ExecutorImpl(
+  TaskRef.newTaskRef[Set[SPObservationID]](Set.empty).unsafePerformSync,
+  TaskRef.newTaskRef[Map[SPObservationID, Executor.ExecState]](Map.empty).unsafePerformSync,
+  async.topic[SeqexecEvent](),
+  DhsClientSim(LocalDate.now()))
