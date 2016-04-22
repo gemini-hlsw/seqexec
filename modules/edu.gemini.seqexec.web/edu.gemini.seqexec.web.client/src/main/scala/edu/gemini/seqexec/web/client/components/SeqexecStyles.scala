@@ -54,7 +54,11 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
-  var errorText = style(
+  val errorText = style(
     color.red
+  )
+
+  val smallTextArea = style(
+    fontSize.smaller
   )
 }

@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionVisibilityState, WebSocketsLog}
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
+import scalacss.ScalaCssReact._
 
 object WebSocketsConsole {
   case class Props(searchArea: SectionVisibilityState, log: WebSocketsLog)
@@ -23,6 +24,7 @@ object WebSocketsConsole {
                 <.div(
                   ^.cls := "column sixteen wide",
                   <.textarea(
+                    SeqexecStyles.smallTextArea,
                     ^.rows := 20,
                     ^.readOnly := true,
                     ^.value := p.log.log.mkString("\n")
