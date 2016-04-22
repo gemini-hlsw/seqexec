@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.services
 
-import edu.gemini.seqexec.web.common.{HttpStatusCodes, SeqexecQueue, Sequence, SequenceSteps}
+import edu.gemini.seqexec.web.common.{HttpStatusCodes, SeqexecQueue, Sequence}
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import upickle.default
 
@@ -27,5 +27,11 @@ object SeqexecWebClient {
     Ajax.get(
       url = s"$baseUrl/current/queue"
     ).map(s => default.read[SeqexecQueue](s.responseText))
+  }
+
+  def run(s: Sequence): Future[String] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/${s.id}run"
+    ).map(s => "")
   }
 }

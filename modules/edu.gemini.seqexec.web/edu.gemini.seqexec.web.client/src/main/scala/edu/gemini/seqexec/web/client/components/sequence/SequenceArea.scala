@@ -2,14 +2,14 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SequenceTab, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model.{RequestRun, SeqexecCircuit, SequenceTab, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPlay}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{ReactComponentB, ReactElement}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
 
 /**
   * Container for a table with the steps
@@ -24,7 +24,7 @@ object SequenceStepsTableContainer {
         ^.cls := "ui raised secondary segment",
         <.div(
           ^.cls := "row",
-          Button("Run"),
+          Button(Button.Props(icon = Some(IconPlay), onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
           Button("Pause")
         ),
         <.div(

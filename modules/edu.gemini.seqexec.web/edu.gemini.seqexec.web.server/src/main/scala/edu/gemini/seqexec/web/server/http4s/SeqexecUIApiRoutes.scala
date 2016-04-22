@@ -32,7 +32,7 @@ object SeqexecUIApiRoutes {
       } yield (obsId, s)
 
       r match {
-        case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "Flamingos2", s.toSequenceSteps, None))))
+        case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
         case -\/(e)      => NotFound(SeqexecFailure.explain(e))
       }
     case GET -> Root / "seqexec" / "events" =>

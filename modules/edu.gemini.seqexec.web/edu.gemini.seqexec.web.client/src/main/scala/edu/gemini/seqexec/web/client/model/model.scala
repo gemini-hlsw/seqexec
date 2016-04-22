@@ -45,6 +45,9 @@ case object ConnectionClosed
 case class NewMessage(s: String)
 case class ConnectionError(s: String)
 
+// Actions related to executing sequences
+case class RequestRun(s: Sequence)
+
 // End Actions
 
 // UI model

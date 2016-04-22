@@ -48,6 +48,18 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 }
 
 /**
+  * Handles sequence execution actions
+  */
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case RequestRun(s) =>
+      effectOnly(Effect(SeqexecWebClient.run(s)))
+  }
+}
+
+/**
   * Handles actions related to the search area, used to open/close the area
   */
 class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
