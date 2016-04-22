@@ -17,12 +17,13 @@ import Scalaz._
   * Rest Endpoints under the /api route
   */
 object SeqexecUIApiRoutes {
+
   val service = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
-    case req @ GET -> Root  / "seqexec" / "sequence" / id =>
+    case req @ GET -> Root  / "seqexec" / "sequence" / oid =>
       val r = for {
-        obsId <- \/.fromTryCatchNonFatal(new SPObservationID(id)).leftMap((t:Throwable) => Unexpected(t.getMessage))
+        obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
         s     <- ExecutorImpl.read(obsId)
       } yield (obsId, s)
 
@@ -30,5 +31,8 @@ object SeqexecUIApiRoutes {
         case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "Flamingos2", s.toSequenceSteps, None))))
         case -\/(e)      => NotFound(SeqexecFailure.explain(e))
       }
+    case GET -> Root / "seqexec" / "events" =>
+      // Stream seqexec events to clients
+      Ok(ExecutorImpl.sequenceEvents.map(write(_)))
   }
 }
