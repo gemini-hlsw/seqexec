@@ -1,11 +1,14 @@
 package edu.gemini.seqexec.web.client.model
 
 import diode.data.{Empty, Pot, PotAction}
+import edu.gemini.seqexec.model.SeqexecEvent
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
 import org.scalajs.dom.WebSocket
 
 import scalaz._
 import Scalaz._
+
+import upickle.default._
 
 // Actions
 
@@ -64,9 +67,10 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   }
 }
 
-case class WebSocketsLog(log: List[String]) {
+case class WebSocketsLog(log: List[SeqexecEvent]) {
+  // Upper bound of accepted events or we may run out of memory
   val maxLength = 100
-  def append(s: String):WebSocketsLog = copy((log :+ s).take(maxLength))
+  def append(s: String):WebSocketsLog = copy((log :+ read[SeqexecEvent](s)).take(maxLength))
 }
 
 object SequencesOnDisplay {

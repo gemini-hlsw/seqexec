@@ -94,10 +94,6 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsLog]) extends Acti
   implicit val runner = new RunAfterJS
 
   override def handle = {
-    case ConnectionOpened =>
-      updated(value.append("WebSocket Connection opened"))
-    case ConnectionClosed =>
-      updated(value.append("WebSocket Connection closed"))
     case NewMessage(s)    =>
       updated(value.append(s))
   }
