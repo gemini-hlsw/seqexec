@@ -7,7 +7,7 @@ import diode._
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
-import org.scalajs.dom.{Event, WebSocket}
+import org.scalajs.dom._
 
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -88,6 +88,22 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 }
 
 /**
+  * Handles actions related to the changing the selection of the displayed sequence
+  */
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsLog]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case ConnectionOpened =>
+      updated(value.append("WebSocket Connection opened"))
+    case ConnectionClosed =>
+      updated(value.append("WebSocket Connection closed"))
+    case NewMessage(s)    =>
+      updated(value.append(s))
+  }
+}
+
+/**
   * Generates Eq comparisons for Pot[A], it is useful for state indicators
   */
 object PotEq {
@@ -106,13 +122,27 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   type SearchResults = List[Sequence]
 
   val webSocket = {
+    import org.scalajs.dom.document
 
-    def onopen(e: Event): Unit = {
-      println("Open")
-    }
+    val host = document.location.host
 
-    val ws = new WebSocket("ws://localhost:9090/api/seqexec/events")
+    def onopen(e: Event): Unit =
+      dispatch(ConnectionOpened)
+
+    def onmessage(e: MessageEvent): Unit =
+      dispatch(NewMessage(e.data.toString))
+
+    def onerror(e: ErrorEvent): Unit =
+      dispatch(ConnectionError(e.message))
+
+    def onclose(e: CloseEvent): Unit =
+      dispatch(ConnectionClosed)
+
+    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
     ws.onopen = onopen _
+    ws.onmessage = onmessage _
+    ws.onerror = onerror _
+    ws.onclose = onclose _
     Some(ws)
   }
 
@@ -120,9 +150,15 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(_.webSocketLog)((m, v) => m.copy(webSocketLog = v)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
-  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler, devConsoleHandler, sequenceDisplayHandler)
+  override protected def actionHandler = composeHandlers(queueHandler,
+    searchHandler,
+    searchAreaHandler,
+    devConsoleHandler,
+    wsLogHandler,
+    sequenceDisplayHandler)
 }

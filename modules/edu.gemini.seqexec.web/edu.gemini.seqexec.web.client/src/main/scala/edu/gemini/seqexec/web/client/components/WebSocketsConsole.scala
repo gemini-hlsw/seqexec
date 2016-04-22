@@ -1,17 +1,16 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionVisibilityState}
+import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionVisibilityState, WebSocketsLog}
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
 
 object WebSocketsConsole {
-  case class Props(searchArea: ModelProxy[SectionVisibilityState])
+  case class Props(searchArea: SectionVisibilityState, log: WebSocketsLog)
 
   val component = ReactComponentB[Props]("WebSocketsConsole")
     .stateless
     .render_P(p =>
-      if (p.searchArea() == SectionOpen) {
+      if (p.searchArea == SectionOpen) {
         <.div(
           ^.cls := "ui raised segments container",
           TextMenuSegment("WebSocket Console"),
@@ -25,7 +24,8 @@ object WebSocketsConsole {
                   ^.cls := "column sixteen wide",
                   <.textarea(
                     ^.rows := 20,
-                    ^.readOnly := true
+                    ^.readOnly := true,
+                    ^.value := p.log.log.mkString("\n")
                   )
                 )
               )
@@ -38,5 +38,5 @@ object WebSocketsConsole {
     )
     .build
 
-  def apply(p: ModelProxy[SectionVisibilityState]) = component(Props(p))
+  def apply(s: SectionVisibilityState, l:WebSocketsLog) = component(Props(s, l))
 }

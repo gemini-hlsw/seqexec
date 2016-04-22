@@ -37,7 +37,10 @@ case class RemoveFromSearch(s: Sequence)
 case class SelectToDisplay(s: Sequence)
 
 // Actions related to web sockets
-case object OpenConnection
+case object ConnectionOpened
+case object ConnectionClosed
+case class NewMessage(s: String)
+case class ConnectionError(s: String)
 
 // End Actions
 
@@ -61,6 +64,11 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   }
 }
 
+case class WebSocketsLog(log: List[String]) {
+  val maxLength = 100
+  def append(s: String):WebSocketsLog = copy((log :+ s).take(maxLength))
+}
+
 object SequencesOnDisplay {
   val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, None)).toZipper)
 }
@@ -71,11 +79,12 @@ object SequencesOnDisplay {
 case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
+                               webSocketLog: WebSocketsLog,
                                searchResults: Pot[List[Sequence]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), Empty, SequencesOnDisplay.empty)
 }
 
 case class WebSocketHandler(socket: Option[WebSocket]) {

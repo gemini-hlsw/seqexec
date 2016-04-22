@@ -15,7 +15,7 @@ object SeqexecUI {
     .render(_ =>
       <.div(
         NavBar(),
-        SeqexecCircuit.connect(_.devConsoleState)(WebSocketsConsole(_)),
+        SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))(u => WebSocketsConsole(u()._1, u()._2)),
         SeqexecCircuit.connect(_.searchAreaState)(QueueArea(_)),
         SequenceArea()
       )
