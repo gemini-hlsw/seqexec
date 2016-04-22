@@ -117,6 +117,7 @@ object PotEq {
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
 
+  // TODO Make this into its own class and handle reconnections
   val webSocket = {
     import org.scalajs.dom.document
 

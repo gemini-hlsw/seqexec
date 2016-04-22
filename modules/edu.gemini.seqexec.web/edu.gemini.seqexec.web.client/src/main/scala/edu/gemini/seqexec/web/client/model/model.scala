@@ -90,7 +90,3 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
 object SeqexecAppRootModel {
   val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), Empty, SequencesOnDisplay.empty)
 }
-
-case class WebSocketHandler(socket: Option[WebSocket]) {
-
-}
