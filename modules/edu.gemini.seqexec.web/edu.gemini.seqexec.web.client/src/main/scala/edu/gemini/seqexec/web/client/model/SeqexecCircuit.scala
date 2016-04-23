@@ -4,10 +4,12 @@ import diode.data.{Pot, PotAction}
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
+import edu.gemini.seqexec.model.{SeqexecEvent, SequenceStartEvent}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
+import upickle.default._
 
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -50,13 +52,14 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 /**
   * Handles sequence execution actions
   */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
     case RunStarted(s) =>
+      // We could react to this change but we rather wait for the command from the event queue
       noChange
     case RunStartFailed(s) =>
       noChange
@@ -106,12 +109,17 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsLog]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog)]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
-    case NewMessage(s)    =>
-      updated(value.append(s))
+  override def handle = {
+    case NewMessage(s) =>
+      val event = read[SeqexecEvent](s)
+      val updatedQueue = event match {
+        case SequenceStartEvent(id) => value._1.map(_.markAsRunning(id))
+        case _                      => value._1
+      }
+      updated(value.copy(_1 = updatedQueue, _2 = value._2.append(event)))
   }
 }
 
@@ -163,9 +171,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(_.webSocketLog)((m, v) => m.copy(webSocketLog = v)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog))((m, v) => m.copy(queue = v._1, webSocketLog = v._2)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 

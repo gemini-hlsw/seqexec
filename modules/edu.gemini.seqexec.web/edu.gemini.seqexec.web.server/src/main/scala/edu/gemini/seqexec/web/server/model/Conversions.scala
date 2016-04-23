@@ -4,7 +4,7 @@ import edu.gemini.seqexec.web.common.{SequenceSteps, Step, StepConfig}
 import edu.gemini.spModel.config2.ConfigSequence
 
 /**
-  * Conversion of hte legacy spmodel to the shared web model. Note that we don't want this class on the shared
+  * Conversion of the legacy spmodel to the shared web model. Note that we don't want this class on the shared
   * bundle, to avoid polluting the JS with old Java code
   */
 object Conversions {

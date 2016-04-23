@@ -20,7 +20,13 @@ object SequenceState {
   case object Completed  extends SequenceState
 }
 
-case class SeqexecQueue(queue: List[Sequence])
+case class SeqexecQueue(queue: List[Sequence]) {
+  // Update the sequence if found
+  def markAsRunning(id: String): SeqexecQueue = copy(queue.collect {
+      case s @ Sequence(i, _, _, _, _) if i === id => s.copy(state = SequenceState.Running)
+      case s                                       => s
+    })
+}
 
 object Instrument {
   // Placeholder for the instrument type

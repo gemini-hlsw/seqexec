@@ -8,8 +8,6 @@ import org.scalajs.dom.WebSocket
 import scalaz._
 import Scalaz._
 
-import upickle.default._
-
 // Actions
 
 // Request loading the queue
@@ -75,7 +73,7 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
 case class WebSocketsLog(log: List[SeqexecEvent]) {
   // Upper bound of accepted events or we may run out of memory
   val maxLength = 100
-  def append(s: String):WebSocketsLog = copy((log :+ read[SeqexecEvent](s)).take(maxLength - 1))
+  def append(e: SeqexecEvent):WebSocketsLog = copy((log :+ e).take(maxLength))
 }
 
 object SequencesOnDisplay {
