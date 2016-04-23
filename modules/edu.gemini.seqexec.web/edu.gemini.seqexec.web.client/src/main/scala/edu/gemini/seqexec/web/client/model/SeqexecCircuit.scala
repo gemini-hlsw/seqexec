@@ -55,7 +55,11 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) exten
 
   override def handle = {
     case RequestRun(s) =>
-      effectOnly(Effect(SeqexecWebClient.run(s)))
+      effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
+    case RunStarted(s) =>
+      noChange
+    case RunStartFailed(s) =>
+      noChange
   }
 }
 
