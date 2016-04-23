@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object SeqexecWebClient {
   val baseUrl = "/api/seqexec"
 
-  def read(id: String): Future[List[Sequence]] = {
+  def read(id: String): Future[List[Sequence]] =
     Ajax.get(
       url = s"$baseUrl/sequence/$id"
     )
@@ -21,17 +21,15 @@ object SeqexecWebClient {
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }
-  }
 
-  def readQueue(): Future[SeqexecQueue] = {
+  def readQueue(): Future[SeqexecQueue] =
     Ajax.get(
       url = s"$baseUrl/current/queue"
     ).map(s => default.read[SeqexecQueue](s.responseText))
-  }
 
   def run(s: Sequence): Future[String] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}run"
+      url = s"$baseUrl/commands/${s.id}/run"
     ).map(s => "")
   }
 }

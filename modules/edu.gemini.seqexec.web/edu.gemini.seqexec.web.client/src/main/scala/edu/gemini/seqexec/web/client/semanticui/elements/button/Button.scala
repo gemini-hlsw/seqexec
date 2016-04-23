@@ -27,6 +27,7 @@ object Button {
                    basic: Boolean = false,
                    inverted: Boolean = false,
                    circular: Boolean = false,
+                   labeled: Boolean = false,
                    tabIndex: Option[Int] = None,
                    color: Option[String] = None,
                    onClick: Callback = Callback.empty)
@@ -42,7 +43,8 @@ object Button {
       "icon"      -> p.icon.isDefined,
       "basic"     -> p.basic,
       "inverted"  -> p.inverted,
-      "circular"  -> p.circular
+      "circular"  -> p.circular,
+      "labeled"   -> p.labeled
     )
 
   def component = ReactComponentB[Props]("Button")

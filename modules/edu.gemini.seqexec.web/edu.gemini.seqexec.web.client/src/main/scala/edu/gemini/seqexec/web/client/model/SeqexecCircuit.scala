@@ -161,6 +161,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
   val wsLogHandler           = new WebSocketEventsHandler(zoomRW(_.webSocketLog)((m, v) => m.copy(webSocketLog = v)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -169,5 +170,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     searchAreaHandler,
     devConsoleHandler,
     wsLogHandler,
-    sequenceDisplayHandler)
+    sequenceDisplayHandler,
+    sequenceExecHandler)
 }

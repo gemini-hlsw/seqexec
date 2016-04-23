@@ -24,7 +24,7 @@ object SequenceStepsTableContainer {
         ^.cls := "ui raised secondary segment",
         <.div(
           ^.cls := "row",
-          Button(Button.Props(icon = Some(IconPlay), onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
+          Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
           Button("Pause")
         ),
         <.div(
