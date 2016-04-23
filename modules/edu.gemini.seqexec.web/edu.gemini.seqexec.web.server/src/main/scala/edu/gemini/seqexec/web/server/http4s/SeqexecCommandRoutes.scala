@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import edu.gemini.seqexec.server.Commands
-import edu.gemini.seqexec.web.server.model.CommandsConversions._
+import edu.gemini.seqexec.web.server.model.CommandsModel._
 import org.http4s._
 import org.http4s.dsl._
 import upickle.default._

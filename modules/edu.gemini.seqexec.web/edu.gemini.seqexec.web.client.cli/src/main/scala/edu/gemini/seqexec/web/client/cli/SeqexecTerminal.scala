@@ -92,13 +92,16 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
+  def bold(s: String):String = s"[[b;;]$s]"
+  def italic(s: String):String = s"[[ig;;]$s]"
+
   // Maps the command text and amount of args required to command handler
   val commands: List[Command] = List(
-    Command("host", 0, HostHandler, List("[[b;;]host]: Returns the odb host used by the seqexec")),
-    Command("host", 1, SetHostHandler, List("[[b;;]host] [[b;;]host:port]: Sets the odb host:port used by the seqexec")),
-    Command("run", 1, RunHandler, List("[[b;;]run] [[ig;;]obsId]: Runs obs id")),
-    Command("show", 2, ShowHandler, List("[[b;;]show] [[ig;;]obsId count]: Show obs id steps count", "[[b;;]show] [[ig;;]obsId static]: Runs obs id")),
-    Command("show", 3, ShowHandler, List("[[b;;]show] [[ig;;]obsId static|dynamic] subsystem: Runs obs id"))
+    Command("host", 0, HostHandler, List(s"${bold("host")}: Returns the odb host used by the seqexec")),
+    Command("host", 1, SetHostHandler, List(s"${bold("host")} ${bold("host:port")}: Sets the odb host:port used by the seqexec")),
+    Command("run", 1, RunHandler, List(s"${bold("run")} ${italic("obsId")}: Runs obs id")),
+    Command("show", 2, ShowHandler, List(s"${bold("show")} ${italic("obsId count")}: Show obs id steps count", s"${bold("show")} ${italic("obsId static")}: Show static configuration for obs id")),
+    Command("show", 3, ShowHandler, List(s"${bold("show")} ${italic("obsId static subsystem")}: : Runs static configuration for subsystem"))
   )
 
   // Used for tab completion
