@@ -26,6 +26,12 @@ case class SeqexecQueue(queue: List[Sequence]) {
       case s @ Sequence(i, _, _, _, _) if i === id => s.copy(state = SequenceState.Running)
       case s                                       => s
     })
+
+  // Update the sequence as done if found
+  def markAsCompleted(id: String): SeqexecQueue = copy(queue.collect {
+      case s @ Sequence(i, _, _, _, _) if i === id => s.copy(state = SequenceState.Completed)
+      case s                                       => s
+    })
 }
 
 object Instrument {
