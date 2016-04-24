@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Pot, PotAction}
+import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
@@ -102,7 +102,8 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case SelectToDisplay(s) =>
-      updated(value.sequenceForInstrument(s))
+      val ref = SeqexecCircuit.sequenceRef(s.id)
+      updated(value.sequenceForInstrument(ref))
   }
 }
 
@@ -178,6 +179,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
+
+  def sequenceRef(id: String):RefTo[Pot[Sequence]] = {
+    val u = zoom(_.queue.flatMap(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s))))
+    RefTo(u)
+  }
 
   override protected def actionHandler = composeHandlers(queueHandler,
     searchHandler,

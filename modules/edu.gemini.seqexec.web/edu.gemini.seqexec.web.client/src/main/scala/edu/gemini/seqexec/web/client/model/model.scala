@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot, PotAction}
+import diode.RootModelR
+import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.SeqexecEvent
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
 import org.scalajs.dom.WebSocket
@@ -55,17 +56,17 @@ sealed trait SectionVisibilityState
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
-case class SequenceTab(instrument: Instrument.Instrument, sequence: Option[Sequence])
+case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Sequence]])
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-  def select(s: Sequence):SequencesOnDisplay =
+  //def select(s: Sequence):SequencesOnDisplay =
     // Focus on the given sequence if it exists, otherwise ignore it
-    copy(instrumentSequences.findZor(_.sequence.exists(_ == s), instrumentSequences))
+    //copy(instrumentSequences.findZor(_.sequence.exists(_ == s), instrumentSequences))
 
-  def sequenceForInstrument(s: Sequence):SequencesOnDisplay = {
+  def sequenceForInstrument(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
-    val q = instrumentSequences.findZ(_.instrument === s.instrument).map(_.modify(_.copy(sequence = s.some)))
+    val q = instrumentSequences.findZ(i => s().exists(_.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
     copy(q | instrumentSequences)
   }
 }
@@ -77,7 +78,9 @@ case class WebSocketsLog(log: List[SeqexecEvent]) {
 }
 
 object SequencesOnDisplay {
-  val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, None)).toZipper)
+  val emptySeqRef:RefTo[Pot[Sequence]] = RefTo(new RootModelR[Pot[Sequence]](Empty))
+
+  val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, emptySeqRef)).toZipper)
 }
 
 /**

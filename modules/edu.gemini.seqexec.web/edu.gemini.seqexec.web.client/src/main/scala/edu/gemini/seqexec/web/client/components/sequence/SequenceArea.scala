@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
+import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model.{RequestRun, SeqexecCircuit, SequenceTab, SequencesOnDisplay}
@@ -88,7 +89,8 @@ object SequenceTabContent {
               ),
               <.div(
                 ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                p.st.sequence.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): ReactElement)(SequenceStepsTableContainer(_))
+                p.st.sequence().render(SequenceStepsTableContainer(_)),
+                p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
               )
             ),
             <.div(
