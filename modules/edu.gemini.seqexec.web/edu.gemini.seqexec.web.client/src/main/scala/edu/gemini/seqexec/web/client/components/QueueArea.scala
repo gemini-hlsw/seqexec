@@ -5,6 +5,7 @@ import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconChevronLeft, IconChevronRight}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -12,7 +13,9 @@ import japgolly.scalajs.react._
 
 import scalacss.ScalaCssReact._
 
-import edu.gemini.seqexec.web.client.services.HtmlConstants.nbsp
+import scalaz.syntax.show._
+
+import edu.gemini.seqexec.web.client.services.HtmlConstants.{nbsp, iconEmpty}
 
 object QueueTableBody {
   case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
@@ -23,6 +26,7 @@ object QueueTableBody {
   def emptyRow(k: String) = {
     <.tr(
       ^.key := k, // React requires unique keys
+      <.td(iconEmpty),
       <.td(nbsp),
       <.td(nbsp),
       <.td(nbsp),
@@ -57,9 +61,18 @@ object QueueTableBody {
                 ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
+                  s.state match {
+                    case SequenceState.Completed => IconCheckmark
+                    case SequenceState.Running   => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                    case SequenceState.Error     => IconAttention
+                    case _                       => iconEmpty
+                  }
+                ),
+                <.td(
+                  ^.cls := "collapsing",
                   s.id
                 ),
-                <.td(s.state.toString),
+                <.td(s.state.shows),
                 <.td(s.instrument),
                 <.td(
                   SeqexecStyles.notInMobile,
@@ -135,7 +148,8 @@ object QueueTableSection {
           ^.cls := "ui selectable compact celled table unstackable",
           <.thead(
             <.tr(
-              <.th("Obs ID "),
+              <.th(iconEmpty),
+              <.th("Obs ID"),
               <.th("State"),
               <.th("Instrument"),
               <.th(
@@ -148,7 +162,7 @@ object QueueTableSection {
           <.tfoot(
             <.tr(
               <.th(
-                ^.colSpan := "4",
+                ^.colSpan := "5",
                 <.div(
                   ^.cls := "ui right floated pagination menu",
                   <.a(

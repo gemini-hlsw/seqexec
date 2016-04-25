@@ -16,15 +16,19 @@ object StepState {
   case object Done    extends StepState
   case object Error   extends StepState
   case object Paused  extends StepState
+
+  implicit val show = Show.shows[StepState] {
+    case Running    => "Running"
+    case NotDone    => "Pending"
+    case Done       => "Done"
+    case Error      => "Error"
+    case Paused     => "Pause"
+  }
+
 }
 
 case class Step(id: Int, state: StepState, config: List[StepConfig], file: Option[String])
-case class SequenceSteps(steps: List[Step]) {
-  def completeStep(i: Int, file: String): SequenceSteps = copy(steps.collect {
-    case s @ Step(sid, _, c, _) if sid === i => s.copy(state = StepState.Done, file = Some(file))
-    case s                                   => s
-  })
-}
+case class SequenceSteps(steps: List[Step])
 
 sealed trait SequenceState
 
@@ -33,6 +37,13 @@ object SequenceState {
   case object Running    extends SequenceState
   case object Error      extends SequenceState
   case object Completed  extends SequenceState
+
+  implicit val show = Show.shows[SequenceState] {
+    case Running    => "Running"
+    case NotRunning => "Inactive"
+    case Error      => "Error"
+    case Completed  => "Done"
+  }
 }
 
 case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[Int])

@@ -15,6 +15,8 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 
+import scalaz.syntax.show._
+
 /**
   * Container for a table with the steps
   */
@@ -81,7 +83,7 @@ object SequenceStepsTableContainer {
                     }
                   ),
                   <.td(s.id + 1),
-                  <.td(s.state.toString),
+                  <.td(s.state.shows),
                   <.td(s.file.getOrElse(""): String),
                   <.td(
                     ^.cls := "collapsing right aligned",
