@@ -72,7 +72,7 @@ object QueueTableBody {
                   ^.cls := "collapsing",
                   s.id
                 ),
-                <.td(s.state.shows),
+                <.td(s.state.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")),
                 <.td(s.instrument),
                 <.td(
                   SeqexecStyles.notInMobile,

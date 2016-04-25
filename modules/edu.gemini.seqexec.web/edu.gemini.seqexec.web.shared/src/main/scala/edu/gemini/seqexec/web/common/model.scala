@@ -28,7 +28,9 @@ object StepState {
 }
 
 case class Step(id: Int, state: StepState, config: List[StepConfig], file: Option[String])
-case class SequenceSteps(steps: List[Step])
+case class SequenceSteps(steps: List[Step]) {
+  def progress: (Int, Int) = (steps.count(_.state == StepState.Done), steps.length)
+}
 
 sealed trait SequenceState
 
@@ -46,13 +48,20 @@ object SequenceState {
   }
 }
 
-case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[Int])
+case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[Int]) {
+  // Returns where on the sequence the execution is at
+  def runningStep: Option[(Int, Int)] = state match {
+    case SequenceState.Running    => Some(steps.progress)
+    case SequenceState.Error      => Some(steps.progress)
+    case _                        => None
+  }
+}
 
 object Sequence {
-  val stepsLens: Sequence @> SequenceSteps = Lens.lensu((a, b) => a.copy(steps = b), _.steps)
+  val stepsLens: Sequence @> SequenceSteps  = Lens.lensu((a, b) => a.copy(steps = b), _.steps)
   val stepsListLens: Sequence @> List[Step] = stepsLens >=> Lens.lensu((a, b) => a.copy(steps = b), _.steps)
 
-  def step(i: Int): Sequence @?> Step = stepsListLens.partial >=> PLens.listNthPLens[Step](i)
+  def step(i: Int): Sequence @?> Step       = stepsListLens.partial >=> PLens.listNthPLens[Step](i)
 }
 
 case class SeqexecQueue(queue: List[Sequence]) {
