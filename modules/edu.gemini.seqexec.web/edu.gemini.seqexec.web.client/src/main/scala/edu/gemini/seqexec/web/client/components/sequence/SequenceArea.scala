@@ -18,6 +18,10 @@ import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
 object SequenceStepsTableContainer {
   case class Props(s: Sequence)
 
+  def requestRun(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
+
+  def requestPause(s: Sequence): Callback = Callback.log("Request pause")
+
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
     .render_P(p =>
@@ -25,8 +29,8 @@ object SequenceStepsTableContainer {
         ^.cls := "ui raised secondary segment",
         <.div(
           ^.cls := "row",
-          p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
-          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true), "Pause")
+          p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
+          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, onClick = requestPause(p.s)), "Pause")
         ),
         <.div(
           ^.cls := "ui divider"

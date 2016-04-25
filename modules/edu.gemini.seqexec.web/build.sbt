@@ -1,3 +1,4 @@
+import Settings._
 import Settings.Libraries._
 
 name := "edu.gemini.seqexec.web"
