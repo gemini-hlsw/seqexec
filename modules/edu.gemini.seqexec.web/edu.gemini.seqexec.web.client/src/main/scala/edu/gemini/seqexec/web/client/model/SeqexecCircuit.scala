@@ -6,7 +6,7 @@ import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{SeqexecEvent, SequenceCompletedEvent, SequenceStartEvent, StepExecutedEvent}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
-import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
 import upickle.default._
@@ -126,7 +126,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
       // Different events may update the state of the queue
       val updatedQueue = event match {
         case SequenceStartEvent(id)         => value._1.map(_.markAsRunning(id))
-        case SequenceCompletedEvent(id)     => value._1.map(_.markAsCompleted(id))
+        case SequenceCompletedEvent(id)     =>
+          new Audio("/sequencecomplete.mp3").play()
+          value._1.map(_.markAsCompleted(id))
         case StepExecutedEvent(id, c, _, f) => value._1.map(_.markStepAsCompleted(id, c, f))
         case _                              => value._1
       }
