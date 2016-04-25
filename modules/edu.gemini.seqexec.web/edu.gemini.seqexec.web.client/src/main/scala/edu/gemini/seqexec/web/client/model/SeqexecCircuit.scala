@@ -180,10 +180,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
-  def sequenceRef(id: String):RefTo[Pot[Sequence]] = {
-    val u = zoom(_.queue.flatMap(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s))))
-    RefTo(u)
-  }
+  def sequenceRef(id: String):RefTo[Pot[Sequence]] =
+    RefTo(zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s))))
 
   override protected def actionHandler = composeHandlers(queueHandler,
     searchHandler,
