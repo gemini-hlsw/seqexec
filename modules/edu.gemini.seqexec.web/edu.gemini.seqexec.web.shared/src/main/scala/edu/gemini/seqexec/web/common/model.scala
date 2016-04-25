@@ -48,9 +48,9 @@ case class SeqexecQueue(queue: List[Sequence]) {
   // Modify step i's state using a lens
   private def markStep(s: Sequence,i: Int, state: StepState):Sequence = Sequence.step(i).mod(_.copy(state = state), s)
 
-  def markStepRunning(s: Sequence,i: Int) = markStep(s, i, StepState.Running)
+  def markStepRunning(s: Sequence, i: Int) = markStep(s, i, StepState.Running)
   // Modify step i marking it as running using a lens
-  def markStepDone(s: Sequence,i: Int) = markStep(s, i, StepState.Done)
+  def markStepDone(s: Sequence, i: Int, fileId: String) = Sequence.step(i).mod(_.copy(file = fileId.some), markStep(s, i, StepState.Done))
 
   // Update the sequence if found
   def markAsRunning(id: String): SeqexecQueue = copy(queue.collect {
@@ -66,7 +66,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
 
   // Update a step of a sequence
   def markStepAsCompleted(id: String, step: Int, fileId: String): SeqexecQueue = copy(queue.collect {
-      case s @ Sequence(i, _, _, _, _) if i === id => markStepRunning(markStepDone(s, step - 1), step)
+      case s @ Sequence(i, _, _, _, _) if i === id => markStepRunning(markStepDone(s, step - 1, fileId), step)
       case s                                       => s
     })
 }

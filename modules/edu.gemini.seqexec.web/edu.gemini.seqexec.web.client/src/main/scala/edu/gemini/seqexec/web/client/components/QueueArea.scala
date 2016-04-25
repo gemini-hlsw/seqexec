@@ -49,7 +49,8 @@ object QueueTableBody {
             case (Some(s), i) =>
               <.tr(
                 ^.classSet(
-                  "positive" -> (s.state == SequenceState.Running),
+                  "positive" -> (s.state == SequenceState.Completed),
+                  "warning"  -> (s.state == SequenceState.Running),
                   "negative" -> (s.state == SequenceState.Error)
                 ),
                 ^.key := s"item.queue.$i",
