@@ -15,6 +15,7 @@ object StepState {
   case object Running extends StepState
   case object Done    extends StepState
   case object Error   extends StepState
+  case object Abort   extends StepState
   case object Paused  extends StepState
 
   implicit val show = Show.shows[StepState] {
@@ -22,6 +23,7 @@ object StepState {
     case NotDone    => "Pending"
     case Done       => "Done"
     case Error      => "Error"
+    case Abort      => "Aborted"
     case Paused     => "Pause"
   }
 
@@ -30,6 +32,13 @@ object StepState {
 case class Step(id: Int, state: StepState, config: List[StepConfig], file: Option[String])
 case class SequenceSteps(steps: List[Step]) {
   def progress: (Int, Int) = (steps.count(_.state == StepState.Done), steps.length)
+  def stopAtNext: SequenceSteps = {
+    val done = steps.count(_.state == StepState.Done) + 1
+    copy(steps.collect {
+      case s @ Step(i, _, _, _) if i === done => s.copy(state = StepState.Abort)
+      case s                                  => s
+    })
+  }
 }
 
 sealed trait SequenceState
@@ -37,6 +46,7 @@ sealed trait SequenceState
 object SequenceState {
   case object NotRunning extends SequenceState
   case object Running    extends SequenceState
+  case object Abort      extends SequenceState
   case object Error      extends SequenceState
   case object Completed  extends SequenceState
 
@@ -44,11 +54,18 @@ object SequenceState {
     case Running    => "Running"
     case NotRunning => "Inactive"
     case Error      => "Error"
+    case Abort      => "Aborted"
     case Completed  => "Done"
   }
 }
 
-case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[Int]) {
+case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[String]) {
+
+  def stopAtCurrentStep: Sequence = state match {
+    case SequenceState.Running => this.copy(state = SequenceState.Abort, error = "Sequence aborted".some, steps = steps.stopAtNext)
+    case _                     => this
+  }
+
   // Returns where on the sequence the execution is at
   def runningStep: Option[(Int, Int)] = state match {
     case SequenceState.Running    => Some(steps.progress)
@@ -72,6 +89,11 @@ case class SeqexecQueue(queue: List[Sequence]) {
   // Modify step i marking it as running using a lens
   def markStepDone(s: Sequence, i: Int, fileId: String) = Sequence.step(i).mod(_.copy(file = fileId.some), markStep(s, i, StepState.Done))
 
+  def stopSequence(id: String): SeqexecQueue = copy(queue.collect {
+      case s @ Sequence(i, _, _, _, _) if i === id => s.stopAtCurrentStep
+      case s                                       => s
+    })
+
   // Update the sequence if found
   def markAsRunning(id: String): SeqexecQueue = copy(queue.collect {
       case s @ Sequence(i, _, _, _, _) if i === id => markStepRunning(s, 0).copy(state = SequenceState.Running)
@@ -86,7 +108,10 @@ case class SeqexecQueue(queue: List[Sequence]) {
 
   // Update a step of a sequence
   def markStepAsCompleted(id: String, step: Int, fileId: String): SeqexecQueue = copy(queue.collect {
-      case s @ Sequence(i, _, _, _, _) if i === id => markStepRunning(markStepDone(s, step - 1, fileId), step)
+      case s @ Sequence(i, _, _, _, _) if i === id => Sequence.step(step).get(s) match {
+        case Some(Step(_, StepState.Abort, _ ,_)) => markStepDone(s, step - 1, fileId)
+        case _                                    => markStepRunning(markStepDone(s, step - 1, fileId), step)
+      }
       case s                                       => s
     })
 }

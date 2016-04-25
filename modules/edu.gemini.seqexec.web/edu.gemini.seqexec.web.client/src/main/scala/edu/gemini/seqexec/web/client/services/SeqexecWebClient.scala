@@ -27,9 +27,21 @@ object SeqexecWebClient {
       url = s"$baseUrl/current/queue"
     ).map(s => default.read[SeqexecQueue](s.responseText))
 
+  /**
+    * Requests the backend to execute a sequence
+    */
   def run(s: Sequence): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/${s.id}/run"
+    ).map(s => default.read[RegularCommand](s.responseText))
+  }
+
+  /**
+    * Requests the backend to stop a sequence
+    */
+  def stop(s: Sequence): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/${s.id}/stop"
     ).map(s => default.read[RegularCommand](s.responseText))
   }
 }

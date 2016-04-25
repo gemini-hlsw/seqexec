@@ -46,8 +46,11 @@ case class ConnectionError(s: String)
 
 // Actions related to executing sequences
 case class RequestRun(s: Sequence)
+case class RequestStop(s: Sequence)
 case class RunStarted(s: Sequence)
+case class RunStopped(s: Sequence)
 case class RunStartFailed(s: Sequence)
+case class RunStopFailed(s: Sequence)
 
 // End Actions
 

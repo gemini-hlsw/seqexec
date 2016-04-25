@@ -58,10 +58,17 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
   override def handle = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
+    case RequestStop(s) =>
+      effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunStopFailed(s) else RunStopped(s))))
+    // We could react to these events but we rather wait for the command from the event queue
     case RunStarted(s) =>
-      // We could react to this change but we rather wait for the command from the event queue
       noChange
     case RunStartFailed(s) =>
+      noChange
+    case RunStopped(s) =>
+      // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
+      updated(value.map(_.stopSequence(s.id)))
+    case RunStopFailed(s) =>
       noChange
   }
 }

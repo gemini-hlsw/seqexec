@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
-import edu.gemini.seqexec.web.client.model.{RequestRun, SeqexecCircuit, SequenceTab, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
@@ -27,7 +27,7 @@ object SequenceStepsTableContainer {
 
   def requestPause(s: Sequence): Callback = Callback.log("Request pause")
 
-  def requestStop(s: Sequence): Callback = Callback.log("Request pause")
+  def requestStop(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestStop(s))}
 
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
