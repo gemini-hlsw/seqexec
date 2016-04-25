@@ -6,7 +6,7 @@ import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model.{RequestRun, SeqexecCircuit, SequenceTab, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPlay}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPlay, IconPause}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -26,7 +26,7 @@ object SequenceStepsTableContainer {
         <.div(
           ^.cls := "row",
           p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
-          p.s.state == SequenceState.Running ?= Button("Pause")
+          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true), "Pause")
         ),
         <.div(
           ^.cls := "ui divider"
@@ -46,7 +46,7 @@ object SequenceStepsTableContainer {
               p.s.steps.steps.map( s =>
                 <.tr(
                   <.td(s.id + 1),
-                  <.td("Not Done"),
+                  <.td(s.state.toString),
                   <.td(
                     ^.cls := "collapsing right aligned",
                     IconCaretRight

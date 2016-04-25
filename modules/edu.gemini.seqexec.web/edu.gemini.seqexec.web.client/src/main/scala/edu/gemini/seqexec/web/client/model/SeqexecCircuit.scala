@@ -4,7 +4,7 @@ import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
-import edu.gemini.seqexec.model.{SeqexecEvent, SequenceCompletedEvent, SequenceStartEvent}
+import edu.gemini.seqexec.model.{SeqexecEvent, SequenceCompletedEvent, SequenceStartEvent, StepExecutedEvent}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
@@ -118,9 +118,10 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
       val event = read[SeqexecEvent](s)
       // Different events may update the state of the queue
       val updatedQueue = event match {
-        case SequenceStartEvent(id)     => value._1.map(_.markAsRunning(id))
-        case SequenceCompletedEvent(id) => value._1.map(_.markAsCompleted(id))
-        case _                          => value._1
+        case SequenceStartEvent(id)         => value._1.map(_.markAsRunning(id))
+        case SequenceCompletedEvent(id)     => value._1.map(_.markAsCompleted(id))
+        case StepExecutedEvent(id, c, _, f) => value._1.map(_.markStepAsCompleted(id, c, f))
+        case _                              => value._1
       }
       updated(value.copy(_1 = updatedQueue, _2 = value._2.append(event)))
   }

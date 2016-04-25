@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.server.model
 
-import edu.gemini.seqexec.web.common.{SequenceSteps, Step, StepConfig}
+import edu.gemini.seqexec.web.common.{SequenceSteps, Step, StepConfig, StepState}
 import edu.gemini.spModel.config2.ConfigSequence
 
 /**
@@ -14,7 +14,7 @@ object Conversions {
         i <- 0 until config.size()
       } yield {
         val s = config.getStep(i)
-        Step(i, s.itemEntries().toList.map(e => StepConfig(e.getKey.getPath, e.getItemValue.toString)))
+        Step(i, StepState.NotDone, s.itemEntries().toList.map(e => StepConfig(e.getKey.getPath, e.getItemValue.toString)), None)
       }
       SequenceSteps(u.toList)
     }
