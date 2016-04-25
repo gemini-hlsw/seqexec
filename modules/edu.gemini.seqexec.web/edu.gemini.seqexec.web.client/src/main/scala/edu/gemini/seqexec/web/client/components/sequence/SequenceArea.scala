@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPlay}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
-import edu.gemini.seqexec.web.common.Sequence
+import edu.gemini.seqexec.web.common.{Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
 
@@ -25,8 +25,8 @@ object SequenceStepsTableContainer {
         ^.cls := "ui raised secondary segment",
         <.div(
           ^.cls := "row",
-          Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
-          Button("Pause")
+          p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = Callback {SeqexecCircuit.dispatch(RequestRun(p.s))}), "Run"),
+          p.s.state == SequenceState.Running ?= Button("Pause")
         ),
         <.div(
           ^.cls := "ui divider"
@@ -89,7 +89,7 @@ object SequenceTabContent {
               ),
               <.div(
                 ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                p.st.sequence().render(SequenceStepsTableContainer(_)),
+                p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(SequenceStepsTableContainer(_)).getOrElse(<.div(): ReactElement))),
                 p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
               )
             ),
