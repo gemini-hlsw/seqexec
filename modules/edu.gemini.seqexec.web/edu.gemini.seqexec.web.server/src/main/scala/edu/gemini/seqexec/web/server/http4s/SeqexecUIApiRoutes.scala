@@ -22,6 +22,18 @@ import scalaz.stream.Exchange
   */
 object SeqexecUIApiRoutes {
 
+  /**
+    * Creates a process that sends a ping every second to keep the connection alive
+    */
+  def pingProcess = {
+    import scalaz.stream.DefaultScheduler
+    import scalaz.stream.time.awakeEvery
+    import scalaz.concurrent.Strategy
+    import scala.concurrent.duration._
+
+    awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map{ d => Ping() }
+  }
+
   val service = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
@@ -36,7 +48,7 @@ object SeqexecUIApiRoutes {
         case -\/(e)      => NotFound(SeqexecFailure.explain(e))
       }
     case GET -> Root / "seqexec" / "events" =>
-      // Stream seqexec events to clients
-      WS(Exchange(ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
+      // Stream seqexec events to clients and a ping
+      WS(Exchange(pingProcess merge ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
   }
 }
