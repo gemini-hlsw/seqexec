@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -27,6 +27,8 @@ object SequenceStepsTableContainer {
 
   def requestPause(s: Sequence): Callback = Callback.log("Request pause")
 
+  def requestStop(s: Sequence): Callback = Callback.log("Request pause")
+
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
     .render_P(p =>
@@ -35,7 +37,8 @@ object SequenceStepsTableContainer {
         <.div(
           ^.cls := "row",
           p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
-          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, onClick = requestPause(p.s)), "Pause")
+          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
+          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
         ),
         Divider(),
         <.div(
