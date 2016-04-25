@@ -12,6 +12,8 @@ import japgolly.scalajs.react._
 
 import scalacss.ScalaCssReact._
 
+import edu.gemini.seqexec.web.client.services.HtmlConstants.nbsp
+
 object QueueTableBody {
   case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
 
@@ -19,8 +21,6 @@ object QueueTableBody {
   val minRows = 5
 
   def emptyRow(k: String) = {
-    val nbsp = "\u00a0"
-
     <.tr(
       ^.key := k, // React requires unique keys
       <.td(nbsp),

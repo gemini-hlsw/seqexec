@@ -6,11 +6,14 @@ import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model.{RequestRun, SeqexecCircuit, SequenceTab, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
+import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 
 /**
   * Container for a table with the steps
@@ -32,9 +35,7 @@ object SequenceStepsTableContainer {
           p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
           p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, onClick = requestPause(p.s)), "Pause")
         ),
-        <.div(
-          ^.cls := "ui divider"
-        ),
+        Divider(),
         <.div(
           ^.cls := "row",
           <.table(
@@ -43,11 +44,24 @@ object SequenceStepsTableContainer {
               <.tr(
                 <.th(
                   ^.cls := "collapsing",
+                  iconEmpty
+                ),
+                <.th(
+                  ^.cls := "collapsing",
                   "Step"
                 ),
-                <.th("State"),
-                <.th("File"),
-                <.th("Config")
+                <.th(
+                  ^.cls := "six wide",
+                  "State"
+                ),
+                <.th(
+                  ^.cls := "ten wide",
+                  "File"
+                ),
+                <.th(
+                  ^.cls := "collapsing",
+                  "Config"
+                )
               )
             ),
             <.tbody(
@@ -57,6 +71,14 @@ object SequenceStepsTableContainer {
                     "positive" -> (s.state == StepState.Done),
                     "warning"  -> (s.state == StepState.Running),
                     "negative" -> (s.state == StepState.Error)
+                  ),
+                  <.td(
+                    s.state match {
+                      case StepState.Done    => IconCheckmark
+                      case StepState.Running => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                      case StepState.Error   => IconAttention
+                      case _                 => iconEmpty
+                    }
                   ),
                   <.td(s.id + 1),
                   <.td(s.state.toString),
