@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot, PotAction}
+import diode.data.{Pot, PotAction}
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
@@ -19,7 +19,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case action: UpdatedQueue =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
@@ -37,7 +37,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
 class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case action: SearchSequence =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
@@ -53,7 +53,7 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case OpenSearchArea  =>
       updated(SectionOpen)
     case CloseSearchArea =>
@@ -67,7 +67,7 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
 class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case ToggleDevConsole if value == SectionOpen   =>
       updated(SectionClosed)
     case ToggleDevConsole if value == SectionClosed =>
@@ -81,7 +81,7 @@ class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case SelectToDisplay(s) =>
       updated(value.sequenceForInstrument(s))
   }
@@ -93,7 +93,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsLog]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case NewMessage(s)    =>
       updated(value.append(s))
   }

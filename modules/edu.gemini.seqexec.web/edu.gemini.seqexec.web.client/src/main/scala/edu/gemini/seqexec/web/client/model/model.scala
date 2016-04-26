@@ -70,7 +70,7 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
 case class WebSocketsLog(log: List[SeqexecEvent]) {
   // Upper bound of accepted events or we may run out of memory
   val maxLength = 100
-  def append(s: String):WebSocketsLog = copy((log :+ read[SeqexecEvent](s)).take(maxLength))
+  def append(s: String):WebSocketsLog = copy((log :+ read[SeqexecEvent](s)).take(maxLength - 1))
 }
 
 object SequencesOnDisplay {
