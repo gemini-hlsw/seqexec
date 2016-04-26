@@ -7,15 +7,12 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconChevronLeft, IconChevronRight}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
+import edu.gemini.seqexec.web.client.services.HtmlConstants.{nbsp, iconEmpty}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
-
 import scalacss.ScalaCssReact._
-
 import scalaz.syntax.show._
-
-import edu.gemini.seqexec.web.client.services.HtmlConstants.{nbsp, iconEmpty}
 
 object QueueTableBody {
   case class Props(queue: ModelProxy[Pot[SeqexecQueue]])

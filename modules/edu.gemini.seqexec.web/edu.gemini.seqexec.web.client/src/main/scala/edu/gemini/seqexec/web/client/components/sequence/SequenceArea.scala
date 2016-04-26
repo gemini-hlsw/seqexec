@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ReactPot._
-import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
+import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
@@ -11,10 +11,10 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRig
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
+import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
-import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
-
+import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
 /**
@@ -121,34 +121,13 @@ object SequenceTabContent {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui bottom attached active tab segment",
+        ^.cls := "ui bottom attached tab segment",
         ^.classSet(
           "active" -> p.isActive
         ),
         dataTab := p.st.instrument,
-        p.isActive ?=
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "row",
-              <.div(
-                ^.cls := "four wide column tablet computer only",
-                HeadersSideBar()
-              ),
-              <.div(
-                ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(SequenceStepsTableContainer(_)).getOrElse(<.div(): ReactElement))),
-                p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
-              )
-            ),
-            <.div(
-              ^.cls := "row computer only",
-              <.div(
-                ^.cls := "sixteen wide column",
-                SeqexecCircuit.connect(_.globalLog)(LogArea(_))
-              )
-            )
-        )
+        p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(SequenceStepsTableContainer(_)).getOrElse(<.div(): ReactElement))),
+        p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
     )
     .build
@@ -170,8 +149,29 @@ object SequenceTabs {
     .render_P( p =>
       <.div(
         ^.cls := "ui bottom attached segment",
-        TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-        tabContents(p.sequences).map(SequenceTabContent(_))
+        <.div(
+          ^.cls := "ui two column vertically divided grid",
+          <.div(
+            ^.cls := "row",
+            SeqexecStyles.rowNoPadding,
+            <.div(
+              ^.cls := "four wide column tablet computer only",
+              HeadersSideBar()
+            ),
+            <.div(
+              ^.cls := "twelve wide computer twelve wide tablet sixteen column",
+              TabularMenu(sequencesTabs(p.sequences).toStream.toList),
+              tabContents(p.sequences).map(SequenceTabContent(_))
+            )
+          ),
+          <.div(
+            ^.cls := "row computer only",
+            <.div(
+              ^.cls := "sixteen wide column",
+              SeqexecCircuit.connect(_.globalLog)(LogArea(_))
+            )
+          )
+        )
       )
     )
     .build
