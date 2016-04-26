@@ -41,7 +41,7 @@ case class SelectToDisplay(s: Sequence)
 // Actions related to web sockets
 case object ConnectionOpened
 case object ConnectionClosed
-case class NewMessage(s: String)
+case class NewSeqexecEvent(e: SeqexecEvent)
 case class ConnectionError(s: String)
 
 // Actions related to executing sequences

@@ -13,6 +13,7 @@ import upickle.default._
 
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scalaz.{-\/, \/, \/-}
 
 // Action Handlers
 /**
@@ -121,18 +122,16 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
   implicit val runner = new RunAfterJS
 
   override def handle = {
-    case NewMessage(s) =>
-      val event = read[SeqexecEvent](s)
-      // Different events may update the state of the queue
-      val updatedQueue = event match {
-        case SequenceStartEvent(id)         => value._1.map(_.markAsRunning(id))
-        case SequenceCompletedEvent(id)     =>
-          new Audio("/sequencecomplete.mp3").play()
-          value._1.map(_.markAsCompleted(id))
-        case StepExecutedEvent(id, c, _, f) => value._1.map(_.markStepAsCompleted(id, c, f))
-        case _                              => value._1
-      }
-      updated(value.copy(_1 = updatedQueue, _2 = value._2.append(event)))
+    case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
+      updated(value.copy(_1 = value._1.map(_.markAsRunning(id)), _2 = value._2.append(event)))
+    case NewSeqexecEvent(event @ StepExecutedEvent(id, c, _, f)) =>
+      updated(value.copy(_1 = value._1.map(_.markStepAsCompleted(id, c, f)), _2 = value._2.append(event)))
+    case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
+      val audioEffect = Effect.action(new Audio("/sequencecomplete.mp3").play())
+      updated(value.copy(_1 = value._1.map(_.markAsCompleted(id)), _2 = value._2.append(event)), audioEffect)
+    case NewSeqexecEvent(s) =>
+      // Ignore unknown events
+      noChange
   }
 }
 
@@ -160,23 +159,31 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
     val host = document.location.host
 
-    def onopen(e: Event): Unit =
+    def onOpen(e: Event): Unit =
       dispatch(ConnectionOpened)
 
-    def onmessage(e: MessageEvent): Unit =
-      dispatch(NewMessage(e.data.toString))
+    def onMessage(e: MessageEvent): Unit = {
+      \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
+        case \/-(event) => dispatch(NewSeqexecEvent(event))
+        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
+      }
+    }
 
-    def onerror(e: ErrorEvent): Unit =
+    def onError(e: ErrorEvent): Unit = {
+      println("Error " + e)
       dispatch(ConnectionError(e.message))
+    }
 
-    def onclose(e: CloseEvent): Unit =
+    def onClose(e: CloseEvent): Unit = {
+      println("Close ")
       dispatch(ConnectionClosed)
+    }
 
     val ws = new WebSocket(s"ws://$host/api/seqexec/events")
-    ws.onopen = onopen _
-    ws.onmessage = onmessage _
-    ws.onerror = onerror _
-    ws.onclose = onclose _
+    ws.onopen = onOpen _
+    ws.onmessage = onMessage _
+    ws.onerror = onError _
+    ws.onclose = onClose _
     Some(ws)
   }
 
