@@ -1,12 +1,13 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Empty, Pot, PotAction}
+import diode.data.{Pot, PotAction}
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
+import org.scalajs.dom._
 
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -18,7 +19,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case action: UpdatedQueue =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
@@ -36,7 +37,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
 class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case action: SearchSequence =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
@@ -49,14 +50,28 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 /**
   * Handles actions related to the search area, used to open/close the area
   */
-class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionHandler(modelRW) {
+class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
-    case OpenSearchArea =>
-      updated(SearchAreaOpen)
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case OpenSearchArea  =>
+      updated(SectionOpen)
     case CloseSearchArea =>
-      updated(SearchAreaClosed)
+      updated(SectionClosed)
+  }
+}
+
+/**
+  * Handles actions related to the development console
+  */
+class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case ToggleDevConsole if value == SectionOpen   =>
+      updated(SectionClosed)
+    case ToggleDevConsole if value == SectionClosed =>
+      updated(SectionOpen)
   }
 }
 
@@ -66,9 +81,21 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SearchAreaState]) extends ActionH
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case SelectToDisplay(s) =>
       updated(value.sequenceForInstrument(s))
+  }
+}
+
+/**
+  * Handles actions related to the changing the selection of the displayed sequence
+  */
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsLog]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case NewMessage(s)    =>
+      updated(value.append(s))
   }
 }
 
@@ -90,12 +117,45 @@ object PotEq {
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
 
+  // TODO Make this into its own class and handle reconnections
+  val webSocket = {
+    import org.scalajs.dom.document
+
+    val host = document.location.host
+
+    def onopen(e: Event): Unit =
+      dispatch(ConnectionOpened)
+
+    def onmessage(e: MessageEvent): Unit =
+      dispatch(NewMessage(e.data.toString))
+
+    def onerror(e: ErrorEvent): Unit =
+      dispatch(ConnectionError(e.message))
+
+    def onclose(e: CloseEvent): Unit =
+      dispatch(ConnectionClosed)
+
+    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
+    ws.onopen = onopen _
+    ws.onmessage = onmessage _
+    ws.onerror = onerror _
+    ws.onclose = onclose _
+    Some(ws)
+  }
+
   val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
+  val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(_.webSocketLog)((m, v) => m.copy(webSocketLog = v)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
 
-  override protected def initialModel = SeqexecAppRootModel(Empty, SearchAreaOpen, Empty, SequencesOnDisplay.empty)
+  override protected def initialModel = SeqexecAppRootModel.initial
 
-  override protected def actionHandler = composeHandlers(queueHandler, searchHandler, searchAreaHandler, sequenceDisplayHandler)
+  override protected def actionHandler = composeHandlers(queueHandler,
+    searchHandler,
+    searchAreaHandler,
+    devConsoleHandler,
+    wsLogHandler,
+    sequenceDisplayHandler)
 }

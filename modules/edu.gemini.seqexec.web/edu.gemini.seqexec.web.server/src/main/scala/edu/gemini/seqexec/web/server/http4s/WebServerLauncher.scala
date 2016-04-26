@@ -7,6 +7,7 @@ object WebServerLauncher extends App {
   def launch(port: Int):Option[Server] = {
     try {
       Some(BlazeBuilder.bindHttp(port)
+        .withWebSockets(true)
         .mountService(StaticRoutes.service, "/")
         .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
         .mountService(SeqexecUIApiRoutes.service, "/api")

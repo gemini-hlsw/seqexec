@@ -1,10 +1,14 @@
 package edu.gemini.seqexec.web.client.model
 
 import diode.data.{Empty, Pot, PotAction}
+import edu.gemini.seqexec.model.SeqexecEvent
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
+import org.scalajs.dom.WebSocket
 
 import scalaz._
 import Scalaz._
+
+import upickle.default._
 
 // Actions
 
@@ -25,6 +29,9 @@ case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Emp
 case object OpenSearchArea
 case object CloseSearchArea
 
+// Actions to close and/open the dev console area
+case object ToggleDevConsole
+
 // Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
 // Action to remove a sequence from the search results
@@ -32,12 +39,18 @@ case class RemoveFromSearch(s: Sequence)
 // Action to select a sequence for display
 case class SelectToDisplay(s: Sequence)
 
+// Actions related to web sockets
+case object ConnectionOpened
+case object ConnectionClosed
+case class NewMessage(s: String)
+case class ConnectionError(s: String)
+
 // End Actions
 
 // UI model
-sealed trait SearchAreaState
-case object SearchAreaOpen extends SearchAreaState
-case object SearchAreaClosed extends SearchAreaState
+sealed trait SectionVisibilityState
+case object SectionOpen extends SectionVisibilityState
+case object SectionClosed extends SectionVisibilityState
 
 case class SequenceTab(instrument: Instrument.Instrument, sequence: Option[Sequence])
 
@@ -54,6 +67,12 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   }
 }
 
+case class WebSocketsLog(log: List[SeqexecEvent]) {
+  // Upper bound of accepted events or we may run out of memory
+  val maxLength = 100
+  def append(s: String):WebSocketsLog = copy((log :+ read[SeqexecEvent](s)).take(maxLength - 1))
+}
+
 object SequencesOnDisplay {
   val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, None)).toZipper)
 }
@@ -61,4 +80,13 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue], searchAreaState: SearchAreaState, searchResults: Pot[List[Sequence]], sequencesOnDisplay: SequencesOnDisplay)
+case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
+                               searchAreaState: SectionVisibilityState,
+                               devConsoleState: SectionVisibilityState,
+                               webSocketLog: WebSocketsLog,
+                               searchResults: Pot[List[Sequence]],
+                               sequencesOnDisplay: SequencesOnDisplay)
+
+object SeqexecAppRootModel {
+  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), Empty, SequencesOnDisplay.empty)
+}

@@ -57,7 +57,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
     buildInfoKeys := Seq(name, version),
     buildInfoPackage := "edu.gemini.seqexec.web.client"
   )
-  .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test")
+  .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test", edu_gemini_seqexec_model_JS)
 
 // This function allows triggered compilation to run only when scala files changes
 // It lets change static files freely
@@ -82,8 +82,8 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web
     // Lets the server read the jsdeps file
     (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client, Compile, packageJSDependencies)).value,
     // Support stopping the running server
-    mainClass in reStart := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
-    //mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
+    //mainClass in reStart := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
+    mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     // do a fastOptJS on reStart
     reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client, Compile)),
     // This settings makes reStart to rebuild if a scala.js file changes on the client
