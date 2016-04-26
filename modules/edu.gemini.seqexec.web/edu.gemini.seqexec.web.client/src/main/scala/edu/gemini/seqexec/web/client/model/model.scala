@@ -67,10 +67,6 @@ case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Se
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-  //def select(s: Sequence):SequencesOnDisplay =
-    // Focus on the given sequence if it exists, otherwise ignore it
-    //copy(instrumentSequences.findZor(_.sequence.exists(_ == s), instrumentSequences))
-
   def sequenceForInstrument(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
     val q = instrumentSequences.findZ(i => s().exists(_.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
@@ -111,5 +107,5 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(Empty, SectionOpen, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }
