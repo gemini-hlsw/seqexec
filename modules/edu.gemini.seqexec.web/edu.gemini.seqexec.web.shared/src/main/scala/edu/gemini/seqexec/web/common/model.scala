@@ -62,7 +62,7 @@ object SequenceState {
 case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[String]) {
 
   def stopAtCurrentStep: Sequence = state match {
-    case SequenceState.Running => this.copy(state = SequenceState.Abort, error = "Sequence aborted".some, steps = steps.stopAtNext)
+    case SequenceState.Running => this.copy(state = SequenceState.Abort, error = "Sequence aborting".some, steps = steps.stopAtNext)
     case _                     => this
   }
 
@@ -109,7 +109,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
   // Update a step of a sequence
   def markStepAsCompleted(id: String, step: Int, fileId: String): SeqexecQueue = copy(queue.collect {
       case s @ Sequence(i, _, _, _, _) if i === id => Sequence.step(step).get(s) match {
-        case Some(Step(_, StepState.Abort, _ ,_)) => markStepDone(s, step - 1, fileId)
+        case Some(Step(_, StepState.Abort, _ ,_)) => markStepDone(s, step - 1, fileId).copy(error = "Sequence aborted".some)
         case _                                    => markStepRunning(markStepDone(s, step - 1, fileId), step)
       }
       case s                                       => s

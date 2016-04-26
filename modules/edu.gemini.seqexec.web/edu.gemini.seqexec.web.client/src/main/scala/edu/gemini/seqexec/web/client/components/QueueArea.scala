@@ -55,17 +55,18 @@ object QueueTableBody {
                 ^.classSet(
                   "positive" -> (s.state == SequenceState.Completed),
                   "warning"  -> (s.state == SequenceState.Running),
-                  "negative" -> (s.state == SequenceState.Error)
+                  "negative" -> (s.state == SequenceState.Error),
+                  "negative" -> (s.state == SequenceState.Abort)
                 ),
                 ^.key := s"item.queue.$i",
                 ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
                   s.state match {
-                    case SequenceState.Completed => IconCheckmark
-                    case SequenceState.Running   => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                    case SequenceState.Error     => IconAttention
-                    case _                       => iconEmpty
+                    case SequenceState.Completed                   => IconCheckmark
+                    case SequenceState.Running                     => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                    case SequenceState.Error | SequenceState.Abort => IconAttention
+                    case _                                         => iconEmpty
                   }
                 ),
                 <.td(
@@ -76,7 +77,7 @@ object QueueTableBody {
                 <.td(s.instrument),
                 <.td(
                   SeqexecStyles.notInMobile,
-                  s.error.map(_ => <.p(IconAttention, " Error")).getOrElse(<.p("-"))
+                  s.error.map(e => <.p(IconAttention, s" $e")).getOrElse(<.p("-"))
                 )
               )
             case (_, i) =>

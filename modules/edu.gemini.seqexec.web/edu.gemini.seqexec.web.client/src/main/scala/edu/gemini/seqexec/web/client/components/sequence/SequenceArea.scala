@@ -36,7 +36,10 @@ object SequenceStepsTableContainer {
         ^.cls := "ui raised secondary segment",
         <.div(
           ^.cls := "row",
-          p.s.state != SequenceState.Running ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
+          p.s.state == SequenceState.Abort ?= <.h3(
+            ^.cls := "ui red header",
+            "Sequence aborted"),
+          p.s.state == SequenceState.NotRunning ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
           p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
           p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
         ),
