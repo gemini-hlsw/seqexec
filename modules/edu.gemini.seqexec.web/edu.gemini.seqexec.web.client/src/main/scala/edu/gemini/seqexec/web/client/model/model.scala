@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.client.model
 
+import java.time.LocalTime
+
 import diode.RootModelR
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.SeqexecEvent
@@ -52,6 +54,8 @@ case class RunStopped(s: Sequence)
 case class RunStartFailed(s: Sequence)
 case class RunStopFailed(s: Sequence)
 
+case class AppendToLog(s: String)
+
 // End Actions
 
 // UI model
@@ -77,7 +81,16 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
 case class WebSocketsLog(log: List[SeqexecEvent]) {
   // Upper bound of accepted events or we may run out of memory
   val maxLength = 100
-  def append(e: SeqexecEvent):WebSocketsLog = copy((log :+ e).take(maxLength))
+  def append(e: SeqexecEvent):WebSocketsLog = copy((log :+ e).take(maxLength - 1))
+}
+
+case class GlobalLogEntry(timestamp: LocalTime, s: String)
+
+case class GlobalLog(log: List[GlobalLogEntry]) {
+  // Upper bound of accepted events or we may run out of memory
+  val maxLength = 500
+  def append(e: String):GlobalLog =
+    copy((log :+ GlobalLogEntry(LocalTime.now(), e)).take(maxLength - 1))
 }
 
 object SequencesOnDisplay {
@@ -93,9 +106,10 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
+                               globalLog: GlobalLog,
                                searchResults: Pot[List[Sequence]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(Empty, SectionOpen, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

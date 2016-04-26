@@ -159,33 +159,7 @@ object QueueTableSection {
               )
             )
           ),
-          SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
-          <.tfoot(
-            <.tr(
-              <.th(
-                ^.colSpan := "5",
-                <.div(
-                  ^.cls := "ui right floated pagination menu",
-                  <.a(
-                    ^.cls := "icon item",
-                    IconChevronLeft
-                  ),
-                  <.a(
-                    ^.cls := "item", "1"),
-                  <.a(
-                    ^.cls := "item", "2"),
-                  <.a(
-                    ^.cls := "item", "3"),
-                  <.a(
-                    ^.cls := "item", "4"),
-                  <.a(
-                    ^.cls := "icon item",
-                    IconChevronRight
-                  )
-                )
-              )
-            )
-          )
+          SeqexecCircuit.connect(_.queue)(QueueTableBody(_))
         )
       )
     ).build

@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
 import upickle.default._
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalaz.{-\/, \/, \/-}
@@ -29,8 +30,9 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
     case AddToQueue(s) =>
       // Append to the current queue if not in the queue already
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} added to the queue")
       val u = value.map(u => u.copy((s :: u.queue.filter(_.id != s.id)).reverse))
-      updated(u)
+      updated(u, logE)
   }
 }
 
@@ -68,7 +70,8 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
       noChange
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
-      updated(value.map(_.stopSequence(s.id)))
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
+      updated(value.map(_.stopSequence(s.id)), logE)
     case RunStopFailed(s) =>
       noChange
   }
@@ -116,6 +119,18 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 }
 
 /**
+  * Handles updates to the log
+  */
+class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle = {
+    case AppendToLog(s) =>
+      updated(value.append(s))
+  }
+}
+
+/**
   * Handles actions related to the changing the selection of the displayed sequence
   */
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog)]) extends ActionHandler(modelRW) {
@@ -123,12 +138,18 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
 
   override def handle = {
     case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
-      updated(value.copy(_1 = value._1.map(_.markAsRunning(id)), _2 = value._2.append(event)))
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
+      updated(value.copy(_1 = value._1.map(_.markAsRunning(id)), _2 = value._2.append(event)), logE)
+
     case NewSeqexecEvent(event @ StepExecutedEvent(id, c, _, f)) =>
-      updated(value.copy(_1 = value._1.map(_.markStepAsCompleted(id, c, f)), _2 = value._2.append(event)))
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id, step $c completed")
+      updated(value.copy(_1 = value._1.map(_.markStepAsCompleted(id, c, f)), _2 = value._2.append(event)), logE)
+
     case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
       val audioEffect = Effect.action(new Audio("/sequencecomplete.mp3").play())
-      updated(value.copy(_1 = value._1.map(_.markAsCompleted(id)), _2 = value._2.append(event)), audioEffect)
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
+      updated(value.copy(_1 = value._1.map(_.markAsCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)
+
     case NewSeqexecEvent(s) =>
       // Ignore unknown events
       noChange
@@ -153,14 +174,21 @@ object PotEq {
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
 
-  // TODO Make this into its own class and handle reconnections
+  def appendToLogE(s: String) =
+    Effect(Future(AppendToLog(s)))
+
+  def appendToLog(s: String) =
+    dispatch(AppendToLog(s:String))
+
   val webSocket = {
     import org.scalajs.dom.document
 
     val host = document.location.host
 
-    def onOpen(e: Event): Unit =
+    def onOpen(e: Event): Unit = {
+      dispatch(AppendToLog("Connected"))
       dispatch(ConnectionOpened)
+    }
 
     def onMessage(e: MessageEvent): Unit = {
       \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
@@ -194,6 +222,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog))((m, v) => m.copy(queue = v._1, webSocketLog = v._2)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
+  val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -210,5 +239,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     devConsoleHandler,
     wsLogHandler,
     sequenceDisplayHandler,
+    globalLogHandler,
     sequenceExecHandler)
 }

@@ -39,6 +39,9 @@ object SequenceStepsTableContainer {
           p.s.state == SequenceState.Abort ?= <.h3(
             ^.cls := "ui red header",
             "Sequence aborted"),
+          p.s.state == SequenceState.Completed ?= <.h3(
+            ^.cls := "ui green header",
+            "Sequence completed"),
           p.s.state == SequenceState.NotRunning ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
           p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
           p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
@@ -78,7 +81,8 @@ object SequenceStepsTableContainer {
                   ^.classSet(
                     "positive" -> (s.state == StepState.Done),
                     "warning"  -> (s.state == StepState.Running),
-                    "negative" -> (s.state == StepState.Error)
+                    "negative" -> (s.state == StepState.Error),
+                    "negative" -> (s.state == StepState.Abort)
                   ),
                   <.td(
                     s.state match {
@@ -141,7 +145,7 @@ object SequenceTabContent {
               ^.cls := "row computer only",
               <.div(
                 ^.cls := "sixteen wide column",
-                LogArea()
+                SeqexecCircuit.connect(_.globalLog)(LogArea(_))
               )
             )
         )
