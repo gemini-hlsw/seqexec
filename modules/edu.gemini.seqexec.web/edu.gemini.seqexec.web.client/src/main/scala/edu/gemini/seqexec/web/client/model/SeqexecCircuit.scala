@@ -71,7 +71,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
       val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
-      updated(value.map(_.stopSequence(s.id)), logE)
+      updated(value.map(_.abortSequence(s.id)), logE)
     case RunStopFailed(s) =>
       noChange
   }
@@ -139,7 +139,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
   override def handle = {
     case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
-      updated(value.copy(_1 = value._1.map(_.markAsRunning(id)), _2 = value._2.append(event)), logE)
+      updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)
 
     case NewSeqexecEvent(event @ StepExecutedEvent(id, c, _, f)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id, step $c completed")
@@ -148,7 +148,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
     case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
       val audioEffect = Effect.action(new Audio("/sequencecomplete.mp3").play())
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
-      updated(value.copy(_1 = value._1.map(_.markAsCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)
+      updated(value.copy(_1 = value._1.map(_.sequenceCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)
 
     case NewSeqexecEvent(s) =>
       // Ignore unknown events
