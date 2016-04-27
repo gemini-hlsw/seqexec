@@ -58,7 +58,7 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
     case RequestStop(s) =>
@@ -124,7 +124,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle = {
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case AppendToLog(s) =>
       updated(value.append(s))
   }
@@ -177,9 +177,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def appendToLogE(s: String) =
     Effect(Future(AppendToLog(s)))
 
-  def appendToLog(s: String) =
-    dispatch(AppendToLog(s:String))
-
+  // TODO Make into its own class
   val webSocket = {
     import org.scalajs.dom.document
 
@@ -226,9 +224,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
+  // Reader for a specific sequence if available
   def sequenceReader(id: String):ModelR[_, Pot[Sequence]] =
     zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s)))
 
+  /**
+    * Makes a reference to a sequence on the queue.
+    * This way we have a normalized model and need to update it in only one place
+    */
   def sequenceRef(id: String):RefTo[Pot[Sequence]] =
     RefTo(sequenceReader(id))
 

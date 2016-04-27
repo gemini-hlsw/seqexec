@@ -82,6 +82,9 @@ case class WebSocketsLog(log: List[SeqexecEvent]) {
 
 case class GlobalLogEntry(timestamp: LocalTime, s: String)
 
+/**
+  * Keeps a list of log entries for display
+  */
 case class GlobalLog(log: List[GlobalLogEntry]) {
   // Upper bound of accepted events or we may run out of memory
   val maxLength = 500
@@ -89,6 +92,9 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
     copy((log :+ GlobalLogEntry(LocalTime.now(), e)).take(maxLength - 1))
 }
 
+/**
+  * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
+  */
 object SequencesOnDisplay {
   val emptySeqRef:RefTo[Pot[Sequence]] = RefTo(new RootModelR[Pot[Sequence]](Empty))
 

@@ -10,6 +10,9 @@ case class StepConfig(key: String, value: String)
 
 sealed trait StepState
 
+/**
+  * Possible states for given step
+  */
 object StepState {
   case object NotDone extends StepState
   case object Running extends StepState
@@ -32,6 +35,7 @@ object StepState {
 case class Step(id: Int, state: StepState, config: List[StepConfig], file: Option[String])
 
 object Step {
+  // Lenses
   val fileLens: Step @> Option[String] = Lens.lensu((s, f) => s.copy(file = f), s => s.file)
   val stateLens: Step @> StepState     = Lens.lensu((s, f) => s.copy(state = f), s => s.state)
 }
@@ -91,14 +95,14 @@ case class Sequence(id: String, state: SequenceState, instrument: Instrument.Ins
 
 object Sequence {
   // Lenses
-  val stepsLens: Sequence @> SequenceSteps  = Lens.lensu((a, b) => a.copy(steps = b), _.steps)
-  val stateLens: Sequence @> SequenceState  = Lens.lensu((a, b) => a.copy(state = b), _.state)
-  val errorLens: Sequence @> Option[String] = Lens.lensu((a, b) => a.copy(error = b), _.error)
-  val stepsListLens: Sequence @> List[Step] = stepsLens >=> Lens.lensu((a, b) => a.copy(steps = b), _.steps)
+  val stepsLens: Sequence @> SequenceSteps          = Lens.lensu((a, b) => a.copy(steps = b), _.steps)
+  val stateLens: Sequence @> SequenceState          = Lens.lensu((a, b) => a.copy(state = b), _.state)
+  val errorLens: Sequence @> Option[String]         = Lens.lensu((a, b) => a.copy(error = b), _.error)
+  val stepsListLens: Sequence @> List[Step]         = stepsLens >=> Lens.lensu((a, b) => a.copy(steps = b), _.steps)
 
-  def step(i: Int): Sequence @?> Step       = stepsListLens.partial >=> PLens.listNthPLens[Step](i)
+  def step(i: Int): Sequence @?> Step               = stepsListLens.partial >=> PLens.listNthPLens[Step](i)
   def stepFile(i: Int): Sequence @?> Option[String] = step(i) andThen Step.fileLens.partial
-  def stepState(i: Int): Sequence @?> StepState = step(i) andThen Step.stateLens.partial
+  def stepState(i: Int): Sequence @?> StepState     = step(i) andThen Step.stateLens.partial
 }
 
 case class SeqexecQueue(queue: List[Sequence]) {
