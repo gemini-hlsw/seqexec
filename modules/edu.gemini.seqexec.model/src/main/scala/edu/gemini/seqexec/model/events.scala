@@ -11,4 +11,5 @@ case object SeqexecConnectionOpenEvent extends SeqexecEvent
 case object SeqexecConnectionCloseEvent extends SeqexecEvent
 case class SeqexecConnectionError(e: String) extends SeqexecEvent
 case class SequenceStartEvent(id: String) extends SeqexecEvent
-case class StepExecutedEvent(id: String, completed: Int, remaning: Int, fileId: ObsId) extends SeqexecEvent
+case class SequenceCompletedEvent(id: String) extends SeqexecEvent
+case class StepExecutedEvent(id: String, completed: Int, remaining: Int, fileId: ObsId) extends SeqexecEvent

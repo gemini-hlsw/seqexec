@@ -119,7 +119,7 @@ object SequenceSearch {
   case class State(searchText: String)
 
   class Backend($: BackendScope[Props, State]) {
-    def onEnter(e: ReactKeyboardEventI): Callback = CallbackOption.keyCodeSwitch(e)   {
+    def onEnter(e: ReactKeyboardEventI): Callback = CallbackOption.keyCodeSwitch(e) {
         case KeyCode.Enter => search
       }
 

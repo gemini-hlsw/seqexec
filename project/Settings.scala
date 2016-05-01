@@ -33,6 +33,7 @@ object Settings {
     val scalaCSS     = "0.4.1"
     val uPickle      = "0.3.9"
     val diode        = "0.5.1"
+    val javaTimeJS   = "0.1.0"
 
     // Java libraries
     val scalaZ       = "7.2.2"
@@ -72,8 +73,9 @@ object Settings {
     val Argonaut    = "io.argonaut"        %% "argonaut"           % LibraryVersions.argonaut
     val CommonsHttp = "commons-httpclient" %  "commons-httpclient" % LibraryVersions.commonsHttp
 
-    val Squants     = Def.setting("com.squants" %%% "squants" % LibraryVersions.squants)
-    val UPickle     = Def.setting("com.lihaoyi" %%% "upickle" % LibraryVersions.uPickle)
+    val Squants     = Def.setting("com.squants"  %%% "squants"           % LibraryVersions.squants)
+    val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"           % LibraryVersions.uPickle)
+    val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time" % LibraryVersions.javaTimeJS)
 
     // ScalaZ
     val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"       % LibraryVersions.scalaZ)

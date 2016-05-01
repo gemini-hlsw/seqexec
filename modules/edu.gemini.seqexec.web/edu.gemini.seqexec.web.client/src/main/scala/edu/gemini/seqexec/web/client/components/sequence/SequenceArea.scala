@@ -1,21 +1,33 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
+import diode.react.ReactPot._
+import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SequenceTab, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox}
+import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
-import edu.gemini.seqexec.web.common.Sequence
+import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
+import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{ReactComponentB, ReactElement}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
+import scalacss.ScalaCssReact._
+import scalaz.syntax.show._
 
 /**
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
   case class Props(s: Sequence)
+
+  def requestRun(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
+
+  def requestPause(s: Sequence): Callback = Callback.log("Request pause")
+
+  def requestStop(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestStop(s))}
 
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
@@ -24,28 +36,65 @@ object SequenceStepsTableContainer {
         ^.cls := "ui raised secondary segment",
         <.div(
           ^.cls := "row",
-          Button("Run"),
-          Button("Pause")
+          p.s.state == SequenceState.Abort ?= <.h3(
+            ^.cls := "ui red header",
+            "Sequence aborted"),
+          p.s.state == SequenceState.Completed ?= <.h3(
+            ^.cls := "ui green header",
+            "Sequence completed"),
+          p.s.state == SequenceState.NotRunning ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
+          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
+          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
         ),
-        <.div(
-          ^.cls := "ui divider"
-        ),
+        Divider(),
         <.div(
           ^.cls := "row",
           <.table(
             ^.cls := "ui selectable compact celled table",
             <.thead(
               <.tr(
-                <.th("Step"),
-                <.th("State"),
-                <.th("Config")
+                <.th(
+                  ^.cls := "collapsing",
+                  iconEmpty
+                ),
+                <.th(
+                  ^.cls := "collapsing",
+                  "Step"
+                ),
+                <.th(
+                  ^.cls := "six wide",
+                  "State"
+                ),
+                <.th(
+                  ^.cls := "ten wide",
+                  "File"
+                ),
+                <.th(
+                  ^.cls := "collapsing",
+                  "Config"
+                )
               )
             ),
             <.tbody(
               p.s.steps.steps.map( s =>
                 <.tr(
+                  ^.classSet(
+                    "positive" -> (s.state == StepState.Done),
+                    "warning"  -> (s.state == StepState.Running),
+                    "negative" -> (s.state == StepState.Error),
+                    "negative" -> (s.state == StepState.Abort)
+                  ),
+                  <.td(
+                    s.state match {
+                      case StepState.Done    => IconCheckmark
+                      case StepState.Running => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                      case StepState.Error   => IconAttention
+                      case _                 => iconEmpty
+                    }
+                  ),
                   <.td(s.id + 1),
-                  <.td("Not Done"),
+                  <.td(s.state.shows),
+                  <.td(s.file.getOrElse(""): String),
                   <.td(
                     ^.cls := "collapsing right aligned",
                     IconCaretRight
@@ -72,33 +121,13 @@ object SequenceTabContent {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui bottom attached active tab segment",
+        ^.cls := "ui bottom attached tab segment",
         ^.classSet(
           "active" -> p.isActive
         ),
         dataTab := p.st.instrument,
-        p.isActive ?=
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "row",
-              <.div(
-                ^.cls := "four wide column tablet computer only",
-                HeadersSideBar()
-              ),
-              <.div(
-                ^.cls := "twelve wide computer twelve wide tablet sixteen column",
-                p.st.sequence.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): ReactElement)(SequenceStepsTableContainer(_))
-              )
-            ),
-            <.div(
-              ^.cls := "row computer only",
-              <.div(
-                ^.cls := "sixteen wide column",
-                LogArea()
-              )
-            )
-        )
+        p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(SequenceStepsTableContainer(_)).getOrElse(<.div(): ReactElement))),
+        p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
     )
     .build
@@ -120,8 +149,29 @@ object SequenceTabs {
     .render_P( p =>
       <.div(
         ^.cls := "ui bottom attached segment",
-        TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-        tabContents(p.sequences).map(SequenceTabContent(_))
+        <.div(
+          ^.cls := "ui two column vertically divided grid",
+          <.div(
+            ^.cls := "row",
+            SeqexecStyles.rowNoPadding,
+            <.div(
+              ^.cls := "four wide column tablet computer only",
+              HeadersSideBar()
+            ),
+            <.div(
+              ^.cls := "twelve wide computer twelve wide tablet sixteen column",
+              TabularMenu(sequencesTabs(p.sequences).toStream.toList),
+              tabContents(p.sequences).map(SequenceTabContent(_))
+            )
+          ),
+          <.div(
+            ^.cls := "row computer only",
+            <.div(
+              ^.cls := "sixteen wide column",
+              SeqexecCircuit.connect(_.globalLog)(LogArea(_))
+            )
+          )
+        )
       )
     )
     .build

@@ -12,12 +12,17 @@ trait ArbitrariesWebCommon {
       } yield StepConfig(k, v)
     }
 
+  implicit val arbStepState: Arbitrary[StepState] =
+    Arbitrary(Gen.oneOf[StepState](StepState.Done, StepState.Error, StepState.NotDone, StepState.Paused, StepState.Running))
+
   implicit val arbStep: Arbitrary[Step] =
     Arbitrary {
       for {
         i <- arbitrary[Int]
+        s <- arbitrary[StepState]
         v <- arbitrary[List[StepConfig]]
-      } yield Step(i, v)
+        f <- arbitrary[Option[String]]
+      } yield Step(i, s, v, f)
     }
 
   implicit val arbSequenceState: Arbitrary[SequenceState] =
@@ -29,7 +34,7 @@ trait ArbitrariesWebCommon {
         id <- arbitrary[String]
         st <- arbitrary[SequenceState]
         i  <- Gen.oneOf(Instrument.instruments.list.toList)
-        v  <- arbitrary[List[StepConfig]]
-      } yield Sequence(id, st, i, SequenceSteps(List(Step(0, v))), None)
+        v  <- arbitrary[List[Step]]
+      } yield Sequence(id, st, i, SequenceSteps(v), None)
     }
 }

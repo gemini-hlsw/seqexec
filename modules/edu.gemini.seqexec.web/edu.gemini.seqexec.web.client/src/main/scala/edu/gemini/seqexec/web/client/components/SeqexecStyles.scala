@@ -42,6 +42,11 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
+  val rowNoPadding = style(
+    paddingBottom(0.px).important,
+    paddingTop(0.px).important
+  )
+
   // Media queries to hide/display items for mobile
   val notInMobile = style(
     media.only.screen.maxWidth(767.px)(

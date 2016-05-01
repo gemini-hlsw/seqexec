@@ -1,16 +1,20 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.data.{Pot, PotAction}
+import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
+import edu.gemini.seqexec.model.{SeqexecEvent, SequenceCompletedEvent, SequenceStartEvent, StepExecutedEvent}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
-import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
+import upickle.default._
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scalaz.{-\/, \/, \/-}
 
 // Action Handlers
 /**
@@ -26,8 +30,9 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
     case AddToQueue(s) =>
       // Append to the current queue if not in the queue already
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} added to the queue")
       val u = value.map(u => u.copy((s :: u.queue.filter(_.id != s.id)).reverse))
-      updated(u)
+      updated(u, logE)
   }
 }
 
@@ -44,6 +49,31 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
     case RemoveFromSearch(s) =>
       updated(value.map(_.filterNot(_ == s)))
+  }
+}
+
+/**
+  * Handles sequence execution actions
+  */
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case RequestRun(s) =>
+      effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
+    case RequestStop(s) =>
+      effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunStopFailed(s) else RunStopped(s))))
+    // We could react to these events but we rather wait for the command from the event queue
+    case RunStarted(s) =>
+      noChange
+    case RunStartFailed(s) =>
+      noChange
+    case RunStopped(s) =>
+      // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
+      updated(value.map(_.abortSequence(s.id)), logE)
+    case RunStopFailed(s) =>
+      noChange
   }
 }
 
@@ -83,19 +113,46 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case SelectToDisplay(s) =>
-      updated(value.sequenceForInstrument(s))
+      val ref = SeqexecCircuit.sequenceRef(s.id)
+      updated(value.sequenceForInstrument(ref))
+  }
+}
+
+/**
+  * Handles updates to the log
+  */
+class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case AppendToLog(s) =>
+      updated(value.append(s))
   }
 }
 
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsLog]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog)]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
-    case NewMessage(s)    =>
-      updated(value.append(s))
+  override def handle = {
+    case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
+      updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)
+
+    case NewSeqexecEvent(event @ StepExecutedEvent(id, c, _, f)) =>
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id, step $c completed")
+      updated(value.copy(_1 = value._1.map(_.markStepAsCompleted(id, c, f)), _2 = value._2.append(event)), logE)
+
+    case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
+      val audioEffect = Effect.action(new Audio("/sequencecomplete.mp3").play())
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
+      updated(value.copy(_1 = value._1.map(_.sequenceCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)
+
+    case NewSeqexecEvent(s) =>
+      // Ignore unknown events
+      noChange
   }
 }
 
@@ -117,29 +174,42 @@ object PotEq {
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
 
-  // TODO Make this into its own class and handle reconnections
+  def appendToLogE(s: String) =
+    Effect(Future(AppendToLog(s)))
+
+  // TODO Make into its own class
   val webSocket = {
     import org.scalajs.dom.document
 
     val host = document.location.host
 
-    def onopen(e: Event): Unit =
+    def onOpen(e: Event): Unit = {
+      dispatch(AppendToLog("Connected"))
       dispatch(ConnectionOpened)
+    }
 
-    def onmessage(e: MessageEvent): Unit =
-      dispatch(NewMessage(e.data.toString))
+    def onMessage(e: MessageEvent): Unit = {
+      \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
+        case \/-(event) => dispatch(NewSeqexecEvent(event))
+        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
+      }
+    }
 
-    def onerror(e: ErrorEvent): Unit =
+    def onError(e: ErrorEvent): Unit = {
+      println("Error " + e)
       dispatch(ConnectionError(e.message))
+    }
 
-    def onclose(e: CloseEvent): Unit =
+    def onClose(e: CloseEvent): Unit = {
+      println("Close ")
       dispatch(ConnectionClosed)
+    }
 
     val ws = new WebSocket(s"ws://$host/api/seqexec/events")
-    ws.onopen = onopen _
-    ws.onmessage = onmessage _
-    ws.onerror = onerror _
-    ws.onclose = onclose _
+    ws.onopen = onOpen _
+    ws.onmessage = onMessage _
+    ws.onerror = onError _
+    ws.onclose = onClose _
     Some(ws)
   }
 
@@ -147,15 +217,31 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(_.webSocketLog)((m, v) => m.copy(webSocketLog = v)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog))((m, v) => m.copy(queue = v._1, webSocketLog = v._2)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
+  val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
-  override protected def actionHandler = composeHandlers(queueHandler,
+  // Reader for a specific sequence if available
+  def sequenceReader(id: String):ModelR[_, Pot[Sequence]] =
+    zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s)))
+
+  /**
+    * Makes a reference to a sequence on the queue.
+    * This way we have a normalized model and need to update it in only one place
+    */
+  def sequenceRef(id: String):RefTo[Pot[Sequence]] =
+    RefTo(sequenceReader(id))
+
+  override protected def actionHandler = composeHandlers(
+    queueHandler,
     searchHandler,
     searchAreaHandler,
     devConsoleHandler,
     wsLogHandler,
-    sequenceDisplayHandler)
+    sequenceDisplayHandler,
+    globalLogHandler,
+    sequenceExecHandler)
 }

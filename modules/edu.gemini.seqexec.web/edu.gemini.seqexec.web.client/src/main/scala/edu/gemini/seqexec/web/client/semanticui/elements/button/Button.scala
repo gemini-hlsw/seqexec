@@ -20,16 +20,18 @@ object Button {
   case object Vertical extends Animated
   case object Fade extends Animated
 
-  case class Props(state: ButtonState = Inactive,
-                   emphasis: Emphasis = NoEmphasis,
-                   animated: Animated = NotAnimated,
-                   icon: Option[Icon] = None,
-                   basic: Boolean = false,
-                   inverted: Boolean = false,
-                   circular: Boolean = false,
+  case class Props(state: ButtonState    = Inactive,
+                   emphasis: Emphasis    = NoEmphasis,
+                   animated: Animated    = NotAnimated,
+                   icon: Option[Icon]    = None,
+                   basic: Boolean        = false,
+                   inverted: Boolean     = false,
+                   circular: Boolean     = false,
+                   labeled: Boolean      = false,
+                   disabled: Boolean     = false,
                    tabIndex: Option[Int] = None,
                    color: Option[String] = None,
-                   onClick: Callback = Callback.empty)
+                   onClick: Callback     = Callback.empty)
 
   def classSet(p: Props) =
     ^.classSet(
@@ -42,7 +44,9 @@ object Button {
       "icon"      -> p.icon.isDefined,
       "basic"     -> p.basic,
       "inverted"  -> p.inverted,
-      "circular"  -> p.circular
+      "circular"  -> p.circular,
+      "labeled"   -> p.labeled,
+      "disabled"  -> p.disabled
     )
 
   def component = ReactComponentB[Props]("Button")

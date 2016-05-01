@@ -6,7 +6,7 @@ import org.http4s.server.blaze.BlazeBuilder
 object WebServerLauncher extends App {
   def launch(port: Int):Option[Server] = {
     try {
-      Some(BlazeBuilder.bindHttp(port)
+      Some(BlazeBuilder.bindHttp(port, "0.0.0.0")
         .withWebSockets(true)
         .mountService(StaticRoutes.service, "/")
         .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")

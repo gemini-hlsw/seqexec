@@ -5,12 +5,14 @@ import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconChevronLeft, IconChevronRight}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
+import edu.gemini.seqexec.web.client.services.HtmlConstants.{nbsp, iconEmpty}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
-
 import scalacss.ScalaCssReact._
+import scalaz.syntax.show._
 
 object QueueTableBody {
   case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
@@ -19,10 +21,9 @@ object QueueTableBody {
   val minRows = 5
 
   def emptyRow(k: String) = {
-    val nbsp = "\u00a0"
-
     <.tr(
       ^.key := k, // React requires unique keys
+      <.td(iconEmpty),
       <.td(nbsp),
       <.td(nbsp),
       <.td(nbsp),
@@ -49,20 +50,31 @@ object QueueTableBody {
             case (Some(s), i) =>
               <.tr(
                 ^.classSet(
-                  "positive" -> (s.state == SequenceState.Running),
-                  "negative" -> (s.state == SequenceState.Error)
+                  "positive" -> (s.state == SequenceState.Completed),
+                  "warning"  -> (s.state == SequenceState.Running),
+                  "negative" -> (s.state == SequenceState.Error),
+                  "negative" -> (s.state == SequenceState.Abort)
                 ),
                 ^.key := s"item.queue.$i",
                 ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
+                  s.state match {
+                    case SequenceState.Completed                   => IconCheckmark
+                    case SequenceState.Running                     => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                    case SequenceState.Error | SequenceState.Abort => IconAttention
+                    case _                                         => iconEmpty
+                  }
+                ),
+                <.td(
+                  ^.cls := "collapsing",
                   s.id
                 ),
-                <.td(s.state.toString),
+                <.td(s.state.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")),
                 <.td(s.instrument),
                 <.td(
                   SeqexecStyles.notInMobile,
-                  s.error.map(_ => <.p(IconAttention, " Error")).getOrElse(<.p("-"))
+                  s.error.map(e => <.p(IconAttention, s" $e")).getOrElse(<.p("-"))
                 )
               )
             case (_, i) =>
@@ -134,7 +146,8 @@ object QueueTableSection {
           ^.cls := "ui selectable compact celled table unstackable",
           <.thead(
             <.tr(
-              <.th("Obs ID "),
+              <.th(iconEmpty),
+              <.th("Obs ID"),
               <.th("State"),
               <.th("Instrument"),
               <.th(
@@ -143,33 +156,7 @@ object QueueTableSection {
               )
             )
           ),
-          SeqexecCircuit.connect(_.queue)(QueueTableBody(_)),
-          <.tfoot(
-            <.tr(
-              <.th(
-                ^.colSpan := "4",
-                <.div(
-                  ^.cls := "ui right floated pagination menu",
-                  <.a(
-                    ^.cls := "icon item",
-                    IconChevronLeft
-                  ),
-                  <.a(
-                    ^.cls := "item", "1"),
-                  <.a(
-                    ^.cls := "item", "2"),
-                  <.a(
-                    ^.cls := "item", "3"),
-                  <.a(
-                    ^.cls := "item", "4"),
-                  <.a(
-                    ^.cls := "icon item",
-                    IconChevronRight
-                  )
-                )
-              )
-            )
-          )
+          SeqexecCircuit.connect(_.queue)(QueueTableBody(_))
         )
       )
     ).build
