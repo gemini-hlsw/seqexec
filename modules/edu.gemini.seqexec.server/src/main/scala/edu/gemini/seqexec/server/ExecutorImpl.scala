@@ -37,7 +37,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
 
   private def recordState(id: SPObservationID)(s: ExecState): Task[Unit] =
     // This marks the current state for observation id
-    stepEvent(id, s).map(eventsQueue.publishOne).sequenceU *> stateRef.modify(_ + (id -> s))
+    stepEvent(id, s).traverseU(eventsQueue.publishOne) *> stateRef.modify(_ + (id -> s))
 
   private def go(id: SPObservationID): Task[Boolean] =
     // It seems this will check cancelRef and return a Task with value true if the observation has not been cancelled
