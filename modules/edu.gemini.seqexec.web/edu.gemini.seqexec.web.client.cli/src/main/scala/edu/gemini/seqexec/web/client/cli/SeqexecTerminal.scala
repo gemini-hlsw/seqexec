@@ -85,9 +85,10 @@ object SeqexecTerminal extends js.JSApp {
 
     override def handle(args: List[String], terminal: Terminal): Unit = {
       args match {
-        case obsId :: "count" :: Nil  => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
-        case obsId :: "static" :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
-        case _                        => terminal.error("Unknown show command")
+        case obsId :: "count" :: Nil               => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
+        case obsId :: "static" :: Nil              => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
+        case obsId :: "static" :: subsystem :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem"), staticResponse, terminal)
+        case _                                     => terminal.error("Unknown show command")
       }
     }
   }
@@ -101,7 +102,7 @@ object SeqexecTerminal extends js.JSApp {
     Command("host", 1, SetHostHandler, List(s"${bold("host")} ${bold("host:port")}: Sets the odb host:port used by the seqexec")),
     Command("run", 1, RunHandler, List(s"${bold("run")} ${italic("obsId")}: Runs obs id")),
     Command("show", 2, ShowHandler, List(s"${bold("show")} ${italic("obsId count")}: Show obs id steps count", s"${bold("show")} ${italic("obsId static")}: Show static configuration for obs id")),
-    Command("show", 3, ShowHandler, List(s"${bold("show")} ${italic("obsId static subsystem")}: : Runs static configuration for subsystem"))
+    Command("show", 3, ShowHandler, List(s"${bold("show")} ${italic("obsId static subsystem")}: Show static configuration for subsystem"))
   )
 
   // Used for tab completion
@@ -115,7 +116,7 @@ object SeqexecTerminal extends js.JSApp {
 
     tokens match {
       case cmd :: args if find(cmd, args).isDefined              => find(cmd, args).foreach(_.handler.handle(args, terminal))
-      case cmd :: args if findSimilar(cmd).isDefined             => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command: Usage ${c.description}"))
+      case cmd :: args if findSimilar(cmd).isDefined             => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command: Usage:\n${c.description.mkString("\n")}"))
       case "help" :: Nil                                         => terminal.echo(s"Commands available: [[ig;;]exit] [[ig;;]clear] ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
       case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd === cmd).flatMap(_.description).mkString("\n")}")
       case "" :: Nil                                             => // Ignore
