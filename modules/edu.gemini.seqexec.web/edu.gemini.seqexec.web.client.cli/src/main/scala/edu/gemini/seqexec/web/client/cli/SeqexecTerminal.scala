@@ -52,34 +52,44 @@ object SeqexecTerminal extends js.JSApp {
   }
 
   object SetHostHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Unit = {
-      runInBackground(Ajax.post(s"$baseUrl/host",
-        data = s"host=${args.head}",
-        headers = Map("Content-Type" -> "application/x-www-form-urlencoded")), defaultResponse, terminal)
+    override def handle(args: List[String], terminal: Terminal): Unit = args match {
+      case host :: Nil =>
+        runInBackground(Ajax.post(s"$baseUrl/host",
+          data = s"host=$host",
+          headers = Map("Content-Type" -> "application/x-www-form-urlencoded")), defaultResponse, terminal)
+      case _           =>
     }
   }
 
   object RunHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Unit = {
-      runInBackground(Ajax.post(s"$baseUrl/${args.head}/run"), defaultResponse, terminal)
+    override def handle(args: List[String], terminal: Terminal): Unit = args match {
+      case obsId :: Nil =>
+        runInBackground(Ajax.post(s"$baseUrl/$obsId/run"), defaultResponse, terminal)
+      case _            =>
     }
   }
 
   object StopHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Unit = {
-      runInBackground(Ajax.post(s"$baseUrl/${args.head}/stop"), defaultResponse, terminal)
+    override def handle(args: List[String], terminal: Terminal): Unit = args match {
+      case obsId :: Nil =>
+        runInBackground(Ajax.post(s"$baseUrl/$obsId/stop"), defaultResponse, terminal)
+      case _            =>
     }
   }
 
   object ContinueHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Unit = {
-      runInBackground(Ajax.post(s"$baseUrl/${args.head}/continue"), defaultResponse, terminal)
+    override def handle(args: List[String], terminal: Terminal): Unit = args match {
+      case obsId :: Nil =>
+        runInBackground(Ajax.post(s"$baseUrl/$obsId/continue"), defaultResponse, terminal)
+      case _            =>
     }
   }
 
   object RunStateHandler extends CommandHandler {
-    override def handle(args: List[String], terminal: Terminal): Unit = {
-      runInBackground(Ajax.get(s"$baseUrl/${args.head}/state"), defaultResponse, terminal)
+    override def handle(args: List[String], terminal: Terminal): Unit = args match {
+      case obsId :: Nil =>
+        runInBackground(Ajax.get(s"$baseUrl/$obsId/state"), defaultResponse, terminal)
+      case _            =>
     }
   }
 
@@ -98,15 +108,19 @@ object SeqexecTerminal extends js.JSApp {
       case _                          => defaultResponse(c)
     }
 
-    override def handle(args: List[String], terminal: Terminal): Unit = {
-      args match {
-        case obsId :: "count" :: Nil                       => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
-        case obsId :: "static" :: Nil                      => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
-        case obsId :: "static" :: subsystem :: Nil         => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem"), staticResponse, terminal)
-        case obsId :: "dynamic":: step :: Nil              => runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step"), staticResponse, terminal)
-        case obsId :: "dynamic":: step :: subsystem :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step/$subsystem"), staticResponse, terminal)
-        case _                                             => terminal.error("Unknown show command")
-      }
+    override def handle(args: List[String], terminal: Terminal): Unit = args match {
+      case obsId :: "count" :: Nil                       =>
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
+      case obsId :: "static" :: Nil                      =>
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
+      case obsId :: "static" :: subsystem :: Nil         =>
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem"), staticResponse, terminal)
+      case obsId :: "dynamic":: step :: Nil              =>
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step"), staticResponse, terminal)
+      case obsId :: "dynamic":: step :: subsystem :: Nil =>
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step/$subsystem"), staticResponse, terminal)
+      case _                                             =>
+        terminal.error("Unknown show command")
     }
   }
 
@@ -147,12 +161,18 @@ object SeqexecTerminal extends js.JSApp {
     def findSimilar(cmd: String): Option[Command] = commands.find(c => c.cmd == cmd)
 
     tokens match {
-      case cmd :: args if find(cmd, args).isDefined             => find(cmd, args).foreach(_.handler.handle(args, terminal))
-      case cmd :: args if findSimilar(cmd).isDefined            => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command ${bold(cmd)}: Usage:\n${c.description.mkString("\n")}"))
-      case "help" :: Nil                                        => terminal.echo(s"Commands available: [[ig;;]exit] [[ig;;]clear] ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
-      case "help" :: cmd :: _  if commands.exists(_.cmd == cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd == cmd).flatMap(_.description).mkString("\n")}")
-      case "" :: Nil                                            => // Ignore
-      case cmd :: _                                             => terminal.error(s"Command '$command' unknown")
+      case cmd :: args if find(cmd, args).isDefined             =>
+        find(cmd, args).foreach(_.handler.handle(args, terminal))
+      case cmd :: args if findSimilar(cmd).isDefined            =>
+        findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command ${bold(cmd)}: Usage:\n${c.description.mkString("\n")}"))
+      case "help" :: Nil                                        =>
+        terminal.echo(s"Commands available: ${italic("exit clear")} ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
+      case "help" :: cmd :: _  if commands.exists(_.cmd == cmd) =>
+        terminal.echo(s"help:\n${commands.filter(_.cmd == cmd).flatMap(_.description).mkString("\n")}")
+      case "" :: Nil                                            =>
+        // Ignore
+      case cmd :: _                                             =>
+        terminal.error(s"Command '$command' unknown")
     }
   }
 
