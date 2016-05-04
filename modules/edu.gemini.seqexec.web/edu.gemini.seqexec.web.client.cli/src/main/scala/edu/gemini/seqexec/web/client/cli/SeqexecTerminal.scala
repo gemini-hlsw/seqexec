@@ -65,6 +65,24 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
+  object StopHandler extends CommandHandler {
+    override def handle(args: List[String], terminal: Terminal): Unit = {
+      runInBackground(Ajax.post(s"$baseUrl/${args.head}/stop"), defaultResponse, terminal)
+    }
+  }
+
+  object ContinueHandler extends CommandHandler {
+    override def handle(args: List[String], terminal: Terminal): Unit = {
+      runInBackground(Ajax.post(s"$baseUrl/${args.head}/continue"), defaultResponse, terminal)
+    }
+  }
+
+  object RunStateHandler extends CommandHandler {
+    override def handle(args: List[String], terminal: Terminal): Unit = {
+      runInBackground(Ajax.get(s"$baseUrl/${args.head}/state"), defaultResponse, terminal)
+    }
+  }
+
   object ShowHandler extends CommandHandler {
     def width(ks: List[StepConfig]): Int = ks match {
       case Nil => 0
@@ -103,6 +121,12 @@ object SeqexecTerminal extends js.JSApp {
       s"${bold("host")} ${bold("host:port")}: Sets the odb host:port used by the seqexec")),
     Command("run", 1, RunHandler, List(
       s"${bold("run")} ${italic("obsId")}: Runs obs id")),
+    Command("stop", 1, StopHandler, List(
+      s"${bold("stop")} ${italic("obsId")}: Request to stop running obs id")),
+    Command("continue", 1, ContinueHandler, List(
+      s"${bold("continue")} ${italic("obsId")}: Continue stopped obs id")),
+    Command("state", 1, RunStateHandler, List(
+      s"${bold("state")} ${italic("obsId")}: Request the currently running state of obs id")),
     Command("show", 2, ShowHandler, List(
       s"${bold("show")} ${italic("obsId count")}: Show obs id steps count",
       s"${bold("show")} ${italic("obsId static")}: Show static configuration for obs id",
