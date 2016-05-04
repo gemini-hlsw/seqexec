@@ -155,11 +155,17 @@ object SequenceTabs {
             ^.cls := "row",
             SeqexecStyles.rowNoPadding,
             <.div(
-              ^.cls := "four wide column tablet computer only",
+              ^.cls := "four wide column computer tablet only",
               HeadersSideBar()
             ),
             <.div(
-              ^.cls := "twelve wide computer twelve wide tablet sixteen column",
+              ^.cls := "twelve wide column computer tablet only",
+              TabularMenu(sequencesTabs(p.sequences).toStream.toList),
+              tabContents(p.sequences).map(SequenceTabContent(_))
+            ),
+            <.div(
+              ^.cls := "sixteen wide column",
+              SeqexecStyles.onlyMobile,
               TabularMenu(sequencesTabs(p.sequences).toStream.toList),
               tabContents(p.sequences).map(SequenceTabContent(_))
             )
