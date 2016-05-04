@@ -15,9 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import upickle.default._
 
-import scalaz._
-import Scalaz._
-
 @JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
 
@@ -85,10 +82,12 @@ object SeqexecTerminal extends js.JSApp {
 
     override def handle(args: List[String], terminal: Terminal): Unit = {
       args match {
-        case obsId :: "count" :: Nil               => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
-        case obsId :: "static" :: Nil              => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
-        case obsId :: "static" :: subsystem :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem"), staticResponse, terminal)
-        case _                                     => terminal.error("Unknown show command")
+        case obsId :: "count" :: Nil                       => runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
+        case obsId :: "static" :: Nil                      => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
+        case obsId :: "static" :: subsystem :: Nil         => runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem"), staticResponse, terminal)
+        case obsId :: "dynamic":: step :: Nil              => runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step"), staticResponse, terminal)
+        case obsId :: "dynamic":: step :: subsystem :: Nil => runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step/$subsystem"), staticResponse, terminal)
+        case _                                             => terminal.error("Unknown show command")
       }
     }
   }
@@ -98,11 +97,20 @@ object SeqexecTerminal extends js.JSApp {
 
   // Maps the command text and amount of args required to command handler
   val commands: List[Command] = List(
-    Command("host", 0, HostHandler, List(s"${bold("host")}: Returns the odb host used by the seqexec")),
-    Command("host", 1, SetHostHandler, List(s"${bold("host")} ${bold("host:port")}: Sets the odb host:port used by the seqexec")),
-    Command("run", 1, RunHandler, List(s"${bold("run")} ${italic("obsId")}: Runs obs id")),
-    Command("show", 2, ShowHandler, List(s"${bold("show")} ${italic("obsId count")}: Show obs id steps count", s"${bold("show")} ${italic("obsId static")}: Show static configuration for obs id")),
-    Command("show", 3, ShowHandler, List(s"${bold("show")} ${italic("obsId static subsystem")}: Show static configuration for subsystem"))
+    Command("host", 0, HostHandler, List(
+      s"${bold("host")}: Returns the odb host used by the seqexec")),
+    Command("host", 1, SetHostHandler, List(
+      s"${bold("host")} ${bold("host:port")}: Sets the odb host:port used by the seqexec")),
+    Command("run", 1, RunHandler, List(
+      s"${bold("run")} ${italic("obsId")}: Runs obs id")),
+    Command("show", 2, ShowHandler, List(
+      s"${bold("show")} ${italic("obsId count")}: Show obs id steps count",
+      s"${bold("show")} ${italic("obsId static")}: Show static configuration for obs id",
+      s"${bold("show")} ${italic("obsId dynamic #step")}: Show dynamic configuration for obs id and #step")),
+    Command("show", 3, ShowHandler, List(
+      s"${bold("show")} ${italic("obsId static subsystem")}: Show static configuration for subsystem")),
+    Command("show", 4, ShowHandler, List(
+      s"${bold("show")} ${italic("obsId dynamic #step subsystem")}: Show dynamic configuration for obs id, #step and subsystem"))
   )
 
   // Used for tab completion
@@ -111,16 +119,16 @@ object SeqexecTerminal extends js.JSApp {
   val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
     val tokens = command.split(" ").toList
 
-    def find(cmd: String, args: List[String]): Option[Command] = commands.find(c => c.cmd === cmd && c.args == args.size)
-    def findSimilar(cmd: String): Option[Command] = commands.find(c => c.cmd === cmd)
+    def find(cmd: String, args: List[String]): Option[Command] = commands.find(c => c.cmd == cmd && c.args == args.size)
+    def findSimilar(cmd: String): Option[Command] = commands.find(c => c.cmd == cmd)
 
     tokens match {
-      case cmd :: args if find(cmd, args).isDefined              => find(cmd, args).foreach(_.handler.handle(args, terminal))
-      case cmd :: args if findSimilar(cmd).isDefined             => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command: Usage:\n${c.description.mkString("\n")}"))
-      case "help" :: Nil                                         => terminal.echo(s"Commands available: [[ig;;]exit] [[ig;;]clear] ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
-      case "help" :: cmd :: _  if commands.exists(_.cmd === cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd === cmd).flatMap(_.description).mkString("\n")}")
-      case "" :: Nil                                             => // Ignore
-      case cmd :: _                                              => terminal.error(s"Command '$command' unknown")
+      case cmd :: args if find(cmd, args).isDefined             => find(cmd, args).foreach(_.handler.handle(args, terminal))
+      case cmd :: args if findSimilar(cmd).isDefined            => findSimilar(cmd).foreach(c => terminal.echo(s"Incomplete command ${bold(cmd)}: Usage:\n${c.description.mkString("\n")}"))
+      case "help" :: Nil                                        => terminal.echo(s"Commands available: [[ig;;]exit] [[ig;;]clear] ${commands.map(c => s"[[ig;;]${c.cmd}]").distinct.mkString(" ")}")
+      case "help" :: cmd :: _  if commands.exists(_.cmd == cmd) => terminal.echo(s"help:\n${commands.filter(_.cmd == cmd).flatMap(_.description).mkString("\n")}")
+      case "" :: Nil                                            => // Ignore
+      case cmd :: _                                             => terminal.error(s"Command '$command' unknown")
     }
   }
 
