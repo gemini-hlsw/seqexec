@@ -4,8 +4,7 @@ import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconChevronLeft, IconChevronRight}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched, IconAttention}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{nbsp, iconEmpty}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}

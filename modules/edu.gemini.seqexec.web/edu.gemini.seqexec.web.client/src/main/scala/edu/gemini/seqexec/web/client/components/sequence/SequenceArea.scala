@@ -158,11 +158,13 @@ object SequenceTabs {
               ^.cls := "four wide column computer tablet only",
               HeadersSideBar()
             ),
+            // Computer/tablet view
             <.div(
               ^.cls := "twelve wide column computer tablet only",
               TabularMenu(sequencesTabs(p.sequences).toStream.toList),
               tabContents(p.sequences).map(SequenceTabContent(_))
             ),
+            // Mobile view
             <.div(
               ^.cls := "sixteen wide column",
               SeqexecStyles.onlyMobile,

@@ -139,11 +139,10 @@ object SequenceSearch {
 
     def render(p: Props, s: State) =
       <.div(
-        ^.cls := "ui right aligned category search dropdown item",
+        ^.cls := "ui right aligned category item",
         <.div(
-          ^.cls := "ui transparent icon input",
+          ^.cls := "ui focus icon input",
           <.input(
-            ^.cls := "prompt",
             ^.`type` := "text",
             ^.placeholder := "Search...",
             ^.onKeyDown ==> onEnter,
@@ -151,10 +150,6 @@ object SequenceSearch {
             ^.value := s.searchText
           ),
           IconSearch.copy(Icon.Props(id = IconSearch.p.id, link = true, onClick = search))
-        ),
-        <.div(
-          ^.cls := "menu"
-          // TODO Add elements of the queue as <div class="item">text</div>
         )
       )
   }
@@ -162,14 +157,6 @@ object SequenceSearch {
   val component = ReactComponentB[Props]("SequenceSearch")
     .initialState(State(""))
     .renderBackend[Backend]
-    .componentDidMount(s =>
-      Callback {
-        // Enable menu on Semantic UI
-        import org.querki.jquery.$
-
-        $(ReactDOM.findDOMNode(s)).dropdown()
-      }
-    )
     .build
 
   def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(Props(searchResults))
