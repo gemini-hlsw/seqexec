@@ -13,8 +13,13 @@ object SeqexecStyles extends StyleSheet.Inline {
   ))
 
   val mainContainer = style(
-    addClassNames("main", "ui", "borderless", "menu", "container"),
-    marginTop(0.em)
+    addClassNames("main", "ui", "borderless", "menu", "container")
+  )
+
+  val navBar = style("navbar")(
+    unsafeRoot(".main.ui.borderless.menu.container.placeholder")(
+      marginTop(0.px)
+    )
   )
 
   val topLogo = style("main.menu .item img.logo")(
