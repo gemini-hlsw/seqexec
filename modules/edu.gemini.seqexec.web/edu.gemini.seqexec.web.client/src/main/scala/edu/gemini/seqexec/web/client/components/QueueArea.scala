@@ -14,18 +14,27 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
 object QueueTableBody {
-  case class Props(queue: ModelProxy[Pot[SeqexecQueue]])
+  case class Props(queue: ModelProxy[Pot[SeqexecQueue]], sectionOpen: SectionVisibilityState)
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
-  def emptyRow(k: String) = {
+  def emptyRow(k: String, sectionOpen: SectionVisibilityState) = {
     <.tr(
       ^.key := k, // React requires unique keys
       <.td(iconEmpty),
-      <.td(nbsp),
-      <.td(nbsp),
-      <.td(nbsp),
+      <.td(
+        sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
+        nbsp
+      ),
+      <.td(
+        sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
+        nbsp
+      ),
+      <.td(
+        sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
+        nbsp
+      ),
       <.td(
         SeqexecStyles.notInMobile,
         nbsp)
@@ -67,29 +76,36 @@ object QueueTableBody {
                 ),
                 <.td(
                   ^.cls := "collapsing",
+                  p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
                   s.id
                 ),
-                <.td(s.state.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")),
-                <.td(s.instrument),
+                <.td(
+                  p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
+                  s.state.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
+                ),
+                <.td(
+                  p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
+                  s.instrument
+                ),
                 <.td(
                   SeqexecStyles.notInMobile,
                   s.error.map(e => <.p(IconAttention, s" $e")).getOrElse(<.p("-"))
                 )
               )
             case (_, i) =>
-              emptyRow(s"item.queue.$i")
+              emptyRow(s"item.queue.$i", p.sectionOpen)
           }
         ),
         // Render some rows when pending
-        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i"))),
+        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i", p.sectionOpen))),
         // Render some rows even if it failed
-        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i")))
+        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i", p.sectionOpen)))
       )
     )
     .componentDidMount($ => load($.props))
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
+  def apply(p: ModelProxy[Pot[SeqexecQueue]], s: SectionVisibilityState) = component(Props(p, s))
 
 }
 
@@ -136,9 +152,11 @@ object QueueAreaTitle {
   * Container for the queue table
   */
 object QueueTableSection {
-  val component = ReactComponentB[Unit]("QueueTableSection")
+  case class Props(opened: SectionVisibilityState)
+
+  val component = ReactComponentB[Props]("QueueTableSection")
     .stateless
-    .render( _ =>
+    .render_P(p =>
       <.div(
         ^.cls := "segment",
         <.table(
@@ -146,21 +164,30 @@ object QueueTableSection {
           <.thead(
             <.tr(
               <.th(iconEmpty),
-              <.th("Obs ID"),
-              <.th("State"),
-              <.th("Instrument"),
+              <.th(
+                p.opened == SectionOpen ?= SeqexecStyles.notInMobile,
+                "Obs ID"
+              ),
+              <.th(
+                p.opened == SectionOpen ?= SeqexecStyles.notInMobile,
+                "State"
+              ),
+              <.th(
+                p.opened == SectionOpen ?= SeqexecStyles.notInMobile,
+                "Instrument"
+              ),
               <.th(
                 SeqexecStyles.notInMobile,
                 "Notes"
               )
             )
           ),
-          SeqexecCircuit.connect(_.queue)(QueueTableBody(_))
+          SeqexecCircuit.connect(_.queue)(QueueTableBody(_, p.opened))
         )
       )
     ).build
 
-  def apply() = component()
+  def apply(p: SectionVisibilityState) = component(Props(p))
 
 }
 
@@ -179,14 +206,13 @@ object QueueArea {
         <.div(
           ^.cls := "ui attached segment",
           <.div(
-            ^.cls := "ui divided grid",
+            ^.cls := "ui grid",
             <.div(
               ^.cls := "stretched row",
               <.div(
-                ^.cls := "column",
                 ^.classSet(
-                  "ten wide"     -> (p.searchArea() == SectionOpen),
-                  "sixteen wide" -> (p.searchArea() == SectionClosed)
+                  "ten wide computer tablet one wide mobile column"     -> (p.searchArea() == SectionOpen),
+                  "sixteen wide column"                                 -> (p.searchArea() == SectionClosed)
                 ),
                 // Show a loading indicator if we are waiting for server data
                 {
@@ -196,7 +222,7 @@ object QueueArea {
                 },
                 // If there was an error on the process display a message
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
-                QueueTableSection()
+                QueueTableSection(p.searchArea())
               ),
               p.searchArea() == SectionOpen ?= SequenceSearchResults() // Display the search area if open
             )

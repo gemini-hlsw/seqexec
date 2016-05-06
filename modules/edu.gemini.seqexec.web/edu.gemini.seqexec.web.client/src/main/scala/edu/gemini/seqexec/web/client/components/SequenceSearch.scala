@@ -81,7 +81,8 @@ object SequenceSearchResults {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "six wide column", {
+        ^.cls := "six wide computer tablet fourteen wide mobile column right floated",
+        {
           implicit val eq = PotEq.searchResultsEq
           SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _))
         },
