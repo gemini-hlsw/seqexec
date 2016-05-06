@@ -6,7 +6,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch, IconCircleNotched}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch, IconCircleNotched, IconRemove}
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -23,7 +23,7 @@ object SequenceSearchResultsHeader {
       <.div(
         ^.cls := "ui top attached segment header",
         p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Searching...")),
-        p().render(u => s"Found ${u.size} sequence(s)"),
+        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = Callback {SeqexecCircuit.dispatch(CloseSearchArea)}), s"Found ${u.size} sequence(s)")),
         p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
       )
     )
