@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.icon
 
+import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement, ReactNode}
 
@@ -8,6 +9,35 @@ import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement, ReactNod
   */
 case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
   import Icon._
+
+  // Custom copy constructor to avoid passing the id again
+  def copyIcon(disabled: Boolean = false,
+           loading: Boolean = false,
+           fitted: Boolean = false,
+           size: Size = Size.NotSized,
+           link: Boolean = false,
+           flipped: Flipped = Flipped.NotFlipped,
+           rotated: Rotated = Rotated.NotRotated,
+           circular: Boolean = false,
+           bordered: Boolean = false,
+           inverted: Boolean = false,
+           color: Option[String] = None,
+           onClick: Callback = Callback.empty): Icon =
+    copy(
+      p = Icon.Props(id = p.id,
+        disabled = disabled,
+        loading = loading,
+        fitted = fitted,
+        size = size,
+        link = link,
+        flipped = flipped,
+        rotated = rotated,
+        circular = circular,
+        bordered = bordered,
+        inverted = inverted,
+        color = color,
+        onClick = onClick),
+      children = if (children.nonEmpty) children else this.children)
 
   def component = ReactComponentB[Props]("Icon")
     .stateless
@@ -19,13 +49,13 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
           "disabled"                 -> p.disabled,
           "loading"                  -> p.loading,
           "fitted"                   -> p.fitted,
-          "tiny"                     -> (p.size == IconSize.Tiny),
-          "mini"                     -> (p.size == IconSize.Mini),
-          "small"                    -> (p.size == IconSize.Small),
-          "large"                    -> (p.size == IconSize.Large),
-          "big"                      -> (p.size == IconSize.Big),
-          "huge"                     -> (p.size == IconSize.Huge),
-          "massive"                  -> (p.size == IconSize.Massive),
+          "tiny"                     -> (p.size == Size.Tiny),
+          "mini"                     -> (p.size == Size.Mini),
+          "small"                    -> (p.size == Size.Small),
+          "large"                    -> (p.size == Size.Large),
+          "big"                      -> (p.size == Size.Big),
+          "huge"                     -> (p.size == Size.Huge),
+          "massive"                  -> (p.size == Size.Massive),
           "link"                     -> p.link,
           "horizontally flipped"     -> (p.flipped == Flipped.Horizontally),
           "vertically flipped"       -> (p.flipped == Flipped.Vertically),
@@ -617,25 +647,11 @@ object Icon {
     case object CounterClockwise extends Rotated
   }
 
-  sealed trait IconSize
-
-  object IconSize {
-    case object NotSized extends IconSize
-    case object Tiny extends IconSize
-    case object Mini extends IconSize
-    case object Small extends IconSize
-    case object Large extends IconSize
-    case object Big extends IconSize
-    case object Huge extends IconSize
-    case object Massive extends IconSize
-  }
-
-
   case class Props(id: String,
                    disabled: Boolean = false,
                    loading: Boolean = false,
                    fitted: Boolean = false,
-                   size: IconSize = IconSize.NotSized,
+                   size: Size = Size.NotSized,
                    link: Boolean = false,
                    flipped: Flipped = Flipped.NotFlipped,
                    rotated: Rotated = Rotated.NotRotated,

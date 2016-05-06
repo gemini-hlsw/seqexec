@@ -4,10 +4,9 @@ import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch, IconCircleNotched}
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -23,8 +22,7 @@ object SequenceSearchResultsHeader {
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
-        p().renderEmpty("Sequence Search"),
-        p().renderPending(_ => "Searching..."),
+        p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Searching...")),
         p().render(u => s"Found ${u.size} sequence(s)"),
         p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
       )
@@ -82,13 +80,11 @@ object SequenceSearchResults {
     .render_P(p =>
       <.div(
         ^.cls := "six wide computer tablet fourteen wide mobile column right floated",
-        {
-          implicit val eq = PotEq.searchResultsEq
-          SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _))
-        },
         <.div(
-          ^.cls := "segment",
-          SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply),
+          ^.cls := "segment", {
+            implicit val eq = PotEq.searchResultsEq
+            SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply)
+          },
           <.div(
             ^.cls := "ui scroll pane bottom attached segment",
             <.table(
