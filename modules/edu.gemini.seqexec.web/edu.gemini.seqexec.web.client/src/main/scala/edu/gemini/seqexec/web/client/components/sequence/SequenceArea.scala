@@ -48,9 +48,10 @@ object SequenceStepsTableContainer {
         ),
         Divider(),
         <.div(
-          ^.cls := "row",
+          ^.cls := "ui row scroll pane",
+          SeqexecStyles.stepsListPane,
           <.table(
-            ^.cls := "ui selectable compact celled table",
+            ^.cls := "ui selectable compact celled table unstackable",
             <.thead(
               <.tr(
                 <.th(
