@@ -4,12 +4,13 @@ import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched, IconAttention}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
-import edu.gemini.seqexec.web.client.services.HtmlConstants.{nbsp, iconEmpty}
+import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
+
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
@@ -158,7 +159,8 @@ object QueueTableSection {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "segment",
+        ^.cls := "ui segment scroll pane",
+        SeqexecStyles.queueListPane,
         <.table(
           ^.cls := "ui selectable compact celled table unstackable",
           <.thead(

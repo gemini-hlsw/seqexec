@@ -36,15 +36,28 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val scrollPane = style("ui.scroll.pane")(
-    overflow.auto,
-    maxHeight(17.3.em) // TODO This size may need to be calculated on the fly
+    overflow.auto
   )
 
-  val scrollPaneSegment = style("ui.scroll.pane.attached.segment")(
+  val queueListPane = style {
+    maxHeight(13.1.em)
+  }
+
+  val searchResultListPane = style {
+    maxHeight(10.3.em)
+  }
+
+  val scrollPaneSegment = style("ui.scroll.pane.segment")(
     padding(0.px),
+    marginTop(0.px),
     unsafeChild("> .ui.table")(
-      border(0.px)
+      border(0.px),
+      borderSpacing(0.px)
     )
+  )
+
+  val hidden = style(
+    display.none
   )
 
   val rowNoPadding = style(

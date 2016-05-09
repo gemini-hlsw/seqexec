@@ -87,6 +87,7 @@ object SequenceSearchResults {
           },
           <.div(
             ^.cls := "ui scroll pane bottom attached segment",
+            SeqexecStyles.searchResultListPane,
             <.table(
               ^.cls := "ui selectable compact table unstackable",
               <.thead(
