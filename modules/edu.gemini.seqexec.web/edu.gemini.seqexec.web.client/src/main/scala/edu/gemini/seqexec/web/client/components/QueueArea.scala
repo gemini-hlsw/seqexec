@@ -130,14 +130,36 @@ object LoadingErrorMsg {
   def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
 }
 
+object QueueTableLoading {
+  case class Props(queue: Pot[SeqexecQueue])
+
+  val component = ReactComponentB[Props]("QueueTableLoading")
+    .stateless
+    .render_P(p =>
+      <.div(
+        ^.cls := "ui header item",
+        p.queue.renderPending(_ => <.span(IconCircleNotched.copyIcon(loading = true), "Loading..."))
+      )
+    ).build
+
+  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p()))
+}
+
 /**
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
+
   val component = ReactComponentB[Unit]("QueueAreaTitle")
     .stateless
     .render(_ =>
       TextMenuSegment("Queue",
+        // Show a loading indicator if we are waiting for server data
+        {
+          // Special equality check to avoid certain UI artifacts
+          implicit val eq = PotEq.seqexecQueueEq
+          SeqexecCircuit.connect(_.queue)(QueueTableLoading(_))
+        },
         <.div(
           ^.cls := "right menu",
           ^.key := "queue.area.title",
@@ -216,12 +238,6 @@ object QueueArea {
                   "ten wide computer tablet one wide mobile column"     -> (p.searchArea() == SectionOpen),
                   "sixteen wide column"                                 -> (p.searchArea() == SectionClosed)
                 ),
-                // Show a loading indicator if we are waiting for server data
-                {
-                  // Special equality check to avoid certain UI artifacts
-                  implicit val eq = PotEq.seqexecQueueEq
-                  SeqexecCircuit.connect(_.queue)(LoadingIndicator("Loading", _))
-                },
                 // If there was an error on the process display a message
                 SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
                 QueueTableSection(p.searchArea())
