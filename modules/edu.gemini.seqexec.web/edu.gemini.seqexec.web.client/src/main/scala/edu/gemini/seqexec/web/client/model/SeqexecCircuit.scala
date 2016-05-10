@@ -114,7 +114,13 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
   override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
-      updated(value.sequenceForInstrument(ref))
+      updated(value.focusOnSequence(ref))
+    case ShowStep(s, i) =>
+      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+        updated(value.showStep(i))
+      } else {
+        noChange
+      }
   }
 }
 

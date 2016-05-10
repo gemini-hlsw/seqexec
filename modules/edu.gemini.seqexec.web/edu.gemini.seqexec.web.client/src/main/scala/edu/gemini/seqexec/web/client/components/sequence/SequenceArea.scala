@@ -21,13 +21,15 @@ import scalaz.syntax.show._
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class Props(s: Sequence)
+  case class Props(s: Sequence, stepConfigDisplayed: Option[Int])
 
   def requestRun(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
 
   def requestPause(s: Sequence): Callback = Callback.log("Request pause")
 
   def requestStop(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestStop(s))}
+
+  def displayStepDetails(s: Sequence, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
@@ -98,7 +100,7 @@ object SequenceStepsTableContainer {
                   <.td(s.file.getOrElse(""): String),
                   <.td(
                     ^.cls := "collapsing right aligned",
-                    IconCaretRight
+                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, s.id))
                   )
                 )
               )
@@ -109,7 +111,7 @@ object SequenceStepsTableContainer {
     )
     .build
 
-  def apply(s: Sequence) = component(Props(s))
+  def apply(s: Sequence, stepConfigDisplayed: Option[Int]) = component(Props(s, stepConfigDisplayed))
 }
 
 /**
@@ -127,7 +129,7 @@ object SequenceTabContent {
           "active" -> p.isActive
         ),
         dataTab := p.st.instrument,
-        p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(SequenceStepsTableContainer(_)).getOrElse(<.div(): ReactElement))),
+        p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(t => SequenceStepsTableContainer(t, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))),
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
     )
@@ -159,7 +161,6 @@ object SequenceTabs {
               ^.cls := "four wide column computer tablet only",
               HeadersSideBar()
             ),
-            // Computer/tablet view
             <.div(
               ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
               TabularMenu(sequencesTabs(p.sequences).toStream.toList),

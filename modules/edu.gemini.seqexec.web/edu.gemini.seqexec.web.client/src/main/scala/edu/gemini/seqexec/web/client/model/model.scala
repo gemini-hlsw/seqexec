@@ -6,7 +6,6 @@ import diode.RootModelR
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.SeqexecEvent
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
-import org.scalajs.dom.WebSocket
 
 import scalaz._
 import Scalaz._
@@ -54,6 +53,8 @@ case class RunStopped(s: Sequence)
 case class RunStartFailed(s: Sequence)
 case class RunStopFailed(s: Sequence)
 
+case class ShowStep(s: Sequence, i: Int)
+
 case class AppendToLog(s: String)
 
 // End Actions
@@ -63,11 +64,16 @@ sealed trait SectionVisibilityState
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
-case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Sequence]])
+case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Sequence]], stepConfigDisplayed: Option[Int])
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-  def sequenceForInstrument(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
+  // Display a given step on the focused secquence
+  def showStep(i: Int):SequencesOnDisplay = {
+    copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
+  }
+
+  def focusOnSequence(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
     val q = instrumentSequences.findZ(i => s().exists(_.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
     copy(q | instrumentSequences)
@@ -98,7 +104,7 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 object SequencesOnDisplay {
   val emptySeqRef:RefTo[Pot[Sequence]] = RefTo(new RootModelR[Pot[Sequence]](Empty))
 
-  val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, emptySeqRef)).toZipper)
+  val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 /**
