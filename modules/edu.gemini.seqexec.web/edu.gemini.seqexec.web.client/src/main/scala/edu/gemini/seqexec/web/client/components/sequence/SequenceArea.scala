@@ -9,6 +9,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
@@ -54,7 +55,12 @@ object SequenceStepsTableContainer {
         } { i =>
           <.div(
             ^.cls := "row",
-            Button(Button.Props(onClick = backToSequence(p.s)), "Back")
+            Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+            <.h5(
+              ^.cls :="ui header",
+              SeqexecStyles.inline,
+              s" Configuration for step ${i + 1}"
+            )
           )
         },
         Divider(),

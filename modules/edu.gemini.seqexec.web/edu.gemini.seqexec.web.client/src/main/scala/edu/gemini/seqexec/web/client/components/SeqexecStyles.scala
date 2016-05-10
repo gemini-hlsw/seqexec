@@ -55,6 +55,10 @@ object SeqexecStyles extends StyleSheet.Inline {
     backgroundColor.lightcyan
   }
 
+  val inline = style {
+    display.inline
+  }
+
   val scrollPaneSegment = style("ui.scroll.pane.segment")(
     padding(0.px),
     marginTop(0.px),
