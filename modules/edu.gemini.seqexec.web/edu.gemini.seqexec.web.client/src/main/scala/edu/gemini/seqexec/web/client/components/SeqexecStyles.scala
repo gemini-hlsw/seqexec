@@ -51,6 +51,10 @@ object SeqexecStyles extends StyleSheet.Inline {
     maxHeight(24.3.em)
   }
 
+  val observeConfig = style {
+    backgroundColor.lightcyan
+  }
+
   val scrollPaneSegment = style("ui.scroll.pane.segment")(
     padding(0.px),
     marginTop(0.px),

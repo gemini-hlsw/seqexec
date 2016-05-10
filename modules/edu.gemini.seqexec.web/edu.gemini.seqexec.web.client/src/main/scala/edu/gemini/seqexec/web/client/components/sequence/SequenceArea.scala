@@ -62,6 +62,7 @@ object SequenceStepsTableContainer {
           ^.cls := "ui row scroll pane",
           SeqexecStyles.stepsListPane,
           p.stepConfigDisplayed.map { i =>
+            val step = p.s.steps.steps.find(_.id == i)
             <.table(
               ^.cls := "ui selectable compact celled table unstackable",
               <.thead(
@@ -73,6 +74,24 @@ object SequenceStepsTableContainer {
                   <.th(
                     ^.cls := "six wide",
                     "Value"
+                  )
+                )
+              ),
+              <.tbody(
+                step.map(_.config).getOrElse(Nil).map( c =>
+                  <.tr(
+                    ^.classSet(
+                      "positive" -> c.key.startsWith("instrument"),
+                      "warning"  -> c.key.startsWith("telescope")
+                    ),
+                    c.key.startsWith("observe") ?= SeqexecStyles.observeConfig,
+                    c.key.startsWith("ocs") ?= SeqexecStyles.observeConfig,
+                    <.td(
+                      c.key
+                    ),
+                    <.td(
+                      c.value
+                    )
                   )
                 )
               )
@@ -109,7 +128,7 @@ object SequenceStepsTableContainer {
                   <.tr(
                     ^.classSet(
                       "positive" -> (s.state == StepState.Done),
-                      "warning" -> (s.state == StepState.Running),
+                      "warning"  -> (s.state == StepState.Running),
                       "negative" -> (s.state == StepState.Error),
                       "negative" -> (s.state == StepState.Abort)
                     ),
