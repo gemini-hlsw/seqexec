@@ -54,6 +54,7 @@ case class RunStartFailed(s: Sequence)
 case class RunStopFailed(s: Sequence)
 
 case class ShowStep(s: Sequence, i: Int)
+case class UnShowStep(s: Sequence)
 
 case class AppendToLog(s: String)
 
@@ -68,10 +69,13 @@ case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Se
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-  // Display a given step on the focused secquence
-  def showStep(i: Int):SequencesOnDisplay = {
+  // Display a given step on the focused sequence
+  def showStep(i: Int):SequencesOnDisplay =
     copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
-  }
+
+  // Don't show steps for the sequence
+  def unshowStep:SequencesOnDisplay =
+    copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
   def focusOnSequence(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus

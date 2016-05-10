@@ -31,81 +31,108 @@ object SequenceStepsTableContainer {
 
   def displayStepDetails(s: Sequence, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
+  def backToSequence(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
+
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui raised secondary segment",
-        <.div(
-          ^.cls := "row",
-          p.s.state == SequenceState.Abort ?= <.h3(
-            ^.cls := "ui red header",
-            "Sequence aborted"),
-          p.s.state == SequenceState.Completed ?= <.h3(
-            ^.cls := "ui green header",
-            "Sequence completed"),
-          p.s.state == SequenceState.NotRunning ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
-          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
-          p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
-        ),
+        p.stepConfigDisplayed.fold {
+          <.div(
+            ^.cls := "row",
+            p.s.state == SequenceState.Abort ?= <.h3(
+              ^.cls := "ui red header",
+              "Sequence aborted"),
+            p.s.state == SequenceState.Completed ?= <.h3(
+              ^.cls := "ui green header",
+              "Sequence completed"),
+            p.s.state == SequenceState.NotRunning ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
+            p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
+            p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
+          )
+        } { i =>
+          <.div(
+            ^.cls := "row",
+            Button(Button.Props(onClick = backToSequence(p.s)), "Back")
+          )
+        },
         Divider(),
         <.div(
           ^.cls := "ui row scroll pane",
           SeqexecStyles.stepsListPane,
-          <.table(
-            ^.cls := "ui selectable compact celled table unstackable",
-            <.thead(
-              <.tr(
-                <.th(
-                  ^.cls := "collapsing",
-                  iconEmpty
-                ),
-                <.th(
-                  ^.cls := "collapsing",
-                  "Step"
-                ),
-                <.th(
-                  ^.cls := "six wide",
-                  "State"
-                ),
-                <.th(
-                  ^.cls := "ten wide",
-                  "File"
-                ),
-                <.th(
-                  ^.cls := "collapsing",
-                  "Config"
-                )
-              )
-            ),
-            <.tbody(
-              p.s.steps.steps.map( s =>
+          p.stepConfigDisplayed.map { i =>
+            <.table(
+              ^.cls := "ui selectable compact celled table unstackable",
+              <.thead(
                 <.tr(
-                  ^.classSet(
-                    "positive" -> (s.state == StepState.Done),
-                    "warning"  -> (s.state == StepState.Running),
-                    "negative" -> (s.state == StepState.Error),
-                    "negative" -> (s.state == StepState.Abort)
+                  <.th(
+                    ^.cls := "collapsing",
+                    "Name"
                   ),
-                  <.td(
-                    s.state match {
-                      case StepState.Done    => IconCheckmark
-                      case StepState.Running => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                      case StepState.Error   => IconAttention
-                      case _                 => iconEmpty
-                    }
-                  ),
-                  <.td(s.id + 1),
-                  <.td(s.state.shows),
-                  <.td(s.file.getOrElse(""): String),
-                  <.td(
-                    ^.cls := "collapsing right aligned",
-                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, s.id))
+                  <.th(
+                    ^.cls := "six wide",
+                    "Value"
                   )
                 )
               )
             )
-          )
+          }.getOrElse {
+            <.table(
+              ^.cls := "ui selectable compact celled table unstackable",
+              <.thead(
+                <.tr(
+                  <.th(
+                    ^.cls := "collapsing",
+                    iconEmpty
+                  ),
+                  <.th(
+                    ^.cls := "collapsing",
+                    "Step"
+                  ),
+                  <.th(
+                    ^.cls := "six wide",
+                    "State"
+                  ),
+                  <.th(
+                    ^.cls := "ten wide",
+                    "File"
+                  ),
+                  <.th(
+                    ^.cls := "collapsing",
+                    "Config"
+                  )
+                )
+              ),
+              <.tbody(
+                p.s.steps.steps.map(s =>
+                  <.tr(
+                    ^.classSet(
+                      "positive" -> (s.state == StepState.Done),
+                      "warning" -> (s.state == StepState.Running),
+                      "negative" -> (s.state == StepState.Error),
+                      "negative" -> (s.state == StepState.Abort)
+                    ),
+                    <.td(
+                      s.state match {
+                        case StepState.Done    => IconCheckmark
+                        case StepState.Running => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                        case StepState.Error   => IconAttention
+                        case _                 => iconEmpty
+                      }
+                    ),
+                    <.td(s.id + 1),
+                    <.td(s.state.shows),
+                    <.td(s.file.getOrElse(""): String),
+                    <.td(
+                      ^.cls := "collapsing right aligned",
+                      IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, s.id))
+                    )
+                  )
+                )
+              )
+            )
+          }
         )
       )
     )

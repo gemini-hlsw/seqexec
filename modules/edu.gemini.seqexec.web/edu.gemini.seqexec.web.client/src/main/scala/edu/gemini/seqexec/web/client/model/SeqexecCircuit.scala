@@ -121,6 +121,12 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       } else {
         noChange
       }
+    case UnShowStep(s) =>
+      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+        updated(value.unshowStep)
+      } else {
+        noChange
+      }
   }
 }
 
