@@ -48,6 +48,11 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
     case RemoveFromSearch(s) =>
+      val empty = value.map(l => l.size == 1 && l.exists(_.id == s.id)).getOrElse(false)
+      // TODO, this should be an effect, but somehow it breaks the queue tracking
+      if (empty) {
+        SeqexecCircuit.dispatch(CloseSearchArea)
+      }
       updated(value.map(_.filterNot(_ == s)))
   }
 }
