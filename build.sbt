@@ -10,8 +10,18 @@ organization in Global := "edu.gemini.ocs"
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
-lazy val seqexec = project
-  .dependsOn(edu_gemini_seqexec_server)
+
+def preventPublication(p: Project) =
+  p.settings(
+    publish := {},
+    publishLocal := {},
+    publishArtifact := false,
+    publishTo := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
+    packagedArtifacts := Map.empty)
+
+lazy val seqexec = preventPublication(project.in(file("seqexec")))
+  .dependsOn(edu_gemini_seqexec_web_server)
+  .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
     name in Universal := "seqexec",
