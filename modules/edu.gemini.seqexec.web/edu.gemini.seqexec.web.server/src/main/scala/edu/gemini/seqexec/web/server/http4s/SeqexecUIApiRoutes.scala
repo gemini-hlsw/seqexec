@@ -9,18 +9,19 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
+import edu.gemini.seqexec.web.server.security.LDAPService
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 
 import scalaz._
 import Scalaz._
-
 import scalaz.stream.Exchange
 
 /**
   * Rest Endpoints under the /api route
   */
 object SeqexecUIApiRoutes {
+  val ldapService = new LDAPService("gs-dc6.gemini.edu", 3268)
 
   /**
     * Creates a process that sends a ping every second to keep the connection alive
