@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.server.play
 
-import java.time.Instant
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
@@ -12,7 +11,7 @@ import play.api.routing.sird._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
-import edu.gemini.seqexec.web.server.security.{AuthenticationService, LDAPService, TestAuthenticationService}
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
 
 import scalaz.{-\/, \/-}
 
@@ -20,11 +19,6 @@ import scalaz.{-\/, \/-}
   * Routes for calls from the web ui
   */
 object SeqexecUIApiRoutes {
-  // TODO Pass the configuration as a param
-  val ldapService = new LDAPService("gs-dc6.gemini.edu", 3268)
-
-  // TODO Only the LDAP service should be present on production mode
-  val authServices = List(TestAuthenticationService, ldapService)
 
   val routes: Routes = {
     case GET(p"/api/seqexec/sequence/$id<.*-[0-9]+>") => Action {
@@ -39,10 +33,10 @@ object SeqexecUIApiRoutes {
     }
     case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.text) { s =>
       val u = read[UserLoginRequest](s.body)
-      authServices.authenticateUser(u.username, u.password) match {
+      AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
         case \/-(user) =>
           val cookieVal = buildToken(user)
-          val cookie = Cookie("token", cookieVal, maxAge = Option(AuthenticationService.sessionTimeout), secure = AuthenticationService.onSSL, httpOnly = true)
+          val cookie = Cookie("token", cookieVal, maxAge = Option(AuthenticationConfig.sessionTimeout), secure = AuthenticationConfig.onSSL, httpOnly = true)
           Results.Ok(write(user)).withCookies(cookie)
         case -\/(_)    => Results.Unauthorized("")
       }

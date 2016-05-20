@@ -12,7 +12,7 @@ import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
-import edu.gemini.seqexec.web.server.security.{AuthenticationService, LDAPService, TestAuthenticationService}
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 
@@ -24,12 +24,6 @@ import scalaz.stream.Exchange
   * Rest Endpoints under the /api route
   */
 object SeqexecUIApiRoutes {
-  // TODO Pass the configuration as a param
-  val ldapService = new LDAPService("gs-dc6.gemini.edu", 3268)
-
-  // TODO Only the LDAP service should be present on production mode
-  val authServices = List(TestAuthenticationService, ldapService)
-
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
@@ -48,11 +42,11 @@ object SeqexecUIApiRoutes {
     case req @ POST -> Root  / "seqexec" / "login" =>
       req.decode[String] { body =>
         val u = read[UserLoginRequest](body)
-        authServices.authenticateUser(u.username, u.password) match {
+        AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             val cookieVal = buildToken(user)
-            val expiration = Instant.now().plusSeconds(AuthenticationService.sessionTimeout)
-            val cookie = Cookie("token", cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationService.onSSL, httpOnly = true)
+            val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
+            val cookie = Cookie("token", cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
             Ok(write(user)).addCookie(cookie)
           case -\/(_)    => Unauthorized(Challenge("jwt", "seqexec"))
         }
