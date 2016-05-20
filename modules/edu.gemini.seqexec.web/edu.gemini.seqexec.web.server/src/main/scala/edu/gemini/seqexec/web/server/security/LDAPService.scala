@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.server.security
 
 import com.unboundid.ldap.sdk._
+import edu.gemini.seqexec.web.common.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
 import scala.collection.JavaConverters._

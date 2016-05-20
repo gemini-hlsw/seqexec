@@ -12,7 +12,7 @@ import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
-import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
+import edu.gemini.seqexec.web.server.security.AuthenticationConfig
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 
@@ -39,6 +39,16 @@ object SeqexecUIApiRoutes {
   val service = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
+    case req @ POST -> Root  / "seqexec" / "logout" =>
+      // This is not necessary, it is just code to verify token decoding
+      val u = for {
+        cookies <- req.headers.get(headers.`Cookie`).map(_.values)
+        token   <- cookies.findLeft(_.name == AuthenticationConfig.cookieName)
+        user    <- decodeToken(token.content).toOption
+      } yield user
+      println("Logged out " + u)
+
+      Ok("").removeCookie(AuthenticationConfig.cookieName)
     case req @ POST -> Root  / "seqexec" / "login" =>
       req.decode[String] { body =>
         val u = read[UserLoginRequest](body)
@@ -46,7 +56,7 @@ object SeqexecUIApiRoutes {
           case \/-(user) =>
             val cookieVal = buildToken(user)
             val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
-            val cookie = Cookie("token", cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
+            val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
             Ok(write(user)).addCookie(cookie)
           case -\/(_)    => Unauthorized(Challenge("jwt", "seqexec"))
         }
