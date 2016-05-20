@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.server.http4s
 
+import java.time.Instant
+
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
@@ -10,7 +12,7 @@ import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
-import edu.gemini.seqexec.web.server.security.{LDAPService, TestAuthenticationService}
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, LDAPService, TestAuthenticationService}
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 
@@ -47,7 +49,11 @@ object SeqexecUIApiRoutes {
       req.decode[String] { body =>
         val u = read[UserLoginRequest](body)
         authServices.authenticateUser(u.username, u.password) match {
-          case \/-(user) => Ok(write(user))
+          case \/-(user) =>
+            val cookieVal = buildToken(user)
+            val expiration = Instant.now().plusSeconds(AuthenticationService.sessionTimeout)
+            val cookie = Cookie("token", cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationService.onSSL, httpOnly = true)
+            Ok(write(user)).addCookie(cookie)
           case -\/(_)    => Unauthorized(Challenge("jwt", "seqexec"))
         }
       }

@@ -46,6 +46,7 @@ object Settings {
     val argonaut     = "6.2-M1"
     val commonsHttp  = "2.0"
     val unboundId    = "3.1.1"
+    val jwt          = "0.7.1"
 
     // test libraries
     val scalaTest    = "3.0.0-M15"
@@ -74,6 +75,7 @@ object Settings {
     val Argonaut    = "io.argonaut"        %% "argonaut"                         % LibraryVersions.argonaut
     val CommonsHttp = "commons-httpclient" %  "commons-httpclient"               % LibraryVersions.commonsHttp
     val UnboundId   = "com.unboundid"      % "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
+    val JwtCore     = "com.pauldijou"      %% "jwt-core"                         % LibraryVersions.jwt
 
     val Squants     = Def.setting("com.squants"  %%% "squants"           % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"           % LibraryVersions.uPickle)

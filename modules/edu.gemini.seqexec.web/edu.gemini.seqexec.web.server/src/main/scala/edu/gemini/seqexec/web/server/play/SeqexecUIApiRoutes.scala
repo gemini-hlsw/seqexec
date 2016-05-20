@@ -1,15 +1,18 @@
 package edu.gemini.seqexec.web.server.play
 
+import java.time.Instant
+
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, UserLoginRequest}
 import edu.gemini.seqexec.web.server.model.CannedModel
-import play.api.mvc.{Action, BodyParsers, Results}
+import play.api.mvc.{Action, BodyParsers, Cookie, Results}
 import play.api.routing.Router._
 import play.api.routing.sird._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
-import edu.gemini.seqexec.web.server.security.{LDAPService, TestAuthenticationService}
+import edu.gemini.seqexec.web.server.security.AuthenticationService._
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, LDAPService, TestAuthenticationService}
 
 import scalaz.{-\/, \/-}
 
@@ -37,7 +40,10 @@ object SeqexecUIApiRoutes {
     case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.text) { s =>
       val u = read[UserLoginRequest](s.body)
       authServices.authenticateUser(u.username, u.password) match {
-        case \/-(user) => Results.Ok(write(user))
+        case \/-(user) =>
+          val cookieVal = buildToken(user)
+          val cookie = Cookie("token", cookieVal, maxAge = Option(AuthenticationService.sessionTimeout), secure = AuthenticationService.onSSL, httpOnly = true)
+          Results.Ok(write(user)).withCookies(cookie)
         case -\/(_)    => Results.Unauthorized("")
       }
     }
