@@ -6,7 +6,8 @@ import scalaz._
 import Scalaz._
 
 /**
-  * Authentication service to avoid the LDAP dependency
+  * Authentication service for testing with a hardcoded list of users
+  * It lets you avoid the LDAP dependency but should not be used in production
   */
 object TestAuthenticationService extends AuthenticationService {
   val cannedUsers = List(UserDetails("telops", "Telops") -> "pwd")

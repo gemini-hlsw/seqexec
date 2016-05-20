@@ -9,13 +9,13 @@ import scalaz._
 import Scalaz._
 
 /**
-  * Handles the connections to the LDAP server
+  * Handles authentication against the AD/LDAP server
   */
-class LDAPService(host: String, port: Int) extends AuthenticationService {
+class LDAPAuthenticationService(host: String, port: Int) extends AuthenticationService {
   val MaxConnections = 20
   val Domain = "@gemini.edu"
   val UidExtractor = s"(\\w*)($Domain)?".r
-  // Shorten the timeout
+  // Shorten the default timeout
   val Timeout = 1000
 
   lazy val connection = new LDAPConnection(new LDAPConnectionOptions() <| {_.setConnectTimeoutMillis(Timeout)}, host, port)
@@ -57,10 +57,8 @@ class LDAPService(host: String, port: Int) extends AuthenticationService {
       case e:LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
         UserNotFound(username).left
       case e:LDAPException =>
-        e.printStackTrace()
         GenericFailure("LDAP Authentication error").left
       case e:Exception =>
-        e.printStackTrace()
         GenericFailure(e.getMessage).left
     } finally {
       pool.releaseConnection(c)

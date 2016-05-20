@@ -48,19 +48,17 @@ object SeqexecWebClient {
   /**
     * Login request
     */
-  def login(u: String, p: String): Future[UserDetails] = {
+  def login(u: String, p: String): Future[UserDetails] =
     Ajax.post(
       url = s"$baseUrl/login",
       data = default.write(UserLoginRequest(u, p))
     ).map(s => default.read[UserDetails](s.responseText))
-  }
 
   /**
-    * Login request
+    * Logout request
     */
-  def logout(): Future[String] = {
+  def logout(): Future[String] =
     Ajax.post(
       url = s"$baseUrl/logout"
     ).map(_.responseText)
-  }
 }

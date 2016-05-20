@@ -42,12 +42,15 @@ object SeqexecUIApiRoutes {
     }
     case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.text) { s =>
       val u = read[UserLoginRequest](s.body)
+      // Try to authenticate
       AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
         case \/-(user) =>
+          // if successful set a cookie
           val cookieVal = buildToken(user)
           val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, maxAge = Option(AuthenticationConfig.sessionTimeout), secure = AuthenticationConfig.onSSL, httpOnly = true)
           Results.Ok(write(user)).withCookies(cookie)
-        case -\/(_)    => Results.Unauthorized("")
+        case -\/(_)    =>
+          Results.Unauthorized("")
       }
     }
   }

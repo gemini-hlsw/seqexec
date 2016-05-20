@@ -52,13 +52,16 @@ object SeqexecUIApiRoutes {
     case req @ POST -> Root  / "seqexec" / "login" =>
       req.decode[String] { body =>
         val u = read[UserLoginRequest](body)
+        // Try to authenticate
         AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
+            // if successful set a cookie
             val cookieVal = buildToken(user)
             val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
             val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
             Ok(write(user)).addCookie(cookie)
-          case -\/(_)    => Unauthorized(Challenge("jwt", "seqexec"))
+          case -\/(_)    =>
+            Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
     case req @ GET -> Root  / "seqexec" / "sequence" / oid =>

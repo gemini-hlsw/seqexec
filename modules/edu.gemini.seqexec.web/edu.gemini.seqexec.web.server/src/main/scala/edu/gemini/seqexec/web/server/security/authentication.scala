@@ -19,8 +19,8 @@ trait AuthenticationService {
   def authenticateUser(username: String, password: String): AuthResult
 }
 
+// TODO externalize the configuration
 object AuthenticationConfig {
-  // TODO externalize the configuration
   val sessionTimeout = 8 * 3600
   val onSSL = false
   val key = "secretkey"
@@ -30,15 +30,17 @@ object AuthenticationConfig {
   val ldapHost = "gs-dc6.gemini.edu"
   val ldapPort = 3268
 
-  val ldapService = new LDAPService(ldapHost, ldapPort)
+  val ldapService = new LDAPAuthenticationService(ldapHost, ldapPort)
 
   // TODO Only the LDAP service should be present on production mode
-  val authServices = if (testMode) List(TestAuthenticationService, ldapService)
-  else List(ldapService)
+  val authServices =
+    if (testMode) List(TestAuthenticationService, ldapService)
+    else List(ldapService)
 
 }
 
-case class Token(exp: Int, iat: Int, username: String, displayName: String) {
+// Intermediate class to decode the claim stored in the JWT token
+case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
   def toUserDetails = UserDetails(username, displayName)
 }
 
@@ -63,14 +65,19 @@ object AuthenticationService {
     }
   }
 
+  /**
+    * From the user details it creates a JSON Web Token
+    */
   def buildToken(u: UserDetails): String =
     // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
     Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(3600), AuthenticationConfig.key, JwtAlgorithm.HmacSHA256)
 
-  def decodeToken(t: String): Try[UserDetails] = {
+  /**
+    * Decodes a token out of JSON Web Token
+    */
+  def decodeToken(t: String): Try[UserDetails] =
     for {
       claim <- Jwt.decode(t, AuthenticationConfig.key, Seq(JwtAlgorithm.HmacSHA256))
-      token <- Try(read[Token](claim))
+      token <- Try(read[JwtUserClaim](claim))
     } yield token.toUserDetails
-  }
 }
