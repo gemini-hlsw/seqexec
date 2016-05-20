@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.services
 
-import edu.gemini.seqexec.web.common.{HttpStatusCodes, RegularCommand, SeqexecQueue, Sequence}
+import edu.gemini.seqexec.web.common._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import upickle.default
 
@@ -43,5 +43,24 @@ object SeqexecWebClient {
     Ajax.post(
       url = s"$baseUrl/commands/${s.id}/stop"
     ).map(s => default.read[RegularCommand](s.responseText))
+  }
+
+  /**
+    * Login request
+    */
+  def login(u: String, p: String): Future[UserDetails] = {
+    Ajax.post(
+      url = s"$baseUrl/login",
+      data = default.write(UserLoginRequest(u, p))
+    ).map(s => default.read[UserDetails](s.responseText))
+  }
+
+  /**
+    * Login request
+    */
+  def logout(): Future[String] = {
+    Ajax.post(
+      url = s"$baseUrl/logout"
+    ).map(_.responseText)
   }
 }
