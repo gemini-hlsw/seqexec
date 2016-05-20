@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.server.play
 
-
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, UserLoginRequest}
@@ -11,7 +10,7 @@ import play.api.routing.sird._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
-import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
+import edu.gemini.seqexec.web.server.security.AuthenticationConfig
 
 import scalaz.{-\/, \/-}
 
@@ -31,10 +30,14 @@ object SeqexecUIApiRoutes {
     case GET(p"/api/seqexec/current/queue") => Action {
       Results.Ok(write(CannedModel.currentQueue))
     }
-    case POST(p"/api/seqexec/login") => Action { r =>
-      r.cookies.get(AuthenticationConfig.cookieName).foreach { c =>
-        println(c.value)
-      }
+    case POST(p"/api/seqexec/logout") => Action { r =>
+      // This is not necessary, it is just code to verify token decoding
+      val u = for {
+        token   <- r.cookies.get(AuthenticationConfig.cookieName)
+        user    <- decodeToken(token.value).toOption
+      } yield user
+      println("Logged out " + u)
+
       Results.Ok("").discardingCookies(DiscardingCookie(AuthenticationConfig.cookieName))
     }
     case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.text) { s =>
