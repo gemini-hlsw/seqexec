@@ -7,9 +7,10 @@ import org.http4s._
 import org.http4s.dsl._
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
+import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import upickle.default._
 import edu.gemini.seqexec.web.server.model.Conversions._
-import edu.gemini.seqexec.web.server.security.LDAPService
+import edu.gemini.seqexec.web.server.security.{LDAPService, TestAuthenticationService}
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 
@@ -21,7 +22,11 @@ import scalaz.stream.Exchange
   * Rest Endpoints under the /api route
   */
 object SeqexecUIApiRoutes {
+  // TODO Pass the configuration as a param
   val ldapService = new LDAPService("gs-dc6.gemini.edu", 3268)
+
+  // TODO Only the LDAP service should be present on production mode
+  val authServices = List(TestAuthenticationService, ldapService)
 
   /**
     * Creates a process that sends a ping every second to keep the connection alive
@@ -32,12 +37,20 @@ object SeqexecUIApiRoutes {
     import scalaz.concurrent.Strategy
     import scala.concurrent.duration._
 
-    awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map{ d => Ping() }
+    awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { d => Ping() }
   }
 
   val service = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
+    case req @ POST -> Root  / "seqexec" / "login" =>
+      req.decode[String] { body =>
+        val u = read[UserLoginRequest](body)
+        authServices.authenticateUser(u.username, u.password) match {
+          case \/-(user) => Ok(write(user))
+          case -\/(_)    => Unauthorized(Challenge("jwt", "seqexec"))
+        }
+      }
     case req @ GET -> Root  / "seqexec" / "sequence" / oid =>
       val r = for {
         obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))

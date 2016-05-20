@@ -1,32 +1,26 @@
 package edu.gemini.seqexec.web.server.security
 
 import com.unboundid.ldap.sdk._
-import com.unboundid.util.Debug
+import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
 import scala.collection.JavaConverters._
 import scalaz._
 import Scalaz._
 
-sealed trait AuthenticationFailure
-case class UserNotFound(user: String) extends AuthenticationFailure
-case class BadCredentials(user: String) extends AuthenticationFailure
-case class GenericFailure(msg: String) extends AuthenticationFailure
-
-case class UserDetails(username: String, displayName: String)
-
 /**
   * Handles the connections to the LDAP server
   */
-class LDAPService(host: String, port: Int) {
+class LDAPService(host: String, port: Int) extends AuthenticationService {
   val MaxConnections = 20
   val Domain = "@gemini.edu"
   val UidExtractor = s"(\\w*)($Domain)?".r
+  // Shorten the timeout
+  val Timeout = 1000
 
-  val connection = new LDAPConnection(host, port)
-  val pool = new LDAPConnectionPool(connection, MaxConnections)
-  //Debug.setEnabled(true)
+  lazy val connection = new LDAPConnection(new LDAPConnectionOptions() <| {_.setConnectTimeoutMillis(Timeout)}, host, port)
+  lazy val pool = new LDAPConnectionPool(connection, MaxConnections)
 
-  def authenticateUser(username: String, password: String): AuthenticationFailure \/ UserDetails = {
+  override def authenticateUser(username: String, password: String): AuthResult = {
     val c = pool.getConnection
     try {
       // Let users enter with or without the domain
@@ -58,7 +52,6 @@ class LDAPService(host: String, port: Int) {
       UserDetails(username, ~displayName).right
     } catch {
       case e:LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
-        e.printStackTrace()
         BadCredentials(username).left
       case e:LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
         UserNotFound(username).left
