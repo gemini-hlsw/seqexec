@@ -7,13 +7,16 @@ import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtHeader, JwtOptions}
 
 import scala.annotation.tailrec
 import scala.util.Try
-import scalaz.{-\/, \/, \/-}
+import scalaz._
+import Scalaz._
 
 sealed trait AuthenticationFailure
 case class UserNotFound(user: String) extends AuthenticationFailure
 case class BadCredentials(user: String) extends AuthenticationFailure
 case object NoAuthenticator extends AuthenticationFailure
 case class GenericFailure(msg: String) extends AuthenticationFailure
+case class DecodingFailure(msg: String) extends AuthenticationFailure
+case object MissingCookie extends AuthenticationFailure
 
 trait AuthenticationService {
   def authenticateUser(username: String, password: String): AuthResult
@@ -45,6 +48,7 @@ case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: Strin
 }
 
 object AuthenticationService {
+  val Realm = "Seqexec"
   type AuthResult = AuthenticationFailure \/ UserDetails
 
   // Allows calling authenticate on a list of authenticator, stopping at the first
@@ -80,4 +84,13 @@ object AuthenticationService {
       claim <- Jwt.decode(t, AuthenticationConfig.key, Seq(JwtAlgorithm.HmacSHA256))
       token <- Try(read[JwtUserClaim](claim))
     } yield token.toUserDetails
+
+  /**
+    * Decodes a token out of JSON Web Token
+    */
+  def decodeToken2(t: String): AuthResult =
+    (for {
+      claim <- Jwt.decode(t, AuthenticationConfig.key, Seq(JwtAlgorithm.HmacSHA256)).toDisjunction
+      token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))
+    } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
 }

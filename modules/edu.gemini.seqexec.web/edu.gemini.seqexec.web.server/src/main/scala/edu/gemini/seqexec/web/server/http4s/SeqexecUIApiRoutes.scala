@@ -6,6 +6,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import org.http4s._
+import org.http4s.server.syntax._
 import org.http4s.dsl._
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
@@ -36,19 +37,11 @@ object SeqexecUIApiRoutes {
     awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { d => Ping() }
   }
 
-  val service = HttpService {
+  val tokenAuthService = new JwtAuthentication
+
+  val publicService: HttpService = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
-    case req @ POST -> Root  / "seqexec" / "logout" =>
-      // This is not necessary, it is just code to verify token decoding
-      val u = for {
-        cookies <- req.headers.get(headers.`Cookie`).map(_.values)
-        token   <- cookies.findLeft(_.name == AuthenticationConfig.cookieName)
-        user    <- decodeToken(token.content).toOption
-      } yield user
-      println("Logged out " + u)
-
-      Ok("").removeCookie(AuthenticationConfig.cookieName)
     case req @ POST -> Root  / "seqexec" / "login" =>
       req.decode[String] { body =>
         val u = read[UserLoginRequest](body)
@@ -78,4 +71,15 @@ object SeqexecUIApiRoutes {
       // Stream seqexec events to clients and a ping
       WS(Exchange(pingProcess merge ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
   }
+
+  val protectedServices: HttpService = tokenAuthService { HttpService {
+      case req @ POST -> Root / "seqexec" / "logout" =>
+        // This is not necessary, it is just code to verify token decoding
+        println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))
+
+        Ok("").removeCookie(AuthenticationConfig.cookieName)
+    }
+  }
+
+  val service = publicService || protectedServices
 }
