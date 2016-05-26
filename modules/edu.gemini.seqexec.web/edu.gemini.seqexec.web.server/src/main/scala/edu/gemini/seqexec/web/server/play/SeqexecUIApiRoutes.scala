@@ -30,13 +30,9 @@ object SeqexecUIApiRoutes {
     case GET(p"/api/seqexec/current/queue") => Action {
       Results.Ok(write(CannedModel.currentQueue))
     }
-    case POST(p"/api/seqexec/logout") => Action { r =>
+    case POST(p"/api/seqexec/logout") => UserAction { a =>
       // This is not necessary, it is just code to verify token decoding
-      val u = for {
-        token   <- r.cookies.get(AuthenticationConfig.cookieName)
-        user    <- decodeToken(token.value).toOption
-      } yield user
-      println("Logged out " + u)
+      println("Logged out " + a.user)
 
       Results.Ok("").discardingCookies(DiscardingCookie(AuthenticationConfig.cookieName))
     }

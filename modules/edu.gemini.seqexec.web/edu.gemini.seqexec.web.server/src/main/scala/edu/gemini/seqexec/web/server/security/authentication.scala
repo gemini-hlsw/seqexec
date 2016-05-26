@@ -79,16 +79,7 @@ object AuthenticationService {
   /**
     * Decodes a token out of JSON Web Token
     */
-  def decodeToken(t: String): Try[UserDetails] =
-    for {
-      claim <- Jwt.decode(t, AuthenticationConfig.key, Seq(JwtAlgorithm.HmacSHA256))
-      token <- Try(read[JwtUserClaim](claim))
-    } yield token.toUserDetails
-
-  /**
-    * Decodes a token out of JSON Web Token
-    */
-  def decodeToken2(t: String): AuthResult =
+  def decodeToken(t: String): AuthResult =
     (for {
       claim <- Jwt.decode(t, AuthenticationConfig.key, Seq(JwtAlgorithm.HmacSHA256)).toDisjunction
       token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))

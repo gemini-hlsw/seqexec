@@ -22,7 +22,7 @@ class JwtAuthentication extends Authentication {
       for {
         cookies <- req.headers.get(headers.`Cookie`).map(_.values) \/> MissingCookie
         token   <- cookies.findLeft(_.name == AuthenticationConfig.cookieName) \/> MissingCookie
-        auth    <- decodeToken2(token.content)
+        auth    <- decodeToken(token.content)
       } yield auth
     }
 
