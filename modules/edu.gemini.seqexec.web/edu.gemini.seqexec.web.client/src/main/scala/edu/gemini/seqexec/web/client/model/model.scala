@@ -4,7 +4,7 @@ import java.time.LocalTime
 
 import diode.RootModelR
 import diode.data.{Empty, Pot, PotAction, RefTo}
-import edu.gemini.seqexec.model.SeqexecEvent
+import edu.gemini.seqexec.model.{SeqexecEvent, UserDetails}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
 
 import scalaz._
@@ -114,7 +114,8 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
+case class SeqexecAppRootModel(user: Option[UserDetails],
+                               queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
@@ -123,5 +124,5 @@ case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(None, Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

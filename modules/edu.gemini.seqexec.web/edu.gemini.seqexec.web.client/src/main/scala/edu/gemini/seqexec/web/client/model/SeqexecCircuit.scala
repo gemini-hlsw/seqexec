@@ -150,13 +150,12 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog)]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case NewSeqexecEvent(SeqexecConnectionOpenEvent(u)) =>
-      println("User " + u)
-      noChange
+      updated(value.copy(_3 = u))
     case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
       updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)
@@ -237,7 +236,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog))((m, v) => m.copy(queue = v._1, webSocketLog = v._2)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog, m.user))((m, v) => m.copy(queue = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
