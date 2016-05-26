@@ -50,8 +50,8 @@ object Settings {
     val jwt          = "0.7.1"
 
     // test libraries
-    val scalaTest    = "3.0.0-M15"
-    val scalaCheck   = "1.12.5"
+    val scalaTest    = "3.0.0-RC1"
+    val scalaCheck   = "1.13.1"
 
     // Pure JS libraries
     val reactJS        = "15.0.1"
