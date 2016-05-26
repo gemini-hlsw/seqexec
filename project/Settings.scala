@@ -29,9 +29,9 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom     = "0.9.0"
-    val scalajsReact = "0.11.0"
+    val scalajsReact = "0.11.1"
     val scalaCSS     = "0.4.1"
-    val uPickle      = "0.3.9"
+    val uPickle      = "0.4.0"
     val diode        = "0.5.1"
     val javaTimeJS   = "0.1.0"
     val javaLogJS    = "0.1.0"
@@ -43,8 +43,7 @@ object Settings {
 
     val http4s       = "0.13.2a"
     val play         = "2.5.3"
-    val scalaJQuery  = "1.0-RC2"
-    val squants      = "0.6.1-GEM" // GEM Denotes our gemini built package
+    val squants      = "0.6.2"
     val argonaut     = "6.2-M1"
     val commonsHttp  = "2.0"
     val unboundId    = "3.1.1"
@@ -74,10 +73,10 @@ object Settings {
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
 
-    val Argonaut    = "io.argonaut"        %% "argonaut"                         % LibraryVersions.argonaut
-    val CommonsHttp = "commons-httpclient" %  "commons-httpclient"               % LibraryVersions.commonsHttp
-    val UnboundId   = "com.unboundid"      % "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
-    val JwtCore     = "com.pauldijou"      %% "jwt-core"                         % LibraryVersions.jwt
+    val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut
+    val CommonsHttp = "commons-httpclient" %  "commons-httpclient"                % LibraryVersions.commonsHttp
+    val UnboundId   = "com.unboundid"      %  "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
+    val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
 
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
