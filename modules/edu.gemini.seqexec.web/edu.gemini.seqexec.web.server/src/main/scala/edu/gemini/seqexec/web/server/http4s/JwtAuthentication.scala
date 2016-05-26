@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.server.http4s
 
-import edu.gemini.seqexec.web.common.UserDetails
+import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationConfig
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import org.http4s.AttributeKey

@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
@@ -21,7 +22,7 @@ import org.http4s.websocket.WebsocketBits._
 
 import scalaz._
 import Scalaz._
-import scalaz.stream.Exchange
+import scalaz.stream.{Exchange, Process}
 
 /**
   * Rest Endpoints under the /api route
@@ -86,6 +87,11 @@ object SeqexecUIApiRoutes {
   }
 
   val protectedServices: HttpService = tokenAuthService { HttpService {
+    case req @ GET -> Root / "seqexec" / "events" =>
+      // Stream seqexec events to clients and a ping
+      val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+      WS(Exchange(pingProcess merge (Process.emit(Text(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => Text(write(v)))), scalaz.stream.Process.empty))
+
       case req @ POST -> Root / "seqexec" / "logout" =>
         // This is not necessary, it is just code to verify token decoding
         println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))

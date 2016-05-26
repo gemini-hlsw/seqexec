@@ -4,7 +4,7 @@ import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
-import edu.gemini.seqexec.model.{SeqexecEvent, SequenceCompletedEvent, SequenceStartEvent, StepExecutedEvent}
+import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
@@ -154,6 +154,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
   implicit val runner = new RunAfterJS
 
   override def handle = {
+    case NewSeqexecEvent(SeqexecConnectionOpenEvent(u)) =>
+      println("User " + u)
+      noChange
     case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
       updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)

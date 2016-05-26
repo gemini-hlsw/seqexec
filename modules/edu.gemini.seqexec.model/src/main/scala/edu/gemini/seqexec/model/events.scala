@@ -7,7 +7,7 @@ import edu.gemini.seqexec.model.dhs.ObsId
   */
 sealed trait SeqexecEvent
 case object NullEvent extends SeqexecEvent
-case object SeqexecConnectionOpenEvent extends SeqexecEvent
+case class SeqexecConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 case object SeqexecConnectionCloseEvent extends SeqexecEvent
 case class SeqexecConnectionError(e: String) extends SeqexecEvent
 case class SequenceStartEvent(id: String) extends SeqexecEvent

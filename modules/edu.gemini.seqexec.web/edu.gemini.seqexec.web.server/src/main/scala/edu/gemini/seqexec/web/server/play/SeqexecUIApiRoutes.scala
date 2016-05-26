@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.server.play
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.model.UserLoginRequest
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState, UserLoginRequest}
 import edu.gemini.seqexec.web.common.LogMessage._

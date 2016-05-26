@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server.play
 
+import edu.gemini.seqexec.model.UserDetails
 import play.api.mvc._
-import edu.gemini.seqexec.web.common.UserDetails
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, MissingCookie}
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 

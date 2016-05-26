@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.server.security
 
-import edu.gemini.seqexec.web.common.UserDetails
+import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import upickle.default._
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtHeader, JwtOptions}

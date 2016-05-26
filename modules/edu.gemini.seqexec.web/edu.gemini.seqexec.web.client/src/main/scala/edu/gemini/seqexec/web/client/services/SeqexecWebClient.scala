@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.services
 
 import java.util.logging.LogRecord
 
+import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
