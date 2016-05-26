@@ -90,7 +90,8 @@ object SeqexecUIApiRoutes {
         // This is not necessary, it is just code to verify token decoding
         println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))
 
-        Ok("").removeCookie(AuthenticationConfig.cookieName)
+        val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some, secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
+        Ok("").removeCookie(cookie)
     }
   }
 
