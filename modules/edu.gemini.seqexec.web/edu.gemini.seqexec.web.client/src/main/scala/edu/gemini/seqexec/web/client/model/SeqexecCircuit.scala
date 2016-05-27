@@ -117,10 +117,10 @@ class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends Ac
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
-    case OpenLoginBox if value == SectionOpen   =>
-      updated(SectionClosed)
-    case CloseLoginBox if value == SectionClosed =>
+    case OpenLoginBox if value == SectionClosed =>
       updated(SectionOpen)
+    case CloseLoginBox if value == SectionOpen  =>
+      updated(SectionClosed)
   }
 }
 

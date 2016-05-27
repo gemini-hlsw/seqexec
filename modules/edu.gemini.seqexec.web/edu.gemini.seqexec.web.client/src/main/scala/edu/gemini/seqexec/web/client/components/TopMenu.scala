@@ -46,7 +46,7 @@ object TopMenu {
 
   case class Props(u: Option[UserDetails])
 
-  def openLogin = Callback {SeqexecCircuit.dispatch(OpenLoginBox)}
+  def openLogin = Callback.log("Open") >> Callback {SeqexecCircuit.dispatch(OpenLoginBox)}
 
   val loginButton = Button(Button.Props(emphasis = Button.Secondary, onClick = openLogin), "Login")
 

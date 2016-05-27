@@ -17,10 +17,12 @@ object SeqexecUI {
         NavBar(),
         SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))(u => WebSocketsConsole(u()._1, u()._2)),
         SeqexecCircuit.connect(_.searchAreaState)(QueueArea(_)),
-        SequenceArea()
+        SequenceArea(),
+        SeqexecCircuit.connect(_.loginBox)(LoginBox(_))
       )
     )
     .build
 
   def apply() = component()
 }
+
