@@ -111,6 +111,20 @@ class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
 }
 
 /**
+  * Handles actions related to the development console
+  */
+class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case OpenLoginBox if value == SectionOpen   =>
+      updated(SectionClosed)
+    case CloseLoginBox if value == SectionClosed =>
+      updated(SectionOpen)
+  }
+}
+
+/**
   * Handles actions related to the changing the selection of the displayed sequence
   */
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
@@ -236,6 +250,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
+  val loginBoxHandler        = new LoginBoxHandler(zoomRW(_.loginBox)((m, v) => m.copy(loginBox = v)))
   val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog, m.user))((m, v) => m.copy(queue = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
@@ -259,6 +274,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     searchHandler,
     searchAreaHandler,
     devConsoleHandler,
+    loginBoxHandler,
     wsLogHandler,
     sequenceDisplayHandler,
     globalLogHandler,

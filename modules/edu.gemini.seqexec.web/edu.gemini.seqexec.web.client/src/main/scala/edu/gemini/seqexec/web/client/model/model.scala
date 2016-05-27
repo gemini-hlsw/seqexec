@@ -32,6 +32,10 @@ case object CloseSearchArea
 // Actions to close and/open the dev console area
 case object ToggleDevConsole
 
+// Actions to close and/open the login box
+case object OpenLoginBox
+case object CloseLoginBox
+
 // Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
 // Action to remove a sequence from the search results
@@ -118,11 +122,12 @@ case class SeqexecAppRootModel(user: Option[UserDetails],
                                queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
+                               loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
                                searchResults: Pot[List[Sequence]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(None, Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }
