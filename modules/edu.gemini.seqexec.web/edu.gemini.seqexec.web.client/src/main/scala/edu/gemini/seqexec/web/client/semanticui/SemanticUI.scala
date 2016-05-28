@@ -17,6 +17,7 @@ object SemanticUI {
 
   class JsVisiblityOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsVisiblityOptions, JsVisiblityOptionBuilder](new JsVisiblityOptionBuilder(_)) {
     def visibilityType(t: String) = jsOpt("type", t)
+    def offset(t: Int) = jsOpt("offset", t)
   }
 
   @js.native

@@ -4,10 +4,9 @@ import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPlus, IconSearch, IconCircleNotched, IconRemove}
 import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -23,9 +22,8 @@ object SequenceSearchResultsHeader {
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
-        p().renderEmpty("Sequence Search"),
-        p().renderPending(_ => "Searching..."),
-        p().render(u => s"Found ${u.size} sequence(s)"),
+        p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Searching...")),
+        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = Callback {SeqexecCircuit.dispatch(CloseSearchArea)}), s"Found ${u.size} sequence(s)")),
         p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
       )
     )
@@ -81,15 +79,15 @@ object SequenceSearchResults {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "six wide column", {
-          implicit val eq = PotEq.searchResultsEq
-          SeqexecCircuit.connect(_.searchResults)(LoadingIndicator("Searching...", _))
-        },
+        ^.cls := "six wide computer tablet fourteen wide mobile column right floated",
         <.div(
-          ^.cls := "segment",
-          SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply),
+          ^.cls := "segment", {
+            implicit val eq = PotEq.searchResultsEq
+            SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply)
+          },
           <.div(
             ^.cls := "ui scroll pane bottom attached segment",
+            SeqexecStyles.searchResultListPane,
             <.table(
               ^.cls := "ui selectable compact table unstackable",
               <.thead(
@@ -139,11 +137,10 @@ object SequenceSearch {
 
     def render(p: Props, s: State) =
       <.div(
-        ^.cls := "ui right aligned category search dropdown item",
+        ^.cls := "ui right aligned category item",
         <.div(
-          ^.cls := "ui transparent icon input",
+          ^.cls := "ui focus icon input",
           <.input(
-            ^.cls := "prompt",
             ^.`type` := "text",
             ^.placeholder := "Search...",
             ^.onKeyDown ==> onEnter,
@@ -151,10 +148,6 @@ object SequenceSearch {
             ^.value := s.searchText
           ),
           IconSearch.copy(Icon.Props(id = IconSearch.p.id, link = true, onClick = search))
-        ),
-        <.div(
-          ^.cls := "menu"
-          // TODO Add elements of the queue as <div class="item">text</div>
         )
       )
   }
@@ -162,14 +155,6 @@ object SequenceSearch {
   val component = ReactComponentB[Props]("SequenceSearch")
     .initialState(State(""))
     .renderBackend[Backend]
-    .componentDidMount(s =>
-      Callback {
-        // Enable menu on Semantic UI
-        import org.querki.jquery.$
-
-        $(ReactDOM.findDOMNode(s)).dropdown()
-      }
-    )
     .build
 
   def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(Props(searchResults))
