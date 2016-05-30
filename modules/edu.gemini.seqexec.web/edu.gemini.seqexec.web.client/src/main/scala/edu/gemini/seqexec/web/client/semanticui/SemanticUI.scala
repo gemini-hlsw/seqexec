@@ -21,6 +21,17 @@ object SemanticUI {
   }
 
   @js.native
+  trait JsModalOptions extends js.Object
+
+  object JsModalOptions extends JsModalOptionBuilder(noOpts)
+
+  class JsModalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsModalOptions, JsModalOptionBuilder](new JsModalOptionBuilder(_)) {
+    def autofocus(t: Boolean) = jsOpt("autofocus", t)
+    def onDeny[A](t: js.Function0[A]) = jsOpt("onDeny", t)
+    def onApprove[A](t: js.Function0[A]) = jsOpt("onApprove", t)
+  }
+
+  @js.native
   trait SemanticCommands extends JQuery {
     def visibility(o: JsVisiblityOptions): this.type = js.native
 
@@ -32,6 +43,8 @@ object SemanticUI {
     def transition(s: String): this.type = js.native
 
     def modal(s: String): this.type = js.native
+
+    def modal(o: JsModalOptions): this.type = js.native
   }
 
   implicit def jq2Semantic(jq: JQuery): SemanticCommands = jq.asInstanceOf[SemanticCommands]

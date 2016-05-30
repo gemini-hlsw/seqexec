@@ -4,8 +4,8 @@ import diode.react.ModelProxy
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconUser, IconLock}
-import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionVisibilityState}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconLock, IconUser}
+import edu.gemini.seqexec.web.client.model._
 
 /**
   * Created by cquiroz on 5/27/16.
@@ -66,11 +66,11 @@ object LoginBox {
         <.div(
           ^.cls := "actions",
             <.div(
-              ^.cls := "ui button",
+              ^.cls := "ui cancel button",
               "Cancel"
             ),
             <.div(
-              ^.cls := "ui button",
+              ^.cls := "ui approve button",
               "Login"
             )
         )
@@ -80,7 +80,18 @@ object LoginBox {
         import org.querki.jquery.$
 
         // Open the modal box
+        if (s.currentProps.open() == SectionClosed) {
+          $(ReactDOM.findDOMNode(s.$)).modal("hide")
+        }
         if (s.currentProps.open() == SectionOpen) {
+          $(ReactDOM.findDOMNode(s.$)).modal(
+            JsModalOptions
+              .autofocus(true)
+              .onDeny { () =>
+                SeqexecCircuit.dispatch(CloseLoginBox)
+              }
+              .onApprove(() => println("Ok"))
+          )
           $(ReactDOM.findDOMNode(s.$)).modal("show")
         }
       }
