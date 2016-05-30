@@ -4,6 +4,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model.{OpenLoginBox, SeqexecCircuit}
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconDropdown
@@ -18,6 +19,7 @@ object LoggedInMenu {
     .stateless
     .render_P(p =>
       <.div(
+        ^.cls := "ui dropdown",
         p.u.displayName,
         IconDropdown,
         <.div(
@@ -46,16 +48,15 @@ object TopMenu {
 
   case class Props(u: Option[UserDetails])
 
-  def openLogin = Callback.log("Open") >> Callback {SeqexecCircuit.dispatch(OpenLoginBox)}
+  def openLogin = Callback {SeqexecCircuit.dispatch(OpenLoginBox)}
 
-  val loginButton = Button(Button.Props(emphasis = Button.Secondary, onClick = openLogin), "Login")
+  val loginButton = Button(Button.Props(size = Size.Small, onClick = openLogin), "Login")
 
   val component = ReactComponentB[Props]("SeqexecTopMenu")
     .stateless
     .render_P( p =>
-      <.a(
-        ^.href :="#",
-        ^.cls := "ui right floated dropdown item",
+      <.div(
+        ^.cls := "ui right floated item",
         p.u.fold(loginButton: ReactElement)(u => LoggedInMenu(u))
       )
     )
