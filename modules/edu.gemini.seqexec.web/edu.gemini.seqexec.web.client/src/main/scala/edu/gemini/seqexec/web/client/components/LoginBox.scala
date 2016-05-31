@@ -9,11 +9,14 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
-import edu.gemini.seqexec.web.client.semanticui.elements.input.Input.ChangeCallback
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+/**
+  * UI for the login box
+  */
 object LoginBox {
 
   case class Props(open: ModelProxy[SectionVisibilityState])
@@ -21,8 +24,6 @@ object LoginBox {
   case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
   val empty = State("", "", None, None)
-
-  def pwdInput(callback: ChangeCallback) = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = callback))
 
   class Backend($: BackendScope[Props, State]) {
     def pwdMod(e: ReactEventI) = {
@@ -40,7 +41,6 @@ object LoginBox {
     def loggedInEvent(u: UserDetails):Callback = Callback {SeqexecCircuit.dispatch(LoggedIn(u))} >> updateProgressMsg("")
     def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
     def updateErrorMsg(m: String):Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
-
     def closeBox = $.modState(_ => empty) >> Callback {SeqexecCircuit.dispatch(CloseLoginBox)}
 
     def attemptLogin = $.state >>= { s =>
@@ -67,10 +67,7 @@ object LoginBox {
             ^.cls :="ui form",
             <.div(
               ^.cls :="required field",
-              <.label(
-                ^.htmlFor := "username",
-                "Username: "
-              ),
+              Label(Label.Props("Username", "username")),
               <.div(
                 ^.cls :="ui icon input",
                 <.input(
@@ -86,10 +83,7 @@ object LoginBox {
             ),
             <.div(
               ^.cls :="required field",
-              <.label(
-                ^.htmlFor := "password",
-                "Password: "
-              ),
+              Label(Label.Props("Password", "password")),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
