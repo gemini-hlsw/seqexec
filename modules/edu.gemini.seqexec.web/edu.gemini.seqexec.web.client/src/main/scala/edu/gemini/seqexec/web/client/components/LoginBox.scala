@@ -1,22 +1,24 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
+import edu.gemini.seqexec.model.UserDetails
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconLock, IconUser}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
 import edu.gemini.seqexec.web.client.semanticui.elements.input.Input.ChangeCallback
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object LoginBox {
 
   case class Props(open: ModelProxy[SectionVisibilityState])
 
-  case class State(username: String, password: String)
+  case class State(username: String, password: String, progressMsg: Option[String])
 
   def pwdInput(callback: ChangeCallback) = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = callback))
 
@@ -24,13 +26,19 @@ object LoginBox {
     def pwdMod = (s: String) => $.modState(_.copy(password = s))
     def userMod = (s: String) => $.modState(_.copy(username = s))
 
-    def attemptLogin = $.state >>= { s => Callback.future(
-      SeqexecWebClient.login(s.username, s.password)
-        .map(u => Callback {SeqexecCircuit.dispatch(LoggedIn(u))})
-        .recover {
-          case t: Exception => Callback.log("tnoehuoneuh")
-        }
-    )}
+    def loggedInEvent(u: UserDetails):Callback = Callback {SeqexecCircuit.dispatch(LoggedIn(u))} >> updateProgressMsg("")
+    def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m)))
+
+    def attemptLogin = $.state >>= { s =>
+      updateProgressMsg("Contacting server...") >>
+      Callback.future(
+        SeqexecWebClient.login(s.username, s.password)
+          .map(loggedInEvent)
+          .recover {
+            case t: Exception => Callback.log("tnoehuoneuh")
+          }
+      )
+    }
 
     val usernameInput = Input(Input.Props("username", "username", Input.TextInput, "Username", onChange = userMod))
 
@@ -74,18 +82,34 @@ object LoginBox {
           )
         ),
         <.div(
-          ^.cls := "actions",
+          ^.cls := "ui actions",
           <.div(
-            ^.cls := "ui cancel button",
-            "Cancel"
-          ),
-          Button(Button.Props(onClick = attemptLogin), "Login")
+            ^.cls := "ui grid",
+            <.div(
+              ^.cls := "middle aligned row",
+              s.progressMsg.map( m =>
+                <.div(
+                  ^.cls := "left floated left aligned six wide column",
+                  IconCircleNotched.copyIcon(loading = true),
+                  m
+                )
+              ),
+              <.div(
+                ^.cls := "right floated right aligned ten wide column",
+                <.div(
+                  ^.cls := "ui cancel button",
+                  "Cancel"
+                ),
+                Button(Button.Props(onClick = attemptLogin), "Login")
+              )
+            )
+          )
         )
       )
   }
 
   val component = ReactComponentB[Props]("Login")
-    .initialState(State("", ""))
+    .initialState(State("", "", None))
     .renderBackend[Backend]
     .componentDidUpdate(s =>
       Callback {
