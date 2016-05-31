@@ -104,7 +104,7 @@ def includeInTrigger(f: java.io.File): Boolean =
 lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web.server"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= ScalaZCore.value +: (Http4s ++ Play),
+    libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore) ++ Http4s ++ Play,
 
     // Settings to optimize the use of sbt-revolver
     
