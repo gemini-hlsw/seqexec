@@ -36,6 +36,8 @@ case object ToggleDevConsole
 case object OpenLoginBox
 case object CloseLoginBox
 
+case class LoggedIn(u: UserDetails)
+
 // Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
 // Action to remove a sequence from the search results

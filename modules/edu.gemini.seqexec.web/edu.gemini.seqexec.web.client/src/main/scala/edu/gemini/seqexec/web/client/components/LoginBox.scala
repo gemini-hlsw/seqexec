@@ -1,22 +1,42 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconLock, IconUser}
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
+import edu.gemini.seqexec.web.client.semanticui.elements.input.Input.ChangeCallback
+import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import scala.concurrent.ExecutionContext.Implicits.global
 
-/**
-  * Created by cquiroz on 5/27/16.
-  */
 object LoginBox {
 
   case class Props(open: ModelProxy[SectionVisibilityState])
 
-  val component = ReactComponentB[Props]("Login")
-    .stateless
-    .render_P(p =>
+  case class State(username: String, password: String)
+
+  def pwdInput(callback: ChangeCallback) = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = callback))
+
+  class Backend($: BackendScope[Props, State]) {
+    def pwdMod = (s: String) => $.modState(_.copy(password = s))
+    def userMod = (s: String) => $.modState(_.copy(username = s))
+
+    def attemptLogin = $.state >>= { s => Callback.future(
+      SeqexecWebClient.login(s.username, s.password)
+        .map(u => Callback {SeqexecCircuit.dispatch(LoggedIn(u))})
+        .recover {
+          case t: Exception => Callback.log("tnoehuoneuh")
+        }
+    )}
+
+    val usernameInput = Input(Input.Props("username", "username", Input.TextInput, "Username", onChange = userMod))
+
+    val passwordInput = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = pwdMod))
+
+    def render(p: Props, s: State) =
       <.div(
         ^.cls := "ui modal",
         <.div(
@@ -28,36 +48,26 @@ object LoginBox {
           <.form(
             ^.cls :="ui form",
             <.div(
-              ^.cls :="field",
+              ^.cls :="required field",
               <.label(
                 ^.htmlFor := "username",
                 "Username: "
               ),
               <.div(
                 ^.cls :="ui icon input",
-                <.input(
-                  ^.`type` := "text",
-                  ^.placeholder := "Username",
-                  ^.name := "username",
-                  ^.id := "username"
-                ),
+                usernameInput,
                 IconUser
               )
             ),
             <.div(
-              ^.cls :="field",
+              ^.cls :="required field",
               <.label(
                 ^.htmlFor := "password",
                 "Password: "
               ),
               <.div(
-                ^.cls :="ui icon input",
-                <.input(
-                  ^.`type` :="password",
-                  ^.placeholder := "Password",
-                  ^.name := "password",
-                  ^.id := "password"
-                ),
+                ^.cls := "ui icon input",
+                passwordInput,
                 IconLock
               )
             )
@@ -65,17 +75,19 @@ object LoginBox {
         ),
         <.div(
           ^.cls := "actions",
-            <.div(
-              ^.cls := "ui cancel button",
-              "Cancel"
-            ),
-            <.div(
-              ^.cls := "ui approve button",
-              "Login"
-            )
+          <.div(
+            ^.cls := "ui cancel button",
+            "Cancel"
+          ),
+          Button(Button.Props(onClick = attemptLogin), "Login")
         )
       )
-    ).componentDidUpdate(s =>
+  }
+
+  val component = ReactComponentB[Props]("Login")
+    .initialState(State("", ""))
+    .renderBackend[Backend]
+    .componentDidUpdate(s =>
       Callback {
         import org.querki.jquery.$
 
@@ -88,9 +100,9 @@ object LoginBox {
             JsModalOptions
               .autofocus(true)
               .onDeny { () =>
+                // Called when cancel is pressed
                 SeqexecCircuit.dispatch(CloseLoginBox)
               }
-              .onApprove(() => println("Ok"))
           )
           $(ReactDOM.findDOMNode(s.$)).modal("show")
         }
