@@ -28,6 +28,8 @@ object SemanticUI {
   class JsModalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsModalOptions, JsModalOptionBuilder](new JsModalOptionBuilder(_)) {
     def autofocus(t: Boolean) = jsOpt("autofocus", t)
     def onDeny[A](t: js.Function0[A]) = jsOpt("onDeny", t)
+    def onHide[A](t: js.Function0[A]) = jsOpt("onHide", t)
+    def onHidden[A](t: js.Function0[A]) = jsOpt("onHidden", t)
     def onApprove[A](t: js.Function0[A]) = jsOpt("onApprove", t)
   }
 

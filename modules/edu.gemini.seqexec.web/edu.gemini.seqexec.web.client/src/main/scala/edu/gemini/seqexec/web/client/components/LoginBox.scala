@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM, ReactEventI}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -20,18 +20,31 @@ object LoginBox {
 
   case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
+  val empty = State("", "", None, None)
+
   def pwdInput(callback: ChangeCallback) = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = callback))
 
   class Backend($: BackendScope[Props, State]) {
-    def pwdMod = (s: String) => $.modState(_.copy(password = s))
-    def userMod = (s: String) => $.modState(_.copy(username = s))
+    def pwdMod(e: ReactEventI) = {
+      // Capture the value outside setState, react reuses the events
+      val v = e.target.value
+      $.modState(_.copy(password = v))
+    }
+
+    def userMod(e: ReactEventI) = {
+      // Capture the value outside setState, react reuses the events
+      val v = e.target.value
+      $.modState(_.copy(username = v))
+    }
 
     def loggedInEvent(u: UserDetails):Callback = Callback {SeqexecCircuit.dispatch(LoggedIn(u))} >> updateProgressMsg("")
     def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
     def updateErrorMsg(m: String):Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
 
+    def closeBox = $.modState(_ => empty) >> Callback {SeqexecCircuit.dispatch(CloseLoginBox)}
+
     def attemptLogin = $.state >>= { s =>
-      updateProgressMsg("Contacting server...") >>
+      updateProgressMsg("Authenticating...") >>
       Callback.future(
         SeqexecWebClient.login(s.username, s.password)
           .map(loggedInEvent)
@@ -40,10 +53,6 @@ object LoginBox {
           }
       )
     }
-
-    val usernameInput = Input(Input.Props("username", "username", Input.TextInput, "Username", onChange = userMod))
-
-    val passwordInput = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = pwdMod))
 
     def render(p: Props, s: State) =
       <.div(
@@ -64,7 +73,14 @@ object LoginBox {
               ),
               <.div(
                 ^.cls :="ui icon input",
-                usernameInput,
+                <.input(
+                  ^.`type` :="text",
+                  ^.placeholder := "Username",
+                  ^.name := "username",
+                  ^.id := "username",
+                  ^.value := s.username,
+                  ^.onChange ==> userMod
+                ),
                 IconUser
               )
             ),
@@ -76,7 +92,14 @@ object LoginBox {
               ),
               <.div(
                 ^.cls := "ui icon input",
-                passwordInput,
+                <.input(
+                  ^.`type` :="password",
+                  ^.placeholder := "Password",
+                  ^.name := "password",
+                  ^.id := "password",
+                  ^.value := s.password,
+                  ^.onChange ==> pwdMod
+                ),
                 IconLock
               )
             )
@@ -104,10 +127,7 @@ object LoginBox {
               ),
               <.div(
                 ^.cls := "right floated right aligned ten wide column",
-                <.div(
-                  ^.cls := "ui cancel button",
-                  "Cancel"
-                ),
+                Button(Button.Props(onClick = closeBox), "Cancel"),
                 Button(Button.Props(onClick = attemptLogin), "Login")
               )
             )
@@ -131,8 +151,9 @@ object LoginBox {
           $(ReactDOM.findDOMNode(s.$)).modal(
             JsModalOptions
               .autofocus(true)
-              .onDeny { () =>
-                // Called when cancel is pressed
+              .onHidden { () =>
+                // Need to call direct access as this is outside the event loop
+                s.$.accessDirect.setState(empty)
                 SeqexecCircuit.dispatch(CloseLoginBox)
               }
           )
