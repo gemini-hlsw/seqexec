@@ -18,7 +18,7 @@ object LoginBox {
 
   case class Props(open: ModelProxy[SectionVisibilityState])
 
-  case class State(username: String, password: String, progressMsg: Option[String])
+  case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
   def pwdInput(callback: ChangeCallback) = Input(Input.Props("password", "password", Input.PasswordInput, "Password", onChange = callback))
 
@@ -27,7 +27,8 @@ object LoginBox {
     def userMod = (s: String) => $.modState(_.copy(username = s))
 
     def loggedInEvent(u: UserDetails):Callback = Callback {SeqexecCircuit.dispatch(LoggedIn(u))} >> updateProgressMsg("")
-    def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m)))
+    def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
+    def updateErrorMsg(m: String):Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
 
     def attemptLogin = $.state >>= { s =>
       updateProgressMsg("Contacting server...") >>
@@ -35,7 +36,7 @@ object LoginBox {
         SeqexecWebClient.login(s.username, s.password)
           .map(loggedInEvent)
           .recover {
-            case t: Exception => Callback.log("tnoehuoneuh")
+            case t: Exception => updateErrorMsg("Login failed, check username/password")
           }
       )
     }
@@ -94,6 +95,13 @@ object LoginBox {
                   m
                 )
               ),
+              s.errorMsg.map( m =>
+                <.div(
+                  ^.cls := "left floated left aligned six wide column red",
+                  IconAttention,
+                  m
+                )
+              ),
               <.div(
                 ^.cls := "right floated right aligned ten wide column",
                 <.div(
@@ -109,7 +117,7 @@ object LoginBox {
   }
 
   val component = ReactComponentB[Props]("Login")
-    .initialState(State("", "", None))
+    .initialState(State("", "", None, None))
     .renderBackend[Backend]
     .componentDidUpdate(s =>
       Callback {
