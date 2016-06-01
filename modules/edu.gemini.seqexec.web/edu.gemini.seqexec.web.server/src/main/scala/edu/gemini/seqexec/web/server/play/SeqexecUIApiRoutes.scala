@@ -7,7 +7,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, UserLoginRequest}
 import edu.gemini.seqexec.web.server.model.CannedModel
-import play.api.mvc.{Action, Results, WebSocket}
+import play.api.mvc._
 import play.api.routing.Router._
 import play.api.routing.sird._
 import upickle.default._
