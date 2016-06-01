@@ -8,7 +8,6 @@ import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 
@@ -24,6 +23,8 @@ object LoginBox {
   case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
   val empty = State("", "", None, None)
+
+  val formId = "login"
 
   class Backend($: BackendScope[Props, State]) {
     def pwdMod(e: ReactEventI) = {
@@ -65,6 +66,9 @@ object LoginBox {
           ^.cls := "ui content",
           <.form(
             ^.cls :="ui form",
+            ^.id := formId,
+            ^.method := "post",
+            ^.action := "#",
             <.div(
               ^.cls :="required field",
               Label(Label.Props("Username", "username")),
@@ -122,7 +126,7 @@ object LoginBox {
               <.div(
                 ^.cls := "right floated right aligned ten wide column",
                 Button(Button.Props(onClick = closeBox), "Cancel"),
-                Button(Button.Props(onClick = attemptLogin), "Login")
+                Button(Button.Props(onClick = attemptLogin, buttonType = Button.SubmitType, form = Some(formId)), "Login")
               )
             )
           )
