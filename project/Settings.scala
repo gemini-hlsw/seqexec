@@ -38,9 +38,10 @@ object Settings {
     // Java libraries
     val scalaZ       = "7.2.2"
     val scalaZStream = "0.8a"
+    val streamZ      = "0.3.2"
 
     val http4s       = "0.13.2a"
-    val play         = "2.5.1"
+    val play         = "2.5.3"
     val scalaJQuery  = "1.0-RC2"
     val squants      = "0.6.1-GEM" // GEM Denotes our gemini built package
     val argonaut     = "6.2-M1"
@@ -82,10 +83,10 @@ object Settings {
     val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time" % LibraryVersions.javaTimeJS)
 
     // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"       % LibraryVersions.scalaZ)
-    
-    val ScalaZConcurrent = "org.scalaz"        %% "scalaz-concurrent" % LibraryVersions.scalaZ
-    val ScalaZStream     = "org.scalaz.stream" %% "scalaz-stream"     % LibraryVersions.scalaZStream
+    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"     % LibraryVersions.scalaZ)
+    val ScalaZConcurrent = "org.scalaz"             %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
+    val ScalaZStream     = "org.scalaz.stream"      %%  "scalaz-stream"       % LibraryVersions.scalaZStream
+    val StreamZ          = "com.github.krasserm"    %%  "streamz-akka-stream" % LibraryVersions.streamZ
 
     // Server side libraries
     val Http4s  = Seq(
