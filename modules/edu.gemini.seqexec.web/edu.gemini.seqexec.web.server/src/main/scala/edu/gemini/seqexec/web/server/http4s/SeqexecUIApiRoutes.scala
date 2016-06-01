@@ -92,12 +92,12 @@ object SeqexecUIApiRoutes {
       val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
       WS(Exchange(pingProcess merge (Process.emit(Text(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => Text(write(v)))), scalaz.stream.Process.empty))
 
-      case req @ POST -> Root / "seqexec" / "logout" =>
-        // This is not necessary, it is just code to verify token decoding
-        println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))
+    case req @ POST -> Root / "seqexec" / "logout" =>
+      // This is not necessary, it is just code to verify token decoding
+      println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))
 
-        val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some, secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
-        Ok("").removeCookie(cookie)
+      val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some, secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
+      Ok("").removeCookie(cookie)
     }
   }
 
