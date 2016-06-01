@@ -135,6 +135,9 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
       // Close the login box
       val effect = Effect(Future(CloseLoginBox))
       updated(Some(u), effect)
+    case Logout =>
+      // Remove the user
+      updated(None)
   }
 }
 

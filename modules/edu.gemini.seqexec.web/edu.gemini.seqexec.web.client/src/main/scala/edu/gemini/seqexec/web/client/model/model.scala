@@ -37,6 +37,7 @@ case object OpenLoginBox
 case object CloseLoginBox
 
 case class LoggedIn(u: UserDetails)
+case object Logout
 
 // Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
