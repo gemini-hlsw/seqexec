@@ -19,10 +19,10 @@ object NavBar {
       <.div(
         SeqexecStyles.mainContainer,
         <.div(
-          ^.cls := "ui header container",
+          ^.cls := "ui container",
           <.div(
             ^.href :="#",
-            ^.cls := "header item",
+            ^.cls := "ui header item",
             <.img(
               ^.cls := "logo",
               ^.src :="images/launcher.png"

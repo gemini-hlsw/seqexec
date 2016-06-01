@@ -51,15 +51,32 @@ object TopMenu {
   def openLogin = Callback {SeqexecCircuit.dispatch(OpenLoginBox)}
   def logout = Callback {SeqexecCircuit.dispatch(Logout)}
 
-  val loginButton = Button(Button.Props(size = Size.Small, onClick = openLogin), "Login")
-  val logoutButton = Button(Button.Props(size = Size.Small, onClick = logout, icon = Some(IconSignOut)), "Logout")
+  val loginButton = Button(Button.Props(size = Size.Medium, onClick = openLogin), "Login")
+  val logoutButton = Button(Button.Props(size = Size.Medium, onClick = logout, icon = Some(IconSignOut)), "Logout")
 
   val component = ReactComponentB[Props]("SeqexecTopMenu")
     .stateless
     .render_P( p =>
       <.div(
-        ^.cls := "ui right floated item",
-        p.u.fold(loginButton: ReactElement)(u => logoutButton)
+        ^.cls := "ui secondary right menu",
+        p.u.fold(
+          <.div(
+            ^.cls := "ui item",
+            loginButton
+          )
+        )(u =>
+          <.div(
+            ^.cls := "ui secondary right menu",
+            <.div(
+              ^.cls := "ui header item",
+              u.displayName
+            ),
+            <.div(
+              ^.cls := "ui item",
+              logoutButton
+            )
+          )
+        )
       )
     )
     .build
