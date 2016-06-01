@@ -9,8 +9,9 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconDropdown, IconSignOut}
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactElement}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
+import scalacss.ScalaCssReact._
 
 object LoggedInMenu {
   case class Props(u: UserDetails)
@@ -52,7 +53,8 @@ object TopMenu {
   def logout = Callback {SeqexecCircuit.dispatch(Logout)}
 
   val loginButton = Button(Button.Props(size = Size.Medium, onClick = openLogin), "Login")
-  val logoutButton = Button(Button.Props(size = Size.Medium, onClick = logout, icon = Some(IconSignOut)), "Logout")
+  def logoutButton(text: String) =
+    Button(Button.Props(size = Size.Medium, onClick = logout, icon = Some(IconSignOut)), text)
 
   val component = ReactComponentB[Props]("SeqexecTopMenu")
     .stateless
@@ -69,11 +71,25 @@ object TopMenu {
             ^.cls := "ui secondary right menu",
             <.div(
               ^.cls := "ui header item",
+              SeqexecStyles.notInMobile,
               u.displayName
             ),
             <.div(
+              ^.cls := "ui header item",
+              SeqexecStyles.onlyMobile,
+              // Ideally we'd do this with css but it is not working properly
+              // inside a header item
+              u.displayName.split("\\s").headOption.map(_.substring(0, 10) + "...").getOrElse[String]("")
+            ),
+            <.div(
               ^.cls := "ui item",
-              logoutButton
+              SeqexecStyles.notInMobile,
+              logoutButton("Logout")
+            ),
+            <.div(
+              ^.cls := "ui item",
+              SeqexecStyles.onlyMobile,
+              logoutButton("")
             )
           )
         )
