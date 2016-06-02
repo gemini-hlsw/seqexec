@@ -136,8 +136,9 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
       val effect = Effect(Future(CloseLoginBox))
       updated(Some(u), effect)
     case Logout =>
-      // Remove the user
-      updated(None)
+      val effect = Effect(SeqexecWebClient.logout())
+      // Remove the user and call logout
+      updated(None, effect)
   }
 }
 
