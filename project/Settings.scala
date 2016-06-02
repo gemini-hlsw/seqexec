@@ -32,7 +32,7 @@ object Settings {
     val scalajsReact = "0.11.1"
     val scalaCSS     = "0.4.1"
     val uPickle      = "0.4.0"
-    val diode        = "0.5.1"
+    val diode        = "0.5.2"
     val javaTimeJS   = "0.1.0"
     val javaLogJS    = "0.1.0"
 

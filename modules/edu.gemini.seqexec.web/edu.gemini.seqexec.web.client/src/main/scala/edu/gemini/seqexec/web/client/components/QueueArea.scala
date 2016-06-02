@@ -168,7 +168,7 @@ object QueueAreaTitle {
             ^.key := "queue.area.title",
             SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
           ): ReactNode
-        }.getOrElse[ReactNode](<.div())
+        }.getOrElse[ReactNode](<.div(^.key := "queue.area.empty"))
       )
     ).build
 

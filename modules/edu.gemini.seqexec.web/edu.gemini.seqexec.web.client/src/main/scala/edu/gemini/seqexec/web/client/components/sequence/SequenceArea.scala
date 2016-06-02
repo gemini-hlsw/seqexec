@@ -190,7 +190,9 @@ object SequenceTabContent {
           "active" -> p.isActive
         ),
         dataTab := p.st.instrument,
-        p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(t => SequenceStepsTableContainer(t, p.user, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))),
+        p.st.sequence().render { s =>
+          SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(t => SequenceStepsTableContainer(t, p.user, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
+        },
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
     )
