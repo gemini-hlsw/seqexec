@@ -13,6 +13,8 @@ import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import scalacss.ScalaCssReact._
 
+// Former logged in menu, not in use at the moment but it may eventually
+// be used if we need to add user settings
 object LoggedInMenu {
   case class Props(u: UserDetails)
 
@@ -77,8 +79,8 @@ object TopMenu {
             <.div(
               ^.cls := "ui header item",
               SeqexecStyles.onlyMobile,
-              // Ideally we'd do this with css but it is not working properly
-              // inside a header item
+              // Ideally we'd do this with css text-overflow but it is not
+              // working properly inside a header item, let's abbreviate in code
               u.displayName.split("\\s").headOption.map(_.substring(0, 10) + "...").getOrElse[String]("")
             ),
             <.div(

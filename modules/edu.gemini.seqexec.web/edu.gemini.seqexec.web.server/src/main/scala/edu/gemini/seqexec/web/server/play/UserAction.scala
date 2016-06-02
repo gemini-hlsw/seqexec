@@ -14,6 +14,7 @@ case class UserRequest[A](user: Option[UserDetails], request: Request[A]) extend
 object UserAction extends
     ActionBuilder[UserRequest] with ActionTransformer[Request, UserRequest] {
 
+  // Attempts to extract from the request cookies the id of the user
   def checkAuth(req: RequestHeader): AuthResult =
     for {
       cookies <- \/-(req.cookies)

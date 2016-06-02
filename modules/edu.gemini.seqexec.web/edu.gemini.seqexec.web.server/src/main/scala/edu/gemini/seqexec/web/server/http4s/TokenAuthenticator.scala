@@ -33,8 +33,6 @@ trait TokenInCookies {
 /**
  * TokenAuthentication instances are middleware that provide a
  * {@link HttpService} with optional HTTP authentication.
- *
- * @type A user object type
  */
 trait TokenAuthenticator[A] extends HttpMiddleware {
   type TokenAuth = String => Task[Option[A]]
@@ -44,17 +42,7 @@ trait TokenAuthenticator[A] extends HttpMiddleware {
   val attributeKey: AttributeKey[Option[A]]
 
   /**
-   * Check if req contains valid credentials. You may assume that
-   * the returned Task is executed at most once (to allow for side-effects,
-   * e.g. the incrementation of a nonce counter in DigestAuthentication).
-    *
-    * @param req The request received from the client.
-   * @return If req contains valid credentials, a copy of req is returned that
-   *         contains additional attributes pertaining to authentication such
-   *         as the username and realm from the valid credentials.
-   *         If req does not contain valid credentials, a challenge is returned.
-   *         This challenge will be included in the HTTP 401
-   *         Unauthorized response that is returned to the client.
+   * Check if req contains valid credentials. it delegates to TokenExtractor
    *
    */
   protected def getUser(req: Request): Task[Option[A]] =
@@ -67,8 +55,8 @@ trait TokenAuthenticator[A] extends HttpMiddleware {
     getUser(req) flatMap {
       case u @ Some(_) =>
         service(req.withAttribute(attributeKey, u))
-      case None =>
-        service(req)
+      case None        =>
+        service(req) // The request is allowed for an anonymous usel
     }
   }
 }

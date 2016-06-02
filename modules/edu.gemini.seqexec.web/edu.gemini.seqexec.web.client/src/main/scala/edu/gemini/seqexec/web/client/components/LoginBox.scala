@@ -34,7 +34,6 @@ object LoginBox {
     }
 
     def userMod(e: ReactEventI) = {
-      // Capture the value outside setState, react reuses the events
       val v = e.target.value
       $.modState(_.copy(username = v))
     }
@@ -42,9 +41,10 @@ object LoginBox {
     def loggedInEvent(u: UserDetails):Callback = Callback {SeqexecCircuit.dispatch(LoggedIn(u))} >> updateProgressMsg("")
     def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
     def updateErrorMsg(m: String):Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
-    def closeBox = $.modState(_ => empty) >> Callback {SeqexecCircuit.dispatch(CloseLoginBox)}
+    def closeBox:Callback = $.modState(_ => empty) >> Callback {SeqexecCircuit.dispatch(CloseLoginBox)}
 
-    def attemptLogin = $.state >>= { s =>
+    def attemptLogin:Callback = $.state >>= { s =>
+      // Change the UI and call login on the remote backend
       updateProgressMsg("Authenticating...") >>
       Callback.future(
         SeqexecWebClient.login(s.username, s.password)
@@ -139,13 +139,17 @@ object LoginBox {
     .renderBackend[Backend]
     .componentDidUpdate(s =>
       Callback {
+        // To properly handle the model we need to do updates with jQuery and
+        // the Semantic UI javascript library
+        // The calls below use a custom scala.js facade for SemantiUI
         import org.querki.jquery.$
 
-        // Open the modal box
+        // Close the modal box if the model changes
         if (s.currentProps.open() == SectionClosed) {
           $(ReactDOM.findDOMNode(s.$)).modal("hide")
         }
         if (s.currentProps.open() == SectionOpen) {
+          // Configure the modal to autofoucs and to act properly on closing
           $(ReactDOM.findDOMNode(s.$)).modal(
             JsModalOptions
               .autofocus(true)
@@ -155,6 +159,7 @@ object LoginBox {
                 SeqexecCircuit.dispatch(CloseLoginBox)
               }
           )
+          // Show the modal box
           $(ReactDOM.findDOMNode(s.$)).modal("show")
         }
       }
