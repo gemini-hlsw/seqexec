@@ -13,14 +13,15 @@ case class UserRequest[A](user: Option[UserDetails], request: Request[A]) extend
 
 object UserAction extends
     ActionBuilder[UserRequest] with ActionTransformer[Request, UserRequest] {
-  override def transform[A](request: Request[A]) = Future.successful {
 
-    def checkAuth(req: Request[A]): AuthResult =
-      for {
-        cookies <- \/-(req.cookies)
-        token   <- cookies.find(_.name == AuthenticationConfig.cookieName) \/> MissingCookie
-        auth    <- decodeToken(token.value)
-      } yield auth
+  def checkAuth(req: RequestHeader): AuthResult =
+    for {
+      cookies <- \/-(req.cookies)
+      token   <- cookies.find(_.name == AuthenticationConfig.cookieName) \/> MissingCookie
+      auth    <- decodeToken(token.value)
+    } yield auth
+
+  override def transform[A](request: Request[A]) = Future.successful {
 
     checkAuth(request) match {
       case \/-(u) => new UserRequest(u.some, request)
