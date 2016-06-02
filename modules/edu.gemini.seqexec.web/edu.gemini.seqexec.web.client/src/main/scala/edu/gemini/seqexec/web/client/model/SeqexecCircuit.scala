@@ -13,10 +13,13 @@ import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
 import upickle.default._
+import boopickle.Default._
+import edu.gemini.seqexec.web.common.picklers._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer, Uint8Array}
 import scalaz.{-\/, \/, \/-}
 
 // Action Handlers
@@ -323,6 +326,44 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomRW(_.ws)((m, v) => m.copy(ws = v)))
+  // TODO Make into its own class
+  val webSocket = {
+    import org.scalajs.dom.document
+
+    val host = document.location.host
+
+    def onOpen(e: Event): Unit = {
+      dispatch(AppendToLog("Connected"))
+      dispatch(ConnectionOpened)
+    }
+
+    def onMessage(e: MessageEvent): Unit = {
+      val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
+      \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
+        case \/-(event) => dispatch(NewSeqexecEvent(event))
+        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
+      }
+    }
+
+    def onError(e: ErrorEvent): Unit = {
+      println("Error " + e)
+      dispatch(ConnectionError(e.message))
+    }
+
+    def onClose(e: CloseEvent): Unit = {
+      println("Close ")
+      dispatch(ConnectionClosed)
+    }
+
+    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
+    ws.binaryType = "arraybuffer"
+    ws.onopen = onOpen _
+    ws.onmessage = onMessage _
+    ws.onerror = onError _
+    ws.onclose = onClose _
+    Some(ws)
+  }
+
   val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))

@@ -81,6 +81,7 @@ object Settings {
 
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
+    val BooPickle   = Def.setting("me.chrons"    %%% "boopickle"            % LibraryVersions.booPickle)
     val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
     val JavaLogJS   = Def.setting("org.scala-js" %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 

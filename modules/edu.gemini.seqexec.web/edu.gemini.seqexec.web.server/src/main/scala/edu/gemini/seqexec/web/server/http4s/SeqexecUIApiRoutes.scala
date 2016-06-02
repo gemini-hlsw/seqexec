@@ -4,21 +4,26 @@ import java.time.Instant
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserLoginRequest}
+import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
+import edu.gemini.seqexec.web.common.picklers._
 import edu.gemini.seqexec.web.common.LogMessage._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationConfig
+
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
-import upickle.default._
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
+import org.http4s.server.middleware.GZip
+
+import upickle.default._
+import boopickle.Default._
 
 import scalaz._
 import Scalaz._
@@ -73,9 +78,6 @@ object SeqexecUIApiRoutes {
         case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
         case -\/(e)      => NotFound(SeqexecFailure.explain(e))
       }
-    case GET -> Root / "seqexec" / "events" =>
-      // Stream seqexec events to clients and a ping
-      WS(Exchange(pingProcess merge ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
     case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[String] { body =>
         val u = read[LogMessage](body)
@@ -90,7 +92,13 @@ object SeqexecUIApiRoutes {
       case req @ GET -> Root / "seqexec" / "events" =>
         // Stream seqexec events to clients and a ping
         val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
-        WS(Exchange(pingProcess merge (Process.emit(Text(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => Text(write(v)))), scalaz.stream.Process.empty))
+
+        // Important to set the type as SeqexecEvent
+        val initialEvent:SeqexecEvent = SeqexecConnectionOpenEvent(user)
+        val byteBuffer = Pickle.intoBytes(initialEvent)
+        val bytes = new Array[Byte](byteBuffer.limit())
+        byteBuffer.get(bytes, 0, byteBuffer.limit)
+        WS(Exchange(pingProcess merge (Process.emit(Binary(bytes)) ++ ExecutorImpl.sequenceEvents.map(v => Binary(Pickle.intoBytes(v).array()))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout" =>
         // This is not necessary, it is just code to verify token decoding
@@ -108,7 +116,8 @@ object SeqexecUIApiRoutes {
           } yield (obsId, s)
 
           r match {
-            case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
+            case \/-((i, s)) =>
+              Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
           }
         }

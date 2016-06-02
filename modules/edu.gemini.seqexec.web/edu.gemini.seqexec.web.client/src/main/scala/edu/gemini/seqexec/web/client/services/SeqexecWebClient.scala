@@ -7,9 +7,11 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import upickle.default
+import boopickle.Default._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer, Uint8Array}
 
 /**
   * Encapsulates remote calls to the Seqexec Web API
@@ -20,8 +22,24 @@ object SeqexecWebClient {
   def read(id: String): Future[List[Sequence]] =
     Ajax.get(
       url = s"$baseUrl/sequence/$id"
+      //responseType = "arraybuffer"
     )
-    .map(s => default.read[List[Sequence]](s.responseText))
+    .map(s => {
+      /*println("a")
+      val r = s.response.asInstanceOf[ArrayBuffer]
+      println("b")
+      println(r.byteLength)
+      println(TypedArrayBuffer.wrap(r))
+      println("c")*/
+      try {
+        //Unpickle[List[Sequence]].fromBytes(TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer]))
+        default.read[List[Sequence]](s.responseText)
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
+          Nil
+      }
+    })
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }

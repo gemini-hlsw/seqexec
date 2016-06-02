@@ -18,7 +18,7 @@ object OcsBuild extends Build {
   lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
     .in(file("modules/edu.gemini.seqexec.model"))
     .settings(
-      libraryDependencies ++= UPickle.value +: TestLibs.value
+      libraryDependencies ++= Seq(UPickle.value, BooPickle.value) ++ TestLibs.value
     )
     .jsSettings(
       scalaJSUseRhino := false
