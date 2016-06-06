@@ -10,7 +10,6 @@ organization in Global := "edu.gemini.ocs"
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
-
 def preventPublication(p: Project) =
   p.settings(
     publish := {},
