@@ -154,6 +154,8 @@ object OcsBuild extends Build {
       // On recompilation only consider changes to .scala and .js files
       watchSources ~= { t:Seq[java.io.File] => {t.filter(includeInTrigger)} },
 
+      emitSourceMaps in fullOptJS := true,
+
       // Settings for the command line client on scala.js
       resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
       // Lets the backend to read the .map file for js
