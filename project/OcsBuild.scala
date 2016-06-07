@@ -65,6 +65,7 @@ object OcsBuild extends Build {
       test := {},
       // Write the generated js to the filename seqexec.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
+      artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
       // JS dependencies from webjars
       jsDependencies ++= Seq(
         "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
@@ -101,6 +102,7 @@ object OcsBuild extends Build {
       test := {},
       // Write the generated js to the filename seqexec.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec-cli.js",
+      artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-cli-opt.js",
       // JS dependencies from webjars
       jsDependencies ++= Seq(
         "org.webjars" % "jquery"          % LibraryVersions.jQuery         / "jquery.js"            minified "jquery.min.js",
@@ -108,6 +110,7 @@ object OcsBuild extends Build {
       ),
       // Build a js dependencies file
       skip in packageJSDependencies := false,
+      emitSourceMaps in fullOptJS := true,
       // Put the jsdeps file on a place reachable for the server
       crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
       libraryDependencies ++= Seq(
@@ -153,8 +156,6 @@ object OcsBuild extends Build {
       watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value,
       // On recompilation only consider changes to .scala and .js files
       watchSources ~= { t:Seq[java.io.File] => {t.filter(includeInTrigger)} },
-
-      emitSourceMaps in fullOptJS := true,
 
       // Settings for the command line client on scala.js
       resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
