@@ -137,7 +137,7 @@ object OcsBuild extends Build {
   lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
     .settings(commonSettings: _*)
     .settings(
-      libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, StreamZ) ++ Http4s ++ Play,
+      libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, StreamZ, Slf4jJuli) ++ Http4s ++ Play,
 
       // Settings to optimize the use of sbt-revolver
 
