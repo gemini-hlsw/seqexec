@@ -25,6 +25,7 @@ lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
   .settings(
     name in Universal := "seqexec",
     mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
+    //mainClass in Compile := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
 
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
@@ -33,5 +34,16 @@ lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
     // Put the jar files in the lib dir
     mappings in Universal <+= (packageBin in Compile) map { jar =>
       jar -> ("lib/" + jar.getName)
-    }
+    },
+
+    // Launch options
+    javaOptions in Universal ++= Seq(
+      // -J params will be added as jvm parameters
+      "-J-Xmx512m",
+      "-J-Xms256m",
+
+      // others will be added as app parameters
+      // TODO Define how to configure applications
+      "prod" // Run in production mode.
+    )
   )
