@@ -27,9 +27,12 @@ lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
     mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     //mainClass in Compile := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
 
+    // The production optimized files will go into the seqexec jar
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
+    resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
+    resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
 
     // Put the jar files in the lib dir
     mappings in Universal <+= (packageBin in Compile) map { jar =>
