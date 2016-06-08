@@ -33,7 +33,7 @@ object AuthenticationConfig {
   val ldapHost = "gs-dc6.gemini.edu"
   val ldapPort = 3268
 
-  val ldapService = new LDAPAuthenticationService(ldapHost, ldapPort)
+  val ldapService = new FreeLDAPAuthenticationService(ldapHost, ldapPort)
 
   // TODO Only the LDAP service should be present on production mode
   val authServices =
