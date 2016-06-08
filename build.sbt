@@ -21,11 +21,37 @@ def preventPublication(p: Project) =
 lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
+  .enablePlugins(UniversalPlugin)
+  .enablePlugins(LinuxPlugin)
+  .enablePlugins(RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
     name in Universal := "seqexec",
     mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     //mainClass in Compile := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
+
+    // RPM properties
+    rpmVendor := "Gemini",
+    version in Rpm := {
+      (version in ThisBuild).value.replace("-SNAPSHOT", "")
+    },
+    // Altering permissions for configs
+    linuxPackageMappings := {
+        val mappings = linuxPackageMappings.value
+        // Changing the group for all configs
+        mappings map {
+            case linuxPackage if linuxPackage.fileData.config equals "true" =>
+                // altering the group
+                val newFileData = linuxPackage.fileData.copy(
+                    group = "appdocs"
+                )
+                // altering the LinuxPackageMapping
+                linuxPackage.copy(
+                    fileData = newFileData
+                )
+            case linuxPackage => linuxPackage
+        }
+    },
 
     // The production optimized files will go into the seqexec jar
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
