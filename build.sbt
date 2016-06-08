@@ -34,6 +34,15 @@ lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
 
+    //  Generate a custom logging.properties for the application
+    resourceGenerators in Compile += Def.task {
+      val loggingTemplate = (baseDirectory in ThisBuild).value / "project" / "resources" / "logging.properties"
+      val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
+      resourceManaged.value.mkdirs()
+      IO.write(resourceManaged.value / loggingTemplate.getName, config)
+      Seq(loggingTemplate)
+    }.taskValue,
+
     // Put the jar files in the lib dir
     mappings in Universal <+= (packageBin in Compile) map { jar =>
       jar -> ("lib/" + jar.getName)
