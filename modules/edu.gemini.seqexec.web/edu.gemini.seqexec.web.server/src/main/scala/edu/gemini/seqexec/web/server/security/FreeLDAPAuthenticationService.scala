@@ -5,19 +5,20 @@ import edu.gemini.seqexec.web.common.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
 import scala.collection.JavaConverters._
-import scala.util.Try
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
 import scalaz.effect.IO
 
-object FreeLDAPAuthenticationService {
+object FreeLDAPAuthenticationService extends App {
+  // Some useful type aliases
   type UID = String
   type DisplayName = String
 
   val Domain = "@gemini.edu"
   val UidExtractor = s"(\\w*)($Domain)?".r
 
+  // Extension methods for ldap connection
   implicit class LdapConnectionOps(val c: LDAPConnection) extends AnyVal {
     def authenticate(u: String, p: String): UID = {
       // It doesn't matter if we include the domain
@@ -38,9 +39,13 @@ object FreeLDAPAuthenticationService {
         Filter.createEqualityFilter("uid", uid),
         Filter.createEqualityFilter("objectClass", "user")
       )
-      val search = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter)
+
+      val attributes = List("displayName", "memberOf", "thumbnailPhoto")
+      val search = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter, attributes: _*)
+      // Search to read user data, it may throw an exception
       val searchResult = c.search(search)
 
+      // Extract the display name if available
       val displayName = for {
           s <- searchResult.getSearchEntries.asScala.headOption
           a <- Option(s.getAttribute("displayName"))
@@ -65,11 +70,6 @@ object FreeLDAPAuthenticationService {
   def bind(u: String, p: String): LdapM[UID] = Free.liftF(LdapOp.AuthenticateOp(u, p))
   def displayName(u: UID): LdapM[DisplayName] = Free.liftF(LdapOp.UserDisplayNameOp(u))
 
-  def authenticationProgram(u: String, p: String): LdapM[UserDetails] = for {
-    u <- bind(u, p)
-    d <- displayName(u)
-  } yield UserDetails(u, d)
-
   // Function taking an Uboundid connection and producing A
   type LDAPConnectionReader[A] = LDAPConnection => A
 
@@ -79,7 +79,7 @@ object FreeLDAPAuthenticationService {
       def apply[A](fa: LdapOp[A]) =
         fa match {
           case LdapOp.AuthenticateOp(u, p) => _.authenticate(u, p)
-          case LdapOp.UserDisplayNameOp(uid: UID) => _.displayName(uid)
+          case LdapOp.UserDisplayNameOp(uid) => _.displayName(uid)
       }
     }
 
@@ -89,7 +89,7 @@ object FreeLDAPAuthenticationService {
       def apply[A](fa: LdapOp[A]) =
         fa match {
           case LdapOp.AuthenticateOp(u, p) => IO(c.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid: UID) => IO(c.displayName(uid))
+          case LdapOp.UserDisplayNameOp(uid) => IO(c.displayName(uid))
       }
     }
 
@@ -99,7 +99,7 @@ object FreeLDAPAuthenticationService {
       def apply[A](fa: LdapOp[A]) =
         fa match {
           case LdapOp.AuthenticateOp(u, p) => Task(c.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid: UID) => Task(c.displayName(uid))
+          case LdapOp.UserDisplayNameOp(uid) => Task(c.displayName(uid))
       }
     }
 
@@ -108,6 +108,13 @@ object FreeLDAPAuthenticationService {
 
   def runReader[A](a: LdapM[A]): LDAPConnectionReader[A] =
     a.foldMap(toReader)
+
+  // Programs
+  def authenticationProgram(u: String, p: String): LdapM[UserDetails] = for {
+    u <- bind(u, p)
+    d <- displayName(u)
+  } yield UserDetails(u, d)
+
 }
 
 /**
@@ -124,20 +131,20 @@ class FreeLDAPAuthenticationService(host: String, port: Int) extends Authenticat
   lazy val pool = new LDAPConnectionPool(connection, MaxConnections)
 
   override def authenticateUser(username: String, password: String): AuthResult = {
-    val c = pool.getConnection
-    try {
-      \/-(runIO(authenticationProgram(username, password), c).unsafePerformIO())
-    } catch {
+    // We may want to run this directly on Task
+    \/.fromTryCatchNonFatal {
+      val c = pool.getConnection
+      runIO(authenticationProgram(username, password), c)
+        .ensuring(IO(pool.releaseConnection(c))).unsafePerformIO()
+    }.leftMap {
       case e:LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
-        BadCredentials(username).left
+        BadCredentials(username)
       case e:LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
-        UserNotFound(username).left
+        UserNotFound(username)
       case e:LDAPException =>
-        GenericFailure("LDAP Authentication error").left
+        GenericFailure("LDAP Authentication error")
       case e:Exception =>
-        GenericFailure(e.getMessage).left
-    } finally {
-      pool.releaseConnection(c)
+        GenericFailure(e.getMessage)
     }
   }
 }

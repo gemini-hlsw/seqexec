@@ -29,7 +29,7 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
       }
     }
 
-  def runMock[A](a: LdapM[A], db: MockAuthDB): Id[A] =
+  def runMock[A](a: LdapM[A], db: MockAuthDB): A =
     a.foldMap(toMockDB(db))
 
   "LDAP Auth Service" should "support auth" in {
