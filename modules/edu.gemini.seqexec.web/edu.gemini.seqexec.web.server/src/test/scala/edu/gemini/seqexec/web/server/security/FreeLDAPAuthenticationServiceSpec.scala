@@ -6,7 +6,6 @@ import org.scalatest.{FlatSpec, Matchers}
 
 import scalaz._
 import Scalaz._
-import scalaz.effect.IO
 
 class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with PropertyChecks {
   import FreeLDAPAuthenticationService._
@@ -20,30 +19,30 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
     def displayName(uid: UID): DisplayName = ~users.get(uid).map(_._2)
   }
 
-  // Natural transformation to IO with a mock auth db
-  def toMockDB(db: MockAuthDB): LdapOp ~> IO =
-    new (LdapOp ~> IO) {
+  // Natural transformation to Id with a mock auth db
+  def toMockDB(db: MockAuthDB): LdapOp ~> Id =
+    new (LdapOp ~> Id) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p) => IO(db.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid: UID) => IO(db.displayName(uid))
+          case LdapOp.AuthenticateOp(u, p) => db.authenticate(u, p)
+          case LdapOp.UserDisplayNameOp(uid: UID) => db.displayName(uid)
       }
     }
 
-  def runMock[A](a: LdapM[A], db: MockAuthDB): IO[A] =
+  def runMock[A](a: LdapM[A], db: MockAuthDB): Id[A] =
     a.foldMap(toMockDB(db))
 
   "LDAP Auth Service" should "support auth" in {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = true)
-      runMock(authenticationProgram(u, ""), db).unsafePerformIO() == UserDetails(u, t._2)
+      runMock(authenticationProgram(u, ""), db) == UserDetails(u, t._2)
     }
   }
   it should "suport auth with a password" in {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
       intercept[RuntimeException] {
-        runMock(authenticationProgram(u, t._1), db).unsafePerformIO() == UserDetails(u, t._2)
+        runMock(authenticationProgram(u, t._1), db) == UserDetails(u, t._2)
       }
     }
   }
@@ -51,7 +50,7 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
       intercept[RuntimeException] {
-        runMock(authenticationProgram(u, ""), db).unsafePerformIO()
+        runMock(authenticationProgram(u, ""), db)
       }
     }
   }
