@@ -18,6 +18,14 @@ def preventPublication(p: Project) =
     publishTo := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
     packagedArtifacts := Map.empty)
 
+val generateLoggingConfigTask = Def.task {
+      val loggingTemplate = (baseDirectory in ThisBuild).value / "project" / "resources" / "logging.properties"
+      val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
+      resourceManaged.value.mkdirs()
+      IO.write(resourceManaged.value / loggingTemplate.getName, config)
+      Seq(loggingTemplate)
+    }
+
 lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
@@ -61,13 +69,7 @@ lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
 
     //  Generate a custom logging.properties for the application
-    resourceGenerators in Compile += Def.task {
-      val loggingTemplate = (baseDirectory in ThisBuild).value / "project" / "resources" / "logging.properties"
-      val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
-      resourceManaged.value.mkdirs()
-      IO.write(resourceManaged.value / loggingTemplate.getName, config)
-      Seq(loggingTemplate)
-    }.taskValue,
+    resourceGenerators in Compile += generateLoggingConfigTask.taskValue,
 
     // Put the jar files in the lib dir
     mappings in Universal <+= (packageBin in Compile) map { jar =>
