@@ -32,17 +32,23 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
   def runMock[A](a: LdapM[A], db: MockAuthDB): A =
     a.foldMap(toMockDB(db))
 
-  "LDAP Auth Service" should "support auth" in {
+  "LDAP Auth Service" should "support simple auth" in {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = true)
-      runMock(authenticationProgram(u, ""), db) == UserDetails(u, t._2)
+      runMock(authenticate(u, ""), db) shouldEqual u
     }
   }
-  it should "suport auth with a password" in {
+  it should "support auth and name" in {
+    forAll { (u: String, t: (String, String)) =>
+      val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = true)
+      runMock(authenticationAndName(u, ""), db) shouldEqual UserDetails(u, t._2)
+    }
+  }
+  it should "support auth and name with a password" in {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
       intercept[RuntimeException] {
-        runMock(authenticationProgram(u, t._1), db) == UserDetails(u, t._2)
+        runMock(authenticationAndName(u, t._1), db) shouldEqual UserDetails(u, t._2)
       }
     }
   }
@@ -50,7 +56,7 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
       intercept[RuntimeException] {
-        runMock(authenticationProgram(u, ""), db)
+        runMock(authenticationAndName(u, ""), db)
       }
     }
   }

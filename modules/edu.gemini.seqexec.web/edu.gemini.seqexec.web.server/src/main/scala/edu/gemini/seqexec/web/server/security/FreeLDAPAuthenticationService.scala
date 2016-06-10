@@ -4,92 +4,45 @@ import com.unboundid.ldap.sdk._
 import edu.gemini.seqexec.web.common.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
-import scala.collection.JavaConverters._
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
 import scalaz.effect.IO
 
-object FreeLDAPAuthenticationService extends App {
-  // Some useful type aliases
-  type UID = String
-  type DisplayName = String
-
-  val Domain = "@gemini.edu"
-  val UidExtractor = s"(\\w*)($Domain)?".r
-
-  // Extension methods for ldap connection
-  implicit class LdapConnectionOps(val c: LDAPConnection) extends AnyVal {
-    def authenticate(u: String, p: String): UID = {
-      // It doesn't matter if we include the domain
-      val usernameWithDomain = if (u.endsWith(Domain)) u else s"$u$Domain"
-      val bindRequest = new SimpleBindRequest(usernameWithDomain, p)
-      // Authenticate, it throws an exception if it fails
-      c.bind(bindRequest)
-      // Uid shouldn't have domain
-      usernameWithDomain match {
-        case UidExtractor(uid, _) => uid
-        case uid                  => uid
-      }
-    }
-
-    def displayName(uid: UID): DisplayName = {
-      val baseDN = c.getRootDSE.getAttributeValue("namingContexts")
-      val filter = Filter.createANDFilter(
-        Filter.createEqualityFilter("uid", uid),
-        Filter.createEqualityFilter("objectClass", "user")
-      )
-
-      val attributes = List("displayName", "memberOf", "thumbnailPhoto")
-      val search = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter, attributes: _*)
-      // Search to read user data, it may throw an exception
-      val searchResult = c.search(search)
-
-      // Extract the display name if available
-      val displayName = for {
-          s <- searchResult.getSearchEntries.asScala.headOption
-          a <- Option(s.getAttribute("displayName"))
-          d <- Option(a.getValue)
-        } yield d
-
-      ~displayName
-    }
-  }
+/**
+  * Definition of LDAP as a free monad algebra/interpreters
+  */
+object FreeLDAPAuthenticationService {
+  import UserDetails._
+  import LdapConnectionOps._
 
   sealed trait LdapOp[A]
+  // Operations on ldap
   object LdapOp {
-    // Operation to authenticate a user, It returs true if it works
+    // Operation to authenticate a user, It returns true if it works
     case class AuthenticateOp(username: String, password: String) extends LdapOp[UID]
-    case class UserDisplayNameOp(uid: UID) extends LdapOp[DisplayName]
+    // Read the user display name
+    case class UserDisplayNameOp(uid: UID)                        extends LdapOp[DisplayName]
+    // Reads the name, groups and thumbnail
+    case class DisplayNameGrpThumbOp(uid: UID)                    extends LdapOp[(DisplayName, Groups, Option[Thumbnail])]
   }
 
   // Free monad over the free functor of LdapOp.
   type LdapM[A] = Free[LdapOp, A]
 
   // Smart constructors for LdapOp[A]
-  def bind(u: String, p: String): LdapM[UID] = Free.liftF(LdapOp.AuthenticateOp(u, p))
-  def displayName(u: UID): LdapM[DisplayName] = Free.liftF(LdapOp.UserDisplayNameOp(u))
-
-  // Function taking an Uboundid connection and producing A
-  type LDAPConnectionReader[A] = LDAPConnection => A
-
-  // Natural transformation to (LDAPConnectionReader[A])
-  val toReader: LdapOp ~> LDAPConnectionReader =
-    new (LdapOp ~> LDAPConnectionReader) {
-      def apply[A](fa: LdapOp[A]) =
-        fa match {
-          case LdapOp.AuthenticateOp(u, p) => _.authenticate(u, p)
-          case LdapOp.UserDisplayNameOp(uid) => _.displayName(uid)
-      }
-    }
+  def bind(u: String, p: String): LdapM[UID]                                   = Free.liftF(LdapOp.AuthenticateOp(u, p))
+  def displayName(u: UID): LdapM[DisplayName]                                  = Free.liftF(LdapOp.UserDisplayNameOp(u))
+  def nameGroupsThumb(u: UID): LdapM[(DisplayName, Groups, Option[Thumbnail])] = Free.liftF(LdapOp.DisplayNameGrpThumbOp(u))
 
   // Natural transformation to IO
   def toIO(c: LDAPConnection): LdapOp ~> IO =
     new (LdapOp ~> IO) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p) => IO(c.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid) => IO(c.displayName(uid))
+          case LdapOp.AuthenticateOp(u, p)       => IO(c.authenticate(u, p))
+          case LdapOp.UserDisplayNameOp(uid)     => IO(c.displayName(uid))
+          case LdapOp.DisplayNameGrpThumbOp(uid) => IO(c.nameGroupsThumb(uid))
       }
     }
 
@@ -98,23 +51,35 @@ object FreeLDAPAuthenticationService extends App {
     new (LdapOp ~> Task) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p) => Task(c.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid) => Task(c.displayName(uid))
+          case LdapOp.AuthenticateOp(u, p)       => Task(c.authenticate(u, p))
+          case LdapOp.UserDisplayNameOp(uid)     => Task(c.displayName(uid))
+          case LdapOp.DisplayNameGrpThumbOp(uid) => Task(c.nameGroupsThumb(uid))
       }
     }
 
+  // Run on IO
   def runIO[A](a: LdapM[A], c: LDAPConnection): IO[A] =
     a.foldMap(toIO(c))
 
-  def runReader[A](a: LdapM[A]): LDAPConnectionReader[A] =
-    a.foldMap(toReader)
+  // Run on task, it could be used with http4s eventually
+  def runTask[A](a: LdapM[A], c: LDAPConnection): Task[A] =
+    a.foldMap(toTask(c))
 
   // Programs
-  def authenticationProgram(u: String, p: String): LdapM[UserDetails] = for {
+  // Does simple user authentication
+  def authenticate(u: String, p: String): LdapM[UID] = bind(u, p)
+
+  // Authenticate and reads the display name
+  def authenticationAndName(u: String, p: String): LdapM[UserDetails] = for {
     u <- bind(u, p)
     d <- displayName(u)
   } yield UserDetails(u, d)
 
+  // Authenticate and reads the name, groups and photo
+  def authNameGroupThumb(u: String, p: String): LdapM[(UserDetails, Groups, Option[Thumbnail])] = for {
+    u <- bind(u, p)
+    d <- nameGroupsThumb(u)
+  } yield (UserDetails(u, d._1), d._2, d._3)
 }
 
 /**
@@ -126,15 +91,19 @@ class FreeLDAPAuthenticationService(host: String, port: Int) extends Authenticat
   val MaxConnections = 20
   // Shorten the default timeout
   val Timeout = 1000
+  val Domain = "@gemini.edu"
 
   lazy val connection = new LDAPConnection(new LDAPConnectionOptions() <| {_.setConnectTimeoutMillis(Timeout)}, host, port)
   lazy val pool = new LDAPConnectionPool(connection, MaxConnections)
 
   override def authenticateUser(username: String, password: String): AuthResult = {
+    // We should always return the domain
+    val usernameWithDomain = if (username.endsWith(Domain)) username else s"$username$Domain"
+
     // We may want to run this directly on Task
     \/.fromTryCatchNonFatal {
       val c = pool.getConnection
-      runIO(authenticationProgram(username, password), c)
+      runIO(authenticationAndName(usernameWithDomain, password), c)
         .ensuring(IO(pool.releaseConnection(c))).unsafePerformIO()
     }.leftMap {
       case e:LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
