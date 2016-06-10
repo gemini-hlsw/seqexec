@@ -26,39 +26,30 @@ val generateLoggingConfigTask = Def.task {
       Seq(loggingTemplate)
     }
 
-lazy val seqexec = preventPublication(project.in(file("app/seqexec")))
+lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
-  .enablePlugins(UniversalPlugin)
-  .enablePlugins(LinuxPlugin)
   .enablePlugins(RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
-    name in Universal := "seqexec",
+    name in Universal := "seqexec-server",
     mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     //mainClass in Compile := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
 
     // RPM properties
     rpmVendor := "Gemini",
+    rpmLicense := Some("BSD-3"),
+    rpmGroup := Some("Gemini"),
+    rpmChangelogFile := None,
+    packageDescription in Rpm := "Seqexec Server",
+    rpmPrefix in Rpm := Some("/gemsoft/opt"),
+    packageName in Rpm := "seqexec-server",
+    // User/Group for execution
+    daemonUser in Linux := "telops",
+    daemonGroup in Linux := "telops",
+    // This lets us build RPMs from snapshot versions
     version in Rpm := {
       (version in ThisBuild).value.replace("-SNAPSHOT", "")
-    },
-    // Altering permissions for configs
-    linuxPackageMappings := {
-        val mappings = linuxPackageMappings.value
-        // Changing the group for all configs
-        mappings map {
-            case linuxPackage if linuxPackage.fileData.config equals "true" =>
-                // altering the group
-                val newFileData = linuxPackage.fileData.copy(
-                    group = "appdocs"
-                )
-                // altering the LinuxPackageMapping
-                linuxPackage.copy(
-                    fileData = newFileData
-                )
-            case linuxPackage => linuxPackage
-        }
     },
 
     // The production optimized files will go into the seqexec jar

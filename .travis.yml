@@ -3,6 +3,9 @@ scala:
   - 2.11.8
 jdk:
   - oraclejdk8
+before_script:
+  - sudo apt-get install -y rpm
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION test
+  #- sbt ++$TRAVIS_SCALA_VERSION test
   - sbt ++$TRAVIS_SCALA_VERSION seqexec/universal:packageZipTarball
+  - sbt ++$TRAVIS_SCALA_VERSION seqexec/rpm:packageBin
