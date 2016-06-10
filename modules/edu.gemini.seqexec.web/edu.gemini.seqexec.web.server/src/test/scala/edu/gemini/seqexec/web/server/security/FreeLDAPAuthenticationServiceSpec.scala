@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.server.security
 
 import edu.gemini.seqexec.web.common.UserDetails
+import edu.gemini.seqexec.web.common.UserDetails._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -24,8 +25,9 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
     new (LdapOp ~> Id) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p) => db.authenticate(u, p)
-          case LdapOp.UserDisplayNameOp(uid: UID) => db.displayName(uid)
+          case LdapOp.AuthenticateOp(u, p)       => db.authenticate(u, p)
+          case LdapOp.UserDisplayNameOp(uid)     => db.displayName(uid)
+          case LdapOp.DisplayNameGrpThumbOp(uid) => ("", Nil, None)
       }
     }
 
