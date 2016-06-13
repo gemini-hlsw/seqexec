@@ -36,6 +36,9 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
     mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     //mainClass in Compile := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
 
+    makeBatScript := None,
+    bashScriptConfigLocation := None,
+
     // RPM properties
     rpmVendor := "Gemini",
     rpmLicense := Some("BSD-3"),
