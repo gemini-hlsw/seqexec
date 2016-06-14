@@ -10,6 +10,31 @@ import spray.revolver.RevolverPlugin.autoImport._
 
 object OcsBuild extends Build {
 
+  lazy val ocsJreDir = settingKey[File]("Directory where distribution JREs are stored.")
+
+  sealed trait LogType
+  object LogType {
+    case object ConsoleAndFiles extends LogType
+    case object Files extends LogType
+  }
+
+  /**
+    * Task to generate a logging configuration file from a template
+    */
+  def generateLoggingConfigTask(logtype: LogType) = Def.task {
+    val loggingConfDestName = "logging.properties"
+    val loggingConfSrcName = logtype match {
+      case LogType.Files           => "logging.files.template"
+      case LogType.ConsoleAndFiles => "logging.console_files.template"
+    }
+
+    val loggingTemplate = (baseDirectory in ThisBuild).value / "project" / "resources" / loggingConfSrcName
+    val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
+    resourceManaged.value.mkdirs()
+    IO.write(resourceManaged.value / loggingConfDestName, config)
+    Seq(resourceManaged.value / loggingConfDestName)
+  }
+
   // The variables defined at this level can be referred
   // by the build.sbt files at the module level
 
