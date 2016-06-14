@@ -50,7 +50,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web
       JQuery.value,
       ScalaCSS.value,
       ScalaJSDom.value,
-      JavaTimeJS.value
+      JavaTimeJS.value,
+      JavaLogJS.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )
   .settings(
