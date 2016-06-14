@@ -30,9 +30,10 @@ object OcsBuild extends Build {
 
     val loggingTemplate = (baseDirectory in ThisBuild).value / "project" / "resources" / loggingConfSrcName
     val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
-    resourceManaged.value.mkdirs()
-    IO.write(resourceManaged.value / loggingConfDestName, config)
-    Seq(resourceManaged.value / loggingConfDestName)
+    target.value.mkdirs()
+    val destFile = target.value / loggingConfDestName
+    IO.write(destFile, config)
+    destFile
   }
 
   // The variables defined at this level can be referred

@@ -32,9 +32,8 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
 
     // Don't create launchers for Windows
     makeBatScript := None,
-    bashScriptConfigLocation := None,
+    bashScriptConfigLocation := Some("${app_home}/../conf/config.properties"),
 
-    // The production optimized files will go into the seqexec jar
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
@@ -42,12 +41,18 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
 
     //  Generate a custom logging.properties for the application
-    resourceGenerators in Compile += generateLoggingConfigTask(LogType.ConsoleAndFiles).taskValue,
+    mappings in Universal += {
+      val f = generateLoggingConfigTask(LogType.ConsoleAndFiles).value
+      f -> ("conf/" + f.getName)
+    },
 
     // Put the jar files in the lib dir
     mappings in Universal <+= (packageBin in Compile) map { jar =>
       jar -> ("lib/" + jar.getName)
     },
+
+    // Create a log dir
+    mappings in Universal ++= Seq(file("log") -> "log"),
 
     // Launch options
     javaOptions in Universal ++= Seq(
