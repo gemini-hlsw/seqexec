@@ -29,31 +29,19 @@ val generateLoggingConfigTask = Def.task {
 lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
-  .enablePlugins(RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
-    name in Universal := "seqexec-server",
+    description := "Seqexec server for local testing",
+    name := "seqexec-server",
+    packageName in Universal := packageName.value,
     mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
-    //mainClass in Compile := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
 
+    // No javadocs
+    mappings in (Compile, packageDoc) := Seq(),
+
+    // Don't create launchers for Windows
     makeBatScript := None,
     bashScriptConfigLocation := None,
-
-    // RPM properties
-    rpmVendor := "Gemini",
-    rpmLicense := Some("BSD-3"),
-    rpmGroup := Some("Gemini"),
-    rpmChangelogFile := None,
-    packageDescription in Rpm := "Seqexec Server",
-    rpmPrefix in Rpm := Some("/gemsoft/opt"),
-    packageName in Rpm := "seqexec-server",
-    // User/Group for execution
-    daemonUser in Linux := "telops",
-    daemonGroup in Linux := "telops",
-    // This lets us build RPMs from snapshot versions
-    version in Rpm := {
-      (version in ThisBuild).value.replace("-SNAPSHOT", "")
-    },
 
     // The production optimized files will go into the seqexec jar
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
