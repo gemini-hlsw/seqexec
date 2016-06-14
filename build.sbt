@@ -65,3 +65,34 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
       "prod" // Run in production mode.
     )
   )
+
+lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqexec-server-l64")))
+  .enablePlugins(LinuxPlugin, RpmPlugin)
+  .enablePlugins(JavaServerAppPackaging)
+  .settings(
+    description := "Seqexec server test deployment on linux 64",
+
+    // RPM properties
+    rpmVendor := "Gemini",
+    rpmLicense := Some("BSD-3"),
+    rpmGroup := Some("Gemini"),
+    rpmChangelogFile := None,
+    packageDescription in Rpm := "Seqexec Server",
+    rpmPrefix in Rpm := Some("/gemsoft/opt"),
+    packageName in Rpm := "seqexec-server",
+    // User/Group for execution
+    daemonUser in Linux := "telops",
+    daemonGroup in Linux := "telops",
+    // This lets us build RPMs from snapshot versions
+    version in Rpm := {
+      (version in ThisBuild).value.replace("-SNAPSHOT", "")
+    },
+
+    // Put the jre
+    linuxPackageMappings in Rpm += {
+      val jresDir = (ocsJreDir in ThisBuild).value
+      // RPM are of interest only for linux 64 bit
+      val linux64Jre = jresDir.toPath.resolve("linux").resolve("JRE64_1.8")
+      packageDirectoryAndContentsMapping((linux64Jre.toFile, (rpmPrefix in Rpm).value.map(_ + "").getOrElse("")))
+    }
+  ).dependsOn(seqexec_server)
