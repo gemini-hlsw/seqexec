@@ -5,7 +5,12 @@ name := "edu.gemini.seqexec.web"
 
 // Root web project
 lazy val edu_gemini_seqexec_web = project.in(file("."))
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client,  edu_gemini_seqexec_web_client_cli, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
+  .aggregate(
+    edu_gemini_seqexec_web_server,
+    edu_gemini_seqexec_web_client,
+    edu_gemini_seqexec_web_client_cli,
+    edu_gemini_seqexec_web_shared_JS,
+    edu_gemini_seqexec_web_shared_JVM)
 
 lazy val commonSettings = Seq(
   // Common libraries
@@ -19,9 +24,7 @@ lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure)
   )
   .jsSettings(
     scalaJSUseRhino := false,
-    libraryDependencies ++= Seq(
-      JavaTimeJS.value,
-      JavaLogJS.value)
+    libraryDependencies += JavaLogJS.value
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm

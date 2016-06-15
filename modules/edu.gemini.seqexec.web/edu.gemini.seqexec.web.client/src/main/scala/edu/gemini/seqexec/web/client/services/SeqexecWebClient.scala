@@ -1,6 +1,9 @@
 package edu.gemini.seqexec.web.client.services
 
+import java.util.logging.LogRecord
+
 import edu.gemini.seqexec.web.common._
+import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import upickle.default
 
@@ -60,5 +63,14 @@ object SeqexecWebClient {
   def logout(): Future[String] =
     Ajax.post(
       url = s"$baseUrl/logout"
+    ).map(_.responseText)
+
+  /**
+    * Log record
+    */
+  def log(record: LogRecord): Future[Unit] =
+    Ajax.post(
+      url = s"$baseUrl/log",
+      data = default.write(LogMessage.fromLogRecord(record))
     ).map(_.responseText)
 }
