@@ -40,7 +40,10 @@ object WebServerLauncher extends App {
         LogManager.getLogManager.readConfiguration(getClass.getClassLoader.getResourceAsStream("logging.properties"))
       }
     }
-  }.leftMap(u => println("Cannot load logging configuration, defaults will be used"))
+  }.leftMap { u =>
+    println("Cannot load logging configuration, defaults will be used")
+    LogManager.getLogManager.readConfiguration()
+  }
 
   // TODO improve configuration style
   val devMode = !args.contains("prod")
