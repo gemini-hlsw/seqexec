@@ -19,13 +19,14 @@ object CharDisplay {
         "#"*border++"\n"++"#"*(border*2+width))
     }
 
-    val x = Math.round(p._1).toInt
-    val y = height - Math.round(p._2).toInt - 1
+    val x = Math.floor(p.x).toInt
+    val y = height - Math.floor(p.y).toInt - 1
+
     addBorder(border,
       if(x>=0 && x<width && y>=0 && y<height)
-        ((" " * width) ++ "\n") * (y-1) ++
-          (" " * (x-1) ++ "O" ++ " " * (width - max(x, 1)) ++
-          "\n") ++ ((" " * width) ++ "\n") * (height - max(y, 1))
+        ((" " * width) ++ "\n") * y ++
+          (" " * x ++ "O" ++ " " * (width - x - 1) ++
+          "\n") ++ ((" " * width) ++ "\n") * (height - y - 1)
       else
         ((" " * width) ++ "\n") * height
     )

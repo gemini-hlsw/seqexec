@@ -1,5 +1,8 @@
 package edu.gemini.experimental.jluhrs
 
+import scalaz.concurrent.Task
+import scalaz.stream.Process
+
 /**
   * Created by jluhrs on 6/2/16.
   */
@@ -10,17 +13,9 @@ object EventStream {
   import Timer._
 
   type Event[A] = (Time, A)
-  type EventStream[A] = Stream[Option[Event[A]]]
+  type EventStream[A] = Process[Task, Event[A]]
 
   // Returns all the events in the stream that happened before a given time.
-  def pastEvents[A](es: EventStream[A], t: Time): (List[Event[A]], EventStream[A]) = {
-    def f (s: EventStream[A], acc: List[Event[A]]): (List[Event[A]], EventStream[A]) = s match {
-      case Some((t1, a)) #:: rest =>  if (t1 > t) (acc, s)
-                                      else f (rest, (t1, a) :: acc)
-      case _                      => (acc, s)
-    }
-    f(es, List()) match {
-      case (l, s) => (l.reverse, s)
-    }
-  }
+//  def pastEvents[A](es: EventStream[A], t: Time): Process[Task, List[Event[A]]] =
+//    es takeWhile  { case (t1, _) => t >= t1 } toList
 }

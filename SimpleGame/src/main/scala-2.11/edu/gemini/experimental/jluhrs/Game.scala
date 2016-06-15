@@ -2,8 +2,12 @@ package edu.gemini.experimental.jluhrs
 
 import EventStream._
 import Timer._
+
 import scalaz._
 import Scalaz._
+import scalaz.stream.Process
+import scalaz.concurrent.Task
+import scala.concurrent.duration._
 
 /**
   * Created by jluhrs on 5/24/16.
@@ -15,12 +19,16 @@ import Scalaz._
  */
 object Game {
 
-  type Position = (Double, Double)
-  type SpeedDir = (Double, Double)
+  case class Position(x: Double, y: Double)
+  case class SpeedDir(x: Double, y: Double)
+
+  sealed trait Input
+
+  case object TimeTick extends Input
 
   case class GameState(t: Time, position: Position, speedDir: SpeedDir, velocity: Double, boardWidth: Int, boardHeight: Int)
 
-  sealed trait PlayerInput
+  sealed trait PlayerInput extends Input
 
   sealed trait DirectionalInput extends PlayerInput
 
@@ -29,63 +37,42 @@ object Game {
   case object Right extends DirectionalInput
   case object Left extends DirectionalInput
 
-  implicit def decodeSpeedDir(i: DirectionalInput): SpeedDir = i match {
-    case Up => (0.0, 1.0)
-    case Down => (0.0, -1.0)
-    case Right => (1.0, 0.0)
-    case Left => (-1.0, 0.0)
+  def toSpeedDir(i: DirectionalInput): SpeedDir = i match {
+    case Up => SpeedDir(0.0, 1.0)
+    case Down => SpeedDir(0.0, -1.0)
+    case Right => SpeedDir(1.0, 0.0)
+    case Left => SpeedDir(-1.0, 0.0)
   }
 
-  def updateSpeed(in: Option[PlayerInput]):State[GameState, Unit] = State[GameState, Unit] { s => {
-      in map {
-        case v: DirectionalInput => (s.copy(speedDir = v), ())
-        case _ => (s, ())
-      } getOrElse ((s, ()))
-    }
-  }
+  def updateSpeed(in: DirectionalInput):State[GameState, Unit] = State[GameState, Unit] { s => (s.copy(speedDir = toSpeedDir(in)), ()) }
 
   def move(delta: Time, p0: Position, dir: SpeedDir, velocity: Double):Position =
-    (p0._1 + delta*velocity*dir._1, p0._2 + delta*velocity*dir._2)
+    Position(p0.x + delta.toUnit(SECONDS) * velocity * dir.x, p0.y + delta.toUnit(SECONDS) * velocity * dir.y)
 
   def tick(time: Time):State[GameState, Unit] = {
     def mod(x:Double, b: Double) = if (x%b < 0) (b + x%b) else x%b
-    def modPos(pos: Position, width: Double, height: Double) = (mod(pos._1, width.toDouble), mod(pos._2, height.toDouble))
+    def modPos(pos: Position, width: Double, height: Double) = Position(mod(pos.x, width.toDouble), mod(pos.y, height.toDouble))
 
-    State[GameState, Unit] { s => (s.copy(t=time, position=modPos(move(time-s.t, s.position, s.speedDir, s.velocity), s.boardWidth, s.boardHeight ) ), ())}
+
+    State[GameState, Unit] { s => {
+      (s.copy(t=time, position=modPos(move(time-s.t, s.position, s.speedDir, s.velocity), s.boardWidth, s.boardHeight ) ), ()) }
+    }
   }
 
   // State machine to run one game cycle.
-  def gameCycle(in: Option[PlayerInput], time: Time): State[GameState, Unit] =
-    for {
-      _ <- updateSpeed(in)
-      _ <- tick(time)
-    } yield ()
-
-  // Returns the most recent player input, for a given time
-  def getUserInput(t: Time, l: => EventStream[PlayerInput]): (EventStream[PlayerInput], (Option[PlayerInput], Time)) = {
-    val v = EventStream.pastEvents(l, t)
-    (v._2, (v._1.reverse.headOption.map(_._2), t))
+  def gameCycle(in: Event[Input]): State[GameState, \/[GameState, GameState]] = in match {
+    case (t: Time, d: DirectionalInput) => (updateSpeed(d) *> get) map (_.left[GameState])
+    case (t: Time, TimeTick) => (tick(t) *> get) map (_.right[GameState])
   }
 
+  def runGame(width: Int, height: Int, input: Process[Task, Event[Input]]): Process[Task, Position] = {
+    val speed = 5.0
+    val startDir = SpeedDir(0.0, 1.0)
+    val startPosition = Position(0.0, height/2.0)
 
-  // Combines the time stream with the player input stream.
-  def timeInputStream(timer: Timer, s: => EventStream[PlayerInput]): Stream[(Option[PlayerInput], Time)] = {
-    val r = getUserInput(timer.head, s)
-    r._2 #:: timeInputStream(timer.tail, r._1)
-  }
+    val s0 = GameState(0 seconds, startPosition, startDir, speed, width, height)
 
-
-  def runGameCycle(s0: GameState, ss: => Stream[State[GameState, Unit]]): Stream[Position] = {
-    s0.position #:: runGameCycle(ss.head(s0)._1, ss.tail)
-  }
-
-  def runGame(width: Int, height: Int, timer: Timer, input: => EventStream[PlayerInput]): Stream[(Double, Double)] = {
-    val speed = 1.0
-    val startPosition = (0.0, 0.0)
-
-    val machine = timeInputStream(timer.tail, input).map((i) => gameCycle(i._1, i._2))
-
-    runGameCycle(GameState(timer.head, startPosition, (0.0, 1.0), speed, width, height), machine)
+    input.stateScan(s0)(gameCycle).filter(_.isRight).map(_.getOrElse(s0)).map(_.position)
 
   }
 

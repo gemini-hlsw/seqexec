@@ -1,9 +1,15 @@
 package edu.gemini.experimental.jluhrs
 
 import EventStream.Event
-import Timer._
 import Game._
 import CharDisplay._
+
+import scala.concurrent.duration._
+import scalaz.stream.time._
+import java.util.concurrent.Executors
+
+import scalaz.concurrent.Task
+import scalaz.stream.{Process, async}
 
 /**
   * Created by jluhrs on 5/25/16.
@@ -11,9 +17,10 @@ import CharDisplay._
 object Main {
 
   val width = 40
-  val height = 20
+  val height = 30
   val border = 1
 
+  implicit val scheduledExecutorService = Executors.newScheduledThreadPool(4)
 
   // Crude way to display the game board
   def displayFrame(s: String) = {
@@ -22,18 +29,17 @@ object Main {
       System.out.print("\n" * (height+2*border))
       System.out.flush();
     }
-
     clearScreen
     System.out.print(s)
     System.out.flush();
-
-    //This is just to animate the frames. The real timing must come from the input timing stream.
-    Thread.sleep(500)
   }
 
-  def main(args: Array[String]): Unit =
-    (runGame(width, height, periodicTimer(0.0, 1.0),
-      Stream[Option[Event[PlayerInput]]](Some(5.0, Right), Some(15.0, Up), Some(25.0, Right))
-    ).take(50).toList map (frame(width, height, border, _))).map(displayFrame)
+  def main(args: Array[String]): Unit = {
+
+    ConsoleKeys.start
+
+    (runGame(width, height, (awakeEvery(100 milliseconds).map((_, TimeTick)) merge ConsoleKeys.inputP))
+      map (frame(width, height, border, _))).map(displayFrame).run.unsafePerformSync
+  }
 
 }

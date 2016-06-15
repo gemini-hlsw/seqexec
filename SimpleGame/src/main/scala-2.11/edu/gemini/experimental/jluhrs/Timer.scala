@@ -1,13 +1,13 @@
 package edu.gemini.experimental.jluhrs
 
+import scala.concurrent.duration.Duration
 /**
   * Created by jluhrs on 5/19/16.
   */
 
 // The source of time (can we really control time ?)
 object Timer {
-  // For the sake of simplicity, Time is defined as Double
-  type Time = Double
+  type Time = Duration
 
   type Timer = Stream[Time]
 
