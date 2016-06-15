@@ -23,7 +23,7 @@ import scalaz.{-\/, \/, \/-}
 class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case action: UpdatedQueue =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
@@ -42,7 +42,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
 class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case action: SearchSequence =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
@@ -63,7 +63,7 @@ class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) e
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
     case RequestStop(s) =>
@@ -88,7 +88,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
 class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case OpenSearchArea  =>
       updated(SectionOpen)
     case CloseSearchArea =>
@@ -102,7 +102,7 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
 class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ToggleDevConsole if value == SectionOpen   =>
       updated(SectionClosed)
     case ToggleDevConsole if value == SectionClosed =>
@@ -116,7 +116,7 @@ class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
 class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case OpenLoginBox if value == SectionClosed =>
       updated(SectionOpen)
     case CloseLoginBox if value == SectionOpen  =>
@@ -130,13 +130,13 @@ class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends Ac
 class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case LoggedIn(u) =>
       // Close the login box
       val effect = Effect(Future(CloseLoginBox))
       updated(Some(u), effect)
     case Logout =>
-      val effect = Effect(SeqexecWebClient.logout())
+      val effect = Effect(SeqexecWebClient.logout().map(_ => NoAction))
       // Remove the user and call logout
       updated(None, effect)
   }
@@ -148,7 +148,7 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
       updated(value.focusOnSequence(ref))
@@ -173,7 +173,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
-  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case AppendToLog(s) =>
       updated(value.append(s))
   }
@@ -197,7 +197,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
       updated(value.copy(_1 = value._1.map(_.markStepAsCompleted(id, c, f)), _2 = value._2.append(event)), logE)
 
     case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
-      val audioEffect = Effect.action(new Audio("/sequencecomplete.mp3").play())
+      val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
       updated(value.copy(_1 = value._1.map(_.sequenceCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)
 

@@ -12,6 +12,7 @@ import scalacss.ScalaCssReact._
   * Component for the bar at the top of the page
   */
 object NavBar {
+  val userConnect = SeqexecCircuit.connect(_.user)
 
   val component = ReactComponentB[Unit]("SeqexecAppBar")
     .stateless
@@ -35,7 +36,7 @@ object NavBar {
               IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
             )
           ),
-          SeqexecCircuit.connect(_.user)(TopMenu(_))
+          userConnect(x => TopMenu(x))
         )
       )
     )

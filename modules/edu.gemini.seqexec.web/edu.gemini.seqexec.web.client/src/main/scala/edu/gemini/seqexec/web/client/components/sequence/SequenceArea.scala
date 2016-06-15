@@ -179,6 +179,8 @@ object SequenceStepsTableContainer {
   * Content of a single tab with a sequence
   */
 object SequenceTabContent {
+  def seqConnect(s: Sequence) = SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))
+
   case class Props(isActive: Boolean, user: Option[UserDetails], st: SequenceTab)
 
   val component = ReactComponentB[Props]("SequenceTabContent")
@@ -191,7 +193,7 @@ object SequenceTabContent {
         ),
         dataTab := p.st.instrument,
         p.st.sequence().render { s =>
-          SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(t => SequenceStepsTableContainer(t, p.user, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
+          seqConnect(s)(u => u().map(t => SequenceStepsTableContainer(t, p.user, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
         },
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
@@ -205,6 +207,8 @@ object SequenceTabContent {
   * Contains all the tabs for the sequences available in parallel
   */
 object SequenceTabs {
+  val logConnect = SeqexecCircuit.connect(_.globalLog)
+
   case class Props(user: Option[UserDetails], sequences: SequencesOnDisplay)
 
   def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
@@ -234,7 +238,7 @@ object SequenceTabs {
             ^.cls := "row computer only",
             <.div(
               ^.cls := "sixteen wide column",
-              SeqexecCircuit.connect(_.globalLog)(LogArea(_))
+              logConnect(LogArea(_))
             )
           )
         )
@@ -246,13 +250,16 @@ object SequenceTabs {
 }
 
 object SequenceArea {
+
+  val connect = SeqexecCircuit.connect(m => (m.user, m.sequencesOnDisplay))
+
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
     .render( _ =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences"),
-        SeqexecCircuit.connect(m => (m.user, m.sequencesOnDisplay))(p => SequenceTabs(p()._1, p()._2))
+        connect(p => SequenceTabs(p()._1, p()._2))
       )
     ).build
 
