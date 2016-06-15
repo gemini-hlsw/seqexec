@@ -82,10 +82,10 @@ object Settings {
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
     val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
-    val JavaLogJS   = Def.setting("org.scala-js" %%% "scalajs-java-logging" % LibraryVersions.javaTimeJS)
+    val JavaLogJS   = Def.setting("org.scala-js" %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"     % LibraryVersions.scalaZ)
+    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"         % LibraryVersions.scalaZ)
     val ScalaZConcurrent = "org.scalaz"             %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
     val ScalaZStream     = "org.scalaz.stream"      %%  "scalaz-stream"       % LibraryVersions.scalaZStream
     val StreamZ          = "com.github.krasserm"    %%  "streamz-akka-stream" % LibraryVersions.streamZ
