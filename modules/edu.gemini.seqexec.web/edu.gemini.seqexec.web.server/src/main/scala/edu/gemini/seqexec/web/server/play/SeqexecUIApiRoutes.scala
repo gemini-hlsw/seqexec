@@ -1,21 +1,26 @@
 package edu.gemini.seqexec.web.server.play
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Source, _}
-import akka.util.ByteString
+import java.util.logging.Logger
+
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
-import edu.gemini.seqexec.web.common.{Sequence, SequenceState, UserLoginRequest}
+import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState, UserLoginRequest}
+import edu.gemini.seqexec.web.common.LogMessage._
 import edu.gemini.seqexec.web.server.model.CannedModel
+import edu.gemini.seqexec.web.server.model.Conversions._
+import edu.gemini.seqexec.web.server.security.AuthenticationService._
+import edu.gemini.seqexec.web.server.security.AuthenticationConfig
+
 import play.api.mvc._
 import play.api.routing.Router._
 import play.api.routing.sird._
-import upickle.default._
-import edu.gemini.seqexec.web.server.model.Conversions._
 import play.api.http.websocket.{Message, PingMessage, TextMessage}
 import play.api.mvc.WebSocket.MessageFlowTransformer
-import edu.gemini.seqexec.web.server.security.AuthenticationService._
-import edu.gemini.seqexec.web.server.security.AuthenticationConfig
+import akka.actor.ActorSystem
+import akka.stream.scaladsl.{Source, _}
+import akka.util.ByteString
+
+import upickle.default._
 
 import scalaz.{-\/, \/-}
 import streamz.akka.stream._
@@ -24,6 +29,9 @@ import streamz.akka.stream._
   * Routes for calls from the web ui
   */
 object SeqexecUIApiRoutes {
+  // Logger for client messages
+  val clientLog = Logger.getLogger("clients")
+
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
@@ -79,9 +87,16 @@ object SeqexecUIApiRoutes {
           val cookieVal = buildToken(user)
           val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, maxAge = Option(AuthenticationConfig.sessionTimeout), secure = AuthenticationConfig.onSSL, httpOnly = true)
           Results.Ok(write(user)).withCookies(cookie)
-        case -\/(_)    =>
+        case -\/(_) =>
           Results.Unauthorized("")
       }
+    }
+    case POST(p"/api/seqexec/log") => Action(BodyParsers.parse.text) { s =>
+      val u = read[LogMessage](s.body)
+      // This will use the server time for the logs
+      clientLog.log(u.level, s"Client ${s.remoteAddress}: ${u.msg}")
+      // Always return ok
+      Results.Ok("")
     }
   }
 }
