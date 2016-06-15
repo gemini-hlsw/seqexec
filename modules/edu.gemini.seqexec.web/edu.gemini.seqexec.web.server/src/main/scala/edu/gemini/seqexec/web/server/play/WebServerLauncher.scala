@@ -1,12 +1,12 @@
 package edu.gemini.seqexec.web.server.play
 
-import edu.gemini.seqexec.web.server.http4s.WebServerLauncher._
+import edu.gemini.seqexec.web.server.common.LogInitialization
 import play.api.routing.Router
-import play.api.{BuiltInComponents, Environment, Mode}
+import play.api.{BuiltInComponents, Mode}
 import play.core.server.{NettyServerComponents, ServerConfig}
 import play.api.mvc._
 
-object WebServerLauncher extends App {
+object WebServerLauncher extends App with LogInitialization {
   val devMode = !args.contains("prod")
 
   def launch(port: Int):NettyServerComponents = {
