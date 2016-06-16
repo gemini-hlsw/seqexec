@@ -1,3 +1,4 @@
+import sbt.Keys._
 
 name := Settings.Definitions.name
 
@@ -22,23 +23,38 @@ def preventPublication(p: Project) =
     publishTo := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
     packagedArtifacts := Map.empty)
 
+lazy val seqexecCommonSettings = Seq(
+  // Common settings for deployments
+  mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
+  // This is important to keep the file generation order correctly
+  parallelExecution in Universal := false,
+  // Name of the launch script
+  executableScriptName := "seqexec-server",
+  // No javadocs
+  mappings in (Compile, packageDoc) := Seq(),
+  // Don't create launchers for Windows
+  makeBatScript := None,
+  // Specify a different name for the config file
+  bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
+  // Launch options
+  javaOptions in Universal ++= Seq(
+    // -J params will be added as jvm parameters
+    "-J-Xmx512m",
+    "-J-Xms256m",
+
+    // others will be added as app parameters
+    // TODO Define how to configure applications
+    "prod" // Run in production mode.
+  )
+)
+
 lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(JavaServerAppPackaging)
+  .settings(seqexecCommonSettings: _*)
   .settings(
     description := "Seqexec server for local testing",
-    name := "seqexec-server",
-    mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
-
-    // No javadocs
-    mappings in (Compile, packageDoc) := Seq(),
-
-    // Don't create launchers for Windows
-    makeBatScript := None,
-    // Specify a different name for the config file
-    bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
-
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
@@ -50,37 +66,21 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
 
     // Generate a custom logging.properties for the application
     // For staging the log uses files and console
-    mappings in Universal += {
+    mappings in Universal in stage += {
       val f = generateLoggingConfigTask(LogType.ConsoleAndFiles).value
-      f -> ("conf/" + f.getName)
-    },
-
-    // The tarball uses only log files
-    mappings in Universal in packageZipTarball += {
-      val f = generateLoggingConfigTask(LogType.Files).value
       f -> ("conf/" + f.getName)
     },
 
     // Put the jar files in the lib dir
     mappings in Universal <+= (packageBin in Compile) map { jar =>
       jar -> ("lib/" + jar.getName)
-    },
-
-    // Launch options
-    javaOptions in Universal ++= Seq(
-      // -J params will be added as jvm parameters
-      "-J-Xmx512m",
-      "-J-Xms256m",
-
-      // others will be added as app parameters
-      // TODO Define how to configure applications
-      "prod" // Run in production mode.
-    )
+    }
   )
 
 lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqexec-server-l64")))
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
+  .settings(seqexecCommonSettings: _*)
   .settings(
     description := "Seqexec server test deployment on linux 64",
 
@@ -98,6 +98,12 @@ lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqex
     // This lets us build RPMs from snapshot versions
     version in Rpm := {
       (version in ThisBuild).value.replace("-SNAPSHOT", "")
+    },
+
+    // The distribution uses only log files, no console
+    mappings in Universal in packageZipTarball += {
+      val f = generateLoggingConfigTask(LogType.Files).value
+      f -> ("conf/" + f.getName)
     },
 
     // Put the jre
