@@ -10,6 +10,10 @@ organization in Global := "edu.gemini.ocs"
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
+// This key is used to find the JRE dir. It should be overriden per user
+// Add a
+ocsJreDir in ThisBuild := Path.userHome / ".jres8"
+
 def preventPublication(p: Project) =
   p.settings(
     publish := {},
