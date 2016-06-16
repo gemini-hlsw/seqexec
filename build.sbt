@@ -36,7 +36,8 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
 
     // Don't create launchers for Windows
     makeBatScript := None,
-    bashScriptConfigLocation := Some("${app_home}/../conf/config.properties"),
+    // Specify a different name for the config file
+    bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
 
     // Run full opt js on the javascript. They will be placed on the "seqexec" jar
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
@@ -44,9 +45,19 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
 
-    //  Generate a custom logging.properties for the application
+    // This is important to keep the file generation order correctly
+    parallelExecution in Universal := false,
+
+    // Generate a custom logging.properties for the application
+    // For staging the log uses files and console
     mappings in Universal += {
       val f = generateLoggingConfigTask(LogType.ConsoleAndFiles).value
+      f -> ("conf/" + f.getName)
+    },
+
+    // The tarball uses only log files
+    mappings in Universal in packageZipTarball += {
+      val f = generateLoggingConfigTask(LogType.Files).value
       f -> ("conf/" + f.getName)
     },
 

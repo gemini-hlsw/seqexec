@@ -21,9 +21,9 @@ object OcsBuild extends Build {
   /**
     * Task to generate a logging configuration file from a template
     */
-  def generateLoggingConfigTask(logtype: LogType) = Def.task {
+  def generateLoggingConfigTask(logType: LogType) = Def.task {
     val loggingConfDestName = "logging.properties"
-    val loggingConfSrcName = logtype match {
+    val loggingConfSrcName = logType match {
       case LogType.Files           => "logging.files.template"
       case LogType.ConsoleAndFiles => "logging.console_files.template"
     }
@@ -32,6 +32,7 @@ object OcsBuild extends Build {
     val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
     target.value.mkdirs()
     val destFile = target.value / loggingConfDestName
+    println(s"Generating configuration of type $logType to ${destFile.getPath}")
     IO.write(destFile, config)
     destFile
   }
