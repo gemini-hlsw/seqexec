@@ -26,9 +26,11 @@ object Game {
 
   case object TimeTick extends Input
 
-  case class GameState(t: Time, position: Position, speedDir: SpeedDir, velocity: Double, boardWidth: Int, boardHeight: Int)
+  case class GameState(t: Time, position: Position, speedDir: SpeedDir, velocity: Double, boardWidth: Int, boardHeight: Int, exit: Boolean)
 
   sealed trait PlayerInput extends Input
+
+  case object Exit extends PlayerInput
 
   sealed trait DirectionalInput extends PlayerInput
 
@@ -54,15 +56,20 @@ object Game {
     def modPos(pos: Position, width: Double, height: Double) = Position(mod(pos.x, width.toDouble), mod(pos.y, height.toDouble))
 
 
-    State[GameState, Unit] { s => {
-      (s.copy(t=time, position=modPos(move(time-s.t, s.position, s.speedDir, s.velocity), s.boardWidth, s.boardHeight ) ), ()) }
+    State[GameState, Unit] { s =>
+      (s.copy(t=time, position=modPos(move(time-s.t, s.position, s.speedDir, s.velocity), s.boardWidth, s.boardHeight ) ), ())
     }
+  }
+
+  def exit: State[GameState, Unit] = State[GameState, Unit] {
+    s => (s.copy(exit = true), ())
   }
 
   // State machine to run one game cycle.
   def gameCycle(in: Event[Input]): State[GameState, \/[GameState, GameState]] = in match {
-    case (t: Time, d: DirectionalInput) => (updateSpeed(d) *> get) map (_.left[GameState])
-    case (t: Time, TimeTick) => (tick(t) *> get) map (_.right[GameState])
+    case (_, d: DirectionalInput) => (updateSpeed(d) *> get) map (_.left[GameState])
+    case (_, Exit )               => (exit *> get) map (_.left[GameState])
+    case (t: Time, TimeTick)      => (tick(t) *> get) map (_.right[GameState])
   }
 
   def runGame(width: Int, height: Int, input: Process[Task, Event[Input]]): Process[Task, Position] = {
@@ -70,9 +77,9 @@ object Game {
     val startDir = SpeedDir(0.0, 1.0)
     val startPosition = Position(0.0, height/2.0)
 
-    val s0 = GameState(0 seconds, startPosition, startDir, speed, width, height)
+    val s0 = GameState(0 seconds, startPosition, startDir, speed, width, height, false)
 
-    input.stateScan(s0)(gameCycle).filter(_.isRight).map(_.getOrElse(s0)).map(_.position)
+    input.stateScan(s0)(gameCycle).collect { case \/-(r) => r}.takeWhile(!_.exit).map(_.position)
 
   }
 

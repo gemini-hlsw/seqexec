@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: edu.gemini.seqexec.Main
+Main-Class: edu.gemini.experimental.jluhrs.Main
 

@@ -1,6 +1,5 @@
 package edu.gemini.experimental.jluhrs
 
-import EventStream.Event
 import Game._
 import CharDisplay._
 
@@ -8,16 +7,13 @@ import scala.concurrent.duration._
 import scalaz.stream.time._
 import java.util.concurrent.Executors
 
-import scalaz.concurrent.Task
-import scalaz.stream.{Process, async}
-
 /**
   * Created by jluhrs on 5/25/16.
   */
 object Main {
 
   val width = 40
-  val height = 30
+  val height = 20
   val border = 1
 
   implicit val scheduledExecutorService = Executors.newScheduledThreadPool(4)
@@ -40,6 +36,10 @@ object Main {
 
     (runGame(width, height, (awakeEvery(100 milliseconds).map((_, TimeTick)) merge ConsoleKeys.inputP))
       map (frame(width, height, border, _))).map(displayFrame).run.unsafePerformSync
+
+    ConsoleKeys.stop
+
+    scheduledExecutorService.shutdown()
   }
 
 }
