@@ -16,17 +16,24 @@ trait LogInitialization {
       // Find the location of the logging configuration relative to this class
       // it assumes the jar is in a lib dir while the configuration is on "conf"
       val jarFile = new File(f).getParentFile
-      val baseDir = jarFile.getParentFile.getAbsolutePath
+      val baseDir = jarFile.getParentFile
       val confDir = new File(jarFile.getParent, "conf")
       val loggingConfig = new File(confDir, "logging.properties")
       if (loggingConfig.exists) {
+        val logDir = new File(baseDir, "log")
         // Replace base dir
         val src = for {
           l <- Source.fromFile(loggingConfig)(Codec.UTF8).getLines
-        } yield l.replace("{{basedir}}", baseDir)
+        } yield l.replace("{{log.dir}}", logDir.getAbsolutePath)
+
+        if (!(logDir.exists() || logDir.mkdirs())) {
+          println(s"Error creating the log dir at ${logDir.getAbsolutePath}")
+          // Fatal error, exit immediately
+          sys.exit(1)
+        }
         val processedFile: String = src.toList.mkString("\n")
 
-        // Load updated configuration
+        // Load updated configuration, note the configuration is in memory and not persisted to the file
         LogManager.getLogManager.readConfiguration(new ByteArrayInputStream(processedFile.getBytes(Codec.UTF8.charSet)))
       } else {
         // Last ditch attempt to read some configuration

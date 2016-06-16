@@ -55,9 +55,6 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
       jar -> ("lib/" + jar.getName)
     },
 
-    // Create a log dir
-    mappings in Universal ++= Seq(file("log") -> "log"),
-
     // Launch options
     javaOptions in Universal ++= Seq(
       // -J params will be added as jvm parameters
