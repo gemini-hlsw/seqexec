@@ -75,7 +75,8 @@ object OcsBuild extends Build {
     .jvmSettings(
     )
     .jsSettings(
-      scalaJSUseRhino := false
+      scalaJSUseRhino := false,
+      libraryDependencies += JavaLogJS.value
     )
 
   lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
@@ -108,7 +109,8 @@ object OcsBuild extends Build {
         JQuery.value,
         ScalaCSS.value,
         ScalaJSDom.value,
-        JavaTimeJS.value
+        JavaTimeJS.value,
+        JavaLogJS.value
       ) ++ ReactScalaJS.value ++ Diode.value
     )
     .settings(
