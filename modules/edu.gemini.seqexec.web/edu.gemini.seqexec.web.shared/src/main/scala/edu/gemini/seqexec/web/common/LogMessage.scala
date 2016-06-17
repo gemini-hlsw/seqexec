@@ -19,19 +19,11 @@ object LogMessage {
   }
 
   // Map levels to numbers to reduce space
-  private val Int2LevelMapping: Map[Int, Level] = Map(0 -> Level.OFF,
-    1 -> Level.SEVERE,
-    3 -> Level.WARNING,
-    4 -> Level.INFO,
-    5 -> Level.CONFIG,
-    6 -> Level.FINE,
-    7 -> Level.FINER,
-    8 -> Level.FINEST,
-    9 -> Level.ALL)
+  private val Level2IntMapping: Map[Level, Int] = List(Level.OFF, Level.SEVERE,
+      Level.WARNING, Level.INFO, Level.CONFIG, Level.FINE, Level.FINER,
+      Level.FINEST, Level.ALL).zipWithIndex.toMap
 
-  private val Level2IntMapping: Map[Level, Int] = Int2LevelMapping.map {
-    case (i, l) => l -> i
-  }(breakOut)
+  private val Int2LevelMapping: Map[Int, Level] = Level2IntMapping.map(_.swap)
 
   // Pickler for Level components
   implicit val levelWriter = upickle.default.Writer[Level]{
