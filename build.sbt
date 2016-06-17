@@ -12,8 +12,8 @@ organization in Global := "edu.gemini.ocs"
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
-// This key is used to find the JRE dir. It should be overriden per user
-// Add a
+// This key is used to find the JRE dir. It could/should be overriden on a user basis
+// Add e.g. a `jres.sbt` file with your particular configuration
 ocsJreDir in ThisBuild := Path.userHome / ".jres8"
 
 def preventPublication(p: Project) =
@@ -29,6 +29,11 @@ lazy val seqexecCommonSettings = Seq(
   mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
+  // Run full opt js on the javascript. They will be placed on the "seqexec" jar
+  resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
+  resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
+  resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
+  resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
   // Name of the launch script
   executableScriptName := "seqexec-server",
   // No javadocs
@@ -56,14 +61,6 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   .settings(seqexecCommonSettings: _*)
   .settings(
     description := "Seqexec server for local testing",
-    // Run full opt js on the javascript. They will be placed on the "seqexec" jar
-    resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
-    resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
-    resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
-    resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
-
-    // This is important to keep the file generation order correctly
-    parallelExecution in Universal := false,
 
     // Generate a custom logging.properties for the application
     // For staging the log uses files and console
