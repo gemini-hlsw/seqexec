@@ -75,7 +75,7 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
     }
   )
 
-lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqexec-server-l64")))
+lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqexec-server-test-l64")))
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .settings(seqexecCommonSettings: _*)
@@ -105,7 +105,7 @@ lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqex
     },
 
     // Put the jre in the tarball
-    mappings in Universal in packageZipTarball ++= {
+    mappings in Universal ++= {
       val jresDir = (ocsJreDir in ThisBuild).value
       // Map the location of jre files
       val jreLink = "JRE64_1.8"
@@ -114,6 +114,10 @@ lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqex
         j._1 -> j._2.replace(jreLink, "jre")
       }
     },
+
+    javaOptions in Universal ++= Seq(
+      "-java-home ${app_home}/jre"
+    ),
 
     // Put the jre
     linuxPackageMappings in Rpm += {
