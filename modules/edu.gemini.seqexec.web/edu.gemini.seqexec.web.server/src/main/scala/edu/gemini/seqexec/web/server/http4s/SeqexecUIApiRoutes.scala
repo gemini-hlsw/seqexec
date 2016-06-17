@@ -1,19 +1,21 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import java.time.Instant
+import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
+import edu.gemini.seqexec.web.common._
+import edu.gemini.seqexec.web.common.LogMessage._
+import edu.gemini.seqexec.web.server.model.CannedModel
+import edu.gemini.seqexec.web.server.security.AuthenticationService._
+import edu.gemini.seqexec.web.server.model.Conversions._
+import edu.gemini.seqexec.web.server.security.AuthenticationConfig
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
-import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.model.CannedModel
-import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import upickle.default._
-import edu.gemini.seqexec.web.server.model.Conversions._
-import edu.gemini.seqexec.web.server.security.AuthenticationConfig
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 
@@ -25,6 +27,9 @@ import scalaz.stream.Exchange
   * Rest Endpoints under the /api route
   */
 object SeqexecUIApiRoutes {
+  // Logger for client messages
+  val clientLog = Logger.getLogger("clients")
+
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
@@ -70,6 +75,14 @@ object SeqexecUIApiRoutes {
     case GET -> Root / "seqexec" / "events" =>
       // Stream seqexec events to clients and a ping
       WS(Exchange(pingProcess merge ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
+    case req @ POST -> Root / "seqexec" / "log" =>
+      req.decode[String] { body =>
+        val u = read[LogMessage](body)
+        // This will use the server time for the logs
+        clientLog.log(u.level, s"Client ${req.remoteAddr}: ${u.msg}")
+        // Always return ok
+        Ok()
+      }
   }
 
   val protectedServices: HttpService = tokenAuthService { HttpService {

@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.common
 
+import java.util.logging.Level
+
 import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
 
@@ -36,5 +38,15 @@ trait ArbitrariesWebCommon {
         i  <- Gen.oneOf(Instrument.instruments.list.toList)
         v  <- arbitrary[List[Step]]
       } yield Sequence(id, st, i, SequenceSteps(v), None)
+    }
+
+  implicit val arbLevel: Arbitrary[LogMessage] =
+    Arbitrary {
+      for {
+        m  <- arbitrary[String]
+        l <- Gen.oneOf(Seq(Level.SEVERE, Level.WARNING, Level.INFO, Level.CONFIG, Level.FINE, Level.FINER, Level.FINEST))
+      } yield {
+        LogMessage(l, m)
+      }
     }
 }

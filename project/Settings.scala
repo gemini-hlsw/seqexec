@@ -34,6 +34,7 @@ object Settings {
     val uPickle      = "0.3.9"
     val diode        = "0.5.1"
     val javaTimeJS   = "0.1.0"
+    val javaLogJS    = "0.1.0"
 
     // Java libraries
     val scalaZ       = "7.2.2"
@@ -78,12 +79,13 @@ object Settings {
     val UnboundId   = "com.unboundid"      % "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
     val JwtCore     = "com.pauldijou"      %% "jwt-core"                         % LibraryVersions.jwt
 
-    val Squants     = Def.setting("com.squants"  %%% "squants"           % LibraryVersions.squants)
-    val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"           % LibraryVersions.uPickle)
-    val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time" % LibraryVersions.javaTimeJS)
+    val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
+    val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
+    val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
+    val JavaLogJS   = Def.setting("org.scala-js" %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"     % LibraryVersions.scalaZ)
+    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"         % LibraryVersions.scalaZ)
     val ScalaZConcurrent = "org.scalaz"             %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
     val ScalaZStream     = "org.scalaz.stream"      %%  "scalaz-stream"       % LibraryVersions.scalaZStream
     val StreamZ          = "com.github.krasserm"    %%  "streamz-akka-stream" % LibraryVersions.streamZ
