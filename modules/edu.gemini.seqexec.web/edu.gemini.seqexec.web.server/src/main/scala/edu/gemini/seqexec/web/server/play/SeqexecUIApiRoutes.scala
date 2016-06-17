@@ -5,7 +5,7 @@ import java.util.logging.Logger
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserLoginRequest}
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
-import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState, UserLoginRequest}
+import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState}
 import edu.gemini.seqexec.web.common.LogMessage._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
