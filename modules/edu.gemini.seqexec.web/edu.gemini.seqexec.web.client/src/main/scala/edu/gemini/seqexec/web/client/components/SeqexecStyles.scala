@@ -96,4 +96,5 @@ object SeqexecStyles extends StyleSheet.Inline {
   val smallTextArea = style(
     fontSize.smaller
   )
+
 }

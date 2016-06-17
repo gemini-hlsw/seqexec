@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.server.security
 
-import edu.gemini.seqexec.web.common.UserDetails
+import edu.gemini.seqexec.model.UserDetails
 
 import scalaz._
 import Scalaz._

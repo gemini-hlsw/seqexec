@@ -19,6 +19,5 @@ object Item {
       )
     ).build
 
-
   def apply(name: String, children: ReactNode*) = component(Props(name), children: _*)
 }

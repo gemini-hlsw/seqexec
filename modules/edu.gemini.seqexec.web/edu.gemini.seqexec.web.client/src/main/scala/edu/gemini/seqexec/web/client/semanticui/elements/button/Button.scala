@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.button
 
+import edu.gemini.seqexec.web.client.semanticui.Size
+import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -20,10 +22,18 @@ object Button {
   case object Vertical extends Animated
   case object Fade extends Animated
 
+  sealed trait Type
+  case object ButtonType extends Type
+  case object ResetType extends Type
+  case object SubmitType extends Type
+
   case class Props(state: ButtonState    = Inactive,
                    emphasis: Emphasis    = NoEmphasis,
                    animated: Animated    = NotAnimated,
                    icon: Option[Icon]    = None,
+                   size: Size            = Size.NotSized,
+                   buttonType: Type      = ButtonType,
+                   form: Option[String]  = None,
                    basic: Boolean        = false,
                    inverted: Boolean     = false,
                    circular: Boolean     = false,
@@ -46,7 +56,14 @@ object Button {
       "inverted"  -> p.inverted,
       "circular"  -> p.circular,
       "labeled"   -> p.labeled,
-      "disabled"  -> p.disabled
+      "disabled"  -> p.disabled,
+      "tiny"      -> (p.size == Size.Tiny),
+      "mini"      -> (p.size == Size.Mini),
+      "small"     -> (p.size == Size.Small),
+      "large"     -> (p.size == Size.Large),
+      "big"       -> (p.size == Size.Big),
+      "huge"      -> (p.size == Size.Huge),
+      "massive"   -> (p.size == Size.Massive)
     )
 
   def component = ReactComponentB[Props]("Button")
@@ -54,6 +71,12 @@ object Button {
       if (p.animated == NotAnimated)
         <.button(
           ^.cls := "ui button",
+          ^.`type` := (p.buttonType match {
+            case ButtonType => "button"
+            case SubmitType => "submit"
+            case ResetType  => "reset"
+          }),
+          p.form.map(f => formId := f),
           p.color.map(u => ^.cls := u),
           classSet(p),
           ^.onClick --> p.onClick,

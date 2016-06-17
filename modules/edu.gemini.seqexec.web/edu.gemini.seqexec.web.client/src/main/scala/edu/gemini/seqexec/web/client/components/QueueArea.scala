@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._
+import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
@@ -149,10 +150,11 @@ object QueueTableLoading {
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
+  case class Props(user: ModelProxy[Option[UserDetails]])
 
-  val component = ReactComponentB[Unit]("QueueAreaTitle")
+  val component = ReactComponentB[Props]("QueueAreaTitle")
     .stateless
-    .render(_ =>
+    .render_P(p =>
       TextMenuSegment("Queue",
         // Show a loading indicator if we are waiting for server data
         {
@@ -160,15 +162,17 @@ object QueueAreaTitle {
           implicit val eq = PotEq.seqexecQueueEq
           SeqexecCircuit.connect(_.queue)(QueueTableLoading(_))
         },
-        <.div(
-          ^.cls := "right menu",
-          ^.key := "queue.area.title",
-          SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
-        )
+        p.user().map { u =>
+          <.div(
+            ^.cls := "right menu",
+            ^.key := "queue.area.title",
+            SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
+          ): ReactNode
+        }.getOrElse[ReactNode](<.div(^.key := "queue.area.empty"))
       )
     ).build
 
-  def apply() = component()
+  def apply(user: ModelProxy[Option[UserDetails]]) = component(Props(user))
 }
 
 /**
@@ -226,7 +230,7 @@ object QueueArea {
     .render_P(p =>
       <.div(
         ^.cls := "ui raised segments container",
-        QueueAreaTitle(),
+        SeqexecCircuit.connect(_.user)(QueueAreaTitle(_)),
         <.div(
           ^.cls := "ui attached segment",
           <.div(

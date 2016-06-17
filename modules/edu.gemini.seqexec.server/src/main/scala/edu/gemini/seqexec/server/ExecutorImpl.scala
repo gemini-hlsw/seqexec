@@ -116,7 +116,7 @@ class ExecutorImpl private (cancelRef: TaskRef[Set[SPObservationID]], stateRef: 
   }
 
   // Important, make it a def so each client gets a new one
-  def sequenceEvents: Process[Task, SeqexecEvent] = Process.emit(SeqexecConnectionOpenEvent) ++ eventsQueue.subscribe
+  def sequenceEvents: Process[Task, SeqexecEvent] = eventsQueue.subscribe
 
 }
 

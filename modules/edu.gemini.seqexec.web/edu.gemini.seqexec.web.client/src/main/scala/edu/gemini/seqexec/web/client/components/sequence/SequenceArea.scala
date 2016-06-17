@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ReactPot._
+import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model._
@@ -15,6 +16,7 @@ import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
+
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
@@ -22,7 +24,7 @@ import scalaz.syntax.show._
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class Props(s: Sequence, stepConfigDisplayed: Option[Int])
+  case class Props(s: Sequence, user: Option[UserDetails], stepConfigDisplayed: Option[Int])
 
   def requestRun(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
 
@@ -42,15 +44,22 @@ object SequenceStepsTableContainer {
         p.stepConfigDisplayed.fold {
           <.div(
             ^.cls := "row",
-            p.s.state == SequenceState.Abort ?= <.h3(
-              ^.cls := "ui red header",
-              "Sequence aborted"),
-            p.s.state == SequenceState.Completed ?= <.h3(
-              ^.cls := "ui green header",
-              "Sequence completed"),
-            p.s.state == SequenceState.NotRunning ?= Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
-            p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
-            p.s.state == SequenceState.Running ?= Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
+            p.user.isDefined && p.s.state == SequenceState.Abort ?=
+              <.h3(
+                ^.cls := "ui red header",
+                "Sequence aborted"
+              ),
+            p.user.isDefined && p.s.state == SequenceState.Completed ?=
+              <.h3(
+                ^.cls := "ui green header",
+                "Sequence completed"
+              ),
+            p.user.isDefined && p.s.state == SequenceState.NotRunning ?=
+              Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
+            p.user.isDefined && p.s.state == SequenceState.Running ?=
+              Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
+            p.user.isDefined && p.s.state == SequenceState.Running ?=
+              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
           )
         } { i =>
           <.div(
@@ -163,14 +172,14 @@ object SequenceStepsTableContainer {
     )
     .build
 
-  def apply(s: Sequence, stepConfigDisplayed: Option[Int]) = component(Props(s, stepConfigDisplayed))
+  def apply(s: Sequence, user: Option[UserDetails], stepConfigDisplayed: Option[Int]) = component(Props(s, user,  stepConfigDisplayed))
 }
 
 /**
   * Content of a single tab with a sequence
   */
 object SequenceTabContent {
-  case class Props(isActive: Boolean, st: SequenceTab)
+  case class Props(isActive: Boolean, user: Option[UserDetails], st: SequenceTab)
 
   val component = ReactComponentB[Props]("SequenceTabContent")
     .stateless
@@ -181,7 +190,9 @@ object SequenceTabContent {
           "active" -> p.isActive
         ),
         dataTab := p.st.instrument,
-        p.st.sequence().render(s => SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(t => SequenceStepsTableContainer(t, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))),
+        p.st.sequence().render { s =>
+          SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))(u => u().map(t => SequenceStepsTableContainer(t, p.user, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
+        },
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
     )
@@ -194,10 +205,10 @@ object SequenceTabContent {
   * Contains all the tabs for the sequences available in parallel
   */
 object SequenceTabs {
-  case class Props(sequences: SequencesOnDisplay)
+  case class Props(user: Option[UserDetails], sequences: SequencesOnDisplay)
 
   def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
-  def tabContents(d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, a)).toStream
+  def tabContents(user: Option[UserDetails], d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, user, a)).toStream
 
   val component = ReactComponentB[Props]("SequenceTabs")
     .stateless
@@ -216,7 +227,7 @@ object SequenceTabs {
             <.div(
               ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
               TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-              tabContents(p.sequences).map(SequenceTabContent(_))
+              tabContents(p.user, p.sequences).map(SequenceTabContent(_))
             )
           ),
           <.div(
@@ -231,7 +242,7 @@ object SequenceTabs {
     )
     .build
 
-  def apply(sequences: SequencesOnDisplay) = component(Props(sequences))
+  def apply(user: Option[UserDetails], sequences: SequencesOnDisplay) = component(Props(user, sequences))
 }
 
 object SequenceArea {
@@ -241,7 +252,7 @@ object SequenceArea {
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences"),
-        SeqexecCircuit.connect(_.sequencesOnDisplay)(p => SequenceTabs(p()))
+        SeqexecCircuit.connect(m => (m.user, m.sequencesOnDisplay))(p => SequenceTabs(p()._1, p()._2))
       )
     ).build
 

@@ -4,7 +4,7 @@ import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
-import edu.gemini.seqexec.model.{SeqexecEvent, SequenceCompletedEvent, SequenceStartEvent, StepExecutedEvent}
+import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
@@ -111,6 +111,38 @@ class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
 }
 
 /**
+  * Handles actions related to opening/closing the login box
+  */
+class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case OpenLoginBox if value == SectionClosed =>
+      updated(SectionOpen)
+    case CloseLoginBox if value == SectionOpen  =>
+      updated(SectionClosed)
+  }
+}
+
+/**
+  * Handles actions related to opening/closing the login box
+  */
+class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[AnyRef, ActionResult[M]] = {
+    case LoggedIn(u) =>
+      // Close the login box
+      val effect = Effect(Future(CloseLoginBox))
+      updated(Some(u), effect)
+    case Logout =>
+      val effect = Effect(SeqexecWebClient.logout())
+      // Remove the user and call logout
+      updated(None, effect)
+  }
+}
+
+/**
   * Handles actions related to the changing the selection of the displayed sequence
   */
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
@@ -150,10 +182,12 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog)]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
+    case NewSeqexecEvent(SeqexecConnectionOpenEvent(u)) =>
+      updated(value.copy(_3 = u))
     case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
       updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)
@@ -234,7 +268,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog))((m, v) => m.copy(queue = v._1, webSocketLog = v._2)))
+  val loginBoxHandler        = new LoginBoxHandler(zoomRW(_.loginBox)((m, v) => m.copy(loginBox = v)))
+  val userLoginHandler       = new UserLoginHandler(zoomRW(_.user)((m, v) => m.copy(user = v)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog, m.user))((m, v) => m.copy(queue = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
@@ -257,6 +293,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     searchHandler,
     searchAreaHandler,
     devConsoleHandler,
+    loginBoxHandler,
+    userLoginHandler,
     wsLogHandler,
     sequenceDisplayHandler,
     globalLogHandler,

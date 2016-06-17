@@ -3,8 +3,9 @@ package edu.gemini.seqexec.web.server.play
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserLoginRequest}
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
-import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState, UserLoginRequest}
+import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState}
 import edu.gemini.seqexec.web.common.LogMessage._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
@@ -24,6 +25,8 @@ import upickle.default._
 
 import scalaz.{-\/, \/-}
 import streamz.akka.stream._
+
+import scalaz.stream.Process
 
 /**
   * Routes for calls from the web ui
@@ -49,19 +52,23 @@ object SeqexecUIApiRoutes {
   implicit val messageFlowTransformer = MessageFlowTransformer.identityMessageFlowTransformer
 
   val routes: Routes = {
-    case GET(p"/api/seqexec/sequence/$id<.*-[0-9]+>") => Action {
-      val obsId = new SPObservationID(id)
-      ExecutorImpl.read(obsId) match {
-        case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
-        case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
+    case GET(p"/api/seqexec/sequence/$id<.*-[0-9]+>") => UserAction { h =>
+      h.user.fold(Results.Unauthorized("")) { _ =>
+        val obsId = new SPObservationID(id)
+        ExecutorImpl.read(obsId) match {
+          case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
+          case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
+        }
       }
     }
     case GET(p"/api/seqexec/current/queue") => Action {
       Results.Ok(write(CannedModel.currentQueue))
     }
     case GET(p"/api/seqexec/events") => WebSocket.accept[Message, Message] { h =>
+      val user = UserAction.checkAuth(h).fold(_ => None, Some.apply)
+
       // Merge the ping and events from ExecutorImpl
-      val events = pingProcess merge ExecutorImpl.sequenceEvents.map(v => TextMessage(write(v)))
+      val events = pingProcess merge (Process.emit(TextMessage(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => TextMessage(write(v))))
 
       // Make an akka publisher out of the scalaz stream
       val (p2, publisher) = events.publisher()

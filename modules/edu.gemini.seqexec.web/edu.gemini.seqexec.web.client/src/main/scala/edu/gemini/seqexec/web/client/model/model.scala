@@ -4,7 +4,7 @@ import java.time.LocalTime
 
 import diode.RootModelR
 import diode.data.{Empty, Pot, PotAction, RefTo}
-import edu.gemini.seqexec.model.SeqexecEvent
+import edu.gemini.seqexec.model.{SeqexecEvent, UserDetails}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
 
 import scalaz._
@@ -31,6 +31,13 @@ case object CloseSearchArea
 
 // Actions to close and/open the dev console area
 case object ToggleDevConsole
+
+// Actions to close and/open the login box
+case object OpenLoginBox
+case object CloseLoginBox
+
+case class LoggedIn(u: UserDetails)
+case object Logout
 
 // Action to add a sequence to the queue
 case class AddToQueue(s: Sequence)
@@ -114,14 +121,16 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(queue: Pot[SeqexecQueue],
+case class SeqexecAppRootModel(user: Option[UserDetails],
+                               queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
+                               loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
                                searchResults: Pot[List[Sequence]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(Empty, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }
