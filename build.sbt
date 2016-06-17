@@ -1,4 +1,5 @@
 import sbt.Keys._
+import NativePackagerHelper._
 
 name := Settings.Definitions.name
 
@@ -66,7 +67,7 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
 
     // Generate a custom logging.properties for the application
     // For staging the log uses files and console
-    mappings in Universal in stage += {
+    mappings in Universal += {
       val f = generateLoggingConfigTask(LogType.ConsoleAndFiles).value
       f -> ("conf/" + f.getName)
     },
@@ -104,6 +105,17 @@ lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqex
     mappings in Universal in packageZipTarball += {
       val f = generateLoggingConfigTask(LogType.Files).value
       f -> ("conf/" + f.getName)
+    },
+
+    // Put the jre in the tarball
+    mappings in Universal in packageZipTarball ++= {
+      val jresDir = (ocsJreDir in ThisBuild).value
+      // Map the location of jre files
+      val jreLink = "JRE64_1.8"
+      val linux64Jre = jresDir.toPath.resolve("linux").resolve(jreLink)
+      directory(linux64Jre.toFile).map { j =>
+        j._1 -> j._2.replace(jreLink, "jre")
+      }
     },
 
     // Put the jre
