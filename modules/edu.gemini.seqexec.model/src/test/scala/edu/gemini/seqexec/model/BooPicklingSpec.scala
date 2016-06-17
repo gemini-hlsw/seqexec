@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import boopickle.Default._
 
 /**
-  * Tests Serialization/Deserialization using uPickle
+  * Tests Serialization/Deserialization using BooPickle
   */
 class BooPicklingSpec extends FlatSpec with Matchers with PropertyChecks {
 
@@ -63,6 +63,13 @@ class BooPicklingSpec extends FlatSpec with Matchers with PropertyChecks {
       Unpickle[StepExecutedEvent].fromBytes(Pickle.intoBytes(event)) shouldEqual event
       val event2: SeqexecEvent = StepExecutedEvent(i, count, count, file)
       Unpickle[SeqexecEvent].fromBytes(Pickle.intoBytes(event2)) shouldEqual event2
+    }
+  }
+
+  "UserLoginRequest" should "upickle/depickle" in {
+    forAll { (u: String, p: String) =>
+      val request = UserLoginRequest(u, p)
+      Unpickle[UserLoginRequest].fromBytes(Pickle.intoBytes(request)) shouldEqual request
     }
   }
 

@@ -73,7 +73,8 @@ object SeqexecWebClient {
   def login(u: String, p: String): Future[UserDetails] =
     Ajax.post(
       url = s"$baseUrl/login",
-      data = default.write(UserLoginRequest(u, p))
+      headers = Map("Content-Type" -> "application/octet-stream"),
+      data = Pickle.intoBytes(UserLoginRequest(u, p))
     ).map(s => default.read[UserDetails](s.responseText))
 
   /**

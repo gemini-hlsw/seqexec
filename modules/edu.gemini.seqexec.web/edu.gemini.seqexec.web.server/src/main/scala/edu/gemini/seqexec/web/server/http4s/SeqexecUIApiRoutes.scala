@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.server.http4s
 
+import java.nio.ByteBuffer
 import java.time.Instant
 import java.util.logging.Logger
 
@@ -14,16 +15,15 @@ import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationConfig
-
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 import org.http4s.server.middleware.GZip
-
 import upickle.default._
 import boopickle.Default._
+import scodec.bits.ByteVector
 
 import scalaz._
 import Scalaz._
@@ -54,8 +54,8 @@ object SeqexecUIApiRoutes {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
     case req @ POST -> Root  / "seqexec" / "login" =>
-      req.decode[String] { body =>
-        val u = read[UserLoginRequest](body)
+      req.decode[ByteVector] { body =>
+        val u = Unpickle[UserLoginRequest].fromBytes(body.toByteBuffer)
         // Try to authenticate
         AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
@@ -88,10 +88,12 @@ object SeqexecUIApiRoutes {
       }
   }
 
+  def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+
   val protectedServices: HttpService = tokenAuthService { HttpService {
       case req @ GET -> Root / "seqexec" / "events" =>
         // Stream seqexec events to clients and a ping
-        val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+        val user = userInRequest(req)
 
         // Important to set the type as SeqexecEvent
         val initialEvent:SeqexecEvent = SeqexecConnectionOpenEvent(user)
@@ -108,7 +110,7 @@ object SeqexecUIApiRoutes {
         Ok("").removeCookie(cookie)
 
       case req @ GET -> Root / "seqexec" / "sequence" / oid =>
-        val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+        val user = userInRequest(req)
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
             obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t: Throwable) => Unexpected(t.getMessage))
