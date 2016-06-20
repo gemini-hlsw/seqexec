@@ -16,6 +16,9 @@ resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw
 // Add e.g. a `jres.sbt` file with your particular configuration
 ocsJreDir in ThisBuild := Path.userHome / ".jres8"
 
+/**
+  * Settings for meta projects to make them non-publishable
+  */
 def preventPublication(p: Project) =
   p.settings(
     publish := {},
@@ -24,8 +27,11 @@ def preventPublication(p: Project) =
     publishTo := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
     packagedArtifacts := Map.empty)
 
+/**
+  * Common settings for the Seqexec instances
+  */
 lazy val seqexecCommonSettings = Seq(
-  // Common settings for deployments
+  // Main class for launching
   mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
@@ -48,12 +54,15 @@ lazy val seqexecCommonSettings = Seq(
     "-J-Xmx512m",
     "-J-Xms256m",
 
-    // others will be added as app parameters
+    // app parameters
     // TODO Define how to configure applications
     "prod" // Run in production mode.
   )
 )
 
+/**
+  * Project for the seqexec server app for development
+  */
 lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
@@ -75,6 +84,9 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
     }
   )
 
+/**
+  * Project for the seqexec server app for testing on Linux 64
+  */
 lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqexec-server-test-l64")))
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
@@ -115,11 +127,12 @@ lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqex
       }
     },
 
+    // Make the launcher use the embedded jre
     javaOptions in Universal ++= Seq(
       "-java-home ${app_home}/../jre"
     ),
 
-    // Put the jre
+    // Put the jre on the RPM
     linuxPackageMappings in Rpm += {
       val jresDir = (ocsJreDir in ThisBuild).value
       // RPM are of interest only for linux 64 bit

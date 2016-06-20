@@ -76,11 +76,11 @@ object Settings {
       "org.scalacheck" %%% "scalacheck"  % LibraryVersions.scalaCheck % "test"
     ))
 
-    val Argonaut    = "io.argonaut"        %% "argonaut"                         % LibraryVersions.argonaut
-    val CommonsHttp = "commons-httpclient" %  "commons-httpclient"               % LibraryVersions.commonsHttp
-    val UnboundId   = "com.unboundid"      % "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
-    val JwtCore     = "com.pauldijou"      %% "jwt-core"                         % LibraryVersions.jwt
-    val Slf4jJuli   = "org.slf4j"          % "slf4j-jdk14"                       % LibraryVersions.slf4j
+    val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut
+    val CommonsHttp = "commons-httpclient" %  "commons-httpclient"                % LibraryVersions.commonsHttp
+    val UnboundId   = "com.unboundid"      %  "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
+    val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
+    val Slf4jJuli   = "org.slf4j"          % " slf4j-jdk14"                       % LibraryVersions.slf4j
 
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)

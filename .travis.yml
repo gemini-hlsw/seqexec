@@ -6,6 +6,6 @@ jdk:
 before_script:
   - sudo apt-get install -y rpm
 script:
-  #- sbt ++$TRAVIS_SCALA_VERSION test
+  - sbt ++$TRAVIS_SCALA_VERSION test
   - sbt ++$TRAVIS_SCALA_VERSION seqexec_server/universal:packageZipTarball
-  #- sbt ++$TRAVIS_SCALA_VERSION seqexec/rpm:packageBin
+  - sbt ++$TRAVIS_SCALA_VERSION seqexec_server_test_l64/rpm:packageBin
