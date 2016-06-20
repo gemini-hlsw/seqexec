@@ -32,7 +32,7 @@ trait TokenInCookies {
 
 /**
  * TokenAuthentication instances are middleware that provide a
- * {@link HttpService} with optional HTTP authentication.
+ * with optional HTTP authentication.
  */
 trait TokenAuthenticator[A] extends HttpMiddleware {
   type TokenAuth = String => Task[Option[A]]
