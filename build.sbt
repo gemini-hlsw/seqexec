@@ -116,7 +116,7 @@ lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqex
     },
 
     javaOptions in Universal ++= Seq(
-      "-java-home ${app_home}/jre"
+      "-java-home ${app_home}/../jre"
     ),
 
     // Put the jre
