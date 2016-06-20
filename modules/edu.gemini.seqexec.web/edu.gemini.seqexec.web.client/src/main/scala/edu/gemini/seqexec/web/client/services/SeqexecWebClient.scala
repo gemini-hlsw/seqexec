@@ -24,22 +24,7 @@ object SeqexecWebClient {
       url = s"$baseUrl/sequence/$id"
       //responseType = "arraybuffer"
     )
-    .map(s => {
-      /*println("a")
-      val r = s.response.asInstanceOf[ArrayBuffer]
-      println("b")
-      println(r.byteLength)
-      println(TypedArrayBuffer.wrap(r))
-      println("c")*/
-      try {
-        //Unpickle[List[Sequence]].fromBytes(TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer]))
-        default.read[List[Sequence]](s.responseText)
-      } catch {
-        case e: Exception =>
-          e.printStackTrace()
-          Nil
-      }
-    })
+    .map(s => default.read[List[Sequence]](s.responseText))
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }
@@ -74,8 +59,12 @@ object SeqexecWebClient {
     Ajax.post(
       url = s"$baseUrl/login",
       headers = Map("Content-Type" -> "application/octet-stream"),
+      responseType = "arraybuffer",
       data = Pickle.intoBytes(UserLoginRequest(u, p))
-    ).map(s => default.read[UserDetails](s.responseText))
+    ).map { s =>
+      val r = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
+      Unpickle[UserDetails].fromBytes(r)
+    }
 
   /**
     * Logout request

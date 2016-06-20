@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.server.http4s
 
-import java.nio.ByteBuffer
 import java.time.Instant
 import java.util.logging.Logger
 
@@ -10,7 +9,6 @@ import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.picklers._
-import edu.gemini.seqexec.web.common.LogMessage._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.model.Conversions._
@@ -63,7 +61,7 @@ object SeqexecUIApiRoutes {
             val cookieVal = buildToken(user)
             val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
             val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
-            Ok(write(user)).addCookie(cookie)
+            Ok(Pickle.intoBytes(user)).withContentType(Some(MediaType.`application/octet-stream`)).addCookie(cookie)
           case -\/(_)    =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }

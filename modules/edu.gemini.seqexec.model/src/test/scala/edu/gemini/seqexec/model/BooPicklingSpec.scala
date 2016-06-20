@@ -73,4 +73,11 @@ class BooPicklingSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
+  "UserDetails" should "upickle/depickle" in {
+    forAll { (u: String, p: String) =>
+      val user = UserDetails(u, p)
+      Unpickle[UserDetails].fromBytes(Pickle.intoBytes(user)) shouldEqual user
+    }
+  }
+
 }
