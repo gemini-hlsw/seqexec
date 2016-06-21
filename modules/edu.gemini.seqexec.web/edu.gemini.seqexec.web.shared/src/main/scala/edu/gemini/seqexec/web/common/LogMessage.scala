@@ -3,8 +3,7 @@ package edu.gemini.seqexec.web.common
 import java.util.logging.{Level, LogRecord}
 
 import upickle.Js
-
-import scala.collection.breakOut
+import boopickle.Default._
 
 /** Minimal class to transfer log messages from client to server
   * We only care about level and message
@@ -34,4 +33,8 @@ object LogMessage {
     // default to level.OFF though it should not happen as the maps are complete
     case Js.Num(i) => Int2LevelMapping.getOrElse(i.toInt, Level.OFF)
   }
+
+  implicit val levelPickler: Pickler[Level] =
+    transformPickler[java.util.logging.Level, Int](Int2LevelMapping.getOrElse(_, Level.OFF))(Level2IntMapping.getOrElse(_, -1))
+
 }

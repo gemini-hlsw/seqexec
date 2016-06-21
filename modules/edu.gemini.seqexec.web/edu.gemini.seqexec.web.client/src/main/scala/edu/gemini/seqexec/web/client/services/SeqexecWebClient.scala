@@ -80,6 +80,7 @@ object SeqexecWebClient {
   def log(record: LogRecord): Future[Unit] =
     Ajax.post(
       url = s"$baseUrl/log",
-      data = default.write(LogMessage.fromLogRecord(record))
+      responseType = "arraybuffer",
+      data = Pickle.intoBytes(LogMessage.fromLogRecord(record))
     ).map(_.responseText)
 }

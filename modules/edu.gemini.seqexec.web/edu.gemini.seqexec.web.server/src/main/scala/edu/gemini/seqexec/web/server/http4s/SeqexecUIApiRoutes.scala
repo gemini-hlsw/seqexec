@@ -28,10 +28,13 @@ import Scalaz._
 import scalaz.stream.{Exchange, Process}
 
 trait BooPickleDecoders {
+  import edu.gemini.seqexec.web.common.LogMessage._
+
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s
   implicit val userLoginDecoder = booOf[UserLoginRequest]
   implicit val userDetailEncoder = booEncoderOf[UserDetails]
+  implicit val logMessageDencoder = booOf[LogMessage]
 }
 
 /**
@@ -83,10 +86,9 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
         case -\/(e)      => NotFound(SeqexecFailure.explain(e))
       }
     case req @ POST -> Root / "seqexec" / "log" =>
-      req.decode[String] { body =>
-        //val u = read[LogMessage](body)
+      req.decode[LogMessage] { msg =>
         // This will use the server time for the logs
-        //clientLog.log(u.level, s"Client ${req.remoteAddr}: ${u.msg}")
+        clientLog.log(msg.level, s"Client ${req.remoteAddr}: ${msg.msg}")
         // Always return ok
         Ok()
       }
