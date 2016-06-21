@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.server.play
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserDetails, UserLoginRequest}
+import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, SeqexecEvent, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState}
 import edu.gemini.seqexec.web.common.LogMessage._
@@ -14,12 +14,11 @@ import edu.gemini.seqexec.web.server.security.AuthenticationConfig
 import play.api.mvc._
 import play.api.routing.Router._
 import play.api.routing.sird._
-import play.api.http.websocket.{Message, PingMessage, TextMessage}
+import play.api.http.websocket.{BinaryMessage, Message, PingMessage, TextMessage}
 import play.api.mvc.WebSocket.MessageFlowTransformer
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Source, _}
 import akka.util.ByteString
-import upickle.default._
 import boopickle.Default._
 import play.api.http.ContentTypes
 
@@ -64,13 +63,18 @@ object SeqexecUIApiRoutes {
       }
     }
     case GET(p"/api/seqexec/current/queue") => Action {
-      Results.Ok(write(CannedModel.currentQueue))
+      Results.Ok(Pickle.intoBytes(CannedModel.currentQueue).array()).as(ContentTypes.BINARY)
     }
     case GET(p"/api/seqexec/events") => WebSocket.accept[Message, Message] { h =>
       val user = UserAction.checkAuth(h).fold(_ => None, Some.apply)
 
+      val initialEvent:SeqexecEvent = SeqexecConnectionOpenEvent(user)
+      val byteBuffer = Pickle.intoBytes(initialEvent)
+      val bytes = new Array[Byte](byteBuffer.limit())
+      byteBuffer.get(bytes, 0, byteBuffer.limit)
+
       // Merge the ping and events from ExecutorImpl
-      val events = pingProcess merge (Process.emit(TextMessage(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => TextMessage(write(v))))
+      val events = pingProcess merge (Process.emit(BinaryMessage(ByteString(bytes))) ++ ExecutorImpl.sequenceEvents.map(v => BinaryMessage(ByteString(Pickle.intoBytes(v).array()))))
 
       // Make an akka publisher out of the scalaz stream
       val (p2, publisher) = events.publisher()

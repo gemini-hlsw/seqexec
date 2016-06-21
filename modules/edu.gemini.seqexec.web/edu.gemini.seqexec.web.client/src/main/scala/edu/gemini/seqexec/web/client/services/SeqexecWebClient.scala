@@ -33,8 +33,12 @@ object SeqexecWebClient {
 
   def readQueue(): Future[SeqexecQueue] =
     Ajax.get(
-      url = s"$baseUrl/current/queue"
-    ).map(s => default.read[SeqexecQueue](s.responseText))
+      url = s"$baseUrl/current/queue",
+      responseType = "arraybuffer"
+    ).map { s =>
+      val r = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
+      Unpickle[SeqexecQueue].fromBytes(r)
+    }
 
   /**
     * Requests the backend to execute a sequence

@@ -20,7 +20,6 @@ import org.http4s.dsl._
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
 import org.http4s.server.middleware.GZip
-import upickle.default._
 import boopickle.Default._
 
 import scalaz._
@@ -36,7 +35,9 @@ trait BooPickleDecoders {
   implicit val userDetailEncoder = booEncoderOf[UserDetails]
   implicit val logMessageDecoder = booOf[LogMessage]
   implicit val sequenceEncoder = booEncoderOf[Sequence]
+  // The next one seems redundant but it won't work without it
   implicit val listSequenceEncoder = booEncoderOf[List[Sequence]]
+  implicit val sequexecQueueEncoder = booEncoderOf[SeqexecQueue]
 }
 
 /**
@@ -62,7 +63,7 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
 
   val publicService: HttpService = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
-      Ok(write(CannedModel.currentQueue))
+      Ok(CannedModel.currentQueue)
 
     case req @ POST -> Root  / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
