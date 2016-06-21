@@ -34,7 +34,9 @@ trait BooPickleDecoders {
   // a circular dependency on http4s
   implicit val userLoginDecoder = booOf[UserLoginRequest]
   implicit val userDetailEncoder = booEncoderOf[UserDetails]
-  implicit val logMessageDencoder = booOf[LogMessage]
+  implicit val logMessageDecoder = booOf[LogMessage]
+  implicit val sequenceEncoder = booEncoderOf[Sequence]
+  implicit val listSequenceEncoder = booEncoderOf[List[Sequence]]
 }
 
 /**
@@ -61,6 +63,7 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
   val publicService: HttpService = HttpService {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
+
     case req @ POST -> Root  / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
         // Try to authenticate
@@ -70,21 +73,12 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
             val cookieVal = buildToken(user)
             val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
             val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
-            Ok(user).withContentType(Some(MediaType.`application/octet-stream`)).addCookie(cookie)
+            Ok(user).addCookie(cookie)
           case -\/(_)    =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
-    case req @ GET -> Root  / "seqexec" / "sequence" / oid =>
-      val r = for {
-        obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
-        s     <- ExecutorImpl.read(obsId)
-      } yield (obsId, s)
 
-      r match {
-        case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
-        case -\/(e)      => NotFound(SeqexecFailure.explain(e))
-      }
     case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[LogMessage] { msg =>
         // This will use the server time for the logs
@@ -109,9 +103,7 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
         WS(Exchange(pingProcess merge (Process.emit(Binary(bytes)) ++ ExecutorImpl.sequenceEvents.map(v => Binary(Pickle.intoBytes(v).array()))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout" =>
-        // This is not necessary, it is just code to verify token decoding
-        println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))
-
+        // Clean the auth cookie
         val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some, secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
         Ok("").removeCookie(cookie)
 
@@ -119,13 +111,12 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
         val user = userInRequest(req)
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
-            obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t: Throwable) => Unexpected(t.getMessage))
-            s <- ExecutorImpl.read(obsId)
+            obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
+            s     <- ExecutorImpl.read(obsId)
           } yield (obsId, s)
 
           r match {
-            case \/-((i, s)) =>
-              Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
+            case \/-((i, s)) => Ok(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None)))
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
           }
         }

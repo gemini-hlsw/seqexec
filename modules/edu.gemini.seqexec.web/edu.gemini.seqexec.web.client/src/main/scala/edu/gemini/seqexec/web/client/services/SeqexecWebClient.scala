@@ -21,11 +21,13 @@ object SeqexecWebClient {
 
   def read(id: String): Future[List[Sequence]] =
     Ajax.get(
-      url = s"$baseUrl/sequence/$id"
-      //responseType = "arraybuffer"
+      url = s"$baseUrl/sequence/$id",
+      responseType = "arraybuffer"
     )
-    .map(s => default.read[List[Sequence]](s.responseText))
-    .recover {
+    .map { s =>
+      val r = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
+      Unpickle[List[Sequence]].fromBytes(r)
+    }.recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }
 

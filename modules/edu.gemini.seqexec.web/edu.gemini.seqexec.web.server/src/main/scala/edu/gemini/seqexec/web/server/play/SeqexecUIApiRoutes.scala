@@ -56,7 +56,9 @@ object SeqexecUIApiRoutes {
       h.user.fold(Results.Unauthorized("")) { _ =>
         val obsId = new SPObservationID(id)
         ExecutorImpl.read(obsId) match {
-          case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
+          case \/-(s) => Results.Ok(Pickle
+            .intoBytes[List[Sequence]](List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))).array())
+            .as(ContentTypes.BINARY)
           case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
         }
       }
@@ -82,9 +84,9 @@ object SeqexecUIApiRoutes {
     }
     case POST(p"/api/seqexec/logout") => UserAction { a =>
       // This is not necessary, it is just code to verify token decoding
-      println("Logged out " + a.user)
       Results.Ok("").discardingCookies(DiscardingCookie(AuthenticationConfig.cookieName))
     }
+
     case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.raw) { s =>
       s.body.asBytes().map(_.asByteBuffer).map { bb =>
         val u = Unpickle[UserLoginRequest].fromBytes(bb)
