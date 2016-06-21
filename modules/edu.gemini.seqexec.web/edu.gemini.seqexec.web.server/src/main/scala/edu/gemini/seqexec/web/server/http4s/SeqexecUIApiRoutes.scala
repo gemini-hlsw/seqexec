@@ -91,17 +91,21 @@ object SeqexecUIApiRoutes extends BooPickleDecoders {
 
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
+  // It is important to reduce the size of the binary frames for WS
+  def trimmedArray(e: SeqexecEvent): Array[Byte] = {
+    val byteBuffer = Pickle.intoBytes(e)
+    val bytes = new Array[Byte](byteBuffer.limit())
+    byteBuffer.get(bytes, 0, byteBuffer.limit)
+    bytes
+  }
+
   val protectedServices: HttpService = tokenAuthService { HttpService {
       case req @ GET -> Root / "seqexec" / "events" =>
         // Stream seqexec events to clients and a ping
         val user = userInRequest(req)
 
-        // Important to set the type as SeqexecEvent
-        val initialEvent:SeqexecEvent = SeqexecConnectionOpenEvent(user)
-        val byteBuffer = Pickle.intoBytes(initialEvent)
-        val bytes = new Array[Byte](byteBuffer.limit())
-        byteBuffer.get(bytes, 0, byteBuffer.limit)
-        WS(Exchange(pingProcess merge (Process.emit(Binary(bytes)) ++ ExecutorImpl.sequenceEvents.map(v => Binary(Pickle.intoBytes(v).array()))), scalaz.stream.Process.empty))
+        WS(Exchange(pingProcess merge (Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+          ExecutorImpl.sequenceEvents.map(v => Binary(trimmedArray(v)))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout" =>
         // Clean the auth cookie
