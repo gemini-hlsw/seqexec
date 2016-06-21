@@ -1,44 +1,32 @@
 package edu.gemini.seqexec.web.server.http4s.encoder
 
+import java.nio.ByteBuffer
+
 import boopickle.Default._
 import boopickle.Pickler
-import org.http4s.{MediaRange, _}
-import org.http4s.MediaRange._
+
+import org.http4s._
 import org.http4s.headers.`Content-Type`
-import scodec.bits.ByteVector
 
-import scalaz.EitherT
-import scalaz.concurrent.Task
+import scalaz.-\/
+import scalaz.stream.Process._
 
-/**
-  * Created by cquiroz on 6/20/16.
-  */
-class BooPickleInstances {
-  implicit def boopickleDecoder[A]: EntityDecoder[A] = EntityDecoder.decodeBy(MediaType.`application/octet-stream`) { msg =>
-    val d = implicitly[Pickler[A]]
-    DecodeResult {
-      Task.now(msg.body.map(bv => Unpickle[A].fromBytes(bv.toByteBuffer)))
-    }
-  }
+trait BooPickleInstances {
 
-  def booOf[A](implicit decoder: Pickler[A]): EntityDecoder[A] =
-    jsonDecoder.flatMapR { json =>
-      decoder.decodeJson(json).fold(
-        failure =>
-          DecodeResult.failure(InvalidMessageBodyFailure(s"Could not decode JSON: $json", Some(failure))),
-        DecodeResult.success(_)
-      )
+  private def boopickleDecoder[A](implicit pickler: Pickler[A]): EntityDecoder[A] =
+    EntityDecoder.decodeBy(MediaType.`application/octet-stream`) { msg =>
+      DecodeResult {
+        msg.body.map(bv => Unpickle[A](pickler).fromBytes(bv.toByteBuffer)).partialAttempt {
+          case e: Exception => emit(MalformedMessageBodyFailure("Invalid binary body", Some(e)))
+        }.runLastOr(-\/(MalformedMessageBodyFailure("Invalid binary: empty body")))
+      }
     }
 
-  /*implicit def jsonEncoder[A]: EntityEncoder[A] =
-    EntityEncoder[ByteVector].contramap[A] { bytes =>
-      // Comment from ArgonautInstances (which this code is based on):
-      // TODO naive implementation materializes to a String.
-      // See https://github.com/non/jawn/issues/6#issuecomment-65018736
-      Printer.noSpaces.pretty(json)
-    }.withContentType(`Content-Type`(MediaType.`application/json`))
+  def booOf[A](implicit pickler: Pickler[A]): EntityDecoder[A] = boopickleDecoder
 
-  def jsonEncoderOf[A](implicit encoder: Encoder[A]): EntityEncoder[A] =
-    jsonEncoder.contramap[A](encoder.apply)*/
+  def booEncoderOf[A](implicit encoder: Pickler[A]): EntityEncoder[A] =
+    EntityEncoder[ByteBuffer].contramap[A] { v =>
+      Pickle.intoBytes(v)
+    }.withContentType(`Content-Type`(MediaType.`application/octet-stream`))
 }
 

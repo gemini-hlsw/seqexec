@@ -10,9 +10,10 @@ import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.picklers._
 import edu.gemini.seqexec.web.server.model.CannedModel
-import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.model.Conversions._
+import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.security.AuthenticationConfig
+import edu.gemini.seqexec.web.server.http4s.encoder._
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
@@ -21,16 +22,22 @@ import org.http4s.websocket.WebsocketBits._
 import org.http4s.server.middleware.GZip
 import upickle.default._
 import boopickle.Default._
-import scodec.bits.ByteVector
 
 import scalaz._
 import Scalaz._
 import scalaz.stream.{Exchange, Process}
 
+trait BooPickleDecoders {
+  // Decoders, Included here instead of the on the object definitions to avoid
+  // a circular dependency on http4s
+  implicit val userLoginDecoder = booOf[UserLoginRequest]
+  implicit val userDetailEncoder = booEncoderOf[UserDetails]
+}
+
 /**
   * Rest Endpoints under the /api route
   */
-object SeqexecUIApiRoutes {
+object SeqexecUIApiRoutes extends BooPickleDecoders {
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 
@@ -52,8 +59,7 @@ object SeqexecUIApiRoutes {
     case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
       Ok(write(CannedModel.currentQueue))
     case req @ POST -> Root  / "seqexec" / "login" =>
-      req.decode[ByteVector] { body =>
-        val u = Unpickle[UserLoginRequest].fromBytes(body.toByteBuffer)
+      req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
         // Try to authenticate
         AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
@@ -61,7 +67,7 @@ object SeqexecUIApiRoutes {
             val cookieVal = buildToken(user)
             val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
             val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
-            Ok(Pickle.intoBytes(user)).withContentType(Some(MediaType.`application/octet-stream`)).addCookie(cookie)
+            Ok(user).withContentType(Some(MediaType.`application/octet-stream`)).addCookie(cookie)
           case -\/(_)    =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
@@ -78,9 +84,9 @@ object SeqexecUIApiRoutes {
       }
     case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[String] { body =>
-        val u = read[LogMessage](body)
+        //val u = read[LogMessage](body)
         // This will use the server time for the logs
-        clientLog.log(u.level, s"Client ${req.remoteAddr}: ${u.msg}")
+        //clientLog.log(u.level, s"Client ${req.remoteAddr}: ${u.msg}")
         // Always return ok
         Ok()
       }
