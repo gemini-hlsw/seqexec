@@ -8,6 +8,8 @@ import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import upickle.default
 import boopickle.Default._
+import boopickle.Pickler
+import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,15 +21,19 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer, Uint8Array}
 object SeqexecWebClient {
   val baseUrl = "/api/seqexec"
 
+  // Decodes the binary response with BooPickle, errors are not handled
+  def unpickle[A](r: XMLHttpRequest)(implicit u: Pickler[A]): A = {
+    val ab = TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer])
+    Unpickle[A].fromBytes(ab)
+  }
+
   def read(id: String): Future[List[Sequence]] =
     Ajax.get(
       url = s"$baseUrl/sequence/$id",
       responseType = "arraybuffer"
     )
-    .map { s =>
-      val r = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
-      Unpickle[List[Sequence]].fromBytes(r)
-    }.recover {
+    .map(unpickle[List[Sequence]])
+    .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }
 
@@ -35,10 +41,7 @@ object SeqexecWebClient {
     Ajax.get(
       url = s"$baseUrl/current/queue",
       responseType = "arraybuffer"
-    ).map { s =>
-      val r = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
-      Unpickle[SeqexecQueue].fromBytes(r)
-    }
+    ).map(unpickle[SeqexecQueue])
 
   /**
     * Requests the backend to execute a sequence
@@ -67,10 +70,7 @@ object SeqexecWebClient {
       headers = Map("Content-Type" -> "application/octet-stream"),
       responseType = "arraybuffer",
       data = Pickle.intoBytes(UserLoginRequest(u, p))
-    ).map { s =>
-      val r = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
-      Unpickle[UserDetails].fromBytes(r)
-    }
+    ).map(unpickle[UserDetails])
 
   /**
     * Logout request
