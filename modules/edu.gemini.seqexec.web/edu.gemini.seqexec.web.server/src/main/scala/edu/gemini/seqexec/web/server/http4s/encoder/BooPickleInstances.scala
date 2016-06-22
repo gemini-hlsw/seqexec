@@ -11,6 +11,10 @@ import org.http4s.headers.`Content-Type`
 import scalaz.-\/
 import scalaz.stream.Process._
 
+/**
+  * Generic factories for http4s encoders/decoders for boopickle
+  * Note that the media type is set for application/octet-stream
+  */
 trait BooPickleInstances {
 
   def booOf[A](implicit pickler: Pickler[A]): EntityDecoder[A] =
@@ -27,4 +31,3 @@ trait BooPickleInstances {
       Pickle.intoBytes(v)
     }.withContentType(`Content-Type`(MediaType.`application/octet-stream`))
 }
-

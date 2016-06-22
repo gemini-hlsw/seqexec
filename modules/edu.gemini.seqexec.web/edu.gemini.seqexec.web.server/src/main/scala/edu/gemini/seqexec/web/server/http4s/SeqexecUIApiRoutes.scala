@@ -46,10 +46,10 @@ object SeqexecUIApiRoutes extends BooPicklers {
   val tokenAuthService = new JwtAuthentication
 
   val publicService: HttpService = GZip { HttpService {
-    case req@GET -> Root / "seqexec" / "current" / "queue" =>
+    case req @ GET -> Root / "seqexec" / "current" / "queue" =>
       Ok(CannedModel.currentQueue)
 
-    case req@POST -> Root / "seqexec" / "login" =>
+    case req @ POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
         // Try to authenticate
         AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
@@ -68,7 +68,7 @@ object SeqexecUIApiRoutes extends BooPicklers {
 
   // Don't gzip log responses
   val logService: HttpService = HttpService {
-    case req@POST -> Root / "seqexec" / "log" =>
+    case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[LogMessage] { msg =>
         // This will use the server time for the logs
         clientLog.log(msg.level, s"Client ${req.remoteAddr}: ${msg.msg}")

@@ -22,4 +22,3 @@ object CommandsModel {
       m => SequenceStatus(s, error = false, m.msg, m.steps)
     )
 }
-

@@ -4,6 +4,9 @@ import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.web.common._
 import boopickle.Default._
 
+/**
+  * Contains http4s implicit encoders of model objects
+  */
 trait BooPicklers {
   import edu.gemini.seqexec.web.common.LogMessage._
   import CliCommand._
