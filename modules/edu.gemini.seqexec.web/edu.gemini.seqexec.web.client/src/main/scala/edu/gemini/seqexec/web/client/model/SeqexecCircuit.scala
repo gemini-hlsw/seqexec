@@ -14,7 +14,6 @@ import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
 import upickle.default._
 import boopickle.Default._
-import edu.gemini.seqexec.web.common.picklers._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

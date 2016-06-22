@@ -6,14 +6,12 @@ import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
-import upickle.default
 import boopickle.Default._
-import boopickle.Pickler
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer, Uint8Array}
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 
 /**
   * Encapsulates remote calls to the Seqexec Web API
@@ -48,8 +46,9 @@ object SeqexecWebClient {
     */
   def run(s: Sequence): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/run"
-    ).map(s => default.read[RegularCommand](s.responseText))
+      url = s"$baseUrl/commands/${s.id}/run",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
   }
 
   /**
@@ -57,8 +56,9 @@ object SeqexecWebClient {
     */
   def stop(s: Sequence): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/stop"
-    ).map(s => default.read[RegularCommand](s.responseText))
+      url = s"$baseUrl/commands/${s.id}/stop",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
   }
 
   /**
@@ -67,7 +67,6 @@ object SeqexecWebClient {
   def login(u: String, p: String): Future[UserDetails] =
     Ajax.post(
       url = s"$baseUrl/login",
-      headers = Map("Content-Type" -> "application/octet-stream"),
       responseType = "arraybuffer",
       data = Pickle.intoBytes(UserLoginRequest(u, p))
     ).map(unpickle[UserDetails])

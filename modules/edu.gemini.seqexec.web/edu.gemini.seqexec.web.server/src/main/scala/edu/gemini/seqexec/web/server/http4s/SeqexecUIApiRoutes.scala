@@ -8,7 +8,6 @@ import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.common.picklers._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
