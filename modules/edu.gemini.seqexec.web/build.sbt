@@ -14,7 +14,7 @@ lazy val edu_gemini_seqexec_web = project.in(file("."))
 
 lazy val commonSettings = Seq(
   // Common libraries
-  libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, BooPickle.value) ++ TestLibs.value
+  libraryDependencies ++= Seq(ScalaZCore.value, BooPickle.value) ++ TestLibs.value
 )
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -113,7 +113,7 @@ def includeInTrigger(f: java.io.File): Boolean =
 lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web.server"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, StreamZ) ++ Http4s ++ Play,
+    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, UnboundId, JwtCore, StreamZ) ++ Http4s ++ Play,
 
     // Settings to optimize the use of sbt-revolver
 

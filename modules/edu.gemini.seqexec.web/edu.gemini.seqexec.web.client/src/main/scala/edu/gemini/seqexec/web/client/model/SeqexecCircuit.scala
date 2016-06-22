@@ -12,13 +12,12 @@ import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
-import upickle.default._
 import boopickle.Default._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer, Uint8Array}
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz.{-\/, \/, \/-}
 
 // Action Handlers
@@ -317,6 +316,8 @@ object PotEq {
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
+  // Import the correct picklers
+  import SeqexecEvent._
   type SearchResults = List[Sequence]
 
   val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
