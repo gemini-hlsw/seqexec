@@ -45,11 +45,11 @@ object SeqexecUIApiRoutes extends BooPicklers {
 
   val tokenAuthService = new JwtAuthentication
 
-  val publicService: HttpService = HttpService {
-    case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
+  val publicService: HttpService = GZip { HttpService {
+    case req@GET -> Root / "seqexec" / "current" / "queue" =>
       Ok(CannedModel.currentQueue)
 
-    case req @ POST -> Root  / "seqexec" / "login" =>
+    case req@POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
         // Try to authenticate
         AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
@@ -60,12 +60,15 @@ object SeqexecUIApiRoutes extends BooPicklers {
             val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal,
               path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
             Ok(user).addCookie(cookie)
-          case -\/(_)    =>
+          case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
+    }}
 
-    case req @ POST -> Root / "seqexec" / "log" =>
+  // Don't gzip log responses
+  val logService: HttpService = HttpService {
+    case req@POST -> Root / "seqexec" / "log" =>
       req.decode[LogMessage] { msg =>
         // This will use the server time for the logs
         clientLog.log(msg.level, s"Client ${req.remoteAddr}: ${msg.msg}")
@@ -76,7 +79,7 @@ object SeqexecUIApiRoutes extends BooPicklers {
 
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
-  val protectedServices: HttpService = tokenAuthService { HttpService {
+  val protectedServices: HttpService = tokenAuthService { GZip { HttpService {
       case req @ GET -> Root / "seqexec" / "events" =>
         // Stream seqexec events to clients and a ping
         val user = userInRequest(req)
@@ -103,9 +106,9 @@ object SeqexecUIApiRoutes extends BooPicklers {
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
           }
         }
-    }
+    }}
 
   }
 
-  val service = publicService || protectedServices
+  val service = publicService || protectedServices || logService
 }

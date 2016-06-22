@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.server.http4s
 import java.io.File
 
 import org.http4s.dsl._
+import org.http4s.server.middleware.GZip
 import org.http4s.{HttpService, Request, Response, StaticFile}
 
 import scalaz.concurrent.Task
@@ -30,9 +31,9 @@ object StaticRoutes {
 
   val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".woff", ".woff2", ".ttf", ".mp3")
 
-  val service = HttpService {
+  val service = GZip { HttpService {
     case req if req.pathInfo == "/"                  => req.serve("/index.html")
     case req if req.pathInfo == "/cli"               => req.serve("/cli.html")
     case req if req.endsWith(supportedExtension: _*) => req.serve()
-  }
+  }}
 }

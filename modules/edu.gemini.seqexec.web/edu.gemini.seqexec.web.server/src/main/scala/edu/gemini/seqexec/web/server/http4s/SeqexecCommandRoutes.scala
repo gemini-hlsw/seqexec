@@ -6,8 +6,7 @@ import edu.gemini.seqexec.web.server.http4s.encoder._
 
 import org.http4s._
 import org.http4s.dsl._
-
-import boopickle.Default._
+import org.http4s.server.middleware.GZip
 
 /**
   * Rest Endpoints under the /api route
@@ -15,7 +14,7 @@ import boopickle.Default._
 object SeqexecCommandRoutes extends BooPicklers {
   val commands = Commands()
 
-  val service = HttpService {
+  val service = GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
       Ok(toCommandResult("host", commands.host()))
 
@@ -55,5 +54,5 @@ object SeqexecCommandRoutes extends BooPicklers {
 
     case req @ GET  -> Root  / obsId / "state" =>
       Ok(toSequenceConfig("state", commands.state(obsId)))
-  }
+  }}
 }
