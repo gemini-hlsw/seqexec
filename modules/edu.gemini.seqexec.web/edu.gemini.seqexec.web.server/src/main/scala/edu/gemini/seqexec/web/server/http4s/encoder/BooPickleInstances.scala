@@ -13,7 +13,7 @@ import scalaz.stream.Process._
 
 trait BooPickleInstances {
 
-  private def boopickleDecoder[A](implicit pickler: Pickler[A]): EntityDecoder[A] =
+  def booOf[A](implicit pickler: Pickler[A]): EntityDecoder[A] =
     EntityDecoder.decodeBy(MediaType.`application/octet-stream`) { msg =>
       DecodeResult {
         msg.body.map(bv => Unpickle[A](pickler).fromBytes(bv.toByteBuffer)).partialAttempt {
@@ -21,8 +21,6 @@ trait BooPickleInstances {
         }.runLastOr(-\/(MalformedMessageBodyFailure("Invalid binary: empty body")))
       }
     }
-
-  def booOf[A](implicit pickler: Pickler[A]): EntityDecoder[A] = boopickleDecoder
 
   def booEncoderOf[A](implicit encoder: Pickler[A]): EntityEncoder[A] =
     EntityEncoder[ByteBuffer].contramap[A] { v =>

@@ -6,17 +6,8 @@ import boopickle.Default._
 
 trait BooPicklers {
   import edu.gemini.seqexec.web.common.LogMessage._
-
-  // Composite pickler for the seqexec event hierarchy
-  // It is not strictly need but reduces the size of the js
-  implicit val eventsPickler = compositePickler[SeqexecEvent]
-      .addConcreteType[NullEvent.type]
-      .addConcreteType[SeqexecConnectionOpenEvent]
-      .addConcreteType[SeqexecConnectionCloseEvent.type]
-      .addConcreteType[SeqexecConnectionError]
-      .addConcreteType[SequenceStartEvent]
-      .addConcreteType[SequenceCompletedEvent]
-      .addConcreteType[StepExecutedEvent]
+  import CliCommand._
+  import SeqexecEvent._
 
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s
@@ -27,8 +18,7 @@ trait BooPicklers {
   // The next one seems redundant but apparently we don't find recursive picklers
   implicit val listSequenceEncoder   = booEncoderOf[List[Sequence]]
   implicit val sequexecQueueEncoder  = booEncoderOf[SeqexecQueue]
-  implicit val regularCommandEncoder = booEncoderOf[RegularCommand]
-  implicit val sequenceConfigEncoder = booEncoderOf[SequenceConfig]
+  implicit val commandsEncoder       = booEncoderOf[CliCommand]
 
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets

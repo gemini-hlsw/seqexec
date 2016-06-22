@@ -2,9 +2,12 @@ package edu.gemini.seqexec.web.server.http4s
 
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.web.server.model.CommandsModel._
+import edu.gemini.seqexec.web.server.http4s.encoder._
+
 import org.http4s._
 import org.http4s.dsl._
-import edu.gemini.seqexec.web.server.http4s.encoder.BooPicklers
+
+import boopickle.Default._
 
 /**
   * Rest Endpoints under the /api route
