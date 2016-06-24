@@ -119,8 +119,12 @@ class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends Ac
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case OpenLoginBox if value == SectionClosed =>
       updated(SectionOpen)
+    case OpenLoginBox                           =>
+      noChange
     case CloseLoginBox if value == SectionOpen  =>
       updated(SectionClosed)
+    case CloseLoginBox                          =>
+      noChange
   }
 }
 
@@ -182,6 +186,55 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
+class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
+  def webSocket = Future[Action] {
+    import org.scalajs.dom.document
+
+    val host = document.location.host
+
+    def onOpen(e: Event): Unit = {
+      println("Open")
+      SeqexecCircuit.dispatch(Connected)
+    }
+
+    def onMessage(e: MessageEvent): Unit = {
+      \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
+        case \/-(event) => SeqexecCircuit.dispatch(NewSeqexecEvent(event))
+        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
+      }
+    }
+
+    def onError(e: ErrorEvent): Unit = {
+      println("Error " + e)
+      //SeqexecCircuit.dispatch(ConnectionError(e.message))
+    }
+
+    def onClose(e: CloseEvent): Unit = {
+      println("Close ")
+      //SeqexecCircuit.dispatch(ConnectionClosed)
+    }
+
+    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
+    ws.onopen = onOpen _
+    ws.onmessage = onMessage _
+    ws.onerror = onError _
+    ws.onclose = onClose _
+    Connecting(ws)
+  }
+
+  override protected def handle = {
+    case WSConnect =>
+      effectOnly(Effect(webSocket))
+    case Connecting(ws) =>
+      updated(Some(ws))
+    case Connected =>
+      effectOnly(Effect.action(AppendToLog("Connected")))
+  }
+}
+
+/**
+  * Handles actions related to the changing the selection of the displayed sequence
+  */
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
@@ -228,42 +281,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def appendToLogE(s: String) =
     Effect(Future(AppendToLog(s)))
 
-  // TODO Make into its own class
-  val webSocket = {
-    import org.scalajs.dom.document
-
-    val host = document.location.host
-
-    def onOpen(e: Event): Unit = {
-      dispatch(AppendToLog("Connected"))
-      dispatch(ConnectionOpened)
-    }
-
-    def onMessage(e: MessageEvent): Unit = {
-      \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
-        case \/-(event) => dispatch(NewSeqexecEvent(event))
-        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
-      }
-    }
-
-    def onError(e: ErrorEvent): Unit = {
-      println("Error " + e)
-      dispatch(ConnectionError(e.message))
-    }
-
-    def onClose(e: CloseEvent): Unit = {
-      println("Close ")
-      dispatch(ConnectionClosed)
-    }
-
-    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
-    ws.onopen = onOpen _
-    ws.onmessage = onMessage _
-    ws.onerror = onError _
-    ws.onclose = onClose _
-    Some(ws)
-  }
-
+  val wsHandler              = new WebSocketHandler(zoomRW(_.ws)((m, v) => m.copy(ws = v)))
   val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
@@ -289,6 +307,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     RefTo(sequenceReader(id))
 
   override protected def actionHandler = composeHandlers(
+    wsHandler,
     queueHandler,
     searchHandler,
     searchAreaHandler,

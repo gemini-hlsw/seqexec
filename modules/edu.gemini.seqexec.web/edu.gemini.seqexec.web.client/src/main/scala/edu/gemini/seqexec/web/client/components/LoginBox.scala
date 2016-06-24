@@ -38,7 +38,7 @@ object LoginBox {
       $.modState(_.copy(username = v))
     }
 
-    def loggedInEvent(u: UserDetails):Callback = Callback {SeqexecCircuit.dispatch(LoggedIn(u))} >> updateProgressMsg("")
+    def loggedInEvent(u: UserDetails):Callback = Callback { SeqexecCircuit.dispatch(LoggedIn(u)) } >> updateProgressMsg("")
     def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
     def updateErrorMsg(m: String):Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
     def closeBox:Callback = $.modState(_ => empty) >> Callback {SeqexecCircuit.dispatch(CloseLoginBox)}

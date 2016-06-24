@@ -2,10 +2,11 @@ package edu.gemini.seqexec.web.client.model
 
 import java.time.LocalTime
 
-import diode.{ActionType, Action, RootModelR}
+import diode.{Action, ActionType, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.{SeqexecEvent, UserDetails}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
+import org.scalajs.dom.WebSocket
 
 import scalaz._
 import Scalaz._
@@ -46,12 +47,6 @@ case class RemoveFromSearch(s: Sequence) extends Action
 // Action to select a sequence for display
 case class SelectToDisplay(s: Sequence) extends Action
 
-// Actions related to web sockets
-case object ConnectionOpened extends Action
-case object ConnectionClosed extends Action
-case class NewSeqexecEvent(e: SeqexecEvent) extends Action
-case class ConnectionError(s: String) extends Action
-
 // Actions related to executing sequences
 case class RequestRun(s: Sequence) extends Action
 case class RequestStop(s: Sequence) extends Action
@@ -64,6 +59,14 @@ case class ShowStep(s: Sequence, i: Int) extends Action
 case class UnShowStep(s: Sequence) extends Action
 
 case class AppendToLog(s: String) extends Action
+
+// Actions related to web sockets
+case object WSConnect extends Action
+case class Connecting(ws: WebSocket) extends Action
+case object Connected extends Action
+case class NewSeqexecEvent(e: SeqexecEvent) extends Action
+case class ConnectionError(s: String) extends Action
+
 
 // End Actions
 
@@ -121,7 +124,8 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(user: Option[UserDetails],
+case class SeqexecAppRootModel(ws: Option[WebSocket],
+                               user: Option[UserDetails],
                                queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
@@ -132,5 +136,5 @@ case class SeqexecAppRootModel(user: Option[UserDetails],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(None, None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }
