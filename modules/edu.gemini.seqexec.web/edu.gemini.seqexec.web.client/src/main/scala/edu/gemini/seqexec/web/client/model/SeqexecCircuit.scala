@@ -192,10 +192,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
 
     val host = document.location.host
 
-    def onOpen(e: Event): Unit = {
-      println("Open")
+    def onOpen(e: Event): Unit =
       SeqexecCircuit.dispatch(Connected)
-    }
 
     def onMessage(e: MessageEvent): Unit = {
       \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
@@ -204,14 +202,12 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
       }
     }
 
-    def onError(e: ErrorEvent): Unit = {
-      println("Error " + e)
-      //SeqexecCircuit.dispatch(ConnectionError(e.message))
-    }
+    def onError(e: ErrorEvent): Unit =
+      SeqexecCircuit.dispatch(ConnectionError(e.message))
 
     def onClose(e: CloseEvent): Unit = {
       println("Close ")
-      //SeqexecCircuit.dispatch(ConnectionClosed)
+      SeqexecCircuit.dispatch(ConnectionClosed)
     }
 
     val ws = new WebSocket(s"ws://$host/api/seqexec/events")
@@ -229,6 +225,10 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
       updated(Some(ws))
     case Connected =>
       effectOnly(Effect.action(AppendToLog("Connected")))
+    case ConnectionError(e) =>
+      effectOnly(Effect.action(AppendToLog(e)))
+    case ConnectionClosed =>
+      updated(None)
   }
 }
 

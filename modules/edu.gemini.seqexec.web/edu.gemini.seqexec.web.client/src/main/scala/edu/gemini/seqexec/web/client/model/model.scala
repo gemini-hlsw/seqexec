@@ -64,6 +64,7 @@ case class AppendToLog(s: String) extends Action
 case object WSConnect extends Action
 case class Connecting(ws: WebSocket) extends Action
 case object Connected extends Action
+case object ConnectionClosed extends Action
 case class NewSeqexecEvent(e: SeqexecEvent) extends Action
 case class ConnectionError(s: String) extends Action
 
