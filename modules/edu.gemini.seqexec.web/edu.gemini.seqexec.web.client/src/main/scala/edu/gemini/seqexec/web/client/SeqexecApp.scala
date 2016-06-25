@@ -12,6 +12,7 @@ import scalacss.ScalaCssReact._
 import org.scalajs.dom.document
 import java.util.logging.{Level, Logger}
 
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
 import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
 
 /**

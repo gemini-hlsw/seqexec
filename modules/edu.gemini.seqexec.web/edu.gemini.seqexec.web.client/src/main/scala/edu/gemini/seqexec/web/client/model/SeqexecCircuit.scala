@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.client.model
 
+import java.util.logging.Logger
+
 import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
@@ -278,6 +280,8 @@ object PotEq {
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = List[Sequence]
 
+  val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
+
   def appendToLogE(s: String) =
     Effect(Future(AppendToLog(s)))
 
@@ -318,4 +322,10 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     sequenceDisplayHandler,
     globalLogHandler,
     sequenceExecHandler)
+
+  override def handleFatal(action: Any, e: Throwable): Unit = {
+    logger.severe(s"Action not handled $action")
+    super.handleFatal(action, e)
+  }
+
 }
