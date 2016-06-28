@@ -214,8 +214,10 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
       }
     }
 
-    def onError(e: ErrorEvent): Unit =
-      SeqexecCircuit.dispatch(ConnectionError(e.message))
+    def onError(e: ErrorEvent): Unit = {
+      // Unfortunately reading the event is not cross-browser safe
+      logger.severe("Error on websocket")
+    }
 
     def onClose(e: CloseEvent): Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
@@ -227,6 +229,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     ws.onerror = onError _
     ws.onclose = onClose _
     Connecting(ws)
+  }.recover {
+    case e: Throwable => NoAction
   }
 
   override protected def handle = {
