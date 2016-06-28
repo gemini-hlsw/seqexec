@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import java.util.logging.Logger
+import java.util.logging.{Level, Logger}
 
 import diode.data._
 import diode.react.ReactConnector
@@ -8,6 +8,7 @@ import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
+import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
@@ -190,14 +191,21 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
+  val logger = Logger.getLogger(this.getClass.getSimpleName)
+  // Reconfigure not to send ajax events in this logger
+  logger.setUseParentHandlers(false)
+  logger.addHandler(new ConsoleHandler(Level.FINE))
 
   def webSocket(delay: Int) = Future[Action] {
     import org.scalajs.dom.document
 
     val host = document.location.host
+    val url = s"ws://$host/api/seqexec/events"
 
-    def onOpen(e: Event): Unit =
+    def onOpen(e: Event): Unit = {
+      logger.info(s"Connected to $url")
       SeqexecCircuit.dispatch(Connected)
+    }
 
     def onMessage(e: MessageEvent): Unit = {
       \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
@@ -209,12 +217,11 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     def onError(e: ErrorEvent): Unit =
       SeqexecCircuit.dispatch(ConnectionError(e.message))
 
-    def onClose(e: CloseEvent): Unit = {
-      println("Close ")
-      SeqexecCircuit.dispatch(ConnectionClosed)
-    }
+    def onClose(e: CloseEvent): Unit =
+      // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
+      SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, delay * 2))))
 
-    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
+    val ws = new WebSocket(url)
     ws.onopen = onOpen _
     ws.onmessage = onMessage _
     ws.onerror = onError _
@@ -225,14 +232,19 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
   override protected def handle = {
     case WSConnect(d) =>
       effectOnly(Effect(webSocket(d)).after(d.millis))
+
     case Connecting(ws) =>
       updated(Some(ws))
+
     case Connected =>
       effectOnly(Effect.action(AppendToLog("Connected")))
+
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
-    case ConnectionClosed =>
-      val effect = Effect(Future(WSConnect(100)))
+
+    case ConnectionClosed(d) =>
+      logger.fine("Retry connecting in "+ d)
+      val effect = Effect(Future(WSConnect(d)))
       updated(None, effect)
   }
 }

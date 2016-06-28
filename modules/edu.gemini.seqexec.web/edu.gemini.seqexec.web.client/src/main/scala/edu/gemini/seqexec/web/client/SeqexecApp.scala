@@ -28,7 +28,7 @@ object SeqexecApp extends JSApp {
   def main(): Unit = {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
-    rootLogger.addHandler(new ConsoleHandler)
+    rootLogger.addHandler(new ConsoleHandler(Level.INFO))
     rootLogger.addHandler(new AjaxHandler(Level.INFO))
 
     val log = Logger.getLogger("edu.gemini.seqexec.web.client.SeqexecApp")

@@ -4,8 +4,9 @@ import java.util.logging.{Handler, Level, LogRecord, SimpleFormatter}
 
 object log {
   // Override Console Handler to use the default js console
-  class ConsoleHandler extends Handler {
+  class ConsoleHandler(level: Level) extends Handler {
     setFormatter(new SimpleFormatter)
+    setLevel(level)
 
     override def publish(record: LogRecord): Unit = {
       if (record.getLevel == Level.SEVERE) {
