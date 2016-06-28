@@ -39,7 +39,7 @@ object SeqexecApp extends JSApp {
     SeqexecStyles.addToDocument()
 
     // Initiate the WebSocket connection
-    SeqexecCircuit.dispatch(WSConnect)
+    SeqexecCircuit.dispatch(WSConnect(0))
 
     // Render the UI using React
     ReactDOM.render(SeqexecUI(), document.getElementById("content"))

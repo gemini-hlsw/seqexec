@@ -189,7 +189,9 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
   * Handles actions related to the changing the selection of the displayed sequence
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
-  def webSocket = Future[Action] {
+  implicit val runner = new RunAfterJS
+
+  def webSocket(delay: Int) = Future[Action] {
     import org.scalajs.dom.document
 
     val host = document.location.host
@@ -221,8 +223,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
   }
 
   override protected def handle = {
-    case WSConnect =>
-      effectOnly(Effect(webSocket))
+    case WSConnect(d) =>
+      effectOnly(Effect(webSocket(d)).after(d.millis))
     case Connecting(ws) =>
       updated(Some(ws))
     case Connected =>
@@ -230,7 +232,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
     case ConnectionClosed =>
-      updated(None)
+      val effect = Effect(Future(WSConnect(100)))
+      updated(None, effect)
   }
 }
 
@@ -326,6 +329,16 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   override def handleFatal(action: Any, e: Throwable): Unit = {
     logger.severe(s"Action not handled $action")
     super.handleFatal(action, e)
+  }
+
+  /**
+    * Handle a non-fatal error, such as dispatching an action with no action handler.
+    *
+    * @param msg Error message
+    */
+  override def handleError(msg: String): Unit = {
+    logger.severe(s"Action error $msg")
+    throw new Exception(s"handleError called with: $msg")
   }
 
 }

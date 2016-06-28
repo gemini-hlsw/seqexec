@@ -61,7 +61,7 @@ case class UnShowStep(s: Sequence) extends Action
 case class AppendToLog(s: String) extends Action
 
 // Actions related to web sockets
-case object WSConnect extends Action
+case class WSConnect(delay: Int) extends Action
 case class Connecting(ws: WebSocket) extends Action
 case object Connected extends Action
 case object ConnectionClosed extends Action
