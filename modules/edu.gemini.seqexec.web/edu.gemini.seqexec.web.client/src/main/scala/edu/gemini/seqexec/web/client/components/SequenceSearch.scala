@@ -74,6 +74,7 @@ object SequenceSearchResultsBody {
   * Shows a table with search results
   */
 object SequenceSearchResults {
+  val searchResultsConnect = SeqexecCircuit.connect(_.searchResults)
 
   val component = ReactComponentB[Unit]("SequenceSearchResult")
     .stateless
@@ -83,7 +84,7 @@ object SequenceSearchResults {
         <.div(
           ^.cls := "segment", {
             implicit val eq = PotEq.searchResultsEq
-            SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsHeader.apply)
+            searchResultsConnect(SequenceSearchResultsHeader.apply)
           },
           <.div(
             ^.cls := "ui scroll pane bottom attached segment",
@@ -97,7 +98,7 @@ object SequenceSearchResults {
                   <.th("\u00a0")
                 )
               ),
-              SeqexecCircuit.connect(_.searchResults)(SequenceSearchResultsBody.apply)
+              searchResultsConnect(SequenceSearchResultsBody.apply)
             )
           )
         )

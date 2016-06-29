@@ -150,6 +150,9 @@ object QueueTableLoading {
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
+  val searchResultsConnect = SeqexecCircuit.connect(_.searchResults)
+  val queueConnect = SeqexecCircuit.connect(_.queue)
+
   case class Props(user: ModelProxy[Option[UserDetails]])
 
   val component = ReactComponentB[Props]("QueueAreaTitle")
@@ -160,13 +163,13 @@ object QueueAreaTitle {
         {
           // Special equality check to avoid certain UI artifacts
           implicit val eq = PotEq.seqexecQueueEq
-          SeqexecCircuit.connect(_.queue)(QueueTableLoading(_))
+          queueConnect(QueueTableLoading.apply)
         },
         p.user().map { u =>
           <.div(
             ^.cls := "right menu",
             ^.key := "queue.area.title",
-            SeqexecCircuit.connect(_.searchResults)(SequenceSearch(_))
+            searchResultsConnect(SequenceSearch.apply)
           ): ReactNode
         }.getOrElse[ReactNode](<.div(^.key := "queue.area.empty"))
       )
@@ -179,6 +182,8 @@ object QueueAreaTitle {
   * Container for the queue table
   */
 object QueueTableSection {
+  val queueConnect = SeqexecCircuit.connect(_.queue)
+
   case class Props(opened: SectionVisibilityState)
 
   val component = ReactComponentB[Props]("QueueTableSection")
@@ -210,7 +215,7 @@ object QueueTableSection {
               )
             )
           ),
-          SeqexecCircuit.connect(_.queue)(QueueTableBody(_, p.opened))
+          queueConnect(QueueTableBody(_, p.opened))
         )
       )
     ).build
@@ -223,6 +228,9 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
+  val queueConnect = SeqexecCircuit.connect(_.queue)
+  val userConnect = SeqexecCircuit.connect(_.user)
+
   case class Props(searchArea: ModelProxy[SectionVisibilityState])
 
   val component = ReactComponentB[Props]("QueueArea")
@@ -230,7 +238,7 @@ object QueueArea {
     .render_P(p =>
       <.div(
         ^.cls := "ui raised segments container",
-        SeqexecCircuit.connect(_.user)(QueueAreaTitle(_)),
+        userConnect(QueueAreaTitle(_)),
         <.div(
           ^.cls := "ui attached segment",
           <.div(
@@ -243,7 +251,7 @@ object QueueArea {
                   "sixteen wide column"                                 -> (p.searchArea() == SectionClosed)
                 ),
                 // If there was an error on the process display a message
-                SeqexecCircuit.connect(_.queue)(LoadingErrorMsg(_)),
+                queueConnect(LoadingErrorMsg(_)),
                 QueueTableSection(p.searchArea())
               ),
               p.searchArea() == SectionOpen ?= SequenceSearchResults() // Display the search area if open

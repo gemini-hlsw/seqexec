@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.model
 
 import java.time.LocalTime
 
-import diode.RootModelR
+import diode.{ActionType, Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.{SeqexecEvent, UserDetails}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
@@ -26,44 +26,44 @@ case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Emp
 }
 
 // Actions to close and/open the search area
-case object OpenSearchArea
-case object CloseSearchArea
+case object OpenSearchArea extends Action
+case object CloseSearchArea extends Action
 
 // Actions to close and/open the dev console area
-case object ToggleDevConsole
+case object ToggleDevConsole extends Action
 
 // Actions to close and/open the login box
-case object OpenLoginBox
-case object CloseLoginBox
+case object OpenLoginBox extends Action
+case object CloseLoginBox extends Action
 
-case class LoggedIn(u: UserDetails)
-case object Logout
+case class LoggedIn(u: UserDetails) extends Action
+case object Logout extends Action
 
 // Action to add a sequence to the queue
-case class AddToQueue(s: Sequence)
+case class AddToQueue(s: Sequence) extends Action
 // Action to remove a sequence from the search results
-case class RemoveFromSearch(s: Sequence)
+case class RemoveFromSearch(s: Sequence) extends Action
 // Action to select a sequence for display
-case class SelectToDisplay(s: Sequence)
+case class SelectToDisplay(s: Sequence) extends Action
 
 // Actions related to web sockets
-case object ConnectionOpened
-case object ConnectionClosed
-case class NewSeqexecEvent(e: SeqexecEvent)
-case class ConnectionError(s: String)
+case object ConnectionOpened extends Action
+case object ConnectionClosed extends Action
+case class NewSeqexecEvent(e: SeqexecEvent) extends Action
+case class ConnectionError(s: String) extends Action
 
 // Actions related to executing sequences
-case class RequestRun(s: Sequence)
-case class RequestStop(s: Sequence)
-case class RunStarted(s: Sequence)
-case class RunStopped(s: Sequence)
-case class RunStartFailed(s: Sequence)
-case class RunStopFailed(s: Sequence)
+case class RequestRun(s: Sequence) extends Action
+case class RequestStop(s: Sequence) extends Action
+case class RunStarted(s: Sequence) extends Action
+case class RunStopped(s: Sequence) extends Action
+case class RunStartFailed(s: Sequence) extends Action
+case class RunStopFailed(s: Sequence) extends Action
 
-case class ShowStep(s: Sequence, i: Int)
-case class UnShowStep(s: Sequence)
+case class ShowStep(s: Sequence, i: Int) extends Action
+case class UnShowStep(s: Sequence) extends Action
 
-case class AppendToLog(s: String)
+case class AppendToLog(s: String) extends Action
 
 // End Actions
 
