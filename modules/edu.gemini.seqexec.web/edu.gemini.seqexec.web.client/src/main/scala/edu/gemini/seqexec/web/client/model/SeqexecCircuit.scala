@@ -31,6 +31,7 @@ class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHand
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
+
     case AddToQueue(s) =>
       // Append to the current queue if not in the queue already
       val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} added to the queue")
@@ -69,17 +70,22 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
+
     case RequestStop(s) =>
       effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunStopFailed(s) else RunStopped(s))))
+
     // We could react to these events but we rather wait for the command from the event queue
     case RunStarted(s) =>
       noChange
+
     case RunStartFailed(s) =>
       noChange
+
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
       val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
       updated(value.map(_.abortSequence(s.id)), logE)
+
     case RunStopFailed(s) =>
       noChange
   }
@@ -94,6 +100,7 @@ class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case OpenSearchArea  =>
       updated(SectionOpen)
+
     case CloseSearchArea =>
       updated(SectionClosed)
   }
@@ -108,6 +115,7 @@ class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ToggleDevConsole if value == SectionOpen   =>
       updated(SectionClosed)
+
     case ToggleDevConsole if value == SectionClosed =>
       updated(SectionOpen)
   }
@@ -122,10 +130,13 @@ class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends Ac
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case OpenLoginBox if value == SectionClosed =>
       updated(SectionOpen)
+
     case OpenLoginBox                           =>
       noChange
+
     case CloseLoginBox if value == SectionOpen  =>
       updated(SectionClosed)
+
     case CloseLoginBox                          =>
       noChange
   }
@@ -142,6 +153,7 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
       // Close the login box
       val effect = Effect(Future(CloseLoginBox))
       updated(Some(u), effect)
+
     case Logout =>
       val effect = Effect(SeqexecWebClient.logout().map(_ => NoAction))
       // Remove the user and call logout
@@ -159,12 +171,14 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
       updated(value.focusOnSequence(ref))
+
     case ShowStep(s, i) =>
       if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
         updated(value.showStep(i))
       } else {
         noChange
       }
+
     case UnShowStep(s) =>
       if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
         updated(value.unshowStep)
@@ -187,16 +201,17 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 }
 
 /**
-  * Handles actions related to the changing the selection of the displayed sequence
+  * Handles the WebSocket connection and performs reconnection if needed
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
   val logger = Logger.getLogger(this.getClass.getSimpleName)
-  // Reconfigure not to send ajax events in this logger
+  // Reconfigure to avoid sending ajax events in this logger
   logger.setUseParentHandlers(false)
   logger.addHandler(new ConsoleHandler(Level.FINE))
 
-  def webSocket(delay: Int) = Future[Action] {
+  // Makes a websocket connection and setups event listeners
+  def webSocket(nextDelay: Int) = Future[Action] {
     import org.scalajs.dom.document
 
     val host = document.location.host
@@ -221,7 +236,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
 
     def onClose(e: CloseEvent): Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
-      SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, delay * 2))))
+      SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, nextDelay * 2))))
 
     val ws = new WebSocket(url)
     ws.onopen = onOpen _
@@ -233,6 +248,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     case e: Throwable => NoAction
   }
 
+  // This is essentially a state machine to handle the connection status and
+  // can reconnect if needed
   override protected def handle = {
     case WSConnect(d) =>
       effectOnly(Effect(webSocket(d)).after(d.millis))
@@ -254,7 +271,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
 }
 
 /**
-  * Handles actions related to the changing the selection of the displayed sequence
+  * Handles messages received over the WS channel
   */
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
@@ -262,6 +279,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocke
   override def handle = {
     case NewSeqexecEvent(SeqexecConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
+
     case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
       updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)
@@ -342,6 +360,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     globalLogHandler,
     sequenceExecHandler)
 
+  /**
+    * Handles a fatal error most likely during action processing
+    */
   override def handleFatal(action: Any, e: Throwable): Unit = {
     logger.severe(s"Action not handled $action")
     super.handleFatal(action, e)
@@ -349,8 +370,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   /**
     * Handle a non-fatal error, such as dispatching an action with no action handler.
-    *
-    * @param msg Error message
     */
   override def handleError(msg: String): Unit = {
     logger.severe(s"Action error $msg")

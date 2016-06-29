@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.model
 
 import java.time.LocalTime
 
-import diode.{Action, ActionType, RootModelR}
+import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.{SeqexecEvent, UserDetails}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
