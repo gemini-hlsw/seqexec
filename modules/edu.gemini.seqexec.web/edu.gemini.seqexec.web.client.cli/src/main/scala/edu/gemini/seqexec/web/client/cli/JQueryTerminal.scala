@@ -17,12 +17,15 @@ object JQueryTerminal {
 
   type CompletionCallback = js.Function1[js.Array[_ >: String], js.Any]
   type CompletionFunction = js.Function3[Terminal, String, CompletionCallback, js.Any]
+  type LoginCallback      = js.Function1[String, js.Any]
+  type LoginFunction      = js.Function3[String, String, LoginCallback, Unit]
 
   class JsTerminalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTerminalOptions, JsTerminalOptionBuilder](new JsTerminalOptionBuilder(_)) {
     def prompt(t: String) = jsOpt("prompt", t)
     def greeting(t: Boolean) = jsOpt("greeting", t)
     def greetings(s: String) = jsOpt("greetings", s)
     def completion(t: CompletionFunction) = jsOpt("completion", t)
+    def login(l: LoginFunction) = jsOpt("login", l)
   }
 
   @js.native

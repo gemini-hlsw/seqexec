@@ -7,8 +7,10 @@ import org.querki.jquery.$
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
 import JQueryTerminal.{Terminal, _}
+import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig, StepConfig}
 import org.scalajs.dom
+import upickle.default
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,8 +22,10 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 @JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
 
+  val apiUrl = "/api/seqexec"
+  val baseUrl = s"$apiUrl/commands"
+
   trait CommandHandler {
-    val baseUrl = "/api/seqexec/commands"
     def handle(args: List[String], terminal: Terminal):Unit
 
     def complete[A <: dom.XMLHttpRequest, B](terminal: Terminal, f: CliCommand => B): PartialFunction[Try[A], js.Any] = {
@@ -128,6 +132,15 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
+  /**
+    * Login request
+    */
+  def login(u: String, p: String): Future[UserDetails] =
+    Ajax.post(
+      url = s"$apiUrl/login",
+      data = default.write(UserLoginRequest(u, p))
+    ).map(s => default.read[UserDetails](s.responseText))
+
   def bold(s: String):String = s"[[b;;]$s]"
   def italic(s: String):String = s"[[ig;;]$s]"
 
@@ -184,7 +197,13 @@ object SeqexecTerminal extends js.JSApp {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
       .greetings(banner + s"\nVersion: ${OcsBuildInfo.version}\n")
-      .completion((t: Terminal, c: String, callback: CompletionCallback) => callback(cmdStrings.toJSArray)))
+      .completion((t: Terminal, c: String, callback: CompletionCallback) => callback(cmdStrings.toJSArray))
+      .login((u: String, p: String, callback: LoginCallback) => {
+        login(u, p).onComplete {
+          case Success(ud) => callback(ud.toString)
+          case Failure(e)  => callback(null)
+        }
+      }))
   }
 
   val banner = """  ___
