@@ -20,10 +20,10 @@ object SeqexecUI {
       <.div(
         NavBar(),
         wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
-        qaConnect(QueueArea(_)),
+        qaConnect(QueueArea.apply),
         SequenceArea(),
         //SeqexecCircuit.connect(SeqexecCircuit.zoom(_.loginBox))((b: ModelProxy[SectionVisibilityState]) => LoginBox(b))
-        lbConnect(LoginBox(_))
+        lbConnect(LoginBox.apply)
       )
     )
     .build

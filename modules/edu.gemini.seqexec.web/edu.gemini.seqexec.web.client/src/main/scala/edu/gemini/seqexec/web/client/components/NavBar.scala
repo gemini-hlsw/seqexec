@@ -36,7 +36,7 @@ object NavBar {
               IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
             )
           ),
-          userConnect(x => TopMenu(x))
+          userConnect(TopMenu.apply)
         )
       )
     )

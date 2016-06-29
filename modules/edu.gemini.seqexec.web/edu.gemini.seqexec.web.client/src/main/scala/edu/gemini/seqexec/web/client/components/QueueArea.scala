@@ -163,13 +163,13 @@ object QueueAreaTitle {
         {
           // Special equality check to avoid certain UI artifacts
           implicit val eq = PotEq.seqexecQueueEq
-          queueConnect(QueueTableLoading(_))
+          queueConnect(QueueTableLoading.apply)
         },
         p.user().map { u =>
           <.div(
             ^.cls := "right menu",
             ^.key := "queue.area.title",
-            searchResultsConnect(SequenceSearch(_))
+            searchResultsConnect(SequenceSearch.apply)
           ): ReactNode
         }.getOrElse[ReactNode](<.div(^.key := "queue.area.empty"))
       )

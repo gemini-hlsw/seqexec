@@ -231,14 +231,14 @@ object SequenceTabs {
             <.div(
               ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
               TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-              tabContents(p.user, p.sequences).map(SequenceTabContent(_))
+              tabContents(p.user, p.sequences).map(SequenceTabContent.apply)
             )
           ),
           <.div(
             ^.cls := "row computer only",
             <.div(
               ^.cls := "sixteen wide column",
-              logConnect(LogArea(_))
+              logConnect(LogArea.apply)
             )
           )
         )
