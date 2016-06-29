@@ -19,25 +19,31 @@ object JQueryTerminal {
   type CompletionFunction = js.Function3[Terminal, String, CompletionCallback, js.Any]
   type LoginCallback      = js.Function1[String, js.Any]
   type LoginFunction      = js.Function3[String, String, LoginCallback, Unit]
+  type TerminalCallback   = js.Function1[Terminal, Int]
 
   class JsTerminalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTerminalOptions, JsTerminalOptionBuilder](new JsTerminalOptionBuilder(_)) {
     def prompt(t: String) = jsOpt("prompt", t)
+    def name(t: String) = jsOpt("name", t)
     def greeting(t: Boolean) = jsOpt("greeting", t)
     def greetings(s: String) = jsOpt("greetings", s)
     def completion(t: CompletionFunction) = jsOpt("completion", t)
+    def onBeforeLogin(t: TerminalCallback) = jsOpt("onBeforeLogin", t)
     def login(l: LoginFunction) = jsOpt("login", l)
   }
 
   @js.native
   trait Terminal extends js.Object {
-    def echo(s: String):js.Any = js.native
-    def error(s: String):js.Any = js.native
-    def pause():js.Any = js.native
-    def resume():js.Any = js.native
+    def echo(s: String): js.Any = js.native
+    def error(s: String): js.Any = js.native
+    def pause(): js.Any = js.native
+    def resume(): js.Any = js.native
+    def logout(local: js.UndefOr[Boolean]): js.Any = js.native
+    def token(): js.Any = js.native
+    def set_token(v: js.UndefOr[String], i: js.UndefOr[Boolean]): js.Any = js.native
   }
 
   @js.native
-    trait TerminalCommands extends JQuery {
+  trait TerminalCommands extends JQuery {
     def terminal(c: js.Function2[String, Terminal, js.Any], o: JsTerminalOptions): this.type = js.native
   }
 

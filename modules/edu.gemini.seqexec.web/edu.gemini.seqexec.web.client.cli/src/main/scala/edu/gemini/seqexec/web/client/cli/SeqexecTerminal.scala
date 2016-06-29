@@ -2,15 +2,19 @@ package edu.gemini.seqexec.web.client.cli
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
-import js.JSConverters._
-import org.querki.jquery.$
+import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.Any._
+import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
+
+import org.querki.jquery.$
 import JQueryTerminal.{Terminal, _}
 import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig, StepConfig}
-import org.scalajs.dom
+
 import upickle.default
+import upickle.default._
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -171,7 +175,7 @@ object SeqexecTerminal extends js.JSApp {
   // Used for tab completion
   val cmdStrings: Seq[String] = "help" :: commands.map(_.cmd).distinct
 
-  val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
+  val terminalHandler: (String, Terminal) => js.Any = { (command, terminal) =>
     val tokens = command.split(" ").toList
 
     def find(cmd: String, args: List[String]): Option[Command] = commands.find(c => c.cmd == cmd && c.args == args.size)
@@ -196,11 +200,31 @@ object SeqexecTerminal extends js.JSApp {
   override def main(): Unit = {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
+      .name("seqexec")
       .greetings(banner + s"\nVersion: ${OcsBuildInfo.version}\n")
       .completion((t: Terminal, c: String, callback: CompletionCallback) => callback(cmdStrings.toJSArray))
+      .onBeforeLogin((terminal: Terminal) => {
+        // Logout from the previous session at the startup
+        // We may want instead to be logged as long as the cookie is valid
+        // but that means contacting the server to check auth, this is a simpler
+        // solution
+        //terminal.set_token(js.undefined, true)
+        //terminal.logout(true)
+        val u = for {
+          i <- 0 until dom.ext.LocalStorage.length
+          key <- dom.ext.LocalStorage.key(i)
+          if key.endsWith("token")
+        } {
+          dom.ext.LocalStorage.remove(key)
+        }
+
+        //terminal.echo(u.mkString("\n"))
+        //  echo(terminal.token().toString)
+        0
+      })
       .login((u: String, p: String, callback: LoginCallback) => {
         login(u, p).onComplete {
-          case Success(ud) => callback(ud.toString)
+          case Success(ud) => callback(ud.toString) // This is not very good but we don't have access to the login cookie
           case Failure(e)  => callback(null)
         }
       }))
