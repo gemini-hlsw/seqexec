@@ -167,6 +167,6 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       buildInfoObject := "OcsBuildInfo",
       buildInfoPackage := "edu.gemini.seqexec.web.client.cli"
     )
-    .dependsOn(edu_gemini_seqexec_web_shared_JS)
+    .dependsOn(edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_model_JS)
 
 }

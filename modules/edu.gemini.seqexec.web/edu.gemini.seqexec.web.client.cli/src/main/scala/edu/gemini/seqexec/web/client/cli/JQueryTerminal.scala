@@ -19,7 +19,7 @@ object JQueryTerminal {
   type CompletionFunction = js.Function3[Terminal, String, CompletionCallback, js.Any]
   type LoginCallback      = js.Function1[String, js.Any]
   type LoginFunction      = js.Function3[String, String, LoginCallback, Unit]
-  type TerminalCallback   = js.Function1[Terminal, Int]
+  type TerminalCallback   = js.Function1[Terminal, Boolean]
 
   class JsTerminalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTerminalOptions, JsTerminalOptionBuilder](new JsTerminalOptionBuilder(_)) {
     def prompt(t: String) = jsOpt("prompt", t)

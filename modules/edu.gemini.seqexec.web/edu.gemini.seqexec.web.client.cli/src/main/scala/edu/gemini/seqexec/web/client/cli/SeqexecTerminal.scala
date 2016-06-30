@@ -7,14 +7,10 @@ import scala.scalajs.js.Any._
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
-
 import org.querki.jquery.$
 import JQueryTerminal.{Terminal, _}
-import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig, StepConfig}
-
-import upickle.default
-import upickle.default._
+import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -142,8 +138,12 @@ object SeqexecTerminal extends js.JSApp {
   def login(u: String, p: String): Future[UserDetails] =
     Ajax.post(
       url = s"$apiUrl/login",
-      data = default.write(UserLoginRequest(u, p))
-    ).map(s => default.read[UserDetails](s.responseText))
+      data = Pickle.intoBytes(UserLoginRequest(u, p)),
+      responseType = "arraybuffer"
+    ).map { s =>
+      val ab = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
+      Unpickle[UserDetails].fromBytes(ab)
+    }
 
   def bold(s: String):String = s"[[b;;]$s]"
   def italic(s: String):String = s"[[ig;;]$s]"
@@ -208,24 +208,12 @@ object SeqexecTerminal extends js.JSApp {
         // We may want instead to be logged as long as the cookie is valid
         // but that means contacting the server to check auth, this is a simpler
         // solution
-        //terminal.set_token(js.undefined, true)
-        //terminal.logout(true)
-        val u = for {
-          i <- 0 until dom.ext.LocalStorage.length
-          key <- dom.ext.LocalStorage.key(i)
-          if key.endsWith("token")
-        } {
-          dom.ext.LocalStorage.remove(key)
-        }
-
-        //terminal.echo(u.mkString("\n"))
-        //  echo(terminal.token().toString)
-        0
+        false
       })
       .login((u: String, p: String, callback: LoginCallback) => {
         login(u, p).onComplete {
           case Success(ud) => callback(ud.toString) // This is not very good but we don't have access to the login cookie
-          case Failure(e)  => callback(null)
+          case Failure(e)  => callback(null) // jquery terminal expects a null as a sign of auth failure
         }
       }))
   }
