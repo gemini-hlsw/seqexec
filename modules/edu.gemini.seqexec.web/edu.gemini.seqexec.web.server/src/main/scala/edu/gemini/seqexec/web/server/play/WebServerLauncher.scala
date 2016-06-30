@@ -6,7 +6,12 @@ import play.api.{BuiltInComponents, Mode}
 import play.core.server.{NettyServerComponents, ServerConfig}
 import play.api.mvc._
 
+import scalaz.effect.IO
+
 object WebServerLauncher extends App with LogInitialization {
+  // Initialize the log and exit if it fails
+  configLog.run.onException(IO(sys.exit(1))).unsafePerformIO()
+
   val devMode = !args.contains("prod")
 
   def launch(port: Int):NettyServerComponents = {

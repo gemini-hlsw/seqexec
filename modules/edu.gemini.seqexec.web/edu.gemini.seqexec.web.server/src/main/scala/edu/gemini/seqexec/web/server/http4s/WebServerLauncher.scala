@@ -8,8 +8,12 @@ import org.http4s.server.blaze.BlazeBuilder
 
 import scalaz._
 import Scalaz._
+import scalaz.effect.IO
 
 object WebServerLauncher extends App with LogInitialization {
+  // Initialize the log and exit if it fails
+  configLog.run.onException(IO(sys.exit(1))).unsafePerformIO()
+
   val logger = Logger.getLogger(getClass.getName)
 
   // TODO improve configuration style
