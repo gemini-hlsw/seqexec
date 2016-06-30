@@ -12,6 +12,7 @@ import scalacss.ScalaCssReact._
 import org.scalajs.dom.document
 import java.util.logging.{Level, Logger}
 
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
 import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
 
 /**
@@ -27,7 +28,7 @@ object SeqexecApp extends JSApp {
   def main(): Unit = {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
-    rootLogger.addHandler(new ConsoleHandler)
+    rootLogger.addHandler(new ConsoleHandler(Level.INFO))
     rootLogger.addHandler(new AjaxHandler(Level.INFO))
 
     val log = Logger.getLogger("edu.gemini.seqexec.web.client.SeqexecApp")
@@ -36,6 +37,9 @@ object SeqexecApp extends JSApp {
 
     // Register CSS styles
     SeqexecStyles.addToDocument()
+
+    // Initiate the WebSocket connection
+    SeqexecCircuit.dispatch(WSConnect(0))
 
     // Render the UI using React
     ReactDOM.render(SeqexecUI(), document.getElementById("content"))
