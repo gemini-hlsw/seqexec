@@ -20,7 +20,6 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz.{-\/, \/, \/-}
 
-// Action Handlers
 /**
   * Handles actions related to the queue like loading and adding new elements
   */
@@ -205,6 +204,9 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
   * Handles the WebSocket connection and performs reconnection if needed
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
+  // Import the correct picklers
+  import SeqexecEvent._
+
   implicit val runner = new RunAfterJS
   val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
@@ -224,7 +226,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     }
 
     def onMessage(e: MessageEvent): Unit = {
-      \/.fromTryCatchNonFatal(read[SeqexecEvent](e.data.toString)) match {
+      val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
+      \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
         case \/-(event) => SeqexecCircuit.dispatch(NewSeqexecEvent(event))
         case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
       }
@@ -240,6 +243,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
       SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, nextDelay * 2))))
 
     val ws = new WebSocket(url)
+    ws.binaryType = "arraybuffer"
     ws.onopen = onOpen _
     ws.onmessage = onMessage _
     ws.onerror = onError _
@@ -316,8 +320,6 @@ object PotEq {
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
-  // Import the correct picklers
-  import SeqexecEvent._
   type SearchResults = List[Sequence]
 
   val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
@@ -326,44 +328,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomRW(_.ws)((m, v) => m.copy(ws = v)))
-  // TODO Make into its own class
-  val webSocket = {
-    import org.scalajs.dom.document
-
-    val host = document.location.host
-
-    def onOpen(e: Event): Unit = {
-      dispatch(AppendToLog("Connected"))
-      dispatch(ConnectionOpened)
-    }
-
-    def onMessage(e: MessageEvent): Unit = {
-      val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
-      \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-        case \/-(event) => dispatch(NewSeqexecEvent(event))
-        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
-      }
-    }
-
-    def onError(e: ErrorEvent): Unit = {
-      println("Error " + e)
-      dispatch(ConnectionError(e.message))
-    }
-
-    def onClose(e: CloseEvent): Unit = {
-      println("Close ")
-      dispatch(ConnectionClosed)
-    }
-
-    val ws = new WebSocket(s"ws://$host/api/seqexec/events")
-    ws.binaryType = "arraybuffer"
-    ws.onopen = onOpen _
-    ws.onmessage = onMessage _
-    ws.onerror = onError _
-    ws.onclose = onClose _
-    Some(ws)
-  }
-
   val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))

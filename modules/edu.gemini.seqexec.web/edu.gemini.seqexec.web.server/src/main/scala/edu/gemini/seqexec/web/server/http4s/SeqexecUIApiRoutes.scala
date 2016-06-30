@@ -80,14 +80,14 @@ object SeqexecUIApiRoutes extends BooPicklers {
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
   val protectedServices: HttpService = tokenAuthService { GZip { HttpService {
-      case req @ GET -> Root / "seqexec" / "events" =>
+      case req @ GET -> Root / "seqexec" / "events"         =>
         // Stream seqexec events to clients and a ping
         val user = userInRequest(req)
 
         WS(Exchange(pingProcess merge (Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
           ExecutorImpl.sequenceEvents.map(v => Binary(trimmedArray(v)))), scalaz.stream.Process.empty))
 
-      case req @ POST -> Root / "seqexec" / "logout" =>
+      case req @ POST -> Root / "seqexec" / "logout"        =>
         // Clean the auth cookie
         val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some,
           secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
