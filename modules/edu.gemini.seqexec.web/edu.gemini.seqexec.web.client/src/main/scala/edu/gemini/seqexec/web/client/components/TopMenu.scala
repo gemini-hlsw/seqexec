@@ -7,10 +7,12 @@ import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconDropdown, IconSignOut}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconDropdown, IconSignOut, IconAttention}
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactElement}
 import japgolly.scalajs.react.vdom.prefix_<^._
+import org.scalajs.dom.WebSocket
+
 import scalacss.ScalaCssReact._
 
 // Former logged in menu, not in use at the moment but it may eventually
