@@ -6,10 +6,12 @@ import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
-import upickle.default
+import boopickle.Default._
+import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 
 /**
   * Encapsulates remote calls to the Seqexec Web API
@@ -17,27 +19,36 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object SeqexecWebClient {
   val baseUrl = "/api/seqexec"
 
+  // Decodes the binary response with BooPickle, errors are not handled
+  def unpickle[A](r: XMLHttpRequest)(implicit u: Pickler[A]): A = {
+    val ab = TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer])
+    Unpickle[A].fromBytes(ab)
+  }
+
   def read(id: String): Future[List[Sequence]] =
     Ajax.get(
-      url = s"$baseUrl/sequence/$id"
+      url = s"$baseUrl/sequence/$id",
+      responseType = "arraybuffer"
     )
-    .map(s => default.read[List[Sequence]](s.responseText))
+    .map(unpickle[List[Sequence]])
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }
 
   def readQueue(): Future[SeqexecQueue] =
     Ajax.get(
-      url = s"$baseUrl/current/queue"
-    ).map(s => default.read[SeqexecQueue](s.responseText))
+      url = s"$baseUrl/current/queue",
+      responseType = "arraybuffer"
+    ).map(unpickle[SeqexecQueue])
 
   /**
     * Requests the backend to execute a sequence
     */
   def run(s: Sequence): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/run"
-    ).map(s => default.read[RegularCommand](s.responseText))
+      url = s"$baseUrl/commands/${s.id}/run",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
   }
 
   /**
@@ -45,8 +56,9 @@ object SeqexecWebClient {
     */
   def stop(s: Sequence): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/stop"
-    ).map(s => default.read[RegularCommand](s.responseText))
+      url = s"$baseUrl/commands/${s.id}/stop",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
   }
 
   /**
@@ -55,8 +67,9 @@ object SeqexecWebClient {
   def login(u: String, p: String): Future[UserDetails] =
     Ajax.post(
       url = s"$baseUrl/login",
-      data = default.write(UserLoginRequest(u, p))
-    ).map(s => default.read[UserDetails](s.responseText))
+      responseType = "arraybuffer",
+      data = Pickle.intoBytes(UserLoginRequest(u, p))
+    ).map(unpickle[UserDetails])
 
   /**
     * Logout request
@@ -72,6 +85,7 @@ object SeqexecWebClient {
   def log(record: LogRecord): Future[Unit] =
     Ajax.post(
       url = s"$baseUrl/log",
-      data = default.write(LogMessage.fromLogRecord(record))
+      responseType = "arraybuffer",
+      data = Pickle.intoBytes(LogMessage.fromLogRecord(record))
     ).map(_.responseText)
 }

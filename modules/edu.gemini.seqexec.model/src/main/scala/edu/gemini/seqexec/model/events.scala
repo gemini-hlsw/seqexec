@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.model
 
+import boopickle.Default._
 import edu.gemini.seqexec.model.dhs.ObsId
 
 /**
@@ -13,3 +14,16 @@ case class SeqexecConnectionError(e: String) extends SeqexecEvent
 case class SequenceStartEvent(id: String) extends SeqexecEvent
 case class SequenceCompletedEvent(id: String) extends SeqexecEvent
 case class StepExecutedEvent(id: String, completed: Int, remaining: Int, fileId: ObsId) extends SeqexecEvent
+
+object SeqexecEvent {
+  // Composite pickler for the seqexec event hierarchy
+  // It is not strictly need but reduces the size of the js
+  implicit val eventsPickler = compositePickler[SeqexecEvent]
+      .addConcreteType[NullEvent.type]
+      .addConcreteType[SeqexecConnectionOpenEvent]
+      .addConcreteType[SeqexecConnectionCloseEvent.type]
+      .addConcreteType[SeqexecConnectionError]
+      .addConcreteType[SequenceStartEvent]
+      .addConcreteType[SequenceCompletedEvent]
+      .addConcreteType[StepExecutedEvent]
+}

@@ -4,21 +4,21 @@ import java.time.Instant
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserLoginRequest}
+import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.common.LogMessage._
 import edu.gemini.seqexec.web.server.model.CannedModel
-import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.model.Conversions._
+import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.security.AuthenticationConfig
+import edu.gemini.seqexec.web.server.http4s.encoder._
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
-import upickle.default._
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebsocketBits._
+import org.http4s.server.middleware.GZip
 
 import scalaz._
 import Scalaz._
@@ -27,7 +27,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-object SeqexecUIApiRoutes {
+object SeqexecUIApiRoutes extends BooPicklers {
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 
@@ -45,76 +45,70 @@ object SeqexecUIApiRoutes {
 
   val tokenAuthService = new JwtAuthentication
 
-  val publicService: HttpService = HttpService {
-    case req @ GET -> Root  / "seqexec" / "current" / "queue" =>
-      Ok(write(CannedModel.currentQueue))
-    case req @ POST -> Root  / "seqexec" / "login" =>
-      req.decode[String] { body =>
-        val u = read[UserLoginRequest](body)
+  val publicService: HttpService = GZip { HttpService {
+    case req @ GET -> Root / "seqexec" / "current" / "queue" =>
+      Ok(CannedModel.currentQueue)
+
+    case req @ POST -> Root / "seqexec" / "login" =>
+      req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
         // Try to authenticate
         AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // if successful set a cookie
             val cookieVal = buildToken(user)
             val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
-            val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
-            Ok(write(user)).addCookie(cookie)
-          case -\/(_)    =>
+            val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal,
+              path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
+            Ok(user).addCookie(cookie)
+          case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
-    case req @ GET -> Root  / "seqexec" / "sequence" / oid =>
-      val r = for {
-        obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
-        s     <- ExecutorImpl.read(obsId)
-      } yield (obsId, s)
+    }}
 
-      r match {
-        case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
-        case -\/(e)      => NotFound(SeqexecFailure.explain(e))
-      }
-    case GET -> Root / "seqexec" / "events" =>
-      // Stream seqexec events to clients and a ping
-      WS(Exchange(pingProcess merge ExecutorImpl.sequenceEvents.map(v => Text(write(v))), scalaz.stream.Process.empty))
+  // Don't gzip log responses
+  val logService: HttpService = HttpService {
     case req @ POST -> Root / "seqexec" / "log" =>
-      req.decode[String] { body =>
-        val u = read[LogMessage](body)
+      req.decode[LogMessage] { msg =>
         // This will use the server time for the logs
-        clientLog.log(u.level, s"Client ${req.remoteAddr}: ${u.msg}")
+        clientLog.log(msg.level, s"Client ${req.remoteAddr}: ${msg.msg}")
         // Always return ok
         Ok()
       }
   }
 
-  val protectedServices: HttpService = tokenAuthService { HttpService {
-      case req @ GET -> Root / "seqexec" / "events" =>
+  def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+
+  val protectedServices: HttpService = tokenAuthService { GZip { HttpService {
+      case req @ GET -> Root / "seqexec" / "events"         =>
         // Stream seqexec events to clients and a ping
-        val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
-        WS(Exchange(pingProcess merge (Process.emit(Text(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => Text(write(v)))), scalaz.stream.Process.empty))
+        val user = userInRequest(req)
 
-      case req @ POST -> Root / "seqexec" / "logout" =>
-        // This is not necessary, it is just code to verify token decoding
-        println("Logged out " + req.attributes.get(JwtAuthentication.authenticatedUser))
+        WS(Exchange(pingProcess merge (Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+          ExecutorImpl.sequenceEvents.map(v => Binary(trimmedArray(v)))), scalaz.stream.Process.empty))
 
-        val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some, secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
+      case req @ POST -> Root / "seqexec" / "logout"        =>
+        // Clean the auth cookie
+        val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some,
+          secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
         Ok("").removeCookie(cookie)
 
       case req @ GET -> Root / "seqexec" / "sequence" / oid =>
-        val user = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+        val user = userInRequest(req)
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
-            obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t: Throwable) => Unexpected(t.getMessage))
-            s <- ExecutorImpl.read(obsId)
+            obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
+            s     <- ExecutorImpl.read(obsId)
           } yield (obsId, s)
 
           r match {
-            case \/-((i, s)) => Ok(write(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
+            case \/-((i, s)) => Ok(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None)))
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
           }
         }
-    }
+    }}
 
   }
 
-  val service = publicService || protectedServices
+  val service = publicService || protectedServices || logService
 }

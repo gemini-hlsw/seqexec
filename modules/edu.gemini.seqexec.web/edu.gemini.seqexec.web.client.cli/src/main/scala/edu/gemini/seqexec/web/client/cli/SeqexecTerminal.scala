@@ -13,7 +13,9 @@ import org.scalajs.dom
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import upickle.default._
+import boopickle.Default._
+
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 
 @JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
@@ -24,7 +26,8 @@ object SeqexecTerminal extends js.JSApp {
 
     def complete[A <: dom.XMLHttpRequest, B](terminal: Terminal, f: CliCommand => B): PartialFunction[Try[A], js.Any] = {
       case Success(s) =>
-        val r = read[CliCommand](s.responseText)
+        val ab = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
+        val r  = Unpickle[CliCommand].fromBytes(ab)
         if (r.error) terminal.error(r.response) else terminal.echo(f(r).toString)
       case Failure(s) => terminal.error(s.toString)
     }
@@ -47,7 +50,7 @@ object SeqexecTerminal extends js.JSApp {
 
   object HostHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Unit = {
-      runInBackground(Ajax.get(s"$baseUrl/host"), defaultResponse, terminal)
+      runInBackground(Ajax.get(s"$baseUrl/host", responseType = "arraybuffer"), defaultResponse, terminal)
     }
   }
 
@@ -56,6 +59,7 @@ object SeqexecTerminal extends js.JSApp {
       case host :: Nil =>
         runInBackground(Ajax.post(s"$baseUrl/host",
           data = s"host=$host",
+          responseType = "arraybuffer",
           headers = Map("Content-Type" -> "application/x-www-form-urlencoded")), defaultResponse, terminal)
       case _           =>
     }
@@ -64,7 +68,7 @@ object SeqexecTerminal extends js.JSApp {
   object RunHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Unit = args match {
       case obsId :: Nil =>
-        runInBackground(Ajax.post(s"$baseUrl/$obsId/run"), defaultResponse, terminal)
+        runInBackground(Ajax.post(s"$baseUrl/$obsId/run", responseType = "arraybuffer"), defaultResponse, terminal)
       case _            =>
     }
   }
@@ -72,7 +76,7 @@ object SeqexecTerminal extends js.JSApp {
   object StopHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Unit = args match {
       case obsId :: Nil =>
-        runInBackground(Ajax.post(s"$baseUrl/$obsId/stop"), defaultResponse, terminal)
+        runInBackground(Ajax.post(s"$baseUrl/$obsId/stop", responseType = "arraybuffer"), defaultResponse, terminal)
       case _            =>
     }
   }
@@ -80,7 +84,7 @@ object SeqexecTerminal extends js.JSApp {
   object ContinueHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Unit = args match {
       case obsId :: Nil =>
-        runInBackground(Ajax.post(s"$baseUrl/$obsId/continue"), defaultResponse, terminal)
+        runInBackground(Ajax.post(s"$baseUrl/$obsId/continue", responseType = "arraybuffer"), defaultResponse, terminal)
       case _            =>
     }
   }
@@ -88,7 +92,7 @@ object SeqexecTerminal extends js.JSApp {
   object RunStateHandler extends CommandHandler {
     override def handle(args: List[String], terminal: Terminal): Unit = args match {
       case obsId :: Nil =>
-        runInBackground(Ajax.get(s"$baseUrl/$obsId/state"), defaultResponse, terminal)
+        runInBackground(Ajax.get(s"$baseUrl/$obsId/state", responseType = "arraybuffer"), defaultResponse, terminal)
       case _            =>
     }
   }
@@ -110,15 +114,15 @@ object SeqexecTerminal extends js.JSApp {
 
     override def handle(args: List[String], terminal: Terminal): Unit = args match {
       case obsId :: "count" :: Nil                       =>
-        runInBackground(Ajax.get(s"$baseUrl/${args.head}/count"), defaultResponse, terminal)
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/count", responseType = "arraybuffer"), defaultResponse, terminal)
       case obsId :: "static" :: Nil                      =>
-        runInBackground(Ajax.get(s"$baseUrl/${args.head}/static"), staticResponse, terminal)
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/static", responseType = "arraybuffer"), staticResponse, terminal)
       case obsId :: "static" :: subsystem :: Nil         =>
-        runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem"), staticResponse, terminal)
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/static/$subsystem", responseType = "arraybuffer"), staticResponse, terminal)
       case obsId :: "dynamic":: step :: Nil              =>
-        runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step"), staticResponse, terminal)
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step", responseType = "arraybuffer"), staticResponse, terminal)
       case obsId :: "dynamic":: step :: subsystem :: Nil =>
-        runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step/$subsystem"), staticResponse, terminal)
+        runInBackground(Ajax.get(s"$baseUrl/${args.head}/dynamic/$step/$subsystem", responseType = "arraybuffer"), staticResponse, terminal)
       case _                                             =>
         terminal.error("Unknown show command")
     }

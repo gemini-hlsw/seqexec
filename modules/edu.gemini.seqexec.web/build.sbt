@@ -14,7 +14,7 @@ lazy val edu_gemini_seqexec_web = project.in(file("."))
 
 lazy val commonSettings = Seq(
   // Common libraries
-  libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value) ++ TestLibs.value
+  libraryDependencies ++= Seq(ScalaZCore.value, BooPickle.value) ++ TestLibs.value
 )
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -28,8 +28,10 @@ lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure)
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
+  .dependsOn(edu_gemini_seqexec_model_JVM)
 
 lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
+  .dependsOn(edu_gemini_seqexec_model_JS)
 
 // Client side project using Scala.js
 lazy val edu_gemini_seqexec_web_client = project.in(file("edu.gemini.seqexec.web.client"))
@@ -111,7 +113,7 @@ def includeInTrigger(f: java.io.File): Boolean =
 lazy val edu_gemini_seqexec_web_server = project.in(file("edu.gemini.seqexec.web.server"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, StreamZ) ++ Http4s ++ Play,
+    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, UnboundId, JwtCore, StreamZ) ++ Http4s ++ Play,
 
     // Settings to optimize the use of sbt-revolver
 

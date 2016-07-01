@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.server.play
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, UserLoginRequest}
+import edu.gemini.seqexec.model.{SeqexecConnectionOpenEvent, SeqexecEvent, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
 import edu.gemini.seqexec.web.common.{LogMessage, Sequence, SequenceState}
 import edu.gemini.seqexec.web.common.LogMessage._
@@ -11,17 +11,16 @@ import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
 import edu.gemini.seqexec.web.server.security.AuthenticationConfig
-
 import play.api.mvc._
 import play.api.routing.Router._
 import play.api.routing.sird._
-import play.api.http.websocket.{Message, PingMessage, TextMessage}
+import play.api.http.websocket.{BinaryMessage, Message, PingMessage, TextMessage}
 import play.api.mvc.WebSocket.MessageFlowTransformer
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Source, _}
 import akka.util.ByteString
-
-import upickle.default._
+import boopickle.Default._
+import play.api.http.ContentTypes
 
 import scalaz.{-\/, \/-}
 import streamz.akka.stream._
@@ -56,19 +55,26 @@ object SeqexecUIApiRoutes {
       h.user.fold(Results.Unauthorized("")) { _ =>
         val obsId = new SPObservationID(id)
         ExecutorImpl.read(obsId) match {
-          case \/-(s) => Results.Ok(write(List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))))
+          case \/-(s) => Results.Ok(Pickle
+            .intoBytes[List[Sequence]](List(Sequence(obsId.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None))).array())
+            .as(ContentTypes.BINARY)
           case -\/(e) => Results.NotFound(SeqexecFailure.explain(e))
         }
       }
     }
     case GET(p"/api/seqexec/current/queue") => Action {
-      Results.Ok(write(CannedModel.currentQueue))
+      Results.Ok(Pickle.intoBytes(CannedModel.currentQueue).array()).as(ContentTypes.BINARY)
     }
     case GET(p"/api/seqexec/events") => WebSocket.accept[Message, Message] { h =>
       val user = UserAction.checkAuth(h).fold(_ => None, Some.apply)
 
+      val initialEvent:SeqexecEvent = SeqexecConnectionOpenEvent(user)
+      val byteBuffer = Pickle.intoBytes(initialEvent)
+      val bytes = new Array[Byte](byteBuffer.limit())
+      byteBuffer.get(bytes, 0, byteBuffer.limit)
+
       // Merge the ping and events from ExecutorImpl
-      val events = pingProcess merge (Process.emit(TextMessage(write(SeqexecConnectionOpenEvent(user)))) ++ ExecutorImpl.sequenceEvents.map(v => TextMessage(write(v))))
+      val events = pingProcess merge (Process.emit(BinaryMessage(ByteString(bytes))) ++ ExecutorImpl.sequenceEvents.map(v => BinaryMessage(ByteString(Pickle.intoBytes(v).array()))))
 
       // Make an akka publisher out of the scalaz stream
       val (p2, publisher) = events.publisher()
@@ -82,28 +88,32 @@ object SeqexecUIApiRoutes {
     }
     case POST(p"/api/seqexec/logout") => UserAction { a =>
       // This is not necessary, it is just code to verify token decoding
-      println("Logged out " + a.user)
       Results.Ok("").discardingCookies(DiscardingCookie(AuthenticationConfig.cookieName))
     }
-    case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.text) { s =>
-      val u = read[UserLoginRequest](s.body)
-      // Try to authenticate
-      AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
-        case \/-(user) =>
-          // if successful set a cookie
-          val cookieVal = buildToken(user)
-          val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, maxAge = Option(AuthenticationConfig.sessionTimeout), secure = AuthenticationConfig.onSSL, httpOnly = true)
-          Results.Ok(write(user)).withCookies(cookie)
-        case -\/(_) =>
-          Results.Unauthorized("")
-      }
+
+    case POST(p"/api/seqexec/login") => Action(BodyParsers.parse.raw) { s =>
+      s.body.asBytes().map(_.asByteBuffer).map { bb =>
+        val u = Unpickle[UserLoginRequest].fromBytes(bb)
+        // Try to authenticate
+        AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
+          case \/-(user) =>
+            // if successful set a cookie
+            val cookieVal = buildToken(user)
+            val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal, maxAge = Option(AuthenticationConfig.sessionTimeout), secure = AuthenticationConfig.onSSL, httpOnly = true)
+            Results.Ok(Pickle.intoBytes[UserDetails](user).array()).as(ContentTypes.BINARY).withCookies(cookie)
+          case -\/(_) =>
+            Results.Unauthorized("")
+        }
+      }.getOrElse(Results.BadRequest)
     }
-    case POST(p"/api/seqexec/log") => Action(BodyParsers.parse.text) { s =>
-      val u = read[LogMessage](s.body)
-      // This will use the server time for the logs
-      clientLog.log(u.level, s"Client ${s.remoteAddress}: ${u.msg}")
-      // Always return ok
-      Results.Ok("")
+    case POST(p"/api/seqexec/log") => Action(BodyParsers.parse.raw) { s =>
+      s.body.asBytes().map(_.asByteBuffer).map { bb =>
+        val u = Unpickle[LogMessage].fromBytes(bb)
+        // This will use the server time for the logs
+        clientLog.log(u.level, s"Client ${s.remoteAddress}: ${u.msg}")
+        // Always return ok
+        Results.Ok("")
+      }.getOrElse(Results.BadRequest)
     }
   }
 }

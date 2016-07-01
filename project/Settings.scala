@@ -32,6 +32,7 @@ object Settings {
     val scalajsReact = "0.11.1"
     val scalaCSS     = "0.4.1"
     val uPickle      = "0.4.0"
+    val booPickle    = "1.2.4"
     val diode        = "1.0.0"
     val javaTimeJS   = "0.1.0"
     val javaLogJS    = "0.1.0"
@@ -81,6 +82,7 @@ object Settings {
 
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
+    val BooPickle   = Def.setting("me.chrons"    %%% "boopickle"            % LibraryVersions.booPickle)
     val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
     val JavaLogJS   = Def.setting("org.scala-js" %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
