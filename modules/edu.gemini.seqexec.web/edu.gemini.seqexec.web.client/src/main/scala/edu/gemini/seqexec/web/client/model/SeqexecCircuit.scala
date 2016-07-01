@@ -318,6 +318,14 @@ object PotEq {
 }
 
 /**
+  * Utility class to let components more easily switch parts of the UI depending on the context
+  */
+case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
+  def isLogged = u.isDefined
+  def isConnected = w.ws.isReady
+}
+
+/**
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
@@ -342,9 +350,23 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
+  // Some useful readers
+
   // Reader for a specific sequence if available
   def sequenceReader(id: String):ModelR[_, Pot[Sequence]] =
     zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s)))
+
+  // Reader to indicate the allowed interactions
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
+
+  // Reader for search results
+  val searchResults: ModelR[SeqexecAppRootModel, Pot[List[Sequence]]] = zoom(_.searchResults)
+
+  // Reader for sequences on display
+  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
+
+  val statusAndSearchResults = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
+  val statusAndSequences = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
 
   /**
     * Makes a reference to a sequence on the queue.

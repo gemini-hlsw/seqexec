@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.data.Pot
 import diode.react.ModelProxy
 import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
@@ -9,7 +8,6 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-import org.scalajs.dom._
 
 import scalacss.ScalaCssReact._
 
@@ -17,7 +15,7 @@ import scalacss.ScalaCssReact._
   * Component for the bar at the top of the page
   */
 object NavBar {
-  val userConnect = SeqexecCircuit.connect(_.user)
+  val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
   val wsConnect = SeqexecCircuit.connect(_.ws)
 
   val component = ReactComponentB[Unit]("SeqexecAppBar")
