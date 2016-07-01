@@ -221,7 +221,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 
     def onOpen(e: Event): Unit = {
       logger.info(s"Connected to $url")
-      SeqexecCircuit.dispatch(Connected(ws, nextDelay))
+      SeqexecCircuit.dispatch(Connected(ws, 0))
     }
 
     def onMessage(e: MessageEvent): Unit = {
@@ -269,9 +269,10 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       effectOnly(Effect.action(AppendToLog(e)))
 
     case ConnectionClosed(d) =>
-      logger.fine("Retry connecting in "+ d)
-      val effect = Effect(Future(WSConnect(d)))
-      updated(WebSocketConnection(Pending(), d), effect)
+      val next = math.min(60000, math.max(250, value.nextAttempt * 2))
+      logger.fine("Retry connecting in "+ next)
+      val effect = Effect(Future(WSConnect(next)))
+      updated(WebSocketConnection(Pending(), next), effect)
   }
 }
 

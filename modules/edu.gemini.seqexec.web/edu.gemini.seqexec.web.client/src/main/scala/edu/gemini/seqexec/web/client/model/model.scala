@@ -95,7 +95,7 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   }
 }
 
-case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Long)
+case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)
 
 object WebSocketConnection {
   val empty = WebSocketConnection(Empty, 0)
