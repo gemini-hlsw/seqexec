@@ -62,8 +62,8 @@ case class AppendToLog(s: String) extends Action
 
 // Actions related to web sockets
 case class WSConnect(delay: Int) extends Action
-case class Connecting(ws: WebSocket) extends Action
-case object Connected extends Action
+case object Connecting extends Action
+case class Connected(ws: WebSocket, delay: Int) extends Action
 case class ConnectionClosed(delay: Int) extends Action
 case class NewSeqexecEvent(e: SeqexecEvent) extends Action
 case class ConnectionError(s: String) extends Action
@@ -93,6 +93,12 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     val q = instrumentSequences.findZ(i => s().exists(_.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
     copy(q | instrumentSequences)
   }
+}
+
+case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Long)
+
+object WebSocketConnection {
+  val empty = WebSocketConnection(Empty, 0)
 }
 
 case class WebSocketsLog(log: List[SeqexecEvent]) {
@@ -125,7 +131,7 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(ws: Pot[WebSocket],
+case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
                                queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
@@ -137,5 +143,6 @@ case class SeqexecAppRootModel(ws: Pot[WebSocket],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(Empty, None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Empty,
+    SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

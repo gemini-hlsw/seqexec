@@ -203,10 +203,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles the WebSocket connection and performs reconnection if needed
   */
-class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
-  // Import the correct picklers
-  import SeqexecEvent._
-
+class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
   val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
@@ -220,9 +217,11 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     val host = document.location.host
     val url = s"ws://$host/api/seqexec/events"
 
+    val ws = new WebSocket(url)
+
     def onOpen(e: Event): Unit = {
       logger.info(s"Connected to $url")
-      SeqexecCircuit.dispatch(Connected)
+      SeqexecCircuit.dispatch(Connected(ws, nextDelay))
     }
 
     def onMessage(e: MessageEvent): Unit = {
@@ -248,7 +247,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     ws.onmessage = onMessage _
     ws.onerror = onError _
     ws.onclose = onClose _
-    Connecting(ws)
+    Connecting
   }.recover {
     case e: Throwable => NoAction
   }
@@ -259,11 +258,12 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     case WSConnect(d) =>
       effectOnly(Effect(webSocket(d)).after(d.millis))
 
-    case Connecting(ws) =>
-      updated(Ready(ws))
+    case Connecting =>
+      noChange
 
-    case Connected =>
-      effectOnly(Effect.action(AppendToLog("Connected")))
+    case Connected(ws, delay) =>
+      val effect = Effect.action(AppendToLog("Connected"))
+      updated(WebSocketConnection(Ready(ws), delay), effect)
 
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
@@ -271,7 +271,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     case ConnectionClosed(d) =>
       logger.fine("Retry connecting in "+ d)
       val effect = Effect(Future(WSConnect(d)))
-      updated(Pending(), effect)
+      updated(WebSocketConnection(Pending(), d), effect)
   }
 }
 
