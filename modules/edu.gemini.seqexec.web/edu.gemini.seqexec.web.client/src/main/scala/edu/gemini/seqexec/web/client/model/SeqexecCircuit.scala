@@ -260,7 +260,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
       effectOnly(Effect(webSocket(d)).after(d.millis))
 
     case Connecting(ws) =>
-      updated(Some(ws))
+      updated(Ready(ws))
 
     case Connected =>
       effectOnly(Effect.action(AppendToLog("Connected")))
@@ -271,7 +271,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     case ConnectionClosed(d) =>
       logger.fine("Retry connecting in "+ d)
       val effect = Effect(Future(WSConnect(d)))
-      updated(None, effect)
+      updated(Pending(), effect)
   }
 }
 

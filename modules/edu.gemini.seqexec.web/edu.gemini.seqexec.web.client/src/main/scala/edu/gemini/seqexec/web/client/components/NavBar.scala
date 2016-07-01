@@ -1,6 +1,8 @@
 package edu.gemini.seqexec.web.client.components
 
+import diode.data.Pot
 import diode.react.ModelProxy
+import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -64,23 +66,24 @@ object NavBar {
   */
 object ConnectionState {
 
-  case class Props(u: Option[WebSocket])
+  case class Props(u: Pot[WebSocket])
 
   val component = ReactComponentB[Props]("ConnectionState")
     .stateless
     .render_P( p =>
-      p.u.fold(
-        <.div(
-          ^.cls := "header item",
+      <.div(
+        ^.cls := "header item",
+        p.u.renderPending(t =>
+          <.div(
           IconAttention.copyIcon(size = Size.Large, color = Option("red")),
           <.span(
             SeqexecStyles.errorText,
             "Connection lost, retrying..."
-          )
-        ): ReactElement)
-      (_ => <.div(): ReactElement)
+          ))
+        )
+      )
     )
     .build
 
-  def apply(u: ModelProxy[Option[WebSocket]]) = component(Props(u()))
+  def apply(u: ModelProxy[Pot[WebSocket]]) = component(Props(u()))
 }

@@ -125,7 +125,7 @@ object SequencesOnDisplay {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(ws: Option[WebSocket],
+case class SeqexecAppRootModel(ws: Pot[WebSocket],
                                user: Option[UserDetails],
                                queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
@@ -137,5 +137,5 @@ case class SeqexecAppRootModel(ws: Option[WebSocket],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(None, None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(Empty, None, Empty, SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }
