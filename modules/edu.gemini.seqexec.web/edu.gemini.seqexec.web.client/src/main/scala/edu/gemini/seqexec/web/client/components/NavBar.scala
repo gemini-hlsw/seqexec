@@ -60,7 +60,7 @@ object NavBar {
 }
 
 /**
-  * Menu at the top bar
+  * Alert message when the connection disappears
   */
 object ConnectionState {
 

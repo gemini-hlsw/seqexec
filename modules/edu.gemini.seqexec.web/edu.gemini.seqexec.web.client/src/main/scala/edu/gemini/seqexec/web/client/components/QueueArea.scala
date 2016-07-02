@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.ModelR
 import diode.data.{Empty, Pot}
 import diode.react.ReactPot._
 import diode.react._

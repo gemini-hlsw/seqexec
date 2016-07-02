@@ -204,7 +204,11 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
   * Handles the WebSocket connection and performs reconnection if needed
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) {
+  // Import explicitly the custom pickler
+  import SeqexecEvent._
+
   implicit val runner = new RunAfterJS
+
   val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
   logger.setUseParentHandlers(false)
@@ -241,7 +245,6 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
       SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, nextDelay * 2))))
 
-    val ws = new WebSocket(url)
     ws.binaryType = "arraybuffer"
     ws.onopen = onOpen _
     ws.onmessage = onMessage _
