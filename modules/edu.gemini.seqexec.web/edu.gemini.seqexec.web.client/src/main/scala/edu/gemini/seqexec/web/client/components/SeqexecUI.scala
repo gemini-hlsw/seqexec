@@ -22,7 +22,6 @@ object SeqexecUI {
         wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
         qaConnect(QueueArea.apply),
         SequenceArea(),
-        //SeqexecCircuit.connect(SeqexecCircuit.zoom(_.loginBox))((b: ModelProxy[SectionVisibilityState]) => LoginBox(b))
         lbConnect(LoginBox.apply)
       )
     )

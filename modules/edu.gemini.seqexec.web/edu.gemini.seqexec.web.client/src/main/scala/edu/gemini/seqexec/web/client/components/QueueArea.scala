@@ -150,7 +150,7 @@ object QueueTableLoading {
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
-  val searchResultsConnect = SeqexecCircuit.connect(_.searchResults)
+  val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults)
   val queueConnect = SeqexecCircuit.connect(_.queue)
 
   case class Props(user: ModelProxy[Option[UserDetails]])
@@ -169,7 +169,7 @@ object QueueAreaTitle {
           <.div(
             ^.cls := "right menu",
             ^.key := "queue.area.title",
-            searchResultsConnect(SequenceSearch.apply)
+            statusAndSearchResultsConnect(SequenceSearch.apply)
           ): ReactNode
         }.getOrElse[ReactNode](<.div(^.key := "queue.area.empty"))
       )

@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.seqexec.web.client.model.{Logout, OpenLoginBox, SeqexecCircuit}
+import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconDropdown
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
 import japgolly.scalajs.react.vdom.prefix_<^._
+
 import scalacss.ScalaCssReact._
 
 // Former logged in menu, not in use at the moment but it may eventually
@@ -49,24 +50,26 @@ object LoggedInMenu {
   */
 object TopMenu {
 
-  case class Props(u: Option[UserDetails])
+  case class Props(i: ClientStatus)
 
   def openLogin = Callback {SeqexecCircuit.dispatch(OpenLoginBox)}
   def logout = Callback {SeqexecCircuit.dispatch(Logout)}
 
-  val loginButton = Button(Button.Props(size = Size.Medium, onClick = openLogin), "Login")
-  def logoutButton(text: String) =
-    Button(Button.Props(size = Size.Medium, onClick = logout, icon = Some(IconSignOut)), text)
+  def loginButton(enabled: Boolean) =
+    Button(Button.Props(size = Size.Medium, onClick = openLogin, disabled = !enabled), "Login")
+
+  def logoutButton(text: String, enabled: Boolean) =
+    Button(Button.Props(size = Size.Medium, onClick = logout, icon = Some(IconSignOut), disabled = !enabled), text)
 
   val component = ReactComponentB[Props]("SeqexecTopMenu")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui secondary right menu",
-        p.u.fold(
+        p.i.u.fold(
           <.div(
             ^.cls := "ui item",
-            loginButton
+            loginButton(p.i.isConnected)
           )
         )(u =>
           <.div(
@@ -86,12 +89,12 @@ object TopMenu {
             <.div(
               ^.cls := "ui item",
               SeqexecStyles.notInMobile,
-              logoutButton("Logout")
+              logoutButton("Logout", p.i.isConnected)
             ),
             <.div(
               ^.cls := "ui item",
               SeqexecStyles.onlyMobile,
-              logoutButton("")
+              logoutButton("", p.i.isConnected)
             )
           )
         )
@@ -99,5 +102,5 @@ object TopMenu {
     )
     .build
 
-  def apply(u: ModelProxy[Option[UserDetails]]) = component(Props(u()))
+  def apply(u: ModelProxy[ClientStatus]) = component(Props(u()))
 }

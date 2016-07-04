@@ -203,11 +203,12 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles the WebSocket connection and performs reconnection if needed
   */
-class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends ActionHandler(modelRW) {
-  // Import the correct picklers
+class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) {
+  // Import explicitly the custom pickler
   import SeqexecEvent._
 
   implicit val runner = new RunAfterJS
+
   val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
   logger.setUseParentHandlers(false)
@@ -220,9 +221,11 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     val host = document.location.host
     val url = s"ws://$host/api/seqexec/events"
 
+    val ws = new WebSocket(url)
+
     def onOpen(e: Event): Unit = {
       logger.info(s"Connected to $url")
-      SeqexecCircuit.dispatch(Connected)
+      SeqexecCircuit.dispatch(Connected(ws, 0))
     }
 
     def onMessage(e: MessageEvent): Unit = {
@@ -242,13 +245,12 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
       SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, nextDelay * 2))))
 
-    val ws = new WebSocket(url)
     ws.binaryType = "arraybuffer"
     ws.onopen = onOpen _
     ws.onmessage = onMessage _
     ws.onerror = onError _
     ws.onclose = onClose _
-    Connecting(ws)
+    Connecting
   }.recover {
     case e: Throwable => NoAction
   }
@@ -259,19 +261,21 @@ class WebSocketHandler[M](modelRW: ModelRW[M, Option[WebSocket]]) extends Action
     case WSConnect(d) =>
       effectOnly(Effect(webSocket(d)).after(d.millis))
 
-    case Connecting(ws) =>
-      updated(Some(ws))
+    case Connecting =>
+      noChange
 
-    case Connected =>
-      effectOnly(Effect.action(AppendToLog("Connected")))
+    case Connected(ws, delay) =>
+      val effect = Effect.action(AppendToLog("Connected"))
+      updated(WebSocketConnection(Ready(ws), delay), effect)
 
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
 
     case ConnectionClosed(d) =>
-      logger.fine("Retry connecting in "+ d)
-      val effect = Effect(Future(WSConnect(d)))
-      updated(None, effect)
+      val next = math.min(60000, math.max(250, value.nextAttempt * 2))
+      logger.fine("Retry connecting in "+ next)
+      val effect = Effect(Future(WSConnect(next)))
+      updated(WebSocketConnection(Pending(), next), effect)
   }
 }
 
@@ -317,6 +321,14 @@ object PotEq {
 }
 
 /**
+  * Utility class to let components more easily switch parts of the UI depending on the context
+  */
+case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
+  def isLogged = u.isDefined
+  def isConnected = w.ws.isReady
+}
+
+/**
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
@@ -341,9 +353,23 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
+  // Some useful readers
+
   // Reader for a specific sequence if available
   def sequenceReader(id: String):ModelR[_, Pot[Sequence]] =
     zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s)))
+
+  // Reader to indicate the allowed interactions
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
+
+  // Reader for search results
+  val searchResults: ModelR[SeqexecAppRootModel, Pot[List[Sequence]]] = zoom(_.searchResults)
+
+  // Reader for sequences on display
+  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
+
+  val statusAndSearchResults = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
+  val statusAndSequences = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
 
   /**
     * Makes a reference to a sequence on the queue.

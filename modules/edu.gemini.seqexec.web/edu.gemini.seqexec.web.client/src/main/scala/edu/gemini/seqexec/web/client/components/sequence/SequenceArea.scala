@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ReactPot._
-import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model._
@@ -24,7 +23,7 @@ import scalaz.syntax.show._
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class Props(s: Sequence, user: Option[UserDetails], stepConfigDisplayed: Option[Int])
+  case class Props(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
   def requestRun(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
 
@@ -44,22 +43,22 @@ object SequenceStepsTableContainer {
         p.stepConfigDisplayed.fold {
           <.div(
             ^.cls := "row",
-            p.user.isDefined && p.s.state == SequenceState.Abort ?=
+            p.status.isLogged && p.s.state == SequenceState.Abort ?=
               <.h3(
                 ^.cls := "ui red header",
                 "Sequence aborted"
               ),
-            p.user.isDefined && p.s.state == SequenceState.Completed ?=
+            p.status.isLogged && p.s.state == SequenceState.Completed ?=
               <.h3(
                 ^.cls := "ui green header",
                 "Sequence completed"
               ),
-            p.user.isDefined && p.s.state == SequenceState.NotRunning ?=
-              Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s)), "Run"),
-            p.user.isDefined && p.s.state == SequenceState.Running ?=
+            p.status.isLogged && p.s.state == SequenceState.NotRunning ?=
+              Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected), "Run"),
+            p.status.isLogged && p.s.state == SequenceState.Running ?=
               Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
-            p.user.isDefined && p.s.state == SequenceState.Running ?=
-              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s)), "Stop")
+            p.status.isLogged && p.s.state == SequenceState.Running ?=
+              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected), "Stop")
           )
         } { i =>
           <.div(
@@ -172,7 +171,7 @@ object SequenceStepsTableContainer {
     )
     .build
 
-  def apply(s: Sequence, user: Option[UserDetails], stepConfigDisplayed: Option[Int]) = component(Props(s, user,  stepConfigDisplayed))
+  def apply(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
 }
 
 /**
@@ -181,7 +180,7 @@ object SequenceStepsTableContainer {
 object SequenceTabContent {
   def seqConnect(s: Sequence) = SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))
 
-  case class Props(isActive: Boolean, user: Option[UserDetails], st: SequenceTab)
+  case class Props(isActive: Boolean, status: ClientStatus, st: SequenceTab)
 
   val component = ReactComponentB[Props]("SequenceTabContent")
     .stateless
@@ -193,7 +192,7 @@ object SequenceTabContent {
         ),
         dataTab := p.st.instrument,
         p.st.sequence().render { s =>
-          seqConnect(s)(u => u().map(t => SequenceStepsTableContainer(t, p.user, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
+          seqConnect(s)(u => u().map(t => SequenceStepsTableContainer(t, p.status, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
         },
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
@@ -209,10 +208,10 @@ object SequenceTabContent {
 object SequenceTabs {
   val logConnect = SeqexecCircuit.connect(_.globalLog)
 
-  case class Props(user: Option[UserDetails], sequences: SequencesOnDisplay)
+  case class Props(status: ClientStatus, sequences: SequencesOnDisplay)
 
   def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
-  def tabContents(user: Option[UserDetails], d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, user, a)).toStream
+  def tabContents(status: ClientStatus, d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
 
   val component = ReactComponentB[Props]("SequenceTabs")
     .stateless
@@ -231,7 +230,7 @@ object SequenceTabs {
             <.div(
               ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
               TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-              tabContents(p.user, p.sequences).map(SequenceTabContent.apply)
+              tabContents(p.status, p.sequences).map(SequenceTabContent.apply)
             )
           ),
           <.div(
@@ -246,12 +245,12 @@ object SequenceTabs {
     )
     .build
 
-  def apply(user: Option[UserDetails], sequences: SequencesOnDisplay) = component(Props(user, sequences))
+  def apply(status: ClientStatus, sequences: SequencesOnDisplay) = component(Props(status, sequences))
 }
 
 object SequenceArea {
 
-  val connect = SeqexecCircuit.connect(m => (m.user, m.sequencesOnDisplay))
+  val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
 
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
