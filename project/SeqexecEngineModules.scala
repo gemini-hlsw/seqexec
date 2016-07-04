@@ -17,6 +17,11 @@ trait SeqexecEngineModules {
     .in(file("modules/edu.gemini.seqexec.server"))
     .dependsOn(edu_gemini_seqexec_model_JVM)
 
+  // This should eventually replaced by seqexec_server
+  lazy val edu_gemini_seqexec_engine = project
+    .in(file("modules/edu.gemini.seqexec.engine"))
+    .dependsOn(edu_gemini_seqexec_model_JVM)
+
   // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
   // We have to define the project properties at this level
   lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
