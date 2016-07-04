@@ -91,7 +91,7 @@ object OcsBuild extends Build {
 
   lazy val commonSettings = Seq(
     // Common libraries
-    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value) ++ TestLibs.value
+    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, BooPickle.value) ++ TestLibs.value
   )
 
   // a special crossProject for configuring a JS/JVM/shared structure
