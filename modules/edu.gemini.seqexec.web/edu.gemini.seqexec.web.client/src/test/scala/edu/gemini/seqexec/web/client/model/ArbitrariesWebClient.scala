@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.model
 
 import diode.data._
-import edu.gemini.seqexec.web.common.{ArbitrariesWebCommon, Instrument, Sequence}
+import edu.gemini.seqexec.web.common.{ArbitrariesWebCommon, Instrument}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 

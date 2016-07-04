@@ -45,7 +45,7 @@ class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with Propert
       // add one
       val result = queueHandler.handle(AddToQueue(sequence))
       result should matchPattern {
-        case ModelUpdate(Ready(SeqexecQueue(q))) if q.size == 1 => // Add an item to the queue
+        case ModelUpdateEffect(Ready(SeqexecQueue(q)), effects) if q.size === 1 && effects.size === 1 => // Add an item to the queue
       }
     }
   }
@@ -56,7 +56,7 @@ class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with Propert
         val queueHandler = new QueueHandler(new RootModelRW(Ready(SeqexecQueue(distinct))))
         val result = queueHandler.handle(AddToQueue(sequence))
         result should matchPattern {
-          case ModelUpdate(Ready(SeqexecQueue(q))) if q.size == distinct.size + 1 => // added a new item to the list
+          case ModelUpdateEffect(Ready(SeqexecQueue(q)), effects) if q.size === distinct.size + 1 && effects.size === 1 => // added a new item to the list
         }
       }
     }
@@ -71,7 +71,7 @@ class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with Propert
         val sequence = Sequence(distinct.head.id, SequenceState.NotRunning, "", SequenceSteps(Nil), None)
         val result = queueHandler.handle(AddToQueue(sequence))
         result should matchPattern {
-          case ModelUpdate(Ready(SeqexecQueue(q))) if q.size == distinct.size => // Ignore adding an existing item
+          case ModelUpdateEffect(Ready(SeqexecQueue(q)), effects) if q.size === distinct.size && effects.size === 1 => // Ignore adding an existing item`
         }
       }
     }
