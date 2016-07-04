@@ -1,6 +1,7 @@
 *.class
 *.log
 *.iml
+.DS_Store
 
 # sbt specific
 .cache
@@ -17,4 +18,10 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 
+# Idea specific
 .idea/
+
+# Ensime
+.ensime
+.ensime_cache/
+.#*
