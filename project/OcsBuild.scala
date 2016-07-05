@@ -116,6 +116,16 @@ object OcsBuild extends Build {
     .settings(
       // Skip tests in module, Rhino doesn't play nice with jquery
       test := {},
+      // This is a not very nice trick to remove js files that exist on the scala tools
+      // library and that conflict with the requested on jsDependencies, in particular
+      // with jquery.js
+      // See http://stackoverflow.com/questions/35374131/scala-js-missing-js-library, UPDATE #1
+      (scalaJSNativeLibraries in Test) <<= (scalaJSNativeLibraries in Test).map { l =>
+        l.map(virtualFiles => virtualFiles.filter(vf => {
+          val f = vf.toURI.toString
+          !(f.endsWith(".js") && f.contains("scala/tools"))
+        }))
+      },
       // Write the generated js to the filename seqexec.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
       artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
