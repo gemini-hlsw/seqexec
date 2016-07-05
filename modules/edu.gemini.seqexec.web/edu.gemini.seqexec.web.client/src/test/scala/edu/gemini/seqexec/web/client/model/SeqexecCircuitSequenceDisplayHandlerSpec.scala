@@ -15,12 +15,12 @@ class SeqexecCircuitSequenceDisplayHandlerSpec extends FlatSpec with Matchers wi
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 10, sizeRange = 20)
 
-  "SeqexecCircuit SequenceDisplayHandler" should "support setting a sequence for an instrument" in {
+  "SeqexecCircuit SequenceDisplayHandler" should "ignore setting a sequence for an uknown sequence" in {
     forAll { (sequence: Sequence) =>
         val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay.empty))
         val result = handler.handle(SelectToDisplay(sequence))
         result should matchPattern {
-          case ModelUpdate(SequencesOnDisplay(t)) if t.focus.sequence === sequence.some && t.focus.instrument == sequence.instrument =>
+          case ModelUpdate(SequencesOnDisplay(t)) if t.findNext(_.sequence == SeqexecCircuit.sequenceRef(sequence.id)).isEmpty =>
         }
       }
     }
