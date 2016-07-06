@@ -2,54 +2,57 @@ package edu.gemini.seqexec.engine
 
 import scalaz._
 import Scalaz._
-import scalaz.concurrent.Task
+import effect.IO
+import IO.putStrLn
 
-object Sequence {
+object Engine {
 
-  type Result = String
+  type Sequence = List[Step]
 
-  sealed trait ActionResult
-  case class SimpleActionResult (r: Result) extends ActionResult
-  case class ComposedActionResult (r: List[ActionResult]) extends ActionResult
+  sealed trait Result
+  case object Done  extends Result
+  case object Error extends Result
 
-  sealed trait Action
-  case object NullAction extends Action
-  case class SimpleAction(t: Task[Result]) extends Action
-  case class ParallelAction(l: List[Action]) extends Action
-  case class SequentialAction(l: List[Action]) extends Action
+  case class Step (t: TcsConfig, i: InstConfig, o: Observation)
 
-  // Traverse the action tree and execute the tasks
-  def runActions(a: Action): Task[ActionResult] = a match {
-    case SimpleAction(t) => t map SimpleActionResult
-    case SequentialAction(l) => Nondeterminism[Task].sequence(l map runActions).map(x => ComposedActionResult(x))
-    case ParallelAction(l) => Nondeterminism[Task].gather(l map runActions).map(x => ComposedActionResult(x))
+  // case class TcsConfig (r: IO[Result])
+  // Haskell's newtype, how to extract inner IO easily?
+  type TcsConfig  = IO[Result]
+  type InstConfig = IO[Result]
+  type Observation= IO[Result]
+
+  def execute(seq: Sequence): IO[Unit] = {
+
+    def step(s:Step): IO[Unit] = s match {
+      case Step(tcs: IO[Result], inst: IO[Result], obsv: IO[Result]) => for {
+        r <- concurrently(tcs, inst)
+        (tr, ir) = r
+        obr <- obsv
+        } yield ()
+      }
+    seq.traverse_(step)
   }
 
-  def main(args: Array[String]): Unit = {
+  private def concurrently[A,B](a: IO[A], b: IO[B]): IO[(Result,Result)] = ???
 
-    val step1Tcs = SimpleAction(Task {
-                                  println("Start TCS configuration for Step 1")
-                                  Thread.sleep(2000)
-                                  println("Complete TCS configuration for Step 1")
-                                  "Completed"
-                                })
+  // TODO: Can't this be made less ugly?
+  val sequence1 = List(Step(
+      (for { _ <- putStrLn("Start TCS configuration for Step 1")
+             _ <- IO(Thread.sleep(2000))
+             _ <- putStrLn("Complete TCS configuration for Step 1")
+             } yield Done
+      ),
+      (for { _ <- putStrLn("Start instrument configuration for Step 1")
+             _ <- IO(Thread.sleep(2000))
+             _ <- putStrLn("Complete instrument configuration for Step 1")
+                } yield Done
+      ),
+      (for  { _ <- putStrLn("Start observation for Step 1")
+              _ <- IO(Thread.sleep(5000))
+              _ <- putStrLn("Complete observation for Step 1")
+              } yield Done
+      )))
 
-    val step1Ins = SimpleAction(Task {
-                                  println("Start instrument configuration for Step 1")
-                                  Thread.sleep(2000)
-                                  println("Complete instrument configuration for Step 1")
-                                  "Completed"
-                                })
+  def main(args: Array[String]): Unit = execute(sequence1).unsafePerformIO()
 
-    val step1Obs = SimpleAction(Task {
-                                  println("Start observation for Step 1")
-                                  Thread.sleep(5000)
-                                  println("Complete observation for Step 1")
-                                  "Completed"
-                                })
-
-    val step1 = SequentialAction(List(ParallelAction(List(step1Tcs, step1Ins)), step1Obs))
-
-    runActions(step1).unsafePerformSync
-  }
 }
