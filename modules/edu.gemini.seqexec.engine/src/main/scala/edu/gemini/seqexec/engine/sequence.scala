@@ -3,6 +3,8 @@ package edu.gemini.seqexec.engine
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.Process
+
 
 object Engine {
 
@@ -27,20 +29,22 @@ object Engine {
     case Observation(a:Action) => a
   }
 
-  def execute(seq: Sequence): Task[Unit] = {
+  sealed trait Event
+  case object Configured extends Event
+  case object Observed   extends Event
 
+  type Chan = Process[Task,Event]
+
+  def execute(chan: Chan, seq: Sequence): Task[Unit] = {
     def step(s:Step): Task[Unit] = s match {
       case Step(tcs: TcsConfig, inst: InstConfig, obsv: Observation) => for {
         r <- concurrently(action(tcs), action(inst))
-        (tr, ir) = r
+        _ <- Task { if (r.equals((Done,Done))) { chan ++ Process(Configured) } }
         obr <- action(obsv)
         } yield ()
       }
     seq.traverse_(step)
   }
-
-  private def concurrently[A,B](a: Task[A], b: Task[B]): Task[(A, B)] =
-    Nondeterminism[Task].both(a,b)
 
   val sequence1 = {
     List(
@@ -72,6 +76,11 @@ object Engine {
       )
     )
 }
-  def main(args: Array[String]): Unit = execute(sequence1).unsafePerformSync
+  def main(args: Array[String]): Unit = {
+    val chan = Process()
+    execute(chan, sequence1).unsafePerformSync
+    }
 
+  private def concurrently[A,B](a: Task[A], b: Task[B]): Task[(A, B)] =
+    Nondeterminism[Task].both(a,b)
 }
