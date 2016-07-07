@@ -39,7 +39,9 @@ object Engine {
     seq.traverse_(step)
   }
 
-  private def concurrently[A,B](a: Task[A], b: Task[B]): Task[(A, B)] = ???
+  private def concurrently[A,B](a: Task[A], b: Task[B]): Task[(A, B)] =
+    Nondeterminism[Task].both(a,b)
+
   val sequence1 = {
     List(
       Step(
