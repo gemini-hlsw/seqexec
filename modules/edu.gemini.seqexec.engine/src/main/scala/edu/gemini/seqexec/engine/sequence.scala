@@ -2,14 +2,13 @@ package edu.gemini.seqexec.engine
 
 import scalaz._
 import Scalaz._
-import effect.IO
-import IO.putStrLn
+import scalaz.concurrent.Task
 
 object Engine {
 
   type Sequence = List[Step]
 
-  type Action = IO[Result]
+  type Action = Task[Result]
 
   sealed trait Result
   case object Done  extends Result
@@ -28,9 +27,9 @@ object Engine {
     case Observation(a:Action) => a
   }
 
-  def execute(seq: Sequence): IO[Unit] = {
+  def execute(seq: Sequence): Task[Unit] = {
 
-    def step(s:Step): IO[Unit] = s match {
+    def step(s:Step): Task[Unit] = s match {
       case Step(tcs: TcsConfig, inst: InstConfig, obsv: Observation) => for {
         r <- concurrently(action(tcs), action(inst))
         (tr, ir) = r
@@ -40,38 +39,37 @@ object Engine {
     seq.traverse_(step)
   }
 
-  private def concurrently[A,B](a: IO[A], b: IO[B]): IO[(A, B)] = ???
-
+  private def concurrently[A,B](a: Task[A], b: Task[B]): Task[(A, B)] = ???
   val sequence1 = {
     List(
       Step(
         (TcsConfig
            (for
-            { _ <- putStrLn("Start TCS configuration for Step 1")
-              _ <- IO(Thread.sleep(2000))
-              _ <- putStrLn("Complete TCS configuration for Step 1")
+            { _ <- Task { println("Start TCS configuration for Step 1") }
+              _ <- Task { Thread.sleep(2000) }
+              _ <- Task { println ("Complete TCS configuration for Step 1") }
             } yield Done
            )
         ),
         (InstConfig
            (for
-            { _ <- putStrLn("Start instrument configuration for Step 1")
-              _ <- IO(Thread.sleep(2000))
-              _ <- putStrLn("Complete instrument configuration for Step 1")
+            { _ <- Task { println("Start instrument configuration for Step 1") }
+              _ <- Task { Thread.sleep(2000) }
+              _ <- Task { println("Complete instrument configuration for Step 1") }
             } yield Done
            )
         ),
         (Observation
            (for
-            { _ <- putStrLn("Start observation for Step 1")
-              _ <- IO(Thread.sleep(5000))
-              _ <- putStrLn("Complete observation for Step 1")
+            { _ <- Task { println("Start observation for Step 1") }
+              _ <- Task { Thread.sleep(5000) }
+              _ <- Task { println("Complete observation for Step 1") }
             } yield Done
            )
         )
       )
     )
 }
-  def main(args: Array[String]): Unit = execute(sequence1).unsafePerformIO()
+  def main(args: Array[String]): Unit = execute(sequence1).unsafePerformSync
 
 }
