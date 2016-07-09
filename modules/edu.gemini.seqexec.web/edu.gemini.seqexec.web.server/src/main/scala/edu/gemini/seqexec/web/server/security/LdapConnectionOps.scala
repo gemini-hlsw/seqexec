@@ -1,7 +1,8 @@
 package edu.gemini.seqexec.web.server.security
 
 import com.unboundid.ldap.sdk.{SearchRequest, SearchScope, _}
-import edu.gemini.seqexec.web.common.UserDetails._
+import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.UserDetails._
 
 import scala.collection.JavaConverters._
 

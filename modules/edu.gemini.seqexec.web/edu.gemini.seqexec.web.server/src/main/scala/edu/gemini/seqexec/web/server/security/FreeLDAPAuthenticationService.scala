@@ -1,7 +1,8 @@
 package edu.gemini.seqexec.web.server.security
 
 import com.unboundid.ldap.sdk._
-import edu.gemini.seqexec.web.common.UserDetails
+import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.UserDetails._
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
 import scalaz.Scalaz._
@@ -51,9 +52,9 @@ object FreeLDAPAuthenticationService {
     new (LdapOp ~> Task) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p)       => Task(c.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid)     => Task(c.displayName(uid))
-          case LdapOp.DisplayNameGrpThumbOp(uid) => Task(c.nameGroupsThumb(uid))
+          case LdapOp.AuthenticateOp(u, p)       => Task.delay(c.authenticate(u, p))
+          case LdapOp.UserDisplayNameOp(uid)     => Task.delay(c.displayName(uid))
+          case LdapOp.DisplayNameGrpThumbOp(uid) => Task.delay(c.nameGroupsThumb(uid))
       }
     }
 
