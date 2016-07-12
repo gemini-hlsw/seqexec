@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.server.security
 
+import java.util.logging.Logger
+
 import com.unboundid.ldap.sdk._
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.UserDetails._
@@ -86,16 +88,17 @@ object FreeLDAPAuthenticationService {
 /**
   * Handles authentication against the AD/LDAP server
   */
-class FreeLDAPAuthenticationService(host: String, port: Int) extends AuthenticationService {
+class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthenticationService {
   import FreeLDAPAuthenticationService._
 
+  val Log = Logger.getLogger(FreeLDAPAuthenticationService.getClass.getSimpleName)
+
+  // Will attempt several servers in case they fail
+  val failoverServerSet = new FailoverServerSet(hosts.map(_._1).toArray, hosts.map(_._2).toArray)
   val MaxConnections = 20
   // Shorten the default timeout
   val Timeout = 1000
   val Domain = "@gemini.edu"
-
-  lazy val connection = new LDAPConnection(new LDAPConnectionOptions() <| {_.setConnectTimeoutMillis(Timeout)}, host, port)
-  lazy val pool = new LDAPConnectionPool(connection, MaxConnections)
 
   override def authenticateUser(username: String, password: String): AuthResult = {
     // We should always return the domain
@@ -103,15 +106,18 @@ class FreeLDAPAuthenticationService(host: String, port: Int) extends Authenticat
 
     // We may want to run this directly on Task
     \/.fromTryCatchNonFatal {
-      val c = pool.getConnection
+      val c = failoverServerSet.getConnection
       runIO(authenticationAndName(usernameWithDomain, password), c)
-        .ensuring(IO(pool.releaseConnection(c))).unsafePerformIO()
+        .ensuring(IO(c.close())).unsafePerformIO()
     }.leftMap {
       case e:LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
+        Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         BadCredentials(username)
       case e:LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
+        Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         UserNotFound(username)
       case e:LDAPException =>
+        Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         GenericFailure("LDAP Authentication error")
       case e:Exception =>
         GenericFailure(e.getMessage)

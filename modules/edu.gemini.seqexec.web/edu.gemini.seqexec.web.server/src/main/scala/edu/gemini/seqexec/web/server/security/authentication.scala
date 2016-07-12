@@ -30,10 +30,9 @@ object AuthenticationConfig {
   val cookieName = "SeqexecToken"
 
   val testMode = true
-  val ldapHost = "gs-dc6.gemini.edu"
-  val ldapPort = 3268
+  val ldapHosts = List(("cpodc-wv1.gemini.edu", 3268), ("sbfdc-wv1.gemini.edu", 3286))
 
-  val ldapService = new FreeLDAPAuthenticationService(ldapHost, ldapPort)
+  val ldapService = new FreeLDAPAuthenticationService(ldapHosts)
 
   // TODO Only the LDAP service should be present on production mode
   val authServices =
@@ -65,7 +64,12 @@ object AuthenticationService {
             case -\/(e)     => go(xs)
           }
       }
-      go(s)
+      // Discard empty values right away
+      if (username.isEmpty || password.isEmpty) {
+        \/.left(BadCredentials(username))
+      } else {
+        go(s)
+      }
     }
   }
 
