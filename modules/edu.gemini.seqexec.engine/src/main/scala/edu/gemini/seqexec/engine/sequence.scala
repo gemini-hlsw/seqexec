@@ -3,7 +3,7 @@ package edu.gemini.seqexec.engine
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.Process
+import scala.concurrent.Channel
 
 
 object Engine {
@@ -32,18 +32,49 @@ object Engine {
   sealed trait Event
   case object Configured extends Event
   case object Observed   extends Event
+  case object Completed  extends Event
 
-  type Chan = Process[Task,Event]
-
-  def execute(chan: Chan, seq: Sequence): Task[Unit] = {
+  def execute(chan: Channel[Event], seq: Sequence): Task[Unit] = {
     def step(s:Step): Task[Unit] = s match {
       case Step(tcs: TcsConfig, inst: InstConfig, obsv: Observation) => for {
         r <- concurrently(action(tcs), action(inst))
-        _ <- Task { if (r.equals((Done,Done))) { chan ++ Process(Configured) } }
+        _ <- Task { if (r.equals((Done, Done))) { chan.write(Configured) } }
         obr <- action(obsv)
-        } yield ()
+        } yield chan.write(Completed)
       }
     seq.traverse_(step)
+  }
+
+  sealed trait Status
+  case object Idle extends Status
+  case object Running extends Status
+  case object Failed extends Status
+
+  def handle (chan: Channel[Event]): Task[Unit] = {
+    def go (s:Status): Task[Unit] = s match {
+      case Idle => Task {
+        println("Output: Starting sequence")
+        go(Running)
+      }
+      case Failed => sys.error("Unimplemented")
+      case Running => for {
+        ev <- Task { chan.read }
+        _ <- ev match {
+          case Configured => Task {
+            println("Output: TCS and Instrument configured")
+            go(Running)
+          }
+          case Observed => Task {
+            println("Output: Observation completed")
+            go(Running)
+          }
+          case Completed  => Task {
+            println("Output: Sequence completed")
+          }
+        }
+      } yield Task(Unit)
+    }
+    go(Idle)
   }
 
   val sequence1 = {
@@ -77,10 +108,9 @@ object Engine {
     )
 }
   def main(args: Array[String]): Unit = {
-    val chan = Process()
-    execute(chan, sequence1).unsafePerformSync
-    }
-
-  private def concurrently[A,B](a: Task[A], b: Task[B]): Task[(A, B)] =
-    Nondeterminism[Task].both(a,b)
+    val chan = new Channel[Event]
+    concurrently(execute(chan, sequence1), handle(chan)).unsafePerformSync
+  }
+  private def concurrently[A, B](a: Task[A], b: Task[B]): Task[(A, B)] =
+    Nondeterminism[Task].both(a, b)
 }
