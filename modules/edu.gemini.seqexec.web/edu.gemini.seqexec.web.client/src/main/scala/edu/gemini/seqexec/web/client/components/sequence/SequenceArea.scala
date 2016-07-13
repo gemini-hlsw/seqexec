@@ -222,7 +222,6 @@ object SequenceTabs {
           ^.cls := "ui two column vertically divided grid",
           <.div(
             ^.cls := "row",
-            SeqexecStyles.rowNoPadding,
             <.div(
               ^.cls := "four wide column computer tablet only",
               HeadersSideBar()
