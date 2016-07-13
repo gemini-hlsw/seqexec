@@ -8,7 +8,26 @@ import scalaz._
 import Scalaz._
 import scalaz.effect.IO
 
-trait LogInitialization {
+trait AppBaseDir {
+  /**
+    * Calculates the base dir of the application based on the location of "this" class jar file
+    * It will throw an exception if unable to find the base dir
+    */
+  def baseDir: File = {
+    val clazz = this.getClass
+    val fileName = clazz.getResource(s"/${clazz.getName.replace(".", System.getProperty("file.separator"))}.class").getFile
+
+    // find the separator for the intra classpath location
+    fileName.replace("file:", "").split("!").headOption.map { (f: String) =>
+      // Find the location of the basedir relative to this class
+      // it assumes the jar is in a lib dir under base
+      val jarFile = new File(f).getParentFile
+      jarFile.getParentFile
+    }.getOrElse(throw new RuntimeException("Fatal! Cannot calculate the app base dir"))
+  }
+}
+
+trait LogInitialization extends AppBaseDir {
   sealed trait LogConfError
   case class ConfigurationNotFound(s: String) extends LogConfError
   case class LogDirNotFound(f: File) extends LogConfError
@@ -25,17 +44,12 @@ trait LogInitialization {
 
   private def readConf: LogConf[(File, String)] = EitherT {
     IO {
-      val clazz = this.getClass
-      val fileName = clazz.getResource(s"/${clazz.getName.replace(".", System.getProperty("file.separator"))}.class").getFile
+      val fileName = "logging.properties"
 
-      // find the separator for the intra classpath location
-      fileName.replace("file:", "").split("!").headOption.map { (f: String) =>
-        // Find the location of the logging configuration relative to this class
-        // it assumes the jar is in a lib dir while the configuration is on "conf"
-        val jarFile = new File(f).getParentFile
-        val baseDir = jarFile.getParentFile
-        val confDir = new File(jarFile.getParent, "conf")
-        val loggingConfig = new File(confDir, "logging.properties")
+      def loggingConfig(baseDir: File): LogConfError \/ (File, String) = {
+        val confDir = new File(baseDir, "conf")
+
+        val loggingConfig = new File(confDir, fileName)
         loggingConfig.exists.fold({
           val logDir = new File(baseDir, "log")
           // Replace base dir
@@ -45,7 +59,12 @@ trait LogInitialization {
 
           \/-((logDir, src.toList.mkString("\n")))
         }, -\/(ConfigurationNotFound(fileName)))
-      }.getOrElse(-\/(ConfigurationNotFound(fileName)))
+      }
+
+      for {
+        bd <- \/-(baseDir)
+        p  <- loggingConfig(bd)
+      } yield p
     }
   }
 
