@@ -42,6 +42,7 @@ object Settings {
     val scalaZ       = "7.2.2"
     val scalaZStream = "0.8a"
 
+    // Scala libraries
     val http4s       = "0.13.2a"
     val squants      = "0.6.2"
     val argonaut     = "6.2-M1"
@@ -49,6 +50,7 @@ object Settings {
     val unboundId    = "3.1.1"
     val jwt          = "0.7.1"
     val slf4j        = "1.7.21"
+    val knobs        = "3.8.1a"
 
     // test libraries
     val scalaTest    = "3.0.0-RC1"
@@ -79,6 +81,7 @@ object Settings {
     val UnboundId   = "com.unboundid"      %  "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
     val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
     val Slf4jJuli   = "org.slf4j"          %  "slf4j-jdk14"                       % LibraryVersions.slf4j
+    val Knobs       = "oncue.knobs"        %% "core"                              % LibraryVersions.knobs
 
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
