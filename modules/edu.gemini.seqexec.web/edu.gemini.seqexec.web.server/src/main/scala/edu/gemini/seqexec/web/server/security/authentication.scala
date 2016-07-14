@@ -3,10 +3,9 @@ package edu.gemini.seqexec.web.server.security
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import upickle.default._
-import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtHeader, JwtOptions}
+import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
 
 import scala.annotation.tailrec
-import scala.util.Try
 import scalaz._
 import Scalaz._
 
@@ -30,7 +29,7 @@ object AuthenticationConfig {
   val cookieName = "SeqexecToken"
 
   val testMode = true
-  val ldapHosts = List(("cpodc-wv1.gemini.edu", 3268), ("sbfdc-wv1.gemini.edu", 3286))
+  val ldapHosts = List(("cpodc-wv1.gemini.edu", 3268), ("sbfdc-wv1.gemini.edu", 3268))
 
   val ldapService = new FreeLDAPAuthenticationService(ldapHosts)
 
