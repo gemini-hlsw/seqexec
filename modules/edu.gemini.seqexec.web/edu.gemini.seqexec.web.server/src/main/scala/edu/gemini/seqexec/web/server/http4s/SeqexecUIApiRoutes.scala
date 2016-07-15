@@ -11,7 +11,7 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationService._
-import edu.gemini.seqexec.web.server.security.AuthenticationConfig
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import org.http4s._
 import org.http4s.server.syntax._
@@ -27,7 +27,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-object SeqexecUIApiRoutes extends BooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService) extends BooPicklers {
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 
@@ -43,7 +43,7 @@ object SeqexecUIApiRoutes extends BooPicklers {
     awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { d => Ping() }
   }
 
-  val tokenAuthService = new JwtAuthentication
+  val tokenAuthService = JwtAuthentication(auth)
 
   val publicService: HttpService = GZip { HttpService {
     case req @ GET -> Root / "seqexec" / "current" / "queue" =>
@@ -52,13 +52,13 @@ object SeqexecUIApiRoutes extends BooPicklers {
     case req @ POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
         // Try to authenticate
-        AuthenticationConfig.authServices.authenticateUser(u.username, u.password) match {
+        auth.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // if successful set a cookie
-            val cookieVal = buildToken(user)
-            val expiration = Instant.now().plusSeconds(AuthenticationConfig.sessionTimeout)
-            val cookie = Cookie(AuthenticationConfig.cookieName, cookieVal,
-              path = "/".some, expires = expiration.some, secure = AuthenticationConfig.onSSL, httpOnly = true)
+            val cookieVal = auth.buildToken(user)
+            val expiration = Instant.now().plusSeconds(auth.sessionTimeout)
+            val cookie = Cookie(auth.cookieName, cookieVal,
+              path = "/".some, expires = expiration.some, secure = auth.onSSL, httpOnly = true)
             Ok(user).addCookie(cookie)
           case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
@@ -89,8 +89,8 @@ object SeqexecUIApiRoutes extends BooPicklers {
 
       case req @ POST -> Root / "seqexec" / "logout"        =>
         // Clean the auth cookie
-        val cookie = Cookie(AuthenticationConfig.cookieName, "", path = "/".some,
-          secure = AuthenticationConfig.onSSL, maxAge = Some(-1), httpOnly = true)
+        val cookie = Cookie(auth.cookieName, "", path = "/".some,
+          secure = auth.onSSL, maxAge = Some(-1), httpOnly = true)
         Ok("").removeCookie(cookie)
 
       case req @ GET -> Root / "seqexec" / "sequence" / oid =>
@@ -110,5 +110,6 @@ object SeqexecUIApiRoutes extends BooPicklers {
 
   }
 
-  val service = publicService || protectedServices || logService
+  def service: Service[Request, Response] = publicService || protectedServices || logService
+
 }

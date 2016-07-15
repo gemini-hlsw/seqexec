@@ -4,6 +4,7 @@ import java.io.File
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.web.server.common.LogInitialization
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
 import knobs._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
@@ -20,7 +21,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   // Initialize logger after the configuration
   val logger = Logger.getLogger(getClass.getName)
 
-  case class ServerConfiguration(host: String, port: Int, devMode: Boolean)
+  case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
 
   // Attempt to get the file or throw an exception if not possible
   val configurationFile: File = new File(new File(baseDir, "conf"), "app.conf")
@@ -30,27 +31,39 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     knobs.Optional(FileResource(configurationFile)) :: Required(ClassPathResource("app.conf")) :: Nil)
 
   // configuration specific to the web server
-  val serverConf: Task[ServerConfiguration] =
+  val serverConf: Task[WebServerConfiguration] =
     config.map { cfg =>
       val host = cfg.require[String]("web-server.host")
       val port = cfg.require[Int]("web-server.port")
       val devMode = cfg.require[String]("mode")
-      ServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"))
+      WebServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"))
+    }
+
+  val authConf: Task[AuthenticationConfig] =
+    config.map { cfg =>
+      val devMode = cfg.require[String]("mode")
+      val sessionTimeout = cfg.require[Int]("authentication.sessionLifeHrs")
+      val cookieName = cfg.require[String]("authentication.cookieName")
+      val secretKey = cfg.require[String]("authentication.secretKey")
+      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey)
     }
 
   override def server(args: List[String]): Task[Server] = {
-    serverConf >>= { conf =>
-      logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
-      server.run(conf)
-    }
+    for {
+      ac <- authConf
+      wc <- serverConf
+      as <- AuthenticationService.authServices.run(ac)
+      ws <- webServer(as).run(wc)
+    } yield ws
   }
 
-  val server: Kleisli[Task, ServerConfiguration, Server] = Kleisli { conf =>
+  def webServer(as: AuthenticationService): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+    logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(StaticRoutes.service(conf.devMode), "/")
       .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
-      .mountService(SeqexecUIApiRoutes.service, "/api")
+      .mountService(new SeqexecUIApiRoutes(as).service, "/api")
       .start
   }
 
