@@ -41,13 +41,17 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   override def server(args: List[String]): Task[Server] = {
     serverConf >>= { conf =>
       logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
-      BlazeBuilder.bindHttp(conf.port, conf.host)
-        .withWebSockets(true)
-        .mountService(StaticRoutes.service(conf.devMode), "/")
-        .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
-        .mountService(SeqexecUIApiRoutes.service, "/api")
-        .start
+      server.run(conf)
     }
+  }
+
+  val server: Kleisli[Task, ServerConfiguration, Server] = Kleisli { conf =>
+    BlazeBuilder.bindHttp(conf.port, conf.host)
+      .withWebSockets(true)
+      .mountService(StaticRoutes.service(conf.devMode), "/")
+      .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
+      .mountService(SeqexecUIApiRoutes.service, "/api")
+      .start
   }
 
 }
