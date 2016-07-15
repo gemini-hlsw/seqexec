@@ -13,7 +13,7 @@ object JwtAuthentication {
 }
 
 case class JwtAuthentication(auth: AuthenticationService) extends TokenAuthenticator[UserDetails] with TokenInCookies {
-  override val cookieName = auth.cookieName
+  override val cookieName = auth.config.cookieName
   override val attributeKey = JwtAuthentication.authenticatedUser
   override val store = (t: String) => auth.decodeToken(t) match {
     case \/-(u) => Task.now(Some(u))

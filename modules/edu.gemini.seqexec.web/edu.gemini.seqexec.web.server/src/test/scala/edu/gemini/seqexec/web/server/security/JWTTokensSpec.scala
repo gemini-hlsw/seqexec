@@ -8,11 +8,15 @@ import scala.util.Success
 import scalaz.\/-
 
 class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
+  val ldapConfig = LDAPConfig(Nil, Nil)
+  val config = AuthenticationConfig(devMode = true, 8, "token", "key", useSSL = false, ldapConfig)
+  val authService = AuthenticationService(config)
+
   "JWT Tokens" should "encode/decode" in {
     forAll { (u: String, p: String) =>
       val userDetails = UserDetails(u, p)
-      val token = AuthenticationService.buildToken(userDetails)
-      \/-(userDetails) shouldEqual AuthenticationService.decodeToken(token)
+      val token = authService.buildToken(userDetails)
+      \/-(userDetails) shouldEqual authService.decodeToken(token)
     }
   }
 }

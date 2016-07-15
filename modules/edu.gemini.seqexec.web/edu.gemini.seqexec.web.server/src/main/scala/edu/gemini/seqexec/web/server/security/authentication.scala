@@ -22,14 +22,11 @@ trait AuthService {
   def authenticateUser(username: String, password: String): AuthResult
 }
 
-case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String) {
-  val onSSL = false
-
-  val ldapHost = "sbfdc-wv1.gemini.edu"
-  val ldapPort = 3268
-
-  val ldapService = new FreeLDAPAuthenticationService(ldapHost, ldapPort)
+case class LDAPConfig(ldapHosts: List[String], ldapPorts: List[Int]) {
+  val ldapService = new FreeLDAPAuthenticationService(ldapHosts.headOption.getOrElse(""), ldapPorts.headOption.getOrElse(0))
 }
+
+case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
 
 // Intermediate class to decode the claim stored in the JWT token
 case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
@@ -40,8 +37,8 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
   import AuthenticationService._
 
   val authServices =
-    if (config.devMode) List(TestAuthenticationService, config.ldapService)
-    else List(config.ldapService)
+    if (config.devMode) List(TestAuthenticationService, config.ldap.ldapService)
+    else List(config.ldap.ldapService)
 
   /**
     * From the user details it creates a JSON Web Token
@@ -60,8 +57,6 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
     } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
 
   val sessionTimeout: Long = config.sessionLifeHrs * 3600
-  val cookieName: String = config.cookieName
-  val onSSL: Boolean = config.onSSL
 
   override def authenticateUser(username: String, password: String): AuthResult = authServices.authenticateUser(username, password)
 }

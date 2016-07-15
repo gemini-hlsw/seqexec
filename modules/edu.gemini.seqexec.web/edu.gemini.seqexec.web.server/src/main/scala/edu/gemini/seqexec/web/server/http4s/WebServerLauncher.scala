@@ -4,7 +4,7 @@ import java.io.File
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.web.server.common.LogInitialization
-import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService}
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import knobs._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
@@ -39,13 +39,24 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       WebServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"))
     }
 
-  val authConf: Task[AuthenticationConfig] =
+  val ldapConf: Task[LDAPConfig] =
     config.map { cfg =>
+      val hosts = cfg.require[List[String]]("authentication.ldap.hosts")
+      val ports = cfg.require[List[Int]]("authentication.ldap.ports")
+      LDAPConfig(hosts, ports)
+    }
+
+  val authConf: Task[AuthenticationConfig] =
+    for {
+      ld <- ldapConf
+      cfg <- config
+    } yield {
       val devMode = cfg.require[String]("mode")
       val sessionTimeout = cfg.require[Int]("authentication.sessionLifeHrs")
       val cookieName = cfg.require[String]("authentication.cookieName")
       val secretKey = cfg.require[String]("authentication.secretKey")
-      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey)
+      val useSSL = cfg.require[Boolean]("authentication.useSSL")
+      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey, useSSL, ld)
     }
 
   override def server(args: List[String]): Task[Server] = {
