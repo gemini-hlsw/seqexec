@@ -51,7 +51,7 @@ trait LogInitialization {
 
   private def makeLogDir(logDir: File): LogConf[Unit] = EitherT {
     IO {
-      (!(logDir.exists() || logDir.mkdirs())).fold(\/-(()), -\/(LogDirNotFound(logDir)))
+      (logDir.exists() || logDir.mkdirs()).fold(\/-(()), -\/(LogDirNotFound(logDir)))
     }
   }
 
