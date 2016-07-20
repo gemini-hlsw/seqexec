@@ -1,14 +1,30 @@
 package edu.gemini.seqexec.web.server.http4s
 
+import java.util.logging.Logger
+
+import edu.gemini.seqexec.web.server.common.LogInitialization
 import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeBuilder
 
-object WebServerLauncher extends App {
+import scalaz._
+import Scalaz._
+import scalaz.effect.IO
+
+object WebServerLauncher extends App with LogInitialization {
+  // Initialize the log and exit if it fails
+  configLog.run.onException(IO(sys.exit(1))).unsafePerformIO()
+
+  val logger = Logger.getLogger(getClass.getName)
+
+  // TODO improve configuration style
+  val devMode = !args.contains("prod")
+
   def launch(port: Int):Option[Server] = {
+    logger.info(s"Starting web server on port $port")
     try {
       Some(BlazeBuilder.bindHttp(port, "0.0.0.0")
         .withWebSockets(true)
-        .mountService(StaticRoutes.service, "/")
+        .mountService(StaticRoutes.service(devMode), "/")
         .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
         .mountService(SeqexecUIApiRoutes.service, "/api")
         .run)

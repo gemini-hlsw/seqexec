@@ -30,9 +30,7 @@ class CustomAssets (environment: Environment) extends Controller {
    */
   def at(rootPath: String, file: String, classPathRoot: String): Action[AnyContent] =
     environment.mode match {
-      case Mode.Prod => Action {
-                          NotFound
-                        }
+      case Mode.Prod => Assets.at(classPathRoot, file)
       case _         =>
         val fileToServe = rootPath match {
           case AbsolutePath(_) => new File(rootPath, file)

@@ -31,8 +31,10 @@ object StaticRoutes {
 
   val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".woff", ".woff2", ".ttf", ".mp3")
 
-  val service = GZip { HttpService {
+  def service(devMode: Boolean) = GZip { HttpService {
+    case req if req.pathInfo == "/" && devMode       => req.serve("/index-dev.html")
     case req if req.pathInfo == "/"                  => req.serve("/index.html")
+    case req if req.pathInfo == "/cli" && devMode    => req.serve("/cli-dev.html")
     case req if req.pathInfo == "/cli"               => req.serve("/cli.html")
     case req if req.endsWith(supportedExtension: _*) => req.serve()
   }}

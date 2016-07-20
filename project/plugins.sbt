@@ -6,3 +6,6 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.8.0")
 
 // Extract metadata from sbt and make it available to the code
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
+
+// Support making distributions
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.1.0-RC1")
