@@ -49,7 +49,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
   lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
     .settings(commonSettings: _*)
     .settings(
-      libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, StreamZ, Slf4jJuli) ++ Http4s ++ Play,
+      libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, Slf4jJuli) ++ Http4s,
 
       // Settings to optimize the use of sbt-revolver
 
@@ -60,7 +60,6 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       // Lets the server read the jsdeps file
       (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client, Compile, packageJSDependencies)).value,
       // Support stopping the running server
-      //mainClass in reStart := Some("edu.gemini.seqexec.web.server.play.WebServerLauncher"),
       mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
       // do a fastOptJS on reStart
       reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client, Compile)),
