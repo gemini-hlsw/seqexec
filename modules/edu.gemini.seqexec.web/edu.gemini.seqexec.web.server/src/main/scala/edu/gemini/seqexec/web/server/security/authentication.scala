@@ -23,7 +23,7 @@ trait AuthService {
 }
 
 case class LDAPConfig(ldapHosts: List[String], ldapPorts: List[Int]) {
-  val ldapService = new FreeLDAPAuthenticationService(ldapHosts.headOption.getOrElse(""), ldapPorts.headOption.getOrElse(0))
+  val ldapService = new FreeLDAPAuthenticationService(ldapHosts.zip(ldapPorts))
 }
 
 case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)

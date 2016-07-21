@@ -88,7 +88,7 @@ object FreeLDAPAuthenticationService {
 /**
   * Handles authentication against the AD/LDAP server
   */
-class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthenticationService {
+class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthService {
   import FreeLDAPAuthenticationService._
 
   val Log = Logger.getLogger(FreeLDAPAuthenticationService.getClass.getSimpleName)

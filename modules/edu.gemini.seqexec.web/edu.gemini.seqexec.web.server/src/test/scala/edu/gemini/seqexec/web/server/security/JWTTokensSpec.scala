@@ -8,7 +8,7 @@ import scala.util.Success
 import scalaz.\/-
 
 class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
-  val ldapConfig = LDAPConfig(Nil, Nil)
+  val ldapConfig = LDAPConfig(List("host1"), List(123))
   val config = AuthenticationConfig(devMode = true, 8, "token", "key", useSSL = false, ldapConfig)
   val authService = AuthenticationService(config)
 
