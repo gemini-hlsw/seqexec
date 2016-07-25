@@ -46,6 +46,27 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
   )
 
   /**
+    * Settings for Seqexec RPMs
+    */
+  lazy val seqexecRPMSettings = Seq(
+    // RPM properties
+    rpmVendor := "Gemini",
+    rpmLicense := Some("BSD-3"),
+    rpmGroup := Some("Gemini"),
+    rpmChangelogFile := None,
+    packageDescription in Rpm := "Seqexec Server",
+    rpmPrefix in Rpm := Some("/gemsoft/opt"),
+    packageName in Rpm := "seqexec-server",
+    // User/Group for execution
+    daemonUser in Linux := "telops",
+    daemonGroup in Linux := "telops",
+    // This lets us build RPMs from snapshot versions
+    version in Rpm := {
+      (version in ThisBuild).value.replace("-SNAPSHOT", "")
+    }
+  )
+
+  /**
     * Project for the seqexec server app for development
     */
   lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
@@ -78,54 +99,41 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
     .enablePlugins(LinuxPlugin, RpmPlugin)
     .enablePlugins(JavaServerAppPackaging)
     .settings(seqexecCommonSettings: _*)
+    .settings(seqexecRPMSettings: _*)
+    .settings(deployedAppMappings: _*)
+    .settings(embeddedJreSettingsLinux64: _*)
     .settings(
       description := "Seqexec server test deployment on linux 64",
 
-      // RPM properties
-      rpmVendor := "Gemini",
-      rpmLicense := Some("BSD-3"),
-      rpmGroup := Some("Gemini"),
-      rpmChangelogFile := None,
-      packageDescription in Rpm := "Seqexec Server",
-      rpmPrefix in Rpm := Some("/gemsoft/opt"),
-      packageName in Rpm := "seqexec-server",
-      // User/Group for execution
-      daemonUser in Linux := "telops",
-      daemonGroup in Linux := "telops",
-      // This lets us build RPMs from snapshot versions
-      version in Rpm := {
-        (version in ThisBuild).value.replace("-SNAPSHOT", "")
-      },
-      // The distribution uses only log files, no console
-      mappings in Universal in packageZipTarball += {
-        val f = generateLoggingConfigTask(LogType.Files).value
-        f -> ("conf/" + f.getName)
-      },
-
-      // Don't include the configuration on the jar. Instead we copy it to the conf dir
-      mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) },
-
-      // Copy the configuration file
-      mappings in Universal in packageZipTarball += {
-        val f = (resourceDirectory in Compile).value / "app.conf"
-        f -> ("conf/" + f.getName)
-      },
-
-      // Put the jre in the tarball
-      mappings in Universal ++= {
+      // Put the jre on the RPM
+      linuxPackageMappings in Rpm += {
         val jresDir = (ocsJreDir in ThisBuild).value
-        // Map the location of jre files
-        val jreLink = "JRE64_1.8"
-        val linux64Jre = jresDir.toPath.resolve("linux").resolve(jreLink)
-        directory(linux64Jre.toFile).map { j =>
-          j._1 -> j._2.replace(jreLink, "jre")
-        }
-      },
+        // RPM are of interest only for linux 64 bit
+        val linux64Jre = jresDir.toPath.resolve("linux").resolve("JRE64_1.8")
+        packageDirectoryAndContentsMapping((linux64Jre.toFile, (rpmPrefix in Rpm).value.map(_ + "").getOrElse("")))
+      }
+    ).dependsOn(seqexec_server)
 
-      // Make the launcher use the embedded jre
-      javaOptions in Universal ++= Seq(
-        "-java-home ${app_home}/../jre"
-      ),
+  /**
+    * Project for the seqexec server app for production on Linux 64
+    */
+  lazy val seqexec_server_l64 = preventPublication(project.in(file("app/seqexec-server-l64")))
+    .dependsOn(edu_gemini_seqexec_web_server)
+    .aggregate(edu_gemini_seqexec_web_server)
+    .enablePlugins(LinuxPlugin, RpmPlugin)
+    .enablePlugins(JavaServerAppPackaging)
+    .settings(seqexecCommonSettings: _*)
+    .settings(seqexecRPMSettings: _*)
+    .settings(deployedAppMappings: _*)
+    .settings(embeddedJreSettingsLinux64: _*)
+    .settings(configurationFromSVN: _*)
+    .settings(
+      description := "Seqexec server production on linux 64",
+      applicationConfName := "seqexec",
+      applicationConfSite := DeploymentSite.GS,
+
+      // Download the configuration from svn
+      dist in Universal <<= (dist in Universal).dependsOn(downloadConfiguration),
 
       // Put the jre on the RPM
       linuxPackageMappings in Rpm += {
