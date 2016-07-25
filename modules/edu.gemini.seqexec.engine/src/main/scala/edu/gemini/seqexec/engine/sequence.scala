@@ -7,7 +7,6 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 
-
 object Engine {
 
   /**
@@ -15,9 +14,9 @@ object Engine {
     * Each `Action` within the second level of the list is meant to be run in
     * parallel.
     */
-  type Sequence = List[Actions]
+  type Sequence = List[Step]
 
-  type Actions = List[Action]
+  type Step = List[Action]
 
   type Action = Task[Result]
 
@@ -76,7 +75,7 @@ object Engine {
   def configureInst : Action  = for
     { _ <- Task { println("Start Instrument configuration") }
       _ <- Task { Thread.sleep(2000) }
-      _ <- Task { println ("Complete Instrument configuration for") }
+      _ <- Task { println("Complete Instrument configuration for") }
     } yield Done
 
   /**
@@ -88,6 +87,7 @@ object Engine {
       _ <- Task { Thread.sleep(2000) }
       _ <- Task { println ("Complete observation") }
     } yield Done
+
   /**
     * Handles console input.
     * TODO: Doesn't work as it is because of console input buffering.
@@ -96,7 +96,7 @@ object Engine {
     Bind[Task].forever(
       Task { readChar() } >>= {
         (c: Char) => c match {
-           case 'p' => Task { chan.write(Pause); println("hola") }
+           case 'p' => Task { chan.write(Pause) }
            case 's' => Task { chan.write(Start) }
            case _   => Task(Unit)
          }
@@ -104,22 +104,22 @@ object Engine {
     )
 
   /**
-    * Monad on which to shove all effects ever needed.
+    *
     */
-  type Telescope[A] = ReaderWriterStateT[Task, Channel[Event], List[String], SeqStatus, A]
+  type Telescope[A] = StateT[Task, SeqStatus, A]
 
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler[R]: Telescope[R] =
+  def handler[R](chan: Channel[Event]): Telescope[R] =
     Bind[Telescope].forever(
-      receive >>= {
+      receive(chan) >>= {
         (ev: Event) => ev match {
-          case Start => log("Output: Started") *> switch(Running) *> execute
+          case Start => log("Output: Started") *> switch(Running) *> execute(chan)
           case Pause => log("Output: Paused") *> switch(Waiting)
           case Completed => log("Output: Action completed")
           case Failed => log("Output: Action failed")
-          case Synced => log("Output: Parallel actions completed") *> execute
+          case Synced => log("Output: Parallel actions completed") *> execute(chan)
           case Finished => log("Output: Finished") *> switch(Waiting)
         }
       }
@@ -129,27 +129,21 @@ object Engine {
     * Log within the `Telescope` monad.
     */
   def log(msg:String): Telescope[Unit] =
-    MonadTell[Telescope, List[String]].tell(List(msg))
+    // XXX: Replace with equivalent of Writer monad.
+    Applicative[Telescope].pure{ println(msg)) }
 
   /**
     * Receive an event within the `Telescope` monad.
     */
-  val receive: Telescope[Event] = for {
-    chan <- channel
-  } yield chan.read
-
-  /**
-    * Receive an event within the `Telescope` monad.
-    */
-  def channel: Telescope[Channel[Event]] =
-    MonadReader[Telescope, Channel[Event]].ask
+  def receive(chan: Channel[Event]): Telescope[Event] =
+    Applicative[Telescope].pure{ chan.read }
 
   /**
     * Change Status within the `Telescope` monad.
     */
   def switch(st: Status): Telescope[Unit] =
     MonadState[Telescope, SeqStatus].modify(
-      (ss: SeqStatus) => ss.map(_ => st)
+      (ss: SeqStatus) => ss.rightMap(_ => st)
     )
 
   /**
@@ -162,28 +156,24 @@ object Engine {
     * Checks the status is running and launches all parallel tasks to complete
     * the next step. It also updates the `Telescope` state as needed.
     */
-  val execute: Telescope[Unit] = {
-    // Execute just one task.
-    def exe(chan: Channel[Event], action:Action): Task[Unit] =
+  def execute(chan: Channel[Event]): Telescope[Unit] = {
+    // Send the result event when action is executed
+    def exe(action: Action): Action =
       action >>= {
         (r: Result) => r match {
-          case Done  => Task { chan.write(Completed) }
-          case Error => Task { chan.write(Failed) }
+          case Done  => Task { chan.write(Completed) } *> action
+          case Error => Task { chan.write(Failed) } *> action
         }
       }
 
     // Helper function to facilitate recursion.
     val go: Telescope[Unit] = for {
-      actions <- pop
-      chan <- MonadReader[Telescope, Channel[Event]].ask
+      actions <- step(chan)
       _ <- Applicative[Telescope].pure(
-        Nondeterminism[Task].gatherUnordered(
-          actions.map(
-            (a: Action) => exe(chan, a)
-          )
+        Nondeterminism[Task].gather(actions.map(exe(_))
         )
       )
-    } yield send(Synced)
+    } yield send(chan)(Synced)
 
     status >>= {
       (st: Status) => st match {
@@ -198,27 +188,33 @@ object Engine {
   /**
     * Send an event within the `Telescope` monad.
     */
-  def send(ev: Event): Telescope[Unit] = for {
-    chan <- channel
-  } yield Applicative[Telescope].pure(
-    Task { chan.write(ev) }
-  )
+  def send(chan: Channel[Event])(ev: Event): Telescope[Unit] =
+    Applicative[Telescope].pure(Task { chan.write(ev) })
 
   /**
-    * Obtain the next step in the `Sequence` and update the `Telescope` state accordingly.
-    * This is all done within the `Telescope` monad.
+    * Obtain the next step in the `Sequence`. It doesn't remove the Step from
+    * the Sequence. This is all done within the `Telescope` monad.
     */
-  def pop: Telescope[List[Action]] =
+  def step(chan: Channel[Event]): Telescope[Step] =
     MonadState[Telescope, SeqStatus].get >>= {
-      (ss) => {
+      ss => {
          val (seq, st) = ss
+         // TODO: headDef :: a -> [a] -> a
          seq match {
-           case (x :: xs) => MonadState[Telescope, SeqStatus].put((xs,st)) *> Applicative[Telescope].pure(x)
-           case _ => send(Finished) *> Applicative[Telescope].pure(List())
+           case (x :: _) => Applicative[Telescope].pure(x)
+           case _ => send(chan)(Finished) *> Applicative[Telescope].pure(List())
          }
       }
     }
 
+  /**
+    * Drops the first Step in the Sequence.
+    * To be used after syncing.
+    */
+  def drop: Telescope[Unit] =
+    MonadState[Telescope, SeqStatus].modify(
+      (ss: SeqStatus) => ss.leftMap(_.tail)
+    )
   // Dummy sequence.
   val sequence0: Sequence =
     List(
@@ -233,7 +229,7 @@ object Engine {
     // This spawns the input thread and the handler thread with its initial
     // state and the event // channel
     val ((output, _), _) = Nondeterminism[Task].both(
-      handler.exec(chan, (sequence0, Waiting)),
+      handler(chan).exec((sequence0, Waiting)),
       input(chan)
     ).unsafePerformSync
   }
