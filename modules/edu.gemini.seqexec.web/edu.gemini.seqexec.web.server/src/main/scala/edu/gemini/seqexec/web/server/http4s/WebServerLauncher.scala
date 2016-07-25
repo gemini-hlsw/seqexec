@@ -3,8 +3,10 @@ package edu.gemini.seqexec.web.server.http4s
 import java.io.File
 import java.util.logging.Logger
 
+import edu.gemini.seqexec.server.ExecutorImpl
 import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
+import edu.gemini.spModel.core.Peer
 import knobs._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
@@ -21,7 +23,15 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   // Initialize logger after the configuration
   val logger = Logger.getLogger(getClass.getName)
 
+  /**
+    * Configuration for the web server
+    */
   case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
+
+  /**
+    * Configuration for the seqexec engine
+    */
+  case class SeqexecConfiguration(odbHost: String)
 
   // Attempt to get the file or throw an exception if not possible
   val configurationFile: File = new File(new File(baseDir, "conf"), "app.conf")
@@ -60,6 +70,19 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey, useSSL, ld)
     }
 
+  val executorConf: Task[SeqexecConfiguration] =
+    config.map { cfg =>
+      val host = cfg.require[String]("seqexec-engine.odb")
+      SeqexecConfiguration(host)
+    }
+
+  /**
+    * Configures the Seqexec executor
+    */
+  def seqexecExecutor: Kleisli[Task, SeqexecConfiguration, Unit] = Kleisli { conf =>
+    Task.delay(ExecutorImpl.host(new Peer(conf.odbHost, 8443, null)))
+  }
+
   /**
     * Configures and builds the web server
     */
@@ -80,6 +103,8 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     for {
       ac <- authConf
       wc <- serverConf
+      sc <- executorConf
+      _  <- seqexecExecutor.run(sc)
       as <- AuthenticationService.authServices.run(ac)
       ws <- webServer(as).run(wc)
     } yield ws
