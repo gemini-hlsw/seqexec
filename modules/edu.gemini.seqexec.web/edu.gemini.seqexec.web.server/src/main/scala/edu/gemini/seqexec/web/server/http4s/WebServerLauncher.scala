@@ -39,12 +39,14 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       WebServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"))
     }
 
+  // Configuration of the ldap clients
   val ldapConf: Task[LDAPConfig] =
     config.map { cfg =>
       val urls = cfg.require[List[String]]("authentication.ldapURLs")
       LDAPConfig(urls)
     }
 
+  // Configuration of the authentication service
   val authConf: Task[AuthenticationConfig] =
     for {
       ld <- ldapConf
@@ -58,15 +60,9 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey, useSSL, ld)
     }
 
-  override def server(args: List[String]): Task[Server] = {
-    for {
-      ac <- authConf
-      wc <- serverConf
-      as <- AuthenticationService.authServices.run(ac)
-      ws <- webServer(as).run(wc)
-    } yield ws
-  }
-
+  /**
+    * Configures and builds the web server
+    */
   def webServer(as: AuthenticationService): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
     BlazeBuilder.bindHttp(conf.port, conf.host)
@@ -77,4 +73,14 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       .start
   }
 
+  /**
+    * Reads the configuration and launches the web server
+    */
+  override def server(args: List[String]): Task[Server] =
+    for {
+      ac <- authConf
+      wc <- serverConf
+      as <- AuthenticationService.authServices.run(ac)
+      ws <- webServer(as).run(wc)
+    } yield ws
 }

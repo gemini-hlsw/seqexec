@@ -19,16 +19,31 @@ case class GenericFailure(msg: String) extends AuthenticationFailure
 case class DecodingFailure(msg: String) extends AuthenticationFailure
 case object MissingCookie extends AuthenticationFailure
 
+/**
+  * Interface for implementations that can authenticate users from a username/pwd pair
+  */
 trait AuthService {
   def authenticateUser(username: String, password: String): AuthResult
 }
 
+/**
+  * Configuration for the LDAP client
+  */
 case class LDAPConfig(ldapHosts: List[String]) {
   val hosts = ldapHosts.map(new LDAPURL(_)).map(u => (u.getHost, u.getPort))
 
   val ldapService = new FreeLDAPAuthenticationService(hosts)
 }
 
+/**
+  * Configuration for the general authentication service
+  * @param devMode Indicates if we are in development mode, In this mode there is an internal list of users
+  * @param sessionLifeHrs How long will the session live in hours
+  * @param cookieName Name of the cookie to store the token
+  * @param secretKey Secret key to encrypt jwt tokens
+  * @param useSSL Whether we use SSL setting the cookie to be https only
+  * @param ldap Configuration for the ldap client
+  */
 case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
 
 // Intermediate class to decode the claim stored in the JWT token
@@ -65,7 +80,6 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
 }
 
 object AuthenticationService {
-  val Realm = "Seqexec"
   type AuthResult = AuthenticationFailure \/ UserDetails
   type AuthenticationServices = List[AuthService]
 
@@ -92,6 +106,7 @@ object AuthenticationService {
     }
   }
 
+  // Launcher for the authentication service taking a configuration
   val authServices: Kleisli[Task, AuthenticationConfig, AuthenticationService] = Kleisli(c =>
     if (c.devMode) Task.now(AuthenticationService(c))
     else Task.now(AuthenticationService(c))

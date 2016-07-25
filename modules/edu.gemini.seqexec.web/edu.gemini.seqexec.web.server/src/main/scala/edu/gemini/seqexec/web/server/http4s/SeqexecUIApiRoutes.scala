@@ -109,6 +109,5 @@ class SeqexecUIApiRoutes(auth: AuthenticationService) extends BooPicklers {
 
   }
 
-  def service: Service[Request, Response] = publicService || protectedServices || logService
-
+  def service = publicService || protectedServices || logService
 }
