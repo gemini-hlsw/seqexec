@@ -28,7 +28,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
 
   // Read the config, first attempt the file or default to the classpath file
   val config: Task[Config] = knobs.loadImmutable(
-    knobs.Optional(FileResource(configurationFile)) :: Required(ClassPathResource("app.conf")) :: Nil)
+    Required(FileResource(configurationFile) or ClassPathResource("app.conf")) :: Nil)
 
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =

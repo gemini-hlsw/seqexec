@@ -40,11 +40,7 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
     javaOptions in Universal ++= Seq(
       // -J params will be added as jvm parameters
       "-J-Xmx512m",
-      "-J-Xms256m",
-
-      // app parameters
-      // TODO Define how to configure applications
-      "prod" // Run in production mode.
+      "-J-Xms256m"
     )
   )
 
@@ -103,6 +99,12 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
       // The distribution uses only log files, no console
       mappings in Universal in packageZipTarball += {
         val f = generateLoggingConfigTask(LogType.Files).value
+        f -> ("conf/" + f.getName)
+      },
+
+      // Copy the configuration file
+      mappings in Universal in packageZipTarball += {
+        val f = (resourceDirectory in Compile).value / "app.conf"
         f -> ("conf/" + f.getName)
       },
 
