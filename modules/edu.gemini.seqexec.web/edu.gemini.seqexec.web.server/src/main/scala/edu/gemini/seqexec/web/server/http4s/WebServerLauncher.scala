@@ -41,9 +41,8 @@ object WebServerLauncher extends ServerApp with LogInitialization {
 
   val ldapConf: Task[LDAPConfig] =
     config.map { cfg =>
-      val hosts = cfg.require[List[String]]("authentication.ldap.hosts")
-      val ports = cfg.require[List[Int]]("authentication.ldap.ports")
-      LDAPConfig(hosts, ports)
+      val urls = cfg.require[List[String]]("authentication.ldapURLs")
+      LDAPConfig(urls)
     }
 
   val authConf: Task[AuthenticationConfig] =

@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.server.security
 
+import com.unboundid.ldap.sdk.LDAPURL
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import upickle.default._
@@ -22,8 +23,10 @@ trait AuthService {
   def authenticateUser(username: String, password: String): AuthResult
 }
 
-case class LDAPConfig(ldapHosts: List[String], ldapPorts: List[Int]) {
-  val ldapService = new FreeLDAPAuthenticationService(ldapHosts.zip(ldapPorts))
+case class LDAPConfig(ldapHosts: List[String]) {
+  val hosts = ldapHosts.map(new LDAPURL(_)).map(u => (u.getHost, u.getPort))
+
+  val ldapService = new FreeLDAPAuthenticationService(hosts)
 }
 
 case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
