@@ -53,9 +53,11 @@ object Engine {
   // when an action is completed even if it belongs to a set of
   // parallel actions.
   case object Completed extends Event
+  // when an action failed
   case object Failed extends Event
   // when a set of parallel actions is completed.
   case object Synced extends Event
+  case object SyncFailed extends Event
   case object Finished extends Event
 
   /**
@@ -106,7 +108,10 @@ object Engine {
   /**
     *
     */
-  type Telescope[A] = StateT[Task, SeqStatus, A]
+  type Telescope[A] = TelescopeStateT[Task, A]
+  // Helper alias to facilitate lifting.
+  type TelescopeStateT[M[_], A] = StateT[M, SeqStatus, A]
+
 
   /**
     * Main logical thread to handle events and produce output.
@@ -120,6 +125,7 @@ object Engine {
           case Completed => log("Output: Action completed")
           case Failed => log("Output: Action failed")
           case Synced => log("Output: Parallel actions completed") *> execute(chan)
+          case SyncFailed => log("Output: Step failed. Repeating...") *> execute(chan)
           case Finished => log("Output: Finished") *> switch(Waiting)
         }
       }
@@ -130,7 +136,7 @@ object Engine {
     */
   def log(msg:String): Telescope[Unit] =
     // XXX: Replace with equivalent of Writer monad.
-    Applicative[Telescope].pure{ println(msg)) }
+    Applicative[Telescope].pure(println(msg))
 
   /**
     * Receive an event within the `Telescope` monad.
@@ -166,23 +172,28 @@ object Engine {
         }
       }
 
-    // Helper function to facilitate recursion.
-    val go: Telescope[Unit] = for {
-      actions <- step(chan)
-      _ <- Applicative[Telescope].pure(
-        Nondeterminism[Task].gather(actions.map(exe(_))
-        )
-      )
-    } yield send(chan)(Synced)
-
     status >>= {
       (st: Status) => st match {
-        case Running => go
+        case Running => for {
+          as <- step(chan)
+          rs <- Nondeterminism[Task].gather(as.map(exe(_))).liftM[TelescopeStateT]
+        } yield {
+          if (Foldable[List].all(rs)(_ == Done)) {
+            // Remove step and send Synced event
+            drop *> send(chan)(Synced)
+          } else {
+            // Just send Failed event. Because it doesn't drop the step it will
+            // be reexecuted again.
+            send(chan)(SyncFailed)
+          }
+        }
+
         // Do nothing when status is in waiting. This will make the handler
         // block waiting for more events.
         case Waiting => Applicative[Telescope].pure(Unit)
       }
     }
+
   }
 
   /**
