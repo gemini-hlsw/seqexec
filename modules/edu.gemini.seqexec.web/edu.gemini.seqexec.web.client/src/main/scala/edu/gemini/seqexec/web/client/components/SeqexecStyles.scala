@@ -51,6 +51,9 @@ object SeqexecStyles extends StyleSheet.Inline {
     maxHeight(24.3.em)
   }
 
+  val stepsListBody = style() // Marker css
+  val stepRunning = style() // Marker css
+
   val observeConfig = style {
     backgroundColor.lightcyan
   }

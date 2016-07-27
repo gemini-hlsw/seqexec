@@ -61,7 +61,7 @@ object Settings {
     val jQuery         = "3.0.0"
     val semanticUI     = "2.2"
     val jQueryTerminal = "0.9.3"
-    val ocsVersion     = "2016001.1.1"
+    val ocsVersion     = "2016102.1.1"
   }
 
   /**

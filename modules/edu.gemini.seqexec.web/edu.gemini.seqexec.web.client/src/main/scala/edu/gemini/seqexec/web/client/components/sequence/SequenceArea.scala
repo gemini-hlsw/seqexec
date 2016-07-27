@@ -14,8 +14,9 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactElement}
 
+import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
@@ -36,8 +37,7 @@ object SequenceStepsTableContainer {
   def backToSequence(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .stateless
-    .render_P(p =>
+    .render_P { p =>
       <.div(
         ^.cls := "ui raised secondary segment",
         p.stepConfigDisplayed.fold {
@@ -65,7 +65,7 @@ object SequenceStepsTableContainer {
             ^.cls := "row",
             Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
             <.h5(
-              ^.cls :="ui header",
+              ^.cls := "ui header",
               SeqexecStyles.inline,
               s" Configuration for step ${i + 1}"
             )
@@ -92,11 +92,11 @@ object SequenceStepsTableContainer {
                 )
               ),
               <.tbody(
-                step.map(_.config).getOrElse(Nil).map( c =>
+                step.map(_.config).getOrElse(Nil).map(c =>
                   <.tr(
                     ^.classSet(
                       "positive" -> c.key.startsWith("instrument"),
-                      "warning"  -> c.key.startsWith("telescope")
+                      "warning" -> c.key.startsWith("telescope")
                     ),
                     c.key.startsWith("observe") ?= SeqexecStyles.observeConfig,
                     c.key.startsWith("ocs") ?= SeqexecStyles.observeConfig,
@@ -138,20 +138,22 @@ object SequenceStepsTableContainer {
                 )
               ),
               <.tbody(
+                SeqexecStyles.stepsListBody,
                 p.s.steps.steps.map(s =>
                   <.tr(
                     ^.classSet(
                       "positive" -> (s.state == StepState.Done),
-                      "warning"  -> (s.state == StepState.Running),
+                      "warning" -> (s.state == StepState.Running),
                       "negative" -> (s.state == StepState.Error),
                       "negative" -> (s.state == StepState.Abort)
                     ),
+                    s.state == StepState.Running ?= SeqexecStyles.stepRunning,
                     <.td(
                       s.state match {
-                        case StepState.Done    => IconCheckmark
+                        case StepState.Done => IconCheckmark
                         case StepState.Running => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                        case StepState.Error   => IconAttention
-                        case _                 => iconEmpty
+                        case StepState.Error => IconAttention
+                        case _ => iconEmpty
                       }
                     ),
                     <.td(s.id + 1),
@@ -168,7 +170,63 @@ object SequenceStepsTableContainer {
           }
         )
       )
-    )
+    }
+    .componentDidMount { f =>
+      import org.scalajs.dom.document
+      import org.scalajs.dom.raw.Element
+      import org.scalajs.dom.raw.Node
+
+      /**
+        * Calculates if the element is visible inside the scroll pane up the dom tree
+        */
+      def visibleY(el: Element):Boolean = {
+        val rect = el.getBoundingClientRect()
+        val top = rect.top
+        val height = rect.height
+
+        def visible(el: Element): Boolean = {
+          val rect = el.getBoundingClientRect()
+          // Check if the element is out of view due to a container scrolling
+          ((top + height) <= rect.bottom) && ((top + height) > rect.top)
+        }
+
+        @tailrec
+        def go(el: Node): Boolean = {el match {
+          case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
+            (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
+          // Fallback to the document in nothing else
+          case e if el.parentNode == document.body                                       =>
+            top <= document.documentElement.clientHeight
+          case e:Element                                   =>
+            go(el.parentNode)
+        }}
+
+        go(el.parentNode)
+      }
+
+      def scrollPosition: Option[(Element, Double)] = {
+        val node = ReactDOM.findDOMNode(f)
+        val tableSelector = s".${SeqexecStyles.stepsListPane.htmlClass}"
+        val rowSelector = s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
+        Option(node.querySelector(rowSelector)).flatMap { e =>
+          import org.querki.jquery.$
+
+          val p = $(e).position().top
+          val pt = $(e).parent().position().top
+          Option(node.querySelector(tableSelector)).flatMap { k =>
+            if (!visibleY(e)) {
+              val u = p - pt
+              Some((k, u))
+            } else {
+              None
+            }
+          }
+        }
+      }
+      scrollPosition.map {
+        case (e, p) => Callback { e.scrollTop = p }
+      }.getOrElse(Callback.empty)
+    }
     .build
 
   def apply(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
