@@ -17,11 +17,6 @@ import scalaz.concurrent.Task
 import scalaz.effect.IO
 
 object WebServerLauncher extends ServerApp with LogInitialization {
-  // Initialize the log and exit if it fails
-  configLog.unsafePerformSync
-
-  // Initialize logger after the configuration
-  val logger = Logger.getLogger(getClass.getName)
 
   /**
     * Configuration for the web server
@@ -33,12 +28,13 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     */
   case class SeqexecConfiguration(odbHost: String)
 
-  // Attempt to get the file or throw an exception if not possible
-  val configurationFile: File = baseDir.map(f => new File(new File(f, "conf"), "app.conf")).unsafePerformSync
+  // Attempt to get the configuration file relative to the base dir
+  val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
-  val config: Task[Config] = knobs.loadImmutable(
-    Required(FileResource(configurationFile) or ClassPathResource("app.conf")) :: Nil)
+  val config: Task[Config] = configurationFile >>= { f =>
+    knobs.loadImmutable(Required(FileResource(f) or ClassPathResource("app.conf")) :: Nil)
+  }
 
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
@@ -87,7 +83,9 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     * Configures and builds the web server
     */
   def webServer(as: AuthenticationService): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+    val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
+
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(StaticRoutes.service(conf.devMode), "/")
@@ -101,6 +99,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     */
   override def server(args: List[String]): Task[Server] =
     for {
+      _  <- configLog
       ac <- authConf
       wc <- serverConf
       sc <- executorConf
