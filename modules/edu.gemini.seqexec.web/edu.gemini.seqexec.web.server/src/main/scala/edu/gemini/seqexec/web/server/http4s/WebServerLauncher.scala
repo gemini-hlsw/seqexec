@@ -18,7 +18,7 @@ import scalaz.effect.IO
 
 object WebServerLauncher extends ServerApp with LogInitialization {
   // Initialize the log and exit if it fails
-  configLog.run.onException(IO(sys.exit(1))).unsafePerformIO()
+  configLog.unsafePerformSync
 
   // Initialize logger after the configuration
   val logger = Logger.getLogger(getClass.getName)
@@ -34,7 +34,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   case class SeqexecConfiguration(odbHost: String)
 
   // Attempt to get the file or throw an exception if not possible
-  val configurationFile: File = new File(new File(baseDir, "conf"), "app.conf")
+  val configurationFile: File = baseDir.map(f => new File(new File(f, "conf"), "app.conf")).unsafePerformSync
 
   // Read the config, first attempt the file or default to the classpath file
   val config: Task[Config] = knobs.loadImmutable(

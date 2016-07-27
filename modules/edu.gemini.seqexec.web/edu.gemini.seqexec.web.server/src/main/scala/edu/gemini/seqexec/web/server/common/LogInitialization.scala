@@ -6,14 +6,14 @@ import java.util.logging.LogManager
 import scala.io.{Codec, Source}
 import scalaz._
 import Scalaz._
-import scalaz.effect.IO
+import scalaz.concurrent.Task
 
 trait AppBaseDir {
   /**
     * Calculates the base dir of the application based on the location of "this" class jar file
     * It will throw an exception if unable to find the base dir
     */
-  def baseDir: File = {
+  def baseDir: Task[File] = Task.delay {
     val clazz = this.getClass
     val fileName = clazz.getResource(s"/${clazz.getName.replace(".", System.getProperty("file.separator"))}.class").getFile
 
@@ -28,28 +28,16 @@ trait AppBaseDir {
 }
 
 trait LogInitialization extends AppBaseDir {
-  sealed trait LogConfError
-  case class ConfigurationNotFound(s: String) extends LogConfError
-  case class LogDirNotFound(f: File) extends LogConfError
-  case object ConfigurationLoadingError extends LogConfError
+  private val loggingConfigurationFileName = "logging.properties"
 
-  type LogConf[A] = EitherT[IO, LogConfError, A]
+  def loggingConfigurationFile(baseDir: File): Task[File] = Task.delay {
+    val confDir = new File(baseDir, "conf")
 
-  object LogConf {
-    def fromDisjunction[A](a: LogConfError \/ A): LogConf[A] = EitherT(IO(a))
-    def fromConfLoading[A](a: => A): LogConf[A] =
-      fromDisjunction(\/.fromTryCatchNonFatal(a).leftMap(_ => ConfigurationLoadingError))
-    val unit: LogConf[Unit] = ().point[LogConf]
+    new File(confDir, loggingConfigurationFileName)
   }
 
-  private def readConf: LogConf[(File, String)] = EitherT {
-    IO {
-      val fileName = "logging.properties"
-
-      def loggingConfig(baseDir: File): LogConfError \/ (File, String) = {
-        val confDir = new File(baseDir, "conf")
-
-        val loggingConfig = new File(confDir, fileName)
+  private def readConf(baseDir: File): Task[(File, String)] = {
+    def replaceLogDir(loggingConfig: File): Task[(File, String)] = Task.delay {
         loggingConfig.exists.fold({
           val logDir = new File(baseDir, "log")
           // Replace base dir
@@ -57,41 +45,38 @@ trait LogInitialization extends AppBaseDir {
             l <- Source.fromFile(loggingConfig)(Codec.UTF8).getLines
           } yield l.replace("{{log.dir}}", logDir.getAbsolutePath)
 
-          \/-((logDir, src.toList.mkString("\n")))
-        }, -\/(ConfigurationNotFound(fileName)))
+          (logDir, src.toList.mkString("\n"))
+        }, throw new RuntimeException("Cannot read the logging configuration file"))
       }
 
-      for {
-        bd <- \/-(baseDir)
-        p  <- loggingConfig(bd)
-      } yield p
-    }
+    loggingConfigurationFile(baseDir) >>= replaceLogDir
   }
 
-  private def makeLogDir(logDir: File): LogConf[Unit] = EitherT {
-    IO {
-      (logDir.exists() || logDir.mkdirs()).fold(\/-(()), -\/(LogDirNotFound(logDir)))
-    }
+  private def makeLogDir(logDir: File): Task[Unit] = Task.delay {
+    (logDir.exists() || logDir.mkdirs()).fold((), throw new RuntimeException(s"Cannot create logging dir $logDir"))
   }
 
-  private def initializeLogFromConf(conf: String): LogConf[Unit] = LogConf.fromConfLoading(
-    // Load updated configuration, note the configuration is in memory and not persisted to the file
-    LogManager.getLogManager.readConfiguration(new ByteArrayInputStream(conf.getBytes(Codec.UTF8.charSet))))
+  private def initializeLogFromConf: Task[Unit] =
+    for {
+      b <- baseDir
+      f <- readConf(b)
+      _ <- makeLogDir(f._1)
+    } yield {
+      // Load updated configuration, note the configuration is in memory and not persisted to the file
+      LogManager.getLogManager.readConfiguration(new ByteArrayInputStream(f._2.getBytes(Codec.UTF8.charSet)))
+    }
 
-  private def initializeLogFromClasspath: LogConf[Unit] = LogConf.fromConfLoading(
-    LogManager.getLogManager.readConfiguration(getClass.getClassLoader.getResourceAsStream("logging.properties")))
+  private def initializeLogFromClasspath: Task[Unit] = Task.delay(
+    LogManager.getLogManager.readConfiguration(getClass.getClassLoader.getResourceAsStream(loggingConfigurationFileName)))
 
-  private def defaultInitialization: LogConf[Unit] = LogConf.fromConfLoading(
+  private def defaultInitialization: Task[Unit] = Task.delay(
     LogManager.getLogManager.readConfiguration())
 
-  private def loadConfiguration(conf: String): LogConf[Unit] =
-    initializeLogFromConf(conf).orElse(initializeLogFromClasspath).orElse(defaultInitialization)
-
-  def configLog: LogConf[Unit] = {
-    for {
-      f <- readConf
-      _ <- makeLogDir(f._1)
-      u <- loadConfiguration(f._2)
-    } yield u
-  }
+  /**
+    * Attempts to load and set the configuration of the java.util.logging subsystem assuming
+    * that a configuration will be at {{app.home}}/conf/logging.properties and will
+    * try to create a dir for log files
+    * It will attempt several strategies to get a usable configuration if errors are detected
+    */
+  def configLog: Task[Unit] = initializeLogFromConf.or(initializeLogFromClasspath).or(defaultInitialization)
 }
