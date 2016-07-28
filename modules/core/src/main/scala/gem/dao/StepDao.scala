@@ -28,7 +28,7 @@ object StepDao {
               ${s.target},
               ${s.observeType},
               ${s.band},
-              ${s.instrument})
+              ${s.instrument.map(_.tag)})
     """.update.run
 
 }

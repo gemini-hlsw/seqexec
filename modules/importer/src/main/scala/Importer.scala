@@ -84,7 +84,7 @@ object Importer extends SafeApp {
     r.read(f).flatMap(insert).except(e => IO.putStrLn(">> " + e.getMessage))
 
   def xmlFiles(dir: File): IO[List[File]] =
-    IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))) //.map(_.take(500))
+    IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(100))
 
   def readAndInsertAll(r: ProgramReader, dir: File): IO[Unit] =
     xmlFiles(dir).flatMap(_.traverse_(readAndInsert(r, _)))
@@ -114,14 +114,14 @@ object Importer extends SafeApp {
 
   def unsafeFromConfig(oid: Observation.Id, config: Map[String, Object]): Step = 
     new Step {
-      val stepCount    = config.nn[Int     ]("metadata:stepcount"   )
-      val isComplete   = config.nn[Boolean ]("metadata:complete"    )
-      val observeClass = config.oe[ObsClass]("observe:class"        )
-      val dataLabel    = config.nn[String  ]("observe:dataLabel"    )
-      val target       = config.op[String  ]("observe:object"       )
-      val observeType  = config.op[String  ]("observe:observeType"  )
-      val band         = config.op[Int     ]("observe:sciBand"      )
-      val instrument   = config.op[String  ]("instrument:instrument")
+      val stepCount    = config.nn[Int       ]("metadata:stepcount"   )
+      val isComplete   = config.nn[Boolean   ]("metadata:complete"    )
+      val observeClass = config.oe[ObsClass  ]("observe:class"        )
+      val dataLabel    = config.nn[String    ]("observe:dataLabel"    )
+      val target       = config.op[String    ]("observe:object"       )
+      val observeType  = config.op[String    ]("observe:observeType"  )
+      val band         = config.op[Int       ]("observe:sciBand"      )
+      val instrument   = config.oe[Instrument]("instrument:instrument")
       val id = StepId(oid, stepCount)
     }
 

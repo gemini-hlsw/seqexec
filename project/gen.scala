@@ -37,7 +37,7 @@ object gen extends SafeApp {
             |  implicit val ${cname}Enumerated: Enumerated[${cname}] =
             |    new Enumerated[${cname}] {
             |      def tag(a: ${cname}) = a.tag
-            |      val all = List(${as.map(tag(_).capitalize).mkString(", ")})
+            |      val all = List(${as.map(x => sanitize(tag(x)).capitalize).mkString(", ")})
             |    }
             |
             |}
@@ -47,6 +47,9 @@ object gen extends SafeApp {
   object Gen {
     def apply[A](implicit ev: Gen[A]): Gen[A] = ev
   }
+
+  def sanitize(s: String): String =
+    s.replace('-', '_').filterNot(_.isWhitespace)
 
   case class ProgramType(tag: String, name: String)
   object ProgramType {
@@ -99,13 +102,30 @@ object gen extends SafeApp {
       }
   }
 
+  case class Instrument(tag: String, name: String)
+  object Instrument {
+    implicit val GenChargeClass: Gen[Instrument] =
+      new Gen[Instrument] {
+        val cname = "Instrument"
+        def mkClass = "sealed abstract class Instrument(val tag: String, val name: String)"
+        def mkCase(p: Instrument) = f"""case object ${sanitize(p.tag).capitalize} extends Instrument("${p.tag}", "${p.name}")"""
+        def tag(p: Instrument) = p.tag
+        val query =
+         sql"""
+              SELECT instrument_id, name
+                FROM instrument
+            ORDER BY name ASC
+          """.query[Instrument]  
+      }
+  }
 
   def apply(dir: File): IO[Seq[File]] =
     for {
       pairs  <- List(
                   Gen[ProgramType].code,
                   Gen[ChargeClass].code,
-                  Gen[ObsClass].code
+                  Gen[ObsClass].code,
+                  Gen[Instrument].code
                 ).sequence
       fs     <- pairs.traverse { case (f, c) => 
                   IO { 
