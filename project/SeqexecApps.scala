@@ -95,12 +95,14 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
       version in Rpm := {
         (version in ThisBuild).value.replace("-SNAPSHOT", "")
       },
-
       // The distribution uses only log files, no console
       mappings in Universal in packageZipTarball += {
         val f = generateLoggingConfigTask(LogType.Files).value
         f -> ("conf/" + f.getName)
       },
+
+      // Don't include the configuration on the jar. Instead we copy it to the conf dir
+      mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) },
 
       // Copy the configuration file
       mappings in Universal in packageZipTarball += {

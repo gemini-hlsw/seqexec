@@ -14,7 +14,6 @@ import org.http4s.server.blaze.BlazeBuilder
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.effect.IO
 
 object WebServerLauncher extends ServerApp with LogInitialization {
 
@@ -32,9 +31,18 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
-  val config: Task[Config] = configurationFile >>= { f =>
-    knobs.loadImmutable(Required(FileResource(f) or ClassPathResource("app.conf")) :: Nil)
+  val defaultConfig: Task[Config] =
+    knobs.loadImmutable(ClassPathResource("app.conf").required :: Nil)
+
+  val fileConfig: Task[Config] = configurationFile >>= { f =>
+    knobs.loadImmutable(FileResource(f).optional :: Nil)
   }
+
+  val config: Task[Config] =
+    for {
+      dc <- defaultConfig
+      fc <- fileConfig
+    } yield dc ++ fc
 
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
