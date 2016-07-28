@@ -88,6 +88,13 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   }
 
   /**
+    * Configures the Authentication service
+    */
+  def authService: Kleisli[Task, AuthenticationConfig, AuthenticationService] = Kleisli { conf =>
+    Task.delay(AuthenticationService(conf))
+  }
+
+  /**
     * Configures and builds the web server
     */
   def webServer(as: AuthenticationService): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
@@ -112,7 +119,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       wc <- serverConf
       sc <- executorConf
       _  <- seqexecExecutor.run(sc)
-      as <- AuthenticationService.authServices.run(ac)
+      as <- authService.run(ac)
       ws <- webServer(as).run(wc)
     } yield ws
 }

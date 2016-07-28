@@ -9,7 +9,6 @@ import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
 import scala.annotation.tailrec
 import scalaz._
 import Scalaz._
-import scalaz.concurrent.Task
 
 sealed trait AuthenticationFailure
 case class UserNotFound(user: String) extends AuthenticationFailure
@@ -76,7 +75,8 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
 
   val sessionTimeout: Long = config.sessionLifeHrs * 3600
 
-  override def authenticateUser(username: String, password: String): AuthResult = authServices.authenticateUser(username, password)
+  override def authenticateUser(username: String, password: String): AuthResult =
+    authServices.authenticateUser(username, password)
 }
 
 object AuthenticationService {
@@ -105,11 +105,4 @@ object AuthenticationService {
       }
     }
   }
-
-  // Launcher for the authentication service taking a configuration
-  val authServices: Kleisli[Task, AuthenticationConfig, AuthenticationService] = Kleisli(c =>
-    if (c.devMode) Task.now(AuthenticationService(c))
-    else Task.now(AuthenticationService(c))
-  )
-
 }
