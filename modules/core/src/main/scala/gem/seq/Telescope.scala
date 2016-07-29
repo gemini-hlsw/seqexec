@@ -15,6 +15,7 @@ final case class Telescope(p: OffsetP, q: OffsetQ) {
 
 object Telescope {
   val Lab = Label("Telescope")
+  val Zero = Telescope(OffsetP.Zero, OffsetQ.Zero)
 
   def lab(name: String): Label = Label(Lab, name)
 
@@ -46,7 +47,7 @@ object Telescope {
 
   implicit val DescribeTelescope: Describe[Telescope] =
     Describe.forProps(
-      Telescope(OffsetP.Zero, OffsetQ.Zero),
+      Zero,
       OffsetPProp, OffsetQProp
     )
 }

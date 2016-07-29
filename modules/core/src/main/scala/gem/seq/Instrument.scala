@@ -1,3 +1,5 @@
 package gem.seq
 
-trait Instrument
+trait Instrument {
+  val tag: String
+}

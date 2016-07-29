@@ -12,8 +12,8 @@ object ObservationDao {
                               observation_index, 
                               title,
                               instrument)
-            VALUES (${o.id.toString}, 
-                    ${o.id.pid.toString}, 
+            VALUES (${o.id}, 
+                    ${o.id.pid}, 
                     ${o.id.index}, 
                     ${o.title},
                     ${o.instrument})

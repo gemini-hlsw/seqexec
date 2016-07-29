@@ -3,32 +3,49 @@ package dao
 
 import doobie.imports._
 
+import scalaz._, Scalaz._
+
 object StepDao {
 
-  def insert(s: Step): ConnectionIO[Int] =
+  def insert[I <: seq.Instrument /* : seq.Describe */](oid: Observation.Id, index: Int, s: seq.Step[I]): ConnectionIO[Int] =
+    insertBaseSlice(oid, index, s) *> {
+      s match {
+        case x @ seq.BiasStep(_)       => insertBiasSlice(oid, index, x)
+        case x @ seq.ScienceStep(_, _) => insertScienceSlice(oid, index, x)
+        case x => FC.delay(println("Can't insert detail slice for " + x)).as(0)
+      }
+    }
+
+  def insertBaseSlice[I <: seq.Instrument /* : seq.Describe */](oid: Observation.Id, index: Int, s: seq.Step[I]): ConnectionIO[Int] =
     sql"""
       INSERT INTO step (observation_id,
-                        observation_index,
-                        program_id,
-                        metadata_stepcount,
-                        metadata_complete,
-                        obs_class_id,
-                        "observe_dataLabel",
-                        observe_object,
-                        "observe_observeType",
-                        "observe_sciBand",
-                        instrument_instrument)
-      VALUES (${s.id.oid.toString},
-              ${s.id.oid.index},
-              ${s.id.oid.pid.toString},
-              ${s.id.index},
-              ${s.isComplete},
-              ${s.observeClass.map(_.tag)},
-              ${s.dataLabel},
-              ${s.target},
-              ${s.observeType},
-              ${s.band},
-              ${s.instrument.map(_.tag)})
+                        index,
+                        instrument_id,
+                        step_type)
+      VALUES ($oid,
+              ${index},
+              ${s.instrument.tag},
+              ${s.stepType.toString} :: step_type)
+    """.update.run
+
+  def insertBiasSlice[I <: seq.Instrument /* : seq.Describe */](oid: Observation.Id, index: Int, s: seq.BiasStep[I]): ConnectionIO[Int] =
+    sql"""
+      INSERT INTO step_bias (observation_id,
+                             index)
+      VALUES (${oid.toString},
+              ${index})
+    """.update.run
+
+  def insertScienceSlice[I <: seq.Instrument /* : seq.Describe */](oid: Observation.Id, index: Int, s: seq.ScienceStep[I]): ConnectionIO[Int] =
+    sql"""
+      INSERT INTO step_science (observation_id,
+                                index,
+                                offset_p,
+                                offset_q)
+      VALUES (${oid},
+              ${index},
+              ${s.telescope.p},
+              ${s.telescope.q})
     """.update.run
 
 }

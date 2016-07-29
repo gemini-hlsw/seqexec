@@ -36,7 +36,7 @@ object ProgramDao {
                            semester_id,
                            program_type_id,
                            index)
-           VALUES (${pid.toString},
+           VALUES (${pid: Program.Id},
                    ${pid.siteVal.toString},
                    ${pid.semesterVal.toString},
                    ${pid.ptypeVal.toString},
@@ -49,7 +49,7 @@ object ProgramDao {
                           site_id, 
                           program_type_id, 
                           day)
-            VALUES (${pid.toString},
+            VALUES (${pid: Program.Id},
                     ${pid.siteVal.toString},
                     ${pid.ptypeVal.toString},
                     ${new java.util.Date(pid.year + "/" + pid.month + "/" + pid.day)})
@@ -62,7 +62,7 @@ object ProgramDao {
                            site_id,
                            semester_id,
                            program_type_id)
-            VALUES (${pid.idString},
+            VALUES (${pid: Program.Id},
                     ${pid.site.map(_.toString)},
                     ${pid.semester.map(_.toString)},
                     ${pid.ptype.map(_.toString)})
