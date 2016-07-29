@@ -2,12 +2,13 @@ package edu.gemini.seqexec.engine
 
 import scala.concurrent.Channel
 
-import edu.gemini.seqexec.engine.Engine._
-import edu.gemini.seqexec.engine.Handler._
-import edu.gemini.seqexec.engine.Sequence._
 import org.scalatest.FlatSpec
 import scalaz._
 import scalaz.concurrent.Task
+
+import edu.gemini.seqexec.engine.Engine._
+import edu.gemini.seqexec.engine.Handler._
+import edu.gemini.seqexec.engine.Sequence._
 
 class HandlerSpec extends FlatSpec {
 
@@ -60,13 +61,13 @@ class HandlerSpec extends FlatSpec {
   def tester(chan: Channel[Event]): Task[Unit] =
     Task.delay {
       Thread.sleep(100)
-      chan.write(Start)
+      chan.write(start)
       Thread.sleep(2000)
-      chan.write(Pause)
+      chan.write(pause)
       Thread.sleep(3000)
       // Add a failing step
-      chan.write(AddStep(List(faulty, observe)))
-      chan.write(Start)
+      chan.write(addStep(List(faulty, observe)))
+      chan.write(start)
     }
 
   Nondeterminism[Task].both(

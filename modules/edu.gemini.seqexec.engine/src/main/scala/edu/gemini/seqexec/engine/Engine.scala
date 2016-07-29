@@ -1,10 +1,10 @@
 package edu.gemini.seqexec.engine
 
 import scala.concurrent.Channel
-import scalaz.concurrent.Task
 
 import scalaz._
 import Scalaz._
+import scalaz.concurrent.Task
 import edu.gemini.seqexec.engine.Sequence._
 
 object Engine {
@@ -13,19 +13,34 @@ object Engine {
     *
     */
   sealed trait Event
-  // Starting and resuming.
-  case object Start extends Event
-  case object Pause extends Event
+  case class EventUser(ue: UserEvent) extends Event
+  case class EventSystem(se: SystemEvent) extends Event
+
+  sealed trait UserEvent
+  case object Start extends UserEvent
+  case object Pause extends UserEvent
+  case class AddStep(a: Step) extends UserEvent
+
+  val start: Event = EventUser(Start)
+  val pause: Event = EventUser(Pause)
+  def addStep(ste: Step): Event = EventUser(AddStep(ste))
+
+  sealed trait SystemEvent
   // when an action is completed even if it belongs to a set of
   // parallel actions.
-  case object Completed extends Event
+  case object Completed extends SystemEvent
   // when an action failed
-  case object Failed extends Event
+  case object Failed extends SystemEvent
   // when a set of parallel actions is completed.
-  case object Synced extends Event
-  case object SyncFailed extends Event
-  case object Finished extends Event
-  case class AddStep(a: Step) extends Event
+  case object Synced extends SystemEvent
+  case object SyncFailed extends SystemEvent
+  case object Finished extends SystemEvent
+
+  val completed: Event = EventSystem(Completed)
+  val failed: Event = EventSystem(Failed)
+  val synced: Event = EventSystem(Synced)
+  val syncFailed: Event = EventSystem(SyncFailed)
+  val finished: Event = EventSystem(Finished)
 
   /**
     * Input Sequence and Status clubbed together
@@ -59,8 +74,8 @@ object Engine {
     def execute(action: Action): Action =
       action >>= {
         (r: Result) => r match {
-          case Done  => Task.delay { chan.write(Completed) } *> action
-          case Error => Task.delay { chan.write(Failed) } *> action
+          case Done  => Task.delay { chan.write(completed) } *> action
+          case Error => Task.delay { chan.write(failed) } *> action
         }
       }
 
@@ -72,11 +87,11 @@ object Engine {
         } yield {
           if (Foldable[List].all(rs)(_ == Done)) {
             // Remove step and send Synced event
-            send(chan)(Synced)
+            send(chan)(synced)
           } else {
             // Just send Failed event. Because it doesn't drop the step it will
             // be reexecuted again.
-            send(chan)(SyncFailed)
+            send(chan)(syncFailed)
           }
         }
 
@@ -130,7 +145,7 @@ object Engine {
          val (seq, st) = ss
          // TODO: headDef :: a -> [a] -> a
          seq match {
-           case Nil => send(chan)(Finished) *> Applicative[Telescope].pure(List())
+           case Nil => send(chan)(finished) *> Applicative[Telescope].pure(List())
            case (x :: _) => Applicative[Telescope].pure(x)
          }
       }
