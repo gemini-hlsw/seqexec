@@ -3,11 +3,13 @@ package edu.gemini.seqexec.engine
 import scala.concurrent.Channel
 
 import edu.gemini.seqexec.engine.Engine._
+import edu.gemini.seqexec.engine.Handler._
+import edu.gemini.seqexec.engine.Sequence._
 import org.scalatest.FlatSpec
 import scalaz._
 import scalaz.concurrent.Task
 
-class EngineSpec extends FlatSpec {
+class HandlerSpec extends FlatSpec {
 
   /**
     * Emulates TCS configuration in the real world.
