@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.engine
 
-import scala.io.StdIn.readChar
 import scala.concurrent.Channel
 
 import scalaz._
@@ -60,36 +59,7 @@ object Engine {
   case object Synced extends Event
   case object SyncFailed extends Event
   case object Finished extends Event
-
-  /**
-    * Emulates TCS configuration in the real world.
-    *
-    */
-  def configureTcs: Action  = for
-    { _ <- Task.delay { println("System: Start TCS configuration") }
-      _ <- Task.delay { Thread.sleep(2000) }
-      _ <- Task.delay { println ("System: Complete TCS configuration") }
-    } yield Done
-
-  /**
-    * Emulates Instrument configuration in the real world.
-    *
-    */
-  def configureInst : Action  = for
-    { _ <- Task.delay { println("System: Start Instrument configuration") }
-      _ <- Task.delay { Thread.sleep(2000) }
-      _ <- Task.delay { println("System: Complete Instrument configuration") }
-    } yield Done
-
-  /**
-    * Emulates an observation in the real world.
-    *
-    */
-  def observe : Action  = for
-    { _ <- Task.delay { println("System: Start observation") }
-      _ <- Task.delay { Thread.sleep(2000) }
-      _ <- Task.delay { println ("System: Complete observation") }
-    } yield Done
+  case class AddStep(a: Step) extends Event
 
   /**
     * Type constructor where all all side effects related to the Telescope are
@@ -103,20 +73,20 @@ object Engine {
     * Main logical thread to handle events and produce output.
     */
   def handler[R](chan: Channel[Event]): Telescope[R] =
-    Bind[Telescope].forever(
-      receive(chan) >>= {
-        (ev: Event) => ev match {
-          case Start => log("Output: Started") *> switch(Running) *> run(chan)
-          case Pause => log("Output: Paused") *> switch(Waiting)
-          case Completed => log("Output: Action completed")
-          case Failed => log("Output: Action failed")
-          case Synced => log("Output: Parallel actions completed") *> run(chan)
-          case SyncFailed => log("Output: Step failed. Repeating...") *> run(chan)
-          case Finished => log("Output: Finished") *> switch(Waiting)
-        }
+    (receive(chan) >>= {
+      (ev: Event) => ev match {
+        case Start => log("Output: Started") *> switch(Running) *> run(chan)
+        case Pause => log("Output: Paused") *> switch(Waiting)
+        case Completed => log("Output: Action completed")
+        case Failed => log("Output: Action failed")
+        case Synced => log("Output: Parallel actions completed") *> tail *> run(chan)
+        case SyncFailed => log("Output: Step failed. Repeating...") *> run(chan)
+        case Finished => log("Output: Finished") *> switch(Waiting)
+        case AddStep(ste) => log("Output: Adding Step") *> add(ste)
       }
-    )
-
+    // XXX: `forever`, for some reason, keeps looping over the same message even
+    // if only sent once.
+    }) >> handler(chan)
 
   /**
     * Checks the status is running and launches all parallel tasks to complete
@@ -140,7 +110,7 @@ object Engine {
         } yield {
           if (Foldable[List].all(rs)(_ == Done)) {
             // Remove step and send Synced event
-            tail *> send(chan)(Synced)
+            send(chan)(Synced)
           } else {
             // Just send Failed event. Because it doesn't drop the step it will
             // be reexecuted again.
@@ -211,18 +181,6 @@ object Engine {
   def tail: Telescope[Unit] =
     MonadState[Telescope, SeqStatus].modify(_.leftMap(_.tail))
 
-  // /**
-  //   * Handles console input.
-  //   * TODO: Doesn't work as it is because of console input buffering.
-  //   */
-  // def input[A](chan: Channel[Event]): Task[A] =
-  //   Bind[Task].forever(
-  //     Task { readChar() } >>= {
-  //       (c: Char) => c match {
-  //         case 'p' => Task { chan.write(Pause) }
-  //         case 's' => Task { chan.write(Start) }
-  //         case _   => Task(Unit)
-  //       }
-  //     }
-  //)
+  def add(ste: Step): Telescope[Unit] =
+    MonadState[Telescope, SeqStatus].modify(_.leftMap(ste :: _))
 }
