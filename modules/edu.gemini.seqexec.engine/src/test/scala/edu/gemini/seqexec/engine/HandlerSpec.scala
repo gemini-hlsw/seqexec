@@ -2,9 +2,7 @@ package edu.gemini.seqexec.engine
 
 import org.scalatest.FlatSpec
 import scalaz._
-import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.Process
 import scalaz.stream.async
 import scalaz.stream.async.mutable.Queue
 
@@ -72,9 +70,8 @@ class HandlerSpec extends FlatSpec {
       queue.enqueueOne(start)
     }
 
-  // XXX: This doesn't typecheck :(
-  // Nondeterminism[Task].both(
-  //   tester(queue),
-  //   handler(queue).run.exec((sequence0, Waiting))
-  // ).unsafePerformSync
+  Nondeterminism[Task].both(
+    queue.enqueueOne(start),
+    handler(queue).run.exec((sequence0, Waiting))
+  ).unsafePerformSync
 }
