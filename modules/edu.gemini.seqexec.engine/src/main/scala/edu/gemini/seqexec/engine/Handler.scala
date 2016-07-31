@@ -1,9 +1,10 @@
 package edu.gemini.seqexec.engine
 
-import scala.concurrent.Channel
-
 import scalaz._
 import Scalaz._
+import scalaz.concurrent.Task
+import scalaz.stream.Process
+import scalaz.stream.async.mutable.Queue
 import edu.gemini.seqexec.engine.Engine._
 
 object Handler {
@@ -11,30 +12,27 @@ object Handler {
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler[R](chan: Channel[Event]): Telescope[R] = {
+  def handler(queue: Queue[Event]): Process[Telescope, Unit] = {
 
     def handleUserEvent(ue: UserEvent): Telescope[Unit] = ue match {
-      case Start => log("Output: Started") *> switch(Running) *> run(chan)
+      case Start => log("Output: Started") *> switch(Running) *> run(queue)
       case Pause => log("Output: Paused") *> switch(Waiting)
       case AddStep(ste) => log("Output: Adding Step") *> add(ste)
     }
 
-    def handleSystemEvent(se: SystemEvent) = se match {
+    def handleSystemEvent(se: SystemEvent): Telescope[Unit] = se match {
       case Completed => log("Output: Action completed")
       case Failed => log("Output: Action failed")
-      case Synced => log("Output: Parallel actions completed") *> tail *> run(chan)
-      case SyncFailed => log("Output: Step failed. Repeating...") *> run(chan)
+      case Synced => log("Output: Parallel actions completed") *> tail *> run(queue)
+      case SyncFailed => log("Output: Step failed. Repeating...") *> run(queue)
       case Finished => log("Output: Finished") *> switch(Waiting)
     }
 
-    (receive(chan) >>= {
-       (ev: Event) => ev match {
-         case EventUser(ue) => handleUserEvent(ue)
-         case EventSystem(se) => handleSystemEvent(se)
-       }
-     }
-    // XXX: `forever`, for some reason, keeps looping over the same message even
-    // if only sent once.
-    ) >> handler(chan)
+    receive(queue) >>= (
+      (ev: Event) => ev match {
+        case EventUser(ue) => Process.eval(handleUserEvent(ue))
+        case EventSystem(se) => Process.eval(handleSystemEvent(se))
+      }
+    )
   }
 }
