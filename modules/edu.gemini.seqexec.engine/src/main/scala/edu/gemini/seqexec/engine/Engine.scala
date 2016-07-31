@@ -1,15 +1,15 @@
 package edu.gemini.seqexec.engine
 
-import scala.concurrent.Channel
-
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.Process
+import scalaz.stream.async.mutable.Queue
 import edu.gemini.seqexec.engine.Sequence._
 
 object Engine {
   /**
-    * Anything that can go through the Event channel.
+    * Anything that can go through the Event Queue.
     *
     */
   sealed trait Event
@@ -56,7 +56,6 @@ object Engine {
   case object Running extends Status
   case object Waiting extends Status
 
-
   /**
     * Type constructor where all all side effects related to the Telescope are
     * managed.
@@ -69,29 +68,29 @@ object Engine {
     * Checks the status is running and launches all parallel tasks to complete
     * the next step. It also updates the `Telescope` state as needed.
     */
-  def run(chan: Channel[Event]): Telescope[Unit] = {
+  def run(queue: Queue[Event]): Telescope[Unit] = {
     // Send the result event when action is executed
     def execute(action: Action): Action =
       action >>= {
         (r: Result) => r match {
-          case Done  => Task.delay { chan.write(completed) } *> action
-          case Error => Task.delay { chan.write(failed) } *> action
+          case Done  => Task.delay { queue.enqueueOne(completed) } *> action
+          case Error => Task.delay { queue.enqueueOne(failed) } *> action
         }
       }
 
     status >>= {
       (st: Status) => st match {
         case Running => for {
-          as <- step(chan)
+          as <- step(queue)
           rs <- Nondeterminism[Task].gather(as.map(execute(_))).liftM[TelescopeStateT]
         } yield {
           if (Foldable[List].all(rs)(_ == Done)) {
             // Remove step and send Synced event
-            send(chan)(synced)
+            send(queue)(synced)
           } else {
             // Just send Failed event. Because it doesn't drop the step it will
             // be reexecuted again.
-            send(chan)(syncFailed)
+            send(queue)(syncFailed)
           }
         }
 
@@ -119,33 +118,32 @@ object Engine {
   /**
     * Send an event within the `Telescope` monad.
     */
-  def send(chan: Channel[Event])(ev: Event): Telescope[Unit] =
-    Applicative[Telescope].pure(Task.delay { chan.write(ev) })
+  def send(queue: Queue[Event])(ev: Event): Telescope[Unit] =
+    Applicative[Telescope].pure(Task.delay { queue.enqueueOne(ev) })
 
   /**
     * Receive an event within the `Telescope` monad.
     */
-  def receive(chan: Channel[Event]): Telescope[Event] =
-    Applicative[Telescope].pure{ chan.read }
+  def receive(queue: Queue[Event]): Process[Telescope, Event] = ???
 
   /**
     * Log within the `Telescope` monad.
     */
   def log(msg:String): Telescope[Unit] =
-    // XXX: Replace with equivalent of Writer monad.
+    // XXX: log4j?
     Applicative[Telescope].pure(println(msg))
 
   /**
     * Obtain the next step in the `Sequence`. It doesn't remove the Step from
     * the Sequence. This is all done within the `Telescope` monad.
     */
-  def step(chan: Channel[Event]): Telescope[Step] =
+  def step(queue: Queue[Event]): Telescope[Step] =
     MonadState[Telescope, SeqStatus].get >>= {
       ss => {
          val (seq, st) = ss
          // TODO: headDef :: a -> [a] -> a
          seq match {
-           case Nil => send(chan)(finished) *> Applicative[Telescope].pure(List())
+           case Nil => send(queue)(finished) *> Applicative[Telescope].pure(List())
            case (x :: _) => Applicative[Telescope].pure(x)
          }
       }
@@ -158,6 +156,9 @@ object Engine {
   def tail: Telescope[Unit] =
     MonadState[Telescope, SeqStatus].modify(_.leftMap(_.tail))
 
+  /**
+    * Adds a step to the beginning of the Sequence.
+    */
   def add(ste: Step): Telescope[Unit] =
     MonadState[Telescope, SeqStatus].modify(_.leftMap(ste :: _))
 }
