@@ -64,6 +64,19 @@ object Engine {
   // Helper alias to facilitate lifting.
   type TelescopeStateT[M[_], A] = StateT[M, SeqStatus, A]
 
+
+  // The `Catchable` instance of `Telescope`` needs to be manually written.
+  // Without it's not possible to use `Telescope` as a scalaz-stream process effects.
+  implicit val telescopeInstance: Catchable[Telescope] =
+    new Catchable[Telescope] {
+      def attempt[A](a: Telescope[A]): Telescope[Throwable \/ A] = a >>= (
+        // `a.attempt` stackoverflows
+        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[TelescopeStateT]
+      )
+      def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[TelescopeStateT]
+    }
+
+
   /**
     * Checks the status is running and launches all parallel tasks to complete
     * the next step. It also updates the `Telescope` state as needed.
@@ -124,7 +137,12 @@ object Engine {
   /**
     * Receive an event within the `Telescope` monad.
     */
-  def receive(queue: Queue[Event]): Process[Telescope, Event] = ???
+  def receive(queue: Queue[Event]): Process[Telescope, Event] = {
+    val toTelescope = new (Task ~> Telescope) {
+      def apply[A](t: Task[A]): Telescope[A] = t.liftM[TelescopeStateT]
+    }
+    queue.dequeue.translate(toTelescope)
+  }
 
   /**
     * Log within the `Telescope` monad.
