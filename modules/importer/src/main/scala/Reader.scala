@@ -15,13 +15,13 @@ import scalaz.effect._
 import scalaz.std.effect.closeable._
 
 case class ProgramReader(parser: PioSpXmlParser) {
-  def read(f: File): IO[ISPProgram] =
+  def read(f: File): IO[Option[ISPProgram]] =
     IO(new FileInputStream(f)).using { fis =>
       IO(new InputStreamReader(fis, "UTF-8")).using { r =>
         IO {
           parser.parseDocument(r) match {
-            case p: ISPProgram => p 
-            case _             => sys.error("Not a science program: " + f)
+            case p: ISPProgram => Some(p) 
+            case _             => None // not a science program
           }
         }
       }

@@ -47,7 +47,6 @@ object Importer extends SafeApp {
       }
 
   def insert(p: ISPProgram): IO[Unit] = {
-
     val sid = p.getProgramID.toString
     val pid = Program.Id.parse(sid)
     val tit = p.getDataObject.getTitle
@@ -77,13 +76,17 @@ object Importer extends SafeApp {
         configs.zipWithIndex.traverse { case (c, n) => StepDao.insert(newObs.id, n, c) }.void
       }
 
-    IO.putStrLn(sid + " - " + tit) *> ins.transact(xa)
+    IO.putStr(".") *> 
+    ins.transact(xa)
   }
 
 
 
   def readAndInsert(r: ProgramReader, f: File): IO[Unit] =
-    r.read(f).flatMap(insert).except(e => IO.putStrLn(">> " + e.getMessage))
+    r.read(f).flatMap { 
+      case Some(p) => insert(p).except(e => IO.putStrLn(">> " + p.getProgramID + ": " + e.getMessage))
+      case None    => IO.ioUnit
+    }
 
   def xmlFiles(dir: File): IO[List[File]] =
     IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(100))
@@ -105,7 +108,8 @@ object Importer extends SafeApp {
   override def runc: IO[Unit] =
     configLogging      *>
     clean.transact(xa) *>
-    ProgramReader.using(readAndInsertAll(_, dir))
+    ProgramReader.using(readAndInsertAll(_, dir)) *>
+    IO.putStrLn("\nDone.")
 
 
 
@@ -124,11 +128,19 @@ object Importer extends SafeApp {
       case ("DARK",   i) => 
         seq.DarkStep(new seq.Instrument { val tag = i.tag.toString })
 
-      case ("OBJECT", i) =>
+      case ("OBJECT" | "CAL", i) =>
         val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
         val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
         seq.ScienceStep(new seq.Instrument { val tag = i.tag.toString }, seq.Telescope(p,q))
         
+      case ("ARC" | "FLAT", i) =>
+        val l = config.read[GCalLamp]("calibration:lamp")
+        val s = config.read[GCalShutter]("calibration:shutter")
+        seq.GcalStep(new seq.Instrument { val tag = i.tag.toString }, seq.GcalUnit(l, s))
+
+      case x => 
+        sys.error("Unknown observeType: " + x + config.mkString("\n>  ", "\n>  ", ""))
+
     }
 
   }

@@ -36,7 +36,7 @@ object Step {
     Show.shows[Step[I]] {
       case BiasStep(i)       => "Bias: "      + showVals("inst", i)
       case DarkStep(i)       => "Dark: "      + showVals("inst", i)
-      // case GcalStep(i, g)    => "Gcal: "      + showVals("inst", i) + " " + showVals("gcal", g)
+      case GcalStep(i, g)    => "Gcal: "      + showVals("inst", i) + " " + showVals("gcal", g)
       case ScienceStep(i, t) => "Science: "   + showVals("inst", i) + " " + showVals("telescope", t)
       case SmartStep(i, t)   => s"Smart $t: " + showVals("inst", i)
     }
@@ -62,20 +62,20 @@ object Step {
   def instrument[I]: Step[I] @?> I = PLens.plensgf({
       case BiasStep(_)               => (i: I) => BiasStep(i)
       case DarkStep(_)               => (i: I) => DarkStep(i)
-      // case GcalStep(_, gcal)         => (i: I) => GcalStep(i, gcal)
+      case GcalStep(_, gcal)         => (i: I) => GcalStep(i, gcal)
       case ScienceStep(_, telescope) => (i: I) => ScienceStep(i, telescope)
       case SmartStep(_, smart)       => (i: I) => SmartStep(i, smart)
     }, {
       case BiasStep(i)       => i
       case DarkStep(i)       => i
-      // case GcalStep(i, _)    => i
+      case GcalStep(i, _)    => i
       case ScienceStep(i, _) => i
       case SmartStep(i, _)   => i
     })
 
-  // def gcal[I]: Step[I] @?> GcalUnit = PLens.plensgf({
-  //     case GcalStep(inst, _) => (g: GcalUnit) => GcalStep(inst, g)
-  //   }, { case GcalStep(_, g) => g })
+  def gcal[I]: Step[I] @?> GcalUnit = PLens.plensgf({
+      case GcalStep(inst, _) => (g: GcalUnit) => GcalStep(inst, g)
+    }, { case GcalStep(_, g) => g })
 
   def telescope[I]: Step[I] @?> Telescope = PLens.plensgf({
       case ScienceStep(inst,_) => (t: Telescope) => ScienceStep(inst, t)
@@ -118,25 +118,25 @@ object DarkStep {
     )
 }
 
-// // ----------------------------------------------------------------------------
-// // Gcal
-// //
-// // Gcal steps are used for manual Gcal calibrations and to store the smart
-// // Gcal expansion once a smart calibration step begins executing.  In other
-// // words "smart" steps turn into ordinary manual Gcal steps when executed.
-// // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Gcal
+//
+// Gcal steps are used for manual Gcal calibrations and to store the smart
+// Gcal expansion once a smart calibration step begins executing.  In other
+// words "smart" steps turn into ordinary manual Gcal steps when executed.
+// ----------------------------------------------------------------------------
 
-// final case class GcalStep[I](instrument: I, gcal: GcalUnit) extends Step[I] {
-//   def stepType = Step.Gcal
-// }
+final case class GcalStep[I](instrument: I, gcal: GcalUnit) extends Step[I] {
+  def stepType = Step.Gcal
+}
 
-// object GcalStep {
-//   implicit def describeGcalStep[I: Describe]: Describe[GcalStep[I]] =
-//     Describe[(I, GcalUnit)].xmap[GcalStep[I]](
-//       t => GcalStep(t._1, t._2),
-//       s => (s.instrument, s.gcal)
-//     )
-// }
+object GcalStep {
+  implicit def describeGcalStep[I: Describe]: Describe[GcalStep[I]] =
+    Describe[(I, GcalUnit)].xmap[GcalStep[I]](
+      t => GcalStep(t._1, t._2),
+      s => (s.instrument, s.gcal)
+    )
+}
 
 // ----------------------------------------------------------------------------
 // Science

@@ -49,7 +49,7 @@ object gen extends SafeApp {
   }
 
   def sanitize(s: String): String =
-    s.replace('-', '_').filterNot(_.isWhitespace)
+    s.replace('-', '_').replace(' ', '_').filterNot(_.isWhitespace)
 
   case class ProgramType(tag: String, name: String)
   object ProgramType {
@@ -153,17 +153,17 @@ object gen extends SafeApp {
       }  
   }
 
-  case class GCalLamp(tag: String, title: String, tccName: String, lampType: GCalLampType)
+  case class GCalLamp(tag: String, tccName: String, lampType: GCalLampType)
   object GCalLamp {
      implicit val GenGCalLamp: Gen[GCalLamp] =
       new Gen[GCalLamp] {
         val cname = "GCalLamp"
-        def mkClass = "sealed abstract class GCalLamp(val tag: String, val title: String, val tccName: String, val lampType: GCalLampType)"
-        def mkCase(p: GCalLamp) = f"""case object ${sanitize(p.tag).capitalize} extends GCalLamp("${p.tag}", "${p.title}", "${p.tccName}", GCalLampType.${p.lampType.tag.capitalize})"""
+        def mkClass = "sealed abstract class GCalLamp(val tag: String, val tccName: String, val lampType: GCalLampType)"
+        def mkCase(p: GCalLamp) = f"""case object ${sanitize(p.tag).capitalize} extends GCalLamp("${p.tag}", "${p.tccName}", GCalLampType.${p.lampType.tag.capitalize})"""
         def tag(p: GCalLamp) = p.tag
         val query =
          sql"""
-          SELECT gcal_lamp_id, title, "tccName", lamp_type FROM gcal_lamp
+          SELECT gcal_lamp_id, "tccName", lamp_type FROM gcal_lamp
          """.query[GCalLamp]  
       }  
   }

@@ -35,7 +35,7 @@ object GcalUnit {
 
   implicit val DescribeGcal: Describe[GcalUnit] =
     Describe.forProps(
-      GcalUnit(GCalLamp.IR_GREY_BODY_HIGH, GCalShutter.Open),
+      GcalUnit(GCalLamp.IR_grey_body___high, GCalShutter.Open),
       LampProp, ShutterProp
     )
 }

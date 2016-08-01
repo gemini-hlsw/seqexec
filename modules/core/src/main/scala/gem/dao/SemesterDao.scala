@@ -20,16 +20,8 @@ object SemesterDao {
 
   def canonicalize(s: Semester): ConnectionIO[Semester] =
     sql"""
-      INSERT INTO semester (
-        semester_id,
-        year, 
-        half
-      )
-      VALUES (
-        ${s.toString}, 
-        ${s.getYear}, 
-        ${s.getHalf}
-      )
+      INSERT INTO semester (semester_id, year, half)
+      VALUES (${s.toString}, ${s.getYear}, ${s.getHalf})
       ON CONFLICT DO NOTHING
     """.update.run.as(s)
 
