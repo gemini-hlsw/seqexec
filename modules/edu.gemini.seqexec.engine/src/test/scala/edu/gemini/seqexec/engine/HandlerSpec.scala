@@ -1,14 +1,14 @@
 package edu.gemini.seqexec.engine
 
+import Engine._
+import Event._
+import Handler._
+import Sequence._
 import org.scalatest.FlatSpec
 import scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.async
 import scalaz.stream.async.mutable.Queue
-
-import edu.gemini.seqexec.engine.Engine._
-import edu.gemini.seqexec.engine.Handler._
-import edu.gemini.seqexec.engine.Sequence._
 
 class HandlerSpec extends FlatSpec {
 
@@ -66,11 +66,12 @@ class HandlerSpec extends FlatSpec {
       _ <- Task { Thread.sleep(3000) }
       // Add a failing step
       _ <- queue.enqueueOne(addStep(List(faulty, observe)))
-      _ <- queue.enqueueOne(start)
+      _ <- Task { Thread.sleep(3000) }
+      _ <- queue.enqueueOne(exit)
     } yield Unit
 
   Nondeterminism[Task].both(
     tester(queue),
-    handler(queue).run.exec((sequence0, Waiting))
+    handler(queue).runLog.exec((sequence0, Waiting))
   ).unsafePerformSync
 }
