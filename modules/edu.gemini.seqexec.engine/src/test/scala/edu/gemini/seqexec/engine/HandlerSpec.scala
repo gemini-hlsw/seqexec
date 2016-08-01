@@ -58,20 +58,19 @@ class HandlerSpec extends FlatSpec {
 
   val queue = async.boundedQueue[Event](10)
 
-  def tester(queue: Queue[Event]): Task[Unit] =
-    Task.delay {
-      Thread.sleep(100)
-      queue.enqueueOne(start)
-      Thread.sleep(2000)
-      queue.enqueueOne(pause)
-      Thread.sleep(3000)
+  def tester(queue: Queue[Event]): Task[Unit] = for {
+      _ <- Task.delay { Thread.sleep(100) }
+      _ <- queue.enqueueOne(start)
+      _ <- Task.delay { Thread.sleep(2000) }
+      _ <- queue.enqueueOne(pause)
+      _ <- Task { Thread.sleep(3000) }
       // Add a failing step
-      queue.enqueueOne(addStep(List(faulty, observe)))
-      queue.enqueueOne(start)
-    }
+      _ <- queue.enqueueOne(addStep(List(faulty, observe)))
+      _ <- queue.enqueueOne(start)
+    } yield Unit
 
   Nondeterminism[Task].both(
-    queue.enqueueOne(start),
+    tester(queue),
     handler(queue).run.exec((sequence0, Waiting))
   ).unsafePerformSync
 }
