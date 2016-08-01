@@ -1,10 +1,10 @@
 package edu.gemini.seqexec.engine
 
-import scalaz._
-import Scalaz._
+import Event._
+import Engine._
+import scalaz.Scalaz._
 import scalaz.stream.Process
 import scalaz.stream.async.mutable.Queue
-import edu.gemini.seqexec.engine.Engine._
 
 object Handler {
 
@@ -17,6 +17,7 @@ object Handler {
       case Start => log("Output: Started") *> switch(Running) *> run(queue)
       case Pause => log("Output: Paused") *> switch(Waiting)
       case AddStep(ste) => log("Output: Adding Step") *> add(ste)
+      case Exit => log("Bye") *> close(queue)
     }
 
     def handleSystemEvent(se: SystemEvent): Telescope[SeqStatus] = se match {
@@ -28,7 +29,7 @@ object Handler {
     }
 
     receive(queue) >>= (
-      (ev: Event) => ev match {
+      ev => ev match {
         case EventUser(ue) => Process.eval(handleUserEvent(ue))
         case EventSystem(se) => Process.eval(handleSystemEvent(se))
       }
