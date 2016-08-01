@@ -64,7 +64,6 @@ object Engine {
   // Helper alias to facilitate lifting.
   type TelescopeStateT[M[_], A] = StateT[M, SeqStatus, A]
 
-
   // The `Catchable` instance of `Telescope`` needs to be manually written.
   // Without it's not possible to use `Telescope` as a scalaz-stream process effects.
   implicit val telescopeInstance: Catchable[Telescope] =
@@ -76,12 +75,11 @@ object Engine {
       def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[TelescopeStateT]
     }
 
-
   /**
     * Checks the status is running and launches all parallel tasks to complete
     * the next step. It also updates the `Telescope` state as needed.
     */
-  def run(queue: Queue[Event]): Telescope[Unit] = {
+  def run(queue: Queue[Event]): Telescope[SeqStatus] = {
     // Send the result event when action is executed
     def execute(action: Action): Action =
       action >>= {
@@ -96,31 +94,32 @@ object Engine {
         case Running => for {
           as <- step(queue)
           rs <- Nondeterminism[Task].gather(as.map(execute(_))).liftM[TelescopeStateT]
-        } yield {
-          if (Foldable[List].all(rs)(_ == Done)) {
-            // Remove step and send Synced event
-            send(queue)(synced)
-          } else {
-            // Just send Failed event. Because it doesn't drop the step it will
-            // be reexecuted again.
-            send(queue)(syncFailed)
-          }
-        }
+          _ <- if (Foldable[List].all(rs)(_ == Done)) {
+               // Remove step and send Synced event
+               // TODO: Change status of Action before returning `SeqStatus`
+               send(queue)(synced)
+               } else {
+               // Just send Failed event. Because it doesn't drop the step it will
+               // be reexecuted again.
+               send(queue)(syncFailed)
+               }
+          ss <- MonadState[Telescope, SeqStatus].get
+        } yield ss
 
         // Do nothing when status is in waiting. This will make the handler
         // block waiting for more events.
-        case Waiting => Applicative[Telescope].pure(Unit)
+        case Waiting => MonadState[Telescope, SeqStatus].get
       }
     }
   }
 
   /**
-    * Change Status within the `Telescope` monad.
+    * Return `SeqStatus` while changing `Status` within the `Telescope` monad.
     */
-  def switch(st: Status): Telescope[Unit] =
+  def switch(st: Status): Telescope[SeqStatus] =
     MonadState[Telescope, SeqStatus].modify(
       (ss: SeqStatus) => ss.rightMap(_ => st)
-    )
+    ) *> MonadState[Telescope, SeqStatus].get
 
   /**
     * Ask for the current `Status` within the `Telescope` monad.
@@ -132,7 +131,7 @@ object Engine {
     * Send an event within the `Telescope` monad.
     */
   def send(queue: Queue[Event])(ev: Event): Telescope[Unit] =
-    Applicative[Telescope].pure(Task.delay { queue.enqueueOne(ev) })
+    Applicative[Telescope].pure(Task.delay(queue.enqueueOne(ev)))
 
   /**
     * Receive an event within the `Telescope` monad.
@@ -145,11 +144,12 @@ object Engine {
   }
 
   /**
-    * Log within the `Telescope` monad.
+    * Return `SeqStatus` and log within the `Telescope` monad as a side effect
     */
-  def log(msg:String): Telescope[Unit] =
+  def log(msg:String): Telescope[SeqStatus] =
     // XXX: log4j?
-    Applicative[Telescope].pure(println(msg))
+    Applicative[Telescope].pure(println(msg)) *>
+      MonadState[Telescope, SeqStatus].get
 
   /**
     * Obtain the next step in the `Sequence`. It doesn't remove the Step from
@@ -175,8 +175,9 @@ object Engine {
     MonadState[Telescope, SeqStatus].modify(_.leftMap(_.tail))
 
   /**
-    * Adds a step to the beginning of the Sequence.
+    * Returns `SeqStatus` and add a step to the beginning of the Sequence.
     */
-  def add(ste: Step): Telescope[Unit] =
-    MonadState[Telescope, SeqStatus].modify(_.leftMap(ste :: _))
+  def add(ste: Step): Telescope[SeqStatus] =
+    MonadState[Telescope, SeqStatus].modify(_.leftMap(ste :: _)) *>
+      MonadState[Telescope, SeqStatus].get
 }
