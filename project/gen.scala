@@ -104,7 +104,7 @@ object gen extends SafeApp {
 
   case class Instrument(tag: String, name: String)
   object Instrument {
-    implicit val GenChargeClass: Gen[Instrument] =
+    implicit val GenInstrument: Gen[Instrument] =
       new Gen[Instrument] {
         val cname = "Instrument"
         def mkClass = "sealed abstract class Instrument(val tag: String, val name: String)"
@@ -119,13 +119,83 @@ object gen extends SafeApp {
       }
   }
 
+  case class GCalLampType(tag: String)
+  object GCalLampType {
+     implicit val GenGCalLampType: Gen[GCalLampType] =
+      new Gen[GCalLampType] {
+        val cname = "GCalLampType"
+        def mkClass = "sealed abstract class GCalLampType(val tag: String)"
+        def mkCase(p: GCalLampType) = f"""case object ${sanitize(p.tag).capitalize} extends GCalLampType("${p.tag}")"""
+        def tag(p: GCalLampType) = p.tag
+        val query =
+         sql"""
+            SELECT enumlabel
+              FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+             WHERE pg_type.typname = 'gcal_lamp_type'
+           """.query[GCalLampType]  
+      }  
+  }
+
+  case class GCalShutter(tag: String)
+  object GCalShutter {
+     implicit val GenGCalShutter: Gen[GCalShutter] =
+      new Gen[GCalShutter] {
+        val cname = "GCalShutter"
+        def mkClass = "sealed abstract class GCalShutter(val tag: String)"
+        def mkCase(p: GCalShutter) = f"""case object ${sanitize(p.tag).capitalize} extends GCalShutter("${p.tag}")"""
+        def tag(p: GCalShutter) = p.tag
+        val query =
+         sql"""
+            SELECT enumlabel
+              FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+             WHERE pg_type.typname = 'gcal_shutter'
+           """.query[GCalShutter]  
+      }  
+  }
+
+  case class GCalLamp(tag: String, title: String, tccName: String, lampType: GCalLampType)
+  object GCalLamp {
+     implicit val GenGCalLamp: Gen[GCalLamp] =
+      new Gen[GCalLamp] {
+        val cname = "GCalLamp"
+        def mkClass = "sealed abstract class GCalLamp(val tag: String, val title: String, val tccName: String, val lampType: GCalLampType)"
+        def mkCase(p: GCalLamp) = f"""case object ${sanitize(p.tag).capitalize} extends GCalLamp("${p.tag}", "${p.title}", "${p.tccName}", GCalLampType.${p.lampType.tag.capitalize})"""
+        def tag(p: GCalLamp) = p.tag
+        val query =
+         sql"""
+          SELECT gcal_lamp_id, title, "tccName", lamp_type FROM gcal_lamp
+         """.query[GCalLamp]  
+      }  
+  }
+
+  case class GCalFilter(tag: String, title: String, obsolete: Boolean)
+  object GCalFilter {
+     implicit val GenGCalLamp: Gen[GCalFilter] =
+      new Gen[GCalFilter] {
+        val cname = "GCalFilter"
+        def mkClass = "sealed abstract class GCalFilter(val tag: String, val title: String, val obsolete: Boolean)"
+        def mkCase(p: GCalFilter) = f"""case object ${sanitize(p.tag).capitalize} extends GCalFilter("${p.tag}", "${p.title}", ${p.obsolete})"""
+        def tag(p: GCalFilter) = p.tag
+        val query =
+         sql"""
+          SELECT gcal_filter_id, title, obsolete
+            FROM gcal_filter
+         """.query[GCalFilter]  
+      }  
+  }
+
+
   def apply(dir: File): IO[Seq[File]] =
     for {
       pairs  <- List(
                   Gen[ProgramType].code,
                   Gen[ChargeClass].code,
                   Gen[ObsClass].code,
-                  Gen[Instrument].code
+                  Gen[Instrument].code,
+                  Gen[GCalLampType].code,
+                  Gen[GCalLamp].code,
+                  Gen[GCalFilter].code,
+                  Gen[GCalShutter].code
                 ).sequence
       fs     <- pairs.traverse { case (f, c) => 
                   IO { 

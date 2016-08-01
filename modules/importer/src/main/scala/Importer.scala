@@ -23,6 +23,7 @@ import doobie.imports._
 
 object Importer extends SafeApp {
   import Program.Id._
+  import ConfigSyntax._
 
   val dir = new File("/Users/rnorris/Scala/ocs-arch/20140922-0730")
 
@@ -85,7 +86,7 @@ object Importer extends SafeApp {
     r.read(f).flatMap(insert).except(e => IO.putStrLn(">> " + e.getMessage))
 
   def xmlFiles(dir: File): IO[List[File]] =
-    IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(10))
+    IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(100))
 
   def readAndInsertAll(r: ProgramReader, dir: File): IO[Unit] =
     xmlFiles(dir).flatMap(_.traverse_(readAndInsert(r, _)))
@@ -107,40 +108,31 @@ object Importer extends SafeApp {
     ProgramReader.using(readAndInsertAll(_, dir))
 
 
-  private implicit class ConfigOps(m: Map[String, Object]) {
-    def nn[A](key: String): A = op(key).getOrElse(sys.error("config key not found: " + key))
-    def op[A](key: String): Option[A] = m.get(key).map(_.asInstanceOf[A])
-    def oe[A: Enumerated](key: String): Option[A] = op[String](key).map(Enumerated[A].unsafeFromTag)
-  }
+
+  // 
 
   def unsafeFromConfig(config: Map[String, Object]): Option[seq.Step[_ <: seq.Instrument]] = {
-    val observeType  = config.op[String    ]("observe:observeType"  )
-    val instrument   = config.oe[Instrument]("instrument:instrument")
 
-    (observeType |@| instrument).tupled.collect { 
-      case ("BIAS",   i) => seq.BiasStep(new seq.Instrument { val tag = i.tag.toString })
-      case ("DARK",   i) => seq.DarkStep(new seq.Instrument { val tag = i.tag.toString })
-      case ("OBJECT", i) => 
+    val observeType  = config.read[Option[String    ]]("observe:observeType"  )
+    val instrument   = config.read[Option[Instrument]]("instrument:instrument")
 
-        val p = config.op[String]("telescope:p").map(s => OffsetP(Angle.fromArcsecs(s.toDouble))).getOrElse(OffsetP.Zero)
-        val q = config.op[String]("telescope:q").map(s => OffsetQ(Angle.fromArcsecs(s.toDouble))).getOrElse(OffsetQ.Zero)
+    (observeType |@| instrument).tupled.collect {
+      
+      case ("BIAS",   i) =>
+        seq.BiasStep(new seq.Instrument { val tag = i.tag.toString })
 
-        // config.filterKeys(_.startsWith("telescope:")).foreach(println)
+      case ("DARK",   i) => 
+        seq.DarkStep(new seq.Instrument { val tag = i.tag.toString })
+
+      case ("OBJECT", i) =>
+        val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
+        val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
         seq.ScienceStep(new seq.Instrument { val tag = i.tag.toString }, seq.Telescope(p,q))
+        
     }
 
   }
-    // new Step {
-    //   val stepCount    = config.nn[Int       ]("metadata:stepcount"   )
-    //   val isComplete   = config.nn[Boolean   ]("metadata:complete"    )
-    //   val observeClass = config.oe[ObsClass  ]("observe:class"        )
-    //   val dataLabel    = config.nn[String    ]("observe:dataLabel"    )
-    //   val target       = config.op[String    ]("observe:object"       )
-    //   val observeType  = config.op[String    ]("observe:observeType"  )
-    //   val band         = config.op[Int       ]("observe:sciBand"      )
-    //   val instrument   = config.oe[Instrument]("instrument:instrument")
-    //   val id = StepId(oid, stepCount)
-    // }
+
 
 }
 

@@ -1,4 +1,5 @@
-package gem.seq
+package gem
+package seq
 
 // import edu.gemini.spModel.`type`.LoggableSpType
 
@@ -58,12 +59,19 @@ final case class EnumMetadata[A](attrs: Metadata.Attrs, values: NonEmptyList[A])
 }
 
 object EnumMetadata {
-  /** Support for creating an EnumMetadata from a Java enum. */
-  def fromJava[A <: java.lang.Enum[A]](attrs: Metadata.Attrs, c: Class[A]): Metadata[A] = {
-    val values = c.getEnumConstants
-    EnumMetadata[A](attrs, NonEmptyList.nel(values.head, IList.fromList(values.tail.toList)))
-  }
+  // /** Support for creating an EnumMetadata from a Java enum. */
+  // def fromJava[A <: java.lang.Enum[A]](attrs: Metadata.Attrs, c: Class[A]): Metadata[A] = {
+  //   val values = c.getEnumConstants
+  //   EnumMetadata[A](attrs, NonEmptyList.nel(values.head, IList.fromList(values.tail.toList)))
+  // }
+
+  def forEnumerated[A](attrs: Metadata.Attrs)(implicit ev: Enumerated[A]): Metadata[A] =
+    EnumMetadata(attrs, ev.all.toNel.get)
+
 }
+
+
+
 
 /** Metadata for properties with two values, one that can be interpreted as
   * true and the other false.  These can be edited with check boxes. Note,

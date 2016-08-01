@@ -30,6 +30,45 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 SET search_path = public, pg_catalog;
 
 --
+-- Name: gcal_lamp_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE gcal_lamp_type AS ENUM (
+    'arc',
+    'flat'
+);
+
+
+ALTER TYPE gcal_lamp_type OWNER TO postgres;
+
+--
+-- Name: gcal_shutter; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE gcal_shutter AS ENUM (
+    'Open',
+    'Closed'
+);
+
+
+ALTER TYPE gcal_shutter OWNER TO postgres;
+
+--
+-- Name: step_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE step_type AS ENUM (
+    'Bias',
+    'Dark',
+    'Gcal',
+    'Science',
+    'Smart'
+);
+
+
+ALTER TYPE step_type OWNER TO postgres;
+
+--
 -- Name: target_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -56,6 +95,45 @@ CREATE TABLE charge_class (
 
 
 ALTER TABLE charge_class OWNER TO postgres;
+
+--
+-- Name: gcal_filter; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE gcal_filter (
+    gcal_filter_id character varying(20) NOT NULL,
+    title character varying(20) NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE gcal_filter OWNER TO postgres;
+
+--
+-- Name: gcal_lamp; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE gcal_lamp (
+    gcal_lamp_id character varying(20) NOT NULL,
+    title character varying(20) NOT NULL,
+    "tccName" character varying(20) NOT NULL,
+    lamp_type gcal_lamp_type NOT NULL
+);
+
+
+ALTER TABLE gcal_lamp OWNER TO postgres;
+
+--
+-- Name: instrument; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE instrument (
+    instrument_id character varying(20) NOT NULL,
+    name character varying(20) NOT NULL
+);
+
+
+ALTER TABLE instrument OWNER TO postgres;
 
 --
 -- Name: obs_class; Type: TABLE; Schema: public; Owner: postgres
@@ -189,21 +267,40 @@ COMMENT ON COLUMN site.altitude IS 'Altitude in meters.';
 --
 
 CREATE TABLE step (
-    program_id character varying(32) NOT NULL,
     observation_id character varying(40) NOT NULL,
-    observation_index smallint NOT NULL,
-    metadata_stepcount smallint NOT NULL,
-    metadata_complete boolean NOT NULL,
-    obs_class_id character varying(20),
-    "observe_dataLabel" character varying(64),
-    observe_object character varying(255),
-    "observe_observeType" character varying(20),
-    "observe_sciBand" smallint,
-    instrument_instrument character varying(20)
+    index smallint NOT NULL,
+    instrument_id character varying(20) NOT NULL,
+    step_type step_type NOT NULL
 );
 
 
 ALTER TABLE step OWNER TO postgres;
+
+--
+-- Name: step_bias; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_bias (
+    index smallint NOT NULL,
+    observation_id character varying(40) NOT NULL
+);
+
+
+ALTER TABLE step_bias OWNER TO postgres;
+
+--
+-- Name: step_science; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_science (
+    index smallint NOT NULL,
+    observation_id character varying(40) NOT NULL,
+    offset_p double precision NOT NULL,
+    offset_q double precision NOT NULL
+);
+
+
+ALTER TABLE step_science OWNER TO postgres;
 
 --
 -- Data for Name: charge_class; Type: TABLE DATA; Schema: public; Owner: postgres
@@ -213,6 +310,63 @@ COPY charge_class (charge_class_id, name) FROM stdin;
 noncharged	Non-charged
 partner	Partner
 program	Program
+\.
+
+
+--
+-- Data for Name: gcal_filter; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY gcal_filter (gcal_filter_id, title, obsolete) FROM stdin;
+NONE	none	f
+ND_10	ND1.0	f
+ND_16	ND1.6	t
+ND_20	ND2.0	f
+ND_30	ND3.0	f
+ND_40	ND4.0	f
+ND_45	ND4-5	f
+ND_50	ND5.0	t
+GMOS	GMOS balance	f
+HROS	HROS balance	t
+NIR	NIR balance	f
+\.
+
+
+--
+-- Data for Name: gcal_lamp; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY gcal_lamp (gcal_lamp_id, title, "tccName", lamp_type) FROM stdin;
+IR_GREY_BODY_HIGH	IR grey body - high	GCALflat	flat
+IR_GREY_BODY_LOW	IR grey body - low	GCALflat	flat
+QUARTZ	Quartz Halogen	GCALflat	flat
+AR_ARC	Ar arc	Ar	arc
+THAR_ARC	ThAr arc	ThAr	arc
+CUAR_ARC	CuAr arc	CuAr	arc
+XE_ARC	Xe arc	Xe	arc
+\.
+
+
+--
+-- Data for Name: instrument; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY instrument (instrument_id, name) FROM stdin;
+GNIRS	GNIRS
+NIRI	NIRI
+Phoenix	Phoenix
+TReCS	TReCS
+Flamingos2	Flamingos2
+NICI	NICI
+bHROS	bHROS
+Visitor Instrument	Visitor Instrument
+Michelle	Michelle
+GMOS-S	GMOS-S
+AcqCam	AcqCam
+GMOS-N	GMOS-N
+NIFS	NIFS
+GPI	GPI
+GSAOI	GSAOI
 \.
 
 
@@ -268,6 +422,13 @@ System Verification	SV
 --
 
 COPY semester (semester_id, year, half) FROM stdin;
+2006A	2006	A
+2006B	2006	B
+2007B	2007	B
+2012B	2012	B
+2003A	2003	A
+2003B	2003	B
+2004A	2004	A
 \.
 
 
@@ -285,7 +446,23 @@ GS	Gemini South	Cerro Pachon	-70.7366867	-30.2407494	2722	America/Santiago
 -- Data for Name: step; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY step (program_id, observation_id, observation_index, metadata_stepcount, metadata_complete, obs_class_id, "observe_dataLabel", observe_object, "observe_observeType", "observe_sciBand", instrument_instrument) FROM stdin;
+COPY step (observation_id, index, instrument_id, step_type) FROM stdin;
+\.
+
+
+--
+-- Data for Name: step_bias; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY step_bias (index, observation_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: step_science; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY step_science (index, observation_id, offset_p, offset_q) FROM stdin;
 \.
 
 
@@ -303,6 +480,30 @@ ALTER TABLE ONLY charge_class
 
 ALTER TABLE ONLY charge_class
     ADD CONSTRAINT charge_test_pkey PRIMARY KEY (charge_class_id);
+
+
+--
+-- Name: gcal_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gcal_filter
+    ADD CONSTRAINT gcal_filter_pkey PRIMARY KEY (gcal_filter_id);
+
+
+--
+-- Name: gcal_lamp_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gcal_lamp
+    ADD CONSTRAINT gcal_lamp_pkey PRIMARY KEY (gcal_lamp_id);
+
+
+--
+-- Name: instrument_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY instrument
+    ADD CONSTRAINT instrument_pkey PRIMARY KEY (instrument_id);
 
 
 --
@@ -327,14 +528,6 @@ ALTER TABLE ONLY observation
 
 ALTER TABLE ONLY observation
     ADD CONSTRAINT observation_pkey PRIMARY KEY (observation_id);
-
-
---
--- Name: pk_observation; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step
-    ADD CONSTRAINT pk_observation PRIMARY KEY (metadata_stepcount, observation_id);
 
 
 --
@@ -370,6 +563,22 @@ ALTER TABLE ONLY site
 
 
 --
+-- Name: step_bias_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_bias
+    ADD CONSTRAINT step_bias_pkey PRIMARY KEY (index, observation_id);
+
+
+--
+-- Name: step_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step
+    ADD CONSTRAINT step_pkey PRIMARY KEY (index, observation_id);
+
+
+--
 -- Name: ix_observation_instrument; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -381,13 +590,6 @@ CREATE INDEX ix_observation_instrument ON observation USING btree (instrument);
 --
 
 CREATE INDEX ix_observation_program_id ON observation USING btree (program_id);
-
-
---
--- Name: ix_step_observation_id; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX ix_step_observation_id ON step USING btree (observation_id);
 
 
 --
@@ -423,14 +625,6 @@ ALTER TABLE ONLY program
 
 
 --
--- Name: fk_step_observation; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step
-    ADD CONSTRAINT fk_step_observation FOREIGN KEY (observation_id, instrument_instrument) REFERENCES observation(observation_id, instrument) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
 -- Name: program_program_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -439,11 +633,19 @@ ALTER TABLE ONLY program
 
 
 --
--- Name: step_obs_class_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: step_bias_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_bias
+    ADD CONSTRAINT step_bias_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_instrument_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY step
-    ADD CONSTRAINT step_obs_class_id_fkey FOREIGN KEY (obs_class_id) REFERENCES obs_class(obs_class_id);
+    ADD CONSTRAINT step_instrument_id_fkey FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id);
 
 
 --
@@ -452,6 +654,14 @@ ALTER TABLE ONLY step
 
 ALTER TABLE ONLY step
     ADD CONSTRAINT step_observation_id_fkey FOREIGN KEY (observation_id) REFERENCES observation(observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_science_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_science
+    ADD CONSTRAINT step_science_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
