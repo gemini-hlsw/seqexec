@@ -8,6 +8,8 @@ import org.scalatest.FlatSpec
 import scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Cause
+import scalaz.stream.Process
+import scalaz.stream.Sink
 import scalaz.stream.async
 import scalaz.stream.async.mutable.Queue
 
@@ -27,7 +29,7 @@ class HandlerSpec extends FlatSpec {
     * Emulates Instrument configuration in the real world.
     *
     */
-  def configureInst: Action  = for {
+  val configureInst: Action  = for {
     _ <- Task.delay { println("System: Start Instrument configuration") }
     _ <- Task.delay { Thread.sleep(2000) }
     _ <- Task.delay { println("System: Complete Instrument configuration") }
@@ -60,20 +62,22 @@ class HandlerSpec extends FlatSpec {
   val queue = async.boundedQueue[Event](10)
 
   def tester(queue: Queue[Event]): Task[Unit] = for {
-      _ <- Task.delay { Thread.sleep(100) }
       _ <- queue.enqueueOne(start)
-      _ <- Task.delay { Thread.sleep(2000) }
       _ <- queue.enqueueOne(pause)
-      _ <- Task { Thread.sleep(3000) }
       // Add a failing step
       _ <- queue.enqueueOne(addStep(List(faulty, observe)))
-      _ <- Task { Thread.sleep(3000) }
       _ <- queue.enqueueOne(exit)
+
     } yield Unit
+
+  def puts(ss: SeqStatus): Task[Unit] = Task.delay { println(ss.toString) }
+
+  val stdout: Sink[Telescope, SeqStatus] =
+    hoistTelescopeSink(Process.constant(puts(_)).toSource)
 
   val t = Nondeterminism[Task].both(
     tester(queue),
-    handler(queue).runLog.exec((sequence0, Waiting))
+    handler(queue).to(stdout).runLog.exec((sequence0, Waiting))
   )
 
   it should "end raising a terminated exception" in {

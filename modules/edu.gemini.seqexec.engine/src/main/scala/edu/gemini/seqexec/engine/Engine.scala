@@ -6,6 +6,7 @@ import scalaz._
 import scalaz.Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
+import scalaz.stream.Sink
 import scalaz.stream.async.mutable.Queue
 
 object Engine {
@@ -104,10 +105,7 @@ object Engine {
     * Receive an event within the `Telescope` monad.
     */
   def receive(queue: Queue[Event]): Process[Telescope, Event] = {
-    val toTelescope = new (Task ~> Telescope) {
-      def apply[A](t: Task[A]): Telescope[A] = t.liftM[TelescopeStateT]
-    }
-    queue.dequeue.translate(toTelescope)
+    hoistTelescope(queue.dequeue)
   }
 
   /**
@@ -148,8 +146,28 @@ object Engine {
     MonadState[Telescope, SeqStatus].modify(_.leftMap(ste :: _)) *>
       MonadState[Telescope, SeqStatus].get
 
+  /** Terminates the queue returning the final `SeqStatus`
+    */
   def close(queue: Queue[Event]): Telescope[SeqStatus] = {
     queue.close.liftM[TelescopeStateT] *>
       MonadState[Telescope, SeqStatus].get
   }
+
+  // Functions to deal with type bureaucracy
+
+  /**
+    * Lifts from `Task` to `Telescope` as the effect of a `Process`.
+    */
+  def hoistTelescope[A](p: Process[Task, A]): Process[Telescope, A] = {
+    val toTelescope = new (Task ~> Telescope) {
+      def apply[B](t: Task[B]): Telescope[B] = t.liftM[TelescopeStateT]
+    }
+    p.translate(toTelescope)
+  }
+
+  /**
+    * Lifts from `Task` to `Telescope` as the effect of a `Sink`.
+    */
+  def hoistTelescopeSink[O](s: Sink[Task, O]): Sink[Telescope, O] =
+    hoistTelescope(s).map(_.map(_.liftM[TelescopeStateT]))
 }
