@@ -14,7 +14,7 @@ object Event {
   sealed trait UserEvent
   case object Start extends UserEvent
   case object Pause extends UserEvent
-  case class AddStep(a: Step) extends UserEvent
+  case class AddStep(ste: Step) extends UserEvent
   case object Exit extends UserEvent
 
   val start: Event = EventUser(Start)
