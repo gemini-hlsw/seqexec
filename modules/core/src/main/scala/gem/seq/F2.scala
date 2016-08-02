@@ -1,7 +1,8 @@
-// package gem.seq
+// package gem
+// package seq
 
-// import edu.gemini.pot.sp.SPComponentType
-// import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Disperser, Filter, FPUnit, LyotWheel}
+// // import edu.gemini.pot.sp.SPComponentType
+// // import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Disperser, Filter, FPUnit, LyotWheel}
 
 // import Metadata.Access._
 // import Metadata.{Attrs, Label}
@@ -12,6 +13,11 @@
 // import scalaz._
 // import Scalaz._
 
+// trait FPUnit
+// trait Filter
+// trait LyotWheel
+// trait Disperser
+
 // final case class F2(
 //     fpu: FPUnit,
 //     mosPreimaging: Boolean,
@@ -21,7 +27,6 @@
 //     disperser: Disperser
 //  ) extends Instrument {
 //   def name = "F2"
-//   def componentType = SPComponentType.INSTRUMENT_FLAMINGOS2
 // }
 
 // object F2 {

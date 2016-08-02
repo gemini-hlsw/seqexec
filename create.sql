@@ -30,6 +30,19 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 SET search_path = public, pg_catalog;
 
 --
+-- Name: f2_decker; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE f2_decker AS ENUM (
+    'Imaging',
+    'Long Slit',
+    'MOS'
+);
+
+
+ALTER TYPE f2_decker OWNER TO postgres;
+
+--
 -- Name: gcal_lamp_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -97,6 +110,61 @@ CREATE TABLE charge_class (
 ALTER TABLE charge_class OWNER TO postgres;
 
 --
+-- Name: f2_disperser; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE f2_disperser (
+    tag character varying(32) NOT NULL,
+    log_value character varying(20) NOT NULL,
+    wavelength double precision
+);
+
+
+ALTER TABLE f2_disperser OWNER TO postgres;
+
+--
+-- Name: f2_filter; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE f2_filter (
+    tag character varying(32) NOT NULL,
+    log_value character varying(20),
+    wavelength double precision
+);
+
+
+ALTER TABLE f2_filter OWNER TO postgres;
+
+--
+-- Name: f2_fpunit; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE f2_fpunit (
+    tag character varying(20) NOT NULL,
+    log_value character varying(20) NOT NULL,
+    slit_width smallint NOT NULL,
+    decker f2_decker NOT NULL
+);
+
+
+ALTER TABLE f2_fpunit OWNER TO postgres;
+
+--
+-- Name: f2_lyot_wheel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE f2_lyot_wheel (
+    tag character varying(32) NOT NULL,
+    log_value character varying(20) NOT NULL,
+    plate_scale double precision NOT NULL,
+    pixel_scale double precision NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE f2_lyot_wheel OWNER TO postgres;
+
+--
 -- Name: gcal_filter; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -115,7 +183,6 @@ ALTER TABLE gcal_filter OWNER TO postgres;
 
 CREATE TABLE gcal_lamp (
     gcal_lamp_id character varying(20) NOT NULL,
-    title character varying(20) NOT NULL,
     "tccName" character varying(20) NOT NULL,
     lamp_type gcal_lamp_type NOT NULL
 );
@@ -289,6 +356,32 @@ CREATE TABLE step_bias (
 ALTER TABLE step_bias OWNER TO postgres;
 
 --
+-- Name: step_dark; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_dark (
+    index smallint NOT NULL,
+    observation_id character varying(40) NOT NULL
+);
+
+
+ALTER TABLE step_dark OWNER TO postgres;
+
+--
+-- Name: step_gcal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_gcal (
+    index smallint NOT NULL,
+    observation_id character varying(40) NOT NULL,
+    gcal_lamp_id character varying,
+    shutter gcal_shutter NOT NULL
+);
+
+
+ALTER TABLE step_gcal OWNER TO postgres;
+
+--
 -- Name: step_science; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -310,6 +403,71 @@ COPY charge_class (charge_class_id, name) FROM stdin;
 noncharged	Non-charged
 partner	Partner
 program	Program
+\.
+
+
+--
+-- Data for Name: f2_disperser; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY f2_disperser (tag, log_value, wavelength) FROM stdin;
+None	none	\N
+R=1200 (J + H) grism	R1200JH	1.3899999999999999
+R=1200 (H + K) grism	R1200HK	1.871
+R=3000 (J or H or K) grism	R3000	1.64999999999999991
+\.
+
+
+--
+-- Data for Name: f2_filter; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY f2_filter (tag, log_value, wavelength) FROM stdin;
+Open	Open	1.60000000000000009
+Y (1.02 um)	Y	1.02000000000000002
+F1056 (1.056 um)	F1056	1.05600000000000005
+F1063 (1.063 um)	F1063	1.06299999999999994
+J-low (1.15 um)	J-low	1.14999999999999991
+J (1.25 um)	J	1.25
+H (1.65 um)	H	1.64999999999999991
+K-long (2.20 um)	K-long	2.20000000000000018
+K-short (2.15 um)	K-short	2.14999999999999991
+JH (spectroscopic)	JH	1.3899999999999999
+HK (spectroscopic)	HK	1.871
+\.
+
+
+--
+-- Data for Name: f2_fpunit; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY f2_fpunit (tag, log_value, slit_width, decker) FROM stdin;
+Imaging (none)	none	0	Imaging
+1-pix longslit	longslit_1	1	Long Slit
+2-pix longslit	longslit_2	2	Long Slit
+3-pix longslit	longslit_3	3	Long Slit
+4-pix longslit	longslit_4	4	Long Slit
+6-pix longslit	longslit_6	6	Long Slit
+8-pix longslit	longslit_8	8	Long Slit
+2-pix pinhole grid	pinhole	0	Imaging
+subpix pinhole grid	subpixPinhole	0	Imaging
+Custom Mask	custom	0	MOS
+\.
+
+
+--
+-- Data for Name: f2_lyot_wheel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY f2_lyot_wheel (tag, log_value, plate_scale, pixel_scale, obsolete) FROM stdin;
+f/16 (open)	f/16	1.6100000000000001	0.179999999999999993	f
+f/32 MCAO high background	f/32 high	0.805000000000000049	0.0899999999999999967	t
+f/32 MCAO low background	f/32 low	0.805000000000000049	0.0899999999999999967	t
+f/33 (Gems)	f/33 Gems	0.78400000000000003	0.0899999999999999967	t
+f/33 (GeMS under-sized)	GeMS under	0.78400000000000003	0.0899999999999999967	f
+f/33 (GeMS over-sized)	GeMS over	0.78400000000000003	0.0899999999999999967	f
+Hartmann A (H1)	Hartmann A (H1)	0	0	f
+Hartmann B (H2)	Hartmann B (H2)	0	0	f
 \.
 
 
@@ -336,14 +494,14 @@ NIR	NIR balance	f
 -- Data for Name: gcal_lamp; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY gcal_lamp (gcal_lamp_id, title, "tccName", lamp_type) FROM stdin;
-IR_GREY_BODY_HIGH	IR grey body - high	GCALflat	flat
-IR_GREY_BODY_LOW	IR grey body - low	GCALflat	flat
-QUARTZ	Quartz Halogen	GCALflat	flat
-AR_ARC	Ar arc	Ar	arc
-THAR_ARC	ThAr arc	ThAr	arc
-CUAR_ARC	CuAr arc	CuAr	arc
-XE_ARC	Xe arc	Xe	arc
+COPY gcal_lamp (gcal_lamp_id, "tccName", lamp_type) FROM stdin;
+IR grey body - high	GCALflat	flat
+IR grey body - low	GCALflat	flat
+Quartz Halogen	GCALflat	flat
+Ar arc	Ar	arc
+ThAr arc	ThAr	arc
+CuAr arc	CuAr	arc
+Xe arc	Xe	arc
 \.
 
 
@@ -459,6 +617,22 @@ COPY step_bias (index, observation_id) FROM stdin;
 
 
 --
+-- Data for Name: step_dark; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY step_dark (index, observation_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: step_gcal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY step_gcal (index, observation_id, gcal_lamp_id, shutter) FROM stdin;
+\.
+
+
+--
 -- Data for Name: step_science; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -480,6 +654,30 @@ ALTER TABLE ONLY charge_class
 
 ALTER TABLE ONLY charge_class
     ADD CONSTRAINT charge_test_pkey PRIMARY KEY (charge_class_id);
+
+
+--
+-- Name: f2_disperser_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY f2_disperser
+    ADD CONSTRAINT f2_disperser_pkey PRIMARY KEY (tag);
+
+
+--
+-- Name: f2_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY f2_filter
+    ADD CONSTRAINT f2_filter_pkey PRIMARY KEY (tag);
+
+
+--
+-- Name: f2_lyot_wheel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY f2_lyot_wheel
+    ADD CONSTRAINT f2_lyot_wheel_pkey PRIMARY KEY (tag);
 
 
 --
@@ -571,6 +769,22 @@ ALTER TABLE ONLY step_bias
 
 
 --
+-- Name: step_dark_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_dark
+    ADD CONSTRAINT step_dark_pkey PRIMARY KEY (index, observation_id);
+
+
+--
+-- Name: step_gcal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_gcal
+    ADD CONSTRAINT step_gcal_pkey PRIMARY KEY (index, observation_id);
+
+
+--
 -- Name: step_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -638,6 +852,30 @@ ALTER TABLE ONLY program
 
 ALTER TABLE ONLY step_bias
     ADD CONSTRAINT step_bias_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_dark_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_dark
+    ADD CONSTRAINT step_dark_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_gcal_gcal_lamp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_gcal
+    ADD CONSTRAINT step_gcal_gcal_lamp_id_fkey FOREIGN KEY (gcal_lamp_id) REFERENCES gcal_lamp(gcal_lamp_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_gcal_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_gcal
+    ADD CONSTRAINT step_gcal_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
