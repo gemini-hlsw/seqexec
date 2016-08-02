@@ -7,6 +7,7 @@ import Sequence._
 import org.scalatest.FlatSpec
 import scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.Cause
 import scalaz.stream.async
 import scalaz.stream.async.mutable.Queue
 
@@ -70,8 +71,12 @@ class HandlerSpec extends FlatSpec {
       _ <- queue.enqueueOne(exit)
     } yield Unit
 
-  Nondeterminism[Task].both(
+  val t = Nondeterminism[Task].both(
     tester(queue),
     handler(queue).runLog.exec((sequence0, Waiting))
-  ).unsafePerformSync
+  )
+
+  it should "end raising a terminated exception" in {
+    intercept[Cause.Terminated](t.unsafePerformSync)
+  }
 }
