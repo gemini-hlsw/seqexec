@@ -14,7 +14,7 @@ object Engine {
     * Input Sequence and Status clubbed together
     *
     */
-  type SeqStatus = (Sequence, Status)
+  case class SeqStatus(seq: Sequence, st: Status)
 
   /**
     * Status of the telescope.
@@ -86,14 +86,20 @@ object Engine {
     */
   def switch(st: Status): Telescope[SeqStatus] =
     MonadState[Telescope, SeqStatus].modify(
-      (ss: SeqStatus) => ss.rightMap(_ => st)
+      (ss: SeqStatus) => ss match {
+        case (SeqStatus(seq, st0)) => SeqStatus(seq, st)
+      }
     ) *> MonadState[Telescope, SeqStatus].get
 
   /**
     * Ask for the current `Status` within the `Telescope` monad.
     */
   val status: Telescope[Status] =
-    MonadState[Telescope, SeqStatus].gets(_._2)
+    MonadState[Telescope, SeqStatus].gets(
+      ss => ss match {
+        case (SeqStatus(_, st)) => st
+      }
+    )
 
   /**
     * Send an event within the `Telescope` monad.
@@ -123,8 +129,7 @@ object Engine {
   def step(queue: Queue[Event]): Telescope[Step] =
     MonadState[Telescope, SeqStatus].get >>= {
       ss => {
-         val (seq, st) = ss
-         // TODO: headDef :: a -> [a] -> a
+         val SeqStatus(seq, st) = ss
          seq match {
            case Nil => send(queue)(finished) *> Applicative[Telescope].pure(List())
            case (x :: _) => Applicative[Telescope].pure(x)
@@ -137,14 +142,21 @@ object Engine {
     * To be used after syncing.
     */
   def tail: Telescope[Unit] =
-    MonadState[Telescope, SeqStatus].modify(_.leftMap(_.tail))
+    MonadState[Telescope, SeqStatus].modify(
+      ss => ss match {
+        case SeqStatus(seq, st) => SeqStatus(seq.tail, st)
+      }
+    )
 
   /**
     * Returns `SeqStatus` and add a step to the beginning of the Sequence.
     */
   def add(ste: Step): Telescope[SeqStatus] =
-    MonadState[Telescope, SeqStatus].modify(_.leftMap(ste :: _)) *>
-      MonadState[Telescope, SeqStatus].get
+    MonadState[Telescope, SeqStatus].modify(
+      ss => ss match {
+        case SeqStatus(seq, st) => SeqStatus(ste :: seq, st)
+      }
+    ) *> MonadState[Telescope, SeqStatus].get
 
   /** Terminates the queue returning the final `SeqStatus`
     */
