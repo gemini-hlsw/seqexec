@@ -2,8 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
 import diode.react.ReactPot._
-import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TextMenuSegment}
-import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
+import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -15,7 +14,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, Ref, ReactEventI}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactEventI, Ref}
 
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
@@ -271,11 +270,9 @@ object SequenceTabContent {
         ^.classSet(
           "active" -> p.isActive
         ),
-        dataTab := p.st.instrument, {
-          implicit val eq = PotEq.sequenceEq
-          p.st.sequence().render { s =>
-            SequenceStepsTableContainer(s, p.status, p.st.stepConfigDisplayed)
-          }
+        dataTab := p.st.instrument,
+        p.st.sequence().render { s =>
+          SequenceStepsTableContainer(s, p.status, p.st.stepConfigDisplayed)
         },
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
@@ -286,24 +283,24 @@ object SequenceTabContent {
 }
 
 /**
-  * Content of a single tab with a sequence
+  * Contains the area with tabs and the sequence body
   */
-object SequenceTableWrapper {
-  def seqConnect(s: Sequence) = SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))
+object SequenceTabsBody {
+  case class Props(s: ClientStatus, d: SequencesOnDisplay)
   def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
-
-  case class Props(p: (ClientStatus, SequencesOnDisplay))
 
   val component = ReactComponentB[Props]("SequenceTabContent")
     .stateless
     .render_P(p =>
       <.div(
-        tabContents(p.p._1, p.p._2).map(SequenceTabContent.apply)
+        ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
+        TabularMenu(p.d),
+        tabContents(p.s, p.d).map(SequenceTabContent.apply)
       )
     )
     .build
 
-  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]) = component(Props(p()))
+  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]) = component(Props(p()._1, p()._2))
 }
 
 /**
@@ -312,12 +309,9 @@ object SequenceTableWrapper {
   */
 object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
-  val sequencesConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
+  val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
 
   case class Props(status: ClientStatus, sequences: SequencesOnDisplay)
-
-  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
-  def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
 
   val component = ReactComponentB[Unit]("SequenceTabs")
     .stateless
@@ -332,11 +326,7 @@ object SequenceTabs {
               ^.cls := "four wide column computer tablet only",
               HeadersSideBar()
             ),
-            <.div(
-              ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-              //TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-              sequencesConnect(SequenceTableWrapper.apply)
-            )
+            sequencesDisplayConnect(SequenceTabsBody.apply)
           ),
           <.div(
             ^.cls := "row computer only",

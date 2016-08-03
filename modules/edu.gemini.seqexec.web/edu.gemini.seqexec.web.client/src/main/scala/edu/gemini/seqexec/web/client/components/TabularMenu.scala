@@ -1,8 +1,9 @@
 package edu.gemini.seqexec.web.client.components
 
+import edu.gemini.seqexec.web.client.model.SequencesOnDisplay
 import edu.gemini.seqexec.web.client.semanticui._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactNode}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
 
 /**
   * Menu with tabs
@@ -10,6 +11,8 @@ import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactNode}
 object TabularMenu {
   case class TabItem(title: String, isActive: Boolean, dataItem: String)
   case class Props(tabs: List[TabItem])
+
+  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
 
   val component = ReactComponentB[Props]("TabularMenu")
     .stateless
@@ -37,5 +40,5 @@ object TabularMenu {
       }
     ).build
 
-  def apply(tabs: List[TabItem], children: ReactNode*) = component(Props(tabs), children)
+  def apply(p: SequencesOnDisplay) = component(Props(sequencesTabs(p).toStream.toList))
 }
