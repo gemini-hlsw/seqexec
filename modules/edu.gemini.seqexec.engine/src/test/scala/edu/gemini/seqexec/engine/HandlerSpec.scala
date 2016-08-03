@@ -77,7 +77,7 @@ class HandlerSpec extends FlatSpec {
 
   val t = Nondeterminism[Task].both(
     tester(queue),
-    handler(queue).to(stdout).runLog.exec((sequence0, Waiting))
+    handler(queue).to(stdout).runLog.exec(SeqStatus(sequence0, Waiting))
   )
 
   it should "end raising a terminated exception" in {
