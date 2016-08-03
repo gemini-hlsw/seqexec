@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
+import diode.data.Pot
+import diode.react.{ModelProxy, ReactConnectProxy}
 import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
@@ -14,16 +16,20 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactElement}
+import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactElement, Ref}
+import org.querki.jquery._
 
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
+import org.scalajs.dom.raw.HTMLElement
 
 /**
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
+  val scrollRef = Ref[HTMLElement]("scrollRef")
+
   case class Props(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
   def requestRun(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
@@ -75,6 +81,7 @@ object SequenceStepsTableContainer {
         <.div(
           ^.cls := "ui row scroll pane",
           SeqexecStyles.stepsListPane,
+          ^.ref := scrollRef,
           p.stepConfigDisplayed.map { i =>
             val step = p.s.steps.steps.find(_.id == i)
             <.table(
@@ -171,67 +178,71 @@ object SequenceStepsTableContainer {
         )
       )
     }
-    .componentDidMount { f =>
-      import org.scalajs.dom.document
-      import org.scalajs.dom.raw.Element
-      import org.scalajs.dom.raw.Node
+    .componentWillUpdate { f =>
+      val div = scrollRef(f.$)
+      div.flatMap { t =>
+        import org.scalajs.dom.document
+        import org.scalajs.dom.raw.Element
+        import org.scalajs.dom.raw.Node
 
-      /**
-        * Calculates if the element is visible inside the scroll pane up the dom tree
-        */
-      def visibleY(el: Element):Boolean = {
-        val rect = el.getBoundingClientRect()
-        val top = rect.top
-        val height = rect.height
-
-        def visible(el: Element): Boolean = {
+        /**
+          * Calculates if the element is visible inside the scroll pane up the dom tree
+          */
+        def visibleY(el: Element): Boolean = {
           val rect = el.getBoundingClientRect()
-          // Check if the element is out of view due to a container scrolling
-          ((top + height) <= rect.bottom) && ((top + height) > rect.top)
+          val top = rect.top
+          val height = rect.height
+
+          def visible(el: Element): Boolean = {
+            val rect = el.getBoundingClientRect()
+            // Check if the element is out of view due to a container scrolling
+            ((top + height) <= rect.bottom) && ((top + height) > rect.top)
+          }
+
+          @tailrec
+          def go(el: Node): Boolean = {
+            el match {
+              case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
+                (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
+              // Fallback to the document in nothing else
+              case e if el.parentNode == document.body =>
+                top <= document.documentElement.clientHeight
+              case e: Element =>
+                go(el.parentNode)
+            }
+          }
+
+          go(el.parentNode)
         }
 
-        @tailrec
-        def go(el: Node): Boolean = {el match {
-          case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
-            (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
-          // Fallback to the document in nothing else
-          case e if el.parentNode == document.body                                       =>
-            top <= document.documentElement.clientHeight
-          case e:Element                                   =>
-            go(el.parentNode)
-        }}
-
-        go(el.parentNode)
-      }
-
-      def scrollPosition: Option[(Element, Double)] = {
-        val node = ReactDOM.findDOMNode(f)
-        val tableSelector = s".${SeqexecStyles.stepsListPane.htmlClass}"
-        val progress = f.props.s.steps.progress
-        // Build a css selector for the relevant row, either the last one when complete
-        // or the currently running one
-        val rowSelector = if (progress._1 == progress._2) {
+        def scrollPosition: Option[Double] = {
+          val progress = f.nextProps.s.steps
+          // Build a css selector for the relevant row, either the last one when complete
+          // or the currently running one
+          val rowSelector = if (progress.allStepsDone) {
             s".${SeqexecStyles.stepsListBody.htmlClass} tr:last-child"
           } else {
             s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
           }
-        Option(node.querySelector(rowSelector)).flatMap { e =>
-          import org.querki.jquery.$
+          Option(t.querySelector(rowSelector)).flatMap { e =>
+            import org.querki.jquery.$
 
-          val p = $(e).position().top
-          val pt = $(e).parent().position().top
-          Option(node.querySelector(tableSelector)).flatMap { k =>
+            val p = $(e).position().top
+            val pt = $(e).parent().position().top
             if (!visibleY(e)) {
               val u = p - pt
-              Some((k, u))
+              Some(u)
             } else {
               None
             }
           }
+          //}
         }
-      }
-      scrollPosition.map {
-        case (e, p) => Callback { e.scrollTop = p }
+        scrollPosition.map { p =>
+          Callback.log("scroll 1 " + f.nextProps.s.steps.progress) >> Callback {
+            t.scrollTop = p
+          }
+        }.getOrElse(Callback.log(f.nextProps.s.steps.progress.toString) >> Callback.empty)
       }.getOrElse(Callback.empty)
     }
     .build
@@ -243,7 +254,6 @@ object SequenceStepsTableContainer {
   * Content of a single tab with a sequence
   */
 object SequenceTabContent {
-  def seqConnect(s: Sequence) = SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))
 
   case class Props(isActive: Boolean, status: ClientStatus, st: SequenceTab)
 
@@ -255,9 +265,11 @@ object SequenceTabContent {
         ^.classSet(
           "active" -> p.isActive
         ),
-        dataTab := p.st.instrument,
-        p.st.sequence().render { s =>
-          seqConnect(s)(u => u().map(t => SequenceStepsTableContainer(t, p.status, p.st.stepConfigDisplayed)).getOrElse(<.div(): ReactElement))
+        dataTab := p.st.instrument, {
+          implicit val eq = PotEq.sequenceEq
+          p.st.sequence().render { s =>
+            SequenceStepsTableContainer(s, p.status, p.st.stepConfigDisplayed)
+          }
         },
         p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
       )
@@ -268,19 +280,42 @@ object SequenceTabContent {
 }
 
 /**
+  * Content of a single tab with a sequence
+  */
+object SequenceTableWrapper {
+  def seqConnect(s: Sequence) = SeqexecCircuit.connect(SeqexecCircuit.sequenceReader(s.id))
+  def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
+
+  case class Props(p: (ClientStatus, SequencesOnDisplay))
+
+  val component = ReactComponentB[Props]("SequenceTabContent")
+    .stateless
+    .render_P(p =>
+      <.div(
+        tabContents(p.p._1, p.p._2).map(SequenceTabContent.apply)
+      )
+    )
+    .build
+
+  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]) = component(Props(p()))
+}
+
+/**
   * Contains all the tabs for the sequences available in parallel
+  * All connects at this level, be careful about adding connects below here
   */
 object SequenceTabs {
-  val logConnect = SeqexecCircuit.connect(_.globalLog)
+  val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
+  val sequencesConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
 
   case class Props(status: ClientStatus, sequences: SequencesOnDisplay)
 
   def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
-  def tabContents(status: ClientStatus, d: SequencesOnDisplay) = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
+  def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
 
-  val component = ReactComponentB[Props]("SequenceTabs")
+  val component = ReactComponentB[Unit]("SequenceTabs")
     .stateless
-    .render_P( p =>
+    .render( _ =>
       <.div(
         ^.cls := "ui bottom attached segment",
         <.div(
@@ -293,8 +328,8 @@ object SequenceTabs {
             ),
             <.div(
               ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-              TabularMenu(sequencesTabs(p.sequences).toStream.toList),
-              tabContents(p.status, p.sequences).map(SequenceTabContent.apply)
+              //TabularMenu(sequencesTabs(p.sequences).toStream.toList),
+              sequencesConnect(SequenceTableWrapper.apply)
             )
           ),
           <.div(
@@ -309,12 +344,10 @@ object SequenceTabs {
     )
     .build
 
-  def apply(status: ClientStatus, sequences: SequencesOnDisplay) = component(Props(status, sequences))
+  def apply() = component()
 }
 
 object SequenceArea {
-
-  val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
 
   val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
@@ -322,7 +355,7 @@ object SequenceArea {
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences"),
-        connect(p => SequenceTabs(p()._1, p()._2))
+        SequenceTabs()
       )
     ).build
 

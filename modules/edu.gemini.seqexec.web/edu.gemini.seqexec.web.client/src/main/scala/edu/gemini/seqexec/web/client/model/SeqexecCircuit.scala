@@ -318,6 +318,7 @@ object PotEq {
 
   val seqexecQueueEq = potStateEq[SeqexecQueue]
   val searchResultsEq = potStateEq[SearchResults]
+  val sequenceEq = potStateEq[Sequence]
 }
 
 /**
