@@ -1,9 +1,8 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import diode.data.Pot
 import diode.react.{ModelProxy, ReactConnectProxy}
 import diode.react.ReactPot._
-import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
+import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.TabularMenu.TabItem
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
@@ -16,8 +15,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactElement, Ref}
-import org.querki.jquery._
+import japgolly.scalajs.react.{Callback, ReactComponentB, Ref, ReactEventI}
 
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
@@ -29,6 +27,8 @@ import org.scalajs.dom.raw.HTMLElement
   */
 object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
+
+  case class State(nextScrollPos: Double, autoScrolled: Boolean)
 
   case class Props(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
@@ -43,7 +43,8 @@ object SequenceStepsTableContainer {
   def backToSequence(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .render_P { p =>
+    .initialState(State(0, autoScrolled = false))
+    .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui raised secondary segment",
         p.stepConfigDisplayed.fold {
@@ -178,7 +179,7 @@ object SequenceStepsTableContainer {
         )
       )
     }
-    .componentWillUpdate { f =>
+    .componentWillReceiveProps { f =>
       val div = scrollRef(f.$)
       div.flatMap { t =>
         import org.scalajs.dom.document
@@ -236,16 +237,21 @@ object SequenceStepsTableContainer {
               None
             }
           }
-          //}
         }
         scrollPosition.map { p =>
-          Callback.log("scroll 1 " + f.nextProps.s.steps.progress) >> Callback {
-            t.scrollTop = p
-          }
-        }.getOrElse(Callback.log(f.nextProps.s.steps.progress.toString) >> Callback.empty)
+          f.$.setState(State(p, autoScrolled = true))
+        }.getOrElse(Callback.empty)
       }.getOrElse(Callback.empty)
-    }
-    .build
+    }.componentWillUpdate { f =>
+      val div = scrollRef(f.$)
+      div.flatMap { t =>
+        if (f.nextState.autoScrolled) {
+          Callback {
+            t.scrollTop = f.nextState.nextScrollPos
+          }
+        } else Callback.empty
+      }.getOrElse(Callback.empty)
+    }.build
 
   def apply(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
 }
