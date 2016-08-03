@@ -207,7 +207,14 @@ object SequenceStepsTableContainer {
       def scrollPosition: Option[(Element, Double)] = {
         val node = ReactDOM.findDOMNode(f)
         val tableSelector = s".${SeqexecStyles.stepsListPane.htmlClass}"
-        val rowSelector = s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
+        val progress = f.props.s.steps.progress
+        // Build a css selector for the relevant row, either the last one when complete
+        // or the currently running one
+        val rowSelector = if (progress._1 == progress._2) {
+            s".${SeqexecStyles.stepsListBody.htmlClass} tr:last-child"
+          } else {
+            s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
+          }
         Option(node.querySelector(rowSelector)).flatMap { e =>
           import org.querki.jquery.$
 
