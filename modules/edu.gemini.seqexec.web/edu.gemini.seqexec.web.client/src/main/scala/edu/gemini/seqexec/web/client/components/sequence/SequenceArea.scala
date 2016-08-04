@@ -350,7 +350,7 @@ object SequenceArea {
     .render( _ =>
       <.div(
         ^.cls := "ui raised segments container",
-        TextMenuSegment("Running Sequences"),
+        TextMenuSegment("Running Sequences", "key.sequences.menu"),
         SequenceTabs()
       )
     ).build

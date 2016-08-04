@@ -1,15 +1,15 @@
 package edu.gemini.seqexec.web.client.components
 
-import japgolly.scalajs.react.{ReactComponentB, ReactNode}
+import japgolly.scalajs.react.{ReactComponentB, ReactElement, ReactNode}
 import japgolly.scalajs.react.vdom.prefix_<^._
 
 /**
   * Bar at the top of the page segtions
   */
-object TextMenuSegment {
-  case class Props(header: String)
+case class TextMenuSegment(p: TextMenuSegment.Props, children: Seq[ReactNode], key: String) {
+  import TextMenuSegment.Props
 
-  val component = ReactComponentB[Props]("TextMenuSegment")
+  def component = ReactComponentB[Props]("TextMenuSegment")
     .stateless
     .renderPC((_, p, c) =>
       <.div(
@@ -20,7 +20,14 @@ object TextMenuSegment {
         ),
         c
       )
-    ).build
+    ).build.withKey(key).apply(p, children)
+}
 
-  def apply(header: String, children: ReactNode*) = component(Props(header), children)
+object TextMenuSegment {
+  case class Props(header: String)
+
+  // Used to call TextMenuSegment directly on a jsx component declaration
+  implicit def icon2TagMod(i: TextMenuSegment):ReactElement = i.component
+
+  def apply(header: String, key: String, children: ReactNode*): TextMenuSegment = TextMenuSegment(Props(header), children, key)
 }

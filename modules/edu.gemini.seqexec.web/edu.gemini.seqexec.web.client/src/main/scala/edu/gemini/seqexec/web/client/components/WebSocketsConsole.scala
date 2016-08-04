@@ -14,7 +14,7 @@ object WebSocketsConsole {
       if (p.searchArea == SectionOpen) {
         <.div(
           ^.cls := "ui raised segments container",
-          TextMenuSegment("WebSocket Console"),
+          TextMenuSegment("WebSocket Console", "key.websockets.menu"),
           <.div(
             ^.cls := "ui attached segment",
             <.div(
