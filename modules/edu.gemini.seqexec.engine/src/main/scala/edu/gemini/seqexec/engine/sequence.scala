@@ -21,7 +21,7 @@ object Sequence {
     *
     */
   sealed trait Result
-  case object Done extends Result
+  case object OK extends Result
   case object Error extends Result
 
 }

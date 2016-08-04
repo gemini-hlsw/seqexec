@@ -52,7 +52,7 @@ object Engine {
     def execute(action: Action): Action =
       action >>= {
         (r: Result) => r match {
-          case Done  => Task.delay { queue.enqueueOne(completed) } *> action
+          case OK  => Task.delay { queue.enqueueOne(completed) } *> action
           case Error => Task.delay { queue.enqueueOne(failed) } *> action
         }
       }
@@ -62,7 +62,7 @@ object Engine {
         case Running => for {
           as <- step(queue)
           rs <- Nondeterminism[Task].gather(as.map(execute(_))).liftM[TelescopeStateT]
-          _ <- if (Foldable[List].all(rs)(_ == Done)) {
+          _ <- if (Foldable[List].all(rs)(_ == OK)) {
                // Remove step and send Synced event
                // TODO: Change status of Action before returning `SeqStatus`
                send(queue)(synced)

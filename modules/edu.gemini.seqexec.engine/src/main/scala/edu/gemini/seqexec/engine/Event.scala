@@ -26,7 +26,7 @@ object Event {
   // when an action is completed even if it belongs to a set of
   // parallel actions.
   case object Completed extends SystemEvent
-  // when an action failed
+  // when an action failed.
   case object Failed extends SystemEvent
   // when a set of parallel actions is completed.
   case object Synced extends SystemEvent
