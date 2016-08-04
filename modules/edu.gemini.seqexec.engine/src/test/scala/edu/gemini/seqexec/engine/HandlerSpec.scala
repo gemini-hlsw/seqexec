@@ -23,7 +23,7 @@ class HandlerSpec extends FlatSpec {
     _ <- Task.delay { println("System: Start TCS configuration") }
     _ <- Task.delay { Thread.sleep(2000) }
     _ <- Task.delay { println ("System: Complete TCS configuration") }
-  } yield Done
+  } yield OK
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -33,7 +33,7 @@ class HandlerSpec extends FlatSpec {
     _ <- Task.delay { println("System: Start Instrument configuration") }
     _ <- Task.delay { Thread.sleep(2000) }
     _ <- Task.delay { println("System: Complete Instrument configuration") }
-  } yield Done
+  } yield OK
 
   /**
     * Emulates an observation in the real world.
@@ -43,13 +43,13 @@ class HandlerSpec extends FlatSpec {
     _ <- Task.delay { println("System: Start observation") }
     _ <- Task.delay { Thread.sleep(2000) }
     _ <- Task.delay { println ("System: Complete observation") }
-  } yield Done
+  } yield OK
 
   val faulty: Action  = for {
     _ <- Task.delay { println("System: Start observation") }
     _ <- Task.delay { Thread.sleep(1000) }
     _ <- Task.delay { println ("System: Complete observation") }
-  } yield Error
+  } yield OK
 
   val sequence0: Sequence =
     List(
@@ -67,7 +67,6 @@ class HandlerSpec extends FlatSpec {
       // Add a failing step
       _ <- queue.enqueueOne(addStep(List(faulty, observe)))
       _ <- queue.enqueueOne(exit)
-
     } yield Unit
 
   def puts(ss: SeqStatus): Task[Unit] = Task.delay { println(ss.toString) }
@@ -77,7 +76,7 @@ class HandlerSpec extends FlatSpec {
 
   val t = Nondeterminism[Task].both(
     tester(queue),
-    handler(queue).to(stdout).runLog.exec(SeqStatus(sequence0, Waiting))
+    handler(queue).to(stdout).run.exec(SeqStatus(sequence0, Waiting))
   )
 
   it should "end raising a terminated exception" in {
