@@ -184,51 +184,57 @@ object SequenceStepsTableContainer {
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
       val div = scrollRef(f.$)
-      div.fold(Callback.empty) { scrollPane =>
-        /**
-          * Calculates if the element is visible inside the scroll pane up the dom tree
-          */
-        def visibleY(el: Element): Boolean = {
-          val rect = el.getBoundingClientRect()
-          val top = rect.top
-          val height = rect.height
+      if (f.nextProps.s.id != f.currentProps.s.id) {
+        // It will reset to 0 if the sequence changes
+        // TODO It may be better to remember the pos of executed steps per sequence
+        f.$.setState(State(0, autoScrolled = true))
+      } else {
+        div.fold(Callback.empty) { scrollPane =>
+          /**
+            * Calculates if the element is visible inside the scroll pane up the dom tree
+            */
+          def visibleY(el: Element): Boolean = {
+            val rect = el.getBoundingClientRect()
+            val top = rect.top
+            val height = rect.height
 
-          @tailrec
-          def go(el: Node): Boolean =
-            el match {
-              case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
-                (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
-              // Fallback to the document in nothing else
-              case e if el.parentNode == document.body                                       =>
-                top <= document.documentElement.clientHeight
-              case e: Element                                                                =>
-                go(el.parentNode)
-            }
+            @tailrec
+            def go(el: Node): Boolean =
+              el match {
+                case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
+                  (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
+                // Fallback to the document in nothing else
+                case e if el.parentNode == document.body                                       =>
+                  top <= document.documentElement.clientHeight
+                case e: Element                                                                =>
+                  go(el.parentNode)
+              }
 
-          go(el.parentNode)
-        }
-
-        /**
-          * Calculates the new scroll position if the relevant row is not visible
-          */
-        def scrollPosition: Option[Double] = {
-          val progress = f.nextProps.s.steps
-          // Build a css selector for the relevant row, either the last one when complete
-          // or the currently running one
-          val rowSelector = if (progress.allStepsDone) {
-            s".${SeqexecStyles.stepsListBody.htmlClass} tr:last-child"
-          } else {
-            s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
+            go(el.parentNode)
           }
-          Option(scrollPane.querySelector(rowSelector)).map(n => (n, n.parentNode)).collect {
-            case (e: HTMLElement, parent: HTMLElement) if !visibleY(e) =>
-              e.offsetTop - parent.offsetTop
-            }
-        }
 
-        // If the scroll position is defined update the state
-        scrollPosition.fold(Callback.empty) { p =>
-          f.$.setState(State(p, autoScrolled = true))
+          /**
+            * Calculates the new scroll position if the relevant row is not visible
+            */
+          def scrollPosition: Option[Double] = {
+            val progress = f.nextProps.s.steps
+            // Build a css selector for the relevant row, either the last one when complete
+            // or the currently running one
+            val rowSelector = if (progress.allStepsDone) {
+              s".${SeqexecStyles.stepsListBody.htmlClass} tr:last-child"
+            } else {
+              s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
+            }
+            Option(scrollPane.querySelector(rowSelector)).map(n => (n, n.parentNode)).collect {
+              case (e: HTMLElement, parent: HTMLElement) if !visibleY(e) =>
+                e.offsetTop - parent.offsetTop
+              }
+          }
+
+          // If the scroll position is defined update the state
+          scrollPosition.fold(Callback.empty) { p =>
+            f.$.setState(State(p, autoScrolled = true))
+          }
         }
       }
     }.componentWillUpdate { f =>
