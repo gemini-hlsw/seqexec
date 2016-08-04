@@ -14,19 +14,18 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.common.{Sequence, SequenceState, StepState}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactEventI, Ref}
+import japgolly.scalajs.react.{Callback, ReactComponentB, Ref}
 
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
-import org.scalajs.dom.raw.HTMLElement
+import org.scalajs.dom.raw.{Element, Node, HTMLElement}
+import org.scalajs.dom.document
 
 /**
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  val scrollRef = Ref[HTMLElement]("scrollRef")
-
   case class State(nextScrollPos: Double, autoScrolled: Boolean)
 
   case class Props(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int])
@@ -40,6 +39,9 @@ object SequenceStepsTableContainer {
   def displayStepDetails(s: Sequence, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
   def backToSequence(s: Sequence): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
+
+  // Reference to the specifc DOM marked by the name `scrollRef`
+  val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
     .initialState(State(0, autoScrolled = false))
@@ -103,7 +105,7 @@ object SequenceStepsTableContainer {
                   <.tr(
                     ^.classSet(
                       "positive" -> c.key.startsWith("instrument"),
-                      "warning" -> c.key.startsWith("telescope")
+                      "warning"  -> c.key.startsWith("telescope")
                     ),
                     c.key.startsWith("observe") ?= SeqexecStyles.observeConfig,
                     c.key.startsWith("ocs") ?= SeqexecStyles.observeConfig,
@@ -150,17 +152,17 @@ object SequenceStepsTableContainer {
                   <.tr(
                     ^.classSet(
                       "positive" -> (s.state == StepState.Done),
-                      "warning" -> (s.state == StepState.Running),
+                      "warning"  -> (s.state == StepState.Running),
                       "negative" -> (s.state == StepState.Error),
                       "negative" -> (s.state == StepState.Abort)
                     ),
                     s.state == StepState.Running ?= SeqexecStyles.stepRunning,
                     <.td(
                       s.state match {
-                        case StepState.Done => IconCheckmark
-                        case StepState.Running => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                        case StepState.Error => IconAttention
-                        case _ => iconEmpty
+                        case StepState.Done    => IconCheckmark
+                        case StepState.Running => IconCircleNotched.copyIcon(loading = true)
+                        case StepState.Error   => IconAttention
+                        case _                 => iconEmpty
                       }
                     ),
                     <.td(s.id + 1),
@@ -179,12 +181,10 @@ object SequenceStepsTableContainer {
       )
     }
     .componentWillReceiveProps { f =>
+      // Called when the props have changed. At this time we can recalculate
+      // if the scroll position needs to be updated and store it in the State
       val div = scrollRef(f.$)
-      div.flatMap { t =>
-        import org.scalajs.dom.document
-        import org.scalajs.dom.raw.Element
-        import org.scalajs.dom.raw.Node
-
+      div.fold(Callback.empty) { scrollPane =>
         /**
           * Calculates if the element is visible inside the scroll pane up the dom tree
           */
@@ -193,28 +193,24 @@ object SequenceStepsTableContainer {
           val top = rect.top
           val height = rect.height
 
-          def visible(el: Element): Boolean = {
-            val rect = el.getBoundingClientRect()
-            // Check if the element is out of view due to a container scrolling
-            ((top + height) <= rect.bottom) && ((top + height) > rect.top)
-          }
-
           @tailrec
-          def go(el: Node): Boolean = {
+          def go(el: Node): Boolean =
             el match {
               case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
                 (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
               // Fallback to the document in nothing else
-              case e if el.parentNode == document.body =>
+              case e if el.parentNode == document.body                                       =>
                 top <= document.documentElement.clientHeight
-              case e: Element =>
+              case e: Element                                                                =>
                 go(el.parentNode)
             }
-          }
 
           go(el.parentNode)
         }
 
+        /**
+          * Calculates the new scroll position if the relevant row is not visible
+          */
         def scrollPosition: Option[Double] = {
           val progress = f.nextProps.s.steps
           // Build a css selector for the relevant row, either the last one when complete
@@ -224,32 +220,28 @@ object SequenceStepsTableContainer {
           } else {
             s".${SeqexecStyles.stepsListBody.htmlClass} tr.${SeqexecStyles.stepRunning.htmlClass}"
           }
-          Option(t.querySelector(rowSelector)).flatMap { e =>
-            import org.querki.jquery.$
-
-            val p = $(e).position().top
-            val pt = $(e).parent().position().top
-            if (!visibleY(e)) {
-              val u = p - pt
-              Some(u)
-            } else {
-              None
+          Option(scrollPane.querySelector(rowSelector)).map(n => (n, n.parentNode)).collect {
+            case (e: HTMLElement, parent: HTMLElement) if !visibleY(e) =>
+              e.offsetTop - parent.offsetTop
             }
-          }
         }
-        scrollPosition.map { p =>
+
+        // If the scroll position is defined update the state
+        scrollPosition.fold(Callback.empty) { p =>
           f.$.setState(State(p, autoScrolled = true))
-        }.getOrElse(Callback.empty)
-      }.getOrElse(Callback.empty)
+        }
+      }
     }.componentWillUpdate { f =>
+      // Called before the DOM is rendered on the updated props. This is the chance
+      // to update the scroll position if needed
       val div = scrollRef(f.$)
-      div.flatMap { t =>
-        if (f.nextState.autoScrolled) {
-          Callback {
-            t.scrollTop = f.nextState.nextScrollPos
+      div.fold(Callback.empty){ scrollPane =>
+        // If the state indicates to scroll, update the scroll position
+        Callback.when(f.nextState.autoScrolled)(Callback {
+            scrollPane.scrollTop = f.nextState.nextScrollPos
           }
-        } else Callback.empty
-      }.getOrElse(Callback.empty)
+        )
+      }
     }.build
 
   def apply(s: Sequence, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
@@ -289,7 +281,7 @@ object SequenceTabsBody {
   case class Props(s: ClientStatus, d: SequencesOnDisplay)
   def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
 
-  val component = ReactComponentB[Props]("SequenceTabContent")
+  val component = ReactComponentB[Props]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(

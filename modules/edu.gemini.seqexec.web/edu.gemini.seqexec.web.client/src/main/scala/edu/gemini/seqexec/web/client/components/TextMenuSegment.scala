@@ -27,7 +27,7 @@ object TextMenuSegment {
   case class Props(header: String)
 
   // Used to call TextMenuSegment directly on a jsx component declaration
-  implicit def icon2TagMod(i: TextMenuSegment):ReactElement = i.component
+  implicit def textMenu2TagMod(i: TextMenuSegment):ReactElement = i.component
 
   def apply(header: String, key: String, children: ReactNode*): TextMenuSegment = TextMenuSegment(Props(header), children, key)
 }
