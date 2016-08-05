@@ -12,6 +12,7 @@ import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
+import scala.scalajs.js
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
@@ -141,7 +142,7 @@ object QueueTableLoading {
         ^.cls := "ui header item",
         p.queue.renderPending(_ => <.span(IconCircleNotched.copyIcon(loading = true), "Loading..."))
       )
-    ).build
+    ).build.withKey("key.queue.loading")
 
   def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p()))
 }
@@ -150,15 +151,15 @@ object QueueTableLoading {
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
-  val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults)
-  val queueConnect = SeqexecCircuit.connect(_.queue)
+  val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults, "key.queue.search": js.Any)
+  val queueConnect = SeqexecCircuit.connect(_.queue, "key.queue.area": js.Any)
 
   case class Props(user: ModelProxy[Option[UserDetails]])
 
   val component = ReactComponentB[Props]("QueueAreaTitle")
     .stateless
     .render_P(p =>
-      TextMenuSegment("Queue",
+      TextMenuSegment("Queue", "key.queue.menu",
         // Show a loading indicator if we are waiting for server data
         {
           // Special equality check to avoid certain UI artifacts
@@ -168,12 +169,11 @@ object QueueAreaTitle {
         p.user().map { u =>
           <.div(
             ^.cls := "right menu",
-            ^.key := "queue.area.title",
             statusAndSearchResultsConnect(SequenceSearch.apply)
           ): ReactNode
-        }.getOrElse[ReactNode](<.div(^.key := "queue.area.empty"))
+        }.getOrElse[ReactNode](<.div())
       )
-    ).build
+    ).build.withKey("key.area.title")
 
   def apply(user: ModelProxy[Option[UserDetails]]) = component(Props(user))
 }
@@ -182,7 +182,7 @@ object QueueAreaTitle {
   * Container for the queue table
   */
 object QueueTableSection {
-  val queueConnect = SeqexecCircuit.connect(_.queue)
+  val queueConnect = SeqexecCircuit.connect(_.queue, "key.queue": js.Any)
 
   case class Props(opened: SectionVisibilityState)
 

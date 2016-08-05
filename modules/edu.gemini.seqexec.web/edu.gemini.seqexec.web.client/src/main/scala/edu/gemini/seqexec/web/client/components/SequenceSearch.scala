@@ -168,7 +168,7 @@ object SequenceSearch {
   val component = ReactComponentB[Props]("SequenceSearch")
     .initialState(State(""))
     .renderBackend[Backend]
-    .build
+    .build.withKey("key.sequence.search")
 
   def apply(p: ModelProxy[(ClientStatus, Pot[List[Sequence]])]) = component(Props(p))
 }

@@ -47,6 +47,11 @@ case class SequenceSteps(steps: List[Step]) {
   def progress: (Int, Int) = (steps.count(_.state == StepState.Done), steps.length)
 
   /**
+    * Indicates if all the steps are marked as done
+    */
+  def allStepsDone: Boolean = steps.count(_.state == StepState.Done) == steps.length
+
+  /**
     * Mark the next step as aborted
     */
   def stopAtNext: SequenceSteps = {
