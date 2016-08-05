@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.server.security
 
+import com.unboundid.ldap.sdk.LDAPURL
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import upickle.default._
@@ -17,45 +18,78 @@ case class GenericFailure(msg: String) extends AuthenticationFailure
 case class DecodingFailure(msg: String) extends AuthenticationFailure
 case object MissingCookie extends AuthenticationFailure
 
-trait AuthenticationService {
+/**
+  * Interface for implementations that can authenticate users from a username/pwd pair
+  */
+trait AuthService {
   def authenticateUser(username: String, password: String): AuthResult
 }
 
-// TODO externalize the configuration
-object AuthenticationConfig {
-  val sessionTimeout = 8 * 3600
-  val onSSL = false
-  val key = "secretkey"
-  val cookieName = "SeqexecToken"
+/**
+  * Configuration for the LDAP client
+  */
+case class LDAPConfig(ldapHosts: List[String]) {
+  val hosts = ldapHosts.map(new LDAPURL(_)).map(u => (u.getHost, u.getPort))
 
-  val testMode = true
-  val ldapHosts = List(("cpodc-wv1.gemini.edu", 3268), ("sbfdc-wv1.gemini.edu", 3268))
-
-  val ldapService = new FreeLDAPAuthenticationService(ldapHosts)
-
-  // TODO Only the LDAP service should be present on production mode
-  val authServices =
-    if (testMode) List(TestAuthenticationService, ldapService)
-    else List(ldapService)
-
+  val ldapService = new FreeLDAPAuthenticationService(hosts)
 }
+
+/**
+  * Configuration for the general authentication service
+  * @param devMode Indicates if we are in development mode, In this mode there is an internal list of users
+  * @param sessionLifeHrs How long will the session live in hours
+  * @param cookieName Name of the cookie to store the token
+  * @param secretKey Secret key to encrypt jwt tokens
+  * @param useSSL Whether we use SSL setting the cookie to be https only
+  * @param ldap Configuration for the ldap client
+  */
+case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
 
 // Intermediate class to decode the claim stored in the JWT token
 case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
   def toUserDetails = UserDetails(username, displayName)
 }
 
+case class AuthenticationService(config: AuthenticationConfig) extends AuthService {
+  import AuthenticationService._
+
+  val authServices =
+    if (config.devMode) List(TestAuthenticationService, config.ldap.ldapService)
+    else List(config.ldap.ldapService)
+
+  /**
+    * From the user details it creates a JSON Web Token
+    */
+  def buildToken(u: UserDetails): String =
+    // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
+    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(3600), config.secretKey, JwtAlgorithm.HmacSHA256)
+
+  /**
+    * Decodes a token out of JSON Web Token
+    */
+  def decodeToken(t: String): AuthResult =
+    (for {
+      claim <- Jwt.decode(t, config.secretKey, Seq(JwtAlgorithm.HmacSHA256)).toDisjunction
+      token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))
+    } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
+
+  val sessionTimeout: Long = config.sessionLifeHrs * 3600
+
+  override def authenticateUser(username: String, password: String): AuthResult =
+    authServices.authenticateUser(username, password)
+}
+
 object AuthenticationService {
-  val Realm = "Seqexec"
   type AuthResult = AuthenticationFailure \/ UserDetails
+  type AuthenticationServices = List[AuthService]
 
   // Allows calling authenticate on a list of authenticator, stopping at the first
   // that succeeds
-  implicit class ComposedAuth(val s: List[AuthenticationService]) extends AnyVal {
+  implicit class ComposedAuth(val s: AuthenticationServices) extends AnyVal {
 
     def authenticateUser(username: String, password: String): AuthResult = {
       @tailrec
-      def go(l: List[AuthenticationService]): AuthResult = l match {
+      def go(l: List[AuthService]): AuthResult = l match {
         case Nil      => -\/(NoAuthenticator)
         case x :: Nil => x.authenticateUser(username, password)
         case x :: xs  => x.authenticateUser(username, password) match {
@@ -71,20 +105,4 @@ object AuthenticationService {
       }
     }
   }
-
-  /**
-    * From the user details it creates a JSON Web Token
-    */
-  def buildToken(u: UserDetails): String =
-    // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
-    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(3600), AuthenticationConfig.key, JwtAlgorithm.HmacSHA256)
-
-  /**
-    * Decodes a token out of JSON Web Token
-    */
-  def decodeToken(t: String): AuthResult =
-    (for {
-      claim <- Jwt.decode(t, AuthenticationConfig.key, Seq(JwtAlgorithm.HmacSHA256)).toDisjunction
-      token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))
-    } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
 }
