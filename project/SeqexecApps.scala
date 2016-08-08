@@ -29,6 +29,7 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
     resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client_cli, Compile)).value.data,
     resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client_cli, Compile)).value,
+    test := {},
     // Name of the launch script
     executableScriptName := "seqexec-server",
     // No javadocs

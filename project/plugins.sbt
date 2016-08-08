@@ -8,4 +8,4 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.8.0")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
 
 // Support making distributions
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.1.0-RC1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0-M7")
