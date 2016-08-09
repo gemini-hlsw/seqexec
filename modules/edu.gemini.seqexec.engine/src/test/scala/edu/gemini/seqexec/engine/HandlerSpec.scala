@@ -8,12 +8,10 @@ import Handler._
 import State._
 import org.scalatest.FlatSpec
 import scalaz._
+import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Cause
-import scalaz.stream.Process
-import scalaz.stream.Sink
 import scalaz.stream.async
-import scalaz.stream.async.mutable.Queue
 
 class HandlerSpec extends FlatSpec {
 
@@ -53,37 +51,45 @@ class HandlerSpec extends FlatSpec {
     _ <- Task.delay { println ("System: Complete observation") }
   } yield OK
 
-  val sequence0: Sequence = Sequence(
-    List(),
-    IntMap(),
-    List(
-      List(configureTcs, configureInst),
-      List(observe),
-      List(configureTcs, configureInst),
-      List(observe)
-    ))
+  val seqstatus1: SeqStatus = SeqStatus(
+    Sequence(
+      List(),
+      IntMap(),
+      List(
+        List(configureTcs, configureInst),
+        List(observe),
+        List(configureTcs, configureInst),
+        List(observe)
+      )),
+    Waiting)
+
+  val emptySeqStatus: SeqStatus =
+    SeqStatus(Sequence(List(), IntMap(), List()), Waiting)
 
   val queue = async.boundedQueue[Event](10)
 
-  def tester(queue: Queue[Event]): Task[Unit] = for {
-      _ <- queue.enqueueOne(start)
-      _ <- queue.enqueueOne(pause)
-      // Add a failing step
-      _ <- queue.enqueueOne(addStep(List(faulty, observe)))
-      _ <- queue.enqueueOne(exit)
-    } yield Unit
+  def request(ev: Event): Task[SeqStatus] =
+    queue.enqueueOne(start) *>
+      (handler(queue).take(1).run.exec(emptySeqStatus))
 
-  def puts(ss: SeqStatus): Task[Unit] = Task.delay { println(ss.toString) }
+  it should "be in running Status after a Start event" in {
+    val response = status.get(request(start).unsafePerformSync)
+    assert(response === Running)
+  }
 
-  val stdout: Sink[Telescope, SeqStatus] =
-    hoistTelescopeSink(Process.constant(puts(_)).toSource)
+  it should "0 steps pending after 4 steps have been processed in seqstatus1" in {
+    val result = queue.enqueueOne(start) *>
+      (handler(queue).take(4).run.exec(seqstatus1))
+    // TODO: `pending` clashes with something brought in scope
+    // which I don't know how to hide
+    assert(sequence.andThen(State.pending).get(result.unsafePerformSync).length == 0)
+  }
 
-  val t = Nondeterminism[Task].both(
-    tester(queue),
-    handler(queue).to(stdout).run.exec(SeqStatus(sequence0, Waiting))
-  )
-
-  it should "end raising a terminated exception" in {
-    intercept[Cause.Terminated](t.unsafePerformSync)
+  it should "finish raising a Terminated exception after an Exit event" in {
+    intercept[Cause.Terminated](
+      (queue.enqueueOne(exit) *>
+         (handler(queue).run.exec(emptySeqStatus))
+      ).unsafePerformSync
+    )
   }
 }
