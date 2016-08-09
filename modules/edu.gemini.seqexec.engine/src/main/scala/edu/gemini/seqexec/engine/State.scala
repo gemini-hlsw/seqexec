@@ -98,5 +98,3 @@ object State {
     sequence.andThen(done).mod(add, ss3)
   }
 }
-
-
