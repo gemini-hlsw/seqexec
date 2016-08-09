@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.engine
 
 import Event._
+import State._
 import Engine._
 import scalaz.Scalaz._
 import scalaz.stream.Process
@@ -14,25 +15,25 @@ object Handler {
   def handler(queue: Queue[Event]): Process[Telescope, SeqStatus] = {
 
     def handleUserEvent(ue: UserEvent): Telescope[SeqStatus] = ue match {
-      case Start => log("Output: Started") *> switch(Running) *> run(queue)
-      case Pause => log("Output: Paused") *> switch(Waiting)
+      case Start => log("Output: Started") *> switch(queue)(Running)
+      case Pause => log("Output: Paused") *> switch(queue)(Waiting)
       case AddStep(ste) => log("Output: Adding Step") *> add(ste)
       case Exit => log("Bye") *> close(queue)
     }
 
     def handleSystemEvent(se: SystemEvent): Telescope[SeqStatus] = se match {
-      case Completed => log("Output: Action completed")
-      case Failed => log("Output: Action failed")
-      case Synced => log("Output: Parallel actions completed") *> tail *> run(queue)
-      case SyncFailed => log("Output: Step failed. Repeating...") *> run(queue)
-      case Finished => log("Output: Finished") *> switch(Waiting)
+      case (Completed(i)) => log("Output: Action completed") *> complete(queue)(i)
+      case (Failed(i)) => log("Output: Action failed") *> fail(i)
+      case Finished => log("Output: Finished")
     }
 
     receive(queue) >>= (
-      ev => ev match {
-        case EventUser(ue) => Process.eval(handleUserEvent(ue))
-        case EventSystem(se) => Process.eval(handleSystemEvent(se))
-      }
+      ev => Process.eval (
+        ev match {
+          case EventUser(ue) => handleUserEvent(ue)
+          case EventSystem(se) => handleSystemEvent(se)
+        }
+      )
     )
   }
 }
