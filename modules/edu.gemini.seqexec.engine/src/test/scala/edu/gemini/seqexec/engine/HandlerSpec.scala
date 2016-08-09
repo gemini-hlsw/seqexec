@@ -1,9 +1,11 @@
 package edu.gemini.seqexec.engine
 
+import scala.collection.immutable.IntMap
+
 import Engine._
 import Event._
 import Handler._
-import Sequence._
+import State._
 import org.scalatest.FlatSpec
 import scalaz._
 import scalaz.concurrent.Task
@@ -51,13 +53,15 @@ class HandlerSpec extends FlatSpec {
     _ <- Task.delay { println ("System: Complete observation") }
   } yield OK
 
-  val sequence0: Sequence =
+  val sequence0: Sequence = Sequence(
+    List(),
+    IntMap(),
     List(
       List(configureTcs, configureInst),
       List(observe),
       List(configureTcs, configureInst),
       List(observe)
-    )
+    ))
 
   val queue = async.boundedQueue[Event](10)
 

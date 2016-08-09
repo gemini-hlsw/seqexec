@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import Sequence._
+import State._
 
 object Event {
   /**
@@ -23,19 +23,11 @@ object Event {
   val exit: Event = EventUser(Exit)
 
   sealed trait SystemEvent
-  // when an action is completed even if it belongs to a set of
-  // parallel actions.
-  case object Completed extends SystemEvent
-  // when an action failed.
-  case object Failed extends SystemEvent
-  // when a set of parallel actions is completed.
-  case object Synced extends SystemEvent
-  case object SyncFailed extends SystemEvent
+  case class Completed(i: Int) extends SystemEvent
+  case class Failed(i: Int) extends SystemEvent
   case object Finished extends SystemEvent
 
-  val completed: Event = EventSystem(Completed)
-  val failed: Event = EventSystem(Failed)
-  val synced: Event = EventSystem(Synced)
-  val syncFailed: Event = EventSystem(SyncFailed)
+  def completed(i: Int): Event = EventSystem(Completed(i))
+  def failed(i: Int): Event = EventSystem(Failed(i))
   val finished: Event = EventSystem(Finished)
 }
