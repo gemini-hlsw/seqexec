@@ -25,7 +25,7 @@ object Engine {
     MonadState[Telescope, SeqStatus].modify(
       (ss: SeqStatus) => ss match {
         case (SeqStatus(seq, st0)) => SeqStatus(seq, st)
-      }) *> MonadState[Telescope, SeqStatus].get
+      }) *> ask
 
   /**
     * Checks the status is running and launches all parallel tasks to complete
@@ -55,7 +55,7 @@ object Engine {
         case Waiting => send(queue)(pause)
       }
      }
-    ) *> MonadState[Telescope, SeqStatus].get
+    ) *> ask
  }
 
   /**
@@ -67,16 +67,15 @@ object Engine {
 
 
   def fail(i: Int): Telescope[SeqStatus] =
-    MonadState[Telescope, SeqStatus].modify(shift(i)) *>
-      MonadState[Telescope, SeqStatus].get
+    MonadState[Telescope, SeqStatus].modify(shift(i)) *> ask
 
   /**
     * Obtain the next step in the `Sequence`. It doesn't remove the Step from
     * the Sequence. This is all done within the `Telescope` monad.
     */
-  private val peek: Telescope[Option[Step]] =
-    MonadState[Telescope, SeqStatus].get >>= (
-      ss => Applicative[Telescope].pure(ss.seq.sts.headOption)
+  private val peek: Telescope[Option[Step]] = ask >>= (
+    ss => Applicative[Telescope].pure(
+      sequence.andThen(pending).get(ss).headOption)
     )
 
   /**
@@ -100,8 +99,7 @@ object Engine {
     */
   def log(msg:String): Telescope[SeqStatus] =
     // XXX: log4j?
-    Applicative[Telescope].pure(println(msg)) *>
-      MonadState[Telescope, SeqStatus].get
+    Applicative[Telescope].pure(println(msg)) *> ask
 
   /**
     * Returns `SeqStatus` and add a step to the beginning of the Sequence.
@@ -109,8 +107,13 @@ object Engine {
   def add(ste: Step): Telescope[SeqStatus] = {
     MonadState[Telescope, SeqStatus].modify(
       ss => sequence.andThen(pending).mod(ste :: _, ss)
-    ) *> MonadState[Telescope, SeqStatus].get
+    ) *> ask
   }
+
+  /**
+    * Get the current State
+    */
+  def ask: Telescope[SeqStatus] = MonadState[Telescope, SeqStatus].get
 
   /** Terminates the queue returning the final `SeqStatus`
     */

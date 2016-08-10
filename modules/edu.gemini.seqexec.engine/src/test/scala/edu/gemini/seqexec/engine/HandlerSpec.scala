@@ -68,6 +68,8 @@ class HandlerSpec extends FlatSpec {
 
   val queue = async.boundedQueue[Event](10)
 
+  // Send an event and obtain a `SeqStatus`. This takes care of terminating the
+  // process.
   def request(ev: Event): Task[SeqStatus] =
     queue.enqueueOne(start) *>
       (handler(queue).take(1).run.exec(emptySeqStatus))
