@@ -18,6 +18,7 @@ object Handler {
       case Start => log("Output: Started") *> switch(queue)(Running)
       case Pause => log("Output: Paused") *> switch(queue)(Waiting)
       case AddStep(ste) => log("Output: Adding Step") *> add(ste)
+      case Poll => log("Output: Poll current state") *> ask
       case Exit => log("Bye") *> close(queue)
     }
 
