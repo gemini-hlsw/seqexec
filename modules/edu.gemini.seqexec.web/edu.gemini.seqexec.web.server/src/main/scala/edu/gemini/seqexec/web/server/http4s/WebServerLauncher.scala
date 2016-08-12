@@ -103,7 +103,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
 
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
-      .mountService(StaticRoutes.service(conf.devMode), "/")
+      .mountService(new StaticRoutes(conf.devMode).service, "/")
       .mountService(SeqexecCommandRoutes.service, "/api/seqexec/commands")
       .mountService(new SeqexecUIApiRoutes(as).service, "/api")
       .start
