@@ -1,8 +1,8 @@
 package gem
 
 /** 
- * Type class for enumerated discriminants like program types and observe classes.
- * all.map(tag).traverse(fromTag) == Some(all)
+ * Typeclass for an enumerated type with unique string tags.
+ * unsafeFromTag . tag = id
  */
 trait Enumerated[A] {
   def all: List[A]
@@ -14,3 +14,18 @@ trait Enumerated[A] {
 object Enumerated {
   def apply[A](implicit ev: Enumerated[A]): Enumerated[A] = ev
 }
+
+trait Obsoletable[A] {
+  def isActive(a: A): Boolean
+  final def isObsolete(a: A): Boolean = !isActive(a)
+}
+
+
+/** Typeclass for things that can be show in a user interface. */
+trait Display[A] {
+  def name(a:A): String         // short name, for labels
+  def elaboration(a:A): Option[String]  // an elaboration on the name, used for computing longname
+  def longName(a: A) = name(a) + elaboration(a).fold("")(n => s" ($n)")
+}
+
+

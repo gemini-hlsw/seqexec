@@ -2,7 +2,7 @@ package gem
 
 import scalaz._, Scalaz._
 
-case class Observation(id: Observation.Id, title: String, instrument: Option[String])
+case class Observation(id: Observation.Id, title: String, instrument: Option[Instrument])
 
 object Observation {
   case class Id(pid: Program.Id, index: Int) {

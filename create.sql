@@ -67,6 +67,16 @@ CREATE TYPE gcal_shutter AS ENUM (
 ALTER TYPE gcal_shutter OWNER TO postgres;
 
 --
+-- Name: identifier; Type: DOMAIN; Schema: public; Owner: postgres
+--
+
+CREATE DOMAIN identifier AS character varying(32)
+	CONSTRAINT identifier_check CHECK (((VALUE)::text ~ '^[A-Z][A-Za-z0-9]*$'::text));
+
+
+ALTER DOMAIN identifier OWNER TO postgres;
+
+--
 -- Name: step_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -98,56 +108,236 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: charge_class; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_f2_disperser; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE charge_class (
-    charge_class_id character varying NOT NULL,
-    name character varying
+CREATE TABLE e_f2_disperser (
+    id identifier NOT NULL,
+    wavelength double precision,
+    tcc_value character varying(64) NOT NULL,
+    short_name character varying(20) NOT NULL,
+    long_name character varying(64) NOT NULL
 );
 
 
-ALTER TABLE charge_class OWNER TO postgres;
+ALTER TABLE e_f2_disperser OWNER TO postgres;
 
 --
--- Name: f2_disperser; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_f2_filter; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE f2_disperser (
-    tag character varying(32) NOT NULL,
-    log_value character varying(20) NOT NULL,
-    wavelength double precision
+CREATE TABLE e_f2_filter (
+    id identifier NOT NULL,
+    wavelength double precision NOT NULL,
+    short_name character varying(20) NOT NULL,
+    long_name character varying(20) NOT NULL,
+    tcc_value character varying(20) NOT NULL,
+    obsolete boolean NOT NULL
 );
 
 
-ALTER TABLE f2_disperser OWNER TO postgres;
+ALTER TABLE e_f2_filter OWNER TO postgres;
 
 --
--- Name: f2_filter; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_f2_fpunit; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE f2_filter (
-    tag character varying(32) NOT NULL,
-    log_value character varying(20),
-    wavelength double precision
-);
-
-
-ALTER TABLE f2_filter OWNER TO postgres;
-
---
--- Name: f2_fpunit; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE f2_fpunit (
-    tag character varying(20) NOT NULL,
-    log_value character varying(20) NOT NULL,
+CREATE TABLE e_f2_fpunit (
+    id identifier NOT NULL,
+    short_name character varying(20) NOT NULL,
     slit_width smallint NOT NULL,
-    decker f2_decker NOT NULL
+    decker f2_decker NOT NULL,
+    long_name character varying(20) NOT NULL,
+    obsolete boolean NOT NULL,
+    tcc_value character varying(20) NOT NULL
 );
 
 
-ALTER TABLE f2_fpunit OWNER TO postgres;
+ALTER TABLE e_f2_fpunit OWNER TO postgres;
+
+--
+-- Name: e_gcal_filter; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gcal_filter (
+    id character varying(20) NOT NULL,
+    short_name character varying(20) NOT NULL,
+    obsolete boolean NOT NULL,
+    tcc_value character varying(20) NOT NULL,
+    long_name character varying(20) NOT NULL
+);
+
+
+ALTER TABLE e_gcal_filter OWNER TO postgres;
+
+--
+-- Name: e_gcal_lamp; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gcal_lamp (
+    id character varying(20) NOT NULL,
+    tcc_value character varying(20) NOT NULL,
+    lamp_type gcal_lamp_type NOT NULL,
+    short_name character varying(20) NOT NULL,
+    long_name character varying(20) NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE e_gcal_lamp OWNER TO postgres;
+
+--
+-- Name: e_instrument; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_instrument (
+    id identifier NOT NULL,
+    short_name character varying(20) NOT NULL,
+    long_name character varying(64) NOT NULL,
+    tcc_value character varying(64) NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE e_instrument OWNER TO postgres;
+
+--
+-- Name: e_program_type; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_program_type (
+    id identifier NOT NULL,
+    short_name character varying(32) NOT NULL,
+    long_name character varying(64) NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE e_program_type OWNER TO postgres;
+
+--
+-- Name: COLUMN e_program_type.id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_program_type.id IS 'enum identifier';
+
+
+--
+-- Name: COLUMN e_program_type.short_name; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_program_type.short_name IS 'short name, ''SV''';
+
+
+--
+-- Name: COLUMN e_program_type.long_name; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_program_type.long_name IS 'long name, ''Classical''';
+
+
+--
+-- Name: COLUMN e_program_type.obsolete; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_program_type.obsolete IS 'true if no longer available';
+
+
+--
+-- Name: e_site; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_site (
+    id identifier NOT NULL,
+    long_name character varying(20) NOT NULL,
+    mountain character varying(20) NOT NULL,
+    longitude real NOT NULL,
+    latitude real NOT NULL,
+    altitude smallint NOT NULL,
+    timezone character varying(20) NOT NULL,
+    short_name character varying(20) NOT NULL
+);
+
+
+ALTER TABLE e_site OWNER TO postgres;
+
+--
+-- Name: TABLE e_site; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE e_site IS 'Lookup table for site information.';
+
+
+--
+-- Name: COLUMN e_site.id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.id IS 'enum identifier';
+
+
+--
+-- Name: COLUMN e_site.long_name; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.long_name IS 'long name, ''Gemini South''';
+
+
+--
+-- Name: COLUMN e_site.mountain; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.mountain IS 'name of mountain, ''Mauna Kea''';
+
+
+--
+-- Name: COLUMN e_site.longitude; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.longitude IS 'longitude in degrees';
+
+
+--
+-- Name: COLUMN e_site.latitude; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.latitude IS 'latitude in degrees';
+
+
+--
+-- Name: COLUMN e_site.altitude; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.altitude IS 'altitude in meters';
+
+
+--
+-- Name: COLUMN e_site.timezone; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.timezone IS 'key for java.util.TimeZone.getTimeZone';
+
+
+--
+-- Name: COLUMN e_site.short_name; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN e_site.short_name IS 'short name, ''GS''';
+
+
+--
+-- Name: e_template; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_template (
+    id identifier NOT NULL,
+    short_name character varying(32) NOT NULL,
+    long_name character varying(64) NOT NULL,
+    tcc_value character varying(64) NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE e_template OWNER TO postgres;
 
 --
 -- Name: f2_lyot_wheel; Type: TABLE; Schema: public; Owner: postgres
@@ -201,21 +391,6 @@ CREATE TABLE instrument (
 
 
 ALTER TABLE instrument OWNER TO postgres;
-
---
--- Name: obs_class; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE obs_class (
-    obs_class_id character varying(20) NOT NULL,
-    name character varying(20) NOT NULL,
-    priority smallint NOT NULL,
-    charge_class_id character varying NOT NULL,
-    log_value character varying(10) NOT NULL
-);
-
-
-ALTER TABLE obs_class OWNER TO postgres;
 
 --
 -- Name: observation; Type: TABLE; Schema: public; Owner: postgres
@@ -396,62 +571,143 @@ CREATE TABLE step_science (
 ALTER TABLE step_science OWNER TO postgres;
 
 --
--- Data for Name: charge_class; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_f2_disperser; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY charge_class (charge_class_id, name) FROM stdin;
-noncharged	Non-charged
-partner	Partner
-program	Program
+COPY e_f2_disperser (id, wavelength, tcc_value, short_name, long_name) FROM stdin;
+R1200JH	1.3899999999999999	R=1200 (J + H) grism	R1200JH	R=1200 (J + H) grism
+R1200HK	1.871	R=1200 (H + K) grism	R1200HK	R=1200 (H + K) grism
+R3000	1.64999999999999991	R=3000 (J or H or K) grism	R3000	R=3000 (J or H or K) grism
+None	\N	None	None	None
 \.
 
 
 --
--- Data for Name: f2_disperser; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_f2_filter; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY f2_disperser (tag, log_value, wavelength) FROM stdin;
-None	none	\N
-R=1200 (J + H) grism	R1200JH	1.3899999999999999
-R=1200 (H + K) grism	R1200HK	1.871
-R=3000 (J or H or K) grism	R3000	1.64999999999999991
+COPY e_f2_filter (id, wavelength, short_name, long_name, tcc_value, obsolete) FROM stdin;
+Open	1.60000000000000009	Open	Open	Open	f
+Y	1.02000000000000002	Y	Y (1.02 um)	Y (1.02 um)	f
+F1056	1.05600000000000005	F1056	F1056 (1.056 um)	F1056 (1.056 um)	f
+F1063	1.06299999999999994	F1063	F1063 (1.063 um)	F1063 (1.063 um)	f
+J	1.25	J	J (1.25 um)	J (1.25 um)	f
+H	1.64999999999999991	H	H (1.65 um)	H (1.65 um)	f
+JH	1.3899999999999999	JH	JH (spectroscopic)	JH (spectroscopic)	f
+HK	1.871	HK	HK (spectroscopic)	HK (spectroscopic)	f
+JLow	1.14999999999999991	J-low	J-low (1.15 um)	J-low (1.15 um)	f
+KLong	2.20000000000000018	K-long	K-long (2.20 um)	K-long (2.20 um)	f
+KShort	2.14999999999999991	K-short	K-short (2.15 um)	K-short (2.15 um)	f
 \.
 
 
 --
--- Data for Name: f2_filter; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_f2_fpunit; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY f2_filter (tag, log_value, wavelength) FROM stdin;
-Open	Open	1.60000000000000009
-Y (1.02 um)	Y	1.02000000000000002
-F1056 (1.056 um)	F1056	1.05600000000000005
-F1063 (1.063 um)	F1063	1.06299999999999994
-J-low (1.15 um)	J-low	1.14999999999999991
-J (1.25 um)	J	1.25
-H (1.65 um)	H	1.64999999999999991
-K-long (2.20 um)	K-long	2.20000000000000018
-K-short (2.15 um)	K-short	2.14999999999999991
-JH (spectroscopic)	JH	1.3899999999999999
-HK (spectroscopic)	HK	1.871
+COPY e_f2_fpunit (id, short_name, slit_width, decker, long_name, obsolete, tcc_value) FROM stdin;
+SubPixPinhole	Sub-Pix Pinhole	0	Imaging	Sub-Pixel Pinhole Gr	f	subpix pinhole grid
+None	None	0	Imaging	Imaging (none)	f	Imaging (none)
+Custom	Custom	0	MOS	Custom Mask	f	Custom Mask
+LongSlit1	Long Slit 1px	1	Long Slit	1-Pixel Long Slit	f	1-pix longslit
+LongSlit2	Long Slit 2px	2	Long Slit	2-Pixel Long Slit	f	2-pix longslit
+LongSlit3	Long Slit 3px	3	Long Slit	3-Pixel Long Slit	f	3-pix longslit
+LongSlit4	Long Slit 4px	4	Long Slit	4-Pixel Long Slit	f	4-pix longslit
+LongSlit6	Long Slit 6px	6	Long Slit	6-Pixel Long Slit	f	6-pix longslit
+LongSlit8	Long Slit 8px	8	Long Slit	8-Pixel Long Slit	f	8-pix longslit
+Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f	2-pix pinhole grid
 \.
 
 
 --
--- Data for Name: f2_fpunit; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_gcal_filter; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY f2_fpunit (tag, log_value, slit_width, decker) FROM stdin;
-Imaging (none)	none	0	Imaging
-1-pix longslit	longslit_1	1	Long Slit
-2-pix longslit	longslit_2	2	Long Slit
-3-pix longslit	longslit_3	3	Long Slit
-4-pix longslit	longslit_4	4	Long Slit
-6-pix longslit	longslit_6	6	Long Slit
-8-pix longslit	longslit_8	8	Long Slit
-2-pix pinhole grid	pinhole	0	Imaging
-subpix pinhole grid	subpixPinhole	0	Imaging
-Custom Mask	custom	0	MOS
+COPY e_gcal_filter (id, short_name, obsolete, tcc_value, long_name) FROM stdin;
+None	none	f	NONE	none
+Gmos	GMOS balance	f	GMOS	GMOS balance
+Hros	HROS balance	t	HROS	HROS balance
+Nir	NIR balance	f	NIR	NIR balance
+Nd10	ND1.0	f	ND_10	ND1.0
+Nd16	ND1.6	t	ND_16	ND1.6
+Nd20	ND2.0	f	ND_20	ND2.0
+Nd30	ND3.0	f	ND_30	ND3.0
+Nd40	ND4.0	f	ND_40	ND4.0
+Nd45	ND4-5	f	ND_45	ND4-5
+Nd50	ND5.0	t	ND_50	ND5.0
+\.
+
+
+--
+-- Data for Name: e_gcal_lamp; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gcal_lamp (id, tcc_value, lamp_type, short_name, long_name, obsolete) FROM stdin;
+IrGreyBodyLow	GCALflat	flat	IR grey body - low	IR grey body - low	f
+IrGreyBodyHigh	GCALflat	flat	IR grey body - high	IR grey body - high	f
+QuartzHalogen	GCALflat	flat	Quartz Halogen	Quartz Halogen	f
+ArArc	Ar	arc	Ar arc	Ar arc	f
+ThArArc	ThAr	arc	ThAr arc	ThAr arc	f
+CuArArc	CuAr	arc	CuAr arc	CuAr arc	f
+XeArc	Xe	arc	Xe arc	Xe arc	f
+\.
+
+
+--
+-- Data for Name: e_instrument; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_instrument (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
+Phoenix	Phoenix	Phoenix	Phoenix	f
+Michelle	Michelle	Michelle	Michelle	f
+Gnirs	GNIRS	GNIRS	GNIRS	f
+Niri	NIRI	NIRI	NIRI	f
+Trecs	TReCS	TReCS	TReCS	f
+Nici	NICI	NICI	NICI	f
+Nifs	NIFS	NIFS	NIFS	f
+Gpi	GPI	GPI	GPI	f
+Gsaoi	GSAOI	GSAOI	GSAOI	f
+GmosS	GMOS-S	GMOS South	GMOS-S	f
+AcqCam	AcqCam	Acquisition Camera	AcqCam	f
+GmosN	GMOS-N	GMOS North	GMOS-N	f
+Bhros	bHROS	bHROS	bHROS	t
+Visitor	Visitor Instrument	Visitor Instrument	Visitor Instrument	f
+Flamingos2	Flamingos2	Flamingos 2	Flamingos2	f
+\.
+
+
+--
+-- Data for Name: e_program_type; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_program_type (id, short_name, long_name, obsolete) FROM stdin;
+CAL	CAL	Calibration	f
+C	C	Classical	f
+DS	DS	Demo Science	f
+DD	DD	Director's Time	f
+ENG	ENG	Engineering	f
+FT	FT	Fast Turnaround	f
+LP	LP	Large Program	f
+Q	Q	Queue	f
+SV	SV	System Verification	f
+\.
+
+
+--
+-- Data for Name: e_site; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_site (id, long_name, mountain, longitude, latitude, altitude, timezone, short_name) FROM stdin;
+GN	Gemini North	Mauna Kea	-155.469055	19.8238068	4213	Pacific/Honolulu	GN
+GS	Gemini South	Cerro Pachon	-70.7366867	-30.2407494	2722	America/Santiago	GS
+\.
+
+
+--
+-- Data for Name: e_template; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_template (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
 \.
 
 
@@ -525,20 +781,6 @@ GMOS-N	GMOS-N
 NIFS	NIFS
 GPI	GPI
 GSAOI	GSAOI
-\.
-
-
---
--- Data for Name: obs_class; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY obs_class (obs_class_id, name, priority, charge_class_id, log_value) FROM stdin;
-science	Science	0	program	SCI
-progCal	Nighttime Program Ca	1	program	NCAL
-partnerCal	Nighttime Partner Ca	2	partner	PCAL
-acq	Acquisition	3	program	ACQ
-acqCal	Acquisition Calibrat	4	partner	ACAL
-dayCal	Daytime Calibration	5	noncharged	DCAL
 \.
 
 
@@ -641,35 +883,67 @@ COPY step_science (index, observation_id, offset_p, offset_q) FROM stdin;
 
 
 --
--- Name: charge_test_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: e_f2_fpunit_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY charge_class
-    ADD CONSTRAINT charge_test_name_key UNIQUE (name);
+ALTER TABLE ONLY e_f2_fpunit
+    ADD CONSTRAINT e_f2_fpunit_pkey PRIMARY KEY (id);
 
 
 --
--- Name: charge_test_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: e_gcal_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY charge_class
-    ADD CONSTRAINT charge_test_pkey PRIMARY KEY (charge_class_id);
+ALTER TABLE ONLY e_gcal_filter
+    ADD CONSTRAINT e_gcal_filter_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_gcal_lamp_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_gcal_lamp
+    ADD CONSTRAINT e_gcal_lamp_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_instrument_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_instrument
+    ADD CONSTRAINT e_instrument_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_program_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_program_type
+    ADD CONSTRAINT e_program_type_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_site_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_site
+    ADD CONSTRAINT e_site_pkey PRIMARY KEY (id);
 
 
 --
 -- Name: f2_disperser_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY f2_disperser
-    ADD CONSTRAINT f2_disperser_pkey PRIMARY KEY (tag);
+ALTER TABLE ONLY e_f2_disperser
+    ADD CONSTRAINT f2_disperser_pkey PRIMARY KEY (id);
 
 
 --
 -- Name: f2_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY f2_filter
-    ADD CONSTRAINT f2_filter_pkey PRIMARY KEY (tag);
+ALTER TABLE ONLY e_f2_filter
+    ADD CONSTRAINT f2_filter_pkey PRIMARY KEY (id);
 
 
 --
@@ -702,14 +976,6 @@ ALTER TABLE ONLY gcal_lamp
 
 ALTER TABLE ONLY instrument
     ADD CONSTRAINT instrument_pkey PRIMARY KEY (instrument_id);
-
-
---
--- Name: obs_class_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY obs_class
-    ADD CONSTRAINT obs_class_pkey PRIMARY KEY (obs_class_id);
 
 
 --
@@ -804,14 +1070,6 @@ CREATE INDEX ix_observation_instrument ON observation USING btree (instrument);
 --
 
 CREATE INDEX ix_observation_program_id ON observation USING btree (program_id);
-
-
---
--- Name: FK_obs_class_1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY obs_class
-    ADD CONSTRAINT "FK_obs_class_1" FOREIGN KEY (charge_class_id) REFERENCES charge_class(charge_class_id);
 
 
 --

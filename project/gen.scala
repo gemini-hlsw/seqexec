@@ -15,6 +15,28 @@ object gen extends SafeApp {
     ""
   )
 
+
+
+  // the type of queries for enumerated types
+  sealed trait NewGen[A] {
+    type Other
+
+    def query: Query0[(
+      String, // Id
+      Int,    // Ordinal
+      String, // tcc_value
+      String, // short_name
+      String, // long_name
+      Other   // Other
+    )]
+
+    
+
+  }
+
+
+
+
   sealed trait Gen[A] {
     def cname: String
     def mkClass: String
@@ -65,40 +87,6 @@ object gen extends SafeApp {
                 FROM program_type
             ORDER BY name ASC
           """.query[ProgramType]  
-      }
-  }
-
-  case class ChargeClass(tag: String, name: String)
-  object ChargeClass {
-    implicit val GenChargeClass: Gen[ChargeClass] =
-      new Gen[ChargeClass] {
-        val cname = "ChargeClass"
-        def mkClass = "sealed abstract class ChargeClass(val tag: String, val name: String)"
-        def mkCase(p: ChargeClass) = f"""case object ${p.tag.capitalize} extends ChargeClass("${p.tag}", "${p.name}")"""
-        def tag(p: ChargeClass) = p.tag
-        val query =
-         sql"""
-              SELECT charge_class_id, name
-                FROM charge_class
-            ORDER BY name ASC
-          """.query[ChargeClass]  
-      }
-  }
-
-  case class ObsClass(tag: String, name: String, cc: String, log: String)
-  object ObsClass {
-    implicit val GenChargeClass: Gen[ObsClass] =
-      new Gen[ObsClass] {
-        val cname = "ObsClass"
-        def mkClass = "sealed abstract class ObsClass(val tag: String, val name: String, val chargeClass: ChargeClass, val logValue: String)"
-        def mkCase(p: ObsClass) = f"""case object ${p.tag.capitalize} extends ObsClass("${p.tag}", "${p.name}", ChargeClass.${p.cc.capitalize}, "${p.log}")"""
-        def tag(p: ObsClass) = p.tag
-        val query =
-         sql"""
-              SELECT obs_class_id, name, charge_class_id, log_value
-                FROM obs_class
-            ORDER BY priority ASC
-          """.query[ObsClass]  
       }
   }
 
@@ -189,8 +177,6 @@ object gen extends SafeApp {
     for {
       pairs  <- List(
                   Gen[ProgramType].code,
-                  Gen[ChargeClass].code,
-                  Gen[ObsClass].code,
                   Gen[Instrument].code,
                   Gen[GCalLampType].code,
                   Gen[GCalLamp].code,

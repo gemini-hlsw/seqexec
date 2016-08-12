@@ -59,9 +59,9 @@ object Importer extends SafeApp {
         val ss   = steps(o)
         val inst = ss.flatMap(_.get("instrument:instrument")).distinct match {
           case      Nil => None
-          case o :: Nil => Some(o.asInstanceOf[String])
+          case o :: Nil => Some(o.asInstanceOf[String]).map(Enumerated[Instrument].unsafeFromTag)
           case o :: os  => sys.error("More than one instrument in sequence: " + (o :: os))
-        }
+        } 
 
         val oid = o.getObservationID
         val newObs = Observation(

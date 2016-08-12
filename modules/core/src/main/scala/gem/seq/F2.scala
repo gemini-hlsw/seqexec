@@ -1,22 +1,17 @@
-// package gem
-// package seq
+package gem
+package seq
 
 // // import edu.gemini.pot.sp.SPComponentType
 // // import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Disperser, Filter, FPUnit, LyotWheel}
 
-// import Metadata.Access._
-// import Metadata.{Attrs, Label}
-// import Metadata.Scope._
+import Metadata.Access._
+import Metadata.{Attrs, Label}
+import Metadata.Scope._
 
-// import java.time.Duration
+import java.time.Duration
 
-// import scalaz._
-// import Scalaz._
-
-// trait FPUnit
-// trait Filter
-// trait LyotWheel
-// trait Disperser
+import scalaz._
+import Scalaz._
 
 // final case class F2(
 //     fpu: FPUnit,
