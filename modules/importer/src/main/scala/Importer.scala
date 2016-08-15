@@ -26,7 +26,7 @@ object Importer extends SafeApp {
   import Program.Id._
   import ConfigSyntax._
 
-  val dir = new File("/Users/rnorris/Scala/ocs-arch/20140922-0730")
+  val dir = new File("archive")
 
   val xa = DriverManagerTransactor[IO](
     "org.postgresql.Driver", 
@@ -89,11 +89,11 @@ object Importer extends SafeApp {
       case None    => IO.ioUnit
     }
 
-  def xmlFiles(dir: File): IO[List[File]] =
-    IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(100))
+  def xmlFiles(dir: File, num: Int): IO[List[File]] =
+    IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(num))
 
-  def readAndInsertAll(r: ProgramReader, dir: File): IO[Unit] =
-    xmlFiles(dir).flatMap(_.traverse_(readAndInsert(r, _)))
+  def readAndInsertAll(r: ProgramReader, dir: File, num: Int): IO[Unit] =
+    xmlFiles(dir, num).flatMap(_.traverse_(readAndInsert(r, _)))
 
   val configLogging: IO[Unit] =
     IO(List(
@@ -106,13 +106,24 @@ object Importer extends SafeApp {
       _ <- sql"delete from semester".update.run
     } yield ()
 
-  override def runc: IO[Unit] =
-    configLogging      *>
-    clean.transact(xa) *>
-    ProgramReader.using(readAndInsertAll(_, dir)) *>
-    IO.putStrLn("\nDone.")
+  val checkArchive: IO[Unit] =
+    IO(dir.isDirectory).flatMap { b =>
+      b.unlessM(IO(sys.error("""
+        |
+        |*** Root of project needs an archive/ dir with program xml files in it.
+        |*** Try ln -s /path/to/some/stuff archive
+        |""".stripMargin)))
+    }
 
-
+  override def runl(args: List[String]): IO[Unit] = 
+    for {
+      n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
+      _ <- checkArchive
+      _ <- configLogging
+      _ <- clean.transact(xa)
+      _ <- ProgramReader.using(readAndInsertAll(_, dir, n))
+      _ <- IO.putStrLn("\nDone.")
+    } yield ()
 
   // 
 
