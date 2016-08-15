@@ -46,7 +46,7 @@ object ProgramDao {
   def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
     sql"""
       INSERT INTO program (program_id, 
-                          site_id, 
+                          site, 
                           program_type, 
                           day)
             VALUES (${pid: Program.Id},
@@ -59,7 +59,7 @@ object ProgramDao {
     pid.semester.traverse(SemesterDao.canonicalize) *>
     sql"""
       INSERT INTO program (program_id, 
-                           site_id,
+                           site,
                            semester_id,
                            program_type)
             VALUES (${pid: Program.Id},

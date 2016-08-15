@@ -16,8 +16,6 @@ lazy val core = project
     import edu.gemini.spModel.core._
     import gem._
     """,
-    // sourceGenerators in Compile +=
-    //   Def.task { gen(sourceManaged.value / "gem").unsafePerformIO }.taskValue,
     sourceGenerators in Compile +=
       Def.task { gen2(sourceManaged.value / "gem").unsafePerformIO }.taskValue
   )

@@ -41,14 +41,20 @@ object ConfigReader extends ConfigReaderLow {
     OffsetAngleConfigReader.map(OffsetQ(_))
 
   implicit val GCalLampConfigReader: ConfigReader[GCalLamp] =
-    cast[java.util.Set[Object]].map(_.iterator.next.toString).map(Enumerated[GCalLamp].unsafeFromTag(_))
+    cast[java.util.Set[Object]].map(_.iterator.next.toString).map(s => GCalLamp.all.find(_.tccValue === s).getOrElse(sys.error("GCalLampConfigReader: unexpected tccValue: " + s)))
+
+  // implicit def EnumeratedConfigReader[A <: { def tccValue: String }](implicit e: Enumerated[A]) =
+  //   StringConfigReader.map(s => e.all.find(_.tccValue === s).getOrElse("Invalid tccValue: " + s))
+
+  implicit val InstrumentConfigReader: ConfigReader[Instrument] =
+    StringConfigReader.map(s => Instrument.all.find(_.tccValue === s).getOrElse(sys.error("InstrumentConfigReader: unexpected tccValue: " + s)))
+
+  implicit val GCalShutterConfigReader: ConfigReader[GCalShutter] =
+    StringConfigReader.map(s => GCalShutter.all.find(_.tccValue === s).getOrElse(sys.error("GCalShutterConfigReader: unexpected tccValue: " + s)))
 
 }
 
 trait ConfigReaderLow { this: ConfigReader.type =>
-
-  implicit def EnumeratedConfigReader[A](implicit e: Enumerated[A]) =
-    StringConfigReader.map(e.unsafeFromTag)
 
   implicit def OptionConfigReader[A](implicit ev: ConfigReader[A]): ConfigReader[Option[A]] =
     lift((c, s) => c.get(s).as(ev.read(c, s)))

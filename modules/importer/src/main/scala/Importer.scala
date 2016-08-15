@@ -60,7 +60,7 @@ object Importer extends SafeApp {
         val ss   = steps(o)
         val inst = ss.flatMap(_.get("instrument:instrument")).distinct match {
           case      Nil => None
-          case o :: Nil => Some(o.asInstanceOf[String]).map(Enumerated[Instrument].unsafeFromTag)
+          case o :: Nil => Some(o.asInstanceOf[String]).map(s => Instrument.all.find(_.tccValue == s).getOrElse(sys.error("Invalid inst tccValue: " + s)))
           case o :: os  => sys.error("More than one instrument in sequence: " + (o :: os))
         } 
 

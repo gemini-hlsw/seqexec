@@ -156,6 +156,23 @@ CREATE TABLE e_f2_fpunit (
 ALTER TABLE e_f2_fpunit OWNER TO postgres;
 
 --
+-- Name: e_f2_lyot_wheel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_f2_lyot_wheel (
+    id identifier NOT NULL,
+    short_name character varying(20) NOT NULL,
+    plate_scale double precision NOT NULL,
+    pixel_scale double precision NOT NULL,
+    obsolete boolean NOT NULL,
+    long_name character varying(32) NOT NULL,
+    tcc_value character varying(32) NOT NULL
+);
+
+
+ALTER TABLE e_f2_lyot_wheel OWNER TO postgres;
+
+--
 -- Name: e_gcal_filter; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -340,59 +357,6 @@ CREATE TABLE e_template (
 ALTER TABLE e_template OWNER TO postgres;
 
 --
--- Name: f2_lyot_wheel; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE f2_lyot_wheel (
-    tag character varying(32) NOT NULL,
-    log_value character varying(20) NOT NULL,
-    plate_scale double precision NOT NULL,
-    pixel_scale double precision NOT NULL,
-    obsolete boolean NOT NULL
-);
-
-
-ALTER TABLE f2_lyot_wheel OWNER TO postgres;
-
---
--- Name: gcal_filter; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE gcal_filter (
-    gcal_filter_id character varying(20) NOT NULL,
-    title character varying(20) NOT NULL,
-    obsolete boolean NOT NULL
-);
-
-
-ALTER TABLE gcal_filter OWNER TO postgres;
-
---
--- Name: gcal_lamp; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE gcal_lamp (
-    gcal_lamp_id character varying(20) NOT NULL,
-    "tccName" character varying(20) NOT NULL,
-    lamp_type gcal_lamp_type NOT NULL
-);
-
-
-ALTER TABLE gcal_lamp OWNER TO postgres;
-
---
--- Name: instrument; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE instrument (
-    instrument_id character varying(20) NOT NULL,
-    name character varying(20) NOT NULL
-);
-
-
-ALTER TABLE instrument OWNER TO postgres;
-
---
 -- Name: observation; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -401,7 +365,7 @@ CREATE TABLE observation (
     observation_index smallint NOT NULL,
     title character varying(255),
     observation_id character varying(40) NOT NULL,
-    instrument character varying(20),
+    instrument identifier,
     CONSTRAINT observation_id_check CHECK (((observation_id)::text = (((program_id)::text || '-'::text) || observation_index)))
 );
 
@@ -415,8 +379,8 @@ ALTER TABLE observation OWNER TO postgres;
 CREATE TABLE program (
     program_id character varying(32) NOT NULL,
     semester_id character varying(20),
-    site_id character varying(2),
-    program_type_id character varying,
+    site identifier,
+    program_type identifier,
     index smallint,
     day date,
     title character varying(255) DEFAULT '«Untitled»'::character varying NOT NULL
@@ -430,25 +394,6 @@ ALTER TABLE program OWNER TO postgres;
 --
 
 COMMENT ON TABLE program IS 'TODO: constraint that requires structured data to be consistent with the program id, when present';
-
-
---
--- Name: program_type; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE program_type (
-    name character varying(20) NOT NULL,
-    program_type_id character varying(3) NOT NULL
-);
-
-
-ALTER TABLE program_type OWNER TO postgres;
-
---
--- Name: TABLE program_type; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON TABLE program_type IS 'TODO: constraint forbidding more rows';
 
 
 --
@@ -473,45 +418,13 @@ COMMENT ON TABLE semester IS '// TODO: start/end dates for site';
 
 
 --
--- Name: site; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE site (
-    site_id character varying(2) NOT NULL,
-    name character varying(20) NOT NULL,
-    mountain character varying(20) NOT NULL,
-    longitude real NOT NULL,
-    latitude real NOT NULL,
-    altitude smallint NOT NULL,
-    timezone character varying(20) NOT NULL,
-    CONSTRAINT site_id_check CHECK ((((site_id)::text = 'GS'::text) OR ((site_id)::text = 'GN'::text)))
-);
-
-
-ALTER TABLE site OWNER TO postgres;
-
---
--- Name: TABLE site; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON TABLE site IS 'Lookup table for site information.';
-
-
---
--- Name: COLUMN site.altitude; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN site.altitude IS 'Altitude in meters.';
-
-
---
 -- Name: step; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE step (
     observation_id character varying(40) NOT NULL,
     index smallint NOT NULL,
-    instrument_id character varying(20) NOT NULL,
+    instrument identifier NOT NULL,
     step_type step_type NOT NULL
 );
 
@@ -549,7 +462,7 @@ ALTER TABLE step_dark OWNER TO postgres;
 CREATE TABLE step_gcal (
     index smallint NOT NULL,
     observation_id character varying(40) NOT NULL,
-    gcal_lamp_id character varying,
+    gcal_lamp identifier,
     shutter gcal_shutter NOT NULL
 );
 
@@ -578,7 +491,7 @@ COPY e_f2_disperser (id, wavelength, tcc_value, short_name, long_name) FROM stdi
 R1200JH	1.3899999999999999	R=1200 (J + H) grism	R1200JH	R=1200 (J + H) grism
 R1200HK	1.871	R=1200 (H + K) grism	R1200HK	R=1200 (H + K) grism
 R3000	1.64999999999999991	R=3000 (J or H or K) grism	R3000	R=3000 (J or H or K) grism
-None	\N	None	None	None
+NoDisperser	\N	None	None	None
 \.
 
 
@@ -620,6 +533,22 @@ Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f	2-pix pinhole grid
 
 
 --
+-- Data for Name: e_f2_lyot_wheel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_f2_lyot_wheel (id, short_name, plate_scale, pixel_scale, obsolete, long_name, tcc_value) FROM stdin;
+HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)	Hartmann A (H1)
+HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)	Hartmann B (H2)
+F32High	f/32 High	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO high background	f/32 MCAO high background
+F32Low	f/32 Low	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO low background	f/32 MCAO low background
+GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS under-sized)	f/33 (GeMS under-sized)
+GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)	f/33 (GeMS over-sized)
+F16	f/16	1.6100000000000001	0.179999999999999993	f	f/16 (Open)	f/16 (open)
+F33Gems	f/33 GeMS	0.78400000000000003	0.0899999999999999967	t	f/33 (GeMS)	f/33 (Gems)
+\.
+
+
+--
 -- Data for Name: e_gcal_filter; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -643,13 +572,13 @@ Nd50	ND5.0	t	ND_50	ND5.0
 --
 
 COPY e_gcal_lamp (id, tcc_value, lamp_type, short_name, long_name, obsolete) FROM stdin;
-IrGreyBodyLow	GCALflat	flat	IR grey body - low	IR grey body - low	f
-IrGreyBodyHigh	GCALflat	flat	IR grey body - high	IR grey body - high	f
-QuartzHalogen	GCALflat	flat	Quartz Halogen	Quartz Halogen	f
-ArArc	Ar	arc	Ar arc	Ar arc	f
-ThArArc	ThAr	arc	ThAr arc	ThAr arc	f
-CuArArc	CuAr	arc	CuAr arc	CuAr arc	f
-XeArc	Xe	arc	Xe arc	Xe arc	f
+IrGreyBodyLow	IR grey body - low	flat	IR grey body - low	IR grey body - low	f
+IrGreyBodyHigh	IR grey body - high	flat	IR grey body - high	IR grey body - high	f
+QuartzHalogen	Quartz Halogen	flat	Quartz Halogen	Quartz Halogen	f
+ArArc	Ar arc	arc	Ar arc	Ar arc	f
+ThArArc	ThAr arc	arc	ThAr arc	ThAr arc	f
+CuArArc	CuAr arc	arc	CuAr arc	CuAr arc	f
+XeArc	Xe arc	arc	Xe arc	Xe arc	f
 \.
 
 
@@ -712,79 +641,6 @@ COPY e_template (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
 
 
 --
--- Data for Name: f2_lyot_wheel; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY f2_lyot_wheel (tag, log_value, plate_scale, pixel_scale, obsolete) FROM stdin;
-f/16 (open)	f/16	1.6100000000000001	0.179999999999999993	f
-f/32 MCAO high background	f/32 high	0.805000000000000049	0.0899999999999999967	t
-f/32 MCAO low background	f/32 low	0.805000000000000049	0.0899999999999999967	t
-f/33 (Gems)	f/33 Gems	0.78400000000000003	0.0899999999999999967	t
-f/33 (GeMS under-sized)	GeMS under	0.78400000000000003	0.0899999999999999967	f
-f/33 (GeMS over-sized)	GeMS over	0.78400000000000003	0.0899999999999999967	f
-Hartmann A (H1)	Hartmann A (H1)	0	0	f
-Hartmann B (H2)	Hartmann B (H2)	0	0	f
-\.
-
-
---
--- Data for Name: gcal_filter; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY gcal_filter (gcal_filter_id, title, obsolete) FROM stdin;
-NONE	none	f
-ND_10	ND1.0	f
-ND_16	ND1.6	t
-ND_20	ND2.0	f
-ND_30	ND3.0	f
-ND_40	ND4.0	f
-ND_45	ND4-5	f
-ND_50	ND5.0	t
-GMOS	GMOS balance	f
-HROS	HROS balance	t
-NIR	NIR balance	f
-\.
-
-
---
--- Data for Name: gcal_lamp; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY gcal_lamp (gcal_lamp_id, "tccName", lamp_type) FROM stdin;
-IR grey body - high	GCALflat	flat
-IR grey body - low	GCALflat	flat
-Quartz Halogen	GCALflat	flat
-Ar arc	Ar	arc
-ThAr arc	ThAr	arc
-CuAr arc	CuAr	arc
-Xe arc	Xe	arc
-\.
-
-
---
--- Data for Name: instrument; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY instrument (instrument_id, name) FROM stdin;
-GNIRS	GNIRS
-NIRI	NIRI
-Phoenix	Phoenix
-TReCS	TReCS
-Flamingos2	Flamingos2
-NICI	NICI
-bHROS	bHROS
-Visitor Instrument	Visitor Instrument
-Michelle	Michelle
-GMOS-S	GMOS-S
-AcqCam	AcqCam
-GMOS-N	GMOS-N
-NIFS	NIFS
-GPI	GPI
-GSAOI	GSAOI
-\.
-
-
---
 -- Data for Name: observation; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -796,24 +652,7 @@ COPY observation (program_id, observation_index, title, observation_id, instrume
 -- Data for Name: program; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY program (program_id, semester_id, site_id, program_type_id, index, day, title) FROM stdin;
-\.
-
-
---
--- Data for Name: program_type; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY program_type (name, program_type_id) FROM stdin;
-Calibration	CAL
-Classical	C
-Demo Science	DS
-Director's Time	DD
-Engineering	ENG
-Fast Turnaround	FT
-Large Program	LP
-Queue	Q
-System Verification	SV
+COPY program (program_id, semester_id, site, program_type, index, day, title) FROM stdin;
 \.
 
 
@@ -833,20 +672,10 @@ COPY semester (semester_id, year, half) FROM stdin;
 
 
 --
--- Data for Name: site; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY site (site_id, name, mountain, longitude, latitude, altitude, timezone) FROM stdin;
-GN	Gemini North	Mauna Kea	-155.469055	19.8238068	4213	Pacific/Honolulu
-GS	Gemini South	Cerro Pachon	-70.7366867	-30.2407494	2722	America/Santiago
-\.
-
-
---
 -- Data for Name: step; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY step (observation_id, index, instrument_id, step_type) FROM stdin;
+COPY step (observation_id, index, instrument, step_type) FROM stdin;
 \.
 
 
@@ -870,7 +699,7 @@ COPY step_dark (index, observation_id) FROM stdin;
 -- Data for Name: step_gcal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY step_gcal (index, observation_id, gcal_lamp_id, shutter) FROM stdin;
+COPY step_gcal (index, observation_id, gcal_lamp, shutter) FROM stdin;
 \.
 
 
@@ -950,32 +779,8 @@ ALTER TABLE ONLY e_f2_filter
 -- Name: f2_lyot_wheel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY f2_lyot_wheel
-    ADD CONSTRAINT f2_lyot_wheel_pkey PRIMARY KEY (tag);
-
-
---
--- Name: gcal_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY gcal_filter
-    ADD CONSTRAINT gcal_filter_pkey PRIMARY KEY (gcal_filter_id);
-
-
---
--- Name: gcal_lamp_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY gcal_lamp
-    ADD CONSTRAINT gcal_lamp_pkey PRIMARY KEY (gcal_lamp_id);
-
-
---
--- Name: instrument_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY instrument
-    ADD CONSTRAINT instrument_pkey PRIMARY KEY (instrument_id);
+ALTER TABLE ONLY e_f2_lyot_wheel
+    ADD CONSTRAINT f2_lyot_wheel_pkey PRIMARY KEY (id);
 
 
 --
@@ -1003,27 +808,11 @@ ALTER TABLE ONLY program
 
 
 --
--- Name: program_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY program_type
-    ADD CONSTRAINT program_type_pkey PRIMARY KEY (program_type_id);
-
-
---
 -- Name: semester_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY semester
     ADD CONSTRAINT semester_pkey PRIMARY KEY (semester_id);
-
-
---
--- Name: site_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY site
-    ADD CONSTRAINT site_pkey PRIMARY KEY (site_id);
 
 
 --
@@ -1089,19 +878,19 @@ ALTER TABLE ONLY program
 
 
 --
--- Name: FK_program_2; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: observation_instrument_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY observation
+    ADD CONSTRAINT observation_instrument_fkey FOREIGN KEY (instrument) REFERENCES e_instrument(id);
+
+
+--
+-- Name: program_site_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY program
-    ADD CONSTRAINT "FK_program_2" FOREIGN KEY (site_id) REFERENCES site(site_id);
-
-
---
--- Name: program_program_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY program
-    ADD CONSTRAINT program_program_type_id_fkey FOREIGN KEY (program_type_id) REFERENCES program_type(program_type_id);
+    ADD CONSTRAINT program_site_fkey FOREIGN KEY (site) REFERENCES e_site(id);
 
 
 --
@@ -1121,11 +910,11 @@ ALTER TABLE ONLY step_dark
 
 
 --
--- Name: step_gcal_gcal_lamp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: step_gcal_gcal_lamp_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_lamp_id_fkey FOREIGN KEY (gcal_lamp_id) REFERENCES gcal_lamp(gcal_lamp_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT step_gcal_gcal_lamp_fkey FOREIGN KEY (gcal_lamp) REFERENCES e_gcal_lamp(id);
 
 
 --
@@ -1137,11 +926,11 @@ ALTER TABLE ONLY step_gcal
 
 
 --
--- Name: step_instrument_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: step_instrument_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY step
-    ADD CONSTRAINT step_instrument_id_fkey FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id);
+    ADD CONSTRAINT step_instrument_fkey FOREIGN KEY (instrument) REFERENCES e_instrument(id);
 
 
 --
