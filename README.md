@@ -46,7 +46,6 @@ You can then import from the `sbt` prompt:
 ```
 sbt> importer/runMain gem.Importer 123     Import the first 123 programs.
 sbt> importer/run                          Import everything; same as passing Int.MaxValue
- 
 ```
 
 Right now just a sketch is imported:
@@ -66,8 +65,11 @@ There are no instrument-specific slices for science steps yet.
 
 Enumerated types are represented by tables named `e_whatever` which are the source for generated code on the Scala side. After compiling if you look in `modules/core/target/scala-2.11/src_managed/gem` you will see the source. The rationale for this is that the database becomes the source of truth, which makes things like filter wavelengths, etc., available for querying and reporting.
 
+It's not yet clear which bits could be data-driven and which need to exist in Scala code. We do need to write code against specific filters and so on but we could still read these from the database on the fly. TBD.
+
 ### Next Steps
 
+- [ ] general re-org and continued refactoring
 - [ ] science steps for F2 and a few more instruments
 - [ ] dao methods for reading (right now all we do is insert)
 - [ ] simple web front end for CRUD actions
