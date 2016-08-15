@@ -5,7 +5,7 @@ This is the initial work on a Postgres-based back end, with an API based around 
 
 ### Setting Up
 
-You need Postgres 9.5 or better. I **highly** recommend using [Postgres.app]() which is much much easier than dealing with a "real" installation. You need to add its binaries to your path, something along the lines of
+You need Postgres 9.5 or better. I **highly** recommend using [Postgres.app](http://postgresapp.com/) which is much much easier than dealing with a "real" installation. You need to add its binaries to your path, something along the lines of
 
 ```
 export PATH=$PATH:/Applications/Postgres.app/Contents/Versions/latest/bin
