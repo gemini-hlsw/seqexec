@@ -1,8 +1,7 @@
 package gem
 package seq
 
-// // import edu.gemini.pot.sp.SPComponentType
-// // import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Disperser, Filter, FPUnit, LyotWheel}
+import gem.enum.{ F2FpUnit, F2Filter, F2LyotWheel, F2Disperser }
 
 import Metadata.Access._
 import Metadata.{Attrs, Label}
@@ -13,95 +12,90 @@ import java.time.Duration
 import scalaz._
 import Scalaz._
 
-// final case class F2(
-//     fpu: FPUnit,
-//     mosPreimaging: Boolean,
-//     exposureTime: Duration,
-//     filter: Filter,
-//     lyoutWheel: LyotWheel,
-//     disperser: Disperser
-//  ) extends Instrument {
-//   def name = "F2"
-// }
+final case class F2(
+    fpu: F2FpUnit,
+    mosPreimaging: Boolean,
+    exposureTime: Duration,
+    F2filter: F2Filter,
+    lyoutWheel: F2LyotWheel,
+    disperser: F2Disperser
+ ) extends Instrument {
+  val tag = gem.enum.Instrument.Flamingos2.tag
+}
 
-// object F2 {
+object F2 {
 
-//   val Lab = Label("F2")
+  val Lab = Label("F2")
 
-//   private def lab(name: String): Label = Label(Lab, name)
+  private def lab(name: String): Label = Label(Lab, name)
 
-//   import BooleanMetadata.forBoolean
-//   import EnumMetadata.fromJava
+  import BooleanMetadata.forBoolean
+  import EnumMetadata.forEnumerated
 
-//   object FocalPlaneUnitProp extends Prop[F2] {
-//     type B = FPUnit
-//     val eq: Equal[FPUnit]  = Equal.equalA
-//     val lens: F2 @> FPUnit = Lens.lensu((a,b) => a.copy(fpu = b), _.fpu)
+  object FocalPlaneUnitProp extends Prop[F2] {
+    type B = F2FpUnit
+    val eq: Equal[F2FpUnit]  = implicitly
+    val lens: F2 @> F2FpUnit = Lens.lensu((a,b) => a.copy(fpu = b), _.fpu)
+    val meta = forEnumerated[F2FpUnit](Attrs(lab("Focal Plane Unit"), Science, SingleStep))
+  }
 
-//     val meta = fromJava(Attrs(lab("Focal Plane Unit"), Science, SingleStep), classOf[FPUnit])
-//   }
+  object MosPreimagingProp extends Prop[F2] {
+    type B = Boolean
+    val eq: Equal[Boolean]  = implicitly
+    val lens: F2 @> Boolean = Lens.lensu((a,b) => a.copy(mosPreimaging = b), _.mosPreimaging)
+    val meta = forBoolean(Attrs(lab("MOS pre-imaging"), Science, Global))
+  }
 
-//   object MosPreimagingProp extends Prop[F2] {
-//     type B = Boolean
-//     val eq: Equal[Boolean]  = implicitly[Equal[Boolean]]
-//     val lens: F2 @> Boolean = Lens.lensu((a,b) => a.copy(mosPreimaging = b), _.mosPreimaging)
+  object ExposureTimeProp extends Prop[F2] {
+    type B = Duration
+    val eq: Equal[Duration]  = Equal.equalA
+    val lens: F2 @> Duration = Lens.lensu((a,b) => a.copy(exposureTime = b), _.exposureTime)
 
-//     val meta = forBoolean(Attrs(lab("MOS pre-imaging"), Science, Global))
-//   }
+    val meta = TextMetadata[Duration](
+      Attrs(lab("Exposure Time"), Science, SingleStep),
+      Some("sec"),
+      et => f"${et.toMillis/1000.0}%3.01f",
+      doubleParser("Exposure Time", _)(d => Duration.ofMillis(math.round(d * 1000)))
+    )
+  }
 
-//   object ExposureTimeProp extends Prop[F2] {
-//     type B = Duration
-//     val eq: Equal[Duration]  = Equal.equalA
-//     val lens: F2 @> Duration = Lens.lensu((a,b) => a.copy(exposureTime = b), _.exposureTime)
+  object FilterProp extends Prop[F2] {
+    type B = F2Filter
+    val eq: Equal[F2Filter]  = implicitly
+    val lens: F2 @> F2Filter = Lens.lensu((a,b) => a.copy(F2filter = b), _.F2filter)
+    val meta = forEnumerated[F2Filter](Attrs(lab("F2Filter"), Science, SingleStep))
+  }
 
-//     val meta = TextMetadata[Duration](
-//       Attrs(lab("Exposure Time"), Science, SingleStep),
-//       Some("sec"),
-//       et => f"${et.toMillis/1000.0}%3.01f",
-//       doubleParser("Exposure Time", _)(d => Duration.ofMillis(math.round(d * 1000)))
-//     )
-//   }
+  object LyotWheelProp extends Prop[F2] {
+    type B = F2LyotWheel
+    val eq: Equal[F2LyotWheel]  = implicitly
+    val lens: F2 @> F2LyotWheel = Lens.lensu((a,b) => a.copy(lyoutWheel = b), _.lyoutWheel)
+    val meta = forEnumerated[F2LyotWheel](Attrs(lab("Lyot Wheel"), Science, SingleStep))
+  }
 
-//   object FilterProp extends Prop[F2] {
-//     type B = Filter
-//     val eq: Equal[Filter]  = Equal.equalA
-//     val lens: F2 @> Filter = Lens.lensu((a,b) => a.copy(filter = b), _.filter)
+  object DisperserProp extends Prop[F2] {
+    type B = F2Disperser
+    val eq: Equal[F2Disperser]  = implicitly
+    val lens: F2 @> F2Disperser = Lens.lensu((a,b) => a.copy(disperser = b), _.disperser)
+    val meta = forEnumerated[F2Disperser](Attrs(lab("Disperser"), Science, SingleStep))
+  }
 
-//     val meta = fromJava(Attrs(lab("Filter"), Science, SingleStep), classOf[Filter])
-//   }
+  implicit val DescribeF2: Describe[F2] =
+    Describe.forProps(
+      F2(
+        F2FpUnit.None,
+        mosPreimaging = false,
+        Duration.ofMillis(85000),
+        F2Filter.Open,
+        F2LyotWheel.F16,
+        F2Disperser.NoDisperser
+      ),
+      FocalPlaneUnitProp,
+      MosPreimagingProp,
+      ExposureTimeProp,
+      FilterProp,
+      LyotWheelProp,
+      DisperserProp
+    )
 
-//   object LyotWheelProp extends Prop[F2] {
-//     type B = LyotWheel
-//     val eq: Equal[LyotWheel]  = Equal.equalA
-//     val lens: F2 @> LyotWheel = Lens.lensu((a,b) => a.copy(lyoutWheel = b), _.lyoutWheel)
-
-//     val meta = fromJava(Attrs(lab("Lyot Wheel"), Science, SingleStep), classOf[LyotWheel])
-//   }
-
-//   object DisperserProp extends Prop[F2] {
-//     type B = Disperser
-//     val eq: Equal[Disperser]  = Equal.equalA
-//     val lens: F2 @> Disperser = Lens.lensu((a,b) => a.copy(disperser = b), _.disperser)
-
-//     val meta = fromJava(Attrs(lab("Disperser"), Science, SingleStep), classOf[Disperser])
-//   }
-
-//   implicit val DescribeF2: Describe[F2] =
-//     Describe.forProps(
-//       F2(
-//         FPUnit.DEFAULT,
-//         mosPreimaging = false,
-//         Duration.ofMillis(85000),
-//         Filter.DEFAULT,
-//         LyotWheel.DEFAULT,
-//         Disperser.DEFAULT
-//       ),
-//       FocalPlaneUnitProp,
-//       MosPreimagingProp,
-//       ExposureTimeProp,
-//       FilterProp,
-//       LyotWheelProp,
-//       DisperserProp
-//     )
-
-// }
+}

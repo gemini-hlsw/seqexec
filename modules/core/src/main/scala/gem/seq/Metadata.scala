@@ -1,8 +1,6 @@
 package gem
 package seq
 
-// import edu.gemini.spModel.`type`.LoggableSpType
-
 import scalaz._
 import Scalaz._
 
