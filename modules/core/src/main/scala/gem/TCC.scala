@@ -1,9 +1,10 @@
 package gem
 
+import gem.enum.Instrument
+
 import edu.gemini.spModel.core._
 
 import scala.reflect.runtime.universe.TypeTag
-
 
 object Tcc {
 
@@ -44,7 +45,7 @@ object Tcc {
   }
   
   case object Instrument extends System("instrument") {
-    val Instrument = Key[gem.Instrument]("instrument")(_.name)
+    val Instrument = Key[Instrument]("instrument")(_.tccValue)
   }
   
   case object Calibration extends System("calibration") {

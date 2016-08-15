@@ -19,7 +19,7 @@ object StepDao {
 
   def insertBaseSlice[I <: Instrument](oid: Observation.Id, index: Int, i: I, t: Step.Type): ConnectionIO[Int] =
     sql"""
-      INSERT INTO step (observation_id, index, instrument_id, step_type)
+      INSERT INTO step (observation_id, index, instrument, step_type)
       VALUES ($oid, ${index}, ${i.tag}, ${t.toString} :: step_type)
     """.update.run
 
@@ -37,7 +37,7 @@ object StepDao {
 
   def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalUnit): ConnectionIO[Int] =
     sql"""
-      INSERT INTO step_gcal (observation_id, index, gcal_lamp_id, shutter)
+      INSERT INTO step_gcal (observation_id, index, gcal_lamp, shutter)
       VALUES (${oid.toString}, ${index}, ${gcal.lamp}, ${gcal.shutter} :: gcal_shutter)
     """.update.run
 

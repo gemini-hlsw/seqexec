@@ -1,6 +1,8 @@
 package gem
 package seq
 
+import gem.enum.{ GCalLamp, GCalShutter }
+
 import gem.seq.Metadata.Access.Science
 import gem.seq.Metadata.{Attrs, Label}
 import gem.seq.Metadata.Scope.SingleStep
@@ -35,7 +37,7 @@ object GcalUnit {
 
   implicit val DescribeGcal: Describe[GcalUnit] =
     Describe.forProps(
-      GcalUnit(GCalLamp.IR_grey_body___high, GCalShutter.Open),
+      GcalUnit(GCalLamp.IrGreyBodyHigh, GCalShutter.Open),
       LampProp, ShutterProp
     )
 }

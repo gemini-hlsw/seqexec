@@ -1,5 +1,7 @@
 package gem
 
+import gem.enum._
+
 import edu.gemini.spModel.core._
 import scala.reflect.ClassTag
 

@@ -1,6 +1,7 @@
 package gem
 
 import gem.dao._
+import gem.enum._
 
 import edu.gemini.pot.sp.{ISPProgram, ISPObservation}
 import edu.gemini.spModel.io.SpImportService

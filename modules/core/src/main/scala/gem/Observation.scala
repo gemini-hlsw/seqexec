@@ -1,5 +1,7 @@
 package gem
 
+import gem.enum.Instrument
+
 import scalaz._, Scalaz._
 
 case class Observation(id: Observation.Id, title: String, instrument: Option[Instrument])

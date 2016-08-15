@@ -1,5 +1,7 @@
 import doobie.imports._
 
+import java.io.File
+
 import scalaz._, Scalaz._
 import scalaz.effect._
 import scala.reflect.runtime.universe.TypeTag
@@ -11,7 +13,7 @@ import shapeless.syntax._
 import shapeless.syntax.singleton._
 import shapeless.record._
 
-object gen2 extends App {
+object gen2 {
   
   val xa = DriverManagerTransactor[IO](
     "org.postgresql.Driver", 
@@ -57,55 +59,123 @@ object gen2 extends App {
               v: Values.Aux[R, V],
              ma: Mapper.Aux[ToLiteral.type, V, L],
              t2: ToTraversable.Aux[L, List, Lub2]
-  ): String = s"""
-    |package gem.enum
-    |
-    |import scalaz.syntax.equal._
-    |import scalaz.std.anyval._
-    |
-    |${decl(name, records.head._2.fields)}
-    |
-    |object $name {
-    |
-    |${records.map { case (id, r) => cons(name, id, r.values) }.mkString("\n") }
-    |
-    |  val all: List[$name] =
-    |    List(${records.map(_._1).mkString(", ")})
-    |
-    |  def fromTag(s: String): Option[$name] =
-    |    all.find(_.tag === s)
-    |
-    |  def unsafeFromTag(s: String): $name =
-    |    fromTag(s).getOrElse(throw new NoSuchElementException(s))
-    |
-    |}
-    |""".stripMargin.trim
+  ): (String, String) = 
+    (s"$name.scala", s"""
+      |package gem
+      |package enum
+      |
+      |import doobie.util.meta.Meta
+      |
+      |import scalaz.syntax.equal._
+      |import scalaz.std.string._
+      |
+      |${decl(name, records.head._2.fields)}
+      |
+      |object $name {
+      |
+      |${records.map { case (id, r) => cons(name, id, r.values) }.mkString("\n") }
+      |
+      |  val all: List[$name] =
+      |    List(${records.map(_._1).mkString(", ")})
+      |
+      |  def fromTag(s: String): Option[$name] =
+      |    all.find(_.tag === s)
+      |
+      |  def unsafeFromTag(s: String): $name =
+      |    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+      |
+      |  implicit val ${name}Meta: Meta[$name] =
+      |    Meta[String].nxmap(unsafeFromTag, _.tag)
+      |
+      |  implicit val ${name}Enumerated: Enumerated[$name] =
+      |    new Enumerated[$name] {
+      |      def all = $name.all
+      |      def tag(a: $name) = a.tag
+      |    }
+      |
+      |}
+      |""".stripMargin.trim
+    )
 
   // Still slightly boilerplatey but not too bad
 
-  println(enum("F2Disperser") {
-    type F2DisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Option[Double]`.T
-    val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength from e_f2_disperser".query[(String, F2DisperserRec)].list
-    io.transact(xa).unsafePerformIO
-  })
+  val enums: List[(String, String)] =
+    List(
 
-  println(enum("F2Filter") {
-    type F2FilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Double, 'obsolete -> Boolean`.T
-    val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength, obsolete from e_f2_filter".query[(String, F2FilterRec)].list
-    io.transact(xa).unsafePerformIO
-  })
+      enum("F2Disperser") {
+        type F2DisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Option[Double]`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength from e_f2_disperser".query[(String, F2DisperserRec)].list
+        io.transact(xa).unsafePerformIO
+      },
 
-  println(enum("GCalFilter") {
-    type GcalFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
-    val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_filter".query[(String, GcalFilterRec)].list
-    io.transact(xa).unsafePerformIO
-  })
+      enum("F2Filter") {
+        type F2FilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Double, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength, obsolete from e_f2_filter".query[(String, F2FilterRec)].list
+        io.transact(xa).unsafePerformIO
+      },
 
-  println(enum("GCalLamp") {
-    type GcalLampRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
-    val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_lamp".query[(String, GcalLampRec)].list
-    io.transact(xa).unsafePerformIO
-  })
+      enum("F2FpUnit") {
+        type F2FpUnitRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'slitWidth -> Int, 'decker -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, slit_width, decker, obsolete from e_f2_fpunit".query[(String, F2FpUnitRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("F2LyotWheel") {
+        type F2LyotWheelRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'plateScale -> Double, 'pixelScale -> Double, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, plate_scale, pixel_scale, obsolete from e_f2_lyot_wheel".query[(String, F2LyotWheelRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GCalFilter") {
+        type GcalFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_filter".query[(String, GcalFilterRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GCalLamp") {
+        type GcalLampRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_lamp".query[(String, GcalLampRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GCalShutter") {
+        type GcalShutterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String`.T
+        val io = sql"""
+          SELECT enumlabel x, enumlabel a, enumlabel b, enumlabel c, enumlabel d
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'gcal_shutter'
+         """.query[(String, GcalShutterRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("Instrument") {
+        type InstrumentRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_instrument".query[(String, InstrumentRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("ProgramType") {
+        type ProgramTypeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_program_type".query[(String, ProgramTypeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("Site") {
+        type SiteRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"select id, id tag, short_name, long_name from e_site".query[(String, SiteRec)].list
+        io.transact(xa).unsafePerformIO
+      }
+
+    )
+
+  def apply(dir: File): IO[Seq[File]] =
+    for {
+      fs <- enums.traverse { case (f, c) => IO { 
+              val file = new File(dir, f)
+              sbt.IO.write(file, c)
+              file
+            }}
+    } yield fs
 
 }
 

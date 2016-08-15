@@ -32,9 +32,9 @@ object ProgramDao {
     SemesterDao.canonicalize(pid.semesterVal) *>
     sql"""
        INSERT INTO program (program_id,
-                           site_id,
+                           site,
                            semester_id,
-                           program_type_id,
+                           program_type,
                            index)
            VALUES (${pid: Program.Id},
                    ${pid.siteVal.toString},
@@ -47,7 +47,7 @@ object ProgramDao {
     sql"""
       INSERT INTO program (program_id, 
                           site_id, 
-                          program_type_id, 
+                          program_type, 
                           day)
             VALUES (${pid: Program.Id},
                     ${pid.siteVal.toString},
@@ -61,7 +61,7 @@ object ProgramDao {
       INSERT INTO program (program_id, 
                            site_id,
                            semester_id,
-                           program_type_id)
+                           program_type)
             VALUES (${pid: Program.Id},
                     ${pid.site.map(_.toString)},
                     ${pid.semester.map(_.toString)},
