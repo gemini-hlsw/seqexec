@@ -1,12 +1,14 @@
 package edu.gemini.seqexec.web.server.http4s
 
-import java.io.File
+import java.time.LocalDateTime
 
 import org.http4s.MediaType._
 import org.http4s.dsl._
-import org.http4s.headers.`Content-Type`
+import org.http4s.headers.{`Cache-Control`, `Content-Type`}
+import org.http4s.CacheDirective._
 import org.http4s.server.middleware.GZip
 import org.http4s._
+import org.http4s.util.NonEmptyList
 
 import scalaz.concurrent.Task
 
@@ -60,9 +62,15 @@ class StaticRoutes(devMode: Boolean) {
     s"<!DOCTYPE html>$xml"
   }
 
+  val inOneYear = LocalDateTime.now.plusYears(1)
+
+  val indexResponse =
+    Ok(index).withContentType(Some(`Content-Type`(`text/html`, Charset.`UTF-8`))).putHeaders(`Cache-Control`(NonEmptyList(`no-cache`())))
+
   // Get a resource from a local file, useful for development
-  def localResource(base: String, path: String, req: Request):Option[Response] = StaticFile.fromFile(new File(base, path), Some(req))
-  def localResource(path: String, req: Request):Option[Response] = StaticFile.fromResource(path, Some(req))
+  def localResource(path: String, req: Request):Option[Response] =
+    StaticFile.fromResource(path, Some(req)).map(_.putHeaders())
+
   // Get a resource from a local file, used in production
   def embeddedResource(path: String, req: Request):Option[Response] = {
     val url = Option(getClass.getResource(path))
@@ -83,7 +91,7 @@ class StaticRoutes(devMode: Boolean) {
   val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".woff", ".woff2", ".ttf", ".mp3")
 
   val service = GZip { HttpService {
-    case req if req.pathInfo == "/"                  => Ok(index).withContentType(Some(`Content-Type`(`text/html`, Charset.`UTF-8`)))
+    case req if req.pathInfo == "/"                  => indexResponse
     case req if req.pathInfo == "/cli" && devMode    => req.serve("/cli-dev.html")
     case req if req.pathInfo == "/cli"               => req.serve("/cli.html")
     case req if req.endsWith(supportedExtension: _*) => req.serve()
