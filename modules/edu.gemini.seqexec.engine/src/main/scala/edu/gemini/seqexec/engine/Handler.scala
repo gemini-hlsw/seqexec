@@ -24,7 +24,7 @@ object Handler {
 
     def handleSystemEvent(se: SystemEvent): Telescope[SeqStatus] = se match {
       case (Completed(i)) => log("Output: Action completed") *> complete(queue)(i)
-      case (Failed(i)) => log("Output: Action failed") *> fail(i)
+      case (Failed(i)) => log("Output: Action failed") *> fail(queue)(i)
       case Finished => log("Output: Finished")
     }
 

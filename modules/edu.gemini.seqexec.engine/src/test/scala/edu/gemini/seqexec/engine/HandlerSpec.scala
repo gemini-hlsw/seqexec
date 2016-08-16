@@ -20,9 +20,9 @@ class HandlerSpec extends FlatSpec {
     *
     */
   val configureTcs: Action  = for {
-    _ <- Task.delay { println("System: Start TCS configuration") }
-    _ <- Task.delay { Thread.sleep(2000) }
-    _ <- Task.delay { println ("System: Complete TCS configuration") }
+    _ <- Task(println("System: Start TCS configuration"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println ("System: Complete TCS configuration"))
   } yield OK
 
   /**
@@ -30,9 +30,9 @@ class HandlerSpec extends FlatSpec {
     *
     */
   val configureInst: Action  = for {
-    _ <- Task.delay { println("System: Start Instrument configuration") }
-    _ <- Task.delay { Thread.sleep(2000) }
-    _ <- Task.delay { println("System: Complete Instrument configuration") }
+    _ <- Task(println("System: Start Instrument configuration"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println("System: Complete Instrument configuration"))
   } yield OK
 
   /**
@@ -40,15 +40,15 @@ class HandlerSpec extends FlatSpec {
     *
     */
   val observe: Action  = for {
-    _ <- Task.delay { println("System: Start observation") }
-    _ <- Task.delay { Thread.sleep(2000) }
-    _ <- Task.delay { println ("System: Complete observation") }
+    _ <- Task(println("System: Start observation"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println ("System: Complete observation"))
   } yield OK
 
   val faulty: Action  = for {
-    _ <- Task.delay { println("System: Start observation") }
-    _ <- Task.delay { Thread.sleep(1000) }
-    _ <- Task.delay { println ("System: Complete observation") }
+    _ <- Task(println("System: Start observation"))
+    _ <- Task(Thread.sleep(1000))
+    _ <- Task(println ("System: Complete observation"))
   } yield OK
 
   val seqstatus1: SeqStatus = SeqStatus(
@@ -75,22 +75,29 @@ class HandlerSpec extends FlatSpec {
       (handler(queue).take(1).run.exec(emptySeqStatus))
 
   it should "be in running Status after a Start event" in {
-    val response = status.get(request(start).unsafePerformSync)
-    assert(response === Running)
+    val result = request(start).unsafePerformSync.status
+    assert(result === Running)
   }
 
-  it should "0 steps pending after 4 steps have been processed in seqstatus1" in {
-    val result = queue.enqueueOne(start) *>
-      (handler(queue).take(4).run.exec(seqstatus1))
-    // TODO: `pending` clashes with something brought in scope
-    // which I don't know how to hide
-    assert(sequence.andThen(State.pending).get(result.unsafePerformSync).length == 0)
+  it should "0 steps pending after 4 steps have been processed for seqstatus1" in {
+    val result = (queue.enqueueOne(start) *>
+      // TODO: Don't hardcode the number of steps to let through.
+      (handler(queue).take(7).run.exec(seqstatus1))).unsafePerformSync
+    assert(result.sequence.pending.length == 0)
   }
 
+  // This is here for visual inspection. The states should be coupled with a //
+  // Sink for concrete tests.
+  it should "0 steps pending after pause/start events" in {
+    val result =
+      (queue.enqueueAll(List(start, poll, pause, poll, start, poll)) *>
+         (handler(queue).take(12).run.exec(seqstatus1))).unsafePerformSync
+    assert(result.sequence.pending.length == 0)
+  }
   it should "finish raising a Terminated exception after an Exit event" in {
-    intercept[Cause.Terminated](
-      (queue.enqueueOne(exit) *>
-         (handler(queue).run.exec(emptySeqStatus))
+    intercept[Cause.Terminated](Nondeterminism[Task].both(
+      (queue.enqueueOne(start) *> queue.enqueueOne(exit)),
+      (handler(queue).run.exec(seqstatus1))
       ).unsafePerformSync
     )
   }
