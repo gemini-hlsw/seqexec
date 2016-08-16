@@ -47,6 +47,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
 
   // Project for the server side application
   lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
+    .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings: _*)
     .settings(
       libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s,
@@ -76,6 +77,14 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client_cli, Compile, packageJSDependencies)).value,
       // do a fastOptJS on reStart
       reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client_cli, Compile))
+    )
+    .settings(
+      buildInfoUsePackageAsPath := true,
+      buildInfoKeys := Seq(name, version),
+      buildInfoKeys += buildInfoBuildNumber,
+      buildInfoOptions += BuildInfoOption.BuildTime,
+      buildInfoObject := "OcsBuildInfo",
+      buildInfoPackage := "edu.gemini.seqexec.web.server"
     )
     .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server)
 
