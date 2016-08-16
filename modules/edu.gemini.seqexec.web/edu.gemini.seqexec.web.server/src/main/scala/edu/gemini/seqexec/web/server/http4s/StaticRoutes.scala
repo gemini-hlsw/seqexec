@@ -103,7 +103,7 @@ class StaticRoutes(devMode: Boolean) {
     }
   }
 
-  val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
+  val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
 
   val service = GZip { HttpService {
     case req if req.pathInfo == "/"                  => indexResponse
