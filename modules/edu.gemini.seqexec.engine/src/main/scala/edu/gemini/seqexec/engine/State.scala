@@ -13,23 +13,7 @@ object State {
     * unit of state for the seqexec. This is what is passed as output to
     * clients.
     */
-  case class SeqStatus(seq: Sequence, st: Status)
-
-  /**
-    * Lens to manipulate the `Sequence` under `SeqStatus`
-    */
-  val sequence = Lens.lensu[SeqStatus, Sequence](
-    (ss, seq1) => ss.copy(seq = seq1),
-    _.seq
-  )
-
-  /**
-    * Lens to manipulate the `Status` under `SeqStatus`
-    */
-  val status = Lens.lensu[SeqStatus, Status](
-    (ss, st1) => ss.copy(st = st1),
-    _.st
-    )
+  case class SeqStatus(sequence: Sequence, status: Status)
 
   /**
     * Execution status. Either `Running` or `Waiting`.
@@ -41,30 +25,9 @@ object State {
   /**
     * A List of `Step`s meant to be run sequentially.
     */
-  case class Sequence(stepsDone: List[StepDone], stepsCurrent: IntMap[Action], stepsPending: List[Step])
-
-  /**
-    * Lens for completed Steps.
-    */
-  val done = Lens.lensu[Sequence, List[StepDone]](
-    (seq, newSteps) => seq.copy(stepsDone = newSteps),
-    _.stepsDone
-  )
-
-  /**
-    * Lens for current actions. These are the actions being executed in
-    * parallel.
-    */
-  val current = Lens.lensu[Sequence, StepCurrent](
-    (seq, newStep) => seq.copy(stepsCurrent = newStep), _.stepsCurrent
-  )
-
-  /**
-    * Lens for the remaining Steps.
-    */
-  val pending = Lens.lensu[Sequence, List[Step]](
-    (seq, newSteps) => seq.copy(stepsPending = newSteps),
-    _.stepsPending
+  case class Sequence(done: List[StepDone],
+                      current: IntMap[Action],
+                      pending: List[Step]
   )
 
   /**
@@ -98,44 +61,87 @@ object State {
   case object Error extends Result
 
   /**
-    * Given the index of a completed Action in the current Step, it moves such
-    * action to the correspondent list of completed actions. If the current Step
-    * is empty, it promotes the next pending Step to current Step.
+    * Lens to manipulate the `Sequence` under `SeqStatus`
     */
+  val sequenceL = Lens.lensu[SeqStatus, Sequence](
+    (ss, seq1) => ss.copy(sequence = seq1),
+    _.sequence
+  )
+
+  /**
+    * Lens to manipulate the `Status` under `SeqStatus`
+    */
+  val statusL = Lens.lensu[SeqStatus, Status](
+    (ss, st1) => ss.copy(status = st1),
+    _.status
+  )
+
+  /**
+    * Lens for completed Steps.
+    */
+  val doneL = Lens.lensu[Sequence, List[StepDone]](
+    (seq, newSteps) => seq.copy(done = newSteps),
+    _.done
+  )
+
+  /**
+    * Lens for current actions. These are the actions being executed in
+    * parallel.
+    */
+  val currentL = Lens.lensu[Sequence, StepCurrent](
+    (seq, newStep) => seq.copy(current = newStep),
+    _.current
+  )
+
+  /**
+    * Lens for the remaining Steps.
+    */
+  val pendingL = Lens.lensu[Sequence, List[Step]](
+    (seq, newSteps) => seq.copy(pending = newSteps),
+    _.pending
+  )
+
+  /**
+    *
+    *
+    */
+  def prime(ss0: SeqStatus): Option[SeqStatus] = {
+
+    def remove(l: List[Step]): List[Step] = tailOption(l).getOrElse(List())
+
+    def toIntMap[A](l: List[A]): IntMap[A] =
+      IntMap(l.zipWithIndex.map(s => (s._2, s._1)).toSeq: _*)
+
+    if (sequenceL.andThen(currentL).get(ss0).isEmpty) {
+      // Peek pending step
+      val h = sequenceL.andThen(pendingL).get(ss0).headOption.getOrElse(List())
+      // Convert pending step to current step
+      val ss1 = sequenceL.andThen(currentL).set(ss0, toIntMap(h))
+      // Remove pending step
+      Some(sequenceL.andThen(pendingL).mod(remove, ss1))
+    } else { None }
+  }
+
+  /*
+   * Given the index of a completed Action in the current Step, it moves such
+   * action to the correspondent list of completed actions. If the current Step
+   * is empty, it promotes the next pending Step to current Step.
+   */
   def shift(i: Int)(ss0: SeqStatus): SeqStatus = {
 
     // TODO: Stock Lens for List?
     // Add an index to the list of completed steps.
-    def add(steps: List[StepDone]): List[StepDone] = steps match {
-      case Nil => List(List(i))
-      // Only the head Step is considered.
-      case (x :: xs) => (i :: x) :: xs
+    def add(steps: List[StepDone]): List[StepDone] =
+      steps match {
+        case Nil => List(List(i))
+        // Only the head Step is considered.
+        case (x :: xs) => (i :: x) :: xs
     }
 
-    // TODO: Stock Lens for List?
-    // Remove a Step from the list of pending Steps.
-    def remove(l: List[Step]): List[Step] = tailOption(l).getOrElse(List())
-
-    // TODO: Isn't there an easier way?
-    // Convert a List to a IntMap.
-    def toIntMap[A](l: List[A]): IntMap[A] =
-      IntMap(l.zipWithIndex.map(s => (s._2, s._1)).toSeq: _*)
-
-    // TODO: Lens in State monad with zoom to clean this up.
-    val ss1 =
-      // when the current Step is empty promote the next pending step.
-      if (sequence.andThen(current).get(ss0).isEmpty) {
-        // Peek pending step
-        val h = sequence.andThen(pending).get(ss0).headOption.getOrElse(List())
-        // Convert pending step to current step
-        val ss2 = sequence.andThen(current).set(ss0, toIntMap(h))
-        // Remove pending step
-        sequence.andThen(pending).mod(remove, ss2)
-      } else { ss0 }
-
     // Remove action from current step
-    val ss3 = sequence.andThen(current).mod(_ - i, ss1)
-    // Add it to completed
-    sequence.andThen(done).mod(add, ss3)
+    val ss1 = sequenceL.andThen(currentL).mod(_ - i, ss0)
+    // Add action to completed
+    sequenceL.andThen(doneL).mod(add, ss1)
   }
+
 }
