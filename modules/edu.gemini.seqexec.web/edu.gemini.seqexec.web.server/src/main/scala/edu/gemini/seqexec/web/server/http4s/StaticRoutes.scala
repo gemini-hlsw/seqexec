@@ -11,6 +11,7 @@ import org.http4s._
 import org.http4s.util.NonEmptyList
 
 import scalaz.concurrent.Task
+import scala.concurrent.duration._
 
 class StaticRoutes(devMode: Boolean) {
   val index = {
@@ -62,7 +63,9 @@ class StaticRoutes(devMode: Boolean) {
     s"<!DOCTYPE html>$xml"
   }
 
-  val inOneYear = LocalDateTime.now.plusYears(1)
+  val oneYear = 365 * 24 * 60 * 60
+
+  val cacheHeaders = if (devMode) Nil else List(`Cache-Control`(NonEmptyList(`max-age`(oneYear.seconds))))
 
   val indexResponse =
     Ok(index).withContentType(Some(`Content-Type`(`text/html`, Charset.`UTF-8`))).putHeaders(`Cache-Control`(NonEmptyList(`no-cache`())))
@@ -83,6 +86,7 @@ class StaticRoutes(devMode: Boolean) {
     def serve(path: String = req.pathInfo): Task[Response] = {
       // To find scala.js generated files we need to go into the dir below, hopefully this can be improved
       localResource(path, req).orElse(embeddedResource(path, req))
+        .map(_.putHeaders(cacheHeaders: _*))
         .map(Task.now)
         .getOrElse(NotFound())
     }
