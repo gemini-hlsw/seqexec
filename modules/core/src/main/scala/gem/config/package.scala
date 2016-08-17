@@ -3,7 +3,7 @@ package gem
 import scalaz._
 import Scalaz._
 
-package object seq {
+package object config {
   val DoublePat = """([-+]?\d*\.?\d+)""".r
 
   def doubleParser[A](label: String, s: String)(f: Double => A): String \/ A =

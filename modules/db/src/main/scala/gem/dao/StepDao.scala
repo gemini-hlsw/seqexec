@@ -1,13 +1,14 @@
 package gem
 package dao
 
+import gem.config._
+
 import doobie.imports._
 import scalaz._, Scalaz._
 
 object StepDao {
-  import gem.seq._
 
-  def insert[I <: Instrument](oid: Observation.Id, index: Int, s: Step[I]): ConnectionIO[Int] =
+  def insert[I <: InstrumentConfig](oid: Observation.Id, index: Int, s: Step[I]): ConnectionIO[Int] =
     insertBaseSlice(oid, index, s.instrument, s.stepType) *> {
       s match {
         case BiasStep(_)       => insertBiasSlice(oid, index)
@@ -17,10 +18,10 @@ object StepDao {
       }
     }
 
-  def insertBaseSlice[I <: Instrument](oid: Observation.Id, index: Int, i: I, t: Step.Type): ConnectionIO[Int] =
+  def insertBaseSlice[I <: InstrumentConfig](oid: Observation.Id, index: Int, i: I, t: Step.Type): ConnectionIO[Int] =
     sql"""
       INSERT INTO step (observation_id, index, instrument, step_type)
-      VALUES ($oid, ${index}, ${i.tag}, ${t.toString} :: step_type)
+      VALUES ($oid, ${index}, ${i.instrument.tag}, ${t.toString} :: step_type)
     """.update.run
 
   def insertBiasSlice(oid: Observation.Id, index: Int): ConnectionIO[Int] =
@@ -35,13 +36,13 @@ object StepDao {
       VALUES (${oid.toString}, ${index})
     """.update.run
 
-  def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalUnit): ConnectionIO[Int] =
+  def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_gcal (observation_id, index, gcal_lamp, shutter)
       VALUES (${oid.toString}, ${index}, ${gcal.lamp}, ${gcal.shutter} :: gcal_shutter)
     """.update.run
 
-  def insertScienceSlice(oid: Observation.Id, index: Int, t: Telescope): ConnectionIO[Int] =
+  def insertScienceSlice(oid: Observation.Id, index: Int, t: TelescopeConfig): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_science (observation_id, index, offset_p, offset_q)
       VALUES (${oid}, ${index}, ${t.p}, ${t.q})
