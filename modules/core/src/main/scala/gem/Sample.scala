@@ -1,4 +1,4 @@
-// package gem.seq
+// package gem
 
 
 // import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Filter, Disperser}

@@ -69,7 +69,7 @@ It's not yet clear which bits could be data-driven and which need to exist in Sc
 
 ### Next Steps
 
-- [ ] general re-org and continued refactoring
+- [x] general re-org and continued refactoring
 - [ ] science steps for F2 and a few more instruments
 - [ ] dao methods for reading (right now all we do is insert)
 - [ ] simple web front end for CRUD actions

@@ -1,6 +1,8 @@
-package gem.seq
+package gem
+package describe
 
-import gem.seq.Step.{Gcal, Science, Smart}
+import gem.config._
+import gem.Step.{Gcal, Science, Smart}
 
 import scalaz._, Scalaz._
 
@@ -28,8 +30,8 @@ object PropGroup {
     val groups = (List.empty[PropGroup[_, I]]/:types) { (groups, t) =>
       t match {
         // case Gcal    => new PropGroup[GcalUnit, I](Step.gcal)       :: groups
-        case Science => new PropGroup[Telescope, I](Step.telescope) :: groups
-        case Smart   => new PropGroup[SmartCal, I](Step.smartCal)   :: groups
+        case Science => new PropGroup[TelescopeConfig, I](Step.telescope) :: groups
+        case Smart   => new PropGroup[SmartCalConfig, I](Step.smartCal)   :: groups
         case _       => groups
       }
     }

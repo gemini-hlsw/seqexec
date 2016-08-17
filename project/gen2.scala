@@ -64,8 +64,6 @@ object gen2 {
       |package gem
       |package enum
       |
-      |import doobie.util.meta.Meta
-      |
       |import scalaz.syntax.equal._
       |import scalaz.std.string._
       |
@@ -83,9 +81,6 @@ object gen2 {
       |
       |  def unsafeFromTag(s: String): $name =
       |    fromTag(s).getOrElse(throw new NoSuchElementException(s))
-      |
-      |  implicit val ${name}Meta: Meta[$name] =
-      |    Meta[String].nxmap(unsafeFromTag, _.tag)
       |
       |  implicit val ${name}Enumerated: Enumerated[$name] =
       |    new Enumerated[$name] {

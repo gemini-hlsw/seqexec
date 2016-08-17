@@ -1,28 +1,31 @@
-package gem.seq
+package gem
+package config
 
 import edu.gemini.spModel.core.AngleSyntax._
 import edu.gemini.spModel.core.{OffsetQ, OffsetP, Offset}
-import gem.seq.Metadata.Access.Science
-import gem.seq.Metadata.{Attrs, Label}
-import gem.seq.Metadata.Scope.SingleStep
+
+import gem.describe._
+import gem.describe.Metadata.Access.Science
+import gem.describe.Metadata.{Attrs, Label}
+import gem.describe.Metadata.Scope.SingleStep
 
 import scalaz._
 import Scalaz._
 
-final case class Telescope(p: OffsetP, q: OffsetQ) {
+final case class TelescopeConfig(p: OffsetP, q: OffsetQ) {
   def offset: Offset = Offset(p, q)
 }
 
-object Telescope {
+object TelescopeConfig {
   val Lab = Label("Telescope")
-  val Zero = Telescope(OffsetP.Zero, OffsetQ.Zero)
+  val Zero = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
 
   def lab(name: String): Label = Label(Lab, name)
 
-  object OffsetPProp extends Prop[Telescope] {
+  object OffsetPProp extends Prop[TelescopeConfig] {
     type B = OffsetP
     val eq: Equal[OffsetP]         = Equal[OffsetP]
-    val lens: Telescope @> OffsetP = Lens.lensu((a, b) => a.copy(p = b), _.p)
+    val lens: TelescopeConfig @> OffsetP = Lens.lensu((a, b) => a.copy(p = b), _.p)
 
     val meta = new TextMetadata[OffsetP](
       Attrs(lab("p"), Science, SingleStep),
@@ -32,10 +35,10 @@ object Telescope {
     )
   }
 
-  object OffsetQProp extends Prop[Telescope] {
+  object OffsetQProp extends Prop[TelescopeConfig] {
     type B = OffsetQ
     val eq: Equal[OffsetQ]         = Equal[OffsetQ]
-    val lens: Telescope @> OffsetQ = Lens.lensu((a, b) => a.copy(q = b), _.q)
+    val lens: TelescopeConfig @> OffsetQ = Lens.lensu((a, b) => a.copy(q = b), _.q)
 
     val meta = new TextMetadata[OffsetQ](
       Attrs(lab("q"), Science, SingleStep),
@@ -45,7 +48,7 @@ object Telescope {
     )
   }
 
-  implicit val DescribeTelescope: Describe[Telescope] =
+  implicit val DescribeTelescope: Describe[TelescopeConfig] =
     Describe.forProps(
       Zero,
       OffsetPProp, OffsetQProp

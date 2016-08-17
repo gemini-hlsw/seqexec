@@ -2,6 +2,7 @@ package gem
 
 import gem.dao._
 import gem.enum._
+import gem.config._
 
 import edu.gemini.pot.sp.{ISPProgram, ISPObservation}
 import edu.gemini.spModel.io.SpImportService
@@ -127,7 +128,7 @@ object Importer extends SafeApp {
 
   // 
 
-  def unsafeFromConfig(config: Map[String, Object]): Option[seq.Step[_ <: seq.Instrument]] = {
+  def unsafeFromConfig(config: Map[String, Object]): Option[Step[_ <: InstrumentConfig]] = {
 
     val observeType  = config.read[Option[String    ]]("observe:observeType"  )
     val instrument   = config.read[Option[Instrument]]("instrument:instrument")
@@ -135,20 +136,20 @@ object Importer extends SafeApp {
     (observeType |@| instrument).tupled.collect {
       
       case ("BIAS",   i) =>
-        seq.BiasStep(new seq.Instrument { val tag = i.tag.toString })
+        BiasStep(new InstrumentConfig(i))
 
       case ("DARK",   i) => 
-        seq.DarkStep(new seq.Instrument { val tag = i.tag.toString })
+        DarkStep(new InstrumentConfig(i))
 
       case ("OBJECT" | "CAL", i) =>
         val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
         val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
-        seq.ScienceStep(new seq.Instrument { val tag = i.tag.toString }, seq.Telescope(p,q))
+        ScienceStep(new InstrumentConfig(i), TelescopeConfig(p,q))
         
       case ("ARC" | "FLAT", i) =>
         val l = config.read[GCalLamp]("calibration:lamp")
         val s = config.read[GCalShutter]("calibration:shutter")
-        seq.GcalStep(new seq.Instrument { val tag = i.tag.toString }, seq.GcalUnit(l, s))
+        GcalStep(new InstrumentConfig(i), GcalConfig(l, s))
 
       case x => 
         sys.error("Unknown observeType: " + x + config.mkString("\n>  ", "\n>  ", ""))

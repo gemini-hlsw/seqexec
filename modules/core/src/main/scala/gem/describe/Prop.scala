@@ -1,4 +1,5 @@
-package gem.seq
+package gem
+package describe
 
 import scalaz._
 import Scalaz._

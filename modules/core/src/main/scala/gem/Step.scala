@@ -1,5 +1,7 @@
 package gem
-package seq
+
+import gem.config._
+import gem.describe._
 
 import scalaz._, Scalaz._
 
@@ -46,8 +48,8 @@ object Step {
   // Partial Lenses: Step[I] @?> A
   //
   // The presence or absence of an A for a given step will depend on the step
-  // type.  For example, only Science steps have a Telescope component and only
-  // Gcal steps have a GcalUnit.
+  // type.  For example, only Science steps have a TelescopeConfig component and only
+  // Gcal steps have a GcalConfig.
   //
   // You can compose these with individual property lenses to get partial
   // lenses for instrument filters, etc.  For example:
@@ -73,16 +75,16 @@ object Step {
       case SmartStep(i, _)   => i
     })
 
-  def gcal[I]: Step[I] @?> GcalUnit = PLens.plensgf({
-      case GcalStep(inst, _) => (g: GcalUnit) => GcalStep(inst, g)
+  def gcal[I]: Step[I] @?> GcalConfig = PLens.plensgf({
+      case GcalStep(inst, _) => (g: GcalConfig) => GcalStep(inst, g)
     }, { case GcalStep(_, g) => g })
 
-  def telescope[I]: Step[I] @?> Telescope = PLens.plensgf({
-      case ScienceStep(inst,_) => (t: Telescope) => ScienceStep(inst, t)
+  def telescope[I]: Step[I] @?> TelescopeConfig = PLens.plensgf({
+      case ScienceStep(inst,_) => (t: TelescopeConfig) => ScienceStep(inst, t)
     }, { case ScienceStep(_, t) => t })
 
-  def smartCal[I]: Step[I] @?> SmartCal = PLens.plensgf({
-      case SmartStep(inst,_) => (s: SmartCal) => SmartStep(inst, s)
+  def smartCal[I]: Step[I] @?> SmartCalConfig = PLens.plensgf({
+      case SmartStep(inst,_) => (s: SmartCalConfig) => SmartStep(inst, s)
     }, { case SmartStep(_, s) => s})
 }
 
@@ -126,13 +128,13 @@ object DarkStep {
 // words "smart" steps turn into ordinary manual Gcal steps when executed.
 // ----------------------------------------------------------------------------
 
-final case class GcalStep[I](instrument: I, gcal: GcalUnit) extends Step[I] {
+final case class GcalStep[I](instrument: I, gcal: GcalConfig) extends Step[I] {
   def stepType = Step.Gcal
 }
 
 object GcalStep {
   implicit def describeGcalStep[I: Describe]: Describe[GcalStep[I]] =
-    Describe[(I, GcalUnit)].xmap[GcalStep[I]](
+    Describe[(I, GcalConfig)].xmap[GcalStep[I]](
       t => GcalStep(t._1, t._2),
       s => (s.instrument, s.gcal)
     )
@@ -142,13 +144,13 @@ object GcalStep {
 // Science
 // ----------------------------------------------------------------------------
 
-final case class ScienceStep[I](instrument: I, telescope: Telescope) extends Step[I] {
+final case class ScienceStep[I](instrument: I, telescope: TelescopeConfig) extends Step[I] {
   def stepType = Step.Science
 }
 
 object ScienceStep {
   implicit def describeScienceStep[I: Describe]: Describe[ScienceStep[I]] =
-    Describe[(I, Telescope)].xmap[ScienceStep[I]](
+    Describe[(I, TelescopeConfig)].xmap[ScienceStep[I]](
       t => ScienceStep(t._1, t._2),
       s => (s.instrument, s.telescope)
     )
@@ -162,13 +164,13 @@ object ScienceStep {
 // Gcal step is substituted in for the smart step.
 // ----------------------------------------------------------------------------
 
-final case class SmartStep[I](instrument: I, smartCal: SmartCal) extends Step[I] {
+final case class SmartStep[I](instrument: I, smartCal: SmartCalConfig) extends Step[I] {
   def stepType = Step.Smart
 }
 
 object SmartStep {
   implicit def describeSmartStep[I: Describe]: Describe[SmartStep[I]] =
-    Describe[(I, SmartCal)].xmap[SmartStep[I]](
+    Describe[(I, SmartCalConfig)].xmap[SmartStep[I]](
       t => SmartStep(t._1, t._2),
       s => (s.instrument, s.smartCal)
     )
