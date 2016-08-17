@@ -24,16 +24,13 @@ object Engine {
     * `Running` status.
     */
   def switch(queue: Queue[Event])(st: Status): Telescope[SeqStatus] =
-    MonadState[Telescope, SeqStatus].modify(
-      (ss: SeqStatus) => ss match {
-        case (SeqStatus(seq, st0)) => SeqStatus(seq, st)
-      }) *> whenM(st == Running)(
-        prime >>= (
-          _ match {
-            case Some(actions) => step(queue)(actions)
-            case None => unit
-          }
-        )
+    MonadState[Telescope, SeqStatus].modify {
+      case (SeqStatus(seq, st0)) => SeqStatus(seq, st)
+    } *> whenM(st == Running)(
+      prime >>= {
+        case Some(actions) => step(queue)(actions)
+        case None => unit
+      }
     ) *> ask
 
   /**
@@ -42,13 +39,11 @@ object Engine {
     * the `SeqStatus`.
     */
   private val prime: Telescope[Option[StepCurrent]] =
-    MonadState[Telescope, SeqStatus].gets(State.prime(_)) >>= (
-      _ match {
-        case Some(ss) => MonadState[Telescope, SeqStatus].put(ss) *>
-            Applicative[Telescope].pure(Some(ss.sequence.current))
-        case None => Applicative[Telescope].pure(None)
-      }
-    )
+    MonadState[Telescope, SeqStatus].gets(State.prime(_)) >>= {
+      case Some(ss) => MonadState[Telescope, SeqStatus].put(ss) *>
+          Applicative[Telescope].pure(Some(ss.sequence.current))
+      case None => Applicative[Telescope].pure(None)
+    }
 
   /**
     * Checks the `Status` is `Running` and executes all actions in a current
@@ -58,23 +53,19 @@ object Engine {
     // Send the expected event when action is executed
     def execute(t: (Int, Action)): Task[Unit] = {
       val (i, action) = t
-      action >>= (
-        _ match {
-          case OK => queue.enqueueOne(completed(i))
-          case Error => queue.enqueueOne(failed(i))
-        }
-      )
-    }
-    status >>= (
-      _ match {
-        case Running => (
-          Nondeterminism[Task].gatherUnordered(
-            actions.toList.map(execute(_))
-          ).liftM[TelescopeStateT]
-        ).void
-        case Waiting => unit
+      action >>= {
+        case OK => queue.enqueueOne(completed(i))
+        case Error => queue.enqueueOne(failed(i))
       }
-    )
+    }
+    status >>= {
+      case Running => (
+        Nondeterminism[Task].gatherUnordered(
+          actions.toList.map(execute(_))
+        ).liftM[TelescopeStateT]
+      ).void
+      case Waiting => unit
+    }
   }
 
   /**
@@ -83,27 +74,19 @@ object Engine {
     * becomes empty it takes care of priming the next Step.
     */
   def complete(queue: Queue[Event])(i: Int): Telescope[SeqStatus] = (
-    MonadState[Telescope, SeqStatus].modify(shift(i)(_)) *> prime >>= (
-      _ match {
-        case Some(actions) => step(queue)(actions)
-        case None => unit
-      }
-    )
-  ) *> ask
+    MonadState[Telescope, SeqStatus].modify(shift(i)(_)) *> prime >>= {
+      case Some(actions) => step(queue)(actions)
+      case None => unit
+    }) *> ask
 
   // For now stop the seqexec when an action fails.
-  def fail(queue: Queue[Event])(i: Int): Telescope[SeqStatus] =
-    switch(queue)(Waiting)
+  def fail(queue: Queue[Event])(i: Int): Telescope[SeqStatus] = switch(queue)(Waiting)
 
   /**
     * Ask for the current `Status` within the `Telescope` monad.
     */
   val status: Telescope[Status] =
-    MonadState[Telescope, SeqStatus].gets(
-      ss => ss match {
-        case (SeqStatus(_, st)) => st
-      }
-    )
+    MonadState[Telescope, SeqStatus].gets({ case (SeqStatus(_, st)) => st })
 
   /**
     * Send an event within the `Telescope` monad.
@@ -115,19 +98,17 @@ object Engine {
     * Log within the `Telescope` monad as a side effect while returning the
     * `SeqStatus`.
     */
-  def log(msg: String): Telescope[SeqStatus] =
-    // XXX: log4j?
-    Applicative[Telescope].pure(println(msg)) *> ask
+  // XXX: log4j?
+  def log(msg: String): Telescope[SeqStatus] = Applicative[Telescope].pure(println(msg)) *> ask
 
   /**
     * Add a `Step` to the beginning of the Sequence while returning the
     * `SeqStatus`.
     */
-  def add(ste: Step): Telescope[SeqStatus] = {
+  def add(ste: Step): Telescope[SeqStatus] =
     MonadState[Telescope, SeqStatus].modify(
       ss => sequenceL.andThen(pendingL).mod(ste :: _, ss)
     ) *> ask
-  }
 
   /**
     * Get the current State
@@ -144,8 +125,7 @@ object Engine {
   /**
     * This creates a `Event` Process with `Telescope` as effect.
     */
-  def receive(queue: Queue[Event]): Process[Telescope, Event] =
-    hoistTelescope(queue.dequeue)
+  def receive(queue: Queue[Event]): Process[Telescope, Event] = hoistTelescope(queue.dequeue)
 
   private val unit: Telescope[Unit] = Applicative[Telescope].pure(Unit)
 
