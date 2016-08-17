@@ -63,43 +63,33 @@ object State {
   /**
     * Lens to manipulate the `Sequence` under `SeqStatus`
     */
-  val sequenceL = Lens.lensu[SeqStatus, Sequence](
-    (ss, seq1) => ss.copy(sequence = seq1),
-    _.sequence
-  )
+  val sequenceL: SeqStatus @> Sequence =
+    Lens.lensu((ss, seq1) => ss.copy(sequence = seq1), _.sequence)
 
   /**
     * Lens to manipulate the `Status` under `SeqStatus`
     */
-  val statusL = Lens.lensu[SeqStatus, Status](
-    (ss, st1) => ss.copy(status = st1),
-    _.status
-  )
+  val statusL: SeqStatus @> Status =
+    Lens.lensu((ss, st1) => ss.copy(status = st1), _.status)
 
   /**
     * Lens for completed Steps.
     */
-  val doneL = Lens.lensu[Sequence, List[StepDone]](
-    (seq, newSteps) => seq.copy(done = newSteps),
-    _.done
-  )
+  val doneL: Sequence @> List[StepDone] =
+    Lens.lensu((seq, newSteps) => seq.copy(done = newSteps), _.done)
 
   /**
     * Lens for current actions. These are the actions being executed in
     * parallel.
     */
-  val currentL = Lens.lensu[Sequence, StepCurrent](
-    (seq, newStep) => seq.copy(current = newStep),
-    _.current
-  )
+  val currentL: Sequence @> StepCurrent =
+    Lens.lensu((seq, newStep) => seq.copy(current = newStep), _.current)
 
   /**
     * Lens for the remaining Steps.
     */
-  val pendingL = Lens.lensu[Sequence, List[Step]](
-    (seq, newSteps) => seq.copy(pending = newSteps),
-    _.pending
-  )
+  val pendingL: Sequence @> List[Step] =
+    Lens.lensu((seq, newSteps) => seq.copy(pending = newSteps), _.pending)
 
   /**
     *
