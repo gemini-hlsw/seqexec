@@ -1,7 +1,5 @@
 package edu.gemini.seqexec.engine
 
-import State._
-
 object Event {
   /**
     * Anything that can go through the Event Queue.
@@ -15,13 +13,13 @@ object Event {
   case object Start extends UserEvent
   case object Pause extends UserEvent
   case object Poll extends UserEvent
-  case class AddStep(ste: Step) extends UserEvent
+  case class AddExecution(pend: Execution.Pending) extends UserEvent
   case object Exit extends UserEvent
 
   val start: Event = EventUser(Start)
   val pause: Event = EventUser(Pause)
   val poll: Event = EventUser(Poll)
-  def addStep(ste: Step): Event = EventUser(AddStep(ste))
+  def addExecution(pend: Execution.Pending): Event = EventUser(AddExecution(pend))
   val exit: Event = EventUser(Exit)
 
   sealed trait SystemEvent
