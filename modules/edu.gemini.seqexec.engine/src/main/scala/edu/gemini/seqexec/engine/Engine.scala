@@ -1,70 +1,67 @@
 package edu.gemini.seqexec.engine
 
 import Event._
-import State._
 import scalaz._
 import scalaz.Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 import scalaz.stream.Sink
-import scalaz.stream.async.mutable.Queue
+import scalaz.stream.async.mutable.{Queue => SQueue}
 
 object Engine {
+
+  type EventQueue = SQueue[Event]
   /**
-    * Type constructor where all all side effects related to the Telescope are
+    * Type constructor where all all side effects related to the Seqexec are
     * managed.
     */
-  type Telescope[A] = TelescopeStateT[Task, A]
+  type Seqexec[A] = SeqexecStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type TelescopeStateT[M[_], A] = StateT[M, SeqStatus, A]
+  type SeqexecStateT[M[_], A] = StateT[M, QueueStatus, A]
 
   /**
-    * Return `SeqStatus` while changing `Status` within the `Telescope` monad.
+    * Return `SeqStatus` while changing `Status` within the `Seqexec` monad.
     * This also takes care of initiating the execution when transitioning to
     * `Running` status.
     */
-  def switch(queue: Queue[Event])(st: Status): Telescope[SeqStatus] =
-    MonadState[Telescope, SeqStatus].modify {
-      case (SeqStatus(seq, st0)) => SeqStatus(seq, st)
-    } *> whenM(st == Running)(
-      prime >>= {
-        case Some(actions) => step(queue)(actions)
-        case None => unit
-      }
-    ) *> ask
+  def switch(q: EventQueue)(st: Status): Seqexec[QueueStatus] =
+    modify (QueueStatus.status.set(_, st)) *>
+      whenM(st == Status.Running)(
+        prime >>= (_.fold(unit)(step(q)(_)))
+      ) *> get
 
   /**
     * Transfer the next pending `Step` to current `Step` when the current `Step`
     * is empty. If the current Step is not empty, `None` without any change in
     * the `SeqStatus`.
     */
-  private val prime: Telescope[Option[StepCurrent]] =
-    MonadState[Telescope, SeqStatus].gets(State.prime(_)) >>= {
-      case Some(ss) => MonadState[Telescope, SeqStatus].put(ss) *>
-          Applicative[Telescope].pure(Some(ss.sequence.current))
-      case None => Applicative[Telescope].pure(None)
+  private val prime: Seqexec[Option[Execution.Current]] =
+    gets(QueueStatus.prime(_)) >>= {
+      case Some(qs) => put(qs) *> pure(Some(qs.queue.current))
+      case None => pure(None)
     }
 
   /**
     * Checks the `Status` is `Running` and executes all actions in a current
     * `Step` in parallel. It also updates the `SeqStatus` as needed.
     */
-  private def step(queue: Queue[Event])(actions: StepCurrent): Telescope[Unit] = {
+  private def step(q: EventQueue)(actions: Execution.Current): Seqexec[Unit] = {
+
     // Send the expected event when action is executed
-    def execute(t: (Int, Action)): Task[Unit] = {
+    def execute(t: (Int, Execution.Action)): Task[Unit] = {
       val (i, action) = t
       action >>= {
-        case OK => queue.enqueueOne(completed(i))
-        case Error => queue.enqueueOne(failed(i))
+        case Result.OK => q.enqueueOne(completed(i))
+        case Result.Error => q.enqueueOne(failed(i))
       }
     }
     status >>= {
-      case Running => (
+      case Status.Running => (
         Nondeterminism[Task].gatherUnordered(
           actions.toList.map(execute(_))
-        ).liftM[TelescopeStateT]
+        ).liftM[SeqexecStateT]
       ).void
-      case Waiting => unit
+      case Status.Waiting => unit
     }
   }
 
@@ -73,87 +70,91 @@ object Engine {
     * transfers such action to the current done Step. If the current Step
     * becomes empty it takes care of priming the next Step.
     */
-  def complete(queue: Queue[Event])(i: Int): Telescope[SeqStatus] = (
-    MonadState[Telescope, SeqStatus].modify(shift(i)(_)) *> prime >>= {
-      case Some(actions) => step(queue)(actions)
-      case None => unit
-    }) *> ask
+  def complete(q: EventQueue)(i: Int): Seqexec[QueueStatus] =
+    modify(QueueStatus.shift(i)(_)) *> (
+      prime >>= (_.fold(unit)(step(q)(_)))
+    ) *> get
 
   // For now stop the seqexec when an action fails.
-  def fail(queue: Queue[Event])(i: Int): Telescope[SeqStatus] = switch(queue)(Waiting)
+  def fail(q: EventQueue)(i: Int): Seqexec[QueueStatus] = switch(q)(Status.Waiting)
 
   /**
-    * Ask for the current `Status` within the `Telescope` monad.
+    * Ask for the current `Status` within the `Seqexec` monad.
     */
-  val status: Telescope[Status] =
-    MonadState[Telescope, SeqStatus].gets({ case (SeqStatus(_, st)) => st })
+  val status: Seqexec[Status] = gets(_.status)
 
   /**
-    * Send an event within the `Telescope` monad.
+    * Send an event within the `Seqexec` monad.
     */
-  private def send(queue: Queue[Event])(ev: Event): Telescope[Unit] =
-    Applicative[Telescope].pure(queue.enqueueOne(ev))
+  private def send(q: EventQueue)(ev: Event): Seqexec[Unit] = pure(q.enqueueOne(ev))
 
   /**
-    * Log within the `Telescope` monad as a side effect while returning the
+    * Log within the `Seqexec` monad as a side effect while returning the
     * `SeqStatus`.
     */
   // XXX: log4j?
-  def log(msg: String): Telescope[SeqStatus] = Applicative[Telescope].pure(println(msg)) *> ask
+  def log(msg: String): Seqexec[QueueStatus] = pure(println(msg)) *> get
 
   /**
     * Add a `Step` to the beginning of the Sequence while returning the
     * `SeqStatus`.
     */
-  def add(ste: Step): Telescope[SeqStatus] =
-    MonadState[Telescope, SeqStatus].modify(
-      ss => sequenceL.andThen(pendingL).mod(ste :: _, ss)
-    ) *> ask
-
-  /**
-    * Get the current State
-    */
-  val ask: Telescope[SeqStatus] = MonadState[Telescope, SeqStatus].get
+  def add(pend: Execution.Pending): Seqexec[QueueStatus] =
+    modify(qs => QueueStatus.pending.mod(pend :: _, qs)) *> get
 
   /** Terminates the queue while returning the final `SeqStatus`
     */
-  def close(queue: Queue[Event]): Telescope[SeqStatus] =
-    queue.close.liftM[TelescopeStateT] *> ask
+  def close(queue: EventQueue): Seqexec[QueueStatus] =
+    queue.close.liftM[SeqexecStateT] *> get
 
   // Functions to deal with type bureaucracy
 
   /**
-    * This creates a `Event` Process with `Telescope` as effect.
+    * This creates a `Event` Process with `Seqexec` as effect.
     */
-  def receive(queue: Queue[Event]): Process[Telescope, Event] = hoistTelescope(queue.dequeue)
-
-  private val unit: Telescope[Unit] = Applicative[Telescope].pure(Unit)
+  def receive(queue: EventQueue): Process[Seqexec, Event] = hoistSeqexec(queue.dequeue)
 
   // Type bureaucracy
 
-  // The `Catchable` instance of `Telescope`` needs to be manually written.
-  // Without it's not possible to use `Telescope` as a scalaz-stream process effects.
-  implicit val telescopeInstance: Catchable[Telescope] =
-    new Catchable[Telescope] {
-      def attempt[A](a: Telescope[A]): Telescope[Throwable \/ A] = a >>= (
-        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[TelescopeStateT]
+  private def pure[A](a: A): Seqexec[A] = Applicative[Seqexec].pure(a)
+
+  private val unit: Seqexec[Unit] = pure(Unit)
+
+  private val get: Seqexec[QueueStatus] =
+    MonadState[Seqexec, QueueStatus].get
+
+  private def gets[A](f: (QueueStatus) => A): Seqexec[A] =
+    MonadState[Seqexec, QueueStatus].gets(f)
+
+  private def modify(f: (QueueStatus) => QueueStatus) =
+    MonadState[Seqexec, QueueStatus].modify(f)
+
+  private def put(qs: QueueStatus): Seqexec[Unit] =
+    MonadState[Seqexec, QueueStatus].put(qs)
+
+  // The `Catchable` instance of `Seqexec`` needs to be manually written.
+  // Without it's not possible to use `Seqexec` as a scalaz-stream process effects.
+  implicit val telescopeInstance: Catchable[Seqexec] =
+    new Catchable[Seqexec] {
+      def attempt[A](a: Seqexec[A]): Seqexec[Throwable \/ A] = a >>= (
+        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[SeqexecStateT]
       )
-      def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[TelescopeStateT]
+      def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[SeqexecStateT]
     }
 
   /**
-    * Lifts from `Task` to `Telescope` as the effect of a `Process`.
+    * Lifts from `Task` to `Seqexec` as the effect of a `Process`.
     */
-  def hoistTelescope[A](p: Process[Task, A]): Process[Telescope, A] = {
-    val toTelescope = new (Task ~> Telescope) {
-      def apply[B](t: Task[B]): Telescope[B] = t.liftM[TelescopeStateT]
+  def hoistSeqexec[A](p: Process[Task, A]): Process[Seqexec, A] = {
+    val toSeqexec = new (Task ~> Seqexec) {
+      def apply[B](t: Task[B]): Seqexec[B] = t.liftM[SeqexecStateT]
     }
-    p.translate(toTelescope)
+    p.translate(toSeqexec)
   }
 
   /**
-    * Lifts from `Task` to `Telescope` as the effect of a `Sink`.
+    * Lifts from `Task` to `Seqexec` as the effect of a `Sink`.
     */
-  def hoistTelescopeSink[O](s: Sink[Task, O]): Sink[Telescope, O] =
-    hoistTelescope(s).map(_.map(_.liftM[TelescopeStateT]))
+  def hoistSeqexecSink[O](s: Sink[Task, O]): Sink[Seqexec, O] =
+    hoistSeqexec(s).map(_.map(_.liftM[SeqexecStateT]))
 }
