@@ -3,7 +3,6 @@ package edu.gemini.seqexec.engine
 import scala.collection.immutable.IntMap
 
 import Result._
-import Engine._
 import Event._
 import Handler._
 import org.scalatest.FlatSpec
