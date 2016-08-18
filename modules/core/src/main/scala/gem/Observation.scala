@@ -4,9 +4,14 @@ import gem.enum.Instrument
 
 import scalaz._, Scalaz._
 
-case class Observation(id: Observation.Id, title: String, instrument: Option[Instrument])
+case class Observation[S](
+  id: Observation.Id, 
+  title: String, 
+  instrument: Option[Instrument], // redundant? this is on the steps too
+  steps: List[S])
 
 object Observation {
+
   case class Id(pid: Program.Id, index: Int) {
     override def toString = s"$pid-$index"
   }
@@ -26,4 +31,12 @@ object Observation {
       fromString(s).getOrElse(sys.error("Malformed Observation.Id: " + s))
 
   }
+
+  implicit def ObservationTraverse[T]: Traverse[Observation[?]] =
+    new Traverse[Observation[?]] {
+      def traverseImpl[G[_]: Applicative, A, B](fa: Observation[A])(f: A => G[B]): G[Observation[B]] =
+        fa.steps.traverse(f).map(ss => fa.copy(steps = ss))
+    }
+
 }
+

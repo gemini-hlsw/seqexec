@@ -25,7 +25,18 @@ lazy val db = project
     libraryDependencies ++= Seq(
       "org.tpolecat" %% "doobie-core"               % "0.3.0-M1", // uh, lame
       "org.tpolecat" %% "doobie-contrib-postgresql" % "0.3.0-M1"
-    )
+    ),
+    initialCommands += """
+      |import scalaz._, Scalaz._, scalaz.effect.IO
+      |import doobie.imports._
+      |import gem._, gem.enum._, gem.dao._
+      |val xa = DriverManagerTransactor[IO](
+      |  "org.postgresql.Driver", 
+      |  "jdbc:postgresql:gem", 
+      |  "postgres", 
+      |  "")
+      |import xa.yolo._
+    """.stripMargin.trim
   )
 
 lazy val importer = project

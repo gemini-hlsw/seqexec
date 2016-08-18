@@ -11,10 +11,10 @@ import scalaz._, Scalaz._
 
 object ProgramDao {
 
-  def insert(p: Program): ConnectionIO[Int] =
+  def insert(p: Program[_]): ConnectionIO[Int] =
     insertProgramIdSlice(p.id) *> update(p)
 
-  def update(p: Program): ConnectionIO[Int] =
+  def update(p: Program[_]): ConnectionIO[Int] =
     sql"""
       UPDATE program
          SET title = ${p.title}
@@ -52,7 +52,7 @@ object ProgramDao {
             VALUES (${pid: Program.Id},
                     ${pid.siteVal.toString},
                     ${pid.ptypeVal.toString},
-                    ${new java.util.Date(pid.year + "/" + pid.month + "/" + pid.day)})
+                    ${new java.util.Date(pid.year + "/" + pid.month + "/" + pid.day)}) -- TODO: not this
     """.update.run
 
   def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
@@ -67,6 +67,15 @@ object ProgramDao {
                     ${pid.semester.map(_.toString)},
                     ${pid.ptype.map(_.toString)})
     """.update.run
+
+  def selectFlat(pid: Program.Id): ConnectionIO[Program[Nothing]] =
+    sql"""
+      SELECT title
+        FROM program
+       WHERE program_id = $pid
+    """.query[String]
+       .map(Program(pid, _, Nil))
+       .unique
 
 }
 

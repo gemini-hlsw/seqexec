@@ -1,7 +1,9 @@
 package gem
 package dao
 
+import edu.gemini.spModel.core._
 import gem.config._
+import gem.enum._
 
 import doobie.imports._
 import scalaz._, Scalaz._
@@ -48,4 +50,67 @@ object StepDao {
       VALUES (${oid}, ${index}, ${t.p}, ${t.q})
     """.update.run
 
+
+
+  // The type we get when we select the fully joined step
+  private case class StepKernel(
+    i: Instrument,
+    stepType: String, // todo: make an enum
+    gcal: (Option[GCalLamp], Option[GCalShutter]),
+    telescope: (Option[OffsetP],  Option[OffsetQ])
+  ) {
+    def toStep: Step[_] =
+      stepType match {
+        
+        case "Bias" => BiasStep(i)
+        case "Dark" => DarkStep(i)
+
+        case "Gcal" =>
+          gcal match {
+            case (Some(l), Some(s)) => GcalStep(i, GcalConfig(l, s))
+            case _ => sys.error("missing gcal information: " + gcal)
+          }
+
+        case "Science" =>
+          telescope match {
+            case (Some(p), Some(q)) => ScienceStep(i, TelescopeConfig(p, q))
+            case _ => sys.error("missing telescope information: " + telescope)
+         }
+      }
+  }
+
+  def selectAll(oid: Observation.Id): ConnectionIO[List[Step[_]]] =
+    sql"""
+      SELECT s.instrument,
+             s.step_type,
+             sg.gcal_lamp,
+             sg.shutter,
+             sc.offset_p,
+             sc.offset_q
+        FROM step s
+             LEFT OUTER JOIN step_gcal sg
+                ON sg.observation_id = s.observation_id AND sg.index = s.index
+             LEFT OUTER JOIN step_science sc
+                ON sc.observation_id = s.observation_id AND sc.index = s.index
+       WHERE s.observation_id = ${oid}
+    ORDER BY s.index
+    """.query[StepKernel].map(_.toStep).list
+    
 }
+
+
+
+
+
+
+// CREATE TYPE step_type AS ENUM
+// (
+//  'Bias',
+//  'Dark',
+//  'Gcal',
+//  'Science',
+//  'Smart'
+// )
+
+
+
