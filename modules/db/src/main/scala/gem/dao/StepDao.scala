@@ -20,62 +20,59 @@ object StepDao {
       }
     }
 
-  def insertBaseSlice[I <: InstrumentConfig](oid: Observation.Id, index: Int, i: I, t: Step.Type): ConnectionIO[Int] =
+  private def insertBaseSlice[I <: InstrumentConfig](oid: Observation.Id, index: Int, i: I, t: Step.Type): ConnectionIO[Int] =
     sql"""
       INSERT INTO step (observation_id, index, instrument, step_type)
       VALUES ($oid, ${index}, ${i.instrument.tag}, ${t.toString} :: step_type)
     """.update.run
 
-  def insertBiasSlice(oid: Observation.Id, index: Int): ConnectionIO[Int] =
+  private def insertBiasSlice(oid: Observation.Id, index: Int): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_bias (observation_id, index)
       VALUES (${oid.toString}, ${index})
     """.update.run
 
-  def insertDarkSlice(oid: Observation.Id, index: Int): ConnectionIO[Int] =
+  private def insertDarkSlice(oid: Observation.Id, index: Int): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_dark (observation_id, index)
       VALUES (${oid.toString}, ${index})
     """.update.run
 
-  def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] =
+  private def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_gcal (observation_id, index, gcal_lamp, shutter)
       VALUES (${oid.toString}, ${index}, ${gcal.lamp}, ${gcal.shutter} :: gcal_shutter)
     """.update.run
 
-  def insertScienceSlice(oid: Observation.Id, index: Int, t: TelescopeConfig): ConnectionIO[Int] =
+  private def insertScienceSlice(oid: Observation.Id, index: Int, t: TelescopeConfig): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_science (observation_id, index, offset_p, offset_q)
       VALUES (${oid}, ${index}, ${t.p}, ${t.q})
     """.update.run
 
-
-
   // The type we get when we select the fully joined step
   private case class StepKernel(
     i: Instrument,
-    stepType: String, // todo: make an enum
+    stepType: StepType, // todo: make an enum
     gcal: (Option[GCalLamp], Option[GCalShutter]),
     telescope: (Option[OffsetP],  Option[OffsetQ])
   ) {
     def toStep: Step[_] =
       stepType match {
         
-        case "Bias" => BiasStep(i)
-        case "Dark" => DarkStep(i)
+        case StepType.Bias => BiasStep(i)
+        case StepType.Dark => DarkStep(i)
 
-        case "Gcal" =>
-          gcal match {
-            case (Some(l), Some(s)) => GcalStep(i, GcalConfig(l, s))
-            case _ => sys.error("missing gcal information: " + gcal)
-          }
+        case StepType.Gcal =>
+          gcal.apply2(GcalConfig(_, _))
+            .map(GcalStep(i, _))
+            .getOrElse(sys.error("missing gcal information: " + gcal))
 
-        case "Science" =>
-          telescope match {
-            case (Some(p), Some(q)) => ScienceStep(i, TelescopeConfig(p, q))
-            case _ => sys.error("missing telescope information: " + telescope)
-         }
+        case StepType.Science =>
+          telescope.apply2(TelescopeConfig(_, _))
+            .map(ScienceStep(i, _))
+            .getOrElse(sys.error("missing telescope information: " + telescope))
+
       }
   }
 
@@ -95,22 +92,12 @@ object StepDao {
        WHERE s.observation_id = ${oid}
     ORDER BY s.index
     """.query[StepKernel].map(_.toStep).list
-    
+
 }
 
 
 
 
-
-
-// CREATE TYPE step_type AS ENUM
-// (
-//  'Bias',
-//  'Dark',
-//  'Gcal',
-//  'Science',
-//  'Smart'
-// )
 
 
 

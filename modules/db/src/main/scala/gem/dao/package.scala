@@ -4,7 +4,7 @@ import doobie.imports._
 import edu.gemini.spModel.core._
 import scala.reflect.runtime.universe.TypeTag
 
-package object dao {
+package object dao extends MoreTupleOps {
 
   // Angle mapping to signed arcseconds. NOT implicit.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
@@ -29,5 +29,26 @@ package object dao {
   // Enumerated by tag as string
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+
+}
+
+trait MoreTupleOps {
+
+  import scalaz._, Scalaz._
+
+  implicit class MoreTuple2Ops[F[_], A, B](t: (F[A], F[B]))(implicit ev: Apply[F]) {
+    def apply2[T](f: (A, B) => T): F[T] =
+      t.fold(ev.lift2(f))
+  }
+
+  implicit class MoreTuple3Ops[F[_], A, B, C](t: (F[A], F[B], F[C]))(implicit ev: Apply[F]) {
+    def apply3[T](f: (A, B, C) => T): F[T] =
+      t.fold(ev.lift3(f))
+  }
+
+  implicit class MoreTuple4Ops[F[_], A, B, C, D](t: (F[A], F[B], F[C], F[D]))(implicit ev: Apply[F]) {
+    def apply4[T](f: (A, B, C, D) => T): F[T] =
+      t.fold(ev.lift4(f))
+  }
 
 }
