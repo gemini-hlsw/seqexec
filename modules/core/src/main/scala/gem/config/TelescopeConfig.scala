@@ -16,7 +16,7 @@ final case class TelescopeConfig(p: OffsetP, q: OffsetQ) {
   def offset: Offset = Offset(p, q)
 }
 
-object TelescopeConfig {
+object TelescopeConfig extends ((OffsetP, OffsetQ) => TelescopeConfig) {
   val Lab = Label("Telescope")
   val Zero = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
 

@@ -55,7 +55,7 @@ object Importer extends SafeApp {
     val obs = p.getAllObservations.asScala.toList
 
     val ins: ConnectionIO[Unit] =
-      ProgramDao.insert(Program(pid, tit)) *>
+      ProgramDao.insert(Program(pid, tit, Nil)) *>
       obs.traverse_ { o => 
 
         val ss   = steps(o)
@@ -69,7 +69,8 @@ object Importer extends SafeApp {
         val newObs = Observation(
           Observation.Id(pid, o.getObservationNumber),
           o.getDataObject.getTitle,
-          inst
+          inst,
+          Nil
         )
 
         val configs = ss.flatMap(unsafeFromConfig)

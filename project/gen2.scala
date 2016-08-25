@@ -143,6 +143,16 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("StepType") {
+        type StepTypeRec = Record.`'tag -> String`.T
+        val io = sql"""
+          SELECT enumlabel x, enumlabel y
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'step_type'
+         """.query[(String, StepTypeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("Instrument") {
         type InstrumentRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_instrument".query[(String, InstrumentRec)].list
