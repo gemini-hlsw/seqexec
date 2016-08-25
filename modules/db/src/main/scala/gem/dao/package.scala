@@ -4,6 +4,8 @@ import doobie.imports._
 import edu.gemini.spModel.core._
 import scala.reflect.runtime.universe.TypeTag
 
+import scalaz._, Scalaz._
+
 package object dao extends MoreTupleOps {
 
   // Angle mapping to signed arcseconds. NOT implicit.
@@ -29,6 +31,21 @@ package object dao extends MoreTupleOps {
   // Enumerated by tag as string
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+
+  def capply2[A, B, T](f: (A, B) => T)(
+    implicit ca: Composite[(Option[A], Option[B])]
+  ): Composite[Option[T]] =
+    ca.xmap(_.apply2(f), _ => sys.error("decode only"))
+
+  def capply3[A, B, C, T](f: (A, B, C) => T)(
+    implicit ca: Composite[(Option[A], Option[B], Option[C])]
+  ): Composite[Option[T]] =
+    ca.xmap(_.apply3(f), _ => sys.error("decode only"))
+
+  def capply4[A, B, C, D, T](f: (A, B, C, D) => T)(
+    implicit ca: Composite[(Option[A], Option[B], Option[C], Option[D])]
+  ): Composite[Option[T]] =
+    ca.xmap(_.apply4(f), _ => sys.error("decode only"))
 
 }
 

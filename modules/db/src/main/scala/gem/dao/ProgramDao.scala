@@ -14,24 +14,27 @@ import scalaz._, Scalaz._
 
 object ProgramDao {
 
-  def insert(p: Program[_]): ConnectionIO[Int] =
-    insertProgramIdSlice(p.id) *> update(p)
+  ///
+  /// INSERT
+  ///
 
-  def update(p: Program[_]): ConnectionIO[Int] =
+  /** Insert a program, disregarding its observations, if any. */
+  def insert(p: Program[_]): ConnectionIO[Int] =
+    insertProgramIdSlice(p.id) *> 
     sql"""
       UPDATE program
          SET title = ${p.title}
        WHERE program_id = ${p.id.toString}
     """.update.run
 
-  def insertProgramIdSlice(pid: ProgramId): ConnectionIO[Int] =
+  private def insertProgramIdSlice(pid: ProgramId): ConnectionIO[Int] =
     pid match {
       case id @ Science  (_, _, _, _) => insertScienceProgramIdSlice(id)
       case id @ Daily (_, _, _, _, _) => insertDailyProgramIdSlice(id)
       case id @ Arbitrary(_, _, _, _) => insertArbitraryProgramIdSlice(id)
     }
 
-  def insertScienceProgramIdSlice(pid: ProgramId.Science): ConnectionIO[Int] =
+  private def insertScienceProgramIdSlice(pid: ProgramId.Science): ConnectionIO[Int] =
     SemesterDao.canonicalize(pid.semesterVal) *>
     sql"""
        INSERT INTO program (program_id,
@@ -46,7 +49,7 @@ object ProgramDao {
                    ${pid.index})
     """.update.run
 
-  def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
+  private def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
     sql"""
       INSERT INTO program (program_id, 
                           site, 
@@ -58,7 +61,7 @@ object ProgramDao {
                     ${new java.util.Date(pid.year + "/" + pid.month + "/" + pid.day)}) -- TODO: not this
     """.update.run
 
-  def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
+  private def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
     pid.semester.traverse(SemesterDao.canonicalize) *>
     sql"""
       INSERT INTO program (program_id, 
@@ -71,28 +74,25 @@ object ProgramDao {
                     ${pid.ptype.map(_.toString)})
     """.update.run
 
-  def selectFlat(pid: Program.Id): ConnectionIO[Program[Nothing]] =
+  ///
+  /// SELECT
+  ///
+
+  /** Select a program by Id, without any Observation information. */
+  def selectFlat(pid: Program.Id): ConnectionIO[Option[Program[Nothing]]] =
     sql"""
       SELECT title
         FROM program
        WHERE program_id = $pid
     """.query[String]
        .map(Program(pid, _, Nil))
-       .unique
+       .option
 
-  // read-only mapping for use with join queries
-  private implicit val OptionGCalConfigComposite: Composite[Option[GcalConfig]] =
-    Composite[(Option[GCalLamp], Option[GCalShutter])].xmap({ 
-      case (l, s) => (l |@| s)(GcalConfig(_, _))
-    }, _ => sys.error("decode only"))
+  // The full program select is a 5-table join. Decoding requires some busywork that's made slightly
+  // simpler by factoring out sub-encoders for different subsets of columns.
+  private implicit val OptionGCalConfigComposite      = capply2(GcalConfig)
+  private implicit val OptionTelescopeConfigComposite = capply2(TelescopeConfig)
 
-  // read-only mapping for use with join queries
-  private implicit val OptionTelescopeConfigComposite: Composite[Option[TelescopeConfig]] =
-    Composite[(Option[OffsetP], Option[OffsetQ])].xmap({
-      case (p, q) => (p |@| q)(TelescopeConfig(_, _))
-    }, _ => sys.error("decode only"))
-
-  // read-only mapping for use with join queries
   private implicit val OptionStepComposite: Composite[Option[Step[_]]] =
     Composite[(Option[StepType], Option[Instrument], Option[GcalConfig], Option[TelescopeConfig])].xmap({
       case (None,                   None,    None,    None   ) => None
@@ -103,7 +103,6 @@ object ProgramDao {
       case x => sys.error("Unexpected Option[Step] inputs: " + x)
     }, _ => sys.error("decode only"))
 
-  // Option[(Observation, Option[Step]])]
   private implicit val OptionObservationOptionStep: Composite[Option[(Observation[Nothing], Option[Step[_]])]] =
     Composite[(Option[Observation.Id], Option[String], Option[Step[_]])].xmap({
       case (None,      None,        None) => None
@@ -111,6 +110,7 @@ object ProgramDao {
       case x => sys.error("Unexpected Option[(Observation[Nothing], Option[Step[_]])] inputs: " + x)
     }, _ => sys.error("decode only"))
 
+  /** Select a program by Id, with fully-populated Observations and steps. */
   def selectFull(pid: Program.Id): ConnectionIO[Option[Program[Observation[Step[_]]]]] =
     sql"""
       SELECT p.program_id,
@@ -136,9 +136,8 @@ object ProgramDao {
        .list.map { rows =>
          rows.headOption.map { case (pid, title, _) => 
 
-           // Compute the list of observations by grouping by Obs[Nothing] and then
-           // collecting the associated steps, if any, which will remain in order
-           // through this transformation
+           // Compute the list of observations by grouping by Obs[Nothing] and then collecting the
+           // associated steps, if any, which will remain in order through this transformation.
            val obs: List[Observation[Step[_]]] = 
              rows.collect { case (_, _, Some(p)) => p }
                  .groupBy(_._1)

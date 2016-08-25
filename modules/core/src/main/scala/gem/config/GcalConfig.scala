@@ -12,7 +12,7 @@ import scalaz._, Scalaz._
 
 case class GcalConfig(lamp: GCalLamp, shutter: GCalShutter)
 
-object GcalConfig {
+object GcalConfig extends ((GCalLamp, GCalShutter) => GcalConfig) {
   import EnumMetadata.forEnumerated
 
   val Lab = Label("GCal Unit")
