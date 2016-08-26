@@ -77,6 +77,7 @@ object Importer extends SafeApp {
 
         ObservationDao.insert(newObs) *>
         configs.zipWithIndex.traverse { case (c, n) => StepDao.insert(newObs.id, n, c) }.void
+
       }
 
     IO.putStr(".") *> 
@@ -129,28 +130,28 @@ object Importer extends SafeApp {
 
   // 
 
-  def unsafeFromConfig(config: Map[String, Object]): Option[Step[_ <: InstrumentConfig]] = {
+  def unsafeFromConfig(config: Map[String, Object]): Option[Step[InstrumentConfig]] = {
 
     val observeType  = config.read[Option[String    ]]("observe:observeType"  )
     val instrument   = config.read[Option[Instrument]]("instrument:instrument")
 
     (observeType |@| instrument).tupled.collect {
       
-      case ("BIAS",   i) =>
-        BiasStep(new InstrumentConfig(i))
+      // case ("BIAS",   i) =>
+      //   BiasStep(new InstrumentConfig(i))
 
-      case ("DARK",   i) => 
-        DarkStep(new InstrumentConfig(i))
+      // case ("DARK",   i) => 
+      //   DarkStep(new InstrumentConfig(i))
 
-      case ("OBJECT" | "CAL", i) =>
-        val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
-        val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
-        ScienceStep(new InstrumentConfig(i), TelescopeConfig(p,q))
+      // case ("OBJECT" | "CAL", i) =>
+      //   val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
+      //   val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
+      //   ScienceStep(new InstrumentConfig(i), TelescopeConfig(p,q))
         
-      case ("ARC" | "FLAT", i) =>
-        val l = config.read[GCalLamp]("calibration:lamp")
-        val s = config.read[GCalShutter]("calibration:shutter")
-        GcalStep(new InstrumentConfig(i), GcalConfig(l, s))
+      // case ("ARC" | "FLAT", i) =>
+      //   val l = config.read[GCalLamp]("calibration:lamp")
+      //   val s = config.read[GCalShutter]("calibration:shutter")
+      //   GcalStep(new InstrumentConfig(i), GcalConfig(l, s))
 
       case x => 
         sys.error("Unknown observeType: " + x + config.mkString("\n>  ", "\n>  ", ""))

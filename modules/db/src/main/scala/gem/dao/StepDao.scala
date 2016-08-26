@@ -11,19 +11,19 @@ import scalaz._, Scalaz._
 object StepDao {
 
   def insert[I <: InstrumentConfig](oid: Observation.Id, index: Int, s: Step[I]): ConnectionIO[Int] =
-    insertBaseSlice(oid, index, s.instrument, s.stepType) *> {
+    insertBaseSlice(oid, index, s.instrument, StepType.forStep(s)) *> {
       s match {
         case BiasStep(_)       => insertBiasSlice(oid, index)
         case DarkStep(_)       => insertDarkSlice(oid, index)
         case ScienceStep(_, t) => insertScienceSlice(oid, index, t)
         case GcalStep(_, g)    => insertGCalSlice(oid, index, g)
       }
-    }
+    } // TODO: instrument config slice
 
-  private def insertBaseSlice[I <: InstrumentConfig](oid: Observation.Id, index: Int, i: I, t: Step.Type): ConnectionIO[Int] =
+  private def insertBaseSlice(oid: Observation.Id, index: Int, i: InstrumentConfig, t: StepType): ConnectionIO[Int] =
     sql"""
       INSERT INTO step (observation_id, index, instrument, step_type)
-      VALUES ($oid, ${index}, ${i.instrument.tag}, ${t.toString} :: step_type)
+      VALUES ($oid, ${index}, ${Instrument.forConfig(i).tag}, ${t.tag} :: step_type)
     """.update.run
 
   private def insertBiasSlice(oid: Observation.Id, index: Int): ConnectionIO[Int] =

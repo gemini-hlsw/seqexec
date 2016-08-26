@@ -1,28 +1,4 @@
-package gem
-package config
-
-import gem.enum.{ F2FpUnit, F2Filter, F2LyotWheel, F2Disperser, Instrument }
-
-import gem.describe._
-import gem.describe.Metadata.Access._
-import gem.describe.Metadata.{Attrs, Label}
-import gem.describe.Metadata.Scope._
-
-import java.time.Duration
-
-import scalaz._
-import Scalaz._
-
-final case class F2Config(
-    fpu: F2FpUnit,
-    mosPreimaging: Boolean,
-    exposureTime: Duration,
-    F2filter: F2Filter,
-    lyoutWheel: F2LyotWheel,
-    disperser: F2Disperser
- ) extends InstrumentConfig(Instrument.Flamingos2)
-
-object F2Config {
+trait F2Describe {
 
   val Lab = Label("F2")
 

@@ -43,3 +43,15 @@ lazy val importer = project
   .in(file("modules/importer"))
   .dependsOn(core, db)
   .settings(commonSettings)
+
+lazy val json = project
+  .in(file("modules/json"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.argonaut" %% "argonaut"        % "6.2-M3",
+      "io.argonaut" %% "argonaut-scalaz" % "6.2-M3"
+    )
+  )
+
