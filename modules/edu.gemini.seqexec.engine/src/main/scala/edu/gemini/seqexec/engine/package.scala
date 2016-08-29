@@ -96,12 +96,15 @@ package object engine {
   def log(msg: String): Engine[QueueStatus] = pure(println(msg)) *> get
 
   /**
-    * Add a `Step` to the beginning of the Sequence while returning the
+    * Add an `Execution` to the beginning of the Queue while returning the
     * `SeqStatus`.
     */
-  def add(pend: Execution.Pending): Engine[QueueStatus] =
-    modify(qs => QueueStatus.pending.mod(pend :: _, qs)) *> get
-
+  def add(pend: Execution.Pending): Engine[QueueStatus] = {
+    val lens = QueueStatus.pending.partial >=>
+       PLens.listHeadPLens[Sequence.Pending] >=>
+       PLens.listHeadPLens[Step.Pending]
+    modify(lens.mod((pend :: _), _)) *> get
+    }
   /** Terminates the queue while returning the final `SeqStatus`
     */
   def close(queue: EventQueue): Engine[QueueStatus] =
