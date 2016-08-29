@@ -9,6 +9,7 @@ package object enum {
     def forConfig(c: InstrumentConfig): Instrument =
       c match {
         case F2Config(_, _, _, _, _, _) => Instrument.Flamingos2
+        case GenericConfig(i)           => i
       }
   }
 
@@ -25,6 +26,3 @@ package object enum {
   }
 
 }
-
-
-

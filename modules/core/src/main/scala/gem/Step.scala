@@ -5,12 +5,12 @@ import gem.enum.StepType
 
 import scalaz._, Scalaz._
 
-sealed abstract class Step[I] extends Product with Serializable {
-  def instrument: I
+sealed abstract class Step[A] extends Product with Serializable {
+  def instrument: A
 }
 
-final case class BiasStep[I](instrument: I) extends Step[I]
-final case class DarkStep[I](instrument: I) extends Step[I]
-final case class GcalStep[I](instrument: I, gcal: GcalConfig) extends Step[I]
-final case class ScienceStep[I](instrument: I, telescope: TelescopeConfig) extends Step[I]
-final case class SmartStep[I](instrument: I, smartCal: SmartCalConfig) extends Step[I]
+final case class BiasStep   [A](instrument: A)                             extends Step[A]
+final case class DarkStep   [A](instrument: A)                             extends Step[A]
+final case class GcalStep   [A](instrument: A, gcal:      GcalConfig)      extends Step[A]
+final case class ScienceStep[A](instrument: A, telescope: TelescopeConfig) extends Step[A]
+final case class SmartStep  [A](instrument: A, smartCal:  SmartCalConfig)  extends Step[A]

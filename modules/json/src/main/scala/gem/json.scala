@@ -1,15 +1,25 @@
 package gem
 
+import edu.gemini.spModel.core._
 import gem.enum.Instrument
 import gem.config._
 import java.time.Duration
-import argonaut._, Argonaut._
+import argonaut._, Argonaut._, ArgonautShapeless._
 
-object json {
+// These json codecs are provided for primitive types that have no natural mapping that would
+// otherwise be inferred via argonaut-shapeless. For now we'll treat the JSON format as an
+// internal concern rather than a public or long-term storage format. If we decide that we *do*
+// want to use JSON externally then auto-derivation becomes dangerous because renaming fields
+// will cause the serial format to change.
+package object json {
+
+  // Angle mapping to signed arcseconds. NOT implicit.
+  val AngleMetaAsSignedArcseconds: CodecJson[Angle] =
+    CodecJson.derived[Double].xmap(Angle.fromArcsecs)(_.toSignedDegrees * 3600)
 
   implicit val durationCodec: CodecJson[Duration] =
     CodecJson(
-      d => Json("seconds" := d.getSeconds, "nanoseconds" := d.getNano), 
+      d => Json("seconds" := d.getSeconds, "nanoseconds" := d.getNano),
       c => for {
              ss <- (c --\ "seconds").as[Long]
              ns <- (c --\ "nanoseconds").as[Long]
@@ -22,28 +32,15 @@ object json {
   implicit val programIdCodec: CodecJson[Program.Id] =
     CodecJson.derived[String].xmap(Program.Id.parse)(_.toString)
 
-  implicit def programCodec[A: CodecJson]: CodecJson[Program[A]] =
-    casecodec3(Program.apply[A], Program.unapply[A])("id", "title", "observations")
-
   implicit val observationIdCodec: CodecJson[Observation.Id] =
     casecodec2(Observation.Id.apply, Observation.Id.unapply)("program-id", "index")
 
-  implicit def observationCodec[A: CodecJson]: CodecJson[Observation[A]] =
-    casecodec4(Observation.apply[A], Observation.unapply[A])("id", "title", "instrument", "steps")
+  // OffsetP maps to a signed angle in arcseconds
+  implicit val OffsetPMeta: CodecJson[OffsetP] =
+    AngleMetaAsSignedArcseconds.xmap(OffsetP(_))(_.toAngle)
 
-   implicit val f2ConfigCodec: CodecJson[F2Config] =
-      casecodec6(F2Config.apply, F2Config.unapply)(
-        "fpu",
-        "mosPreimaging",
-        "exposureTime",
-        "filter",
-        "lyoutWheel",
-        "disperser"
-      )
-
-  // implicit def instrumentConfigCodec[A](implicit ev: InstrumentConfig[A]): CodecJson[A] =
-  //   ev.instrument match {
-  //     case Instrument.Flamingos2 => f2ConfigCodec // how do I prove A =:= Flamingos2Config here?
-  //   }
+  // OffsetQ maps to a signed angle in arcseconds
+  implicit val OffsetQMeta: CodecJson[OffsetQ] =
+    AngleMetaAsSignedArcseconds.xmap(OffsetQ(_))(_.toAngle)
 
 }
