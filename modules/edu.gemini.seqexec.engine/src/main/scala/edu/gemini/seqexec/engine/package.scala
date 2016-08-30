@@ -60,10 +60,13 @@ package object engine {
         Nondeterminism[Task].gatherUnordered(
           actions.toList.map(execute(_))
         ).liftM[EngineStateT]
-      ).void
+      ) *> send(q)(executed)
       case Status.Waiting => unit
     }
   }
+
+  def next(q: EventQueue): Engine[QueueStatus] =
+    (prime >>= (_.fold(unit)(step(q)(_)))) *> get
 
   /**
     * Given the index in the current `Step` of the completed action, it
@@ -71,9 +74,7 @@ package object engine {
     * becomes empty it takes care of priming the next Step.
     */
   def complete(q: EventQueue)(i: Int): Engine[QueueStatus] =
-    modify(QueueStatus.shift(i)(_)) *> (
-      prime >>= (_.fold(unit)(step(q)(_)))
-    ) *> get
+    modify(QueueStatus.shift(i)(_)) *> get
 
   // For now stop the seqexec when an action fails.
   def fail(q: EventQueue)(i: Int): Engine[QueueStatus] = switch(q)(Status.Waiting)

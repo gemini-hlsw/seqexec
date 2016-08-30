@@ -25,9 +25,11 @@ object Event {
   sealed trait SystemEvent
   case class Completed(i: Int) extends SystemEvent
   case class Failed(i: Int) extends SystemEvent
+  case object Executed extends SystemEvent
   case object Finished extends SystemEvent
 
   def completed(i: Int): Event = EventSystem(Completed(i))
   def failed(i: Int): Event = EventSystem(Failed(i))
+  val executed: Event = EventSystem(Executed)
   val finished: Event = EventSystem(Finished)
 }
