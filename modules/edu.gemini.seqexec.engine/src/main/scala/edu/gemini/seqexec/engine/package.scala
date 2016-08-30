@@ -58,7 +58,7 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete(q: EventQueue)(i: Int): Engine[QueueStatus] =
+  def complete(i: Int): Engine[QueueStatus] =
     modify(QueueStatus.shift(i)(_)) *> get
 
   /**
