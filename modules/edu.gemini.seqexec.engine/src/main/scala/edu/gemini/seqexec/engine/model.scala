@@ -197,6 +197,11 @@ object Step {
   *
   * A sequential `Action` can be represented with just one pending `Action`.
   */
+case class Execution(
+  pending: Execution.Pending,
+  current: Execution.Current,
+  done: Execution.Done
+)
 
 object Execution {
 
@@ -214,6 +219,15 @@ object Execution {
    * index can be used to backtrack the correspondent original action.
    */
   type Done = List[Int]
+
+  val pending: Execution @> Pending =
+    Lens.lensu((as, nas) => as.copy(pending = nas), _.pending)
+
+  val current: Execution @> Current =
+    Lens.lensu((as, nas) => as.copy(current = nas), _.current)
+
+  val done: Execution @> Done =
+    Lens.lensu((as, nas) => as.copy(done = nas), _.done)
 }
 
 /**
