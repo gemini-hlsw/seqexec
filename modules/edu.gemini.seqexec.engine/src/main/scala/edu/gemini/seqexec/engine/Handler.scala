@@ -20,7 +20,7 @@ object Handler {
     }
 
     def handleSystemEvent(se: SystemEvent): Engine[QueueStatus] = se match {
-      case (Completed(i)) => log("Output: Action completed") *> complete(q)(i)
+      case (Completed(i)) => log("Output: Action completed") *> complete(i)
       case (Failed(i)) => log("Output: Action failed") *> fail(q)(i)
       case Executed => log("Output: Parallel actions completed") *> next(q)
       case Finished => log("Output: Finished")
