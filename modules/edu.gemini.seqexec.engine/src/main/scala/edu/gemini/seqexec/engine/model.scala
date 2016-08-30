@@ -4,51 +4,44 @@ import scala.collection.immutable.IntMap
 
 import scalaz._
 import Scalaz._
-import scalaz.concurrent.Task
 
 /**
- * Input `Sequence` and `Status` of the execution. This is the fundamental
- * unit of state for the seqexec. This is what is passed as output to
+ * Input `Sequence` and `Status` of the execution. This is the top level state
+ * data type to be used by the `Engine`. This is what is passed as output to
  * clients.
  */
 case class QueueStatus(queue: Queue, status: Status)
 
 object QueueStatus {
 
-  /**
-   * Lens to manipulate the `Sequence` under `Engine`
-   */
   val queue: QueueStatus @> Queue =
     Lens.lensu((ss, q1) => ss.copy(queue = q1), _.queue)
 
-  /**
-   * Lens to manipulate the `Status` under `Engine`
-   */
   val status: QueueStatus @> Status =
     Lens.lensu((ss, st1) => ss.copy(status = st1), _.status)
 
   /**
-    * Lens for the remaining Steps.
+    * Lens for the remaining Queue.
     */
   val pending: QueueStatus @> Queue.Pending = queue >=> Queue.pending
 
   /**
-    * Lens for current actions. These are the actions being executed in
-    * parallel.
+    * Lens for the current Execution.
     */
   val current: QueueStatus @> Queue.Current = queue >=> Queue.current
 
   /**
-    * Lens for completed Steps.
+    * Lens for the completed Queue.
     */
   val done: QueueStatus @> Queue.Done = queue >=> Queue.done
 
   /**
-   *
-   *
-   */
+    * Promote the next pending `Execution` to current when the current
+    * `Execution` is empty. If the current `Execution` is returns `None`.
+    */
   def prime(ss0: QueueStatus): Option[QueueStatus] = {
 
+    // Read next pending Execution.
     def peek(qs: QueueStatus): Execution.Pending =
       // Sequence
       (qs.queue.pending.headOption >>=
@@ -58,6 +51,7 @@ object QueueStatus {
         (_.headOption)
       ).getOrElse(List())
 
+    // Remove next pending Execution.
     def remove(qs: QueueStatus): QueueStatus =
       (QueueStatus.pending.partial >=>
          PLens.listHeadPLens[Sequence.Pending] >=>
@@ -69,30 +63,29 @@ object QueueStatus {
       IntMap(l.zipWithIndex.map(s => (s._2, s._1)).toSeq: _*)
 
     if (QueueStatus.current.get(ss0).isEmpty) {
-      // Convert pending step to current step
+      // Copy next pending execution to current execution
       val ss1 = QueueStatus.current.set(ss0, toIntMap(peek(ss0)))
-      // Remove pending step
-      Some (remove(ss1))
-      // Some(QueueStatus.pending.mod(remove, ss1))
+      // `QueueStatus` with next pending execution removed
+      Some(remove(ss1))
     } else { None }
   }
 
 
   /*
-   * Given the index of a completed Action in the current Step, it moves such
-   * action to the correspondent list of completed actions. If the current Step
-   * is empty, it promotes the next pending Step to current Step.
+   * Given the index of a completed `Action` in the current Execution, it moves
+   * such Action to the completed actions of the next done `Execution`. If the
+   * current Step is empty, it does nothing.
    */
   def shift(i: Int)(ss0: QueueStatus): QueueStatus = {
 
-    // Add an index to the list of completed steps.
+    // Add index to the next done execution.
     def add(steps: Queue.Done): Queue.Done =
       (PLens.listHeadPLens[Sequence.Done] >=>
        PLens.listHeadPLens[Step.Done] >=>
        PLens.listHeadPLens[Execution.Done]
       ).mod(i :: _, steps)
 
-    // Remove action from current step
+    // Remove action from current execution
     val ss1 = QueueStatus.current.mod(_ - i, ss0)
     // Add action to completed
     QueueStatus.done.mod(add, ss1)
@@ -100,7 +93,10 @@ object QueueStatus {
 }
 
 /**
-  * A List of `Step`s meant to be run sequentially.
+  * A triplet with the `Sequence`s waiting for execution, the current
+  * `Execution` and the completed `Sequence`s.
+  *
+  * This is what gets loaded every night for observation.
   */
 case class Queue(
   pending: Queue.Pending,
@@ -127,7 +123,7 @@ object Queue {
 }
 
 /**
- * Execution status. Either `Running` or `Waiting`.
+ * Global flag to indicate execution status.
  */
 sealed trait Status
 
@@ -136,6 +132,10 @@ object Status {
   case object Waiting extends Status
 }
 
+/**
+  * A triplet of remaining `Step`s, current `Execution` and completed `Step`s.
+  * The `Step`s in a `Sequence` are roughly grouped by target and instrument.
+  */
 case class Sequence(
   pending: Sequence.Pending,
   current: Sequence.Current,
@@ -159,6 +159,11 @@ object Sequence {
   val done: Sequence @> Sequence.Done =
     Lens.lensu((s, ns) => s.copy(done = ns), _.done)
 }
+
+/**
+  * A triplet of remaining `Execution`s, current `Execution` and completed
+  * `Execution`s. These `Execution` are grouped by observation in common.
+  */
 
 case class Step(
   pending: Step.Pending,
@@ -184,11 +189,18 @@ object Step {
     Lens.lensu((s, ns) => s.copy(done = ns), _.done)
 }
 
+/**
+  * A triplet of remaining `Action`s, current `Execution` being executed and
+  * completed `Action`s. The `Actions`s of an `Execution` are executed
+  * in parallel and atomically, meaning that they can't be interrupted while any
+  * action is still being executed.
+  *
+  * A sequential `Action` can be represented with just one pending `Action`.
+  */
+
 object Execution {
-  /**
-    * This represents something to be done in the underlying systems.
-    */
-  type Action = Task[Result]
+
+  type Pending = List[Action]
 
   /**
     * Actions with static indexing. This is meant to be used for the transition
@@ -198,11 +210,6 @@ object Execution {
   type Current = IntMap[Action]
 
   /**
-   *  A list of actions to be run in parallel.
-   */
-  type Pending = List[Action]
-
-  /**
    * A list of successfully completed actions represented with an index. This
    * index can be used to backtrack the correspondent original action.
    */
@@ -210,7 +217,7 @@ object Execution {
 }
 
 /**
-  * The result of an action.
+  * The result of an `Action`.
   */
 sealed trait Result
 

@@ -18,7 +18,7 @@ class HandlerSpec extends FlatSpec {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Execution.Action  = for {
+  val configureTcs: Action  = for {
     _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(2000))
     _ <- Task(println ("System: Complete TCS configuration"))
@@ -28,7 +28,7 @@ class HandlerSpec extends FlatSpec {
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Execution.Action  = for {
+  val configureInst: Action  = for {
     _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(2000))
     _ <- Task(println("System: Complete Instrument configuration"))
@@ -38,13 +38,13 @@ class HandlerSpec extends FlatSpec {
     * Emulates an observation in the real world.
     *
     */
-  val observe: Execution.Action  = for {
+  val observe: Action  = for {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(2000))
     _ <- Task(println ("System: Complete observation"))
   } yield OK
 
-  val faulty: Execution.Action  = for {
+  val faulty: Action  = for {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(1000))
     _ <- Task(println ("System: Complete observation"))

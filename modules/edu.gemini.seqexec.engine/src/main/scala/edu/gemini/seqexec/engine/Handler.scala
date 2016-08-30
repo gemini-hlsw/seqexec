@@ -15,7 +15,7 @@ object Handler {
       case Start => log("Output: Started") *> switch(q)(Status.Running)
       case Pause => log("Output: Paused") *> switch(q)(Status.Waiting)
       case AddExecution(pend) => log("Output: Adding Pending Execution") *> add(pend)
-      case Poll => log("Output: Poll current state")
+      case Poll => log("Output: Polling current state")
       case Exit => log("Bye") *> close(q)
     }
 
