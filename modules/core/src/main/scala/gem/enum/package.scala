@@ -2,6 +2,9 @@ package gem
 
 import gem.config._
 
+// The members of this package are generated from database tables, which are the source of truth.
+// See project/gen2.scala for details. Associations with other model types, as needed, are provided
+// here as implicit classes wrapping the generated companion objects.
 package object enum {
 
   /** Add mapping from InstrumentConfig to Instrument. */

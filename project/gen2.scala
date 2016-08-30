@@ -14,11 +14,11 @@ import shapeless.syntax.singleton._
 import shapeless.record._
 
 object gen2 {
-  
+
   val xa = DriverManagerTransactor[IO](
-    "org.postgresql.Driver", 
-    "jdbc:postgresql:gem", 
-    "postgres", 
+    "org.postgresql.Driver",
+    "jdbc:postgresql:gem",
+    "postgres",
     ""
   )
 
@@ -45,7 +45,6 @@ object gen2 {
   ): String =
     h.map(ToLiteral).toList.mkString(s"  case object $id extends $name(", ", ", ")")
 
-
   def decl[H <: HList, O <: HList, L](name: String, h: H)(
     implicit ma: Mapper.Aux[ToDeclaration.type, H, O],
              ta: ToTraversable.Aux[O, List, L]
@@ -59,7 +58,7 @@ object gen2 {
               v: Values.Aux[R, V],
              ma: Mapper.Aux[ToLiteral.type, V, L],
              t2: ToTraversable.Aux[L, List, Lub2]
-  ): (String, String) = 
+  ): (String, String) =
     (s"$name.scala", s"""
       |package gem
       |package enum
@@ -104,7 +103,7 @@ object gen2 {
       },
 
       enum("F2Filter") {
-        type F2FilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Double, 'obsolete -> Boolean`.T
+        type F2FilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Option[Double], 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength, obsolete from e_f2_filter".query[(String, F2FilterRec)].list
         io.transact(xa).unsafePerformIO
       },
@@ -175,7 +174,7 @@ object gen2 {
 
   def apply(dir: File): IO[Seq[File]] =
     for {
-      fs <- enums.traverse { case (f, c) => IO { 
+      fs <- enums.traverse { case (f, c) => IO {
               val file = new File(dir, f)
               sbt.IO.write(file, c)
               file
@@ -183,5 +182,3 @@ object gen2 {
     } yield fs
 
 }
-
-

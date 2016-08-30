@@ -25,7 +25,8 @@ import doobie.imports._
 
 object Importer extends SafeApp {
   import Program.Id._
-  import ConfigSyntax._
+  // import ConfigSyntax._
+  import ConfigReader3._
 
   val dir = new File("archive")
 
@@ -59,9 +60,9 @@ object Importer extends SafeApp {
       obs.traverse_ { o =>
 
         val ss   = steps(o)
-        val inst = ss.flatMap(_.get("instrument:instrument")).distinct match {
+        val inst = ss.flatMap(_.cget(Legacy.Instrument.Instrument)).distinct match {
           case      Nil => None
-          case o :: Nil => Some(o.asInstanceOf[String]).map(s => Instrument.all.find(_.tccValue == s).getOrElse(sys.error("Invalid inst tccValue: " + s)))
+          case o :: Nil => Some(o)
           case o :: os  => sys.error("More than one instrument in sequence: " + (o :: os))
         }
 
@@ -126,12 +127,11 @@ object Importer extends SafeApp {
       _ <- IO.putStrLn("\nDone.")
     } yield ()
 
-  //
 
   def unsafeFromConfig(config: Map[String, Object]): Option[Step[InstrumentConfig]] = {
 
-    val observeType  = config.read[Option[String    ]]("observe:observeType"  )
-    val instrument   = config.read[Option[Instrument]]("instrument:instrument")
+    val observeType = config.cget(Legacy.Observe.ObserveType)
+    val instrument  = config.cget(Legacy.Instrument.Instrument)
 
     (observeType |@| instrument).tupled.collect {
 
@@ -142,13 +142,13 @@ object Importer extends SafeApp {
         DarkStep(unsafeInstConfig(i, config))
 
       case ("OBJECT" | "CAL", i) =>
-        val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
-        val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
+        val p = config.cgetOrElse(Legacy.Telescope.P, OffsetP.Zero)
+        val q = config.cgetOrElse(Legacy.Telescope.Q, OffsetQ.Zero)
         ScienceStep(unsafeInstConfig(i, config), TelescopeConfig(p,q))
 
       case ("ARC" | "FLAT", i) =>
-        val l = config.read[GCalLamp]("calibration:lamp")
-        val s = config.read[GCalShutter]("calibration:shutter")
+        val l = config.uget(Legacy.Calibration.Lamp)
+        val s = config.uget(Legacy.Calibration.Shutter)
         GcalStep(unsafeInstConfig(i, config), GcalConfig(l, s))
 
       case x =>
@@ -160,6 +160,16 @@ object Importer extends SafeApp {
 
   def unsafeInstConfig(i: Instrument, config: Map[String, Object]): InstrumentConfig =
     i match {
+      case Instrument.Flamingos2 =>
+
+        val fpu           = config.uget(Legacy.Instrument.F2.Fpu)
+        val mosPreimaging = config.uget(Legacy.Instrument.MosPreImaging)
+        val exposureTime  = config.uget(Legacy.Observe.ExposureTime)
+        val filter        = config.uget(Legacy.Instrument.F2.Filter)
+        val lyoutWheel    = config.uget(Legacy.Instrument.F2.LyotWheel)
+        val disperser     = config.uget(Legacy.Instrument.F2.Disperser)
+        F2Config(fpu, mosPreimaging, exposureTime, filter, lyoutWheel, disperser)
+
       case _ => GenericConfig(i)
     }
 
