@@ -1,5 +1,7 @@
 package edu.gemini.seqexec
 
+import scala.collection.immutable.IntMap
+
 import edu.gemini.seqexec.engine.Event._
 import scalaz._
 import scalaz.Scalaz._
@@ -10,14 +12,26 @@ import scalaz.stream.async.mutable.{Queue => SQueue}
 
 package object engine {
 
+  // Top level synonyms
+
   /**
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
   type Action = Task[Result]
 
+  /**
+    * Actions with static indexing. This is meant to be used for the transition
+    * of parallel actions from ongoing to completed. An ordinary list won't keep
+    * the original index as actions are removed.
+    */
+  type Current = IntMap[Action]
+
+
   // Avoid name class with the proper Seqexec `Queue`
   type EventQueue = SQueue[Event]
+
+  // Engine proper
 
   /**
     * Type constructor where all Seqexec side effect are managed.
@@ -100,7 +114,7 @@ package object engine {
     * Checks the `Status` is `Running` and executes all actions in the current
     * `Execution` in parallel. It also updates the `QueueStatus` as needed.
     */
-  private def step(q: EventQueue)(actions: Execution.Current): Engine[Unit] = {
+  private def step(q: EventQueue)(actions: Current): Engine[Unit] = {
 
     // Send the expected event when action is executed
     def execute(t: (Int, Action)): Task[Unit] = {
@@ -125,7 +139,7 @@ package object engine {
     * `Execution` is empty. If the current `Execution` is not empty it does
     * nothing.
     */
-  private val prime: Engine[Option[Execution.Current]] =
+  private val prime: Engine[Option[Current]] =
     gets(QueueStatus.prime(_)) >>= {
       case Some(qs) => put(qs) *> pure(Some(qs.queue.current))
       case None => pure(None)
@@ -179,4 +193,7 @@ package object engine {
     */
   def hoistEngineSink[O](s: Sink[Task, O]): Sink[Engine, O] =
     hoistEngine(s).map(_.map(_.liftM[EngineStateT]))
+
+  def toIntMap[A](l: List[A]): IntMap[A] =
+    IntMap(l.zipWithIndex.map(s => (s._2, s._1)).toSeq: _*)
 }

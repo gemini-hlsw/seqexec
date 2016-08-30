@@ -1,7 +1,5 @@
 package edu.gemini.seqexec.engine
 
-import scala.collection.immutable.IntMap
-
 import scalaz._
 import Scalaz._
 
@@ -28,7 +26,7 @@ object QueueStatus {
   /**
     * Lens for the current Execution.
     */
-  val current: QueueStatus @> Queue.Current = queue >=> Queue.current
+  val current: QueueStatus @> Current = queue >=> Queue.current
 
   /**
     * Lens for the completed Queue.
@@ -58,9 +56,6 @@ object QueueStatus {
            PLens.listHeadPLens[Step.Pending] >=>
          PLens.listHeadPLens[Execution.Pending]
       ).mod(_.tailOption.getOrElse(List()), qs)
-
-    def toIntMap[A](l: List[A]): IntMap[A] =
-      IntMap(l.zipWithIndex.map(s => (s._2, s._1)).toSeq: _*)
 
     if (QueueStatus.current.get(ss0).isEmpty) {
       // Copy next pending execution to current execution
@@ -100,7 +95,7 @@ object QueueStatus {
   */
 case class Queue(
   pending: Queue.Pending,
-  current: Queue.Current,
+  current: Current,
   done: Queue.Done
 )
 
@@ -108,17 +103,15 @@ object Queue {
 
   type Pending = List[Sequence.Pending]
 
-  type Current = Sequence.Current
-
   type Done = List[Sequence.Done]
 
-  val pending: Queue @> Queue.Pending =
+  val pending: Queue @> Pending =
     Lens.lensu((q, qp) => q.copy(pending = qp), _.pending)
 
-  val current: Queue @> Queue.Current =
+  val current: Queue @> Current =
     Lens.lensu((q, qc) => q.copy(current = qc), _.current)
 
-  val done: Queue @> Queue.Done =
+  val done: Queue @> Done =
     Lens.lensu((q, qd) => q.copy(done = qd), _.done)
 }
 
@@ -138,7 +131,7 @@ object Status {
   */
 case class Sequence(
   pending: Sequence.Pending,
-  current: Sequence.Current,
+  current: Current,
   done: Sequence.Done
 )
 
@@ -146,17 +139,15 @@ object Sequence {
 
   type Pending = List[Step.Pending]
 
-  type Current = Step.Current
-
   type Done = List[Step.Done]
 
-  val pending: Sequence @> Sequence.Pending =
+  val pending: Sequence @> Pending =
     Lens.lensu((s, ns) => s.copy(pending = ns), _.pending)
 
-  val current: Sequence @> Sequence.Current =
+  val current: Sequence @> Current =
     Lens.lensu((s, ns) => s.copy(current = ns), _.current)
 
-  val done: Sequence @> Sequence.Done =
+  val done: Sequence @> Done =
     Lens.lensu((s, ns) => s.copy(done = ns), _.done)
 }
 
@@ -167,7 +158,7 @@ object Sequence {
 
 case class Step(
   pending: Step.Pending,
-  current: Step.Current,
+  current: Current,
   done: Step.Done
 )
 
@@ -175,17 +166,15 @@ object Step {
 
   type Pending = List[Execution.Pending]
 
-  type Current = Execution.Current
-
   type Done = List[Execution.Done]
 
-  val pending: Step @> Step.Pending =
+  val pending: Step @> Pending =
     Lens.lensu((s, ns) => s.copy(pending = ns), _.pending)
 
-  val current: Step @> Step.Current =
+  val current: Step @> Current =
     Lens.lensu((s, ns) => s.copy(current = ns), _.current)
 
-  val done: Step @> Step.Done =
+  val done: Step @> Done =
     Lens.lensu((s, ns) => s.copy(done = ns), _.done)
 }
 
@@ -199,20 +188,13 @@ object Step {
   */
 case class Execution(
   pending: Execution.Pending,
-  current: Execution.Current,
+  current: Current,
   done: Execution.Done
 )
 
 object Execution {
 
   type Pending = List[Action]
-
-  /**
-    * Actions with static indexing. This is meant to be used for the transition
-    * of parallel actions from ongoing to completed. An ordinary list won't keep
-    * the original index as actions are removed.
-    */
-  type Current = IntMap[Action]
 
   /**
    * A list of successfully completed actions represented with an index. This
