@@ -2,6 +2,7 @@ package edu.gemini.seqexec.engine
 
 import Event._
 import scalaz.Scalaz._
+import scalaz.concurrent.Task
 import scalaz.stream.Process
 
 object Handler {
@@ -22,12 +23,12 @@ object Handler {
     def handleSystemEvent(se: SystemEvent): Engine[QueueStatus] = se match {
       case (Completed(i)) => log("Output: Action completed") *> complete(i)
       case (Failed(i)) => log("Output: Action failed") *> fail(q)(i)
-      case Executed => log("Output: Parallel actions completed") *> next(q)
+      case Executed => log("Output: Execution completed, launching next execution") *> next(q)
       case Finished => log("Output: Finished")
     }
 
     receive(q) >>= (
-      ev => Process.eval (
+      ev => Process.eval(
         ev match {
           case EventUser(ue) => handleUserEvent(ue)
           case EventSystem(se) => handleSystemEvent(se)
@@ -35,4 +36,7 @@ object Handler {
       )
     )
   }
+
+  def run(q: EventQueue)(qs0: QueueStatus): Task[QueueStatus] =
+    handler(q).takeWhile(!QueueStatus.isEmpty(_)).run.exec(qs0)
 }

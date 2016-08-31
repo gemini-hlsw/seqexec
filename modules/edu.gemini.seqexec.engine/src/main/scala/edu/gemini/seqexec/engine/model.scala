@@ -33,6 +33,17 @@ object QueueStatus {
     */
   val done: QueueStatus @> Queue.Done = queue >=> Queue.done
 
+  val pendingExecution: QueueStatus @?> Execution.Pending =
+    QueueStatus.pending.partial >=>
+    PLens.listHeadPLens[Sequence.Pending] >=>
+    PLens.listHeadPLens[Step.Pending] >=>
+    PLens.listHeadPLens[Execution.Pending]
+
+  /**
+    * Are there any pending actions remaining?
+    */
+  def isEmpty(qs: QueueStatus): Boolean = QueueStatus.pendingExecution.get(qs).isEmpty
+
   /**
     * Promote the next pending `Execution` to current when the current
     * `Execution` is empty. If the current `Execution` is returns `None`.
@@ -51,11 +62,7 @@ object QueueStatus {
 
     // Remove next pending Execution.
     def remove(qs: QueueStatus): QueueStatus =
-      (QueueStatus.pending.partial >=>
-         PLens.listHeadPLens[Sequence.Pending] >=>
-           PLens.listHeadPLens[Step.Pending] >=>
-         PLens.listHeadPLens[Execution.Pending]
-      ).mod(_.tailOption.getOrElse(List()), qs)
+      QueueStatus.pendingExecution.mod(_.tailOption.getOrElse(List()), qs)
 
     if (QueueStatus.current.get(ss0).isEmpty) {
       // Copy next pending execution to current execution
