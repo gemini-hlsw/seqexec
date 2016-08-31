@@ -108,7 +108,7 @@ package object engine {
   /**
     * Enqueue `Event` in the Engine.
     */
-  private def send(q: EventQueue)(ev: Event): Engine[Unit] = pure(q.enqueueOne(ev))
+  private def send(q: EventQueue)(ev: Event): Engine[Unit] = q.enqueueOne(ev).liftM[EngineStateT]
 
   /**
     * Checks the `Status` is `Running` and executes all actions in the current
