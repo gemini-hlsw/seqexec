@@ -15,7 +15,7 @@ object StepDao {
       s match {
         case BiasStep(_)       => insertBiasSlice(oid, index)
         case DarkStep(_)       => insertDarkSlice(oid, index)
-        case ScienceStep(_, t) => insertScienceSlice(oid, index, t)
+        case ScienceStep(i, t) => insertScienceSlice(oid, index, t) *> insertConfigSlice(oid, index, i)
         case GcalStep(_, g)    => insertGCalSlice(oid, index, g)
       }
     } // TODO: instrument config slice
@@ -50,6 +50,19 @@ object StepDao {
       VALUES (${oid}, ${index}, ${t.p}, ${t.q})
     """.update.run
 
+    private def insertConfigSlice(oid: Observation.Id, index: Int, i: InstrumentConfig): ConnectionIO[Int] =
+      i match {
+
+        case F2Config(fpu, mosPreimaging, exposureTime, filter, lyotWheel, disperser) =>
+          sql"""
+            INSERT INTO step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser)
+            VALUES ($oid, $index, $fpu, $mosPreimaging, ${exposureTime.getSeconds}, $filter, $lyotWheel, $disperser)
+          """.update.run
+
+        case GenericConfig(i) => 0.point[ConnectionIO]
+
+      }
+
   // The type we get when we select the fully joined step
   private case class StepKernel(
     i: Instrument,
@@ -57,9 +70,9 @@ object StepDao {
     gcal: (Option[GCalLamp], Option[GCalShutter]),
     telescope: (Option[OffsetP],  Option[OffsetQ])
   ) {
-    def toStep: Step[_] =
+    def toStep: Step[Instrument] =
       stepType match {
-        
+
         case StepType.Bias => BiasStep(i)
         case StepType.Dark => DarkStep(i)
 
@@ -76,7 +89,7 @@ object StepDao {
       }
   }
 
-  def selectAll(oid: Observation.Id): ConnectionIO[List[Step[_]]] =
+  def selectAll(oid: Observation.Id): ConnectionIO[List[Step[Instrument]]] =
     sql"""
       SELECT s.instrument,
              s.step_type,
@@ -94,10 +107,3 @@ object StepDao {
     """.query[StepKernel].map(_.toStep).list
 
 }
-
-
-
-
-
-
-

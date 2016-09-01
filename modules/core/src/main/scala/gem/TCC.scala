@@ -74,3 +74,8 @@ object Tcc {
   }
 
 }
+
+trait TccTypes {
+
+  
+}

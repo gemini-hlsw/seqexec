@@ -12,7 +12,7 @@ final case class F2Config(
   mosPreimaging: Boolean,     // instrument:mosPreimaging,NO
   exposureTime:  Duration,    // observe:exposureTime,2.0
   filter:        F2Filter,    // instrument:filter,Dark
-  lyoutWheel:    F2LyotWheel, // instrument:lyotWheel,f/16 (open))
+  lyotWheel:     F2LyotWheel, // instrument:lyotWheel,f/16 (open))
   disperser:     F2Disperser  // instrument:disperser,None
 ) extends InstrumentConfig
 

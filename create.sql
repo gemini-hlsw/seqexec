@@ -128,7 +128,7 @@ ALTER TABLE e_f2_disperser OWNER TO postgres;
 
 CREATE TABLE e_f2_filter (
     id identifier NOT NULL,
-    wavelength double precision NOT NULL,
+    wavelength double precision,
     short_name character varying(20) NOT NULL,
     long_name character varying(20) NOT NULL,
     tcc_value character varying(20) NOT NULL,
@@ -456,6 +456,31 @@ CREATE TABLE step_dark (
 ALTER TABLE step_dark OWNER TO postgres;
 
 --
+-- Name: step_f2; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_f2 (
+    observation_id character varying(40) NOT NULL,
+    index smallint NOT NULL,
+    fpu identifier NOT NULL,
+    mos_preimaging boolean NOT NULL,
+    exposure_time integer NOT NULL,
+    filter identifier NOT NULL,
+    lyot_wheel identifier NOT NULL,
+    disperser identifier NOT NULL
+);
+
+
+ALTER TABLE step_f2 OWNER TO postgres;
+
+--
+-- Name: COLUMN step_f2.exposure_time; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should this be another type?';
+
+
+--
 -- Name: step_gcal; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -488,10 +513,10 @@ ALTER TABLE step_science OWNER TO postgres;
 --
 
 COPY e_f2_disperser (id, wavelength, tcc_value, short_name, long_name) FROM stdin;
-R1200JH	1.3899999999999999	R=1200 (J + H) grism	R1200JH	R=1200 (J + H) grism
-R1200HK	1.871	R=1200 (H + K) grism	R1200HK	R=1200 (H + K) grism
-R3000	1.64999999999999991	R=3000 (J or H or K) grism	R3000	R=3000 (J or H or K) grism
-NoDisperser	\N	None	None	None
+R1200JH	1.3899999999999999	R1200JH	R1200JH	R=1200 (J + H) grism
+R1200HK	1.871	R1200HK	R1200HK	R=1200 (H + K) grism
+R3000	1.64999999999999991	R3000	R3000	R=3000 (J or H or K) grism
+NoDisperser	\N	NONE	None	None
 \.
 
 
@@ -500,17 +525,18 @@ NoDisperser	\N	None	None	None
 --
 
 COPY e_f2_filter (id, wavelength, short_name, long_name, tcc_value, obsolete) FROM stdin;
-Open	1.60000000000000009	Open	Open	Open	f
-Y	1.02000000000000002	Y	Y (1.02 um)	Y (1.02 um)	f
-F1056	1.05600000000000005	F1056	F1056 (1.056 um)	F1056 (1.056 um)	f
-F1063	1.06299999999999994	F1063	F1063 (1.063 um)	F1063 (1.063 um)	f
-J	1.25	J	J (1.25 um)	J (1.25 um)	f
-H	1.64999999999999991	H	H (1.65 um)	H (1.65 um)	f
-JH	1.3899999999999999	JH	JH (spectroscopic)	JH (spectroscopic)	f
-HK	1.871	HK	HK (spectroscopic)	HK (spectroscopic)	f
-JLow	1.14999999999999991	J-low	J-low (1.15 um)	J-low (1.15 um)	f
-KLong	2.20000000000000018	K-long	K-long (2.20 um)	K-long (2.20 um)	f
-KShort	2.14999999999999991	K-short	K-short (2.15 um)	K-short (2.15 um)	f
+Open	1.60000000000000009	Open	Open	OPEN	f
+Y	1.02000000000000002	Y	Y (1.02 um)	Y	f
+F1056	1.05600000000000005	F1056	F1056 (1.056 um)	F1056	f
+J	1.25	J	J (1.25 um)	J	f
+H	1.64999999999999991	H	H (1.65 um)	H	f
+JH	1.3899999999999999	JH	JH (spectroscopic)	JH	f
+HK	1.871	HK	HK (spectroscopic)	HK	f
+JLow	1.14999999999999991	J-low	J-low (1.15 um)	J_LOW	f
+KLong	2.20000000000000018	K-long	K-long (2.20 um)	K_LONG	f
+KShort	2.14999999999999991	K-short	K-short (2.15 um)	K_SHORT	f
+F1063	1.06299999999999994	F1063	F1063 (1.063 um)	F1063	f
+Dark	\N	Dark	Dark	DARK	f
 \.
 
 
@@ -519,16 +545,16 @@ KShort	2.14999999999999991	K-short	K-short (2.15 um)	K-short (2.15 um)	f
 --
 
 COPY e_f2_fpunit (id, short_name, slit_width, decker, long_name, obsolete, tcc_value) FROM stdin;
-SubPixPinhole	Sub-Pix Pinhole	0	Imaging	Sub-Pixel Pinhole Gr	f	subpix pinhole grid
-None	None	0	Imaging	Imaging (none)	f	Imaging (none)
-Custom	Custom	0	MOS	Custom Mask	f	Custom Mask
-LongSlit1	Long Slit 1px	1	Long Slit	1-Pixel Long Slit	f	1-pix longslit
-LongSlit2	Long Slit 2px	2	Long Slit	2-Pixel Long Slit	f	2-pix longslit
-LongSlit3	Long Slit 3px	3	Long Slit	3-Pixel Long Slit	f	3-pix longslit
-LongSlit4	Long Slit 4px	4	Long Slit	4-Pixel Long Slit	f	4-pix longslit
-LongSlit6	Long Slit 6px	6	Long Slit	6-Pixel Long Slit	f	6-pix longslit
-LongSlit8	Long Slit 8px	8	Long Slit	8-Pixel Long Slit	f	8-pix longslit
-Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f	2-pix pinhole grid
+Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f	PINHOLE
+SubPixPinhole	Sub-Pix Pinhole	0	Imaging	Sub-Pixel Pinhole Gr	f	SUBPIX_PINHOLE
+None	None	0	Imaging	Imaging (none)	f	FPU_NONE
+Custom	Custom	0	MOS	Custom Mask	f	CUSTOM_MASK
+LongSlit1	Long Slit 1px	1	Long Slit	1-Pixel Long Slit	f	LONGSLIT_1
+LongSlit2	Long Slit 2px	2	Long Slit	2-Pixel Long Slit	f	LONGSLIT_2
+LongSlit3	Long Slit 3px	3	Long Slit	3-Pixel Long Slit	f	LONGSLIT_3
+LongSlit4	Long Slit 4px	4	Long Slit	4-Pixel Long Slit	f	LONGSLIT_4
+LongSlit6	Long Slit 6px	6	Long Slit	6-Pixel Long Slit	f	LONGSLIT_6
+LongSlit8	Long Slit 8px	8	Long Slit	8-Pixel Long Slit	f	LONGSLIT_8
 \.
 
 
@@ -537,14 +563,14 @@ Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f	2-pix pinhole grid
 --
 
 COPY e_f2_lyot_wheel (id, short_name, plate_scale, pixel_scale, obsolete, long_name, tcc_value) FROM stdin;
-HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)	Hartmann A (H1)
-HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)	Hartmann B (H2)
-F32High	f/32 High	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO high background	f/32 MCAO high background
-F32Low	f/32 Low	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO low background	f/32 MCAO low background
-GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS under-sized)	f/33 (GeMS under-sized)
-GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)	f/33 (GeMS over-sized)
-F16	f/16	1.6100000000000001	0.179999999999999993	f	f/16 (Open)	f/16 (open)
-F33Gems	f/33 GeMS	0.78400000000000003	0.0899999999999999967	t	f/33 (GeMS)	f/33 (Gems)
+F16	f/16	1.6100000000000001	0.179999999999999993	f	f/16 (Open)	OPEN
+F32High	f/32 High	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO high background	HIGH
+F32Low	f/32 Low	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO low background	LOW
+F33Gems	f/33 GeMS	0.78400000000000003	0.0899999999999999967	t	f/33 (GeMS)	GEMS
+GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS under-sized)	GEMS_UNDER
+GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)	GEMS_OVER
+HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)	H1
+HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)	H2
 \.
 
 
@@ -665,9 +691,6 @@ COPY semester (semester_id, year, half) FROM stdin;
 2006B	2006	B
 2007B	2007	B
 2012B	2012	B
-2003A	2003	A
-2003B	2003	B
-2004A	2004	A
 \.
 
 
@@ -692,6 +715,14 @@ COPY step_bias (index, observation_id) FROM stdin;
 --
 
 COPY step_dark (index, observation_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: step_f2; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser) FROM stdin;
 \.
 
 
@@ -832,6 +863,14 @@ ALTER TABLE ONLY step_dark
 
 
 --
+-- Name: step_f2_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_pkey PRIMARY KEY (index, observation_id);
+
+
+--
 -- Name: step_gcal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -848,6 +887,14 @@ ALTER TABLE ONLY step
 
 
 --
+-- Name: step_science_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_science
+    ADD CONSTRAINT step_science_pkey PRIMARY KEY (index, observation_id);
+
+
+--
 -- Name: ix_observation_instrument; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -859,6 +906,27 @@ CREATE INDEX ix_observation_instrument ON observation USING btree (instrument);
 --
 
 CREATE INDEX ix_observation_program_id ON observation USING btree (program_id);
+
+
+--
+-- Name: ix_program_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_program_id ON program USING btree (program_id);
+
+
+--
+-- Name: ix_step; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_step ON step USING btree (observation_id, index);
+
+
+--
+-- Name: ix_step_oid; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_step_oid ON step USING btree (observation_id);
 
 
 --
@@ -907,6 +975,46 @@ ALTER TABLE ONLY step_bias
 
 ALTER TABLE ONLY step_dark
     ADD CONSTRAINT step_dark_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_f2_disperser_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_disperser_fkey FOREIGN KEY (disperser) REFERENCES e_f2_disperser(id);
+
+
+--
+-- Name: step_f2_filter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_filter_fkey FOREIGN KEY (filter) REFERENCES e_f2_filter(id);
+
+
+--
+-- Name: step_f2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_id_fkey FOREIGN KEY (fpu) REFERENCES e_f2_fpunit(id);
+
+
+--
+-- Name: step_f2_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: step_f2_lyot_wheel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_lyot_wheel_fkey FOREIGN KEY (lyot_wheel) REFERENCES e_f2_lyot_wheel(id);
 
 
 --

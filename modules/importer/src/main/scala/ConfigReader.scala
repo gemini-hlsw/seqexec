@@ -1,71 +1,98 @@
-// package gem
-//
-// import gem.enum._
-//
-// import edu.gemini.spModel.core._
-// import scala.reflect.ClassTag
-//
-// import scalaz._, Scalaz._
-//
-// final class ConfigReader[A](run: Coyoneda[(Map[String, Object], String) => ?, A]) {
-//
-//   def read(c: Map[String, Object], key: String): A =
-//     run.k(run.fi(c, key))
-//
-//   def map[B](f: A => B): ConfigReader[B] =
-//     new ConfigReader(run map f)
-//
-// }
-//
-// object ConfigReader extends ConfigReaderLow {
-//
-//   def apply[A](implicit ev: ConfigReader[A]): ConfigReader[A] = ev
-//
-//   def lift[A](f: (Map[String, Object], String) => A): ConfigReader[A] =
-//     new ConfigReader(Coyoneda.lift[(Map[String, Object], String) => ?, A](f))
-//
-//   def cast[A](implicit ev: ClassTag[A]): ConfigReader[A] =
-//     lift((c, s) => ev.runtimeClass.cast(c(s)).asInstanceOf[A])
-//
-//   implicit val StringConfigReader: ConfigReader[String] =
-//     cast[Object].map(_.toString)
-//
-//   // not implicit
-//   val OffsetAngleConfigReader: ConfigReader[Angle] =
-//     StringConfigReader.map(_.toDouble).map(Angle.fromArcsecs)
-//
-//   implicit val OffsetPConfigReader: ConfigReader[OffsetP] =
-//     OffsetAngleConfigReader.map(OffsetP(_))
-//
-//   implicit val OffsetQConfigReader: ConfigReader[OffsetQ] =
-//     OffsetAngleConfigReader.map(OffsetQ(_))
-//
-//   implicit val GCalLampConfigReader: ConfigReader[GCalLamp] =
-//     cast[java.util.Set[Object]].map(_.iterator.next.toString).map(s => GCalLamp.all.find(_.tccValue === s).getOrElse(sys.error("GCalLampConfigReader: unexpected tccValue: " + s)))
-//
-//   // implicit def EnumeratedConfigReader[A <: { def tccValue: String }](implicit e: Enumerated[A]) =
-//   //   StringConfigReader.map(s => e.all.find(_.tccValue === s).getOrElse("Invalid tccValue: " + s))
-//
-//   implicit val InstrumentConfigReader: ConfigReader[Instrument] =
-//     StringConfigReader.map(s => Instrument.all.find(_.tccValue === s).getOrElse(sys.error("InstrumentConfigReader: unexpected tccValue: " + s)))
-//
-//   implicit val GCalShutterConfigReader: ConfigReader[GCalShutter] =
-//     StringConfigReader.map(s => GCalShutter.all.find(_.tccValue === s).getOrElse(sys.error("GCalShutterConfigReader: unexpected tccValue: " + s)))
-//
-// }
-//
-// trait ConfigReaderLow { this: ConfigReader.type =>
-//
-//   implicit def OptionConfigReader[A](implicit ev: ConfigReader[A]): ConfigReader[Option[A]] =
-//     lift((c, s) => c.get(s).as(ev.read(c, s)))
-//
-// }
-//
-// object ConfigSyntax {
-//
-//   implicit class ConfigOps(c: Map[String, Object]) {
-//     def read[A](key: String)(implicit ev: ConfigReader[A]): A =
-//       ev.read(c, key)
-//   }
-//
-// }
+package gem
+
+import edu.gemini.spModel.core._
+import edu.gemini.spModel.`type`.SequenceableSpType
+import edu.gemini.spModel.data.YesNoType
+import gem.config._
+import gem.enum._
+import java.time.Duration
+import scala.reflect.runtime.universe.TypeTag
+
+import scalaz._, Scalaz._
+
+object ConfigReader3 {
+
+  object Enum {
+    def find[A](f: A => Boolean)(implicit ev: Enumerated[A]): Option[A] =
+      ev.all.find(f)
+
+    def findp[A: Enumerated, B: Equal](f: A => B)(b: B): Option[A] =
+      find[A](a => f(a) === b)
+
+    def ufindp[A: Enumerated, B: Equal](f: A => B)(b: B)(implicit ev: TypeTag[A]): A =
+      find[A](a => f(a) === b).getOrElse(sys.error(s"enum value of type ${ev.tpe} not found: $b"))
+  }
+
+  // This isn't a typeclass because instances aren't unique
+  type Read[A] = AnyRef => A
+  object Read {
+    import Enum._
+
+    def cast[A]: Read[A] =
+      _.asInstanceOf[A]
+
+    def enum[A: Enumerated: TypeTag](f: A => String): Read[A] =
+      cast[String].map(ufindp(f))
+
+    def seq[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String): Read[A] =
+      cast[S].map(s => ufindp(f)(s.sequenceValue))
+
+    val unit:        Read[Unit]        = _ => ()
+    val string:      Read[String]      = cast[String]
+    val double:      Read[Double]      = cast[Double]
+    val int:         Read[Int]         = cast[Int]
+    val long:        Read[Long]        = cast[Long]
+    val offsetAngle: Read[Angle]       = string.map(s => Angle.fromArcsecs(s.toDouble))
+    val offsetP:     Read[OffsetP]     = offsetAngle.map(OffsetP(_))
+    val offsetQ:     Read[OffsetQ]     = offsetAngle.map(OffsetQ(_))
+    val instrument:  Read[Instrument]  = enum(_.tccValue)
+    val yesNo:       Read[Boolean]     = cast[YesNoType].map(_.toBoolean)
+
+    val durSecs:     Read[Duration]     = double.map(_.toInt).map(Duration.ofSeconds(_))
+
+    // GCal
+    val gcalLamp:    Read[GCalLamp]    = cast[java.util.Set[Object]].map(_.iterator.next.toString).map(ufindp[GCalLamp, String](_.tccValue))
+    val gcalShutter: Read[GCalShutter] = seq[edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter, GCalShutter](_.tccValue)
+
+    // F2
+    val f2fpu:       Read[F2FpUnit]    = seq[edu.gemini.spModel.gemini.flamingos2.Flamingos2.FPUnit,    F2FpUnit](_.tccValue)
+    val f2filter:    Read[F2Filter]    = seq[edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter,    F2Filter](_.tccValue)
+    val f2lyotwheel: Read[F2LyotWheel] = seq[edu.gemini.spModel.gemini.flamingos2.Flamingos2.LyotWheel, F2LyotWheel](_.tccValue)
+    val f2disperser: Read[F2Disperser] = seq[edu.gemini.spModel.gemini.flamingos2.Flamingos2.Disperser, F2Disperser](_.tccValue)
+
+  }
+
+  case class KeyRead[A](k: Tcc.System#Key[A], r: Read[A])
+
+  object Legacy {
+    object Telescope {
+      val P = KeyRead(Tcc.Telescope.P, Read.offsetP)
+      val Q = KeyRead(Tcc.Telescope.Q, Read.offsetQ)
+    }
+    object Observe {
+      val ObserveType  = KeyRead(Tcc.Observe.ObserveType, Read.string)
+      val ExposureTime = KeyRead(Tcc.Observe.ExposureTime, Read.durSecs)
+    }
+    object Instrument {
+      val Instrument    = KeyRead(Tcc.Instrument.Instrument,    Read.instrument)
+      val MosPreImaging = KeyRead(Tcc.Instrument.MosPreImaging, Read.yesNo)
+      object F2 {
+        val Fpu       = KeyRead(Tcc.Instrument.F2.Fpu,       Read.f2fpu)
+        val Filter    = KeyRead(Tcc.Instrument.F2.Filter,    Read.f2filter)
+        val LyotWheel = KeyRead(Tcc.Instrument.F2.LyotWheel, Read.f2lyotwheel)
+        val Disperser = KeyRead(Tcc.Instrument.F2.Disperser, Read.f2disperser)
+      }
+    }
+    object Calibration {
+      val Lamp    = KeyRead(Tcc.Calibration.Lamp, Read.gcalLamp)
+      val Shutter = KeyRead(Tcc.Calibration.Shutter, Read.gcalShutter)
+    }
+  }
+
+  implicit class ConfigOps3(c: Map[String, AnyRef]) {
+    def cget[A](kr: KeyRead[A]): Option[A] = kr.k.legacyGet(c).map(kr.r)
+    def uget[A](k: KeyRead[A]): A = cgetOrElse(k, throw sys.error(s"not found: $k"))
+    def cgetOrElse[A](k: KeyRead[A], a: => A): A = cget(k).getOrElse(a)
+  }
+
+}
