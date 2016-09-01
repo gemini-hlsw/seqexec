@@ -30,21 +30,21 @@ object Importer extends SafeApp {
   val dir = new File("archive")
 
   val xa = DriverManagerTransactor[IO](
-    "org.postgresql.Driver", 
-    "jdbc:postgresql:gem", 
-    "postgres", 
+    "org.postgresql.Driver",
+    "jdbc:postgresql:gem",
+    "postgres",
     ""
   )
 
   def steps(o: ISPObservation): List[Map[String, Object]] =
     ConfigBridge
-      .extractSequence(o, new JU.HashMap, IDENTITY_MAP) 
+      .extractSequence(o, new JU.HashMap, IDENTITY_MAP)
       .getAllSteps
       .toList
       .map { c =>
          c.itemEntries
           .iterator
-          .map { e => (e.getKey.toString, e.getItemValue) } 
+          .map { e => (e.getKey.toString, e.getItemValue) }
           .toMap
       }
 
@@ -56,14 +56,14 @@ object Importer extends SafeApp {
 
     val ins: ConnectionIO[Unit] =
       ProgramDao.insert(Program(pid, tit, Nil)) *>
-      obs.traverse_ { o => 
+      obs.traverse_ { o =>
 
         val ss   = steps(o)
         val inst = ss.flatMap(_.get("instrument:instrument")).distinct match {
           case      Nil => None
           case o :: Nil => Some(o.asInstanceOf[String]).map(s => Instrument.all.find(_.tccValue == s).getOrElse(sys.error("Invalid inst tccValue: " + s)))
           case o :: os  => sys.error("More than one instrument in sequence: " + (o :: os))
-        } 
+        }
 
         val oid = o.getObservationID
         val newObs = Observation(
@@ -77,16 +77,15 @@ object Importer extends SafeApp {
 
         ObservationDao.insert(newObs) *>
         configs.zipWithIndex.traverse { case (c, n) => StepDao.insert(newObs.id, n, c) }.void
+
       }
 
-    IO.putStr(".") *> 
+    IO.putStr(".") *>
     ins.transact(xa)
   }
 
-
-
   def readAndInsert(r: ProgramReader, f: File): IO[Unit] =
-    r.read(f).flatMap { 
+    r.read(f).flatMap {
       case Some(p) => insert(p).except(e => IO.putStrLn(">> " + p.getProgramID + ": " + e.getMessage))
       case None    => IO.ioUnit
     }
@@ -117,7 +116,7 @@ object Importer extends SafeApp {
         |""".stripMargin)))
     }
 
-  override def runl(args: List[String]): IO[Unit] = 
+  override def runl(args: List[String]): IO[Unit] =
     for {
       n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
       _ <- checkArchive
@@ -127,38 +126,41 @@ object Importer extends SafeApp {
       _ <- IO.putStrLn("\nDone.")
     } yield ()
 
-  // 
+  //
 
-  def unsafeFromConfig(config: Map[String, Object]): Option[Step[_ <: InstrumentConfig]] = {
+  def unsafeFromConfig(config: Map[String, Object]): Option[Step[InstrumentConfig]] = {
 
     val observeType  = config.read[Option[String    ]]("observe:observeType"  )
     val instrument   = config.read[Option[Instrument]]("instrument:instrument")
 
     (observeType |@| instrument).tupled.collect {
-      
-      case ("BIAS",   i) =>
-        BiasStep(new InstrumentConfig(i))
 
-      case ("DARK",   i) => 
-        DarkStep(new InstrumentConfig(i))
+      case ("BIAS",   i) =>
+        BiasStep(unsafeInstConfig(i, config))
+
+      case ("DARK",   i) =>
+        DarkStep(unsafeInstConfig(i, config))
 
       case ("OBJECT" | "CAL", i) =>
         val p = config.read[Option[OffsetP]]("telescope:p").getOrElse(OffsetP.Zero)
         val q = config.read[Option[OffsetQ]]("telescope:q").getOrElse(OffsetQ.Zero)
-        ScienceStep(new InstrumentConfig(i), TelescopeConfig(p,q))
-        
+        ScienceStep(unsafeInstConfig(i, config), TelescopeConfig(p,q))
+
       case ("ARC" | "FLAT", i) =>
         val l = config.read[GCalLamp]("calibration:lamp")
         val s = config.read[GCalShutter]("calibration:shutter")
-        GcalStep(new InstrumentConfig(i), GcalConfig(l, s))
+        GcalStep(unsafeInstConfig(i, config), GcalConfig(l, s))
 
-      case x => 
+      case x =>
         sys.error("Unknown observeType: " + x + config.mkString("\n>  ", "\n>  ", ""))
 
     }
 
   }
 
+  def unsafeInstConfig(i: Instrument, config: Map[String, Object]): InstrumentConfig =
+    i match {
+      case _ => GenericConfig(i)
+    }
 
 }
-
