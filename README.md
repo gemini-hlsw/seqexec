@@ -58,8 +58,9 @@ Right now just a sketch is imported:
   - dark
   - gcal (lamp, shutter)
   - science (offset p/q)
+    - F2 (fpu, pre-imaging, exposure time, filter, lyot wheel, disperser)
 
-There are no instrument-specific slices for science steps yet.
+There are no other instrument-specific slices for science steps yet.
 
 ### Enumerated Types
 
