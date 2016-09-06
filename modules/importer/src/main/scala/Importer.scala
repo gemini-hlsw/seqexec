@@ -45,8 +45,6 @@ object Importer extends SafeApp {
     ""
   )
 
-  val log = Log("importer", lxa)
-
   def steps(o: ISPObservation): List[Map[String, Object]] =
     ConfigBridge
       .extractSequence(o, new JU.HashMap, IDENTITY_MAP)
@@ -94,7 +92,7 @@ object Importer extends SafeApp {
     ins.transact(xa)
   }
 
-  def readAndInsert(r: ProgramReader, f: File): IO[Unit] =
+  def readAndInsert(r: ProgramReader, f: File, log: Log[IO]): IO[Unit] =
     log.instrument(r.read(f), s"read ${f.getName}").flatMap {
       case Some(p) => log.instrument(insert(p), s"insert ${p.getProgramID}")
       case None    => IO.ioUnit
@@ -103,8 +101,8 @@ object Importer extends SafeApp {
   def xmlFiles(dir: File, num: Int): IO[List[File]] =
     IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(num))
 
-  def readAndInsertAll(r: ProgramReader, dir: File, num: Int): IO[Unit] =
-    xmlFiles(dir, num).flatMap(_.traverse_(readAndInsert(r, _)))
+  def readAndInsertAll(r: ProgramReader, dir: File, num: Int, log: Log[IO]): IO[Unit] =
+    xmlFiles(dir, num).flatMap(_.traverse_(readAndInsert(r, _, log)))
 
   val configLogging: IO[Unit] =
     IO(List(
@@ -129,13 +127,14 @@ object Importer extends SafeApp {
 
   override def runl(args: List[String]): IO[Unit] =
     for {
+      l <- Log.newLog[IO]("importer", lxa)
       n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
       _ <- checkArchive
       _ <- configLogging
       _ <- clean.transact(xa)
-      _ <- ProgramReader.using(readAndInsertAll(_, dir, n))
+      _ <- ProgramReader.using(readAndInsertAll(_, dir, n, l))
       _ <- IO.putStrLn("Awaiting log shutdown.")
-      _ <- log.shutdown[IO](5 * 1000) // if we're not done soon somethinig is wrong
+      _ <- l.shutdown(5 * 1000) // if we're not done soon somethinig is wrong
       _ <- IO.putStrLn("Done.")
     } yield ()
 
