@@ -16,6 +16,7 @@ object Tcc {
   private def clean(s: String) =
     s.replace("edu.gemini.spModel.core.", "")
      .replace("java.lang.", "")
+     .replace("java.time.", "")
      .replace("gem.", "")
 
   // This might work better flattened
@@ -77,5 +78,5 @@ object Tcc {
 
 trait TccTypes {
 
-  
+
 }

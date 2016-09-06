@@ -13,12 +13,12 @@ object StepDao {
   def insert[I <: InstrumentConfig](oid: Observation.Id, index: Int, s: Step[I]): ConnectionIO[Int] =
     insertBaseSlice(oid, index, s.instrument, StepType.forStep(s)) *> {
       s match {
-        case BiasStep(_)       => insertBiasSlice(oid, index)
+        case BiasStep(_)       => insertBiasSlice(oid, index)       
         case DarkStep(_)       => insertDarkSlice(oid, index)
-        case ScienceStep(i, t) => insertScienceSlice(oid, index, t) *> insertConfigSlice(oid, index, i)
+        case ScienceStep(_, t) => insertScienceSlice(oid, index, t)
         case GcalStep(_, g)    => insertGCalSlice(oid, index, g)
       }
-    } // TODO: instrument config slice
+    } *> insertConfigSlice(oid, index, s.instrument)
 
   private def insertBaseSlice(oid: Observation.Id, index: Int, i: InstrumentConfig, t: StepType): ConnectionIO[Int] =
     sql"""

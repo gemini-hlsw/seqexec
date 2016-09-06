@@ -37,6 +37,8 @@ object Importer extends SafeApp {
     ""
   )
 
+  val log = Log("importer", xa)
+
   def steps(o: ISPObservation): List[Map[String, Object]] =
     ConfigBridge
       .extractSequence(o, new JU.HashMap, IDENTITY_MAP)
@@ -81,15 +83,14 @@ object Importer extends SafeApp {
 
       }
 
-    IO.putStr(".") *>
     ins.transact(xa)
   }
 
   def readAndInsert(r: ProgramReader, f: File): IO[Unit] =
-    r.read(f).flatMap {
-      case Some(p) => insert(p).except(e => IO.putStrLn(">> " + p.getProgramID + ": " + e.getMessage))
+    log.instrument(r.read(f), s"read ${f.getName}").flatMap {
+      case Some(p) => log.instrument(insert(p), s"insert ${p.getProgramID}")
       case None    => IO.ioUnit
-    }
+    } .except(e => IO(e.printStackTrace))
 
   def xmlFiles(dir: File, num: Int): IO[List[File]] =
     IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(num))
@@ -105,6 +106,7 @@ object Importer extends SafeApp {
   val clean: ConnectionIO[Unit] =
     for {
       _ <- sql"truncate program cascade".update.run
+      _ <- sql"truncate log".update.run
       _ <- sql"delete from semester".update.run
     } yield ()
 
@@ -112,8 +114,8 @@ object Importer extends SafeApp {
     IO(dir.isDirectory).flatMap { b =>
       b.unlessM(IO(sys.error("""
         |
-        |*** Root of project needs an archive/ dir with program xml files in it.
-        |*** Try ln -s /path/to/some/stuff archive
+        |** Root of project needs an archive/ dir with program xml files in it.
+        |** Try ln -s /path/to/some/stuff archive
         |""".stripMargin)))
     }
 
@@ -131,25 +133,25 @@ object Importer extends SafeApp {
   def unsafeFromConfig(config: Map[String, Object]): Option[Step[InstrumentConfig]] = {
 
     val observeType = config.cget(Legacy.Observe.ObserveType)
-    val instrument  = config.cget(Legacy.Instrument.Instrument)
+    val instrument  = config.cget(Legacy.Instrument.Instrument).map(unsafeInstConfig(_, config))
 
     (observeType |@| instrument).tupled.collect {
 
       case ("BIAS",   i) =>
-        BiasStep(unsafeInstConfig(i, config))
+        BiasStep(i)
 
       case ("DARK",   i) =>
-        DarkStep(unsafeInstConfig(i, config))
+        DarkStep(i)
 
       case ("OBJECT" | "CAL", i) =>
         val p = config.cgetOrElse(Legacy.Telescope.P, OffsetP.Zero)
         val q = config.cgetOrElse(Legacy.Telescope.Q, OffsetQ.Zero)
-        ScienceStep(unsafeInstConfig(i, config), TelescopeConfig(p,q))
+        ScienceStep(i, TelescopeConfig(p,q))
 
       case ("ARC" | "FLAT", i) =>
         val l = config.uget(Legacy.Calibration.Lamp)
         val s = config.uget(Legacy.Calibration.Shutter)
-        GcalStep(unsafeInstConfig(i, config), GcalConfig(l, s))
+        GcalStep(i, GcalConfig(l, s))
 
       case x =>
         sys.error("Unknown observeType: " + x + config.mkString("\n>  ", "\n>  ", ""))
