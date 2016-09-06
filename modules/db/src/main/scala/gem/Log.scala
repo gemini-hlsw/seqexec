@@ -37,6 +37,11 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
     (LogDao.insert(Level.INFO, none, msg, None, Some(elapsed)).transact(xa) *>
      Task.delay(jdkLogger.log(Level.INFO, s"$msg ($elapsed ms)"))).detach.as(a)
 
+  /**
+   * Construct a new program in `M` that is equivalent to `ma` but also logs a message, elapsed
+   * time and (in case of failure) a stacktrace to the database and to a JDK logger. Logging is
+   * asynchronous so messages may not appear immediately.
+   */
   def instrument[A](ma: M[A], msg: String): M[A] =
     for {
       start   <- now
