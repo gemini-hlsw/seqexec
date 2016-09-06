@@ -19,6 +19,7 @@ import scala.collection.JavaConverters._
 
 import scalaz._, Scalaz._
 import scalaz.effect._
+import scalaz.concurrent.Task
 import scalaz.std.effect.closeable._
 
 import doobie.imports._
@@ -37,7 +38,14 @@ object Importer extends SafeApp {
     ""
   )
 
-  val log = Log("importer", xa)
+  val lxa = DriverManagerTransactor[Task](
+    "org.postgresql.Driver",
+    "jdbc:postgresql:gem",
+    "postgres",
+    ""
+  )
+
+  val log = Log("importer", lxa)
 
   def steps(o: ISPObservation): List[Map[String, Object]] =
     ConfigBridge
@@ -126,7 +134,9 @@ object Importer extends SafeApp {
       _ <- configLogging
       _ <- clean.transact(xa)
       _ <- ProgramReader.using(readAndInsertAll(_, dir, n))
-      _ <- IO.putStrLn("\nDone.")
+      _ <- IO.putStrLn("Awaiting log shutdown.")
+      _ <- log.shutdown[IO](5 * 1000) // if we're not done soon somethinig is wrong
+      _ <- IO.putStrLn("Done.")
     } yield ()
 
 
