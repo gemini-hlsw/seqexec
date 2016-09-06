@@ -133,8 +133,7 @@ object Importer extends SafeApp {
       _ <- configLogging
       _ <- clean.transact(xa)
       _ <- ProgramReader.using(readAndInsertAll(_, dir, n, l))
-      _ <- IO.putStrLn("Awaiting log shutdown.")
-      _ <- l.shutdown(5 * 1000) // if we're not done soon somethinig is wrong
+      _ <- l.shutdown(5 * 1000) // if we're not done soon something is wrong
       _ <- IO.putStrLn("Done.")
     } yield ()
 

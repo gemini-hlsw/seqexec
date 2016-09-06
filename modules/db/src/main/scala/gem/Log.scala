@@ -52,8 +52,10 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
 
   def shutdown(ms: Long): M[Unit] =
     delay {
+      jdkLogger.info("Log shutdown requested.")
       es.shutdown
       es.awaitTermination(ms, TimeUnit.MILLISECONDS)
+      jdkLogger.info("Log shutdown complete.")
     }
 
 }
