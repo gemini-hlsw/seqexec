@@ -2,6 +2,7 @@ package gem
 
 import doobie.imports._
 import edu.gemini.spModel.core._
+import java.util.logging.Level
 import scala.reflect.runtime.universe.TypeTag
 
 import scalaz._, Scalaz._
@@ -31,6 +32,10 @@ package object dao extends MoreTupleOps {
   // Enumerated by tag as string
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+
+  // Java Log Levels (not nullable)
+  implicit def levelMeta: Meta[Level] =
+    Meta[String].nxmap(Level.parse, _.getName)
 
   def capply2[A, B, T](f: (A, B) => T)(
     implicit ca: Composite[(Option[A], Option[B])]

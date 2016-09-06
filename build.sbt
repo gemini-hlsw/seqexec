@@ -1,7 +1,7 @@
 
 lazy val argonautVersion          = "6.2-M3"
 lazy val kpVersion                = "0.8.0"
-lazy val doobieVersion            = "0.3.0-M1" // TODO
+lazy val doobieVersion            = "0.3.0" // TODO
 lazy val scalazVersion            = "7.2.4"
 lazy val shapelessVersion         = "2.3.1"
 lazy val argonautShapelessVersion = "1.2.0-M1"
