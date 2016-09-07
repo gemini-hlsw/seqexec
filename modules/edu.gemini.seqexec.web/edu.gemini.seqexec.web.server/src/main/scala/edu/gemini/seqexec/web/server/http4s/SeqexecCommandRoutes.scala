@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.server.http4s
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
-
+import edu.gemini.seqexec.web.server.security.AuthenticationService
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
@@ -11,10 +11,13 @@ import org.http4s.server.middleware.GZip
 /**
   * Rest Endpoints under the /api route
   */
-object SeqexecCommandRoutes extends BooPicklers {
+class SeqexecCommandRoutes(auth: AuthenticationService) extends BooPicklers {
+
+  val tokenAuthService = JwtAuthentication(auth)
+
   val commands = Commands()
 
-  val service = GZip { HttpService {
+  val service = tokenAuthService { GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
       Ok(toCommandResult("host", commands.host()))
 
@@ -54,5 +57,5 @@ object SeqexecCommandRoutes extends BooPicklers {
 
     case req @ GET  -> Root  / obsId / "state" =>
       Ok(toSequenceConfig("state", commands.state(obsId)))
-  }}
+  }}}
 }
