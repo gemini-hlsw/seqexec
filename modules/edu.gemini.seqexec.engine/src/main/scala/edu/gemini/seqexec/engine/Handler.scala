@@ -10,9 +10,9 @@ object Handler {
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler(q: EventQueue): Process[Engine, QueueStatus] = {
+  def handler(q: EventQueue): Process[Engine, State] = {
 
-    def handleUserEvent(ue: UserEvent): Engine[QueueStatus] = ue match {
+    def handleUserEvent(ue: UserEvent): Engine[State] = ue match {
       case Start => log("Output: Started") *> switch(q)(Status.Running)
       case Pause => log("Output: Paused") *> switch(q)(Status.Waiting)
       case AddExecution(pend) => log("Output: Adding Pending Execution") *> add(pend)
@@ -20,10 +20,10 @@ object Handler {
       case Exit => log("Bye") *> close(q)
     }
 
-    def handleSystemEvent(se: SystemEvent): Engine[QueueStatus] = se match {
+    def handleSystemEvent(se: SystemEvent): Engine[State] = se match {
       case (Completed(i)) => log("Output: Action completed") *> complete(i)
       case (Failed(i)) => log("Output: Action failed") *> fail(q)(i)
-      case Executed => log("Output: Execution completed, launching next execution") *> next(q)
+      case Executed => log("Output: Execution completed, launching next execution") *> execute(q)
       case Finished => log("Output: Finished")
     }
 
@@ -37,6 +37,6 @@ object Handler {
     )
   }
 
-  def run(q: EventQueue)(qs0: QueueStatus): Task[QueueStatus] =
-    handler(q).takeWhile(!QueueStatus.isEmpty(_)).run.exec(qs0)
+  def run(q: EventQueue)(qs0: State): Task[State] = ???
+    // handler(q).takeWhile(!State.isEmpty(_)).run.exec(qs0)
 }
