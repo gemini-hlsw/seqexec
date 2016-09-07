@@ -1,129 +1,38 @@
 package edu.gemini.seqexec.engine
 
+
 import scalaz._
 import Scalaz._
 
 /**
- * Input `Sequence` and `Status` of the execution. This is the top level state
- * data type to be used by the `Engine`. This is what is passed as output to
- * clients.
+ * This is the main state data type to be used by the `Engine`. This is what
+ * gets modified whenever it needs to react to an Event.
  */
-case class QueueStatus(queue: Queue, status: Status)
+case class State(pending: Queue[Action],
+                 current: Current,
+                 done: Queue[Result],
+                 status: Status)
 
-object QueueStatus {
+object State {
 
-  val queue: QueueStatus @> Queue =
-    Lens.lensu((ss, q1) => ss.copy(queue = q1), _.queue)
+  val pending: State @> Queue[Action] =
+    Lens.lensu((s, q) => s.copy(pending = q), _.pending)
 
-  val status: QueueStatus @> Status =
-    Lens.lensu((ss, st1) => ss.copy(status = st1), _.status)
+  val current: State @> Current =
+    Lens.lensu((s, c) => s.copy(current = c), _.current)
 
-  /**
-    * Lens for the remaining Queue.
-    */
-  val pending: QueueStatus @> Queue.Pending = queue >=> Queue.pending
+  val done: State @> Queue[Result] =
+    Lens.lensu((s, q) => s.copy(done = q), _.done)
 
-  /**
-    * Lens for the current Execution.
-    */
-  val current: QueueStatus @> Current = queue >=> Queue.current
+  val status: State @> Status =
+    Lens.lensu((s, st) => s.copy(status = st), _.status)
 
-  /**
-    * Lens for the completed Queue.
-    */
-  val done: QueueStatus @> Queue.Done = queue >=> Queue.done
-
-  val pendingExecution: QueueStatus @?> Execution.Pending =
-    QueueStatus.pending.partial >=>
-    PLens.listHeadPLens[Sequence.Pending] >=>
-    PLens.listHeadPLens[Step.Pending] >=>
-    PLens.listHeadPLens[Execution.Pending]
-
-  /**
-    * Are there any pending actions remaining?
-    */
-  def isEmpty(qs: QueueStatus): Boolean = QueueStatus.pendingExecution.get(qs).isEmpty
-
-  /**
-    * Promote the next pending `Execution` to current when the current
-    * `Execution` is empty. If the current `Execution` is returns `None`.
-    */
-  def prime(ss0: QueueStatus): Option[QueueStatus] = {
-
-    // Read next pending Execution.
-    def peek(qs: QueueStatus): Execution.Pending =
-      // Sequence
-      (qs.queue.pending.headOption >>=
-        // Step
-        (_.headOption) >>=
-        // Execution
-        (_.headOption)
-      ).getOrElse(List())
-
-    // Remove next pending Execution.
-    def remove(qs: QueueStatus): QueueStatus =
-      QueueStatus.pendingExecution.mod(_.tailOption.getOrElse(List()), qs)
-
-    if (QueueStatus.current.get(ss0).isEmpty) {
-      // Copy next pending execution to current execution
-      val ss1 = QueueStatus.current.set(ss0, toIntMap(peek(ss0)))
-      // `QueueStatus` with next pending execution removed
-      Some(remove(ss1))
-    } else { None }
-  }
-
-
-  /*
-   * Given the index of a completed `Action` in the current Execution, it moves
-   * such Action to the completed actions of the next done `Execution`. If the
-   * current Step is empty, it does nothing.
-   */
-  def shift(i: Int)(ss0: QueueStatus): QueueStatus = {
-
-    // Add index to the next done execution.
-    def add(steps: Queue.Done): Queue.Done =
-      (PLens.listHeadPLens[Sequence.Done] >=>
-       PLens.listHeadPLens[Step.Done] >=>
-       PLens.listHeadPLens[Execution.Done]
-      ).mod(i :: _, steps)
-
-    // Remove action from current execution
-    val ss1 = QueueStatus.current.mod(_ - i, ss0)
-    // Add action to completed
-    QueueStatus.done.mod(add, ss1)
-  }
+  def mark(i: Int)(r: Result)(st: State): State =
+    current.mod(Current.mark(i)(r)(_), st)
 }
 
 /**
-  * A triplet with the `Sequence`s waiting for execution, the current
-  * `Execution` and the completed `Sequence`s.
-  *
-  * This is what gets loaded every night for observation.
-  */
-case class Queue(
-  pending: Queue.Pending,
-  current: Current,
-  done: Queue.Done
-)
-
-object Queue {
-
-  type Pending = List[Sequence.Pending]
-
-  type Done = List[Sequence.Done]
-
-  val pending: Queue @> Pending =
-    Lens.lensu((q, qp) => q.copy(pending = qp), _.pending)
-
-  val current: Queue @> Current =
-    Lens.lensu((q, qc) => q.copy(current = qc), _.current)
-
-  val done: Queue @> Done =
-    Lens.lensu((q, qd) => q.copy(done = qd), _.done)
-}
-
-/**
- * Global flag to indicate execution status.
+ * Flag to indicate whether the global execution is `Running` or `Waiting`.
  */
 sealed trait Status
 
@@ -133,95 +42,111 @@ object Status {
 }
 
 /**
-  * A triplet of remaining `Step`s, current `Execution` and completed `Step`s.
-  * The `Step`s in a `Sequence` are roughly grouped by target and instrument.
+  * A list of Sequences. The `Queue` could be empty of Sequences when waiting
+  * for the addition of new ones.
   */
-case class Sequence(
-  pending: Sequence.Pending,
-  current: Current,
-  done: Sequence.Done
-)
+case class Queue[A](sequences: List[Sequence[A]])
 
-object Sequence {
+object Queue {
+  def sequences[A]: Queue[A] @> List[Sequence[A]] =
+    Lens.lensu((q, ss) => q.copy(sequences = ss), _.sequences)
 
-  type Pending = List[Step.Pending]
-
-  type Done = List[Step.Done]
-
-  val pending: Sequence @> Pending =
-    Lens.lensu((s, ns) => s.copy(pending = ns), _.pending)
-
-  val current: Sequence @> Current =
-    Lens.lensu((s, ns) => s.copy(current = ns), _.current)
-
-  val done: Sequence @> Done =
-    Lens.lensu((s, ns) => s.copy(done = ns), _.done)
-}
-
-/**
-  * A triplet of remaining `Execution`s, current `Execution` and completed
-  * `Execution`s. These `Execution` are grouped by observation in common.
-  */
-
-case class Step(
-  pending: Step.Pending,
-  current: Current,
-  done: Step.Done
-)
-
-object Step {
-
-  type Pending = List[Execution.Pending]
-
-  type Done = List[Execution.Done]
-
-  val pending: Step @> Pending =
-    Lens.lensu((s, ns) => s.copy(pending = ns), _.pending)
-
-  val current: Step @> Current =
-    Lens.lensu((s, ns) => s.copy(current = ns), _.current)
-
-  val done: Step @> Done =
-    Lens.lensu((s, ns) => s.copy(done = ns), _.done)
-}
-
-/**
-  * A triplet of remaining `Action`s, current `Execution` being executed and
-  * completed `Action`s. The `Actions`s of an `Execution` are executed
-  * in parallel and atomically, meaning that they can't be interrupted while any
-  * action is still being executed.
-  *
-  * A sequential `Action` can be represented with just one pending `Action`.
-  */
-case class Execution(
-  pending: Execution.Pending,
-  current: Current,
-  done: Execution.Done
-)
-
-object Execution {
-
-  type Pending = List[Action]
+  def next[A]: Queue[A] @?> Sequence[A] = sequences.partial >=> PLens.listHeadPLens
 
   /**
-   * A list of successfully completed actions represented with an index. This
-   * index can be used to backtrack the correspondent original action.
-   */
-  type Done = List[Int]
+    * Returns the next `Execution` and the remaining `Queue`. If the `Execution`
+    * was the last one, the `Queue` becomes empty.
+    *
+    * The meaning for the constructor wrappers for `Execution`s:
+    *  - E \/ x \/ x: When current `Sequence` completed
+    *  - x \/ E \/ x: When current `Step` completed
+    *  - x \/ x \/ E: When more `Execution`s remain in the current `Step`
+    *
+    * `uncons`ing on an empty `Queue` returns an empty `Queue`.
+    */
+  def uncons[A](q: Queue[A]): Option[(Execution[A] \/ Execution[A] \/ Execution[A], Queue[A])] =
+    // Queue empty?
+    q.sequences.headOption.map(
+      Sequence.uncons(_) match {
+        // Current step completed
+        case (-\/(l)) => {
+          val (exe, mseq) = l
+          mseq match {
+            // No more Steps in current Sequence, remove Sequence.
+            // TODO: listTailPLens?
+            case None => (exe.left.left, Queue(q.sequences.tailOption.getOrElse(List())))
+            // More Steps left in current Sequence, replace next Sequence with
+            // modified one.
+            case Some(seq) => (exe.right.left, next.set(q, seq).getOrElse(q))
+          }
+        }
+        // Step ongoing
+        case (\/-(r)) => {
+          val (exe, seq) = r
+          // seq has the execution already extracted
+          (exe.right, next.set(q, seq).getOrElse(q))
+        }
+      }
+    )
+}
 
-  val pending: Execution @> Pending =
-    Lens.lensu((as, nas) => as.copy(pending = nas), _.pending)
+case class Sequence[A](id: String, steps: NonEmptyList[Step[A]])
 
-  val current: Execution @> Current =
-    Lens.lensu((as, nas) => as.copy(current = nas), _.current)
+object Sequence {
+  def steps[A]: Sequence[A] @> NonEmptyList[Step[A]] =
+    Lens.lensu((s, sts) => s.copy(steps = sts), _.steps)
 
-  val done: Execution @> Done =
-    Lens.lensu((as, nas) => as.copy(done = nas), _.done)
+  def next[A]: Sequence[A] @> Step[A] = steps >=> Lens.nelHeadLens
+
+  /**
+    * \/-(Execution, Sequence)
+    *
+    * Returns the next `Execution` and the remaining `Sequence` when there are
+    * more `Execution`s left in the current `Step`.
+    *
+    * -\/(Execution, Option[Sequence])
+    *
+    * Returns the next `Execution` and the remaining `Sequence` when there are
+    * no more `Execution`s in the current `Step`. If this was the last `Step` of
+    * the current `Sequence` it becomes `None`.
+    */
+  def uncons[A](seq: Sequence[A]): ((Execution[A], Option[Sequence[A]]) \/ (Execution[A], Sequence[A])) = {
+    val (exe, mstep) = Step.uncons(seq.steps.head)
+    mstep match {
+      // Last Execution in Step, remove Step
+      case None => (exe, seq.steps.tail.toNel.map(Sequence(seq.id, _))).left
+      // More Executions in Step, remove Execution in Step
+      case Some(st) => (exe, next.set(seq, st)).right
+    }
+  }
+}
+
+case class Step[A](id: Int, executions: NonEmptyList[Execution[A]])
+
+object Step {
+  def executions[A]: Step[A] @> NonEmptyList[Execution[A]] =
+    Lens.lensu((s, exes) => s.copy(executions = exes), _.executions)
+
+  /**
+    * Returns the next `Execution` and the remaining `Step` if there are more
+    * `Execution`s left.
+    */
+  def uncons[A](st: Step[A]): (Execution[A], Option[Step[A]]) =
+    (st.executions.head,
+     st.executions.tail.toNel.map(Step(st.id, _))
+    )
+}
+
+object Current {
+  // Same actions if index doesn't exist
+  def mark(i: Int)(r: Result)(actions: Current): Current =
+    PLens.vectorNthPLens(i).setOr(actions, r.right, actions)
 }
 
 /**
   * The result of an `Action`.
   */
+
 sealed trait Result
 
 object Result {

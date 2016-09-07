@@ -20,16 +20,19 @@ package object engine {
     */
   type Action = Task[Result]
 
+  // Avoid name class with the proper Seqexec `Queue`
+  type EventQueue = SQueue[Event]
+
   /**
     * Actions with static indexing. This is meant to be used for the transition
     * of parallel actions from ongoing to completed. An ordinary list won't keep
     * the original index as actions are removed.
     */
-  type Current = IntMap[Action]
+  // TODO: non empty?
+  type Current = Vector[Action \/ Result]
 
-
-  // Avoid name class with the proper Seqexec `Queue`
-  type EventQueue = SQueue[Event]
+  // XXX: Document!
+  type Execution[A] = NonEmptyList[A]
 
   // Engine proper
 
@@ -38,7 +41,7 @@ package object engine {
     */
   type Engine[A] = EngineStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type EngineStateT[M[_], A] = StateT[M, QueueStatus, A]
+  type EngineStateT[M[_], A] = StateT[M, State, A]
 
   /**
     * Changes the `Status` and returns the new `QueueStatus`
@@ -46,8 +49,8 @@ package object engine {
     * This also takes care of initiating the execution when transitioning to
     * `Running` status.
     */
-  def switch(q: EventQueue)(st: Status): Engine[QueueStatus] =
-    modify (QueueStatus.status.set(_, st)) *>
+  def switch(q: EventQueue)(st: Status): Engine[State] =
+    modify (State.status.set(_, st)) *>
       whenM(st == Status.Running)(
         prime >>= (_.fold(unit)(step(q)(_)))
       ) *> get
@@ -58,22 +61,22 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete(i: Int): Engine[QueueStatus] =
-    modify(QueueStatus.shift(i)(_)) *> get
+  def complete(i: Int): Engine[State] = modify(State.mark(i)(Result.OK)(_)) *> get
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `QueueStatus`. In the future this function should handle the failed
     * action.
     */
-  def fail(q: EventQueue)(i: Int): Engine[QueueStatus] = switch(q)(Status.Waiting)
+  def fail(q: EventQueue)(i: Int): Engine[State] =
+    modify(State.mark(i)(Result.Error)(_)) *> switch(q)(Status.Waiting)
 
   /**
     * Launches the next `Execution` when the current `Execution` is empty while
     * returning the `QueueStatus` just before the next execution starts. This is
     * mainly meant to be used to handle `Executed` events.
     */
-  def next(q: EventQueue): Engine[QueueStatus] =
+  def execute(q: EventQueue): Engine[State] =
     (prime >>= (_.fold(unit)(step(q)(_)))) *> get
 
   /**
@@ -82,11 +85,12 @@ package object engine {
     */
   // TODO: Change this to the end or insert by index. For that List -> Vector in
   // `QueueStatus`
-  def add(pend: Execution.Pending): Engine[QueueStatus] = {
-    val lens = QueueStatus.pending.partial >=>
-      PLens.listHeadPLens[Sequence.Pending] >=>
-      PLens.listHeadPLens[Step.Pending]
-    modify(lens.mod((pend :: _), _)) *> get
+  def add(pend: Execution[Action]): Engine[State] = {
+    ???
+    // val l = QueueStatus.pending.partial >=>
+    //   PLens.listHeadPLens[Sequence.Pending] >=>
+    //   PLens.listHeadPLens[Step.Pending]
+    // modify(l.mod((pend :: _), _)) *> get
   }
 
   /**
@@ -98,11 +102,11 @@ package object engine {
     * Log something and return the `QueueStatus`
     */
   // XXX: Proper Java logging
-  def log(msg: String): Engine[QueueStatus] = pure(println(msg)) *> get
+  def log(msg: String): Engine[State] = pure(println(msg)) *> get
 
   /** Terminates the `Engine` returning the final `QueueStatus`.
     */
-  def close(queue: EventQueue): Engine[QueueStatus] =
+  def close(queue: EventQueue): Engine[State] =
     queue.close.liftM[EngineStateT] *> get
 
   /**
@@ -114,11 +118,11 @@ package object engine {
     * Checks the `Status` is `Running` and executes all actions in the current
     * `Execution` in parallel. It also updates the `QueueStatus` as needed.
     */
-  private def step(q: EventQueue)(actions: Current): Engine[Unit] = {
+  private def step(q: EventQueue)(actions: Execution[Action]): Engine[Unit] = {
 
     // Send the expected event when action is executed
-    def execute(t: (Int, Action)): Task[Unit] = {
-      val (i, action) = t
+    def act(t: (Action, Int)): Task[Unit] = {
+      val (action, i) = t
       action >>= {
         case Result.OK => q.enqueueOne(completed(i))
         case Result.Error => q.enqueueOne(failed(i))
@@ -127,7 +131,8 @@ package object engine {
     status >>= {
       case Status.Running => (
         Nondeterminism[Task].gatherUnordered(
-          actions.toList.map(execute(_))
+          actions.toList.zipWithIndex.map(act(_)
+          )
         ).liftM[EngineStateT]
       ) *> send(q)(executed)
       case Status.Waiting => unit
@@ -139,11 +144,11 @@ package object engine {
     * `Execution` is empty. If the current `Execution` is not empty it does
     * nothing.
     */
-  private val prime: Engine[Option[Current]] =
-    gets(QueueStatus.prime(_)) >>= {
-      case Some(qs) => put(qs) *> pure(Some(qs.queue.current))
-      case None => pure(None)
-    }
+  private val prime: Engine[Option[Execution[Action]]] = ???
+    // gets(State.prime(_)) >>= {
+    //   case Some(s) => put(s) *> pure(Some(s.queue.current))
+    //   case None => pure(None)
+    // }
 
   // Functions to facilitate type bureaucracy
 
@@ -156,17 +161,17 @@ package object engine {
 
   private val unit: Engine[Unit] = pure(Unit)
 
-  private val get: Engine[QueueStatus] =
-    MonadState[Engine, QueueStatus].get
+  private val get: Engine[State] =
+    MonadState[Engine, State].get
 
-  private def gets[A](f: (QueueStatus) => A): Engine[A] =
-    MonadState[Engine, QueueStatus].gets(f)
+  private def gets[A](f: (State) => A): Engine[A] =
+    MonadState[Engine, State].gets(f)
 
-  private def modify(f: (QueueStatus) => QueueStatus) =
-    MonadState[Engine, QueueStatus].modify(f)
+  private def modify(f: (State) => State) =
+    MonadState[Engine, State].modify(f)
 
-  private def put(qs: QueueStatus): Engine[Unit] =
-    MonadState[Engine, QueueStatus].put(qs)
+  private def put(qs: State): Engine[Unit] =
+    MonadState[Engine, State].put(qs)
 
   // The `Catchable` instance of `Engine`` needs to be manually written.
   // Without it's not possible to use `Engine` as a scalaz-stream process effects.
