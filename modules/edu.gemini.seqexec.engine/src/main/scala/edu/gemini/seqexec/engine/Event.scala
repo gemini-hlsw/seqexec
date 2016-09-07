@@ -15,13 +15,13 @@ object Event {
   case object Start extends UserEvent
   case object Pause extends UserEvent
   case object Poll extends UserEvent
-  case class AddExecution(pend: Execution.Pending) extends UserEvent
+  case class AddExecution(pend: Execution[Action]) extends UserEvent
   case object Exit extends UserEvent
 
   val start: Event = EventUser(Start)
   val pause: Event = EventUser(Pause)
   val poll: Event = EventUser(Poll)
-  def addExecution(pend: Execution.Pending): Event = EventUser(AddExecution(pend))
+  def addExecution(pend: Execution[Action]): Event = EventUser(AddExecution(pend))
   val exit: Event = EventUser(Exit)
 
   /**
