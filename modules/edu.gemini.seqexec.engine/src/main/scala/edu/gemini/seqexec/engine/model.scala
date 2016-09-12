@@ -28,6 +28,57 @@ object State {
 
   def mark(i: Int)(r: Result)(st: State): State =
     current.mod(Current.mark(i)(r)(_), st)
+
+  def prime(st: State): (Option[(Execution[Action], State)]) = {
+    // XXX: Use temporal values for better readability
+    // For now it's easier to read inside-out
+    Queue.uncons(st.pending).map(
+      t => {
+        val (exe3, qp) = t
+        (Queue.execution(exe3),
+         State.current.set(
+           State.pending.set(
+             State.done.set(
+               st,
+               Queue.cons(unload(st.current))(st.done)
+             ),
+             qp),
+           load(exe3)
+         )
+        )
+      }
+    )
+  }
+
+  def load(exe3: Queue.Execution3[Action]): Current = {
+
+    def vec(exe: Execution[Action]): Vector[Action \/ Result] = exe.map(_.left).toVector
+
+    exe3 match {
+      case -\/(-\/((exe, seqid, stepid))) => Current(vec(exe), Some((seqid, stepid).left))
+      case -\/(\/-((exe, stepid))) => Current(vec(exe), Some(stepid.right))
+      case \/-(exe) => Current(vec(exe), None)
+    }
+  }
+
+  def unload(current: Current): Queue.Execution3[Result] = {
+    // XXX: Return None when not all are results!
+    def unvec(v: Vector[Action \/ Result]): Execution[Result] = {
+      rights(v.toList).toNel.getOrElse(???)
+    }
+
+    val exe = unvec(current.actions)
+
+    current.ctxt match {
+      case None => exe.right
+      case Some(-\/((seqid, stepid))) => (exe, seqid, stepid).left.left
+      case Some(\/-(stepid)) => (exe, stepid).right.left
+    }
+  }
+
+  // not available in scalaz?
+  private def rights[L, R](xs: List[L \/ R]): List[R] =
+    for { \/-(r) <- xs } yield r
 }
 
 /**
@@ -47,10 +98,15 @@ object Status {
 case class Queue[A](sequences: List[Sequence[A]])
 
 object Queue {
+
+  type Execution3[A] = (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A]
+
   def sequences[A]: Queue[A] @> List[Sequence[A]] =
     Lens.lensu((q, ss) => q.copy(sequences = ss), _.sequences)
 
   def next[A]: Queue[A] @?> Sequence[A] = sequences.partial >=> PLens.listHeadPLens
+
+  def execution[A](exe3: Execution3[A]): Execution[A] = ???
 
   /**
     * Adds an `Execution` to the `Queue`.
@@ -60,7 +116,7 @@ object Queue {
     * - x \/ E \/ x: Creates a new `Step` ands adds it to the current `Sequence`.
     * - E \/ x \/ x: Creates a new `Sequence` and adds it to the front of the `Queue`.
     */
-  def cons[A](exe3: (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A])(q: Queue[A]): Queue[A] =
+  def cons[A](exe3: Execution3[A])(q: Queue[A]): Queue[A] =
     exe3 match {
       // New Sequence
       case -\/(-\/((exe, seqid, stepid))) =>
@@ -77,7 +133,7 @@ object Queue {
         )
       // New Step
       case -\/(\/-((exe, i))) => next.mod(Sequence.cons((exe, i).left), q)
-      // Current Step.
+      // Current Step
       case \/-(exe) => next.mod(Sequence.cons(exe.right)((_: Sequence[A])), q)
     }
 
@@ -92,7 +148,7 @@ object Queue {
     *
     * `uncons`ing on an empty `Queue` returns an empty `Queue`.
     */
-  def uncons[A](q: Queue[A]): Option[((Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A], Queue[A])] =
+  def uncons[A](q: Queue[A]): Option[(Execution3[A], Queue[A])] =
     // Queue empty?
     q.sequences.headOption.map(seq0 =>
       Sequence.uncons(seq0) match {
@@ -191,10 +247,13 @@ object Step {
     )
 }
 
+case class Current(actions: Vector[Action \/ Result],
+                   ctxt: Option[(String, Int) \/ Int])
+
 object Current {
   // Same actions if index doesn't exist
-  def mark(i: Int)(r: Result)(actions: Current): Current =
-    PLens.vectorNthPLens(i).setOr(actions, r.right, actions)
+  def mark(i: Int)(r: Result)(c: Current): Current =
+    Current(PLens.vectorNthPLens(i).setOr(c.actions, r.right, c.actions), c.ctxt)
 }
 
 /**
