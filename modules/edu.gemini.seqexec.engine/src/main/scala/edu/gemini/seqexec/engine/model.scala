@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.engine
 
-
 import scalaz._
 import Scalaz._
 
@@ -54,35 +53,62 @@ object Queue {
   def next[A]: Queue[A] @?> Sequence[A] = sequences.partial >=> PLens.listHeadPLens
 
   /**
+    * Adds an `Execution` to the `Queue`.
+    *
+    * The `Execution` wrappers mean:
+    * - x \/ x \/ E: Adds it to the current `Step`.
+    * - x \/ E \/ x: Creates a new `Step` ands adds it to the current `Sequence`.
+    * - E \/ x \/ x: Creates a new `Sequence` and adds it to the front of the `Queue`.
+    */
+  def cons[A](exe3: (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A])(q: Queue[A]): Queue[A] =
+    exe3 match {
+      // New Sequence
+      case -\/(-\/((exe, seqid, stepid))) =>
+        Queue(
+          Sequence(
+            seqid,
+            NonEmptyList(
+              Step(
+                stepid,
+                NonEmptyList(exe)
+              )
+            )
+          ) :: q.sequences
+        )
+      // New Step
+      case -\/(\/-((exe, i))) => next.mod(Sequence.cons((exe, i).left), q)
+      // Current Step.
+      case \/-(exe) => next.mod(Sequence.cons(exe.right)((_: Sequence[A])), q)
+    }
+
+  /**
     * Returns the next `Execution` and the remaining `Queue`. If the `Execution`
     * was the last one, the `Queue` becomes empty.
     *
-    * The meaning for the constructor wrappers for `Execution`s:
-    *  - E \/ x \/ x: When current `Sequence` completed
-    *  - x \/ E \/ x: When current `Step` completed
+    * The `Execution` wrappers mean:
     *  - x \/ x \/ E: When more `Execution`s remain in the current `Step`
+    *  - x \/ E \/ x: When current `Step` completed
+    *  - E \/ x \/ x: When current `Sequence` completed
     *
     * `uncons`ing on an empty `Queue` returns an empty `Queue`.
     */
-  def uncons[A](q: Queue[A]): Option[(Execution[A] \/ Execution[A] \/ Execution[A], Queue[A])] =
+  def uncons[A](q: Queue[A]): Option[((Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A], Queue[A])] =
     // Queue empty?
-    q.sequences.headOption.map(
-      Sequence.uncons(_) match {
+    q.sequences.headOption.map(seq0 =>
+      Sequence.uncons(seq0) match {
         // Current step completed
-        case (-\/(l)) => {
-          val (exe, mseq) = l
+        case -\/(((exe, stepid), mseq)) => {
           mseq match {
             // No more Steps in current Sequence, remove Sequence.
             // TODO: listTailPLens?
-            case None => (exe.left.left, Queue(q.sequences.tailOption.getOrElse(List())))
+            case None => ((exe, seq0.id, stepid).left.left, Queue(q.sequences.tailOption.getOrElse(List())))
             // More Steps left in current Sequence, replace next Sequence with
             // modified one.
-            case Some(seq) => (exe.right.left, next.set(q, seq).getOrElse(q))
+            case Some(seq) => ((exe, stepid).right.left, next.set(q, seq).getOrElse(q))
           }
         }
         // Step ongoing
-        case (\/-(r)) => {
-          val (exe, seq) = r
+        case \/-((exe, seq)) => {
           // seq has the execution already extracted
           (exe.right, next.set(q, seq).getOrElse(q))
         }
@@ -99,22 +125,42 @@ object Sequence {
   def next[A]: Sequence[A] @> Step[A] = steps >=> Lens.nelHeadLens
 
   /**
-    * \/-(Execution, Sequence)
+    * Adds an `Execution` to the `Sequence`.
+    *
+    * The `Execution` wrappers mean:
+    * - x \/ E: Adds it to the current `Step`.
+    * - E \/ x: Creates a new `Step` ands adds it to the front of the `Sequence`.
+    */
+  def cons[A](exe2: (Execution[A], Int) \/ Execution[A])(seq: Sequence[A]): Sequence[A] =
+    exe2 match {
+      // Add new Step
+      case -\/((exe, sid)) => Sequence(seq.id, Step(sid, NonEmptyList(exe)) <:: seq.steps)
+      // Add to current Step
+      case \/-(exe) => next.mod(Step.cons(exe)(_), seq)
+    }
+
+
+  /**
+    * Returns the next `Execution` and the remaining of the `Sequence`.
+    *
+    * The wrappers mean:
+    *
+    * - x \/ (Execution, Sequence):
     *
     * Returns the next `Execution` and the remaining `Sequence` when there are
     * more `Execution`s left in the current `Step`.
     *
-    * -\/(Execution, Option[Sequence])
+    * - (Execution, Option[Sequence]) \/ x:
     *
     * Returns the next `Execution` and the remaining `Sequence` when there are
     * no more `Execution`s in the current `Step`. If this was the last `Step` of
     * the current `Sequence` it becomes `None`.
     */
-  def uncons[A](seq: Sequence[A]): ((Execution[A], Option[Sequence[A]]) \/ (Execution[A], Sequence[A])) = {
+  def uncons[A](seq: Sequence[A]): (((Execution[A], Int), Option[Sequence[A]]) \/ (Execution[A], Sequence[A])) = {
     val (exe, mstep) = Step.uncons(seq.steps.head)
     mstep match {
       // Last Execution in Step, remove Step
-      case None => (exe, seq.steps.tail.toNel.map(Sequence(seq.id, _))).left
+      case None => ((exe, seq.steps.head.id), seq.steps.tail.toNel.map(Sequence(seq.id, _))).left
       // More Executions in Step, remove Execution in Step
       case Some(st) => (exe, next.set(seq, st)).right
     }
@@ -124,8 +170,16 @@ object Sequence {
 case class Step[A](id: Int, executions: NonEmptyList[Execution[A]])
 
 object Step {
+
   def executions[A]: Step[A] @> NonEmptyList[Execution[A]] =
     Lens.lensu((s, exes) => s.copy(executions = exes), _.executions)
+
+  def next[A]: Step[A] @> Execution[A] = executions >=> Lens.nelHeadLens
+
+  /**
+    * Adds a `Execution` to the font of a `Step`.
+    */
+  def cons[A](exe: Execution[A])(st: Step[A]): Step[A] = Step(st.id, exe <:: st.executions)
 
   /**
     * Returns the next `Execution` and the remaining `Step` if there are more
