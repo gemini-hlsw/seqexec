@@ -28,10 +28,13 @@ package object engine {
     * of parallel actions from ongoing to completed. An ordinary list won't keep
     * the original index as actions are removed.
     */
-  // TODO: non empty?
-  type Current = Vector[Action \/ Result]
+  // type Current = Vector[Action \/ Result]
 
-  // XXX: Document!
+  /**
+    * An `Execution` is a group of `Action`s that need to be run in parallel
+    * without interruption. A *sequential* `Execution` can be represented with
+    * an `Execution` with a single `Action`.
+    */
   type Execution[A] = NonEmptyList[A]
 
   // Engine proper
@@ -141,14 +144,16 @@ package object engine {
 
   /**
     * Promote the next pending `Execution` to current when the current
-    * `Execution` is empty. If the current `Execution` is not empty it does
-    * nothing.
+    * `Execution` is empty. If the current `Execution` is not
+    * empty it does nothing.
+    *
+    * For convenience it also returns the promoted `Execution`.
     */
-  private val prime: Engine[Option[Execution[Action]]] = ???
-    // gets(State.prime(_)) >>= {
-    //   case Some(s) => put(s) *> pure(Some(s.queue.current))
-    //   case None => pure(None)
-    // }
+  private val prime: Engine[Option[Execution[Action]]] =
+    gets(State.prime(_)) >>= {
+       case Some((exe, s)) => put(s) *> pure(Some(exe))
+       case None => pure(None)
+    }
 
   // Functions to facilitate type bureaucracy
 
