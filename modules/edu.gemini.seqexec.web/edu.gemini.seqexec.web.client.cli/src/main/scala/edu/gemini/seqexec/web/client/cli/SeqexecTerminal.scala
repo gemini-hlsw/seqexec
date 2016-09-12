@@ -2,13 +2,15 @@ package edu.gemini.seqexec.web.client.cli
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
-import js.JSConverters._
-import org.querki.jquery.$
+import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.Any._
+import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
+import org.querki.jquery.$
 import JQueryTerminal.{Terminal, _}
 import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig, StepConfig}
-import org.scalajs.dom
+import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,8 +22,10 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 @JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
 
+  val apiUrl = "/api/seqexec"
+  val baseUrl = s"$apiUrl/commands"
+
   trait CommandHandler {
-    val baseUrl = "/api/seqexec/commands"
     def handle(args: List[String], terminal: Terminal):Unit
 
     def complete[A <: dom.XMLHttpRequest, B](terminal: Terminal, f: CliCommand => B): PartialFunction[Try[A], js.Any] = {
@@ -128,6 +132,19 @@ object SeqexecTerminal extends js.JSApp {
     }
   }
 
+  /**
+    * Login request
+    */
+  def login(u: String, p: String): Future[UserDetails] =
+    Ajax.post(
+      url = s"$apiUrl/login",
+      data = Pickle.intoBytes(UserLoginRequest(u, p)),
+      responseType = "arraybuffer"
+    ).map { s =>
+      val ab = TypedArrayBuffer.wrap(s.response.asInstanceOf[ArrayBuffer])
+      Unpickle[UserDetails].fromBytes(ab)
+    }
+
   def bold(s: String):String = s"[[b;;]$s]"
   def italic(s: String):String = s"[[ig;;]$s]"
 
@@ -158,7 +175,7 @@ object SeqexecTerminal extends js.JSApp {
   // Used for tab completion
   val cmdStrings: Seq[String] = "help" :: commands.map(_.cmd).distinct
 
-  val terminalHandler:(String, Terminal) => js.Any = { (command, terminal) =>
+  val terminalHandler: (String, Terminal) => js.Any = { (command, terminal) =>
     val tokens = command.split(" ").toList
 
     def find(cmd: String, args: List[String]): Option[Command] = commands.find(c => c.cmd == cmd && c.args == args.size)
@@ -183,8 +200,22 @@ object SeqexecTerminal extends js.JSApp {
   override def main(): Unit = {
     $(document.body).terminal(terminalHandler, JsTerminalOptions
       .prompt("seqexec> ")
+      .name("seqexec")
       .greetings(banner + s"\nVersion: ${OcsBuildInfo.version}\n")
-      .completion((t: Terminal, c: String, callback: CompletionCallback) => callback(cmdStrings.toJSArray)))
+      .completion((t: Terminal, c: String, callback: CompletionCallback) => callback(cmdStrings.toJSArray))
+      .onBeforeLogin((terminal: Terminal) => {
+        // Logout from the previous session at the startup
+        // We may want instead to be logged as long as the cookie is valid
+        // but that means contacting the server to check auth, this is a simpler
+        // solution
+        false
+      })
+      .login((u: String, p: String, callback: LoginCallback) => {
+        login(u, p).onComplete {
+          case Success(ud) => callback(ud.toString) // This is not very good but we don't have access to the login cookie
+          case Failure(e)  => callback(null) // jquery terminal expects a null as a sign of auth failure
+        }
+      }))
   }
 
   val banner = """  ___

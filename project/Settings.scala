@@ -60,7 +60,7 @@ object Settings {
     val reactJS        = "15.0.1"
     val jQuery         = "3.0.0"
     val semanticUI     = "2.2"
-    val jQueryTerminal = "0.9.3"
+    val jQueryTerminal = "0.11.2"
     val ocsVersion     = "2016102.1.1"
   }
 
