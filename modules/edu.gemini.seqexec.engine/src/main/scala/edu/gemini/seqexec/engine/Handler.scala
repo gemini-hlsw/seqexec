@@ -2,7 +2,7 @@ package edu.gemini.seqexec.engine
 
 import Event._
 import scalaz.Scalaz._
-import scalaz.concurrent.Task
+// import scalaz.concurrent.Task
 import scalaz.stream.Process
 
 object Handler {
@@ -15,7 +15,7 @@ object Handler {
     def handleUserEvent(ue: UserEvent): Engine[State] = ue match {
       case Start => log("Output: Started") *> switch(q)(Status.Running)
       case Pause => log("Output: Paused") *> switch(q)(Status.Waiting)
-      case AddExecution(pend) => log("Output: Adding Pending Execution") *> add(pend)
+      case AddExecution(pend) => log("Output: Adding Pending Execution") // *> add(pend)
       case Poll => log("Output: Polling current state")
       case Exit => log("Bye") *> close(q)
     }
@@ -23,7 +23,7 @@ object Handler {
     def handleSystemEvent(se: SystemEvent): Engine[State] = se match {
       case (Completed(i)) => log("Output: Action completed") *> complete(i)
       case (Failed(i)) => log("Output: Action failed") *> fail(q)(i)
-      case Executed => log("Output: Execution completed, launching next execution") *> execute(q)
+      case Executed => log("Output: Execution completed, launching next execution") *> next(q)
       case Finished => log("Output: Finished")
     }
 
@@ -37,6 +37,6 @@ object Handler {
     )
   }
 
-  def run(q: EventQueue)(qs0: State): Task[State] = ???
-    // handler(q).takeWhile(!State.isEmpty(_)).run.exec(qs0)
+  // def run(q: EventQueue)(qs0: State): Task[State] =
+  //   handler(q).takeWhile(!State.isEmpty(_)).run.exec(qs0)
 }
