@@ -35,16 +35,16 @@ package object engine {
     */
   type Engine[A] = EngineStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type EngineStateT[M[_], A] = StateT[M, State, A]
+  type EngineStateT[M[_], A] = StateT[M, QState, A]
 
   /**
-    * Changes the `Status` and returns the new `State`.
+    * Changes the `Status` and returns the new `QState`.
     *
     * It also takes care of initiating the execution when transitioning to
     * `Running` status.
     */
-  def switch(q: EventQueue)(st: Status): Engine[State] =
-    modify (State.status.set(_, st)) *> { if (st == Status.Running) next(q) else get }
+  def switch(q: EventQueue)(st: Status): Engine[QState] =
+    modify (QState.status.set(_, st)) *> { if (st == Status.Running) next(q) else get }
 
   /**
     * Adds the `Current` `Execution` to the completed `Queue`, makes the next
@@ -53,8 +53,8 @@ package object engine {
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
   // XXX: Handle trying to `next` when there are actions pending in Current.
-  def next(q: EventQueue): Engine[State] =
-    (gets(State.next(_)) >>= {
+  def next(q: EventQueue): Engine[QState] =
+    (gets(QState.next(_)) >>= {
        // This should only happen when Queue is empty.
        case None => send(q)(finished)
        case Some((actions, s)) => put(s) *> execute(q)(actions)
@@ -62,19 +62,19 @@ package object engine {
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
-    * marks the `Action` as completed and returns the new `State`.
+    * marks the `Action` as completed and returns the new `QState`.
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete(i: Int): Engine[State] = modify(State.mark(i)(Result.OK)(_)) *> get
+  def complete(i: Int): Engine[QState] = modify(QState.mark(i)(Result.OK)(_)) *> get
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
-    * `State`. In the future this function should handle the failed
+    * `QState`. In the future this function should handle the failed
     * action.
     */
-  def fail(q: EventQueue)(i: Int): Engine[State] =
-    modify(State.mark(i)(Result.Error)(_)) *> switch(q)(Status.Waiting)
+  def fail(q: EventQueue)(i: Int): Engine[QState] =
+    modify(QState.mark(i)(Result.Error)(_)) *> switch(q)(Status.Waiting)
 
   /**
     * Adds an `Execution` to the beginning of the `QueueStatus` while returning
@@ -82,7 +82,7 @@ package object engine {
     */
   // TODO: Change this to the end or insert by index. For that List -> Vector in
   // `QueueStatus`
-  // def add(pend: Execution[Action]): Engine[State] = {
+  // def add(pend: Execution[Action]): Engine[QState] = {
   //   val l = QueueStatus.pending.partial >=>
   //     PLens.listHeadPLens[Sequence.Pending] >=>
   //     PLens.listHeadPLens[Step.Pending]
@@ -95,14 +95,14 @@ package object engine {
   val status: Engine[Status] = gets(_.status)
 
   /**
-    * Log something and return the `State`.
+    * Log something and return the `QState`.
     */
   // XXX: Proper Java logging
-  def log(msg: String): Engine[State] = pure(println(msg)) *> get
+  def log(msg: String): Engine[QState] = pure(println(msg)) *> get
 
-  /** Terminates the `Engine` returning the final `State`.
+  /** Terminates the `Engine` returning the final `QState`.
     */
-  def close(queue: EventQueue): Engine[State] =
+  def close(queue: EventQueue): Engine[QState] =
     queue.close.liftM[EngineStateT] *> get
 
   /**
@@ -113,7 +113,7 @@ package object engine {
   /**
     * Checks the `Status` is `Running` and executes all actions in the `Current`
     * `Execution` in parallel. When all are done it emits the `Executed` event.
-    * It also updates the `State` as needed.
+    * It also updates the `QState` as needed.
     */
   private def execute(q: EventQueue)(actions: Execution[Action]): Engine[Unit] = {
 
@@ -148,17 +148,17 @@ package object engine {
 
   private val unit: Engine[Unit] = pure(Unit)
 
-  private val get: Engine[State] =
-    MonadState[Engine, State].get
+  private val get: Engine[QState] =
+    MonadState[Engine, QState].get
 
-  private def gets[A](f: (State) => A): Engine[A] =
-    MonadState[Engine, State].gets(f)
+  private def gets[A](f: (QState) => A): Engine[A] =
+    MonadState[Engine, QState].gets(f)
 
-  private def modify(f: (State) => State) =
-    MonadState[Engine, State].modify(f)
+  private def modify(f: (QState) => QState) =
+    MonadState[Engine, QState].modify(f)
 
-  private def put(qs: State): Engine[Unit] =
-    MonadState[Engine, State].put(qs)
+  private def put(qs: QState): Engine[Unit] =
+    MonadState[Engine, QState].put(qs)
 
   // The `Catchable` instance of `Engine`` needs to be manually written.
   // Without it's not possible to use `Engine` as a scalaz-stream process effects.

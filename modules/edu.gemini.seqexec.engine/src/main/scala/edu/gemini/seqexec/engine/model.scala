@@ -7,26 +7,32 @@ import Scalaz._
  * This is the main state data type to be used by the `Engine`. This is what
  * gets modified whenever it needs to react to an Event.
  */
-case class State(pending: Queue[Action],
-                 current: Current,
-                 done: Queue[Result],
-                 status: Status)
+case class QState(pending: Queue[Action],
+                  current: Current,
+                  done: Queue[Result],
+                  status: Status)
 
-object State {
+object QState {
 
-  val pending: State @> Queue[Action] =
+  val pending: QState @> Queue[Action] =
     Lens.lensu((s, q) => s.copy(pending = q), _.pending)
 
-  val current: State @> Current =
+  val current: QState @> Current =
     Lens.lensu((s, c) => s.copy(current = c), _.current)
 
-  val done: State @> Queue[Result] =
+  val done: QState @> Queue[Result] =
     Lens.lensu((s, q) => s.copy(done = q), _.done)
 
-  val status: State @> Status =
+  val status: QState @> Status =
     Lens.lensu((s, st) => s.copy(status = st), _.status)
 
-  def mark(i: Int)(r: Result)(st: State): State =
+  /**
+    * Given an index of a current `Action` it replaces such `Action` with the
+    * `Result` and returns the new modified `State`.
+    *
+    * If the index doesn't exist, the new `State` is returned unmodified.
+    */
+  def mark(i: Int)(r: Result)(st: QState): QState =
     current.mod(Current.mark(i)(r)(_), st)
 
   /**
@@ -38,12 +44,12 @@ object State {
     * If the `Current` doesn't have all actions completed or there are no more
     * pending `Execution`s it returns None.
     */
-  def next(st: State): Option[(Execution[Action], State)] = for {
+  def next(st: QState): Option[(Execution[Action], QState)] = for {
     exe3done <- uncurrentify(st.current)
     qd = Queue.cons(exe3done)(st.done)
     (exe3pending, qp) <- Queue.uncons(st.pending)
     (actions, c) = currentify(exe3pending)
-  } yield (actions, State(qp, c, qd, st.status))
+  } yield (actions, QState(qp, c, qd, st.status))
 
   /**
     * Transform an *unconsed* pending `Execution` into `Current` in addition to
