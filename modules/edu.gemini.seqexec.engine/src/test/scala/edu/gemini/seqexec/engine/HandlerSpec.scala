@@ -1,7 +1,5 @@
 package edu.gemini.seqexec.engine
 
-import scala.collection.immutable.IntMap
-
 import Result._
 import Event._
 import Handler._
@@ -48,34 +46,33 @@ class HandlerSpec extends FlatSpec {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(1000))
     _ <- Task(println ("System: Complete observation"))
-  } yield OK
+  } yield Error
 
-  val qs1: QueueStatus = QueueStatus(
+  val qs1: QState = QState.init(
     Queue(
       List(
-        List(
-          List(
-            List(configureTcs, configureInst),
-            List(observe)
-          ),
-          List()
-        ),
-        List(
-          List(
-            List(configureTcs, configureInst),
-            List(observe)
-          ),
-          List()
+        Sequence(
+          "First",
+          NonEmptyList(
+            Step(
+              1,
+              NonEmptyList(
+                NonEmptyList(configureTcs, configureInst), // Execution
+                NonEmptyList(observe) // Execution
+              )
+            ),
+            Step(
+              2,
+              NonEmptyList(
+                NonEmptyList(configureTcs, configureInst), // Execution
+                NonEmptyList(observe) // Execution
+              )
+            )
+          )
         )
-      ),
-      IntMap(),
-        List()
-    ),
-    Status.Waiting
+      )
+    )
   )
-
-  val emptyQueueStatus: QueueStatus =
-    QueueStatus(Queue(List(), IntMap(), List()), Status.Waiting)
 
   val queue = async.boundedQueue[Event](10)
 
@@ -102,9 +99,9 @@ class HandlerSpec extends FlatSpec {
   //   assert(result.queue.pending.length == 2)
   // }
 
-  it should "finish raising a Terminated exception after an Exit event" in {
+  it should "print qs1 execution" in {
     intercept[Cause.Terminated](Nondeterminism[Task].both(
-      (queue.enqueueOne(start) *> queue.enqueueOne(exit)),
+      (queue.enqueueOne(start)), // *> queue.enqueueOne(exit)),
       (handler(queue).run.exec(qs1))
       ).unsafePerformSync
     )

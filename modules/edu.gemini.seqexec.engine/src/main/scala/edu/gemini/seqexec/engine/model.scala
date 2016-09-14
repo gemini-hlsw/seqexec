@@ -26,6 +26,14 @@ object QState {
   val status: QState @> Status =
     Lens.lensu((s, st) => s.copy(status = st), _.status)
 
+  val empty: QState = QState(Queue.empty, Current.empty, Queue.empty, Status.Waiting)
+
+  /**
+    * Initialize a `QState` passing a `Queue` of `Action`s. This also takes care
+    * of making the first pending `Execution` `Current`.
+    */
+  def init(q: Queue[Action]): QState = pending.set(empty, q)
+
   /**
     * Given an index of a current `Action` it replaces such `Action` with the
     * `Result` and returns the new modified `State`.
@@ -105,12 +113,16 @@ object Status {
   * A list of Sequences. The `Queue` could be empty of Sequences when waiting
   * for the addition of new ones.
   */
-case class Queue[A](sequences: List[Sequence[A]])
+case class Queue[A](sequences: List[Sequence[A]]) {
+  def isEmpty: Boolean = this.sequences.isEmpty
+}
+
 
 object Queue {
 
   type Execution3[A] = (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A]
 
+  def empty[A]: Queue[A] = Queue(List())
   def sequences[A]: Queue[A] @> List[Sequence[A]] =
     Lens.lensu((q, ss) => q.copy(sequences = ss), _.sequences)
 
@@ -283,6 +295,7 @@ case class Current(actions: Vector[Action \/ Result],
                    ctxt: Option[(String, Int) \/ Int])
 
 object Current {
+  val empty: Current = Current(Vector.empty, None)
   /**
     * Set the `Result` for the given `Action` index in `Current`.
     *

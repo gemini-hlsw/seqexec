@@ -37,5 +37,4 @@ object Event {
   def failed(i: Int): Event = EventSystem(Failed(i))
   val executed: Event = EventSystem(Executed)
   val finished: Event = EventSystem(Finished)
-
 }
