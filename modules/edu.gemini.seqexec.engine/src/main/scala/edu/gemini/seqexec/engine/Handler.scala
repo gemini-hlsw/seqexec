@@ -10,9 +10,9 @@ object Handler {
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler(q: EventQueue): Process[Engine, State] = {
+  def handler(q: EventQueue): Process[Engine, QState] = {
 
-    def handleUserEvent(ue: UserEvent): Engine[State] = ue match {
+    def handleUserEvent(ue: UserEvent): Engine[QState] = ue match {
       case Start => log("Output: Started") *> switch(q)(Status.Running)
       case Pause => log("Output: Paused") *> switch(q)(Status.Waiting)
       case AddExecution(pend) => log("Output: Adding Pending Execution") // *> add(pend)
@@ -20,7 +20,7 @@ object Handler {
       case Exit => log("Bye") *> close(q)
     }
 
-    def handleSystemEvent(se: SystemEvent): Engine[State] = se match {
+    def handleSystemEvent(se: SystemEvent): Engine[QState] = se match {
       case (Completed(i)) => log("Output: Action completed") *> complete(i)
       case (Failed(i)) => log("Output: Action failed") *> fail(q)(i)
       case Executed => log("Output: Execution completed, launching next execution") *> next(q)
