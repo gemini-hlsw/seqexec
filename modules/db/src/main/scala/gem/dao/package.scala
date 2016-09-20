@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe.TypeTag
 
 import scalaz._, Scalaz._
 
-package object dao extends MoreTupleOps {
+package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   // Angle mapping to signed arcseconds. NOT implicit.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
