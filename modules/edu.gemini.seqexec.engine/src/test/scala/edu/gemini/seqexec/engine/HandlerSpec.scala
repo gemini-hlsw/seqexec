@@ -74,36 +74,28 @@ class HandlerSpec extends FlatSpec {
     )
   )
 
-  val queue = async.boundedQueue[Event](10)
-
-  // Start the engine with an initial `QueueStatus` and collect the final `QueueStatus`
-  // def topple(qs: QueueStatus): Task[QueueStatus] =
-  //   queue.enqueueOne(start) *> Handler.run(queue)(qs)
-
-  // it should "be in running Status after a Start event" in {
-  //   val result = topple(emptyQueueStatus).unsafePerformSync
-  //   assert(result.status === Status.Running)
-  // }
-
-  // it should "No pending sequences after running qs1" in {
-  //   val result = topple(qs1).unsafePerformSync
-  //   assert(QueueStatus.pendingExecution.get(result) === Some(List()))
-  // }
-
-  // This is here for visual inspection. The states should be coupled with a //
-  // Sink for concrete tests.
-  // it should "0 steps pending after pause/start events" in {
-  //   val result =
-  //     (queue.enqueueAll(List(start, poll, pause, poll, start, poll)) *>
-  //        (handler(queue).take(9).run.exec(qs1))).unsafePerformSync
-  //   assert(result.queue.pending.length == 2)
-  // }
-
   it should "Print qs1 execution" in {
+    val q = async.boundedQueue[Event](10)
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
-        queue.enqueueOne(start),
-        handler(queue).run.exec(qs1)
+        q.enqueueOne(start),
+        handler(q).run.exec(qs1)
+      ).unsafePerformSync
+    )
+  }
+
+  it should "Print qs1 execution with pause" in {
+    val q = async.boundedQueue[Event](10)
+    intercept[Cause.Terminated](
+      Nondeterminism[Task].both(
+        List(
+          q.enqueueOne(start),
+          Task(Thread.sleep(2000)),
+          q.enqueueOne(pause),
+          Task(Thread.sleep(2000)),
+          q.enqueueOne(start)
+        ).sequence_,
+       handler(q).run.exec(qs1)
       ).unsafePerformSync
     )
   }
