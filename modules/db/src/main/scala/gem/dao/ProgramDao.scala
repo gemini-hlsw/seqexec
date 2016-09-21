@@ -20,7 +20,7 @@ object ProgramDao {
 
   /** Insert a program, disregarding its observations, if any. */
   def insert(p: Program[_]): ConnectionIO[Int] =
-    insertProgramIdSlice(p.id) *> 
+    insertProgramIdSlice(p.id) *>
     sql"""
       UPDATE program
          SET title = ${p.title}
@@ -51,9 +51,9 @@ object ProgramDao {
 
   private def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
     sql"""
-      INSERT INTO program (program_id, 
-                          site, 
-                          program_type, 
+      INSERT INTO program (program_id,
+                          site,
+                          program_type,
                           day)
             VALUES (${pid: Program.Id},
                     ${pid.siteVal.toString},
@@ -64,7 +64,7 @@ object ProgramDao {
   private def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
     pid.semester.traverse(SemesterDao.canonicalize) *>
     sql"""
-      INSERT INTO program (program_id, 
+      INSERT INTO program (program_id,
                            site,
                            semester_id,
                            program_type)
@@ -77,6 +77,17 @@ object ProgramDao {
   ///
   /// SELECT
   ///
+
+  def selectBySubstring(pat: String, max: Int): ConnectionIO[List[Program[Nothing]]] =
+    sql"""
+      SELECT program_id, title
+        FROM program
+       WHERE program_id like $pat OR title like $pat
+    ORDER BY program_id, title
+       LIMIT $max
+    """.query[(Program.Id, String)]
+       .map { case (pid, title) => Program(pid, title, Nil) }
+       .list
 
   /** Select a program by Id, without any Observation information. */
   def selectFlat(pid: Program.Id): ConnectionIO[Option[Program[Nothing]]] =
@@ -134,11 +145,11 @@ object ProgramDao {
     ORDER BY o.observation_id, s.index;
     """.query[(Program.Id, String, Option[(Observation[Nothing], Option[Step[_]])])]
        .list.map { rows =>
-         rows.headOption.map { case (pid, title, _) => 
+         rows.headOption.map { case (pid, title, _) =>
 
            // Compute the list of observations by grouping by Obs[Nothing] and then collecting the
            // associated steps, if any, which will remain in order through this transformation.
-           val obs: List[Observation[Step[_]]] = 
+           val obs: List[Observation[Step[_]]] =
              rows.collect { case (_, _, Some(p)) => p }
                  .groupBy(_._1)
                  .toList
@@ -153,5 +164,3 @@ object ProgramDao {
        }
 
 }
-
-

@@ -93,8 +93,8 @@ object Importer extends SafeApp {
   }
 
   def readAndInsert(r: ProgramReader, f: File, log: Log[IO]): IO[Unit] =
-    log.instrument(r.read(f), s"read ${f.getName}").flatMap {
-      case Some(p) => log.instrument(insert(p), s"insert ${p.getProgramID}")
+    log.log(s"read ${f.getName}")(r.read(f)).flatMap {
+      case Some(p) => log.log(s"insert ${p.getProgramID}")(insert(p))
       case None    => IO.ioUnit
     } .except(e => IO(e.printStackTrace))
 

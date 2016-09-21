@@ -168,6 +168,12 @@ object gen2 {
         type SiteRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
         val io = sql"select id, id tag, short_name, long_name from e_site".query[(String, SiteRec)].list
         io.transact(xa).unsafePerformIO
+      },
+
+      enum("ProgramRole") {
+        type ProgramRole = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"select id, id tag, short_name, long_name from e_program_role".query[(String, ProgramRole)].list
+        io.transact(xa).unsafePerformIO
       }
 
     )

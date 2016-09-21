@@ -28,12 +28,12 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
   private def now: M[Long] =
     delay(System.currentTimeMillis)
 
-  private def fail[A](msg: String, elapsed: Long, t: Throwable): M[A] =
+  private def fail[A](msg: => String, elapsed: Long, t: Throwable): M[A] =
     (LogDao.insert(Level.SEVERE, none, msg, Some(t), Some(elapsed)).transact(xa) *>
      Task.delay(jdkLogger.log(Level.SEVERE, s"$msg ($elapsed ms)", t))).detach   *>
     Catchable[M].fail[A](t)
 
-  private def success[A](msg: String, elapsed: Long, a: A): M[A] =
+  private def success[A](msg: => String, elapsed: Long, a: A): M[A] =
     (LogDao.insert(Level.INFO, none, msg, None, Some(elapsed)).transact(xa) *>
      Task.delay(jdkLogger.log(Level.INFO, s"$msg ($elapsed ms)"))).detach.as(a)
 
@@ -42,7 +42,7 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
    * time and (in case of failure) a stacktrace to the database and to a JDK logger. Logging is
    * asynchronous so messages may not appear immediately.
    */
-  def instrument[A](ma: M[A], msg: String): M[A] =
+  def log[A](msg: => String)(ma: M[A]): M[A] =
     for {
       start   <- now
       disj    <- ma.attempt

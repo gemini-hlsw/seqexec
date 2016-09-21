@@ -12,10 +12,12 @@ lazy val commonSettings = Seq(
   libraryDependencies += "org.scala-lang" %  "scala-reflect" % scalaVersion.value
 )
 
+// N.B. `describe` is not a project yet. It doesn't quite compile. Will need some rejiggering.
+
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, importer, json)
+  .aggregate(core, db, importer, json, service)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -55,6 +57,13 @@ lazy val importer = project
   .in(file("modules/importer"))
   .dependsOn(core, db)
   .settings(commonSettings)
+  .settings(
+    // IDEA needs to see these but sbt doesn't. Go figure.
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-xml"                % "1.0.3",
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+    )
+  )
 
 lazy val json = project
   .in(file("modules/json"))
@@ -68,4 +77,7 @@ lazy val json = project
     )
   )
 
-// N.B. describe is not a project yet. It doesn't quite compile. Will need some rejiggering.
+lazy val service = project
+  .in(file("modules/service"))
+  .dependsOn(core, db)
+  .settings(commonSettings)

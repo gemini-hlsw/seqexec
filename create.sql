@@ -27,6 +27,20 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
+--
+-- Name: tsm_system_time; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS tsm_system_time WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION tsm_system_time; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION tsm_system_time IS 'TABLESAMPLE method which accepts time in milliseconds as a limit';
+
+
 SET search_path = public, pg_catalog;
 
 --
@@ -75,6 +89,23 @@ CREATE DOMAIN identifier AS character varying(32)
 
 
 ALTER DOMAIN identifier OWNER TO postgres;
+
+--
+-- Name: log_level; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE log_level AS ENUM (
+    'FINEST',
+    'FINER',
+    'FINE',
+    'CONFIG',
+    'INFO',
+    'WARNING',
+    'SEVERE'
+);
+
+
+ALTER TYPE log_level OWNER TO postgres;
 
 --
 -- Name: step_type; Type: TYPE; Schema: public; Owner: postgres
@@ -219,6 +250,19 @@ CREATE TABLE e_instrument (
 ALTER TABLE e_instrument OWNER TO postgres;
 
 --
+-- Name: e_program_role; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_program_role (
+    id identifier NOT NULL,
+    short_name character varying(32),
+    long_name character varying(64)
+);
+
+
+ALTER TABLE e_program_role OWNER TO postgres;
+
+--
 -- Name: e_program_type; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -355,6 +399,52 @@ CREATE TABLE e_template (
 
 
 ALTER TABLE e_template OWNER TO postgres;
+
+--
+-- Name: gem_user; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE gem_user (
+    id character varying(20) NOT NULL,
+    first character varying(20) NOT NULL,
+    last character varying(20) NOT NULL,
+    md5 character(32) NOT NULL,
+    email character varying(40),
+    staff boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE gem_user OWNER TO postgres;
+
+--
+-- Name: gem_user_program; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE gem_user_program (
+    user_id character varying(20) NOT NULL,
+    program_id character varying(32) NOT NULL,
+    program_role identifier NOT NULL
+);
+
+
+ALTER TABLE gem_user_program OWNER TO postgres;
+
+--
+-- Name: log; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE log (
+    "timestamp" timestamp(5) with time zone NOT NULL,
+    level log_level NOT NULL,
+    program character varying(32),
+    message character varying(255) NOT NULL,
+    stacktrace text,
+    elapsed bigint,
+    user_id character varying
+);
+
+
+ALTER TABLE log OWNER TO postgres;
 
 --
 -- Name: observation; Type: TABLE; Schema: public; Owner: postgres
@@ -632,6 +722,17 @@ Flamingos2	Flamingos2	Flamingos 2	Flamingos2	f
 
 
 --
+-- Data for Name: e_program_role; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_program_role (id, short_name, long_name) FROM stdin;
+PI	PI	Principal Investigator
+GEM	GEM	Gemini Contact
+NGO	NGO	NGO Contact
+\.
+
+
+--
 -- Data for Name: e_program_type; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -663,6 +764,31 @@ GS	Gemini South	Cerro Pachon	-70.7366867	-30.2407494	2722	America/Santiago	GS
 --
 
 COPY e_template (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
+\.
+
+
+--
+-- Data for Name: gem_user; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY gem_user (id, first, last, md5, email, staff) FROM stdin;
+tpolecat	Rob	Norris	72b302bf297a228a75730123efef7c41	rnorris@gemini.edu	f
+\.
+
+
+--
+-- Data for Name: gem_user_program; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY gem_user_program (user_id, program_id, program_role) FROM stdin;
+\.
+
+
+--
+-- Data for Name: log; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY log ("timestamp", level, program, message, stacktrace, elapsed, user_id) FROM stdin;
 \.
 
 
@@ -775,6 +901,22 @@ ALTER TABLE ONLY e_instrument
 
 
 --
+-- Name: e_program_role_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_program_role
+    ADD CONSTRAINT e_program_role_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_program_role_short_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_program_role
+    ADD CONSTRAINT e_program_role_short_name_key UNIQUE (short_name);
+
+
+--
 -- Name: e_program_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -812,6 +954,14 @@ ALTER TABLE ONLY e_f2_filter
 
 ALTER TABLE ONLY e_f2_lyot_wheel
     ADD CONSTRAINT f2_lyot_wheel_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gen_user_program_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gem_user_program
+    ADD CONSTRAINT gen_user_program_pkey PRIMARY KEY (user_id, program_id, program_role);
 
 
 --
@@ -895,6 +1045,14 @@ ALTER TABLE ONLY step_science
 
 
 --
+-- Name: user_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gem_user
+    ADD CONSTRAINT user_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: ix_observation_instrument; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -930,6 +1088,37 @@ CREATE INDEX ix_step_oid ON step USING btree (observation_id);
 
 
 --
+-- Name: ix_timestamp; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_timestamp ON log USING btree ("timestamp" DESC);
+
+
+--
+-- Name: FK_gen_user_program_1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gem_user_program
+    ADD CONSTRAINT "FK_gen_user_program_1" FOREIGN KEY (user_id) REFERENCES gem_user(id);
+
+
+--
+-- Name: FK_gen_user_program_2; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gem_user_program
+    ADD CONSTRAINT "FK_gen_user_program_2" FOREIGN KEY (program_id) REFERENCES program(program_id);
+
+
+--
+-- Name: FK_gen_user_program_3; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY gem_user_program
+    ADD CONSTRAINT "FK_gen_user_program_3" FOREIGN KEY (program_role) REFERENCES e_program_role(id);
+
+
+--
 -- Name: FK_observation_1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -943,6 +1132,14 @@ ALTER TABLE ONLY observation
 
 ALTER TABLE ONLY program
     ADD CONSTRAINT "FK_program_1" FOREIGN KEY (semester_id) REFERENCES semester(semester_id);
+
+
+--
+-- Name: log_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY log
+    ADD CONSTRAINT log_user_id_fkey FOREIGN KEY (user_id) REFERENCES gem_user(id);
 
 
 --
