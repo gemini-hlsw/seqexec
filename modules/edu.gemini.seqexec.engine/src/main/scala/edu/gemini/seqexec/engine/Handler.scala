@@ -15,7 +15,7 @@ object Handler {
     def handleUserEvent(ue: UserEvent): Engine[QState] = ue match {
       case Start => log("Output: Started") *> switch(q)(Status.Running)
       case Pause => log("Output: Paused") *> switch(q)(Status.Waiting)
-      case AddExecution(pend) => log("Output: Adding Pending Execution") // *> add(pend)
+      case AddExecution(pend) => log("Output: Adding Pending Execution") // TODO: Implement handler
       case Poll => log("Output: Polling current state")
       case Exit => log("Bye") *> close(q)
     }
@@ -38,5 +38,5 @@ object Handler {
   }
 
   def run(q: EventQueue)(qs: QState): Task[QState] =
-    handler(q).takeWhile(!_.pending.isEmpty).run.exec(qs)
+    handler(q).run.exec(qs)
 }

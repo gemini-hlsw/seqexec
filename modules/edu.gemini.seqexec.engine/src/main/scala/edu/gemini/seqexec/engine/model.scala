@@ -10,7 +10,10 @@ import Scalaz._
 case class QState(pending: Queue[Action],
                   current: Current,
                   done: Queue[Result],
-                  status: Status)
+                  status: Status) {
+
+  def isEmpty: Boolean = this.pending.sequences.isEmpty && this.current.isEmpty
+}
 
 object QState {
 
@@ -38,10 +41,13 @@ object QState {
     * Given an index of a current `Action` it replaces such `Action` with the
     * `Result` and returns the new modified `State`.
     *
+    * If after marking the `Action`, all elements in `Current` are `Result`, it
+    * empties `Current` and moves the `Result` to the completed `Queue`
+    *
     * If the index doesn't exist, the new `State` is returned unmodified.
     */
-  def mark(i: Int)(r: Result)(st: QState): QState =
-    current.mod(Current.mark(i)(r)(_), st)
+  def mark(i: Int)(r: Result)(qs: QState): QState =
+    current.mod(Current.mark(i)(r)(_), qs)
 
   /**
     * Returns a new `State` where the next pending `Execution` has been promoted
@@ -52,26 +58,37 @@ object QState {
     * If the `Current` doesn't have all actions completed or there are no more
     * pending `Execution`s it returns None.
     */
-  def next(st: QState): Option[(Execution[Action], QState)] = for {
-    exe3done <- uncurrentify(st.current)
-    qd = Queue.cons(exe3done)(st.done)
-    (exe3pending, qp) <- Queue.uncons(st.pending)
-    (actions, c) = currentify(exe3pending)
-  } yield (actions, QState(qp, c, qd, st.status))
+  def next(qs: QState): Option[QState] = cleanup(qs) >>= (prime(_))
 
+  // None: current not empty
+  //       pending queue empty
+  def prime(qs: QState): Option[QState] =
+    if (qs.current.isEmpty)
+      Queue.uncons(qs.pending).map(
+        t => {
+         val (exe3, q) = t
+         QState(q, currentify(exe3), qs.done, qs.status)
+        }
+      )
+    else None
+
+  def cleanup(qs: QState): Option[QState] =
+    uncurrentify(qs.current).map(exe3 =>
+      QState(qs.pending, Current.empty, Queue.cons(exe3)(qs.done), qs.status)
+    )
   /**
     * Transform an *unconsed* pending `Execution` into `Current` in addition to
     * returning the unwrapped `Execution`.
     */
   // TODO: Use same structure for `Current` and `Queue.Execution3`?
-  private def currentify(exe3: Queue.Execution3[Action]): (Execution[Action], Current) = {
+  private def currentify(exe3: Queue.Execution3[Action]): (Current) = {
 
     def vec(exe: Execution[Action]): Vector[Action \/ Result] = exe.map(_.left).toVector
 
     exe3 match {
-      case -\/(-\/((actions, seqid, stepid))) => (actions, Current(vec(actions), Some((seqid, stepid).left)))
-      case -\/(\/-((actions, stepid))) => (actions, Current(vec(actions), Some(stepid.right)))
-      case \/-(actions) => (actions, Current(vec(actions), None))
+      case -\/(-\/((actions, seqid, stepid))) => Current(vec(actions), Some((seqid, stepid).left))
+      case -\/(\/-((actions, stepid))) => Current(vec(actions), Some(stepid.right))
+      case \/-(actions) => Current(vec(actions), None)
     }
   }
 
@@ -82,14 +99,11 @@ object QState {
   // TODO: Use same structure for `Current` and `Queue.Execution3`?
   private def uncurrentify(current: Current): Option[Queue.Execution3[Result]] = {
 
-    // not available in scalaz?
-    def rights[L, R](xs: List[L \/ R]): List[R] = for { \/-(r) <- xs } yield r
-
-    def unvec(v: Vector[Action \/ Result]): Option[Execution[Result]] =
-      if (v.all(_.isRight)) rights(v.toList).toNel
+    val unvec: Option[Execution[Result]] =
+      if (current.ars.all(_.isRight)) current.results.toNel
       else None
 
-    unvec(current.actions).map(
+    unvec.map(
       exe => current.ctxt match {
         case None => exe.right
         case Some(-\/((seqid, stepid))) => (exe, seqid, stepid).left.left
@@ -117,12 +131,12 @@ case class Queue[A](sequences: List[Sequence[A]]) {
   def isEmpty: Boolean = this.sequences.isEmpty
 }
 
-
 object Queue {
 
   type Execution3[A] = (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A]
 
   def empty[A]: Queue[A] = Queue(List())
+
   def sequences[A]: Queue[A] @> List[Sequence[A]] =
     Lens.lensu((q, ss) => q.copy(sequences = ss), _.sequences)
 
@@ -176,7 +190,7 @@ object Queue {
     *  - x \/ E \/ x: When current `Step` has been completed.
     *  - E \/ x \/ x: When current `Sequence` has been completed.
     *
-    * `uncons`ing on an empty `Queue` returns an empty `Queue`.
+    * `uncons`ing on an empty `Queue` returns `None`.
     */
   def uncons[A](q: Queue[A]): Option[(Execution3[A], Queue[A])] =
     // Queue empty?
@@ -187,7 +201,8 @@ object Queue {
           mseq match {
             // No more Steps in current Sequence, remove Sequence.
             // TODO: listTailPLens?
-            case None => ((exe, seq0.id, stepid).left.left, Queue(q.sequences.tailOption.getOrElse(List())))
+            case None => ((exe, seq0.id, stepid).left.left,
+                          Queue(q.sequences.tailOption.getOrElse(List())))
             // More Steps left in current Sequence, remove `Step` from Sequence.
             case Some(seq) => ((exe, stepid).right.left, head.set(q, seq).getOrElse(q))
           }
@@ -289,10 +304,28 @@ object Step {
   * the `Queue` for proper insertion into the completed `Queue` when all the
   * `Execution`s are done.
   */
-case class Current(actions: Vector[Action \/ Result],
+case class Current(ars: Vector[Action \/ Result],
                    // TODO: The following tuples should be replaced by either
                    // Sequence or Step parameters
-                   ctxt: Option[(String, Int) \/ Int])
+                   ctxt: Option[(String, Int) \/ Int]) {
+
+  def isEmpty: Boolean = this.ars.empty
+
+  def actions: List[Action] = {
+
+    // not available in scalaz?
+    def lefts[L, R](xs: List[L \/ R]): List[L] = for { -\/(r) <- xs } yield r
+
+    lefts(this.ars.toList)
+  }
+
+  def results: List[Result] = {
+    // not available in scalaz?
+    def rights[L, R](xs: List[L \/ R]): List[R] = for { \/-(r) <- xs } yield r
+
+    rights(this.ars.toList)
+  }
+}
 
 object Current {
   val empty: Current = Current(Vector.empty, None)
@@ -302,13 +335,12 @@ object Current {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result)(c: Current): Current =
-    Current(PLens.vectorNthPLens(i).setOr(c.actions, r.right, c.actions), c.ctxt)
+    Current(PLens.vectorNthPLens(i).setOr(c.ars, r.right, c.ars), c.ctxt)
 }
 
 /**
   * The result of an `Action`.
   */
-
 sealed trait Result
 
 object Result {

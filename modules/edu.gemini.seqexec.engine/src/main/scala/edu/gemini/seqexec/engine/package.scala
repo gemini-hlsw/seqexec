@@ -44,7 +44,16 @@ package object engine {
     * `Running` status.
     */
   def switch(q: EventQueue)(st: Status): Engine[QState] =
-    modify (QState.status.set(_, st)) *> { if (st == Status.Running) next(q) else get }
+    modify(QState.status.set(_, st)) *> {
+      if (st == Status.Running) prime *> execute(q) *> get
+      else get
+    }
+
+  def prime: Engine[Unit] =
+    gets(QState.prime(_)) >>= {
+      case None => unit
+      case Some(qs) => put(qs)
+    }
 
   /**
     * Adds the `Current` `Execution` to the completed `Queue`, makes the next
@@ -52,13 +61,41 @@ package object engine {
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  // XXX: Handle trying to `next` when there are actions pending in Current.
   def next(q: EventQueue): Engine[QState] =
     (gets(QState.next(_)) >>= {
-       // This should only happen when Queue is empty.
+       // No more Executions left
        case None => send(q)(finished)
-       case Some((actions, s)) => put(s) *> execute(q)(actions)
+         // Execution completed, execute next actions
+       case Some(qs) => put(qs) *> execute(q)
      }) *> get
+
+  /**
+    * Checks the `Status` is `Running` and executes all actions in the `Current`
+    * `Execution` in parallel. When all are done it emits the `Executed` event.
+    * It also updates the `QState` as needed.
+    */
+  private def execute(q: EventQueue): Engine[Unit] = {
+
+    // Send the expected event when action is executed
+    def act(t: (Action, Int)): Task[Unit] = {
+      val (action, i) = t
+      action >>= {
+        case Result.OK => q.enqueueOne(completed(i))
+        case Result.Error => q.enqueueOne(failed(i))
+      }
+    }
+
+    status >>= {
+      case Status.Waiting => unit
+      case Status.Running => (
+        gets(_.current.actions) >>= (
+          actions => Nondeterminism[Task].gatherUnordered(
+            actions.zipWithIndex.map(act(_))
+          ).liftM[EngineStateT]
+        )
+      ) *> send(q)(executed)
+    }
+  }
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -66,7 +103,8 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete(i: Int): Engine[QState] = modify(QState.mark(i)(Result.OK)(_)) *> get
+  def complete(i: Int): Engine[QState] =
+    modify(QState.mark(i)(Result.OK)(_)) *> get
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
@@ -75,19 +113,6 @@ package object engine {
     */
   def fail(q: EventQueue)(i: Int): Engine[QState] =
     modify(QState.mark(i)(Result.Error)(_)) *> switch(q)(Status.Waiting)
-
-  /**
-    * Adds an `Execution` to the beginning of the `QueueStatus` while returning
-    * the `QueueStatus`.
-    */
-  // TODO: Change this to the end or insert by index. For that List -> Vector in
-  // `QueueStatus`
-  // def add(pend: Execution[Action]): Engine[QState] = {
-  //   val l = QueueStatus.pending.partial >=>
-  //     PLens.listHeadPLens[Sequence.Pending] >=>
-  //     PLens.listHeadPLens[Step.Pending]
-  //   modify(l.mod((pend :: _), _)) *> get
-  // }
 
   /**
     * Ask for the current Engine `Status`.
@@ -109,33 +134,6 @@ package object engine {
     * Enqueue `Event` in the Engine.
     */
   private def send(q: EventQueue)(ev: Event): Engine[Unit] = q.enqueueOne(ev).liftM[EngineStateT]
-
-  /**
-    * Checks the `Status` is `Running` and executes all actions in the `Current`
-    * `Execution` in parallel. When all are done it emits the `Executed` event.
-    * It also updates the `QState` as needed.
-    */
-  private def execute(q: EventQueue)(actions: Execution[Action]): Engine[Unit] = {
-
-    // Send the expected event when action is executed
-    def act(t: (Action, Int)): Task[Unit] = {
-      val (action, i) = t
-      action >>= {
-        case Result.OK => q.enqueueOne(completed(i))
-        case Result.Error => q.enqueueOne(failed(i))
-      }
-    }
-
-    status >>= {
-      case Status.Running => (
-        Nondeterminism[Task].gatherUnordered(
-          actions.toList.zipWithIndex.map(act(_)
-          )
-        ).liftM[EngineStateT]
-      ) *> send(q)(executed)
-      case Status.Waiting => unit
-    }
-  }
 
   // Functions to facilitate type bureaucracy
 
