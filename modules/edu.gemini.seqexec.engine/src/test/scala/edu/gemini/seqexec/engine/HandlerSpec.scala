@@ -99,10 +99,11 @@ class HandlerSpec extends FlatSpec {
   //   assert(result.queue.pending.length == 2)
   // }
 
-  it should "print qs1 execution" in {
-    intercept[Cause.Terminated](Nondeterminism[Task].both(
-      (queue.enqueueOne(start)), // *> queue.enqueueOne(exit)),
-      (handler(queue).run.exec(qs1))
+  it should "Print qs1 execution" in {
+    intercept[Cause.Terminated](
+      Nondeterminism[Task].both(
+        queue.enqueueOne(start),
+        handler(queue).run.exec(qs1)
       ).unsafePerformSync
     )
   }
