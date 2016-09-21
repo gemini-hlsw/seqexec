@@ -3,12 +3,12 @@ package gem
 import doobie.imports._
 
 import gem.dao._
-import gem.enum.Instrument
+import gem.enum._
 
 import scalaz._, Scalaz._
 import scalaz.concurrent.Task
 
-case class Service[M[_]](xa: Transactor[M], log: Log[M]) {
+case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]) {
 
   /**
    * Return a list of programs whose name or id contains the given substring (case-insensitive), up
@@ -37,16 +37,17 @@ case class Service[M[_]](xa: Transactor[M], log: Log[M]) {
       ???
     }
 
-  def shutdown(ms: Long): M[Unit] =
-    log.shutdown(ms)
-
 }
 
 object Service {
 
-  def forTesting: Service[Task] = {
+  def forTesting(uname: String): Service[Task] = {
     val xa = DriverManagerTransactor[Task]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
-    Log.newLog[Task]("Testing", xa).map(Service(xa, _)).unsafePerformSync
+    val io = for {
+      user <- UserDao.selectWithRoles(uname).transact(xa)
+      log  <- Log.newLog[Task]("Testing", xa)
+    } yield Service(xa, log, user)
+    io.unsafePerformSync
   }
 
 }

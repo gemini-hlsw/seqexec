@@ -57,6 +57,13 @@ lazy val importer = project
   .in(file("modules/importer"))
   .dependsOn(core, db)
   .settings(commonSettings)
+  .settings(
+    // IDEA needs to see these but sbt doesn't. Go figure.
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-xml"                % "1.0.3",
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+    )
+  )
 
 lazy val json = project
   .in(file("modules/json"))
