@@ -12,7 +12,7 @@ case class QState(pending: Queue[Action],
                   done: Queue[Result],
                   status: Status) {
 
-  def isEmpty: Boolean = this.pending.sequences.isEmpty && this.current.isEmpty
+  def isEmpty: Boolean = pending.sequences.isEmpty && current.isEmpty
 }
 
 object QState {
@@ -58,18 +58,15 @@ object QState {
     * If the `Current` doesn't have all actions completed or there are no more
     * pending `Execution`s it returns None.
     */
-  def next(qs: QState): Option[QState] = cleanup(qs) >>= (prime(_))
+  def next(qs: QState): Option[QState] = cleanup(qs).flatMap(prime)
 
   // None: current not empty
   //       pending queue empty
   def prime(qs: QState): Option[QState] =
     if (qs.current.isEmpty)
-      Queue.uncons(qs.pending).map(
-        t => {
-         val (exe3, q) = t
-         QState(q, currentify(exe3), qs.done, qs.status)
-        }
-      )
+      Queue.uncons(qs.pending).map {
+        case (exe3, q) => QState(q, currentify(exe3), qs.done, qs.status)
+      }
     else None
 
   def cleanup(qs: QState): Option[QState] =
@@ -81,13 +78,16 @@ object QState {
     * returning the unwrapped `Execution`.
     */
   // TODO: Use same structure for `Current` and `Queue.Execution3`?
-  private def currentify(exe3: Queue.Execution3[Action]): (Current) = {
+  private def currentify(exe3: Queue.Execution3[Action]): Current = {
 
     def vec(exe: Execution[Action]): Vector[Action \/ Result] = exe.map(_.left).toVector
 
     exe3 match {
+      // New Sequence
       case -\/(-\/((actions, seqid, stepid))) => Current(vec(actions), Some((seqid, stepid).left))
+      // New Step
       case -\/(\/-((actions, stepid))) => Current(vec(actions), Some(stepid.right))
+      // Modify current Step
       case \/-(actions) => Current(vec(actions), None)
     }
   }
@@ -105,8 +105,11 @@ object QState {
 
     unvec.map(
       exe => current.ctxt match {
+        // Modify current Step
         case None => exe.right
+        // New Sequence
         case Some(-\/((seqid, stepid))) => (exe, seqid, stepid).left.left
+        // New Step
         case Some(\/-(stepid)) => (exe, stepid).right.left
       }
     )
@@ -128,14 +131,14 @@ object Status {
   * for the addition of new ones.
   */
 case class Queue[A](sequences: List[Sequence[A]]) {
-  def isEmpty: Boolean = this.sequences.isEmpty
+  def isEmpty: Boolean = sequences.isEmpty
 }
 
 object Queue {
 
   type Execution3[A] = (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A]
 
-  def empty[A]: Queue[A] = Queue(List())
+  def empty[A]: Queue[A] = Queue(Nil)
 
   def sequences[A]: Queue[A] @> List[Sequence[A]] =
     Lens.lensu((q, ss) => q.copy(sequences = ss), _.sequences)
@@ -202,7 +205,7 @@ object Queue {
             // No more Steps in current Sequence, remove Sequence.
             // TODO: listTailPLens?
             case None => ((exe, seq0.id, stepid).left.left,
-                          Queue(q.sequences.tailOption.getOrElse(List())))
+                          Queue(q.sequences.tailOption.getOrElse(Nil)))
             // More Steps left in current Sequence, remove `Step` from Sequence.
             case Some(seq) => ((exe, stepid).right.left, head.set(q, seq).getOrElse(q))
           }
@@ -272,7 +275,7 @@ object Sequence {
 }
 
 /**
-  * A list of `Executions` grouped by obersvation.
+  * A list of `Executions` grouped by observation.
   */
 case class Step[A](id: Int, executions: NonEmptyList[Execution[A]])
 
@@ -309,21 +312,19 @@ case class Current(ars: Vector[Action \/ Result],
                    // Sequence or Step parameters
                    ctxt: Option[(String, Int) \/ Int]) {
 
-  def isEmpty: Boolean = this.ars.empty
+  def isEmpty: Boolean = ars.empty
 
   def actions: List[Action] = {
 
-    // not available in scalaz?
-    def lefts[L, R](xs: List[L \/ R]): List[L] = for { -\/(r) <- xs } yield r
+    def lefts[L, R](xs: List[L \/ R]): List[L] = xs.collect { case -\/(l) => l }
 
-    lefts(this.ars.toList)
+    lefts(ars.toList)
   }
 
   def results: List[Result] = {
-    // not available in scalaz?
-    def rights[L, R](xs: List[L \/ R]): List[R] = for { \/-(r) <- xs } yield r
+    def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
 
-    rights(this.ars.toList)
+    rights(ars.toList)
   }
 }
 

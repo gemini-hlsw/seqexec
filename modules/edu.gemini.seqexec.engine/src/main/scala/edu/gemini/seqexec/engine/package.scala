@@ -44,13 +44,12 @@ package object engine {
     * `Running` status.
     */
   def switch(q: EventQueue)(st: Status): Engine[QState] =
-    modify(QState.status.set(_, st)) *> {
-      if (st == Status.Running) prime *> execute(q) *> get
-      else get
-    }
+    modify(QState.status.set(_, st)) *>
+    whenM (st == Status.Running) (prime *> execute(q)) *>
+    get
 
   def prime: Engine[Unit] =
-    gets(QState.prime(_)) >>= {
+    gets(QState.prime(_)).flatMap {
       case None => unit
       case Some(qs) => put(qs)
     }
@@ -62,7 +61,7 @@ package object engine {
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
   def next(q: EventQueue): Engine[QState] =
-    (gets(QState.next(_)) >>= {
+    (gets(QState.next(_)).flatMap {
        // No more Executions left
        case None => send(q)(finished)
          // Execution completed, execute next actions
@@ -77,20 +76,20 @@ package object engine {
   private def execute(q: EventQueue): Engine[Unit] = {
 
     // Send the expected event when action is executed
-    def act(t: (Action, Int)): Task[Unit] = {
-      val (action, i) = t
-      action >>= {
-        case Result.OK => q.enqueueOne(completed(i))
-        case Result.Error => q.enqueueOne(failed(i))
-      }
+    def act(t: (Action, Int)): Task[Unit] = t match {
+      case (action, i) =>
+        action.flatMap {
+          case Result.OK => q.enqueueOne(completed(i))
+          case Result.Error => q.enqueueOne(failed(i))
+        }
     }
 
-    status >>= {
+    status.flatMap {
       case Status.Waiting => unit
       case Status.Running => (
-        gets(_.current.actions) >>= (
+        gets(_.current.actions).flatMap(
           actions => Nondeterminism[Task].gatherUnordered(
-            actions.zipWithIndex.map(act(_))
+            actions.zipWithIndex.map(act)
           ).liftM[EngineStateT]
         )
       ) *> send(q)(executed)
