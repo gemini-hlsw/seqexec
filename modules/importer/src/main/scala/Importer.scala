@@ -92,17 +92,17 @@ object Importer extends SafeApp {
     ins.transact(xa)
   }
 
-  def readAndInsert(r: ProgramReader, f: File, log: Log[IO]): IO[Unit] =
-    log.log(s"read ${f.getName}")(r.read(f)).flatMap {
-      case Some(p) => log.log(s"insert ${p.getProgramID}")(insert(p))
+  def readAndInsert(u: User[_], r: ProgramReader, f: File, log: Log[IO]): IO[Unit] =
+    log.log(u, s"read ${f.getName}")(r.read(f)).flatMap {
+      case Some(p) => log.log(u, s"insert ${p.getProgramID}")(insert(p))
       case None    => IO.ioUnit
     } .except(e => IO(e.printStackTrace))
 
   def xmlFiles(dir: File, num: Int): IO[List[File]] =
     IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(num))
 
-  def readAndInsertAll(r: ProgramReader, dir: File, num: Int, log: Log[IO]): IO[Unit] =
-    xmlFiles(dir, num).flatMap(_.traverse_(readAndInsert(r, _, log)))
+  def readAndInsertAll(u: User[_], r: ProgramReader, dir: File, num: Int, log: Log[IO]): IO[Unit] =
+    xmlFiles(dir, num).flatMap(_.traverse_(readAndInsert(u, r, _, log)))
 
   val configLogging: IO[Unit] =
     IO(List(
@@ -127,12 +127,13 @@ object Importer extends SafeApp {
 
   override def runl(args: List[String]): IO[Unit] =
     for {
+      u <- UserDao.selectRoot.transact(xa)
       l <- Log.newLog[IO]("importer", lxa)
       n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
       _ <- checkArchive
       _ <- configLogging
       _ <- clean.transact(xa)
-      _ <- ProgramReader.using(readAndInsertAll(_, dir, n, l))
+      _ <- ProgramReader.using(readAndInsertAll(u, _, dir, n, l))
       _ <- l.shutdown(5 * 1000) // if we're not done soon something is wrong
       _ <- IO.putStrLn("Done.")
     } yield ()

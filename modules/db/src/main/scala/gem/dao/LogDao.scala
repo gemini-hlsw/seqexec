@@ -15,10 +15,10 @@ object LogDao {
     sw.toString
   }
 
-  def insert(level: Level, pid: Option[Program.Id], msg: String, t: Option[Throwable], elapsed: Option[Long]): ConnectionIO[Int] =
+  def insert(user: User[_], level: Level, pid: Option[Program.Id], msg: String, t: Option[Throwable], elapsed: Option[Long]): ConnectionIO[Int] =
     sql"""
-      INSERT INTO log ("timestamp", level, program, message, stacktrace, elapsed)
-           VALUES (now(), $level :: log_level, $pid, $msg, ${t.map(stack)}, $elapsed)
+      INSERT INTO log (user_id, "timestamp", level, program, message, stacktrace, elapsed)
+           VALUES (${user.id}, now(), $level :: log_level, $pid, $msg, ${t.map(stack)}, $elapsed)
      """.update.run
 
 }

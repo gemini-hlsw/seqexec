@@ -25,11 +25,11 @@ If you ever want to wipe out the database and start over, you can do
 psql -c 'drop database gem' -U postgres
 ```
 
-And then re-run steps 2 and 3 above. At any time you can say 
+And then re-run steps 2 and 3 above. At any time you can say
 
 ```
 psql -U postgres -d gem
-``` 
+```
 
 to poke around with the database on the commandline. For real work I recommend a more full-featured front end. I use [Toad](https://www.toadworld.com/products/toad-mac-edition) but there are a lot of options.
 
@@ -68,12 +68,11 @@ Enumerated types are represented by tables named `e_whatever` which are the sour
 
 It's not yet clear which bits could be data-driven and which need to exist in Scala code. We do need to write code against specific filters and so on but we could still read these from the database on the fly. TBD.
 
-### Next Steps
+### Schema Updates
 
-- [x] general re-org and continued refactoring
-- [ ] set up Travis CI
-- [ ] science steps for F2 and a few more instruments
-- [ ] dao methods for reading (right now all we do is insert)
-- [ ] simple web front end for CRUD actions
-- [ ] integrate Logoot project and implement persistent peer
+If you need to update the schema you can just make changes locally and then truncate user data and do a dump.
 
+```
+psql -c "truncate log; truncate program cascade; delete from gem_user where id != 'root'" -d gem -U postgres
+gem (user *)$ pg_dump -U postgres -d gem > create.sql
+```
