@@ -8,9 +8,15 @@ import doobie.imports._
 
 object UserDao {
 
+  /** Select the super-user, for system processes. */
+  def selectRoot: ConnectionIO[User[Nothing]] =
+    select("root")
+
   def select(id: String): ConnectionIO[User[Nothing]] =
     sql"""
-      SELECT id, first, last, email, staff FROM gem_user
+      SELECT id, first, last, email, staff
+      FROM gem_user
+      WHERE id = $id
     """.query[(String, String, String, String, Boolean)]
        .unique.map { case (i, f, l, e, s) =>
          User(i, f, l, e, s, Map.empty)
@@ -26,6 +32,7 @@ object UserDao {
              g.program_id,
              g.program_role
         FROM gem_user u LEFT OUTER JOIN gem_user_program g ON g.user_id = u.id
+        WHERE id = $id
     """
       .query[(String, String, String, String, Boolean, Option[Program.Id], Option[ProgramRole])]
       .list

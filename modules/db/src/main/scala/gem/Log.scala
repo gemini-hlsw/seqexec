@@ -28,26 +28,26 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
   private def now: M[Long] =
     delay(System.currentTimeMillis)
 
-  private def fail[A](msg: => String, elapsed: Long, t: Throwable): M[A] =
-    (LogDao.insert(Level.SEVERE, none, msg, Some(t), Some(elapsed)).transact(xa) *>
-     Task.delay(jdkLogger.log(Level.SEVERE, s"$msg ($elapsed ms)", t))).detach   *>
+  private def fail[A](user: User[_], msg: => String, elapsed: Long, t: Throwable): M[A] =
+    (LogDao.insert(user, Level.SEVERE, none, msg, Some(t), Some(elapsed)).transact(xa) *>
+     Task.delay(jdkLogger.log(Level.SEVERE, s"${user.id}: $msg ($elapsed ms)", t))).detach   *>
     Catchable[M].fail[A](t)
 
-  private def success[A](msg: => String, elapsed: Long, a: A): M[A] =
-    (LogDao.insert(Level.INFO, none, msg, None, Some(elapsed)).transact(xa) *>
-     Task.delay(jdkLogger.log(Level.INFO, s"$msg ($elapsed ms)"))).detach.as(a)
+  private def success[A](user: User[_], msg: => String, elapsed: Long, a: A): M[A] =
+    (LogDao.insert(user, Level.INFO, none, msg, None, Some(elapsed)).transact(xa) *>
+     Task.delay(jdkLogger.log(Level.INFO, s"${user.id}: $msg ($elapsed ms)"))).detach.as(a)
 
   /**
    * Construct a new program in `M` that is equivalent to `ma` but also logs a message, elapsed
    * time and (in case of failure) a stacktrace to the database and to a JDK logger. Logging is
    * asynchronous so messages may not appear immediately.
    */
-  def log[A](msg: => String)(ma: M[A]): M[A] =
+  def log[A](user: User[_], msg: => String)(ma: M[A]): M[A] =
     for {
       start   <- now
       disj    <- ma.attempt
       elapsed <- now.map(_ - start)
-      a       <- disj.fold(t => fail(msg, elapsed, t), a => success(msg, elapsed, a))
+      a       <- disj.fold(t => fail(user, msg, elapsed, t), a => success(user, msg, elapsed, a))
     } yield a
 
   def shutdown(ms: Long): M[Unit] =

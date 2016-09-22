@@ -15,7 +15,7 @@ case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]
    * to a provided maximum length. The use case is an "Open" dialog.
    */
   def queryProgramsByName(substr: String, max: Int): M[List[Program[Nothing]]] =
-    log.log(s"""queryProgramsByName("$substr", $max)""") {
+    log.log(user, s"""queryProgramsByName("$substr", $max)""") {
       ProgramDao.selectBySubstring(s"%$substr%", max).transact(xa)
     }
 
@@ -24,7 +24,7 @@ case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]
    * program, allowing the user to navigate to a selected observation.
    */
   def getProgram(id: Program.Id): M[Program[Observation[Nothing]]] =
-    log.log(s"getProgram($id)") {
+    log.log(user, s"getProgram($id)") {
       ???
     }
 
@@ -33,7 +33,7 @@ case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]
    * sequence editor.
    */
   def getObservation(id: Observation.Id): M[Observation[Step[_ <: Instrument]]] =
-    log.log(s"getObservation($id)") {
+    log.log(user, s"getObservation($id)") {
       ???
     }
 
