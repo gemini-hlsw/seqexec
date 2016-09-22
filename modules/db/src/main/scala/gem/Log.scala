@@ -30,12 +30,12 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
 
   private def fail[A](user: User[_], msg: => String, elapsed: Long, t: Throwable): M[A] =
     (LogDao.insert(user, Level.SEVERE, none, msg, Some(t), Some(elapsed)).transact(xa) *>
-     Task.delay(jdkLogger.log(Level.SEVERE, s"$msg ($elapsed ms)", t))).detach   *>
+     Task.delay(jdkLogger.log(Level.SEVERE, s"${user.id}: $msg ($elapsed ms)", t))).detach   *>
     Catchable[M].fail[A](t)
 
   private def success[A](user: User[_], msg: => String, elapsed: Long, a: A): M[A] =
     (LogDao.insert(user, Level.INFO, none, msg, None, Some(elapsed)).transact(xa) *>
-     Task.delay(jdkLogger.log(Level.INFO, s"$msg ($elapsed ms)"))).detach.as(a)
+     Task.delay(jdkLogger.log(Level.INFO, s"${user.id}: $msg ($elapsed ms)"))).detach.as(a)
 
   /**
    * Construct a new program in `M` that is equivalent to `ma` but also logs a message, elapsed
