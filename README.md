@@ -74,5 +74,5 @@ If you need to update the schema you can just make changes locally and then trun
 
 ```
 psql -c "truncate log; truncate program cascade; delete from gem_user where id != 'root'" -d gem -U postgres
-gem (user *)$ pg_dump -U postgres -d gem > create.sql
+pg_dump -U postgres -d gem > create.sql
 ```
