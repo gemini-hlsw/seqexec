@@ -20,7 +20,7 @@ class HandlerSpec extends FlatSpec {
     _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(2000))
     _ <- Task(println ("System: Complete TCS configuration"))
-  } yield OK
+  } yield OK(())
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -30,7 +30,7 @@ class HandlerSpec extends FlatSpec {
     _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(2000))
     _ <- Task(println("System: Complete Instrument configuration"))
-  } yield OK
+  } yield OK(())
 
   /**
     * Emulates an observation in the real world.
@@ -40,13 +40,13 @@ class HandlerSpec extends FlatSpec {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(2000))
     _ <- Task(println ("System: Complete observation"))
-  } yield OK
+  } yield OK(())
 
   val faulty: Action  = for {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(1000))
     _ <- Task(println ("System: Complete observation"))
-  } yield Error
+  } yield Error(())
 
   val qs1: QState = QState.init(
     Queue(

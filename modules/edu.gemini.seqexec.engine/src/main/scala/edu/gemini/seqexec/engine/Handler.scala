@@ -21,8 +21,8 @@ object Handler {
     }
 
     def handleSystemEvent(se: SystemEvent): Engine[QState] = se match {
-      case (Completed(i)) => log("Output: Action completed") *> complete(i)
-      case (Failed(i)) => log("Output: Action failed") *> fail(q)(i)
+      case (Completed(i, r)) => log("Output: Action completed") *> complete(i, r)
+      case (Failed(i, e)) => log("Output: Action failed") *> fail(q)(i, e)
       case Executed => log("Output: Execution completed, launching next execution") *> next(q)
       // TODO: Closing to facilitate testing, in reality it shouldn't close
       case Finished => log("Output: Finished") *> close(q)

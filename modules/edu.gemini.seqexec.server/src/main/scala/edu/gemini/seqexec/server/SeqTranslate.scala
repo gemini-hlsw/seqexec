@@ -22,7 +22,7 @@ object SeqTranslate {
     case \/-(r) => Result.OK(r)
   }
 
-  def step(dhsClient: DhsClient)(i: Int, config: Config): SeqexecFailure \/ (Step[Action]) = {
+  def step(dhsClient: DhsClient)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
       case GmosSouth.name => Some(GmosSouth)
@@ -49,6 +49,6 @@ object SeqTranslate {
 
     val b = nelOfConfigs(a).flatMap(steps)
 
-    b.map(Sequence[Action](obsId, _))
+    b.map(Sequence[Action](obsId, _, List()))
   }
 }
