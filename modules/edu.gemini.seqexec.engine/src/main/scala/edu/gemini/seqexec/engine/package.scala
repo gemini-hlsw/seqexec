@@ -85,8 +85,8 @@ package object engine {
     def act(t: (Action, Int)): Task[Unit] = t match {
       case (action, i) =>
         action.flatMap {
-          case Result.OK => q.enqueueOne(completed(i))
-          case Result.Error => q.enqueueOne(failed(i))
+        case Result.OK(r) => q.enqueueOne(completed(i, r))
+        case Result.Error(e) => q.enqueueOne(failed(i, e))
         }
     }
 
@@ -108,16 +108,16 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete(i: Int): Engine[QState] =
-    modify(QState.mark(i)(Result.OK)(_)) *> get
+  def complete[R](i: Int, r: R): Engine[QState] =
+    modify(QState.mark(i)(Result.OK(r))(_)) *> get
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `QState`. In the future this function should handle the failed
     * action.
     */
-  def fail(q: EventQueue)(i: Int): Engine[QState] =
-    modify(QState.mark(i)(Result.Error)(_)) *> switch(q)(Status.Waiting)
+  def fail[E](q: EventQueue)(i: Int, e: E): Engine[QState] =
+    modify(QState.mark(i)(Result.Error(e))(_)) *> switch(q)(Status.Waiting)
 
   /**
     * Ask for the current Engine `Status`.

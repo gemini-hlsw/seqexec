@@ -15,7 +15,7 @@ trait SeqexecEngineModules {
   // List all the modules and their inter dependencies
   lazy val edu_gemini_seqexec_server = project
     .in(file("modules/edu.gemini.seqexec.server"))
-    .dependsOn(edu_gemini_seqexec_model_JVM)
+    .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM)
 
   // This should eventually replaced by seqexec_server
   lazy val edu_gemini_seqexec_engine = project
