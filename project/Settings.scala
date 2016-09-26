@@ -28,9 +28,9 @@ object Settings {
     val scala        = "2.11.8"
 
     // ScalaJS libraries
-    val scalaDom     = "0.9.0"
-    val scalajsReact = "0.11.1"
-    val scalaCSS     = "0.4.1"
+    val scalaDom     = "0.9.1"
+    val scalajsReact = "0.11.2"
+    val scalaCSS     = "0.5.0"
     val uPickle      = "0.4.0"
     val booPickle    = "1.2.4"
     val diode        = "1.0.0"
@@ -43,23 +43,23 @@ object Settings {
     val scalaZStream = "0.8a"
 
     // Scala libraries
-    val http4s       = "0.14.1a"
+    val http4s       = "0.14.7a"
     val squants      = "0.6.2"
     val argonaut     = "6.2-M1"
     val commonsHttp  = "2.0"
     val unboundId    = "3.1.1"
-    val jwt          = "0.7.1"
+    val jwt          = "0.8.1"
     val slf4j        = "1.7.21"
     val knobs        = "3.8.1a"
 
     // test libraries
-    val scalaTest    = "3.0.0-RC1"
+    val scalaTest    = "3.0.0"
     val scalaCheck   = "1.13.1"
 
     // Pure JS libraries
-    val reactJS        = "15.0.1"
+    val reactJS        = "15.3.2"
     val jQuery         = "3.0.0"
-    val semanticUI     = "2.2"
+    val semanticUI     = "2.2.2"
     val jQueryTerminal = "0.11.2"
     val ocsVersion     = "2016102.1.1"
   }
