@@ -74,7 +74,23 @@ class HandlerSpec extends FlatSpec {
     )
   )
 
-  it should "Print qs1 execution" in {
+  it should "be in Running status after starting" in {
+    val q = async.boundedQueue[Event](10)
+    val qs = (q.enqueueOne(start) *>
+                    handler(q).take(1).run.exec(qs1)).unsafePerformSync
+    assert(qs.status === Status.Running)
+  }
+
+  it should "be 0 pending executions after execution" in {
+    val q = async.boundedQueue[Event](10)
+    val qs = (
+      q.enqueueOne(start) *>
+        // 6 Actions + 4 Executions => take(10)
+        handler(q).take(10).run.exec(qs1)).unsafePerformSync
+    assert(qs.pending.isEmpty)
+  }
+
+  it should "Print execution" in {
     val q = async.boundedQueue[Event](10)
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
@@ -84,7 +100,7 @@ class HandlerSpec extends FlatSpec {
     )
   }
 
-  it should "Print qs1 execution with pause" in {
+  it should "Print execution with pause" in {
     val q = async.boundedQueue[Event](10)
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
