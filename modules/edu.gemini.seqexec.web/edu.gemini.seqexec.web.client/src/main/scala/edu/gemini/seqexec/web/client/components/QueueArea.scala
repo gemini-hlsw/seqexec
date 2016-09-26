@@ -166,12 +166,12 @@ object QueueAreaTitle {
           implicit val eq = PotEq.seqexecQueueEq
           queueConnect(QueueTableLoading.apply)
         },
-        p.user().map { u =>
+        p.user().fold(<.div()) { _ =>
           <.div(
             ^.cls := "right menu",
             statusAndSearchResultsConnect(SequenceSearch.apply)
-          ): ReactNode
-        }.getOrElse[ReactNode](<.div())
+          )
+        }
       )
     ).build.withKey("key.area.title")
 

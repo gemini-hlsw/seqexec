@@ -14,13 +14,15 @@ case class TextMenuSegment(p: TextMenuSegment.Props, children: Seq[ReactNode], k
     .renderPC((_, p, c) =>
       <.div(
         ^.cls := "ui top attached text menu segment",
+        ^.key := s"$key.text",
         <.div(
           ^.cls := "ui header item",
+          ^.key := s"$key.item",
           p.header
         ),
         c
       )
-    ).build.withKey(key).apply(p, children)
+    ).build.withKey(key).apply(p, children: _*)
 }
 
 object TextMenuSegment {
@@ -31,3 +33,4 @@ object TextMenuSegment {
 
   def apply(header: String, key: String, children: ReactNode*): TextMenuSegment = TextMenuSegment(Props(header), children, key)
 }
+
