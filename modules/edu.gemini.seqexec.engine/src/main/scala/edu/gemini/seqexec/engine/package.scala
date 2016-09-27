@@ -54,6 +54,12 @@ package object engine {
       case Some(qs) => put(qs)
     }
 
+  def cleanup: Engine[Unit] =
+    gets(QState.cleanup(_)).flatMap {
+      case None => unit
+      case Some(qs) => put(qs)
+    }
+
   /**
     * Adds the `Current` `Execution` to the completed `Queue`, makes the next
     * pending `Execution` the `Current` one, and initiates the actual execution.
@@ -63,7 +69,7 @@ package object engine {
   def next(q: EventQueue): Engine[QState] =
     (gets(QState.next(_)).flatMap {
        // No more Executions left
-       case None => send(q)(finished)
+       case None => cleanup *> send(q)(finished)
          // Execution completed, execute next actions
        case Some(qs) => put(qs) *> execute(q)
      }) *> get

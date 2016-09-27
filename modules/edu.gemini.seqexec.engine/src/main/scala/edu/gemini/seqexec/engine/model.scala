@@ -130,18 +130,32 @@ object Status {
   * A list of Sequences. The `Queue` could be empty of Sequences when waiting
   * for the addition of new ones.
   */
-case class Queue[A](sequences: List[Sequence[A]]) {
+case class Queue[A](
+  sequences: List[Sequence[A]],
+  // Unrooted Steps (without a Queue)
+  steps: List[Step[A]],
+  // Unrooted Executions (without a Step)
+  executions: List[Execution[A]]
+) {
+
   def isEmpty: Boolean = sequences.isEmpty
+
 }
 
 object Queue {
 
   type Execution3[A] = (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A]
 
-  def empty[A]: Queue[A] = Queue(Nil)
+  def empty[A]: Queue[A] = Queue(Nil, Nil, Nil)
 
   def sequences[A]: Queue[A] @> List[Sequence[A]] =
-    Lens.lensu((q, ss) => q.copy(sequences = ss), _.sequences)
+    Lens.lensu((q, s) => q.copy(sequences = s), _.sequences)
+
+  def steps[A]: Queue[A] @> List[Step[A]] =
+    Lens.lensu((q, s) => q.copy(steps = s), _.steps)
+
+  def executions[A]: Queue[A] @> List[Execution[A]] =
+    Lens.lensu((q, e) => q.copy(executions = e), _.executions)
 
   // Next `Sequence`
   def head[A]: Queue[A] @?> Sequence[A] = sequences.partial >=> PLens.listHeadPLens
@@ -173,15 +187,31 @@ object Queue {
             NonEmptyList(
               Step(
                 stepid,
-                NonEmptyList(exe)
-              )
-            )
-          ) :: q.sequences
+                NonEmptyList(
+                  exe,
+                  q.executions: _*
+                )
+              ),
+              q.steps: _*
+            ),
+            Nil
+          ) :: q.sequences,
+          Nil,
+          Nil
         )
       // New Step
-      case -\/(\/-((exe, i))) => head.mod(Sequence.cons((exe, i).left), q)
+      case -\/(\/-((exe, i))) => {
+        // head.mod(Sequence.cons((exe, i).left), q)
+        executions.set(
+          steps.mod(
+            Step(i, NonEmptyList(exe, q.executions: _*)) :: _,
+            q
+          ),
+          Nil
+        )
+      }
       // Modify current Step
-      case \/-(exe) => head.mod(Sequence.cons(exe.right)((_: Sequence[A])), q)
+      case \/-(exe) => executions.mod(exe :: _, q)// head.mod(Sequence.cons(exe.right)((_: Sequence[A])), q)
     }
 
   /**
@@ -195,6 +225,7 @@ object Queue {
     *
     * `uncons`ing on an empty `Queue` returns `None`.
     */
+  // TODO: Handle unrooted Sequences and Steps
   def uncons[A](q: Queue[A]): Option[(Execution3[A], Queue[A])] =
     // Queue empty?
     q.sequences.headOption.map(seq0 =>
@@ -204,8 +235,12 @@ object Queue {
           mseq match {
             // No more Steps in current Sequence, remove Sequence.
             // TODO: listTailPLens?
-            case None => ((exe, seq0.id, stepid).left.left,
-                          Queue(q.sequences.tailOption.getOrElse(Nil)))
+            case None => (
+              (exe, seq0.id, stepid).left.left,
+              Queue(q.sequences.tailOption.getOrElse(Nil),
+                    q.steps,
+                    q.executions)
+            )
             // More Steps left in current Sequence, remove `Step` from Sequence.
             case Some(seq) => ((exe, stepid).right.left, head.set(q, seq).getOrElse(q))
           }
@@ -222,7 +257,12 @@ object Queue {
 /**
   * A list of Steps grouped by target and instrument.
   */
-case class Sequence[A](id: String, steps: NonEmptyList[Step[A]])
+case class Sequence[A](
+  id: String,
+  steps: NonEmptyList[Step[A]],
+  // Unrooted executions
+  executions: List[Execution[A]]
+)
 
 object Sequence {
   def steps[A]: Sequence[A] @> NonEmptyList[Step[A]] =
@@ -241,11 +281,15 @@ object Sequence {
   def cons[A](exe2: (Execution[A], Int) \/ Execution[A])(seq: Sequence[A]): Sequence[A] =
     exe2 match {
       // Create new Step with the Execution
-      case -\/((exe, sid)) => Sequence(seq.id, Step(sid, NonEmptyList(exe)) <:: seq.steps)
+      case -\/((exe, sid)) =>
+        Sequence(
+          seq.id,
+          Step(sid, NonEmptyList(exe, seq.executions: _*)) <:: seq.steps,
+          Nil
+        )
       // Add Execution to current Step
-      case \/-(exe) => head.mod(Step.cons(exe)(_), seq)
+      case \/-(exe) => Sequence(seq.id, seq.steps, exe :: seq.executions)
     }
-
 
   /**
     * Returns the next `Execution` and the remaining of the `Sequence`.
@@ -263,11 +307,15 @@ object Sequence {
     * no more `Execution`s in the current `Step`. If this was the last `Step` of
     * the current `Sequence` it becomes `None`.
     */
+  // TODO: Handle unrooted executions
   def uncons[A](seq: Sequence[A]): (((Execution[A], Int), Option[Sequence[A]]) \/ (Execution[A], Sequence[A])) = {
     val (exe, mstep) = Step.uncons(seq.steps.head)
     mstep match {
       // No more Executions in Step, remove Step
-      case None => ((exe, seq.steps.head.id), seq.steps.tail.toNel.map(Sequence(seq.id, _))).left
+      case None => (
+        (exe, seq.steps.head.id),
+        seq.steps.tail.toNel.map(Sequence(seq.id, _, seq.executions))
+      ).left
       // More Executions in Step, remove Execution in Step
       case Some(st) => (exe, head.set(seq, st)).right
     }
@@ -287,7 +335,7 @@ object Step {
   def head[A]: Step[A] @> Execution[A] = executions >=> Lens.nelHeadLens
 
   /**
-    * Adds a `Execution` to the font of a `Step`.
+    * Adds a `Execution` to the front of a `Step`.
     */
   def cons[A](exe: Execution[A])(st: Step[A]): Step[A] = Step(st.id, exe <:: st.executions)
 
@@ -307,10 +355,10 @@ object Step {
   * the `Queue` for proper insertion into the completed `Queue` when all the
   * `Execution`s are done.
   */
-case class Current(ars: Vector[Action \/ Result],
-                   // TODO: The following tuples should be replaced by either
-                   // Sequence or Step parameters
-                   ctxt: Option[(String, Int) \/ Int]) {
+case class Current(
+  ars:  Vector[Action \/ Result],
+  ctxt: Option[(String, Int) \/ Int]
+) {
 
   def isEmpty: Boolean = ars.empty
 
@@ -322,6 +370,7 @@ case class Current(ars: Vector[Action \/ Result],
   }
 
   def results: List[Result] = {
+
     def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
 
     rights(ars.toList)
