@@ -25,7 +25,8 @@ trait SeqexecEngineModules {
       libraryDependencies ++= Seq(BooPickle.value) ++ TestLibs.value
     )
     .jsSettings(
-      scalaJSUseRhino := false
+      scalaJSUseRhino := false,
+      jsEnv := NodeJSEnv().value
     )
 
   lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm

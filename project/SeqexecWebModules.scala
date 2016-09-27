@@ -1,6 +1,5 @@
 import sbt.Keys._
 import sbt._
-
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport._
 import sbtbuildinfo.BuildInfoPlugin
@@ -30,6 +29,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     )
     .jsSettings(
       scalaJSUseRhino := false,
+      jsEnv := NodeJSEnv().value,
       libraryDependencies += JavaLogJS.value
     )
 
@@ -94,8 +94,8 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings: _*)
     .settings(
-      // Skip tests in module, Rhino doesn't play nice with jquery
-      test := {},
+      // Run tests is JsDom
+      jsEnv := JSDOMNodeJSEnv().value,
       // This is a not very nice trick to remove js files that exist on the scala tools
       // library and that conflict with the requested on jsDependencies, in particular
       // with jquery.js
@@ -113,7 +113,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       jsDependencies ++= Seq(
         "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
         "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-dom.js"         minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
-        "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js",
+        "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js" commonJSName "jQuery",
         "org.webjars"       % "Semantic-UI" % LibraryVersions.semanticUI  / "semantic.js"          minified "semantic.min.js" dependsOn "jquery.js"
       ),
       // Build a js dependencies file
@@ -142,9 +142,8 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings: _*)
     .settings(
-      // Skip tests in module, Rhino doesn't play nice with jquery
-      test := {},
-      // Write the generated js to the filename seqexec.js
+      jsEnv := JSDOMNodeJSEnv().value,
+      // Write the generated js to the filename seqexec-cli.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec-cli.js",
       artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-cli-opt.js",
       // JS dependencies from webjars
@@ -157,6 +156,8 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       emitSourceMaps in fullOptJS := true,
       // Put the jsdeps file on a place reachable for the server
       crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
+      // Compile tests to JS using fast-optimisation
+      scalaJSStage in Test := FastOptStage,
       libraryDependencies ++= Seq(
         JQuery.value
       )
