@@ -68,9 +68,12 @@ class HandlerSpec extends FlatSpec {
                 NonEmptyList(observe) // Execution
               )
             )
-          )
+          ),
+          Nil
         )
-      )
+      ),
+      Nil,
+      Nil
     )
   )
 
@@ -88,6 +91,15 @@ class HandlerSpec extends FlatSpec {
         // 6 Actions + 4 Executions => take(10)
         handler(q).take(10).run.exec(qs1)).unsafePerformSync
     assert(qs.pending.isEmpty)
+  }
+
+  it should "be 1 done Sequence after execution" in {
+    val q = async.boundedQueue[Event](10)
+    val qs = (
+      q.enqueueOne(start) *>
+        // 6 Actions + 4 Executions + 1 start + 1 finished =>.take(12)
+        handler(q).take(12).run.exec(qs1)).unsafePerformSync
+    assert(qs.done.sequences.length == 1)
   }
 
   it should "Print execution" in {
