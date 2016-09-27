@@ -166,12 +166,12 @@ object QueueAreaTitle {
           implicit val eq = PotEq.seqexecQueueEq
           queueConnect(QueueTableLoading.apply)
         },
-        p.user().map { u =>
+        p.user().fold(<.div()) { _ =>
           <.div(
             ^.cls := "right menu",
             statusAndSearchResultsConnect(SequenceSearch.apply)
-          ): ReactNode
-        }.getOrElse[ReactNode](<.div())
+          )
+        }
       )
     ).build.withKey("key.area.title")
 
@@ -247,8 +247,8 @@ object QueueArea {
               ^.cls := "stretched row",
               <.div(
                 ^.classSet(
-                  "ten wide computer tablet one wide mobile column"     -> (p.searchArea() == SectionOpen),
-                  "sixteen wide column"                                 -> (p.searchArea() == SectionClosed)
+                  "ten wide computer two wide tablet one wide mobile column" -> (p.searchArea() == SectionOpen),
+                  "sixteen wide column"                                      -> (p.searchArea() == SectionClosed)
                 ),
                 // If there was an error on the process display a message
                 queueConnect(LoadingErrorMsg(_)),
