@@ -3,6 +3,11 @@ scala:
   - 2.11.8
 jdk:
   - oraclejdk8
+install:
+  - . $HOME/.nvm/nvm.sh
+  - nvm install stable
+  - nvm use stable
+  - npm install jsdom
 before_script:
   - sudo apt-get install -y rpm
 script:
