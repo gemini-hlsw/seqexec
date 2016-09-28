@@ -1,5 +1,7 @@
 # OCS3
 
+[![Build Status](https://travis-ci.org/gemini-hlsw/ocs3.svg?branch=develop)](https://travis-ci.org/gemini-hlsw/ocs3)
+
 This project aims to build the next generation Observatory Control System (OCS). At the time of this writing, only the Seqexec has been integrated. This setup has the following goals
 
 - Adhere to the simplest possible sbt structure.
@@ -44,6 +46,10 @@ To tests the javascript side you need to install node and jsdom. In OSX using `b
 brew install node
 npm install jsdom
 ```
+
+`node` should be at least on version `0.6.x`, check it with `node --version` once installed
+
+Don't install jsdom at the global level (with the -g option) as it doesn't work properly with scala.js
 
 ## IDEA
 
