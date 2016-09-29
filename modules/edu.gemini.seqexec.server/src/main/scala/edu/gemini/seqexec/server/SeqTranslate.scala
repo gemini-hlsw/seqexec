@@ -33,17 +33,17 @@ object SeqTranslate {
     instrument.map { a =>
       val systems = nels(Tcs(TcsControllerEpics), a)
       // TODO Find a proper way to inject the subsystems
-      Step[Action](i, nels(systems.map(x => toAction(x.configure(config))), nels(toAction(a.observe(config)(dhsClient))))).right
+      Step[Action](i, nels(systems.map(x => (x.configure(config))), nels((a.observe(config)(dhsClient))))).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[Step[Action]])
   }
 
   def sequence(dhsClient: DhsClient)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] =
   {
     def nelOfConfigs(l : List[Config]): SeqexecFailure \/ NonEmptyList[Config] =
-      l.toNel.map(_.right).getOrElse(Execution("No steps found in sequence.").left)
+      l.toNel.map(_.right).getOrElse(SeqexecFailure.Execution("No steps found in sequence.").left)
 
     def steps(l : NonEmptyList[Config]): SeqexecFailure \/ NonEmptyList[Step[Action]] =
-      l.zipWithIndex.traverse[({ type λ[β] = SeqexecFailure \/ β })#λ, Step[Action]] { case (c, i) => step(dhsClient)(i, c) }
+      l.zipWithIndex.traverseU{ case (c, i) => step(dhsClient)(i, c) }
 
     val a = sequenceConfig.getAllSteps.toList
 
