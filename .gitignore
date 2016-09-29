@@ -31,3 +31,6 @@ bin/
 archive
 
 .idea
+*.ipr
+*.iws
+
