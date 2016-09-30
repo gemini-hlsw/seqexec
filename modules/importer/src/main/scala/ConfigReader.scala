@@ -37,6 +37,12 @@ object ConfigReader3 {
     def enum[A: Enumerated: TypeTag](f: A => String): Read[A] =
       cast[String].map(ufindp(f))
 
+    def seqOpt[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String, default: S): Read[A] =
+      cast[edu.gemini.shared.util.immutable.Option[S]].map { opt =>
+        val s = if (opt.isEmpty) default else opt.getValue
+        ufindp(f)(s.sequenceValue)
+      }
+
     def seq[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String): Read[A] =
       cast[S].map(s => ufindp(f)(s.sequenceValue))
 
@@ -57,7 +63,7 @@ object ConfigReader3 {
     val f2filter:      Read[F2Filter     ] = seq[OldF2.Filter,      F2Filter     ](_.tccValue)
     val f2lyotwheel:   Read[F2LyotWheel  ] = seq[OldF2.LyotWheel,   F2LyotWheel  ](_.tccValue)
     val f2disperser:   Read[F2Disperser  ] = seq[OldF2.Disperser,   F2Disperser  ](_.tccValue)
-    val f2windowcover: Read[F2WindowCover] = seq[OldF2.WindowCover, F2WindowCover](_.tccValue)
+    val f2windowcover: Read[F2WindowCover] = seqOpt[OldF2.WindowCover, F2WindowCover](_.tccValue, OldF2.WindowCover.OPEN)
 
   }
 
