@@ -39,8 +39,7 @@ object ConfigReader3 {
 
     def seqOpt[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String, default: S): Read[A] =
       cast[edu.gemini.shared.util.immutable.Option[S]].map { opt =>
-        val s = if (opt.isEmpty) default else opt.getValue
-        ufindp(f)(s.sequenceValue)
+        ufindp(f)(opt.getOrElse(default).sequenceValue)
       }
 
     def seq[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String): Read[A] =
