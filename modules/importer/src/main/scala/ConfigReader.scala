@@ -40,23 +40,24 @@ object ConfigReader3 {
     def seq[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String): Read[A] =
       cast[S].map(s => ufindp(f)(s.sequenceValue))
 
-    val unit:        Read[Unit       ] = _ => ()
-    val string:      Read[String     ] = cast[String]
-    val double:      Read[Double     ] = cast[Double]
-    val int:         Read[Int        ] = cast[Int]
-    val long:        Read[Long       ] = cast[Long]
-    val offsetAngle: Read[Angle      ] = string.map(s => Angle.fromArcsecs(s.toDouble))
-    val offsetP:     Read[OffsetP    ] = offsetAngle.map(OffsetP(_))
-    val offsetQ:     Read[OffsetQ    ] = offsetAngle.map(OffsetQ(_))
-    val instrument:  Read[Instrument ] = enum(_.tccValue)
-    val yesNo:       Read[Boolean    ] = cast[YesNoType].map(_.toBoolean)
-    val durSecs:     Read[Duration   ] = double.map(_.toInt).map(Duration.ofSeconds(_))
-    val gcalLamp:    Read[GCalLamp   ] = cast[JSet[Object]].map(_.iterator.next.toString).map(ufindp[GCalLamp, String](_.tccValue))
-    val gcalShutter: Read[GCalShutter] = seq[OldGCal.Shutter, GCalShutter](_.tccValue)
-    val f2fpu:       Read[F2FpUnit   ] = seq[OldF2.FPUnit,    F2FpUnit   ](_.tccValue)
-    val f2filter:    Read[F2Filter   ] = seq[OldF2.Filter,    F2Filter   ](_.tccValue)
-    val f2lyotwheel: Read[F2LyotWheel] = seq[OldF2.LyotWheel, F2LyotWheel](_.tccValue)
-    val f2disperser: Read[F2Disperser] = seq[OldF2.Disperser, F2Disperser](_.tccValue)
+    val unit:          Read[Unit         ] = _ => ()
+    val string:        Read[String       ] = cast[String]
+    val double:        Read[Double       ] = cast[Double]
+    val int:           Read[Int          ] = cast[Int]
+    val long:          Read[Long         ] = cast[Long]
+    val offsetAngle:   Read[Angle        ] = string.map(s => Angle.fromArcsecs(s.toDouble))
+    val offsetP:       Read[OffsetP      ] = offsetAngle.map(OffsetP(_))
+    val offsetQ:       Read[OffsetQ      ] = offsetAngle.map(OffsetQ(_))
+    val instrument:    Read[Instrument   ] = enum(_.tccValue)
+    val yesNo:         Read[Boolean      ] = cast[YesNoType].map(_.toBoolean)
+    val durSecs:       Read[Duration     ] = double.map(_.toInt).map(Duration.ofSeconds(_))
+    val gcalLamp:      Read[GCalLamp     ] = cast[JSet[Object]].map(_.iterator.next.toString).map(ufindp[GCalLamp, String](_.tccValue))
+    val gcalShutter:   Read[GCalShutter  ] = seq[OldGCal.Shutter, GCalShutter](_.tccValue)
+    val f2fpu:         Read[F2FpUnit     ] = seq[OldF2.FPUnit,      F2FpUnit     ](_.tccValue)
+    val f2filter:      Read[F2Filter     ] = seq[OldF2.Filter,      F2Filter     ](_.tccValue)
+    val f2lyotwheel:   Read[F2LyotWheel  ] = seq[OldF2.LyotWheel,   F2LyotWheel  ](_.tccValue)
+    val f2disperser:   Read[F2Disperser  ] = seq[OldF2.Disperser,   F2Disperser  ](_.tccValue)
+    val f2windowcover: Read[F2WindowCover] = seq[OldF2.WindowCover, F2WindowCover](_.tccValue)
 
   }
 
@@ -75,10 +76,11 @@ object ConfigReader3 {
       val Instrument    = KeyRead(Tcc.Instrument.Instrument,    Read.instrument)
       val MosPreImaging = KeyRead(Tcc.Instrument.MosPreImaging, Read.yesNo)
       object F2 {
-        val Fpu       = KeyRead(Tcc.Instrument.F2.Fpu,       Read.f2fpu)
-        val Filter    = KeyRead(Tcc.Instrument.F2.Filter,    Read.f2filter)
-        val LyotWheel = KeyRead(Tcc.Instrument.F2.LyotWheel, Read.f2lyotwheel)
-        val Disperser = KeyRead(Tcc.Instrument.F2.Disperser, Read.f2disperser)
+        val Fpu         = KeyRead(Tcc.Instrument.F2.Fpu,         Read.f2fpu)
+        val Filter      = KeyRead(Tcc.Instrument.F2.Filter,      Read.f2filter)
+        val LyotWheel   = KeyRead(Tcc.Instrument.F2.LyotWheel,   Read.f2lyotwheel)
+        val Disperser   = KeyRead(Tcc.Instrument.F2.Disperser,   Read.f2disperser)
+        val WindowCover = KeyRead(Tcc.Instrument.F2.WindowCover, Read.f2windowcover)
       }
     }
     object Calibration {

@@ -13,7 +13,8 @@ final case class F2Config(
   exposureTime:  Duration,
   filter:        F2Filter,
   lyotWheel:     F2LyotWheel,
-  disperser:     F2Disperser
+  disperser:     F2Disperser,
+  windowCover:   F2WindowCover
 ) extends InstrumentConfig
 
 // TODO: temporary, until all instruments are supported

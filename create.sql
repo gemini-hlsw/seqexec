@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.5.3
--- Dumped by pg_dump version 9.5.3
+-- Dumped from database version 9.5.4
+-- Dumped by pg_dump version 9.5.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -202,6 +202,20 @@ CREATE TABLE e_f2_lyot_wheel (
 
 
 ALTER TABLE e_f2_lyot_wheel OWNER TO postgres;
+
+--
+-- Name: e_f2_window_cover; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_f2_window_cover (
+    id identifier NOT NULL,
+    short_name character varying(20) NOT NULL,
+    long_name character varying(20) NOT NULL,
+    tcc_value character varying(20) NOT NULL
+);
+
+
+ALTER TABLE e_f2_window_cover OWNER TO postgres;
 
 --
 -- Name: e_gcal_filter; Type: TABLE; Schema: public; Owner: postgres
@@ -409,7 +423,7 @@ CREATE TABLE gem_user (
     first character varying(20) NOT NULL,
     last character varying(20) NOT NULL,
     md5 character(32) NOT NULL,
-    email character varying(40) NOT NULL,
+    email character varying(40),
     staff boolean DEFAULT false NOT NULL
 );
 
@@ -557,7 +571,8 @@ CREATE TABLE step_f2 (
     exposure_time integer NOT NULL,
     filter identifier NOT NULL,
     lyot_wheel identifier NOT NULL,
-    disperser identifier NOT NULL
+    disperser identifier NOT NULL,
+    window_cover identifier NOT NULL
 );
 
 
@@ -661,6 +676,16 @@ GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS unde
 GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)	GEMS_OVER
 HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)	H1
 HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)	H2
+\.
+
+
+--
+-- Data for Name: e_f2_window_cover; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_f2_window_cover (id, short_name, long_name, tcc_value) FROM stdin;
+Open	Open	Open	OPEN
+Close	Close	Close	CLOSE
 \.
 
 
@@ -772,7 +797,7 @@ COPY e_template (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
 --
 
 COPY gem_user (id, first, last, md5, email, staff) FROM stdin;
-root			                                	 	t
+tpolecat	Rob	Norris	72b302bf297a228a75730123efef7c41	rnorris@gemini.edu	f
 \.
 
 
@@ -848,7 +873,7 @@ COPY step_dark (index, observation_id) FROM stdin;
 -- Data for Name: step_f2; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser) FROM stdin;
+COPY step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser, window_cover) FROM stdin;
 \.
 
 
@@ -874,6 +899,14 @@ COPY step_science (index, observation_id, offset_p, offset_q) FROM stdin;
 
 ALTER TABLE ONLY e_f2_fpunit
     ADD CONSTRAINT e_f2_fpunit_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_f2_window_cover_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_f2_window_cover
+    ADD CONSTRAINT e_f2_window_cover_pkey PRIMARY KEY (id);
 
 
 --
@@ -1215,6 +1248,14 @@ ALTER TABLE ONLY step_f2
 
 
 --
+-- Name: step_f2_window_cover_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_f2
+    ADD CONSTRAINT step_f2_window_cover_fkey FOREIGN KEY (window_cover) REFERENCES e_f2_window_cover(id);
+
+
+--
 -- Name: step_gcal_gcal_lamp_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1261,7 +1302,7 @@ ALTER TABLE ONLY step_science
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
-GRANT ALL ON SCHEMA public TO rnorris;
+GRANT ALL ON SCHEMA public TO swalker;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
