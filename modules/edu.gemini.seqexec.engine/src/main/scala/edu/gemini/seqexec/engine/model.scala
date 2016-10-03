@@ -201,7 +201,6 @@ object Queue {
         )
       // New Step
       case -\/(\/-((exe, i))) => {
-        // head.mod(Sequence.cons((exe, i).left), q)
         executions.set(
           steps.mod(
             Step(i, NonEmptyList(exe, q.executions: _*)) :: _,
@@ -211,7 +210,7 @@ object Queue {
         )
       }
       // Modify current Step
-      case \/-(exe) => executions.mod(exe :: _, q)// head.mod(Sequence.cons(exe.right)((_: Sequence[A])), q)
+      case \/-(exe) => executions.mod(exe :: _, q)
     }
 
   /**
