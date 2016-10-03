@@ -4,119 +4,6 @@ import scalaz._
 import Scalaz._
 
 /**
- * This is the main state data type to be used by the `Engine`. This is what
- * gets modified whenever it needs to react to an Event.
- */
-case class QState(pending: Queue[Action],
-                  current: Current,
-                  done: Queue[Result],
-                  status: Status) {
-
-  def isEmpty: Boolean = pending.sequences.isEmpty && current.isEmpty
-}
-
-object QState {
-
-  val pending: QState @> Queue[Action] =
-    Lens.lensu((s, q) => s.copy(pending = q), _.pending)
-
-  val current: QState @> Current =
-    Lens.lensu((s, c) => s.copy(current = c), _.current)
-
-  val done: QState @> Queue[Result] =
-    Lens.lensu((s, q) => s.copy(done = q), _.done)
-
-  val status: QState @> Status =
-    Lens.lensu((s, st) => s.copy(status = st), _.status)
-
-  val empty: QState = QState(Queue.empty, Current.empty, Queue.empty, Status.Waiting)
-
-  /**
-    * Initialize a `QState` passing a `Queue` of `Action`s. This also takes care
-    * of making the first pending `Execution` `Current`.
-    */
-  def init(q: Queue[Action]): QState = pending.set(empty, q)
-
-  /**
-    * Given an index of a current `Action` it replaces such `Action` with the
-    * `Result` and returns the new modified `State`.
-    *
-    * If after marking the `Action`, all elements in `Current` are `Result`, it
-    * empties `Current` and moves the `Result` to the completed `Queue`
-    *
-    * If the index doesn't exist, the new `State` is returned unmodified.
-    */
-  def mark(i: Int)(r: Result)(qs: QState): QState =
-    current.mod(Current.mark(i)(r)(_), qs)
-
-  /**
-    * Returns a new `State` where the next pending `Execution` has been promoted
-    * to `Current` and `Current` is placed in the completed `Queue`. As a
-    * convenience it also returns the `Execution` with pending `Actions` just
-    * before making it `Current`.
-    *
-    * If the `Current` doesn't have all actions completed or there are no more
-    * pending `Execution`s it returns None.
-    */
-  def next(qs: QState): Option[QState] = cleanup(qs).flatMap(prime)
-
-  // None: current not empty
-  //       pending queue empty
-  def prime(qs: QState): Option[QState] =
-    if (qs.current.isEmpty)
-      Queue.uncons(qs.pending).map {
-        case (exe3, q) => QState(q, currentify(exe3), qs.done, qs.status)
-      }
-    else None
-
-  def cleanup(qs: QState): Option[QState] =
-    uncurrentify(qs.current).map(exe3 =>
-      QState(qs.pending, Current.empty, Queue.cons(exe3)(qs.done), qs.status)
-    )
-  /**
-    * Transform an *unconsed* pending `Execution` into `Current` in addition to
-    * returning the unwrapped `Execution`.
-    */
-  // TODO: Use same structure for `Current` and `Queue.Execution3`?
-  private def currentify(exe3: Queue.Execution3[Action]): Current = {
-
-    def vec(exe: Execution[Action]): Vector[Action \/ Result] = exe.map(_.left).toVector
-
-    exe3 match {
-      // New Sequence
-      case -\/(-\/((actions, seqid, stepid))) => Current(vec(actions), Some((seqid, stepid).left))
-      // New Step
-      case -\/(\/-((actions, stepid))) => Current(vec(actions), Some(stepid.right))
-      // Modify current Step
-      case \/-(actions) => Current(vec(actions), None)
-    }
-  }
-
-  /**
-    * Transform a `Current` into a completed `Execution` for *consing*. If there
-    * is any pending `Action` or no `Result`s in `Current` it returns None.
-    */
-  // TODO: Use same structure for `Current` and `Queue.Execution3`?
-  private def uncurrentify(current: Current): Option[Queue.Execution3[Result]] = {
-
-    val unvec: Option[Execution[Result]] =
-      if (current.ars.all(_.isRight)) current.results.toNel
-      else None
-
-    unvec.map(
-      exe => current.ctxt match {
-        // Modify current Step
-        case None => exe.right
-        // New Sequence
-        case Some(-\/((seqid, stepid))) => (exe, seqid, stepid).left.left
-        // New Step
-        case Some(\/-(stepid)) => (exe, stepid).right.left
-      }
-    )
-  }
-}
-
-/**
  * Flag to indicate whether the global execution is `Running` or `Waiting`.
  */
 sealed trait Status
@@ -152,7 +39,7 @@ object Step {
      st.executions.tail.toNel.map(Step(st.id, _))
     )
 
-  implicit val StepFunctor = new Functor[Step] {
+  implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
       Step(fa.id, fa.executions.map(_.map(f)))
   }
@@ -358,12 +245,141 @@ object Queue {
       }
     )
 
-  implicit val QueueFunctor = new Functor[Queue] {
+  // TODO: This violates Monoid laws, but after removing Queue.steps and //
+  // Queue.executions it should abide out-of-the-box.
+  implicit def queueMonoid[A]: Monoid[Queue[A]] = new Monoid[Queue[A]] {
+    def append(a: Queue[A], b: => Queue[A]): Queue[A] =
+      Queue(a.sequences ::: b.sequences, b.steps, b.executions)
+
+    val zero: Queue[A] = Queue(Nil, Nil, Nil)
+
+  }
+
+  implicit val queueFunctor = new Functor[Queue] {
     def map[A, B](fa: Queue[A])(f: A => B): Queue[B] =
       Queue(fa.sequences.map(_.map(f)),
             fa.steps.map(_.map(f)),
             fa.executions.map(_.map(f))
       )
+  }
+}
+
+/**
+ * This is the main state data type to be used by the `Engine`. This is what
+ * gets modified whenever it needs to react to an Event.
+ */
+case class QState(pending: Queue[Action],
+                  current: Current,
+                  done: Queue[Result],
+                  status: Status) {
+
+  def isEmpty: Boolean = pending.sequences.isEmpty && current.isEmpty
+
+  def output: Queue[Action \/ Result] =
+    // Type inference needs some help
+    // TODO: Reverse done Sequences? It depends on what's more convenient to the client
+    // XXX: Include Current execution
+    (done.map(_.right): Queue[Action \/ Result]) |+| pending.map(_.left)
+}
+
+object QState {
+
+  val pending: QState @> Queue[Action] =
+    Lens.lensu((s, q) => s.copy(pending = q), _.pending)
+
+  val current: QState @> Current =
+    Lens.lensu((s, c) => s.copy(current = c), _.current)
+
+  val done: QState @> Queue[Result] =
+    Lens.lensu((s, q) => s.copy(done = q), _.done)
+
+  val status: QState @> Status =
+    Lens.lensu((s, st) => s.copy(status = st), _.status)
+
+  val empty: QState = QState(Queue.empty, Current.empty, Queue.empty, Status.Waiting)
+
+  /**
+    * Initialize a `QState` passing a `Queue` of `Action`s. This also takes care
+    * of making the first pending `Execution` `Current`.
+    */
+  def init(q: Queue[Action]): QState = pending.set(empty, q)
+
+  /**
+    * Given an index of a current `Action` it replaces such `Action` with the
+    * `Result` and returns the new modified `State`.
+    *
+    * If after marking the `Action`, all elements in `Current` are `Result`, it
+    * empties `Current` and moves the `Result` to the completed `Queue`
+    *
+    * If the index doesn't exist, the new `State` is returned unmodified.
+    */
+  def mark(i: Int)(r: Result)(qs: QState): QState =
+    current.mod(Current.mark(i)(r)(_), qs)
+
+  /**
+    * Returns a new `State` where the next pending `Execution` has been promoted
+    * to `Current` and `Current` is placed in the completed `Queue`. As a
+    * convenience it also returns the `Execution` with pending `Actions` just
+    * before making it `Current`.
+    *
+    * If the `Current` doesn't have all actions completed or there are no more
+    * pending `Execution`s it returns None.
+    */
+  def next(qs: QState): Option[QState] = cleanup(qs).flatMap(prime)
+
+  // None: current not empty
+  //       pending queue empty
+  def prime(qs: QState): Option[QState] =
+    if (qs.current.isEmpty)
+      Queue.uncons(qs.pending).map {
+        case (exe3, q) => QState(q, currentify(exe3), qs.done, qs.status)
+      }
+    else None
+
+  def cleanup(qs: QState): Option[QState] =
+    uncurrentify(qs.current).map(exe3 =>
+      QState(qs.pending, Current.empty, Queue.cons(exe3)(qs.done), qs.status)
+    )
+  /**
+    * Transform an *unconsed* pending `Execution` into `Current` in addition to
+    * returning the unwrapped `Execution`.
+    */
+  // TODO: Use same structure for `Current` and `Queue.Execution3`?
+  private def currentify(exe3: Queue.Execution3[Action]): Current = {
+
+    def vec(exe: Execution[Action]): Vector[Action \/ Result] = exe.map(_.left).toVector
+
+    exe3 match {
+      // New Sequence
+      case -\/(-\/((actions, seqid, stepid))) => Current(vec(actions), Some((seqid, stepid).left))
+      // New Step
+      case -\/(\/-((actions, stepid))) => Current(vec(actions), Some(stepid.right))
+      // Modify current Step
+      case \/-(actions) => Current(vec(actions), None)
+    }
+  }
+
+  /**
+    * Transform a `Current` into a completed `Execution` for *consing*. If there
+    * is any pending `Action` or no `Result`s in `Current` it returns None.
+    */
+  // TODO: Use same structure for `Current` and `Queue.Execution3`?
+  private def uncurrentify(current: Current): Option[Queue.Execution3[Result]] = {
+
+    val unvec: Option[Execution[Result]] =
+      if (current.ars.all(_.isRight)) current.results.toNel
+      else None
+
+    unvec.map(
+      exe => current.ctxt match {
+        // Modify current Step
+        case None => exe.right
+        // New Sequence
+        case Some(-\/((seqid, stepid))) => (exe, seqid, stepid).left.left
+        // New Step
+        case Some(\/-(stepid)) => (exe, stepid).right.left
+      }
+    )
   }
 }
 
