@@ -69,75 +69,55 @@ object Commands {
   def apply(): Commands = new Commands {
 
     override def host(): CommandResult =
-      \/.right(CommandResponse(s"Default seq host set to ${ExecutorImpl.host().host} ${ExecutorImpl.host().port}"))
+      \/.right(CommandResponse(s"Default seq host set to ${ODBProxy.host().host} ${ODBProxy.host().port}"))
 
     override def host(peer: String): CommandResult =
       parseLoc(peer).flatMap { h =>
-        ExecutorImpl.host(h)
+        ODBProxy.host(h)
         host()
       }
 
     override def showCount(obsId: String): CommandResult =
       for {
         oid <- parseId(obsId)
-        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        seq <- ODBProxy.read(oid).leftMap(SeqexecFailureError.apply)
       } yield CommandResponse(s"$oid sequence has ${seq.size()} steps.")
 
     override def showStatic(obsId: String): CommandResult =
       for {
         oid <- parseId(obsId)
-        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        seq <- ODBProxy.read(oid).leftMap(SeqexecFailureError.apply)
       } yield CommandResponse(s"$oid Static Values", keys(seq, 0, seq.getStaticKeys), Nil)
 
     override def showStatic(obsId: String, system: String): CommandResult =
       for {
         oid <- parseId(obsId)
-        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        seq <- ODBProxy.read(oid).leftMap(SeqexecFailureError.apply)
         ks  = seq.getStaticKeys.filter(sysFilter(system))
       } yield CommandResponse(s"$oid Static Values ($system only)", keys(seq, 0, ks), Nil)
 
     override def showDynamic(obsId: String, step: String): CommandResult =
       for {
         oid <- parseId(obsId)
-        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        seq <- ODBProxy.read(oid).leftMap(SeqexecFailureError.apply)
         s   <- ifStepValid(oid, seq, step)
       } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(seq, s, seq.getIteratedKeys), Nil)
 
     override def showDynamic(obsId: String, step: String, system: String): CommandResult =
       for {
         oid <- parseId(obsId)
-        seq <- ExecutorImpl.read(oid).leftMap(SeqexecFailureError.apply)
+        seq <- ODBProxy.read(oid).leftMap(SeqexecFailureError.apply)
         s   <- ifStepValid(oid, seq, step)
         ks  = seq.getStaticKeys.filter(sysFilter(system))
       } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(seq, s, ks), Nil)
 
-    override def run(obsId: String): CommandResult =
-      for {
-        oid <- parseId(obsId)
-        _   <- ExecutorImpl.start(oid).leftMap(SeqexecFailureError.apply)
-      } yield CommandResponse(s"Sequence $obsId started.")
+    override def run(obsId: String): CommandResult = ???
 
-    override def stop(obsId: String): CommandResult = {
-      for {
-        oid <- parseId(obsId)
-        _   <- ExecutorImpl.stop(oid).leftMap(SeqexecFailureError.apply)
-      } yield CommandResponse(s"Stop requested for $obsId.")
-    }
+    override def stop(obsId: String): CommandResult = ???
 
-    override def continue(obsId: String): CommandResult =
-      for {
-        oid <- parseId(obsId)
-        _   <- ExecutorImpl.continue(oid).leftMap(SeqexecFailureError.apply)
-        r   <- \/.right(CommandResponse(s"Resume requested for $obsId."))
-      } yield r
+    override def continue(obsId: String): CommandResult = ???
 
-    override def state(obsId: String): CommandResult =
-      for {
-        oid <- parseId(obsId)
-        s   <- ExecutorImpl.state(oid).leftMap(SeqexecFailureError.apply)
-        d   = ExecutorImpl.stateDescription(s)
-        r   <- \/.right(CommandResponse(d._1, Nil, d._2))
-      } yield r
+    override def state(obsId: String): CommandResult = ???
 
     def seqValue(o: Object): String = o match {
       case s: SequenceableSpType => s.sequenceValue()

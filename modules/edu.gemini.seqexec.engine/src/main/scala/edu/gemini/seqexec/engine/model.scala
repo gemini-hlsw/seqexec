@@ -394,6 +394,6 @@ object Current {
 sealed trait Result
 
 object Result {
-  case object OK extends Result
-  case object Error extends Result
+  case class OK[R](r: R) extends Result
+  case class Error[E](e: E) extends Result
 }

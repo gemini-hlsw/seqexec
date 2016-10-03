@@ -28,13 +28,13 @@ object Event {
     * Events generated internally by the Engine.
     */
   sealed trait SystemEvent
-  case class Completed(i: Int) extends SystemEvent
-  case class Failed(i: Int) extends SystemEvent
+  case class Completed[R](i: Int, r: R) extends SystemEvent
+  case class Failed[E](i: Int, e: E) extends SystemEvent
   case object Executed extends SystemEvent
   case object Finished extends SystemEvent
 
-  def completed(i: Int): Event = EventSystem(Completed(i))
-  def failed(i: Int): Event = EventSystem(Failed(i))
+  def completed[R](i: Int, r: R): Event = EventSystem(Completed(i, r))
+  def failed[E](i: Int, e: E): Event = EventSystem(Failed(i, e))
   val executed: Event = EventSystem(Executed)
   val finished: Event = EventSystem(Finished)
 }
