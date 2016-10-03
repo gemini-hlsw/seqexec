@@ -423,7 +423,7 @@ CREATE TABLE gem_user (
     first character varying(20) NOT NULL,
     last character varying(20) NOT NULL,
     md5 character(32) NOT NULL,
-    email character varying(40),
+    email character varying(40) NOT NULL,
     staff boolean DEFAULT false NOT NULL
 );
 
@@ -797,7 +797,7 @@ COPY e_template (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
 --
 
 COPY gem_user (id, first, last, md5, email, staff) FROM stdin;
-tpolecat	Rob	Norris	72b302bf297a228a75730123efef7c41	rnorris@gemini.edu	f
+root			                                	 	t
 \.
 
 
