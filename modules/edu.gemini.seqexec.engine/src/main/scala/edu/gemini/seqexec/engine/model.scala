@@ -127,6 +127,111 @@ object Status {
 }
 
 /**
+  * A list of `Executions` grouped by observation.
+  */
+case class Step[A](id: Int, executions: NonEmptyList[Execution[A]])
+
+object Step {
+
+  def executions[A]: Step[A] @> NonEmptyList[Execution[A]] =
+    Lens.lensu((s, exes) => s.copy(executions = exes), _.executions)
+
+  def head[A]: Step[A] @> Execution[A] = executions >=> Lens.nelHeadLens
+
+  /**
+    * Adds a `Execution` to the front of a `Step`.
+    */
+  def cons[A](exe: Execution[A])(st: Step[A]): Step[A] = Step(st.id, exe <:: st.executions)
+
+  /**
+    * Return the next `Execution` and the remaining `Step` if there are more
+    * `Execution`s left.
+    */
+  def uncons[A](st: Step[A]): (Execution[A], Option[Step[A]]) =
+    (st.executions.head,
+     st.executions.tail.toNel.map(Step(st.id, _))
+    )
+
+  implicit val StepFunctor = new Functor[Step] {
+    def map[A, B](fa: Step[A])(f: A => B): Step[B] =
+      Step(fa.id, fa.executions.map(_.map(f)))
+  }
+}
+
+/**
+  * A list of Steps grouped by target and instrument.
+  */
+case class Sequence[A](
+  id: String,
+  steps: NonEmptyList[Step[A]],
+  // Unrooted executions
+  executions: List[Execution[A]]
+)
+
+object Sequence {
+  def steps[A]: Sequence[A] @> NonEmptyList[Step[A]] =
+    Lens.lensu((s, sts) => s.copy(steps = sts), _.steps)
+
+  // Next Step
+  def head[A]: Sequence[A] @> Step[A] = steps >=> Lens.nelHeadLens
+
+  /**
+    * Adds an `Execution` to a `Sequence`.
+    *
+    * `Execution` wrappers:
+    * - x \/ E: Adds it to the current `Step`.
+    * - E \/ x: Creates a new `Step` ands adds it in the front of the `Sequence`.
+    */
+  def cons[A](exe2: (Execution[A], Int) \/ Execution[A])(seq: Sequence[A]): Sequence[A] =
+    exe2 match {
+      // Create new Step with the Execution
+      case -\/((exe, sid)) =>
+        Sequence(
+          seq.id,
+          Step(sid, NonEmptyList(exe, seq.executions: _*)) <:: seq.steps,
+          Nil
+        )
+      // Add Execution to current Step
+      case \/-(exe) => Sequence(seq.id, seq.steps, exe :: seq.executions)
+    }
+
+  /**
+    * Returns the next `Execution` and the remaining of the `Sequence`.
+    *
+    * Execution wrappers:
+    *
+    * - x \/ (Execution, Sequence):
+    *
+    * Returns the next `Execution` and the remaining `Sequence` when there are
+    * more `Execution`s left in the current `Step`.
+    *
+    * - (Execution, Option[Sequence]) \/ x:
+    *
+    * Returns the next `Execution` and the remaining `Sequence` when there are
+    * no more `Execution`s in the current `Step`. If this was the last `Step` of
+    * the current `Sequence` it becomes `None`.
+    */
+  // TODO: Handle unrooted executions
+  def uncons[A](seq: Sequence[A]): (((Execution[A], Int), Option[Sequence[A]]) \/ (Execution[A], Sequence[A])) = {
+    val (exe, mstep) = Step.uncons(seq.steps.head)
+    mstep match {
+      // No more Executions in Step, remove Step
+      case None => (
+        (exe, seq.steps.head.id),
+        seq.steps.tail.toNel.map(Sequence(seq.id, _, seq.executions))
+      ).left
+      // More Executions in Step, remove Execution in Step
+      case Some(st) => (exe, head.set(seq, st)).right
+    }
+  }
+
+  implicit val SequenceFunctor = new Functor[Sequence] {
+    def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
+      Sequence(fa.id, fa.steps.map(_.map(f)), fa.executions.map(_.map(f)))
+  }
+}
+
+/**
   * A list of Sequences. The `Queue` could be empty of Sequences when waiting
   * for the addition of new ones.
   */
@@ -144,6 +249,7 @@ case class Queue[A](
 
 object Queue {
 
+  // TODO: Replace this with `Either3`
   type Execution3[A] = (Execution[A], String, Int) \/ (Execution[A], Int) \/ Execution[A]
 
   def empty[A]: Queue[A] = Queue(Nil, Nil, Nil)
@@ -251,101 +357,14 @@ object Queue {
         }
       }
     )
-}
 
-/**
-  * A list of Steps grouped by target and instrument.
-  */
-case class Sequence[A](
-  id: String,
-  steps: NonEmptyList[Step[A]],
-  // Unrooted executions
-  executions: List[Execution[A]]
-)
-
-object Sequence {
-  def steps[A]: Sequence[A] @> NonEmptyList[Step[A]] =
-    Lens.lensu((s, sts) => s.copy(steps = sts), _.steps)
-
-  // Next Step
-  def head[A]: Sequence[A] @> Step[A] = steps >=> Lens.nelHeadLens
-
-  /**
-    * Adds an `Execution` to a `Sequence`.
-    *
-    * `Execution` wrappers:
-    * - x \/ E: Adds it to the current `Step`.
-    * - E \/ x: Creates a new `Step` ands adds it in the front of the `Sequence`.
-    */
-  def cons[A](exe2: (Execution[A], Int) \/ Execution[A])(seq: Sequence[A]): Sequence[A] =
-    exe2 match {
-      // Create new Step with the Execution
-      case -\/((exe, sid)) =>
-        Sequence(
-          seq.id,
-          Step(sid, NonEmptyList(exe, seq.executions: _*)) <:: seq.steps,
-          Nil
-        )
-      // Add Execution to current Step
-      case \/-(exe) => Sequence(seq.id, seq.steps, exe :: seq.executions)
-    }
-
-  /**
-    * Returns the next `Execution` and the remaining of the `Sequence`.
-    *
-    * Execution wrappers:
-    *
-    * - x \/ (Execution, Sequence):
-    *
-    * Returns the next `Execution` and the remaining `Sequence` when there are
-    * more `Execution`s left in the current `Step`.
-    *
-    * - (Execution, Option[Sequence]) \/ x:
-    *
-    * Returns the next `Execution` and the remaining `Sequence` when there are
-    * no more `Execution`s in the current `Step`. If this was the last `Step` of
-    * the current `Sequence` it becomes `None`.
-    */
-  // TODO: Handle unrooted executions
-  def uncons[A](seq: Sequence[A]): (((Execution[A], Int), Option[Sequence[A]]) \/ (Execution[A], Sequence[A])) = {
-    val (exe, mstep) = Step.uncons(seq.steps.head)
-    mstep match {
-      // No more Executions in Step, remove Step
-      case None => (
-        (exe, seq.steps.head.id),
-        seq.steps.tail.toNel.map(Sequence(seq.id, _, seq.executions))
-      ).left
-      // More Executions in Step, remove Execution in Step
-      case Some(st) => (exe, head.set(seq, st)).right
-    }
+  implicit val QueueFunctor = new Functor[Queue] {
+    def map[A, B](fa: Queue[A])(f: A => B): Queue[B] =
+      Queue(fa.sequences.map(_.map(f)),
+            fa.steps.map(_.map(f)),
+            fa.executions.map(_.map(f))
+      )
   }
-}
-
-/**
-  * A list of `Executions` grouped by observation.
-  */
-case class Step[A](id: Int, executions: NonEmptyList[Execution[A]])
-
-object Step {
-
-  def executions[A]: Step[A] @> NonEmptyList[Execution[A]] =
-    Lens.lensu((s, exes) => s.copy(executions = exes), _.executions)
-
-  def head[A]: Step[A] @> Execution[A] = executions >=> Lens.nelHeadLens
-
-  /**
-    * Adds a `Execution` to the front of a `Step`.
-    */
-  def cons[A](exe: Execution[A])(st: Step[A]): Step[A] = Step(st.id, exe <:: st.executions)
-
-  /**
-    * Return the next `Execution` and the remaining `Step` if there are more
-    * `Execution`s left.
-    */
-  def uncons[A](st: Step[A]): (Execution[A], Option[Step[A]]) =
-    (st.executions.head,
-     st.executions.tail.toNel.map(Step(st.id, _))
-    )
 }
 
 /**
