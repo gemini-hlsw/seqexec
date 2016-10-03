@@ -13,7 +13,7 @@ object StepDao {
   def insert[I <: InstrumentConfig](oid: Observation.Id, index: Int, s: Step[I]): ConnectionIO[Int] =
     insertBaseSlice(oid, index, s.instrument, StepType.forStep(s)) *> {
       s match {
-        case BiasStep(_)       => insertBiasSlice(oid, index)       
+        case BiasStep(_)       => insertBiasSlice(oid, index)
         case DarkStep(_)       => insertDarkSlice(oid, index)
         case ScienceStep(_, t) => insertScienceSlice(oid, index, t)
         case GcalStep(_, g)    => insertGCalSlice(oid, index, g)
@@ -53,10 +53,10 @@ object StepDao {
     private def insertConfigSlice(oid: Observation.Id, index: Int, i: InstrumentConfig): ConnectionIO[Int] =
       i match {
 
-        case F2Config(fpu, mosPreimaging, exposureTime, filter, lyotWheel, disperser) =>
+        case F2Config(fpu, mosPreimaging, exposureTime, filter, lyotWheel, disperser, windowCover) =>
           sql"""
-            INSERT INTO step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser)
-            VALUES ($oid, $index, $fpu, $mosPreimaging, ${exposureTime.getSeconds}, $filter, $lyotWheel, $disperser)
+            INSERT INTO step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser, window_cover)
+            VALUES ($oid, $index, $fpu, $mosPreimaging, ${exposureTime.getSeconds}, $filter, $lyotWheel, $disperser, $windowCover)
           """.update.run
 
         case GenericConfig(i) => 0.point[ConnectionIO]
