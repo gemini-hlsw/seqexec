@@ -90,7 +90,7 @@ class HandlerSpec extends FlatSpec {
     assert(qs.pending.isEmpty)
   }
 
-  it should "be 1 done Sequence after execution" in {
+  it should "be 1 Sequence done after execution" in {
     val q = async.boundedQueue[Event](10)
     val qs = (
       q.enqueueOne(start) *>

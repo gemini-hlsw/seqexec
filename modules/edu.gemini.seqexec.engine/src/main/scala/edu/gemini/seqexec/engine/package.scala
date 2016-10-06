@@ -55,7 +55,7 @@ package object engine {
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
   def next(q: EventQueue): Engine[QState] =
-    (gets(QState.next(_)).flatMap {
+    (gets(_.next).flatMap {
        // No more Executions left
        case None => send(q)(finished)
          // Execution completed, execute next actions
@@ -73,8 +73,8 @@ package object engine {
     def act(t: (Action, Int)): Task[Unit] = t match {
       case (action, i) =>
         action.flatMap {
-        case Result.OK(r) => q.enqueueOne(completed(i, r))
-        case Result.Error(e) => q.enqueueOne(failed(i, e))
+          case Result.OK(r) => q.enqueueOne(completed(i, r))
+          case Result.Error(e) => q.enqueueOne(failed(i, e))
         }
     }
 
@@ -97,7 +97,7 @@ package object engine {
     * When the index doesn't exit it does nothing.
     */
   def complete[R](i: Int, r: R): Engine[QState] =
-    modify(QState.mark(i)(Result.OK(r))(_)) *> get
+    modify(_.mark(i)(Result.OK(r))) *> get
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
@@ -105,7 +105,7 @@ package object engine {
     * action.
     */
   def fail[E](q: EventQueue)(i: Int, e: E): Engine[QState] =
-    modify(QState.mark(i)(Result.Error(e))(_)) *> switch(q)(Status.Waiting)
+    modify(_.mark(i)(Result.Error(e))) *> switch(q)(Status.Waiting)
 
   /**
     * Ask for the current Engine `Status`.
