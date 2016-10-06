@@ -43,19 +43,19 @@ case class Current(ars: List[Action \/ Result]) {
     if (ars.all(_.isRight)) Some(results)
     else None
 
-}
-
-object Current {
-
-  val empty: Current = Current(Nil)
-
   /**
     * Set the `Result` for the given `Action` index in `Current`.
     *
     * If the index doesn't exist, `Current` is returned unmodified.
     */
-  def mark(i: Int)(r: Result)(c: Current): Current =
-    Current(PLens.listNthPLens(i).setOr(c.ars, r.right, c.ars))
+  def mark(i: Int)(r: Result): Current =
+    Current(PLens.listNthPLens(i).setOr(ars, r.right, ars))
+
+}
+
+object Current {
+
+  val empty: Current = Current(Nil)
 
   def currentify(exe: Execution[Action]): Option[Current] =
     if (!exe.isEmpty) Some(Current(exe.map(_.left)))
@@ -161,57 +161,10 @@ object Queue {
 }
 
 /**
- * This is the main state data type to be used by the `Engine`. This is what
- * gets modified whenever it needs to react to an Event.
- */
-case class QState(zipper: Zipper.QueueZ, status: Status) {
-
-  def isEmpty: Boolean = pending.sequences.isEmpty && current.isEmpty
-
-  val current: Current = zipper.focus.focus.focus
-
-  val pending: Queue[Action] = zipper.pending
-
-  val done: Queue[Result] = zipper.done
-
-  def output: Queue[Action \/ Result] = ???
-    // Type inference needs some help
-    // TODO: Reverse done Sequences? It depends on what's more convenient to the client
-    // XXX: Include Current execution
-    // (done.map(_.right): Queue[Action \/ Result]) |+| pending.map(_.left)
-}
-
-object QState {
-
-  private val zipper: QState @> Zipper.QueueZ =
-    Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
-
-  val current: QState @> Current =
-    zipper >=> Zipper.QueueZ.current
-
-  val status: QState @> Status =
-     Lens.lensu((s, st) => s.copy(status = st), _.status)
-
-  /**
-    * Initialize a `QState` passing a `Queue` of `Action`s. This also takes care
-    * of making the first pending `Execution` `Current`.
-    */
-  // TODO: Make this function `apply`?
-  def init(q: Queue[Action]): QState =
-    // TODO: Unsafe!! Enforce nonempty Queue as parameter
-    QState(Zipper.QueueZ.currentify(q).get, Status.Waiting)
-
-  /**
-    * Given an index of a current `Action` it replaces such `Action` with the
-    * `Result` and returns the new modified `State`.
-    *
-    * If after marking the `Action`, all elements in `Current` are `Result`, it
-    * empties `Current` and moves the `Result` to the completed `Queue`
-    *
-    * If the index doesn't exist, the new `State` is returned unmodified.
-    */
-  def mark(i: Int)(r: Result)(qs: QState): QState =
-    current.mod(Current.mark(i)(r)(_), qs)
+  * This is the main state data type to be used by the `Engine`. This is what
+  * gets modified whenever it needs to react to an Event.
+  */
+sealed trait QState {
 
   /**
     * Returns a new `State` where the next pending `Execution` has been promoted
@@ -222,8 +175,103 @@ object QState {
     * If the `Current` doesn't have all actions completed or there are no more
     * pending `Execution`s it returns None.
     */
-  def next(qs: QState): Option[QState] =
-    qs.zipper.next.map(QState(_, qs.status))
+  val next: Option[QState]
+
+  val status: Status
+
+  val pending: Queue[Action]
+
+  val current: Current
+
+  val done: Queue[Result]
+
+  /**
+    * Given an index of a current `Action` it replaces such `Action` with the
+    * `Result` and returns the new modified `State`.
+    *
+    * If after marking the `Action`, all elements in `Current` are `Result`, it
+    * empties `Current` and moves the `Result` to the completed `Queue`
+    *
+    * If the index doesn't exist, the new `State` is returned unmodified.
+    */
+  def mark(i: Int)(r: Result): QState
+
+}
+
+case class QStateI(pending: Queue[Action], status: Status) extends QState { self =>
+
+  val next: Option[QState] =
+    Zipper.QueueZ.currentify(pending).map(QStateZ(_, status))
+
+  val current: Current = Current.empty
+
+  val done: Queue[Result] = Queue(Nil)
+
+  def mark(i: Int)(r: Result): QState = self
+
+}
+
+case class QStateZ(zipper: Zipper.QueueZ, status: Status) extends QState { self =>
+
+  val next: Option[QState] = zipper.next match {
+    // Last execution
+    case None => zipper.uncurrentify.map(QStateF(_, status))
+    case Some(x) => Some(QStateZ(x, status))
+  }
+
+  val current: Current = zipper.focus.focus.focus
+
+  val pending: Queue[Action] = zipper.pending
+
+  val done: Queue[Result] = zipper.done
+
+  def mark(i: Int)(r: Result): QState = {
+
+    val zipper: QStateZ @> Zipper.QueueZ =
+      Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
+
+    val current: QStateZ @> Current = zipper >=> Zipper.QueueZ.current
+
+    current.mod(_.mark(i)(r), self)
+
+  }
+
+}
+
+case class QStateF(done: Queue[Result], status: Status) extends QState { self =>
+
+  val next: Option[QState] = None
+
+  val current: Current = Current.empty
+
+  val pending: Queue[Action] = Queue(Nil)
+
+  def mark(i: Int)(r: Result): QState = self
+
+}
+
+object QState {
+
+  val status: QState @> Status =
+    // `QState` doesn't provide `.copy`
+    Lens.lensu(
+      (qs, s) => (
+        qs match {
+          // TODO: Isn't there a better way to write this?
+          case QStateI(st, _) => QStateI(st, s)
+          case QStateZ(st, _) => QStateZ(st, s)
+          case QStateF(st, _) => QStateF(st, s)
+        }
+      ),
+      _.status
+    )
+
+  /**
+    * Initialize a `QStateZ` passing a `Queue` of `Action`s. This also takes care
+    * of making the first pending `Execution` `Current`.
+    */
+  // TODO: Make this function `apply`?
+  def init(q: Queue[Action]): QState = QStateI(q, Status.Waiting)
 
 }
 

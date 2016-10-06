@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.engine
 
 import scalaz._
-import Scalaz._
 
 object Zipper {
 
@@ -88,17 +87,6 @@ object Zipper {
             (seqPending, q) <- pending.uncons
             curr <- SequenceZ.currentify(seqPending)
           } yield QueueZ(q, curr, done.cons(seqDone))
-          // XXX: This stacksoverflow
-          // focus.uncurrentify.flatMap(
-          //   seqDone => pending.uncons match {
-          //     case None =>
-          //       Some(QueueZ(Queue(Nil), focus, done.cons(seqDone)))
-          //     case Some((seqPending, q)) =>
-          //       SequenceZ.currentify(seqPending).map(
-          //         curr => QueueZ(q, curr, done.cons(seqDone))
-          //       )
-          //   }
-          // )
         // Current Sequence ongoing
         case Some(seqz) => Some(QueueZ(pending, seqz, done))
       }
