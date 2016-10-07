@@ -6,7 +6,7 @@ import java.util.logging.Logger
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
-import edu.gemini.seqexec.server.{ExecutorImpl, SeqexecFailure}
+import edu.gemini.seqexec.server.{ODBProxy, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
@@ -79,12 +79,12 @@ class SeqexecUIApiRoutes(auth: AuthenticationService) extends BooPicklers {
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
   val protectedServices: HttpService = tokenAuthService { GZip { HttpService {
-      case req @ GET -> Root / "seqexec" / "events"         =>
-        // Stream seqexec events to clients and a ping
-        val user = userInRequest(req)
-
-        WS(Exchange(pingProcess merge (Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
-          ExecutorImpl.sequenceEvents.map(v => Binary(trimmedArray(v)))), scalaz.stream.Process.empty))
+//      case req @ GET -> Root / "seqexec" / "events"         =>
+//        // Stream seqexec events to clients and a ping
+//        val user = userInRequest(req)
+//
+//        WS(Exchange(pingProcess merge (Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+//          ExecutorImpl.sequenceEvents.map(v => Binary(trimmedArray(v)))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout"        =>
         // Clean the auth cookie
@@ -97,7 +97,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService) extends BooPicklers {
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
             obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
-            s     <- ExecutorImpl.read(obsId)
+            s     <- ODBProxy.read(obsId)
           } yield (obsId, s)
 
           r match {

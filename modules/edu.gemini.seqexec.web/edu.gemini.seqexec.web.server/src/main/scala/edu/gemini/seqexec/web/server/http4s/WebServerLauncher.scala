@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.server.http4s
 import java.io.File
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.server.ExecutorImpl
+import edu.gemini.seqexec.server.ODBProxy
 import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.spModel.core.Peer
@@ -84,7 +84,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     * Configures the Seqexec executor
     */
   def seqexecExecutor: Kleisli[Task, SeqexecConfiguration, Unit] = Kleisli { conf =>
-    Task.delay(ExecutorImpl.host(new Peer(conf.odbHost, 8443, null)))
+    Task.delay(ODBProxy.host(new Peer(conf.odbHost, 8443, null)))
   }
 
   /**
