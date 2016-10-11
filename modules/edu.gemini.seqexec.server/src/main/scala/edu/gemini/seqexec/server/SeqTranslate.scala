@@ -1,16 +1,13 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
-import edu.gemini.seqexec.server.SeqexecFailure.{Execution, UnrecognizedInstrument}
+import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
-import scalaz.\/
-import scalaz.NonEmptyList._
 import scalaz._
 import Scalaz._
-import scalaz.syntax.TraverseOps
 
 /**
   * Created by jluhrs on 9/14/16.
@@ -23,6 +20,7 @@ object SeqTranslate {
   }
 
   def step(dhsClient: DhsClient)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
+
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
       case GmosSouth.name => Some(GmosSouth)
@@ -31,24 +29,26 @@ object SeqTranslate {
     }
 
     instrument.map { a =>
-      val systems = nels(Tcs(TcsControllerEpics), a)
+      val systems = List(Tcs(TcsControllerEpics), a)
       // TODO Find a proper way to inject the subsystems
-      Step[Action](i, nels(systems.map(x => (x.configure(config))), nels((a.observe(config)(dhsClient))))).right
+      Step[Action](
+        i,
+        List(
+          // TODO: implicit function doesn't work here, why?
+          systems.map(x => toAction(x.configure(config))),
+          List((a.observe(config)(dhsClient)))
+        )
+      ).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[Step[Action]])
   }
 
-  def sequence(dhsClient: DhsClient)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] =
-  {
-    def nelOfConfigs(l : List[Config]): SeqexecFailure \/ NonEmptyList[Config] =
-      l.toNel.map(_.right).getOrElse(SeqexecFailure.Execution("No steps found in sequence.").left)
+  def sequence(dhsClient: DhsClient)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
+  val configs = sequenceConfig.getAllSteps.toList
 
-    def steps(l : NonEmptyList[Config]): SeqexecFailure \/ NonEmptyList[Step[Action]] =
-      l.zipWithIndex.traverseU{ case (c, i) => step(dhsClient)(i, c) }
+  val steps = configs.zipWithIndex.traverseU {
+    case (c, i) => step(dhsClient)(i, c)
+  }
 
-    val a = sequenceConfig.getAllSteps.toList
-
-    val b = nelOfConfigs(a).flatMap(steps)
-
-    b.map(Sequence[Action](obsId, _, List()))
+  steps.map(Sequence[Action](obsId, _))
   }
 }
