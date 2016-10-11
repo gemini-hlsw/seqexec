@@ -6,30 +6,9 @@ import Scalaz._
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[A](id: Int, executions: List[Execution[A]]) {
-
-  def isEmpty: Boolean = executions.isEmpty
-
-  /**
-    * Adds a `Execution` to the front of a `Step`.
-    */
-  def cons(exe: Execution[A]): Step[A] = Step(id, exe :: executions)
-
-  /**
-    * Return the next `Execution` and the remaining `Step` if there are more
-    * `Execution`s left.
-    */
-  def uncons: Option[(Execution[A], Step[A])] =
-    executions.headOption.map((_, Step(id, executions.tail)))
-
-}
+case class Step[A](id: Int, executions: List[Execution[A]])
 
 object Step {
-
-  def empty[A](id: Int): Step[A] = Step(id, Nil)
-
-  def executions[A]: Step[A] @> List[Execution[A]] =
-    Lens.lensu((s, exes) => s.copy(executions = exes), _.executions)
 
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
@@ -39,31 +18,40 @@ object Step {
 }
 
 case class StepZ(
-  pending: Step[Action],
+  id: Int,
+  pending: List[Execution[Action]],
   focus: Current,
-  done: Step[Result]
+  done: List[Execution[Result]]
 ) {
 
-  val next: Option[StepZ] = for {
-    exeDone <- focus.uncurrentify
-    (exePending, step) <- pending.uncons
-    curr <- Current.currentify(exePending)
-  } yield StepZ(step, curr, done.cons(exeDone))
-
+  val next: Option[StepZ] =
+    pending match {
+      case exep :: exeps => for {
+        // TODO: Applicative syntax?
+        curr <- Current.currentify(exep)
+        exed <- focus.uncurrentify
+      } yield StepZ(id, exeps, curr, exed :: done)
+      case Nil => None
+    }
 
   val uncurrentify: Option[Step[Result]] =
-    if (pending.isEmpty) focus.uncurrentify.map(done.cons)
+    if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, x :: done))
     else None
 
 }
 
 object StepZ {
 
-  def currentify(step0: Step[Action]): Option[StepZ] = for {
-    (exe, step1) <- step0.uncons
-    curr <- Current.currentify(exe)
-  } yield StepZ(step1, curr, Step.empty(step0.id))
+  def currentify(step: Step[Action]): Option[StepZ] =
+    step.executions match {
+      case exe :: exes =>
+        Current.currentify(exe).map(
+          StepZ(step.id, exes, _, Nil)
+        )
+      case Nil => None
+    }
 
   val current: StepZ @> Current =
     Lens.lensu((s, f) => s.copy(focus = f), _.focus)
+
 }

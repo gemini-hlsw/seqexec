@@ -6,16 +6,7 @@ import Scalaz._
 /**
   * A list of Steps grouped by target and instrument.
   */
-case class Sequence[A](id: String, steps: List[Step[A]]) {
-
-  def isEmpty: Boolean = steps.isEmpty
-
-  def cons(step: Step[A]): Sequence[A] = Sequence(id, step :: steps)
-
-  def uncons: Option[(Step[A], Sequence[A])] =
-    steps.headOption.map((_, Sequence(id, steps.tail)))
-
-}
+case class Sequence[A](id: String, steps: List[Step[A]])
 
 object Sequence {
 
@@ -31,36 +22,45 @@ object Sequence {
 
 }
 
-
 case class SequenceZ(
-  pending: Sequence[Action],
+  id: String,
+  pending: List[Step[Action]],
   focus: StepZ,
-  done: Sequence[Result]
+  done: List[Step[Result]]
 ) {
 
   val next: Option[SequenceZ] =
     focus.next match {
       // Step completed
-      case None => for {
-        stepDone <- focus.uncurrentify
-        (stepPending, seq) <- pending.uncons
-        curr <- StepZ.currentify(stepPending)
-      } yield SequenceZ(seq, curr, done.cons(stepDone))
+      case None =>
+        pending match {
+          case stepp :: stepps => for {
+            // TODO: Applicative style?
+            curr  <- StepZ.currentify(stepp)
+            stepd <- focus.uncurrentify
+          } yield SequenceZ(id, stepps, curr, stepd :: done)
+          case Nil => None
+        }
       // Current step ongoing
-      case Some(stz) => Some(SequenceZ(pending, stz, done))
+      case Some(stz) => Some(SequenceZ(id, pending, stz, done))
     }
 
   val uncurrentify: Option[Sequence[Result]] =
-    if (pending.isEmpty) focus.uncurrentify.map(done.cons)
+    if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, x :: done))
     else None
+
 }
 
 object SequenceZ {
 
-  def currentify(seq0: Sequence[Action]): Option[SequenceZ] = for {
-    (step, seq1) <- seq0.uncons
-    curr <- StepZ.currentify(step)
-  } yield SequenceZ(seq1, curr, Sequence.empty(seq0.id))
+  def currentify(seq: Sequence[Action]): Option[SequenceZ] =
+    seq.steps match {
+      case step :: steps =>
+        StepZ.currentify(step).map(
+          SequenceZ(seq.id, steps, _, Nil)
+        )
+      case Nil => None
+    }
 
   private val focus: SequenceZ @> StepZ =
     Lens.lensu((s, f) => s.copy(focus = f), _.focus)

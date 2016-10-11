@@ -7,16 +7,7 @@ import Scalaz._
   * A list of Sequences. The `Queue` could be empty of Sequences when waiting
   * for the addition of new ones.
   */
-case class Queue[A](sequences: List[Sequence[A]]) {
-
-  def isEmpty: Boolean = sequences.isEmpty
-
-  def cons(seq: Sequence[A]): Queue[A] = Queue(seq :: sequences)
-
-  def uncons: Option[(Sequence[A], Queue[A])] =
-    sequences.headOption.map((_, Queue(sequences.tail)))
-
-}
+case class Queue[A](sequences: List[Sequence[A]])
 
 object Queue {
 
@@ -38,36 +29,42 @@ object Queue {
 }
 
 case class QueueZ(
-  pending: Queue[Action],
+  pending: List[Sequence[Action]],
   focus: SequenceZ,
-  done: Queue[Result]
+  done: List[Sequence[Result]]
 ) {
 
   val next: Option[QueueZ] =
     focus.next match {
       // Sequence completed
       case None =>
-        for {
-          seqDone <- focus.uncurrentify
-          (seqPending, q) <- pending.uncons
-          curr <- SequenceZ.currentify(seqPending)
-        } yield QueueZ(q, curr, done.cons(seqDone))
+        pending match {
+          case seqp :: seqps => for {
+            curr <- SequenceZ.currentify(seqp)
+            seqd <- focus.uncurrentify
+          } yield QueueZ(seqps, curr, seqd :: done)
+          case Nil => None
+        }
       // Current Sequence ongoing
       case Some(seqz) => Some(QueueZ(pending, seqz, done))
     }
 
   val uncurrentify: Option[Queue[Result]] =
-    if (pending.isEmpty) focus.uncurrentify.map(done.cons)
+    if (pending.isEmpty) focus.uncurrentify.map(x => Queue(x :: done))
     else None
 
 }
 
 object QueueZ {
 
-  def currentify(queue0: Queue[Action]): Option[QueueZ] = for {
-      (seq, queue1) <- queue0.uncons
-      curr <- SequenceZ.currentify(seq)
-    } yield QueueZ(queue1, curr, Queue(Nil))
+  def currentify(queue: Queue[Action]): Option[QueueZ] =
+    queue.sequences match {
+      case seq :: seqs =>
+        SequenceZ.currentify(seq).map(
+          QueueZ(seqs, _, Nil)
+        )
+      case Nil => None
+    }
 
   private val focus: QueueZ @> SequenceZ =
     Lens.lensu((q, f) => q.copy(focus = f), _.focus)
@@ -75,4 +72,3 @@ object QueueZ {
   val current: QueueZ @> Current = focus >=> SequenceZ.current
 
 }
-

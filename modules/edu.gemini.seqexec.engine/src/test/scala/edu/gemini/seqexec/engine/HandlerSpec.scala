@@ -96,7 +96,7 @@ class HandlerSpec extends FlatSpec {
       q.enqueueOne(start) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
         handler(q).take(12).run.exec(qs1)).unsafePerformSync
-    assert(qs.done.sequences.length == 1)
+    assert(qs.done.length == 1)
   }
 
   it should "Print execution" in {

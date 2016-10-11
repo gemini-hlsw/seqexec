@@ -29,9 +29,7 @@ case class Current(ars: List[Action \/ Result]) {
 
   }
 
-  val uncurrentify: Option[Execution[Result]] =
-    if (ars.all(_.isRight)) Some(results)
-    else None
+  val uncurrentify: Option[Execution[Result]] = ars.all(_.isRight).option(results)
 
   /**
     * Set the `Result` for the given `Action` index in `Current`.
@@ -48,8 +46,7 @@ object Current {
   val empty: Current = Current(Nil)
 
   def currentify(exe: Execution[Action]): Option[Current] =
-    if (!exe.isEmpty) Some(Current(exe.map(_.left)))
-    else None
+    (!exe.isEmpty).option(Current(exe.map(_.left)))
 
 }
 

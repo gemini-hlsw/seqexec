@@ -30,11 +30,11 @@ sealed trait QState {
 
   val status: Status
 
-  val pending: Queue[Action]
+  val pending: List[Sequence[Action]]
 
   val current: Current
 
-  val done: Queue[Result]
+  val done: List[Sequence[Result]]
 
   /**
     * Given an index of a current `Action` it replaces such `Action` with the
@@ -49,14 +49,16 @@ sealed trait QState {
 
 }
 
-case class QStateI(pending: Queue[Action], status: Status) extends QState { self =>
+case class QStateI(queue: Queue[Action], status: Status) extends QState { self =>
 
   val next: Option[QState] =
-    QueueZ.currentify(pending).map(QStateZ(_, status))
+    QueueZ.currentify(queue).map(QStateZ(_, status))
+
+  val pending: List[Sequence[Action]] = queue.sequences
 
   val current: Current = Current.empty
 
-  val done: Queue[Result] = Queue(Nil)
+  val done: List[Sequence[Result]] = Nil
 
   def mark(i: Int)(r: Result): QState = self
 
@@ -72,9 +74,9 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
 
   val current: Current = zipper.focus.focus.focus
 
-  val pending: Queue[Action] = zipper.pending
+  val pending: List[Sequence[Action]] = zipper.pending
 
-  val done: Queue[Result] = zipper.done
+  val done: List[Sequence[Result]] = zipper.done
 
   def mark(i: Int)(r: Result): QState = {
 
@@ -89,13 +91,15 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
 
 }
 
-case class QStateF(done: Queue[Result], status: Status) extends QState { self =>
+case class QStateF(queue: Queue[Result], status: Status) extends QState { self =>
 
   val next: Option[QState] = None
 
   val current: Current = Current.empty
 
-  val pending: Queue[Action] = Queue(Nil)
+  val pending: List[Sequence[Action]] = Nil
+
+  val done: List[Sequence[Result]] = queue.sequences
 
   def mark(i: Int)(r: Result): QState = self
 
