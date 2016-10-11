@@ -9,27 +9,27 @@ import Scalaz._
   * the `Queue` for proper insertion into the completed `Queue` when all the
   * `Execution`s are done.
   */
-case class Current(ars: List[Action \/ Result]) {
+case class Current(execution: Execution[Action \/ Result]) {
 
-  def isEmpty: Boolean = ars.isEmpty
+  val isEmpty: Boolean = execution.isEmpty
 
-  def actions: List[Action] = {
+  val actions: List[Action] = {
 
     def lefts[L, R](xs: List[L \/ R]): List[L] = xs.collect { case -\/(l) => l }
 
-    lefts(ars.toList)
+    lefts(execution.toList)
 
   }
 
-  def results: List[Result] = {
+  val results: List[Result] = {
 
     def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
 
-    rights(ars.toList)
+    rights(execution.toList)
 
   }
 
-  val uncurrentify: Option[Execution[Result]] = ars.all(_.isRight).option(results)
+  val uncurrentify: Option[Execution[Result]] = execution.all(_.isRight).option(results)
 
   /**
     * Set the `Result` for the given `Action` index in `Current`.
@@ -37,7 +37,7 @@ case class Current(ars: List[Action \/ Result]) {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result): Current =
-    Current(PLens.listNthPLens(i).setOr(ars, r.right, ars))
+    Current(PLens.listNthPLens(i).setOr(execution, r.right, execution))
 
 }
 

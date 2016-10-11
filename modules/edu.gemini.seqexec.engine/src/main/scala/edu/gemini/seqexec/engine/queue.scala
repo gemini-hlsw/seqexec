@@ -7,7 +7,7 @@ import Scalaz._
   * A list of Sequences. The `Queue` could be empty of Sequences when waiting
   * for the addition of new ones.
   */
-case class Queue[A](sequences: List[Sequence[A]])
+case class Queue[+A](sequences: List[Sequence[A]])
 
 object Queue {
 
@@ -53,6 +53,12 @@ case class QueueZ(
     if (pending.isEmpty) focus.uncurrentify.map(x => Queue(x :: done))
     else None
 
+  val toQueue: Queue[Action \/ Result] =
+    Queue(
+      done.map(_.map(_.right)) ++
+      List(focus.toSequence) ++
+      pending.map(_.map(_.left))
+    )
 }
 
 object QueueZ {

@@ -6,7 +6,7 @@ import Scalaz._
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[A](id: Int, executions: List[Execution[A]])
+case class Step[+A](id: Int, executions: List[Execution[A]])
 
 object Step {
 
@@ -37,6 +37,15 @@ case class StepZ(
   val uncurrentify: Option[Step[Result]] =
     if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, x :: done))
     else None
+
+  val toStep: Step[Action \/ Result] =
+    Step(
+      id,
+      // TODO: Functor composition?
+      done.map(_.map(_.right)) ++
+      List(focus.execution) ++
+      pending.map(_.map(_.left))
+    )
 
 }
 

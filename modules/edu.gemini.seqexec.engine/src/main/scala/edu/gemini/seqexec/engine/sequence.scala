@@ -6,7 +6,7 @@ import Scalaz._
 /**
   * A list of Steps grouped by target and instrument.
   */
-case class Sequence[A](id: String, steps: List[Step[A]])
+case class Sequence[+A](id: String, steps: List[Step[A]])
 
 object Sequence {
 
@@ -49,6 +49,14 @@ case class SequenceZ(
     if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, x :: done))
     else None
 
+  val toSequence: Sequence[Action \/ Result] =
+    Sequence(
+      id,
+      // TODO: Functor composition?
+      done.map(_.map(_.right)) ++
+      List(focus.toStep) ++
+      pending.map(_.map(_.left))
+    )
 }
 
 object SequenceZ {
