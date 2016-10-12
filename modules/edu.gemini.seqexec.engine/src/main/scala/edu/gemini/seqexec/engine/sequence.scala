@@ -15,9 +15,26 @@ object Sequence {
   def steps[A]: Sequence[A] @> List[Step[A]] =
     Lens.lensu((s, sts) => s.copy(steps = sts), _.steps)
 
+  def status(seq: Sequence[Action \/ Result]): Status =
+    if (seq.steps.isEmpty || seq.all(_.isLeft)) Status.Waiting
+    else if (seq.all(_.isRight)) Status.Completed
+    else Status.Running
+
+
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
       Sequence(fa.id, fa.steps.map(_.map(f)))
+  }
+
+  // TODO: Proof Foldable laws
+  implicit val stepFoldable = new Foldable[Sequence] {
+    def foldMap[A, B](fa: Sequence[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
+      // TODO: Foldable composition?
+      fa.steps.foldMap(_.foldMap(f))
+
+    def foldRight[A, B](fa: Sequence[A], z: => B)(f: (A, => B) => B): B =
+      fa.steps.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
+
   }
 
 }

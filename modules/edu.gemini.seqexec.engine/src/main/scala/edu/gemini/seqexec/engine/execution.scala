@@ -29,6 +29,11 @@ case class Current(execution: Execution[Action \/ Result]) {
 
   }
 
+  def status: Status =
+    if (execution.isEmpty || execution.all(_.isLeft)) Status.Waiting
+    else if (execution.all(_.isRight)) Status.Completed
+    else Status.Running
+
   val uncurrentify: Option[Execution[Result]] = execution.all(_.isRight).option(results)
 
   /**

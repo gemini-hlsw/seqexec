@@ -10,9 +10,25 @@ case class Step[+A](id: Int, executions: List[Execution[A]])
 
 object Step {
 
+  def status(step: Step[Action \/ Result]): Status =
+    if (step.executions.isEmpty || step.all(_.isLeft)) Status.Waiting
+    else if (step.all(_.isRight)) Status.Completed
+    else Status.Running
+
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
       Step(fa.id, fa.executions.map(_.map(f)))
+  }
+
+  // TODO: Proof Foldable laws
+  implicit val stepFoldable = new Foldable[Step] {
+    def foldMap[A, B](fa: Step[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
+      // TODO: Foldable composition?
+      fa.executions.foldMap(_.foldMap(f))
+
+    def foldRight[A, B](fa: Step[A], z: => B)(f: (A, => B) => B): B =
+      fa.executions.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
+
   }
 
 }

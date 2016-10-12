@@ -79,8 +79,9 @@ package object engine {
     }
 
     status.flatMap {
-      case Status.Waiting => unit
-      case Status.Running => (
+      case Status.Waiting   => unit
+      case Status.Completed => unit
+      case Status.Running   => (
         gets(_.current.actions).flatMap(
           actions => Nondeterminism[Task].gatherUnordered(
             actions.zipWithIndex.map(act)

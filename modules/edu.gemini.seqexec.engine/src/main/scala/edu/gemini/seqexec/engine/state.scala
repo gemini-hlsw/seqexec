@@ -8,8 +8,9 @@ import scalaz._
 sealed trait Status
 
 object Status {
-  case object Running extends Status
-  case object Waiting extends Status
+  case object Waiting   extends Status
+  case object Completed extends Status
+  case object Running   extends Status
 }
 /**
   * This is the main state data type to be used by the `Engine`. This is what
