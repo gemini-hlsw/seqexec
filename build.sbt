@@ -12,6 +12,12 @@ lazy val commonSettings = Seq(
   libraryDependencies += "org.scala-lang" %  "scala-reflect" % scalaVersion.value
 )
 
+lazy val flywaySettings = Seq(
+  flywayUrl             := "jdbc:postgresql:gem",
+  flywayUser            := "postgres",
+  flywayLocations       := Seq("filesystem:sql")
+)
+
 // N.B. `describe` is not a project yet. It doesn't quite compile. Will need some rejiggering.
 
 lazy val gem = project
@@ -81,3 +87,8 @@ lazy val service = project
   .in(file("modules/service"))
   .dependsOn(core, db)
   .settings(commonSettings)
+
+lazy val sql = project
+  .in(file("sql"))
+  .settings(flywaySettings)
+
