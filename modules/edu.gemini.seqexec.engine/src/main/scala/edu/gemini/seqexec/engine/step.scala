@@ -10,6 +10,10 @@ case class Step[+A](id: Int, executions: List[Execution[A]])
 
 object Step {
 
+  /**
+    * Calculate the `Step` `Status` based on the underlying `Action`s.
+    *
+    */
   def status(step: Step[Action \/ Result]): Status =
     if (step.executions.isEmpty || step.all(_.isLeft)) Status.Waiting
     else if (step.all(_.isRight)) Status.Completed
@@ -33,6 +37,10 @@ object Step {
 
 }
 
+/**
+  * Step Zipper. This structure is optimized for the actual `Step` execution.
+  *
+  */
 case class StepZ(
   id: Int,
   pending: List[Execution[Action]],
@@ -40,6 +48,13 @@ case class StepZ(
   done: List[Execution[Result]]
 ) {
 
+  /**
+    * Adds the `Current` `Execution` to the list of completed `Execution`s and
+    * makes the next pending `Execution` the `Current` one.
+    *
+    * If there are still `Action`s that have not finished in `Current` or if
+    * there are no more pending `Execution`s it returns `None`.
+    */
   val next: Option[StepZ] =
     pending match {
       case exep :: exeps => for {
@@ -50,10 +65,19 @@ case class StepZ(
       case Nil => None
     }
 
+  /**
+    * Obtain the resulting `Step` only if all `Execution`s have been completed.
+    * This is a special way of *unzipping* a `StepZ`.
+    *
+    */
   val uncurrentify: Option[Step[Result]] =
     if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, x :: done))
     else None
 
+  /**
+    * Unzip a `StepZ`. This creates a single `Step` with either completed
+    * `Exection`s or pending `Execution`s.
+    */
   val toStep: Step[Action \/ Result] =
     Step(
       id,
@@ -67,6 +91,11 @@ case class StepZ(
 
 object StepZ {
 
+  /**
+    * Make a `StepZ` from a `Step` only if all the `Execution`s in the `Step` are
+    * pending. This is a special way of *zipping* a `Step`.
+    *
+    */
   def currentify(step: Step[Action]): Option[StepZ] =
     step.executions match {
       case exe :: exes =>

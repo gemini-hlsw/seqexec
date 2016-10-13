@@ -13,19 +13,18 @@ object Status {
   case object Running   extends Status
 }
 /**
-  * This is the main state data type to be used by the `Engine`. This is what
-  * gets modified whenever it needs to react to an Event.
+  * This is the top level state exposed by the `Engine`. This is what gets
+  * generated whenever it needs to react to an `Event`.
   */
 sealed trait QState {
 
   /**
-    * Returns a new `State` where the next pending `Execution` has been promoted
-    * to `Current` and `Current` is placed in the completed `Queue`. As a
-    * convenience it also returns the `Execution` with pending `Actions` just
-    * before making it `Current`.
+    * Returns a new `State` where the next pending `Sequence` is been made the
+    * current `Sequence` under execution and the previous current `Sequence` is
+    * placed in the completed `Queue`.
     *
-    * If the `Current` doesn't have all actions completed or there are no more
-    * pending `Execution`s it returns None.
+    * If the current `Sequence` has `Step`s not completed or there are no more
+    * pending `Seqeunce`s it returns `None`.
     */
   val next: Option[QState]
 
@@ -33,6 +32,9 @@ sealed trait QState {
 
   val pending: List[Sequence[Action]]
 
+  /**
+    * Current Execution
+    */
   val current: Current
 
   val done: List[Sequence[Result]]
@@ -41,15 +43,17 @@ sealed trait QState {
     * Given an index of a current `Action` it replaces such `Action` with the
     * `Result` and returns the new modified `State`.
     *
-    * If after marking the `Action`, all elements in `Current` are `Result`, it
-    * empties `Current` and moves the `Result` to the completed `Queue`
-    *
     * If the index doesn't exist, the new `State` is returned unmodified.
     */
   def mark(i: Int)(r: Result): QState
 
 }
 
+/**
+  * Initial `State`. This doesn't have any `Sequence` under execution, there are
+  * only pending `Step`s.
+  *
+  */
 case class QStateI(queue: Queue[Action], status: Status) extends QState { self =>
 
   val next: Option[QState] =
@@ -65,6 +69,10 @@ case class QStateI(queue: Queue[Action], status: Status) extends QState { self =
 
 }
 
+/**
+  * This is the `State` in Zipper mode, which means is under execution.
+  *
+  */
 case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
 
   val next: Option[QState] = zipper.next match {
@@ -73,7 +81,18 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
     case Some(x) => Some(QStateZ(x, status))
   }
 
-  val current: Current = zipper.focus.focus.focus
+  /**
+    * Current Execution
+    */
+  val current: Current =
+    // Sequence
+    zipper
+      // Seqeunce
+      .focus
+      // Step
+      .focus
+      // Execution
+      .focus
 
   val pending: List[Sequence[Action]] = zipper.pending
 
@@ -92,6 +111,11 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
 
 }
 
+/**
+  * Final `State`. This doesn't have any `Sequence` under execution, there are
+  * only completed `Step`s.
+  *
+  */
 case class QStateF(queue: Queue[Result], status: Status) extends QState { self =>
 
   val next: Option[QState] = None
@@ -123,8 +147,7 @@ object QState {
     )
 
   /**
-    * Initialize a `QStateZ` passing a `Queue` of `Action`s. This also takes care
-    * of making the first pending `Execution` `Current`.
+    * Initialize a `State` passing a `Queue` of pending `Sequence`s.
     */
   // TODO: Make this function `apply`?
   def init(q: Queue[Action]): QState = QStateI(q, Status.Waiting)

@@ -4,10 +4,9 @@ import scalaz._
 import Scalaz._
 
 /**
-  * This structure holds the `Execution` currently under execution. It carries
-  * information about which `Action`s have been completed and the position in
-  * the `Queue` for proper insertion into the completed `Queue` when all the
-  * `Execution`s are done.
+  * This structure holds the current `Execution` under execution. It carries
+  * information about which `Action`s have been completed.
+  *
   */
 case class Current(execution: Execution[Action \/ Result]) {
 
@@ -29,11 +28,19 @@ case class Current(execution: Execution[Action \/ Result]) {
 
   }
 
+  /**
+    * Calculate `Execution` `Status` based on the underlying `Action`s.
+    *
+    */
   def status: Status =
     if (execution.isEmpty || execution.all(_.isLeft)) Status.Waiting
     else if (execution.all(_.isRight)) Status.Completed
     else Status.Running
 
+  /**
+    * Obtain the resulting `Execution` only if all actions have been completed.
+    *
+    */
   val uncurrentify: Option[Execution[Result]] = execution.all(_.isRight).option(results)
 
   /**
@@ -50,6 +57,11 @@ object Current {
 
   val empty: Current = Current(Nil)
 
+  /**
+    * Make an `Execution` `Current` only if all the `Action`s in the execution
+    * are pending.
+    *
+    */
   def currentify(exe: Execution[Action]): Option[Current] =
     (!exe.isEmpty).option(Current(exe.map(_.left)))
 

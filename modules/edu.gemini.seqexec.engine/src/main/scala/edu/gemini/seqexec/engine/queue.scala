@@ -4,8 +4,7 @@ import scalaz._
 import Scalaz._
 
 /**
-  * A list of Sequences. The `Queue` could be empty of Sequences when waiting
-  * for the addition of new ones.
+  * A list of `Sequence`s.
   */
 case class Queue[+A](sequences: List[Sequence[A]])
 
@@ -28,12 +27,25 @@ object Queue {
 
 }
 
+/**
+  * Queue Zipper. This structure is optimized for the actual `Queue`
+  * execution.
+  *
+  */
 case class QueueZ(
   pending: List[Sequence[Action]],
   focus: SequenceZ,
   done: List[Sequence[Result]]
 ) {
 
+  /**
+    * Runs the next execution. If the current `Sequence` is completed it adds
+    * the `SequenceZ` under focus to the list of completed `Sequence`s and makes
+    * the next pending `Sequence` the current one.
+    *
+    * If there are still `Step`s that have not finished in the current
+    * `Sequence` or if there are no more pending `Seqeunce`s it returns `None`.
+    */
   val next: Option[QueueZ] =
     focus.next match {
       // Sequence completed
@@ -49,10 +61,19 @@ case class QueueZ(
       case Some(seqz) => Some(QueueZ(pending, seqz, done))
     }
 
+  /**
+    * Obtain the `Queue` results only if all `Step`s have been completed.
+    * This is a special way of *unzipping* a `SequenceZ`.
+    *
+    */
   val uncurrentify: Option[Queue[Result]] =
     if (pending.isEmpty) focus.uncurrentify.map(x => Queue(x :: done))
     else None
 
+  /**
+    * Unzip `QueueZ`. This creates a single `Sequence` with either completed
+    * `Step`s or pending `Step`s.
+    */
   val toQueue: Queue[Action \/ Result] =
     Queue(
       done.map(_.map(_.right)) ++
@@ -63,6 +84,11 @@ case class QueueZ(
 
 object QueueZ {
 
+  /**
+    * Make a `QueueZ` from a `Queue` only if all the `Sequence`s in the
+    * `Queue` are pending. This is a special way of *zipping* a `Queue`.
+    *
+    */
   def currentify(queue: Queue[Action]): Option[QueueZ] =
     queue.sequences match {
       case seq :: seqs =>
