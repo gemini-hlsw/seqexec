@@ -25,7 +25,7 @@ object Handler {
       case (Failed(i, e)) => log("Output: Action failed") *> fail(q)(i, e)
       case Executed => log("Output: Execution completed, launching next execution") *> next(q)
       // TODO: Closing to facilitate testing, in reality it shouldn't close
-      case Finished => log("Output: Finished") *> close(q)
+      case Finished => log("Output: Finished") *> switch(q)(Status.Completed) *> close(q)
     }
 
     receive(q) >>= (

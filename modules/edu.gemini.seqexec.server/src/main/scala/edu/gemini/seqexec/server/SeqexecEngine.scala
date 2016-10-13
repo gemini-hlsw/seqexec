@@ -45,12 +45,13 @@ object SeqexecEngine {
     object Running extends StepState
   }
 
-  trait ActionStatus
+  sealed trait ActionStatus
   object ActionStatus {
-    object Pending
-    object Completed
-    case class Running(progress: Double)
+    case object Pending extends ActionStatus
+    case object Completed extends ActionStatus
+    case class Running(progress: Double) extends ActionStatus
   }
+
 
   abstract class Step {
     val config: StepConfig
@@ -71,9 +72,9 @@ object SeqexecEngine {
 
   sealed trait SequenceState
   object SequenceState {
-    object Completed
-    object Running
-    object Idle
+    case object Completed extends SequenceState
+    case object Running   extends SequenceState
+    case object Idle      extends SequenceState
   }
 
   case class SequenceView (
@@ -81,6 +82,54 @@ object SeqexecEngine {
     steps: List[Step],
     willStopIn: Option[Int]
   )
+
+  object SequenceView {
+
+    import edu.gemini.seqexec.engine
+
+    // TODO: Better name and move it to `engine`
+    type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
+    type StepAR = engine.Step[engine.Action \/ engine.Result]
+
+    def engineView(seq: SequenceAR): SequenceView =
+      // TODO: Implement willStopIn
+      SequenceView(engineStatus(seq), engineSteps(seq), None)
+
+    private def engineStatus(seq: SequenceAR): SequenceState =
+      engine.Sequence.status(seq) match {
+          case engine.Status.Waiting   => SequenceState.Idle
+          case engine.Status.Completed => SequenceState.Completed
+          case engine.Status.Running   => SequenceState.Running
+        }
+
+    private def engineSteps(seq: SequenceAR): List[Step] = {
+
+      def engineStatus(step: StepAR): StepState =
+        engine.Step.status(step) match {
+          case engine.Status.Waiting   => StepState.Pending
+          case engine.Status.Completed => StepState.Completed
+          case engine.Status.Running   => StepState.Running
+        }
+
+      def engineStep(step: StepAR): Step =
+        StandardStep(
+          // TODO: Add configuration parameter to Engine Step
+          Map.empty,
+          engineStatus(step),
+          // TODO: Implement breakpoints at Engine level
+          false,
+          // TODO: Implement skipping at Engine level
+          false,
+          Map.empty,
+          // TODO: Implement standard step at Engine level
+          ActionStatus.Pending
+        )
+
+      seq.steps.map(engineStep)
+    }
+
+
+  }
 
   // Log message types
   type Time = java.time.Instant
