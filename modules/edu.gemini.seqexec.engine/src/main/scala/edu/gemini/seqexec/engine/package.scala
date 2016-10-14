@@ -26,6 +26,8 @@ package object engine {
     * without interruption. A *sequential* `Execution` can be represented with
     * an `Execution` with a single `Action`.
     */
+  // TODO: This should be a `NonEmptyList`. `Current.results`, `Current.actions`
+  // would still need to be plain `List`s.
   type Execution[A] = List[A]
 
   // Engine proper
@@ -58,7 +60,7 @@ package object engine {
   def next(q: EventQueue): Engine[QState] =
     (gets(_.next).flatMap {
        // No more Executions left
-       case None => send(q)(finished)
+       case None     => send(q)(finished)
          // Execution completed, execute next actions
        case Some(qs) => put(qs) *> execute(q)
      }) *> get
@@ -74,7 +76,7 @@ package object engine {
     def act(t: (Action, Int)): Task[Unit] = t match {
       case (action, i) =>
         action.flatMap {
-          case Result.OK(r) => q.enqueueOne(completed(i, r))
+          case Result.OK(r)    => q.enqueueOne(completed(i, r))
           case Result.Error(e) => q.enqueueOne(failed(i, e))
         }
     }
@@ -157,7 +159,7 @@ package object engine {
   // Without it's not possible to use `Engine` as a scalaz-stream process effects.
   implicit val engineInstance: Catchable[Engine] =
     new Catchable[Engine] {
-      def attempt[A](a: Engine[A]): Engine[Throwable \/ A] = a >>= (
+      def attempt[A](a: Engine[A]): Engine[Throwable \/ A] = a.flatMap(
         x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[EngineStateT]
       )
       def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[EngineStateT]

@@ -13,19 +13,13 @@ case class Current(execution: Execution[Action \/ Result]) {
   val isEmpty: Boolean = execution.isEmpty
 
   val actions: List[Action] = {
-
     def lefts[L, R](xs: List[L \/ R]): List[L] = xs.collect { case -\/(l) => l }
-
     lefts(execution.toList)
-
   }
 
   val results: List[Result] = {
-
     def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
-
     rights(execution.toList)
-
   }
 
   /**
@@ -41,7 +35,8 @@ case class Current(execution: Execution[Action \/ Result]) {
     * Obtain the resulting `Execution` only if all actions have been completed.
     *
     */
-  val uncurrentify: Option[Execution[Result]] = execution.all(_.isRight).option(results)
+  val uncurrentify: Option[Execution[Result]] =
+    execution.all(_.isRight).option(results)
 
   /**
     * Set the `Result` for the given `Action` index in `Current`.
@@ -50,7 +45,6 @@ case class Current(execution: Execution[Action \/ Result]) {
     */
   def mark(i: Int)(r: Result): Current =
     Current(PLens.listNthPLens(i).setOr(execution, r.right, execution))
-
 }
 
 object Current {
@@ -63,8 +57,7 @@ object Current {
     *
     */
   def currentify(exe: Execution[Action]): Option[Current] =
-    (!exe.isEmpty).option(Current(exe.map(_.left)))
-
+    (exe.nonEmpty).option(Current(exe.map(_.left)))
 }
 
 /**

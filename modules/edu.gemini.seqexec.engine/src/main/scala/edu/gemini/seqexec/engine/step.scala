@@ -32,9 +32,7 @@ object Step {
 
     def foldRight[A, B](fa: Step[A], z: => B)(f: (A, => B) => B): B =
       fa.executions.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
-
   }
-
 }
 
 /**
@@ -57,12 +55,12 @@ case class StepZ(
     */
   val next: Option[StepZ] =
     pending match {
+      case Nil           => None
       case exep :: exeps => for {
         // TODO: Applicative syntax?
         curr <- Current.currentify(exep)
         exed <- focus.uncurrentify
       } yield StepZ(id, exeps, curr, exed :: done)
-      case Nil => None
     }
 
   /**
@@ -86,7 +84,6 @@ case class StepZ(
       List(focus.execution) ++
       pending.map(_.map(_.left))
     )
-
 }
 
 object StepZ {
@@ -98,14 +95,13 @@ object StepZ {
     */
   def currentify(step: Step[Action]): Option[StepZ] =
     step.executions match {
+      case Nil         => None
       case exe :: exes =>
         Current.currentify(exe).map(
           StepZ(step.id, exes, _, Nil)
         )
-      case Nil => None
     }
 
   val current: StepZ @> Current =
     Lens.lensu((s, f) => s.copy(focus = f), _.focus)
-
 }

@@ -53,7 +53,6 @@ sealed trait QState {
     * or pending `Sequence`s.
     */
   val toQueue: Queue[Action \/ Result]
-
 }
 
 /**
@@ -75,7 +74,6 @@ case class QStateI(queue: Queue[Action], status: Status) extends QState { self =
   def mark(i: Int)(r: Result): QState = self
 
   val toQueue: Queue[Action \/ Result] = queue.map(_.left)
-
 }
 
 /**
@@ -86,7 +84,7 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
 
   val next: Option[QState] = zipper.next match {
     // Last execution
-    case None => zipper.uncurrentify.map(QStateF(_, status))
+    case None    => zipper.uncurrentify.map(QStateF(_, status))
     case Some(x) => Some(QStateZ(x, status))
   }
 
@@ -115,7 +113,6 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
     val current: QStateZ @> Current = zipper >=> QueueZ.current
 
     current.mod(_.mark(i)(r), self)
-
   }
 
   val toQueue: Queue[Action \/ Result] =
@@ -124,7 +121,6 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
       List(zipper.focus.toSequence) ++
       pending.map(_.map(_.left))
     )
-
 }
 
 /**
@@ -145,7 +141,6 @@ case class QStateF(queue: Queue[Result], status: Status) extends QState { self =
   def mark(i: Int)(r: Result): QState = self
 
   val toQueue: Queue[Action \/ Result] = queue.map(_.right)
-
 }
 
 object QState {
@@ -169,5 +164,4 @@ object QState {
     */
   // TODO: Make this function `apply`?
   def init(q: Queue[Action]): QState = QStateI(q, Status.Waiting)
-
 }

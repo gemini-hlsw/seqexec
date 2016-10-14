@@ -24,7 +24,6 @@ object Queue {
     def map[A, B](fa: Queue[A])(f: A => B): Queue[B] =
       Queue(fa.sequences.map(_.map(f)))
   }
-
 }
 
 /**
@@ -49,13 +48,13 @@ case class QueueZ(
   val next: Option[QueueZ] =
     focus.next match {
       // Sequence completed
-      case None =>
+      case None       =>
         pending match {
+          case Nil           => None
           case seqp :: seqps => for {
             curr <- SequenceZ.currentify(seqp)
             seqd <- focus.uncurrentify
           } yield QueueZ(seqps, curr, seqd :: done)
-          case Nil => None
         }
       // Current Sequence ongoing
       case Some(seqz) => Some(QueueZ(pending, seqz, done))
@@ -91,16 +90,15 @@ object QueueZ {
     */
   def currentify(queue: Queue[Action]): Option[QueueZ] =
     queue.sequences match {
+      case Nil         => None
       case seq :: seqs =>
         SequenceZ.currentify(seq).map(
           QueueZ(seqs, _, Nil)
         )
-      case Nil => None
     }
 
   private val focus: QueueZ @> SequenceZ =
     Lens.lensu((q, f) => q.copy(focus = f), _.focus)
 
   val current: QueueZ @> Current = focus >=> SequenceZ.current
-
 }

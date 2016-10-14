@@ -34,7 +34,6 @@ object Sequence {
 
     def foldRight[A, B](fa: Sequence[A], z: => B)(f: (A, => B) => B): B =
       fa.steps.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
-
   }
 
 }
@@ -62,14 +61,14 @@ case class SequenceZ(
   val next: Option[SequenceZ] =
     focus.next match {
       // Step completed
-      case None =>
+      case None      =>
         pending match {
+          case Nil             => None
           case stepp :: stepps => for {
             // TODO: Applicative style?
             curr  <- StepZ.currentify(stepp)
             stepd <- focus.uncurrentify
           } yield SequenceZ(id, stepps, curr, stepd :: done)
-          case Nil => None
         }
       // Current step ongoing
       case Some(stz) => Some(SequenceZ(id, pending, stz, done))
@@ -107,16 +106,15 @@ object SequenceZ {
     */
   def currentify(seq: Sequence[Action]): Option[SequenceZ] =
     seq.steps match {
+      case Nil           => None
       case step :: steps =>
         StepZ.currentify(step).map(
           SequenceZ(seq.id, steps, _, Nil)
         )
-      case Nil => None
     }
 
   private val focus: SequenceZ @> StepZ =
     Lens.lensu((s, f) => s.copy(focus = f), _.focus)
 
   val current: SequenceZ @> Current = focus >=> StepZ.current
-
 }
