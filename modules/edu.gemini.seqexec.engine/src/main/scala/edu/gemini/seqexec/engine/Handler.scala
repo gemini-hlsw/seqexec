@@ -14,11 +14,9 @@ object Handler {
 
     def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
       case Start              =>
-        log("Output: Started") *>
-        switch(q)(Status.Running)
+        log("Output: Started") *> switch(q)(Status.Running)
       case Pause              =>
-        log("Output: Paused") *>
-        switch(q)(Status.Waiting)
+        log("Output: Paused") *> switch(q)(Status.Waiting)
       case AddExecution(pend) =>
         log("Output: Adding Pending Execution") // TODO: Implement handler
       case Poll               =>
@@ -29,19 +27,14 @@ object Handler {
 
     def handleSystemEvent(se: SystemEvent): Engine[Unit] = se match {
       case (Completed(i, r)) =>
-        log("Output: Action completed") *>
-        complete(i, r)
+        log("Output: Action completed") *> complete(i, r)
       case (Failed(i, e))    =>
-        log("Output: Action failed") *>
-        fail(q)(i, e)
+        log("Output: Action failed") *> fail(q)(i, e)
       case Executed          =>
-        log("Output: Execution completed, launching next execution") *>
-        next(q)
+        log("Output: Execution completed, launching next execution") *> next(q)
       // TODO: Closing to facilitate testing, in reality it shouldn't close
       case Finished          =>
-        log("Output: Finished") *>
-        switch(q)(Status.Completed) *>
-        close(q)
+        log("Output: Finished") *> switch(q)(Status.Completed) *> close(q)
     }
 
     receive(q).flatMap(
@@ -49,8 +42,7 @@ object Handler {
         (ev match {
            case EventUser(ue) => handleUserEvent(ue)
            case EventSystem(se) => handleSystemEvent(se)
-         }
-        ) *> get
+         }) *> get
       )
     )
   }

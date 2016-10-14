@@ -46,9 +46,8 @@ package object engine {
     * `Running` `Status`.
     */
   def switch(q: EventQueue)(st: Status): Engine[Unit] =
-    modify(QState.status.set(_, st)) *>
     // TODO: Make Status an Equal instance
-    whenM (st == Status.Running) (execute(q))
+    modify(QState.status.set(_, st)) *> whenM (st == Status.Running) (execute(q))
 
   /**
     * Adds the current Execution` to the completed `Queue`, makes the next

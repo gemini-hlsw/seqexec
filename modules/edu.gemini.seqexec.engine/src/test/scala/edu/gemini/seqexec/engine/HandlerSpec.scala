@@ -76,8 +76,7 @@ class HandlerSpec extends FlatSpec {
 
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
-    val qs = (q.enqueueOne(start) *>
-                    handler(q).take(1).run.exec(qs1)).unsafePerformSync
+    val qs = (q.enqueueOne(start) *> handler(q).take(1).run.exec(qs1)).unsafePerformSync
     assert(qs.status === Status.Running)
   }
 
