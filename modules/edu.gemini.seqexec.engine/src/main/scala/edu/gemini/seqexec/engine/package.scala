@@ -45,11 +45,10 @@ package object engine {
     * It also takes care of initiating the execution when transitioning to
     * `Running` `Status`.
     */
-  def switch(q: EventQueue)(st: Status): Engine[QState] =
+  def switch(q: EventQueue)(st: Status): Engine[Unit] =
     modify(QState.status.set(_, st)) *>
     // TODO: Make Status an Equal instance
-    whenM (st == Status.Running) (execute(q)) *>
-    get
+    whenM (st == Status.Running) (execute(q))
 
   /**
     * Adds the current Execution` to the completed `Queue`, makes the next
@@ -57,13 +56,13 @@ package object engine {
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  def next(q: EventQueue): Engine[QState] =
-    (gets(_.next).flatMap {
-       // No more Executions left
-       case None     => send(q)(finished)
-         // Execution completed, execute next actions
-       case Some(qs) => put(qs) *> execute(q)
-     }) *> get
+  def next(q: EventQueue): Engine[Unit] =
+    gets(_.next).flatMap {
+      // No more Executions left
+      case None     => send(q)(finished)
+      // Execution completed, execute next actions
+      case Some(qs) => put(qs) *> execute(q)
+    }
 
   /**
     * Checks the `Status` is `Running` and executes all actions in the `Current`
@@ -100,15 +99,14 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete[R](i: Int, r: R): Engine[QState] =
-    modify(_.mark(i)(Result.OK(r))) *> get
+  def complete[R](i: Int, r: R): Engine[Unit] = modify(_.mark(i)(Result.OK(r)))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail[E](q: EventQueue)(i: Int, e: E): Engine[QState] =
+  def fail[E](q: EventQueue)(i: Int, e: E): Engine[Unit] =
     modify(_.mark(i)(Result.Error(e))) *> switch(q)(Status.Waiting)
 
   /**
@@ -120,12 +118,11 @@ package object engine {
     * Log something and return the `State`.
     */
   // XXX: Proper Java logging
-  def log(msg: String): Engine[QState] = pure(println(msg)) *> get
+  def log(msg: String): Engine[Unit] = pure(println(msg))
 
   /** Terminates the `Engine` returning the final `State`.
     */
-  def close(queue: EventQueue): Engine[QState] =
-    queue.close.liftM[EngineStateT] *> get
+  def close(queue: EventQueue): Engine[Unit] = queue.close.liftM[EngineStateT]
 
   /**
     * Enqueue `Event` in the Engine.
@@ -143,7 +140,7 @@ package object engine {
 
   private val unit: Engine[Unit] = pure(Unit)
 
-  private val get: Engine[QState] =
+  val get: Engine[QState] =
     MonadState[Engine, QState].get
 
   private def gets[A](f: (QState) => A): Engine[A] =
@@ -180,5 +177,4 @@ package object engine {
     */
   def hoistEngineSink[O](s: Sink[Task, O]): Sink[Engine, O] =
     hoistEngine(s).map(_.map(_.liftM[EngineStateT]))
-
 }

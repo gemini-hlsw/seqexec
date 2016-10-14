@@ -12,7 +12,7 @@ object Handler {
     */
   def handler(q: EventQueue): Process[Engine, QState] = {
 
-    def handleUserEvent(ue: UserEvent): Engine[QState] = ue match {
+    def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
       case Start              =>
         log("Output: Started") *>
         switch(q)(Status.Running)
@@ -27,7 +27,7 @@ object Handler {
         log("Bye") *> close(q)
     }
 
-    def handleSystemEvent(se: SystemEvent): Engine[QState] = se match {
+    def handleSystemEvent(se: SystemEvent): Engine[Unit] = se match {
       case (Completed(i, r)) =>
         log("Output: Action completed") *>
         complete(i, r)
@@ -46,10 +46,11 @@ object Handler {
 
     receive(q).flatMap(
       ev => Process.eval(
-        ev match {
-          case EventUser(ue) => handleUserEvent(ue)
-          case EventSystem(se) => handleSystemEvent(se)
-        }
+        (ev match {
+           case EventUser(ue) => handleUserEvent(ue)
+           case EventSystem(se) => handleSystemEvent(se)
+         }
+        ) *> get
       )
     )
   }
