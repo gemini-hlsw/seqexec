@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.engine
 
 import scalaz._
+import Scalaz._
 
 /**
  * Flag to indicate whether the global execution is `Running` or `Waiting`.
@@ -47,6 +48,12 @@ sealed trait QState {
     */
   def mark(i: Int)(r: Result): QState
 
+  /**
+    * Unzip `State`. This creates a single `Queue` with either completed `Sequence`s
+    * or pending `Sequence`s.
+    */
+  val toQueue: Queue[Action \/ Result]
+
 }
 
 /**
@@ -66,6 +73,8 @@ case class QStateI(queue: Queue[Action], status: Status) extends QState { self =
   val done: List[Sequence[Result]] = Nil
 
   def mark(i: Int)(r: Result): QState = self
+
+  val toQueue: Queue[Action \/ Result] = queue.map(_.left)
 
 }
 
@@ -109,6 +118,13 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
 
   }
 
+  val toQueue: Queue[Action \/ Result] =
+    Queue(
+      done.map(_.map(_.right)) ++
+      List(zipper.focus.toSequence) ++
+      pending.map(_.map(_.left))
+    )
+
 }
 
 /**
@@ -127,6 +143,8 @@ case class QStateF(queue: Queue[Result], status: Status) extends QState { self =
   val done: List[Sequence[Result]] = queue.sequences
 
   def mark(i: Int)(r: Result): QState = self
+
+  val toQueue: Queue[Action \/ Result] = queue.map(_.right)
 
 }
 

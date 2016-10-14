@@ -28,7 +28,7 @@ object Handler {
       case Finished => log("Output: Finished") *> switch(q)(Status.Completed) *> close(q)
     }
 
-    receive(q) >>= (
+    receive(q).flatMap(
       ev => Process.eval(
         ev match {
           case EventUser(ue) => handleUserEvent(ue)

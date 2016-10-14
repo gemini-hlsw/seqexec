@@ -88,14 +88,18 @@ object SeqexecEngine {
     import edu.gemini.seqexec.engine
 
     // TODO: Better name and move it to `engine`
+    type QueueAR = engine.Queue[engine.Action \/ engine.Result]
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
     type StepAR = engine.Step[engine.Action \/ engine.Result]
 
-    def engineView(seq: SequenceAR): SequenceView =
-      // TODO: Implement willStopIn
-      SequenceView(engineStatus(seq), engineSteps(seq), None)
+    def process(q: engine.EventQueue): Process[engine.Engine, List[SequenceView]] =
+      engine.Handler.handler(q).map(_.toQueue.sequences.map(viewSequence))
 
-    private def engineStatus(seq: SequenceAR): SequenceState =
+    def viewSequence(seq: SequenceAR): SequenceView =
+      // TODO: Implement willStopIn
+      SequenceView(statusSequence(seq), engineSteps(seq), None)
+
+    private def statusSequence(seq: SequenceAR): SequenceState =
       engine.Sequence.status(seq) match {
           case engine.Status.Waiting   => SequenceState.Idle
           case engine.Status.Completed => SequenceState.Completed
@@ -104,18 +108,18 @@ object SeqexecEngine {
 
     private def engineSteps(seq: SequenceAR): List[Step] = {
 
-      def engineStatus(step: StepAR): StepState =
+      def statusStep(step: StepAR): StepState =
         engine.Step.status(step) match {
           case engine.Status.Waiting   => StepState.Pending
           case engine.Status.Completed => StepState.Completed
           case engine.Status.Running   => StepState.Running
         }
 
-      def engineStep(step: StepAR): Step =
+      def viewStep(step: StepAR): Step =
         StandardStep(
           // TODO: Add configuration parameter to Engine Step
           Map.empty,
-          engineStatus(step),
+          statusStep(step),
           // TODO: Implement breakpoints at Engine level
           false,
           // TODO: Implement skipping at Engine level
@@ -125,7 +129,8 @@ object SeqexecEngine {
           ActionStatus.Pending
         )
 
-      seq.steps.map(engineStep)
+      seq.steps.map(viewStep)
+
     }
 
 
