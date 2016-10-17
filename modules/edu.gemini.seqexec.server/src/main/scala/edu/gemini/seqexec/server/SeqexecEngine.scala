@@ -18,7 +18,7 @@ object SeqexecEngine {
   def setBreakpoint(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def setSkipMark(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def requestRefresh(): Unit = ???
-  def eventProcess(): Process[Task, SeqexecEvent] = ???
+  def eventProcess(): Process[Task, SeqexecEvent] = outQ.dequeue
 
   sealed trait SeqexecEvent
   object SeqexecEvent {
@@ -165,4 +165,7 @@ object SeqexecEngine {
   }
 
   case class LogMsg(t: LogType, timestamp: Time, msg: String)
+
+  private val outQ = scalaz.stream.async.boundedQueue[SeqexecEvent](10)
+
 }
