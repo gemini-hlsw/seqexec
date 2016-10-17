@@ -135,7 +135,7 @@ package object engine {
     */
   def receive(queue: EventQueue): Process[Engine, Event] = hoistEngine(queue.dequeue)
 
-  private def pure[A](a: A): Engine[A] = Applicative[Engine].pure(a)
+  def pure[A](a: A): Engine[A] = Applicative[Engine].pure(a)
 
   private val unit: Engine[Unit] = pure(Unit)
 
