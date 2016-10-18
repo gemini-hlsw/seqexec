@@ -23,7 +23,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, importer, json, service)
+  .aggregate(core, db, importer, json, service, telnetd)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -92,3 +92,11 @@ lazy val sql = project
   .in(file("sql"))
   .settings(flywaySettings)
 
+lazy val telnetd = project
+  .in(file("modules/telnetd"))
+  .dependsOn(service)
+  .settings(commonSettings)
+  .settings(
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1-SNAPSHOT"
+  )

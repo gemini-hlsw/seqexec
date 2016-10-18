@@ -40,14 +40,14 @@ case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]
 }
 
 object Service {
-
-  def forTesting(uname: String): Service[Task] = {
-    val xa = DriverManagerTransactor[Task]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
-    val io = for {
-      user <- UserDao.selectWithRoles(uname).transact(xa)
-      log  <- Log.newLog[Task]("Testing", xa)
-    } yield Service(xa, log, user)
-    io.unsafePerformSync
-  }
+  //
+  // def forTesting(uname: String): Service[Task] = {
+  //   val xa = DriverManagerTransactor[Task]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
+  //   val io = for {
+  //     user <- UserDao.selectWithRoles(uname).transact(xa)
+  //     log  <- Log.newLog[Task]("Testing", xa)
+  //   } yield Service(xa, log, user)
+  //   io.unsafePerformSync
+  // }
 
 }
