@@ -1,6 +1,8 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.engine.Event
 
 import scalaz.\/
 import scalaz.concurrent.Task
@@ -18,12 +20,8 @@ object SeqexecEngine {
   def requestRefresh(): Unit = ???
   def eventProcess(): Process[Task, SeqexecEvent] = ???
 
-
   sealed trait SeqexecEvent
   object SeqexecEvent {
-
-    import edu.gemini.seqexec.engine
-    import edu.gemini.seqexec.engine.Event
 
     case class SequenceStart(view: List[SequenceView]) extends SeqexecEvent
     case class StepExecuted(view: List[SequenceView]) extends SeqexecEvent
@@ -40,14 +38,14 @@ object SeqexecEngine {
         case Event.Start => SequenceStart(svs)
         case Event.Pause => SequencePauseRequested(svs)
         case Event.Poll  => NewLogMessage("Immediate State requested")
-        case Event.Exit => NewLogMessage("Exit requested by user")
+        case Event.Exit  => NewLogMessage("Exit requested by user")
       }
       case Event.EventSystem(se) => se match {
         // TODO: Sequence completed event not emited by engine.
         case Event.Completed(_, _) => NewLogMessage("Action completed")
-        case Event.Failed(_, _) => NewLogMessage("Action failed")
-        case Event.Executed => StepExecuted(svs)
-        case Event.Finished => NewLogMessage("Execution finished")
+        case Event.Failed(_, _)    => NewLogMessage("Action failed")
+        case Event.Executed        => StepExecuted(svs)
+        case Event.Finished        => NewLogMessage("Execution finished")
       }
     }
 
@@ -112,8 +110,6 @@ object SeqexecEngine {
 
   object SequenceView {
 
-    import edu.gemini.seqexec.engine
-
     // TODO: Better name and move it to `engine`
     type QueueAR = engine.Queue[engine.Action \/ engine.Result]
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
@@ -154,10 +150,7 @@ object SeqexecEngine {
         )
 
       seq.steps.map(viewStep)
-
     }
-
-
   }
 
   // Log message types
@@ -172,5 +165,4 @@ object SeqexecEngine {
   }
 
   case class LogMsg(t: LogType, timestamp: Time, msg: String)
-
 }
