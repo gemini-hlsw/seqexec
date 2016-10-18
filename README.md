@@ -11,13 +11,20 @@ You need Postgres 9.5 or better. I **highly** recommend using [Postgres.app](htt
 export PATH=$PATH:/Applications/Postgres.app/Contents/Versions/latest/bin
 ```
 
-Next you can run the following to set up the database.
+Next you can run the following to create the database and user.
 
 ```
 psql -c 'create user postgres createdb'
 psql -c 'create database gem' -U postgres
-psql -c '\i create.sql' -d gem -U postgres
 ```
+
+Now initialize the database by running the migration script.
+
+```
+sbt sql/flywayMigrate
+```
+
+You can also just do `sql/flywayMigrate` from the sbt prompt if you already have sbt running. You will repeat this step each time the schema changes. It's not part of the build yet but probably will be soon.
 
 If you ever want to wipe out the database and start over, you can do
 
