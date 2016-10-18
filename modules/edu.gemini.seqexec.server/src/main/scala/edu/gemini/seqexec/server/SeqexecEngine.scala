@@ -21,13 +21,40 @@ object SeqexecEngine {
 
   sealed trait SeqexecEvent
   object SeqexecEvent {
-    case class SequenceStart(view: SequenceView) extends SeqexecEvent
-    case class StepExecuted(view: SequenceView) extends SeqexecEvent
-    case class SequenceCompleted(view: SequenceView) extends SeqexecEvent
-    case class StepBreakpointChanged(view: SequenceView) extends SeqexecEvent
-    case class StepSkipMarkChanged(view: SequenceView) extends SeqexecEvent
-    case class SequencePauseRequested(view: SequenceView) extends SeqexecEvent
-    case class NewLogMessage(msg: LogMsg) extends SeqexecEvent
+
+    import edu.gemini.seqexec.engine
+    import edu.gemini.seqexec.engine.Event
+
+    case class SequenceStart(view: List[SequenceView]) extends SeqexecEvent
+    case class StepExecuted(view: List[SequenceView]) extends SeqexecEvent
+    case class SequenceCompleted(view: List[SequenceView]) extends SeqexecEvent
+    case class StepBreakpointChanged(view: List[SequenceView]) extends SeqexecEvent
+    case class StepSkipMarkChanged(view: List[SequenceView]) extends SeqexecEvent
+    case class SequencePauseRequested(view: List[SequenceView]) extends SeqexecEvent
+    // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
+    // has to be embedded in a `Task`
+    case class NewLogMessage(msg: String) extends SeqexecEvent
+
+    def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
+      case Event.EventUser(ue) => ue match {
+        case Event.Start => SequenceStart(svs)
+        case Event.Pause => SequencePauseRequested(svs)
+        case Event.Poll  => NewLogMessage("Immediate State requested")
+        case Event.Exit => NewLogMessage("Exit requested by user")
+      }
+      case Event.EventSystem(se) => se match {
+        // TODO: Sequence completed event not emited by engine.
+        case Event.Completed(_, _) => NewLogMessage("Action completed")
+        case Event.Failed(_, _) => NewLogMessage("Action failed")
+        case Event.Executed => StepExecuted(svs)
+        case Event.Finished => NewLogMessage("Execution finished")
+      }
+    }
+
+    def process(q: engine.EventQueue): Process[engine.Engine, SeqexecEvent] =
+      engine.Handler.handler(q).map {
+        case (ev, qs) => toSeqexecEvent(ev)(qs.toQueue.sequences.map(SequenceView.viewSequence))
+      }
   }
 
   type SystemName = String
@@ -91,9 +118,6 @@ object SeqexecEngine {
     type QueueAR = engine.Queue[engine.Action \/ engine.Result]
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
     type StepAR = engine.Step[engine.Action \/ engine.Result]
-
-    def process(q: engine.EventQueue): Process[engine.Engine, List[SequenceView]] =
-      engine.Handler.handler(q).map(_.toQueue.sequences.map(viewSequence))
 
     def viewSequence(seq: SequenceAR): SequenceView =
       // TODO: Implement willStopIn
