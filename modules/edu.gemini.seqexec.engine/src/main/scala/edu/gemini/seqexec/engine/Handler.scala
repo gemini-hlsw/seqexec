@@ -10,15 +10,13 @@ object Handler {
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler(q: EventQueue): Process[Engine, QState] = {
+  def handler(q: EventQueue): Process[Engine, (Event, QState)] = {
 
     def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
       case Start              =>
         log("Output: Started") *> switch(q)(Status.Running)
       case Pause              =>
         log("Output: Paused") *> switch(q)(Status.Waiting)
-      case AddExecution(pend) =>
-        log("Output: Adding Pending Execution") // TODO: Implement handler
       case Poll               =>
         log("Output: Polling current state")
       case Exit               =>
@@ -37,14 +35,13 @@ object Handler {
         log("Output: Finished") *> switch(q)(Status.Completed) *> close(q)
     }
 
-    receive(q).flatMap(
-      ev => Process.eval(
-        (ev match {
-           case EventUser(ue) => handleUserEvent(ue)
-           case EventSystem(se) => handleSystemEvent(se)
-         }) *> get
-      )
-    )
+    def handleEvent(ev: Event): Engine[Unit] =
+      ev match {
+        case EventUser(ue)   => handleUserEvent(ue)
+        case EventSystem(se) => handleSystemEvent(se)
+      }
+
+    receive(q).flatMap(ev => Process.eval(handleEvent(ev) *> get).map((ev, _)))
   }
 
   def run(q: EventQueue)(qs: QState): Task[QState] =
