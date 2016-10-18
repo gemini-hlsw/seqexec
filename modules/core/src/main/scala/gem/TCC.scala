@@ -61,10 +61,11 @@ object Tcc {
     // we repeat them below, namespaced per instrument for type safety.
 
     object F2 {
-      val Fpu       = Key[F2FpUnit   ]("fpu"      )(_.tccValue)
-      val Filter    = Key[F2Filter   ]("filter"   )(_.tccValue)
-      val LyotWheel = Key[F2LyotWheel]("lyotWheel")(_.tccValue)
-      val Disperser = Key[F2Disperser]("disperser")(_.tccValue)
+      val Fpu         = Key[F2FpUnit     ]("fpu"        )(_.tccValue)
+      val Filter      = Key[F2Filter     ]("filter"     )(_.tccValue)
+      val LyotWheel   = Key[F2LyotWheel  ]("lyotWheel"  )(_.tccValue)
+      val Disperser   = Key[F2Disperser  ]("disperser"  )(_.tccValue)
+      val WindowCover = Key[F2WindowCover]("windowCover")(_.tccValue)
     }
 
   }

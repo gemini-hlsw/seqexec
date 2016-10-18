@@ -120,6 +120,12 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("F2WindowCover") {
+        type F2WindowCoverRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String`.T
+        val io = sql"select id, id tag, short_name, long_name, tcc_value from e_f2_window_cover".query[(String, F2WindowCoverRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("GCalFilter") {
         type GcalFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_filter".query[(String, GcalFilterRec)].list

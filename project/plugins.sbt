@@ -3,6 +3,9 @@ resolvers += Resolver.url(
     url("http://dl.bintray.com/content/tpolecat/sbt-plugin-releases"))(
         Resolver.ivyStylePatterns)
 
+resolvers  += "Flyway" at "https://flywaydb.org/repo"
+
+addSbtPlugin("org.flywaydb"      % "flyway-sbt"   % "4.0.3")
 addSbtPlugin("org.tpolecat"      % "tut-plugin"   % "0.4.3") // triggers
 addSbtPlugin("com.eed3si9n"      % "sbt-unidoc"   % "0.3.1")
 addSbtPlugin("com.jsuereth"      % "sbt-pgp"      % "1.0.0") // triggers
