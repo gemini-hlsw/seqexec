@@ -17,8 +17,6 @@ object Handler {
         log("Output: Started") *> switch(q)(Status.Running)
       case Pause              =>
         log("Output: Paused") *> switch(q)(Status.Waiting)
-      case AddExecution(pend) =>
-        log("Output: Adding Pending Execution") // TODO: Implement handler
       case Poll               =>
         log("Output: Polling current state")
       case Exit               =>
