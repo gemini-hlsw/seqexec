@@ -20,7 +20,9 @@ CREATE TABLE log_observe_event
    "timestamp"   timestamp (5) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
    event         evt_type NOT NULL,
    sequence_id   text NOT NULL,
-   step          integer
+   step          integer CHECK (step > 0),
+   CONSTRAINT check_step CHECK ((event IN ('StartIntegration', 'EndIntegration') AND step iS NOT NULL) OR
+                                (event NOT IN ('StartIntegration', 'EndIntegration') AND step IS NULL))
 );
 
 ALTER TABLE log_observe_event OWNER TO postgres;
