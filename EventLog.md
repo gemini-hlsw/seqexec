@@ -90,10 +90,10 @@ object EventLog {
   case class EventEndSequence(  timestamp: Instant, sid: Sequence.Id) extends Event
 
 
-  case class EventPauseObserve(   timestamp: Instant, sid: Sequence.Id, why: Option[String]) extends Event
-  case class EventContinueObserve(timestamp: Instant, sid: Sequence.Id, why: Option[String]) extends Event
-  case class EventAbortObserve(   timestamp: Instant, sid: Sequence.Id, why: Option[String]) extends Event
-  case class EventStopObserve(    timestamp: Instant, sid: Sequence.Id, why: Option[String]) extends Event
+  case class EventPauseObserve(   timestamp: Instant, sid: Sequence.Id) extends Event
+  case class EventContinueObserve(timestamp: Instant, sid: Sequence.Id) extends Event
+  case class EventAbortObserve(   timestamp: Instant, sid: Sequence.Id) extends Event
+  case class EventStopObserve(    timestamp: Instant, sid: Sequence.Id) extends Event
 
   case class EventStartIntegration(timestamp: Instant, sid: Sequence.Id, step: Int) extends Event
   case class EventEndIntegration(  timestamp: Instant, sid: Sequence.Id, step: Int) extends Event
@@ -102,66 +102,69 @@ object EventLog {
 
 Here I replaced "dataset" start/end events with "integration" start/end keeping in mind that multiple datasets may be produced for each step.
 
-As indicated by vertical whitespace in the code above there are three categories of events.  Correspondingly, I assume there will need to be three tables to store them (?).
 
-### 1. Observe Stage Events
+### Observe Events
 
-Stages of observation execution: slew, visit, and sequence.  Visit is a concept that I'm not sure I understand.  Is there a difference between visit start/end and sequence start/end?  A couple of `ENUM` types will be necessary to define the table.  First, the event lifecycle to mark the start and end events:
+Observe events can be mapped to a single table with a few constraints to
+ensure consistency.  First, an `ENUM`  will be necessary to define the
+event type:
 
-````sql
-CREATE TYPE evt_lifecycle AS ENUM (
-    'Start',
-    'End'
+
+````scala
+CREATE TYPE evt_type AS ENUM (
+    'StartSequence',
+    'EndSequence',
+    'StartSlew',
+    'EndSlew',
+    'StartVisit',
+    'EndVisit',
+    'StartIntegration',
+    'EndIntegration',
+    'Abort',
+    'Continue',
+    'Pause',
+    'Stop'
 );
-
-ALTER TYPE evt_lifecycle OWNER TO postgres;
 ````
 
 Which are translated into generated Scala enum types in `gen2`:
 
 ````scala
-      enum("EventLifecycle") {
-        type EventLifecycleRec = Record.`'tag -> String`.T
-        val io = sql"""
-          SELECT enumlabel a, enumlabel b
-          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-          WHERE pg_type.typname = 'evt_lifecycle'
-        """.query[(String, EventLifecycleRec)].list
-        io.transact(xa).unsafePerformIO
-      }
+       enum("EventType") {
+         type EventTypeRec = Record.`'tag -> String`.T
+         val io = sql"""
+           SELECT enumlabel a, enumlabel b
+           FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+           WHERE pg_type.typname = 'evt_type'
+         """.query[(String, EventTypeRec)].list
+         io.transact(xa).unsafePerformIO
+       }
 ````
 
-Second, the stage type itself:
+Then the table itself:
 
-````sql
-CREATE TYPE evt_observe_stage AS ENUM (
-    'Sequence',
-    'Slew',
-    'Visit'
-);
-
-ALTER TYPE evt_observe_stage OWNER TO postgres;
-````
-
-with corresponding code to generate a Scala `EventObserveStage` enum.  Finally, the table itself:
-
-````sql
-CREATE TABLE log_observe_stage
+````scala
+CREATE TABLE log_observe_event
 (
    id            SERIAL,
    "timestamp"   timestamp (5) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   lifecycle     evt_lifecycle NOT NULL,
-   observe_stage evt_observe_stage NOT NULL,
-   sequence_id   text NOT NULL
+   event         evt_type NOT NULL,
+   sequence_id   text NOT NULL,
+   step          integer CHECK (step > 0),
+   CONSTRAINT check_step CHECK ((event IN ('StartIntegration', 'EndIntegration') AND step iS NOT NULL) OR
+                                (event NOT IN ('StartIntegration', 'EndIntegration') AND step IS NULL))
 );
- 
-ALTER TABLE log_observe_stage OWNER TO postgres;
 
-ALTER TABLE ONLY log_observe_stage
-    ADD CONSTRAINT log_observe_stage_pkey PRIMARY KEY (id);
+ALTER TABLE log_observe_event OWNER TO postgres;
 
-CREATE INDEX ix_log_observe_stage_timestamp ON log_observe_stage USING btree ("timestamp" DESC);
+ALTER TABLE ONLY log_observe_event
+    ADD CONSTRAINT log_observe_event_pkey PRIMARY KEY (id);
+
+CREATE INDEX ix_log_observe_event_timestamp ON log_observe_event USING btree ("timestamp" DESC);
 ````
+
+Note the constraints on step to guarantee a positive value that is defined
+if and only if it is an integration event.
 
 There are a couple of things I'm not sure about here.  First, `timestamp`, even in combination with sequence id, doesn't seem like a valid primary key.  Do we need a primary key at all?  We'll never actually join on the primary key, I think. The reason I could find for it was avoiding duplicates when something goes wrong reading from a backup.
 
@@ -169,66 +172,9 @@ Next, the timestamp itself is a `timestamp with time zone`.  It took me a while 
 
 Finally, I made an index on the `timestamp` since that supports a major use case -- finding events between two given times.  I think we'll also want an index on the sequence id since I anticipate wanting all the events for a given sequence or observation.
 
-### 2. Observe Control Events
-
-Observe control refers to pause/continue, stop/abort actions.  The corresponding `ENUM` is:
-
-````sql
-create TYPE evt_observe_ctrl AS ENUM (
-    'Abort',
-    'Continue',
-    'Pause',
-    'Stop'
-);
-
-ALTER TYPE evt_observe_ctrl OWNER TO postgres;
-````
-
-and the table itself is
-
-````sql
-CREATE TABLE log_observe_ctrl
-(
-   id            SERIAL,
-   "timestamp"   timestamp (5) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   observe_ctrl  evt_observe_ctrl NOT NULL,
-   sequence_id   text NOT NULL,
-   why           text
-);
- 
-ALTER TABLE log_observe_ctrl OWNER TO postgres;
-
-ALTER TABLE ONLY log_observe_ctrl
-    ADD CONSTRAINT log_observe_ctrl_pkey PRIMARY KEY (id);
-
-CREATE INDEX ix_log_observe_ctrl_timestamp ON log_observe_ctrl USING btree ("timestamp" DESC);
-````
-
-### 3. Observe Integration Events
-
-Integration refers to the entire time data is being collected for a given step.  For future instruments, this may produce multiple datasets so I renamed the old "dataset" event.  Here I don't try to include the actual datasets that are created but rather anticipate a separate `dataset` table that can be joined via the `sequence_id` and `step` number.
-
-````sql
-CREATE TABLE log_observe_int
-(
-   id            SERIAL,
-   "timestamp"   timestamp (5) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   lifecycle     evt_lifecycle NOT NULL,
-   sequence_id   text NOT NULL,
-   step          integer NOT NULL
-);
- 
-ALTER TABLE log_observe_int OWNER TO postgres;
-
-ALTER TABLE ONLY log_observe_int
-    ADD CONSTRAINT log_observe_int_pkey PRIMARY KEY (id);
-
-CREATE INDEX ix_log_observe_int_timestamp ON log_observe_int USING btree ("timestamp" DESC);
-````
-
 ### Determining the Current State
 
-From the information in the event logs, we should be able to determine:
+From the information in the event log, we should be able to determine:
 
 1. which steps are executed and in which order across the sequences
 2. today's time accounting information
@@ -245,13 +191,13 @@ The DAO provides simple methods for inserting the various event types into the c
 package gem.dao
 
 import gem.{EventLog, Sequence}
-import gem.enum.{EventLifecycle => Lifecycle, EventObserveCtrl => Ctrl, EventObserveStage => Stage}
+import gem.EventLog._
+import gem.enum.EventType
+import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew, EndVisit, Pause, StartIntegration, StartSequence, StartSlew, StartVisit, Stop}
 
 import java.sql.Timestamp
 import java.time.Instant
 import doobie.imports._
-import gem.EventLog._
-import gem.enum.EventObserveStage.{Sequence => Seq, Slew, Visit}
 
 import scalaz._
 import Scalaz._
@@ -260,138 +206,79 @@ import Scalaz._
 
 object EventLogDao {
 
-  private def insertObserveStage(l: Lifecycle, s: Stage, sid: Sequence.Id): ConnectionIO[Int] =
+  private def insertEvent(t: EventType, sid: Sequence.Id, step: Option[Int]): ConnectionIO[Int] =
     sql"""
-      INSERT INTO log_observe_stage (lifecycle, observe_stage, sequence_id)
-           VALUES ($l :: evt_lifecycle,
-                   $s :: evt_observe_stage,
-                   ${sid.toString})
-    """.update.run
-
-  def insertStartSequence(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.Start, Stage.Sequence, sid)
-
-  def insertEndSequence(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.End, Stage.Sequence, sid)
-
-  def insertStartSlew(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.Start, Stage.Slew, sid)
-
-  def insertEndSlew(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.End, Stage.Slew, sid)
-
-  def insertStartVisit(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.Start, Stage.Visit, sid)
-
-  def insertEndVisit(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.End, Stage.Visit, sid)
-
-  private def insertObserveCtrl(c: Ctrl, sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    sql"""
-      INSERT INTO log_observe_ctrl (observe_ctrl, sequence_id, why)
-           VALUES ($c :: evt_observe_ctrl,
-                   ${sid.toString},
-                   $why)
-    """.update.run
-
-  def insertAbortObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Abort, sid, why)
-
-  def insertContinueObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Continue, sid, why)
-
-  def insertPauseObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Pause, sid, why)
-
-  def insertStopObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Pause, sid, why)
-
-  private def insertObserveIntegration(l: Lifecycle, sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    sql"""
-      INSERT INTO log_observe_int (lifecycle, sequence_id, step)
-           VALUES ($l :: evt_lifecycle,
-                   ${sid.toString},
+      INSERT INTO log_observe_event (event, sequence_id, step)
+           VALUES ($t :: evt_type,
+                   $sid,
                    $step)
     """.update.run
 
-  def insertStartIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    insertObserveIntegration(Lifecycle.Start, sid, step)
+  def insertAbortObserve(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Abort, sid, None)
+
+  def insertContinue(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Continue, sid, None)
 
   def insertEndIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    insertObserveIntegration(Lifecycle.End, sid, step)
+    insertEvent(EndIntegration, sid, Some(step))
+
+  def insertEndSequence(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(EndSequence, sid, None)
+
+  def insertEndSlew(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(EndSlew, sid, None)
+
+  def insertEndVisit(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(EndVisit, sid, None)
+
+  def insertPauseObserve(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Pause, sid, None)
+
+  def insertStartIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
+    insertEvent(StartIntegration, sid, Some(step))
+
+  def insertStartSequence(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(StartSequence, sid, None)
+
+  def insertStartSlew(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(StartSlew, sid, None)
+
+  def insertStartVisit(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(StartVisit, sid, None)
+
+  def insertStop(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Stop, sid, None)
 
   private def ts(i: Instant): Timestamp =
     Timestamp.from(i)
 
-  private def selectAllObserveStage(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
+  def selectAll(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
     sql"""
       SELECT timestamp,
-             lifecycle,
-             observe_stage,
-             sequence_id
-        FROM log_observe_stage
-       WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
-    ORDER BY timestamp
-    """.query[(Timestamp, Lifecycle, Stage, String)].map { case (t,l,s,i) =>
-      val timestamp = t.toInstant
-      val sid       = Sequence.Id.unsafeFromString(i)
-      val start     = l == Lifecycle.Start
-
-      s match {
-        case Slew   => start ? (EventStartSlew(timestamp, sid):     Event) | EventEndSlew(timestamp, sid)
-        case Visit  => start ? (EventStartVisit(timestamp, sid):    Event) | EventEndVisit(timestamp, sid)
-        case Seq    => start ? (EventStartSequence(timestamp, sid): Event) | EventEndSequence(timestamp, sid)
-      }
-    }.list
-
-  private def selectAllObserveControl(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
-    sql"""
-      SELECT timestamp,
-             observe_ctrl,
-             sequence_id,
-             why
-        FROM log_observe_ctrl
-       WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
-    ORDER BY timestamp
-    """.query[(Timestamp, Ctrl, String, Option[String])].map { case (t,c,i,w) =>
-      val timestamp = t.toInstant
-      val sid       = Sequence.Id.unsafeFromString(i)
-
-      c match {
-        case Ctrl.Abort    => EventAbortObserve(   timestamp, sid, w): Event
-        case Ctrl.Continue => EventContinueObserve(timestamp, sid, w): Event
-        case Ctrl.Pause    => EventPauseObserve(   timestamp, sid, w): Event
-        case Ctrl.Stop     => EventStopObserve(    timestamp, sid, w): Event
-      }
-    }.list
-
-  private def selectAllObserveIntegration(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
-    sql"""
-      SELECT timestamp,
-             lifecycle,
+             event :: evt_type,
              sequence_id,
              step
-        FROM log_observe_int
+        FROM log_observe_event
        WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
     ORDER BY timestamp
-    """.query[(Timestamp, Lifecycle, String, Int)].map { case (t,l,i,s) =>
-      val timestamp = t.toInstant
-      val sid       = Sequence.Id.unsafeFromString(i)
+    """.query[(Instant, EventType, Sequence.Id, Option[Int])].map { case (t,e,s,i) =>
 
-      l match {
-        case Lifecycle.Start => EventStartIntegration(timestamp, sid, s): Event
-        case Lifecycle.End   => EventEndIntegration(  timestamp, sid, s): Event
-      }
+      (e match {
+        case Abort            => EventAbortObserve(t, s)
+        case Continue         => EventContinueObserve(t, s)
+        case EndIntegration   => EventEndIntegration(t, s, i.get)
+        case EndSequence      => EventEndSequence(t, s)
+        case EndSlew          => EventEndSlew(t, s)
+        case EndVisit         => EventEndVisit(t, s)
+        case Pause            => EventPauseObserve(t, s)
+        case StartIntegration => EventStartIntegration(t, s, i.get)
+        case StartSequence    => EventStartSequence(t, s)
+        case StartSlew        => EventStartSlew(t, s)
+        case StartVisit       => EventStartVisit(t, s)
+        case Stop             => EventStopObserve(t, s)
+      }): EventLog.Event
     }.list
-
-  def selectAll(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
-    for {
-      c <- selectAllObserveControl(start, end)
-      i <- selectAllObserveIntegration(start, end)
-      s <- selectAllObserveStage(start, end)
-    } yield (c ++ i ++ s).sortBy(_.timestamp)
 
 }
 ````
-
-I'm just combining the data collected from the three tables in Scala code.  Maybe there's a more efficient way to do this in a query?
