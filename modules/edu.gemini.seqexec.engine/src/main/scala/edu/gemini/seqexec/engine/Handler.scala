@@ -10,7 +10,7 @@ object Handler {
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler(q: EventQueue): Process[Engine, (Event, QState)] = {
+  def handler(q: EventQueue)(ev: Event): Engine[(Event, QState)] = {
 
     def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
       case Start              =>
@@ -40,10 +40,15 @@ object Handler {
         case EventUser(ue)   => handleUserEvent(ue)
         case EventSystem(se) => handleSystemEvent(se)
       }
-
-    receive(q).flatMap(ev => Process.eval(handleEvent(ev) *> get).map((ev, _)))
+    (handleEvent(ev) *> get).map((ev, _))
   }
 
-  def run(q: EventQueue)(qs: QState): Task[QState] =
-    handler(q).run.exec(qs)
+  def processT(q: EventQueue)(qs: QState): Process[Task, (Event, QState)] =
+    // TODO: Golf with `evalMap`
+    q.dequeue.flatMap(ev => Process.eval(handler(q)(ev).eval(qs)))
+
+  def processE(q: EventQueue): Process[Engine, (Event, QState)] =
+    // TODO: Golf with `evalMap`
+    receive(q).flatMap(ev => Process.eval(handler(q)(ev)))
+
 }

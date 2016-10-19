@@ -49,10 +49,12 @@ object SeqexecEngine {
       }
     }
 
-    def process(q: engine.EventQueue): Process[engine.Engine, SeqexecEvent] =
-      engine.Handler.handler(q).map {
-        case (ev, qs) => toSeqexecEvent(ev)(qs.toQueue.sequences.map(SequenceView.viewSequence))
+    def process(q: engine.EventQueue)(qs0: engine.QState): Process[Task, SeqexecEvent] =
+      engine.Handler.processT(q)(qs0).map {
+        case (ev, qs) =>
+          toSeqexecEvent(ev)(qs.toQueue.sequences.map(SequenceView.viewSequence))
       }
+
   }
 
   type SystemName = String
