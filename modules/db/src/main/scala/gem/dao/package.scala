@@ -2,10 +2,14 @@ package gem
 
 import doobie.imports._
 import edu.gemini.spModel.core._
-import java.util.logging.Level
-import scala.reflect.runtime.universe.TypeTag
 
-import scalaz._, Scalaz._
+import java.sql.Timestamp
+import java.time.Instant
+import java.util.logging.Level
+
+import scala.reflect.runtime.universe.TypeTag
+import scalaz._
+import Scalaz._
 
 package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
@@ -29,6 +33,9 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   implicit val ObservationIdMeta: Meta[Observation.Id] =
     Meta[String].nxmap(Observation.Id.unsafeFromString, _.toString)
 
+  implicit val SequenceIdMeta: Meta[Sequence.Id] =
+    Meta[String].nxmap(Sequence.Id.unsafeFromString, _.toString)
+
   // Enumerated by tag as string
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
@@ -36,6 +43,9 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   // Java Log Levels (not nullable)
   implicit def levelMeta: Meta[Level] =
     Meta[String].nxmap(Level.parse, _.getName)
+
+  implicit val InstantMeta: Meta[Instant] =
+    Meta[Timestamp].nxmap(_.toInstant, Timestamp.from)
 
   def capply2[A, B, T](f: (A, B) => T)(
     implicit ca: Composite[(Option[A], Option[B])]

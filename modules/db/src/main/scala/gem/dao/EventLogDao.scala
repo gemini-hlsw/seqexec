@@ -1,13 +1,13 @@
 package gem.dao
 
 import gem.{EventLog, Sequence}
-import gem.enum.{EventLifecycle => Lifecycle, EventObserveCtrl => Ctrl, EventObserveStage => Stage}
+import gem.EventLog._
+import gem.enum.EventType
+import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew, EndVisit, Pause, StartIntegration, StartSequence, StartSlew, StartVisit, Stop}
 
 import java.sql.Timestamp
 import java.time.Instant
 import doobie.imports._
-import gem.EventLog._
-import gem.enum.EventObserveStage.{Sequence => Seq, Slew, Visit}
 
 import scalaz._
 import Scalaz._
@@ -16,135 +16,78 @@ import Scalaz._
 
 object EventLogDao {
 
-  private def insertObserveStage(l: Lifecycle, s: Stage, sid: Sequence.Id): ConnectionIO[Int] =
+  private def insertEvent(t: EventType, sid: Sequence.Id, step: Option[Int]): ConnectionIO[Int] =
     sql"""
-      INSERT INTO log_observe_stage (lifecycle, observe_stage, sequence_id)
-           VALUES ($l :: evt_lifecycle,
-                   $s :: evt_observe_stage,
-                   ${sid.toString})
-    """.update.run
-
-  def insertStartSequence(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.Start, Stage.Sequence, sid)
-
-  def insertEndSequence(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.End, Stage.Sequence, sid)
-
-  def insertStartSlew(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.Start, Stage.Slew, sid)
-
-  def insertEndSlew(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.End, Stage.Slew, sid)
-
-  def insertStartVisit(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.Start, Stage.Visit, sid)
-
-  def insertEndVisit(sid: Sequence.Id): ConnectionIO[Int] =
-    insertObserveStage(Lifecycle.End, Stage.Visit, sid)
-
-  private def insertObserveCtrl(c: Ctrl, sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    sql"""
-      INSERT INTO log_observe_ctrl (observe_ctrl, sequence_id, why)
-           VALUES ($c :: evt_observe_ctrl,
-                   ${sid.toString},
-                   $why)
-    """.update.run
-
-  def insertAbortObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Abort, sid, why)
-
-  def insertContinueObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Continue, sid, why)
-
-  def insertPauseObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Pause, sid, why)
-
-  def insertStopObserve(sid: Sequence.Id, why: Option[String]): ConnectionIO[Int] =
-    insertObserveCtrl(Ctrl.Pause, sid, why)
-
-  private def insertObserveIntegration(l: Lifecycle, sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    sql"""
-      INSERT INTO log_observe_int (lifecycle, sequence_id, step)
-           VALUES ($l :: evt_lifecycle,
-                   ${sid.toString},
+      INSERT INTO log_observe_event (event, sequence_id, step)
+           VALUES ($t :: evt_type,
+                   $sid,
                    $step)
     """.update.run
 
-  def insertStartIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    insertObserveIntegration(Lifecycle.Start, sid, step)
+  def insertAbortObserve(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Abort, sid, None)
+
+  def insertContinue(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Continue, sid, None)
 
   def insertEndIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    insertObserveIntegration(Lifecycle.End, sid, step)
+    insertEvent(EndIntegration, sid, Some(step))
+
+  def insertEndSequence(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(EndSequence, sid, None)
+
+  def insertEndSlew(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(EndSlew, sid, None)
+
+  def insertEndVisit(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(EndVisit, sid, None)
+
+  def insertPauseObserve(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Pause, sid, None)
+
+  def insertStartIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
+    insertEvent(StartIntegration, sid, Some(step))
+
+  def insertStartSequence(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(StartSequence, sid, None)
+
+  def insertStartSlew(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(StartSlew, sid, None)
+
+  def insertStartVisit(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(StartVisit, sid, None)
+
+  def insertStop(sid: Sequence.Id): ConnectionIO[Int] =
+    insertEvent(Stop, sid, None)
 
   private def ts(i: Instant): Timestamp =
     Timestamp.from(i)
 
-  private def selectAllObserveStage(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
+  def selectAll(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
     sql"""
       SELECT timestamp,
-             lifecycle,
-             observe_stage,
-             sequence_id
-        FROM log_observe_stage
-       WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
-    ORDER BY timestamp
-    """.query[(Timestamp, Lifecycle, Stage, String)].map { case (t,l,s,i) =>
-      val timestamp = t.toInstant
-      val sid       = Sequence.Id.unsafeFromString(i)
-      val start     = l == Lifecycle.Start
-
-      s match {
-        case Slew   => start ? (EventStartSlew(timestamp, sid):     Event) | EventEndSlew(timestamp, sid)
-        case Visit  => start ? (EventStartVisit(timestamp, sid):    Event) | EventEndVisit(timestamp, sid)
-        case Seq    => start ? (EventStartSequence(timestamp, sid): Event) | EventEndSequence(timestamp, sid)
-      }
-    }.list
-
-  private def selectAllObserveControl(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
-    sql"""
-      SELECT timestamp,
-             observe_ctrl,
-             sequence_id,
-             why
-        FROM log_observe_ctrl
-       WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
-    ORDER BY timestamp
-    """.query[(Timestamp, Ctrl, String, Option[String])].map { case (t,c,i,w) =>
-      val timestamp = t.toInstant
-      val sid       = Sequence.Id.unsafeFromString(i)
-
-      c match {
-        case Ctrl.Abort    => EventAbortObserve(   timestamp, sid, w): Event
-        case Ctrl.Continue => EventContinueObserve(timestamp, sid, w): Event
-        case Ctrl.Pause    => EventPauseObserve(   timestamp, sid, w): Event
-        case Ctrl.Stop     => EventStopObserve(    timestamp, sid, w): Event
-      }
-    }.list
-
-  private def selectAllObserveIntegration(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
-    sql"""
-      SELECT timestamp,
-             lifecycle,
+             event :: evt_type,
              sequence_id,
              step
-        FROM log_observe_int
+        FROM log_observe_event
        WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
     ORDER BY timestamp
-    """.query[(Timestamp, Lifecycle, String, Int)].map { case (t,l,i,s) =>
-      val timestamp = t.toInstant
-      val sid       = Sequence.Id.unsafeFromString(i)
+    """.query[(Instant, EventType, Sequence.Id, Option[Int])].map { case (t,e,s,i) =>
 
-      l match {
-        case Lifecycle.Start => EventStartIntegration(timestamp, sid, s): Event
-        case Lifecycle.End   => EventEndIntegration(  timestamp, sid, s): Event
-      }
+      (e match {
+        case Abort            => EventAbortObserve(t, s)
+        case Continue         => EventContinueObserve(t, s)
+        case EndIntegration   => EventEndIntegration(t, s, i.get)
+        case EndSequence      => EventEndSequence(t, s)
+        case EndSlew          => EventEndSlew(t, s)
+        case EndVisit         => EventEndVisit(t, s)
+        case Pause            => EventPauseObserve(t, s)
+        case StartIntegration => EventStartIntegration(t, s, i.get)
+        case StartSequence    => EventStartSequence(t, s)
+        case StartSlew        => EventStartSlew(t, s)
+        case StartVisit       => EventStartVisit(t, s)
+        case Stop             => EventStopObserve(t, s)
+      }): EventLog.Event
     }.list
-
-  def selectAll(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
-    for {
-      c <- selectAllObserveControl(start, end)
-      i <- selectAllObserveIntegration(start, end)
-      s <- selectAllObserveStage(start, end)
-    } yield (c ++ i ++ s).sortBy(_.timestamp)
 
 }

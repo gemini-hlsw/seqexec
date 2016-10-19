@@ -21,8 +21,10 @@ object Tester extends SafeApp {
     for {
       _ <- EventLogDao.insertStartSlew(sid).transact(xa)
       _ <- EventLogDao.insertStartVisit(sid).transact(xa)
-      _ <- EventLogDao.insertPauseObserve(sid, Some("Cloudy")).transact(xa)
-      _ <- EventLogDao.insertAbortObserve(sid, Some("Hopeless")).transact(xa)
+      _ <- EventLogDao.insertStartIntegration(sid, 1).transact(xa)
+      _ <- EventLogDao.insertEndIntegration(sid, 1).transact(xa)
+      _ <- EventLogDao.insertPauseObserve(sid).transact(xa)
+      _ <- EventLogDao.insertAbortObserve(sid).transact(xa)
       _ <- EventLogDao.insertEndVisit(sid).transact(xa)
       _ <- EventLogDao.insertEndSlew(sid).transact(xa)
       l <- EventLogDao.selectAll(Instant.now().minusSeconds(10), Instant.now().plusSeconds(10)).transact(xa)

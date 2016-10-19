@@ -157,33 +157,13 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
-      enum("EventLifecycle") {
-        type EventLifecycleRec = Record.`'tag -> String`.T
+      enum("EventType") {
+        type EventTypeRec = Record.`'tag -> String`.T
         val io = sql"""
           SELECT enumlabel a, enumlabel b
           FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-          WHERE pg_type.typname = 'evt_lifecycle'
-        """.query[(String, EventLifecycleRec)].list
-        io.transact(xa).unsafePerformIO
-      },
-
-      enum("EventObserveStage") {
-        type EventObserveStageRec = Record.`'tag -> String`.T
-        val io = sql"""
-          SELECT enumlabel a, enumlabel b
-          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-          WHERE pg_type.typname = 'evt_observe_stage'
-        """.query[(String, EventObserveStageRec)].list
-        io.transact(xa).unsafePerformIO
-      },
-
-      enum("EventObserveCtrl") {
-        type EventObserveCtrlRec = Record.`'tag -> String`.T
-        val io = sql"""
-          SELECT enumlabel a, enumlabel b
-          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-          WHERE pg_type.typname = 'evt_observe_ctrl'
-        """.query[(String, EventObserveCtrlRec)].list
+          WHERE pg_type.typname = 'evt_type'
+        """.query[(String, EventTypeRec)].list
         io.transact(xa).unsafePerformIO
       },
 
