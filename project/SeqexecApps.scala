@@ -11,6 +11,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport._
 import sbt.Keys._
 import sbt._
 
+
 /**
   * Application level wodules for the Seqexec
   */
