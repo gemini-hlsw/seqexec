@@ -2,11 +2,12 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.Event
+import edu.gemini.seqexec.engine.{Event, QState, Sequence, Action, Result}
 
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.async.mutable.Queue
 import scalaz.stream.Process
 import edu.gemini.seqexec.model.SharedModel._
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
@@ -16,14 +17,76 @@ import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
   */
 object SeqexecEngine {
 
+  /**
+    * Emulates TCS configuration in the real world.
+    *
+    */
+  val configureTcs: Action  = for {
+    _ <- Task(println("System: Start TCS configuration"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println ("System: Complete TCS configuration"))
+  } yield Result.OK(())
+
+  /**
+    * Emulates Instrument configuration in the real world.
+    *
+    */
+  val configureInst: Action  = for {
+    _ <- Task(println("System: Start Instrument configuration"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println("System: Complete Instrument configuration"))
+  } yield Result.OK(())
+
+  /**
+    * Emulates an observation in the real world.
+    *
+    */
+  val observe: Action  = for {
+    _ <- Task(println("System: Start observation"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println ("System: Complete observation"))
+  } yield Result.OK(())
+
+  val faulty: Action  = for {
+    _ <- Task(println("System: Start observation"))
+    _ <- Task(Thread.sleep(1000))
+    _ <- Task(println ("System: Complete observation"))
+  } yield Result.Error(())
+
+  val qs: QState = QState.init(
+    engine.Queue(
+      List(
+        Sequence(
+          "First",
+          List(
+            engine.Step(
+              1,
+              List(
+                List(configureTcs, configureInst), // Execution
+                List(observe) // Execution
+              )
+            ),
+            engine.Step(
+              2,
+              List(
+                List(configureTcs, configureInst), // Execution
+                List(observe) // Execution
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+
   def start(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def requestPause(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def setBreakpoint(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def setSkipMark(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def requestRefresh(): Unit = ???
-  def eventProcess(): Process[Task, SeqexecEvent] = ???
+  def eventProcess(q: Queue[Event.Event]): Process[Task, SeqexecEvent] = process(q)(qs)
 
-  def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
+  private def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
     case Event.EventUser(ue) => ue match {
       case Event.Start => SequenceStart(svs)
       case Event.Pause => SequencePauseRequested(svs)
@@ -42,10 +105,9 @@ object SeqexecEngine {
   def process(q: engine.EventQueue)(qs0: engine.QState): Process[Task, SeqexecEvent] =
     engine.Handler.processT(q)(qs0).map {
       case (ev, qs) =>
-        toSeqexecEvent(ev)(qs.toQueue.sequences.map(SequenceViewT.viewSequence))
+        toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
     }
 
-  object SequenceViewT {
 
     // TODO: Better name and move it to `engine`
     type QueueAR = engine.Queue[engine.Action \/ engine.Result]
@@ -89,5 +151,3 @@ object SeqexecEngine {
       seq.steps.map(viewStep)
     }
   }
-
-}

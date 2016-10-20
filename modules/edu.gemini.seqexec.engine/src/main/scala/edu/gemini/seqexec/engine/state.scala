@@ -92,9 +92,9 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
     * Current Execution
     */
   val current: Current =
-    // Sequence
+    // Queue
     zipper
-      // Seqeunce
+      // Sequence
       .focus
       // Step
       .focus
