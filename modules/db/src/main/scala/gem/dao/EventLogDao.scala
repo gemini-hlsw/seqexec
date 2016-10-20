@@ -1,7 +1,7 @@
 package gem.dao
 
-import gem.{EventLog, Sequence}
-import gem.EventLog._
+import gem.{Event, Sequence}
+import gem.Event._
 import gem.enum.EventType
 import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew, EndVisit, Pause, StartIntegration, StartSequence, StartSlew, StartVisit, Stop}
 
@@ -63,7 +63,7 @@ object EventLogDao {
   private def ts(i: Instant): Timestamp =
     Timestamp.from(i)
 
-  def selectAll(start: Instant, end: Instant): ConnectionIO[List[EventLog.Event]] =
+  def selectAll(start: Instant, end: Instant): ConnectionIO[List[Event]] =
     sql"""
       SELECT timestamp,
              event :: evt_type,
@@ -72,22 +72,21 @@ object EventLogDao {
         FROM log_observe_event
        WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
     ORDER BY timestamp
-    """.query[(Instant, EventType, Sequence.Id, Option[Int])].map { case (t,e,s,i) =>
-
-      (e match {
-        case Abort            => EventAbortObserve(t, s)
-        case Continue         => EventContinueObserve(t, s)
-        case EndIntegration   => EventEndIntegration(t, s, i.get)
-        case EndSequence      => EventEndSequence(t, s)
-        case EndSlew          => EventEndSlew(t, s)
-        case EndVisit         => EventEndVisit(t, s)
-        case Pause            => EventPauseObserve(t, s)
-        case StartIntegration => EventStartIntegration(t, s, i.get)
-        case StartSequence    => EventStartSequence(t, s)
-        case StartSlew        => EventStartSlew(t, s)
-        case StartVisit       => EventStartVisit(t, s)
-        case Stop             => EventStopObserve(t, s)
-      }): EventLog.Event
+    """.query[(Instant, EventType, Sequence.Id, Option[Int])].map {
+      case (t, Abort,            s, None   ) => abortObserve(t, s)
+      case (t, Continue,         s, None   ) => continueObserve(t, s)
+      case (t, EndIntegration,   s, Some(i)) => endIntegration(t, s, i)
+      case (t, EndSequence,      s, None   ) => endSequence(t, s)
+      case (t, EndSlew,          s, None   ) => endSlew(t, s)
+      case (t, EndVisit,         s, None   ) => endVisit(t, s)
+      case (t, Pause,            s, None   ) => pauseObserve(t, s)
+      case (t, StartIntegration, s, Some(i)) => startIntegration(t, s, i)
+      case (t, StartSequence,    s, None   ) => startSequence(t, s)
+      case (t, StartSlew,        s, None   ) => startSlew(t, s)
+      case (t, StartVisit,       s, None   ) => startVisit(t, s)
+      case (t, Stop,             s, None   ) => stopObserve(t, s)
+      case (t, e,                s, step   ) =>
+        sys.error(s"Unexpected row in log_observe_event: ($t, $e, $s, $step)")
     }.list
 
 }
