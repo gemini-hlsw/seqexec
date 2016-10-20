@@ -60,8 +60,8 @@ object EventLogDao {
   def insertStop(sid: Sequence.Id): ConnectionIO[Int] =
     insertEvent(Stop, sid, None)
 
-  private def ts(i: Instant): Timestamp =
-    Timestamp.from(i)
+//  private def ts(i: Instant): Timestamp =
+//    Timestamp.from(i)
 
   def selectAll(start: Instant, end: Instant): ConnectionIO[List[Event]] =
     sql"""
@@ -70,7 +70,7 @@ object EventLogDao {
              sequence_id,
              step
         FROM log_observe_event
-       WHERE timestamp BETWEEN ${ts(start)} AND ${ts(end)}
+       WHERE timestamp BETWEEN $start AND $end
     ORDER BY timestamp
     """.query[(Instant, EventType, Sequence.Id, Option[Int])].map {
       case (t, Abort,            s, None   ) => abortObserve(t, s)
