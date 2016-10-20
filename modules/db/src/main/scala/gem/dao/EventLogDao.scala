@@ -60,9 +60,6 @@ object EventLogDao {
   def insertStop(sid: Sequence.Id): ConnectionIO[Int] =
     insertEvent(Stop, sid, None)
 
-//  private def ts(i: Instant): Timestamp =
-//    Timestamp.from(i)
-
   def selectAll(start: Instant, end: Instant): ConnectionIO[List[Event]] =
     sql"""
       SELECT timestamp,
