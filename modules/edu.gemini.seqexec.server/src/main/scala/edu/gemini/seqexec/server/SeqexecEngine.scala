@@ -7,7 +7,6 @@ import edu.gemini.seqexec.engine.{Event, QState, Sequence, Action, Result}
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.async.mutable.Queue
 import scalaz.stream.Process
 import edu.gemini.seqexec.model.SharedModel._
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
@@ -84,7 +83,11 @@ object SeqexecEngine {
   def setBreakpoint(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def setSkipMark(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
   def requestRefresh(): Unit = ???
-  def eventProcess(q: Queue[Event.Event]): Process[Task, SeqexecEvent] = process(q)(qs)
+  def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
+    engine.Handler.processT(q)(qs).map {
+      case (ev, qs) =>
+        toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
+    }
 
   private def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
     case Event.EventUser(ue) => ue match {
@@ -102,17 +105,11 @@ object SeqexecEngine {
     }
   }
 
-  def process(q: engine.EventQueue)(qs0: engine.QState): Process[Task, SeqexecEvent] =
-    engine.Handler.processT(q)(qs0).map {
-      case (ev, qs) =>
-        toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
-    }
-
-
     // TODO: Better name and move it to `engine`
     type QueueAR = engine.Queue[engine.Action \/ engine.Result]
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
     type StepAR = engine.Step[engine.Action \/ engine.Result]
+
 
     def viewSequence(seq: SequenceAR): SequenceView =
       // TODO: Implement willStopIn

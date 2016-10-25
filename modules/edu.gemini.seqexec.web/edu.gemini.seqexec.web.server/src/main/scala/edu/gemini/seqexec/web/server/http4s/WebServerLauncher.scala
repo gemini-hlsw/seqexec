@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.server.http4s
 import java.io.File
 import java.util.logging.Logger
 
+import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Event
 import edu.gemini.seqexec.server.ODBProxy
 import edu.gemini.seqexec.web.server.common.LogInitialization
@@ -15,7 +16,6 @@ import org.http4s.server.blaze.BlazeBuilder
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.async.mutable.Queue
 import scalaz.stream.async
 
 object WebServerLauncher extends ServerApp with LogInitialization {
@@ -98,16 +98,9 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   }
 
   /**
-    * Configures the input queue for executor
-    */
-  def queueService: Kleisli[Task, AuthenticationConfig, AuthenticationService] = Kleisli { conf =>
-    Task.delay(AuthenticationService(conf))
-  }
-
-  /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, q: Queue[Event.Event]): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, q: engine.EventQueue): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
 

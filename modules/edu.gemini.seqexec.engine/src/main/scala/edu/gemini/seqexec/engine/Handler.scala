@@ -1,7 +1,8 @@
 package edu.gemini.seqexec.engine
 
 import Event._
-import scalaz.Scalaz._
+import scalaz._
+import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 
@@ -10,7 +11,7 @@ object Handler {
   /**
     * Main logical thread to handle events and produce output.
     */
-  def handler(q: EventQueue)(ev: Event): Engine[(Event, QState)] = {
+  private def handler(q: EventQueue)(ev: Event): Engine[QState] = {
 
     def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
       case Start              =>
@@ -35,20 +36,33 @@ object Handler {
         log("Output: Finished") *> switch(q)(Status.Completed) *> close(q)
     }
 
-    def handleEvent(ev: Event): Engine[Unit] =
-      ev match {
+    (ev match {
         case EventUser(ue)   => handleUserEvent(ue)
         case EventSystem(se) => handleSystemEvent(se)
-      }
-    (handleEvent(ev) *> get).map((ev, _))
+      }) *> get
   }
 
+  // Kudos to @tpolecat
+  /** Traverse a process with a stateful computation. */
+  def mapEvalState[F[_]: Monad: Catchable, A, S, B](
+    fs: Process[F, A], s: S, f: A => StateT[F, S, B]
+  ): Process[F, B] = {
+    def go(fs: Process[F, A], s: S): Process[F, B] =
+      Process.eval(fs.unconsOption).flatMap {
+        case None         => Process.halt
+        case Some((h, t)) => Process.eval(f(h).run(s)).flatMap {
+          case (s, a) => Process.emit(a) ++ go(t, s)
+        }
+      }
+    go(fs, s)
+  }
+
+  private def handlerE(q: EventQueue)(ev: Event): Engine[(Event, QState)] =
+    handler(q)(ev).map((ev, _))
+
   def processT(q: EventQueue)(qs: QState): Process[Task, (Event, QState)] =
-    // TODO: Golf with `evalMap`
-    q.dequeue.flatMap(ev => Process.eval(handler(q)(ev).eval(qs)))
+    mapEvalState(q.dequeue, qs, handlerE(q))
 
   def processE(q: EventQueue): Process[Engine, (Event, QState)] =
-    // TODO: Golf with `evalMap`
-    receive(q).flatMap(ev => Process.eval(handler(q)(ev)))
-
+    receive(q).evalMap(handlerE(q))
 }

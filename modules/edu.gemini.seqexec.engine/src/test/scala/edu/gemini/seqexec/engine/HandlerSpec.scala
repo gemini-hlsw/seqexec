@@ -77,7 +77,7 @@ class HandlerSpec extends FlatSpec {
 
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
-    val qs = (q.enqueueOne(start) *> processE(q).take(1).run.exec(qs1)).unsafePerformSync
+    val qs = (q.enqueueOne(start) *> processE(q).take(1).runLast.eval(qs1)).unsafePerformSync.get._2
     assert(qs.status === Status.Running)
   }
 
@@ -86,7 +86,7 @@ class HandlerSpec extends FlatSpec {
     val qs = (
       q.enqueueOne(start) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
-        processE(q).take(12).run.exec(qs1)).unsafePerformSync
+        processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
     assert(qs.pending.isEmpty)
   }
 
@@ -95,7 +95,7 @@ class HandlerSpec extends FlatSpec {
     val qs = (
       q.enqueueOne(start) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
-        processE(q).take(12).run.exec(qs1)).unsafePerformSync
+        processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
     assert(qs.done.length == 1)
   }
 
@@ -104,7 +104,7 @@ class HandlerSpec extends FlatSpec {
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
         q.enqueueOne(start),
-        processE(q).run.exec(qs1)
+        processE(q).run.eval(qs1)
       ).unsafePerformSync
     )
   }
@@ -120,7 +120,7 @@ class HandlerSpec extends FlatSpec {
           Task(Thread.sleep(2000)),
           q.enqueueOne(start)
         ).sequence_,
-       processE(q).run.exec(qs1)
+       processE(q).run.eval(qs1)
       ).unsafePerformSync
     )
   }

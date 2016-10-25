@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.Event.Event
+import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine, SeqexecFailure}
@@ -23,12 +23,12 @@ import org.http4s.server.middleware.GZip
 import scalaz._
 import Scalaz._
 import scalaz.stream.{Exchange, Process}
-import scalaz.stream.async.mutable.Queue
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, q: Queue[Event]) extends BooPicklers with NewBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) extends BooPicklers with NewBooPicklers {
+
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 

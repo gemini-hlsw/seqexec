@@ -47,7 +47,7 @@ package object engine {
     */
   def switch(q: EventQueue)(st: Status): Engine[Unit] =
     // TODO: Make Status an Equal instance
-    modify(QState.status.set(_, st)) *> whenM (st == Status.Running) (execute(q))
+    modify(QState.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
 
   /**
     * Adds the current Execution` to the completed `Queue`, makes the next
@@ -150,6 +150,9 @@ package object engine {
 
   private def put(qs: QState): Engine[Unit] =
     MonadState[Engine, QState].put(qs)
+
+  // For instrospection
+  val printQState: Engine[Unit] = gets((qs: QState) => Task.now(println(qs)).liftM[EngineStateT])
 
   // The `Catchable` instance of `Engine`` needs to be manually written.
   // Without it's not possible to use `Engine` as a scalaz-stream process effects.
