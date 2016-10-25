@@ -41,6 +41,7 @@ trait NewBooPicklers {
     .addConcreteType[SeqexecEvent.StepBreakpointChanged]
     .addConcreteType[SeqexecEvent.StepSkipMarkChanged]
     .addConcreteType[SeqexecEvent.SequencePauseRequested]
+    .addConcreteType[SeqexecEvent.NewLogMessage]
 
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets
