@@ -69,7 +69,6 @@ case class ConnectionClosed(delay: Int) extends Action
 case class NewSeqexecEvent(e: SeqexecEvent) extends Action
 case class ConnectionError(s: String) extends Action
 
-
 // End Actions
 
 // UI model
