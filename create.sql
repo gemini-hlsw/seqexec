@@ -14,28 +14,28 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
--- Name: tsm_system_time; Type: EXTENSION; Schema: -; Owner: 
+-- Name: tsm_system_time; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS tsm_system_time WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION tsm_system_time; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION tsm_system_time; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION tsm_system_time IS 'TABLESAMPLE method which accepts time in milliseconds as a limit';

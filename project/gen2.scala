@@ -95,7 +95,6 @@ object gen2 {
 
   val enums: List[(String, String)] =
     List(
-
       enum("F2Disperser") {
         type F2DisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Option[Double]`.T
         val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength from e_f2_disperser".query[(String, F2DisperserRec)].list
@@ -155,6 +154,16 @@ object gen2 {
           FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
           WHERE pg_type.typname = 'step_type'
          """.query[(String, StepTypeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("EventType") {
+        type EventTypeRec = Record.`'tag -> String`.T
+        val io = sql"""
+          SELECT enumlabel a, enumlabel b
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'evt_type'
+        """.query[(String, EventTypeRec)].list
         io.transact(xa).unsafePerformIO
       },
 
