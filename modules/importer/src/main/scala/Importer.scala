@@ -14,6 +14,7 @@ import edu.gemini.spModel.config.map.ConfigValMapInstances.IDENTITY_MAP;
 import java.io._
 import java.{ util => JU }
 import java.util.logging.{ Logger, Level }
+import java.time.Duration
 
 import scala.collection.JavaConverters._
 
@@ -175,11 +176,11 @@ object Importer extends SafeApp {
 
         val fpu           = config.uget(Legacy.Instrument.F2.Fpu)
         val mosPreimaging = config.uget(Legacy.Instrument.MosPreImaging)
-        val exposureTime  = config.uget(Legacy.Observe.ExposureTime)
+        val exposureTime  = config.cgetOrElse(Legacy.Observe.ExposureTime, Duration.ofSeconds(0))
         val filter        = config.uget(Legacy.Instrument.F2.Filter)
         val lyoutWheel    = config.uget(Legacy.Instrument.F2.LyotWheel)
         val disperser     = config.uget(Legacy.Instrument.F2.Disperser)
-        val windowCover   = config.uget(Legacy.Instrument.F2.WindowCover)
+        val windowCover   = config.cgetOrElse(Legacy.Instrument.F2.WindowCover, F2WindowCover.Open)
         F2Config(fpu, mosPreimaging, exposureTime, filter, lyoutWheel, disperser, windowCover)
 
       case _ => GenericConfig(i)

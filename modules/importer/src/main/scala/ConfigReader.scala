@@ -10,6 +10,7 @@ import java.util.{ Set => JSet }
 import scala.reflect.runtime.universe.TypeTag
 import edu.gemini.spModel.gemini.calunit.{ CalUnitParams => OldGCal }
 import edu.gemini.spModel.gemini.flamingos2.{ Flamingos2 => OldF2 }
+import edu.gemini.shared.util.immutable.{ Some => GSome }
 
 import scalaz._, Scalaz._
 
@@ -37,11 +38,6 @@ object ConfigReader3 {
     def enum[A: Enumerated: TypeTag](f: A => String): Read[A] =
       cast[String].map(ufindp(f))
 
-    def seqOpt[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String, default: S): Read[A] =
-      cast[edu.gemini.shared.util.immutable.Option[S]].map { opt =>
-        ufindp(f)(opt.getOrElse(default).sequenceValue)
-      }
-
     def seq[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String): Read[A] =
       cast[S].map(s => ufindp(f)(s.sequenceValue))
 
@@ -62,7 +58,17 @@ object ConfigReader3 {
     val f2filter:      Read[F2Filter     ] = seq[OldF2.Filter,      F2Filter     ](_.tccValue)
     val f2lyotwheel:   Read[F2LyotWheel  ] = seq[OldF2.LyotWheel,   F2LyotWheel  ](_.tccValue)
     val f2disperser:   Read[F2Disperser  ] = seq[OldF2.Disperser,   F2Disperser  ](_.tccValue)
-    val f2windowcover: Read[F2WindowCover] = seqOpt[OldF2.WindowCover, F2WindowCover](_.tccValue, OldF2.WindowCover.OPEN)
+
+    // It appears that the window cover is sometimes "bare" and someimes wrapped in `Some` ... it is
+    // not `None` in my test data so there's not a mapping for it.
+    val f2windowcover: Read[F2WindowCover] = { a =>
+      ufindp[F2WindowCover, String](_.tccValue) {
+        a match {
+          case a: OldF2.WindowCover        => a.sequenceValue
+          case s: GSome[OldF2.WindowCover] => s.getValue.sequenceValue
+        }
+      }
+    }
 
   }
 
