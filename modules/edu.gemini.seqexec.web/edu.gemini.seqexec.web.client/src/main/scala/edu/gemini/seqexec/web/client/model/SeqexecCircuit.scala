@@ -6,7 +6,8 @@ import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
-import edu.gemini.seqexec.model._
+import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
