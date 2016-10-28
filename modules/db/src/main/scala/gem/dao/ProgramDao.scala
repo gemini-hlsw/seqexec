@@ -82,7 +82,7 @@ object ProgramDao {
     sql"""
       SELECT program_id, title
         FROM program
-       WHERE program_id like $pat OR title like $pat
+       WHERE lower(program_id) like $pat OR lower(title) like $pat
     ORDER BY program_id, title
        LIMIT $max
     """.query[(Program.Id, String)]

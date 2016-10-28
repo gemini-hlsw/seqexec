@@ -8,7 +8,7 @@ import gem.enum._
 import scalaz._, Scalaz._
 import scalaz.concurrent.Task
 
-case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]) {
+final class Service[M[_]] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 
   /**
    * Return a list of programs whose name or id contains the given substring (case-insensitive), up
@@ -40,14 +40,12 @@ case class Service[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]
 }
 
 object Service {
-  //
-  // def forTesting(uname: String): Service[Task] = {
-  //   val xa = DriverManagerTransactor[Task]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
-  //   val io = for {
-  //     user <- UserDao.selectWithRoles(uname).transact(xa)
-  //     log  <- Log.newLog[Task]("Testing", xa)
-  //   } yield Service(xa, log, user)
-  //   io.unsafePerformSync
-  // }
+
+  def apply[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
+    new Service(xa, log, user)
+
+  object L {
+    def user[M[_]]: Service[M] @> User[ProgramRole] = Lens.lensu((a, b) => new Service(a.xa, a.log, b), _.user)
+  }
 
 }
