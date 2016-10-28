@@ -15,7 +15,8 @@ package object command {
   val All = Commands[GemState](
     cd.command,
     ls.command,
-    whoami.command
+    whoami.command,
+    passwd.command
   )
 
   type GemCommand = Command[SessionIO, Session[GemState]]

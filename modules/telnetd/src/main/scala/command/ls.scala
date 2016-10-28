@@ -26,7 +26,8 @@ object ls {
       help("A glob-style pattern"),
       metavar("<pattern>"),
       value("*")
-    ).map(_.replaceAll("\\*", "%").toLowerCase)
+    ).map(_.replaceAll("\\*", "%")
+           .replaceAll("\\.", "?"))
 
   val command: GemCommand =
     shellCommand[GemState](

@@ -46,4 +46,13 @@ object UserDao {
             User(i, f, l, e, s, map)
         }
       }
+
+  def changePassword(uid: User.Id, oldPassword: String, newPassword: String): ConnectionIO[Boolean] =
+    sql"""
+      UPDATE gem_user
+      SET    md5 = md5($newPassword)
+      WHERE  id  = ${uid}
+      AND    md5 = md5($oldPassword)
+    """.update.run.map(_ == 1)
+
 }

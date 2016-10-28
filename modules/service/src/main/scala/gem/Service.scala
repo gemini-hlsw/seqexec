@@ -11,8 +11,8 @@ import scalaz.concurrent.Task
 final class Service[M[_]] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 
   /**
-   * Return a list of programs whose name or id contains the given substring (case-insensitive), up
-   * to a provided maximum length. The use case is an "Open" dialog.
+   * Construct a program that yields a list of `Program` whose name or id contains the given
+   * substring (case-insensitive), up to a provided maximum length.
    */
   def queryProgramsByName(substr: String, max: Int): M[List[Program[Nothing]]] =
     log.log(user, s"""queryProgramsByName("$substr", $max)""") {
@@ -20,32 +20,33 @@ final class Service[M[_]] private (private val xa: Transactor[M], val log: Log[M
     }
 
   /**
-   * Return a program and shallow observations. The use case is an overview page showing the
-   * program, allowing the user to navigate to a selected observation.
+   * Construct a program that attempts to change the user's password, yielding `true` on success.
    */
-  def getProgram(id: Program.Id): M[Program[Observation[Nothing]]] =
-    log.log(user, s"getProgram($id)") {
-      ???
-    }
-
-  /**
-   * Fetch an observation with full sequence information. The use case is initial population of a
-   * sequence editor.
-   */
-  def getObservation(id: Observation.Id): M[Observation[Step[_ <: Instrument]]] =
-    log.log(user, s"getObservation($id)") {
-      ???
+  def changePassword(oldPassword: String, newPassword: String): M[Boolean] =
+    log.log(user, "changePassword(***, ***)") {
+      UserDao.changePassword(user.id, oldPassword, newPassword).transact(xa)
     }
 
 }
 
 object Service {
 
-  def apply[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
-    new Service(xa, log, user)
-
   object L {
     def user[M[_]]: Service[M] @> User[ProgramRole] = Lens.lensu((a, b) => new Service(a.xa, a.log, b), _.user)
   }
+
+  def apply[M[_]](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
+    new Service(xa, log, user)
+
+  /**
+   * Construct a program that verifies a user's id and password and returns a `Service`.
+   */
+  def tryLogin[M[_]: Monad: Catchable: Capture](
+    user: User.Id, pass: String, xa: Transactor[M], txa: Transactor[Task]
+  ): M[Option[Service[M]]] =
+    xa.transact(UserDao.selectWithRoles(user, pass)).flatMap {
+      case None    => Option.empty[Service[M]].point[M]
+      case Some(u) => Log.newLog[M](s"session:$u.name", txa).map(l => Some(Service[M](xa, l, u)))
+    }
 
 }
