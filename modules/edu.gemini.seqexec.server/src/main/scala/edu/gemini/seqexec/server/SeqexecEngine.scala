@@ -78,11 +78,22 @@ object SeqexecEngine {
     )
   )
 
-  def start(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
-  def requestPause(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
-  def setBreakpoint(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
-  def setSkipMark(seqId: SPObservationID): SeqexecFailure \/ Unit = ???
-  def requestRefresh(): Unit = ???
+  // TODO: Add seqId: SPObservationID as parameter
+  def start(q: engine.EventQueue): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.start).map(_.right)
+
+  // TODO: Add seqId: SPObservationID as parameter
+  def requestPause(q: engine.EventQueue): Task[SeqexecFailure \/ Unit ]=
+    q.enqueueOne(Event.pause).map(_.right)
+
+  // TODO: Add seqId: SPObservationID as parameter
+  def setBreakpoint(q: engine.EventQueue): Task[SeqexecFailure \/ Unit]= ???
+
+  // TODO: Add seqId: SPObservationID as parameter
+  def setSkipMark(q: engine.EventQueue): Task[SeqexecFailure \/ Unit] = ???
+
+  def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
+
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.Handler.processT(q)(qs).map {
       case (ev, qs) =>

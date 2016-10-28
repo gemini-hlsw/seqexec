@@ -1,6 +1,8 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import edu.gemini.seqexec.server.Commands
+import edu.gemini.seqexec.server.SeqexecEngine
+import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
@@ -11,7 +13,7 @@ import org.http4s.server.middleware.GZip
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService) extends BooPicklers {
+class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue) extends BooPicklers {
 
   val tokenAuthService = JwtAuthentication(auth)
 
@@ -57,5 +59,25 @@ class SeqexecCommandRoutes(auth: AuthenticationService) extends BooPicklers {
 
     case req @ GET  -> Root  / obsId / "state" =>
       Ok(toSequenceConfig("state", commands.state(obsId)))
+
+    // New SeqexecEngine
+
+    // TODO: Add obsId parameter
+    case req @ POST -> Root / "start" =>
+      // TODO: Get rid of `.toString` How do we want to represent input results
+      // now?
+      Ok(SeqexecEngine.start(q).map(_.toString))
+
+    // TODO: Add obsId parameter
+    case req @ POST -> Root / "pause" =>
+      // TODO: Get rid of `.toString` How do we want to represent input results
+      // now?
+      Ok(SeqexecEngine.requestPause(q).map(_.toString))
+
+    case req @ GET -> Root / "refresh" =>
+      // TODO: Get rid of `.toString` How do we want to represent input results
+      // now?
+      Ok(SeqexecEngine.requestRefresh(q).map(_.toString))
+
   }}}
 }
