@@ -4,7 +4,8 @@ import java.time.LocalTime
 
 import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
-import edu.gemini.seqexec.model.{SeqexecEvent, UserDetails}
+import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
 import org.scalajs.dom.WebSocket
 
@@ -67,7 +68,6 @@ case class Connected(ws: WebSocket, delay: Int) extends Action
 case class ConnectionClosed(delay: Int) extends Action
 case class NewSeqexecEvent(e: SeqexecEvent) extends Action
 case class ConnectionError(s: String) extends Action
-
 
 // End Actions
 

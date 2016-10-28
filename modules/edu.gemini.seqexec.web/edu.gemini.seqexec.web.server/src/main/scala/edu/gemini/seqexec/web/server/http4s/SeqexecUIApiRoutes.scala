@@ -4,9 +4,10 @@ import java.time.Instant
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
-import edu.gemini.seqexec.server.{ODBProxy, SeqexecFailure}
+import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.model.Conversions._
@@ -26,7 +27,8 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService) extends BooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) extends BooPicklers with NewBooPicklers {
+
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 
@@ -79,12 +81,12 @@ class SeqexecUIApiRoutes(auth: AuthenticationService) extends BooPicklers {
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
   val protectedServices: HttpService = tokenAuthService { GZip { HttpService {
-//      case req @ GET -> Root / "seqexec" / "events"         =>
-//        // Stream seqexec events to clients and a ping
-//        val user = userInRequest(req)
-//
-//        WS(Exchange(pingProcess merge (Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
-//          ExecutorImpl.sequenceEvents.map(v => Binary(trimmedArray(v)))), scalaz.stream.Process.empty))
+      case req @ GET -> Root / "seqexec" / "events"         =>
+        // Stream seqexec events to clients and a ping
+        val user = userInRequest(req)
+
+        WS(Exchange(pingProcess merge //(Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+          SeqexecEngine.eventProcess(q).map(v => Binary(newTrimmedArray(v))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout"        =>
         // Clean the auth cookie
