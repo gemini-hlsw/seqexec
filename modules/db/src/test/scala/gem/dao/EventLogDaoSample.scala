@@ -16,18 +16,18 @@ object EventLogDaoSample extends SafeApp {
     ""
   )
 
-  val sid = Sequence.Id.unsafeFromString("GS-2017A-Q-1-2-acq")
+  val oid = Observation.Id.unsafeFromString("GS-2017A-Q-1-2")
 
   def insertEvents: ConnectionIO[List[Event]] =
     for {
-      _ <- insertStartSlew(sid)
-      _ <- insertStartVisit(sid)
-      _ <- insertStartIntegration(sid, 1)
-      _ <- insertEndIntegration(sid, 1)
-      _ <- insertPauseObserve(sid)
-      _ <- insertAbortObserve(sid)
-      _ <- insertEndVisit(sid)
-      _ <- insertEndSlew(sid)
+      _ <- insertStartSlew(oid)
+      _ <- insertStartVisit(oid)
+      _ <- insertStartIntegration(oid, 1)
+      _ <- insertEndIntegration(oid, 1)
+      _ <- insertPauseObserve(oid)
+      _ <- insertAbortObserve(oid)
+      _ <- insertEndVisit(oid)
+      _ <- insertEndSlew(oid)
       l <- selectAll(Instant.now().minusSeconds(10), Instant.now().plusSeconds(10))
     } yield l
 

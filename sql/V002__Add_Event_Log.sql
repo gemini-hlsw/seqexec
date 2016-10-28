@@ -16,11 +16,11 @@ CREATE TYPE evt_type AS ENUM (
 
 CREATE TABLE log_observe_event
 (
-   id            SERIAL,
-   "timestamp"   timestamp (5) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   event         evt_type NOT NULL,
-   sequence_id   text NOT NULL,
-   step          integer CHECK (step > 0),
+   id              SERIAL,
+   "timestamp"     timestamp (5) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   event           evt_type NOT NULL,
+   observation_id  text NOT NULL,
+   step            integer CHECK (step > 0),
    CONSTRAINT check_step CHECK ((event IN ('StartIntegration', 'EndIntegration') AND step iS NOT NULL) OR
                                 (event NOT IN ('StartIntegration', 'EndIntegration') AND step IS NULL))
 );

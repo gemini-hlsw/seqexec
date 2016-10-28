@@ -1,75 +1,72 @@
 package gem.dao
 
-import gem.{Event, Sequence}
+import gem.{Event, Observation}
 import gem.Event._
 import gem.enum.EventType
 import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew, EndVisit, Pause, StartIntegration, StartSequence, StartSlew, StartVisit, Stop}
 
-import java.sql.Timestamp
 import java.time.Instant
 import doobie.imports._
 
-import scalaz._
-import Scalaz._
-
+import scalaz._, Scalaz._
 
 
 object EventLogDao {
 
-  private def insertEvent(t: EventType, sid: Sequence.Id, step: Option[Int]): ConnectionIO[Int] =
+  private def insertEvent(t: EventType, oid: Observation.Id, step: Option[Int]): ConnectionIO[Int] =
     sql"""
-      INSERT INTO log_observe_event (event, sequence_id, step)
+      INSERT INTO log_observe_event (event, observation_id, step)
            VALUES ($t :: evt_type,
-                   $sid,
+                   $oid,
                    $step)
     """.update.run
 
-  def insertAbortObserve(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(Abort, sid, None)
+  def insertAbortObserve(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(Abort, oid, None)
 
-  def insertContinue(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(Continue, sid, None)
+  def insertContinue(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(Continue, oid, None)
 
-  def insertEndIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    insertEvent(EndIntegration, sid, Some(step))
+  def insertEndIntegration(oid: Observation.Id, step: Int): ConnectionIO[Int] =
+    insertEvent(EndIntegration, oid, Some(step))
 
-  def insertEndSequence(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(EndSequence, sid, None)
+  def insertEndSequence(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(EndSequence, oid, None)
 
-  def insertEndSlew(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(EndSlew, sid, None)
+  def insertEndSlew(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(EndSlew, oid, None)
 
-  def insertEndVisit(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(EndVisit, sid, None)
+  def insertEndVisit(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(EndVisit, oid, None)
 
-  def insertPauseObserve(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(Pause, sid, None)
+  def insertPauseObserve(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(Pause, oid, None)
 
-  def insertStartIntegration(sid: Sequence.Id, step: Int): ConnectionIO[Int] =
-    insertEvent(StartIntegration, sid, Some(step))
+  def insertStartIntegration(oid: Observation.Id, step: Int): ConnectionIO[Int] =
+    insertEvent(StartIntegration, oid, Some(step))
 
-  def insertStartSequence(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(StartSequence, sid, None)
+  def insertStartSequence(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(StartSequence, oid, None)
 
-  def insertStartSlew(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(StartSlew, sid, None)
+  def insertStartSlew(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(StartSlew, oid, None)
 
-  def insertStartVisit(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(StartVisit, sid, None)
+  def insertStartVisit(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(StartVisit, oid, None)
 
-  def insertStop(sid: Sequence.Id): ConnectionIO[Int] =
-    insertEvent(Stop, sid, None)
+  def insertStop(oid: Observation.Id): ConnectionIO[Int] =
+    insertEvent(Stop, oid, None)
 
   def selectAll(start: Instant, end: Instant): ConnectionIO[List[Event]] =
     sql"""
       SELECT timestamp,
              event :: evt_type,
-             sequence_id,
+             observation_id,
              step
         FROM log_observe_event
        WHERE timestamp BETWEEN $start AND $end
     ORDER BY timestamp
-    """.query[(Instant, EventType, Sequence.Id, Option[Int])].map {
+    """.query[(Instant, EventType, Observation.Id, Option[Int])].map {
       case (t, Abort,            s, None   ) => abortObserve(t, s)
       case (t, Continue,         s, None   ) => continueObserve(t, s)
       case (t, EndIntegration,   s, Some(i)) => endIntegration(t, s, i)
