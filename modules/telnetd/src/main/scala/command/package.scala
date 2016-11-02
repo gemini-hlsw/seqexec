@@ -13,7 +13,6 @@ package object command {
   }
 
   val All = Commands[GemState](
-    cd.command,
     ls.command,
     whoami.command,
     passwd.command
