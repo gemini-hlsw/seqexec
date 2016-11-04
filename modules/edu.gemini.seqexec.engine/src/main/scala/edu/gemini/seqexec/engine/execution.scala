@@ -36,7 +36,7 @@ case class Current(execution: Execution[Action \/ Result]) {
     *
     */
   val uncurrentify: Option[Execution[Result]] =
-    execution.all(_.isRight).option(results)
+    (execution.nonEmpty && execution.all(_.isRight)).option(results)
 
   /**
     * Set the `Result` for the given `Action` index in `Current`.
