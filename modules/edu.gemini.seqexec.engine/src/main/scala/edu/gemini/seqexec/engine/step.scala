@@ -56,11 +56,10 @@ case class StepZ(
   val next: Option[StepZ] =
     pending match {
       case Nil           => None
-      case exep :: exeps => for {
-        // TODO: Applicative syntax?
-        curr <- Current.currentify(exep)
-        exed <- focus.uncurrentify
-      } yield StepZ(id, exeps, curr, exed :: done)
+      case exep :: exeps =>
+        (Current.currentify(exep) |@| focus.uncurrentify) (
+          (curr, exed) => StepZ(id, exeps, curr, exed :: done)
+        )
     }
 
   /**
@@ -81,8 +80,9 @@ case class StepZ(
       id,
       // TODO: Functor composition?
       done.map(_.map(_.right)) ++
-      List(focus.execution) ++
-      pending.map(_.map(_.left))
+        List(focus.execution) ++
+        pending.map(_.map(_.left)
+        )
     )
 }
 
