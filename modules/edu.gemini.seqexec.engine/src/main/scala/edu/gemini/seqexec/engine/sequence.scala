@@ -64,11 +64,10 @@ case class SequenceZ(
       case None      =>
         pending match {
           case Nil             => None
-          case stepp :: stepps => for {
-            // TODO: Applicative style?
-            curr  <- StepZ.currentify(stepp)
-            stepd <- focus.uncurrentify
-          } yield SequenceZ(id, stepps, curr, stepd :: done)
+          case stepp :: stepps =>
+            (StepZ.currentify(stepp) |@| focus.uncurrentify) (
+              (curr, stepd) => SequenceZ(id, stepps, curr, stepd :: done)
+            )
         }
       // Current step ongoing
       case Some(stz) => Some(SequenceZ(id, pending, stz, done))
@@ -92,8 +91,8 @@ case class SequenceZ(
       id,
       // TODO: Functor composition?
       done.map(_.map(_.right)) ++
-      List(focus.toStep) ++
-      pending.map(_.map(_.left))
+        List(focus.toStep) ++
+        pending.map(_.map(_.left))
     )
 }
 
