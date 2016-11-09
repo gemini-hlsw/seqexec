@@ -70,7 +70,7 @@ package object engine {
       // Empty state
       case None     => send(q)(finished)
       // Final State
-      case Some(qs@QStateF(_, _)) => put(qs) *> send(q)(finished)
+      case Some(qs: QStateF) => put(qs) *> send(q)(finished)
       // Execution completed, execute next actions
       case Some(qs) => put(qs) *> execute(q)
     }

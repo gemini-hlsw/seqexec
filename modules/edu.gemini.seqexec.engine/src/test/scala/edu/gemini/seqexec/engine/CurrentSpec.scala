@@ -21,7 +21,7 @@ class CurrentSpec extends FlatSpec with Matchers {
     assert(curr.uncurrentify.isEmpty)
   }
 
-  "marking an index out of bonds" should "not modify the execution" in {
+  "marking an index out of bounds" should "not modify the execution" in {
     assert(curr.mark(3)(Result.Error(Unit)) === curr)
   }
 
