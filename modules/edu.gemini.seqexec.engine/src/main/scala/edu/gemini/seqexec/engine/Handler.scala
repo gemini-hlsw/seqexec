@@ -22,6 +22,7 @@ object Handler {
         log("Output: Polling current state")
       case Exit               =>
         log("Bye") *> close(q)
+      case Load(seq) => log("Output: Loaded") *> sequence(seq)
     }
 
     def handleSystemEvent(se: SystemEvent): Engine[Unit] = se match {

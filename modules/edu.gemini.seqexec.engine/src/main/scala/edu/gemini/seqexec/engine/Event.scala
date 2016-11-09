@@ -16,11 +16,13 @@ object Event {
   case object Pause extends UserEvent
   case object Poll extends UserEvent
   case object Exit extends UserEvent
+  case class Load(sequence: Sequence[Action]) extends UserEvent
 
   val start: Event = EventUser(Start)
   val pause: Event = EventUser(Pause)
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
+  def load(sequence: Sequence[Action]): Event = EventUser(Load(sequence))
 
   /**
     * Events generated internally by the Engine.
