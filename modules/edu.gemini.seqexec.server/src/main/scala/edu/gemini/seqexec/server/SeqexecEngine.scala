@@ -61,6 +61,9 @@ object SeqexecEngine {
     )
   )
 
+  // Stub for Sequence loading.
+  def loadSequence(q: engine.EventQueue, oid: SPObservationID): Task[SeqexecFailure \/ Unit] = ???
+
   // TODO: Add seqId: SPObservationID as parameter
   def start(q: engine.EventQueue): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start).map(_.right)
