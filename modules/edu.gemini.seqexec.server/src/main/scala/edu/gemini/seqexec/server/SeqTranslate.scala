@@ -6,8 +6,8 @@ import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 /**
   * Created by jluhrs on 9/14/16.
@@ -29,7 +29,7 @@ object SeqTranslate {
     }
 
     instrument.map { a =>
-      val systems = List(Tcs(TcsControllerEpics), a)
+      val systems = List(Tcs(TcsControllerSim), a)
       // TODO Find a proper way to inject the subsystems
       Step[Action](
         i,
@@ -43,12 +43,12 @@ object SeqTranslate {
   }
 
   def sequence(dhsClient: DhsClient)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
-  val configs = sequenceConfig.getAllSteps.toList
+    val configs = sequenceConfig.getAllSteps.toList
 
-  val steps = configs.zipWithIndex.traverseU {
-    case (c, i) => step(dhsClient)(i, c)
-  }
+    val steps = configs.zipWithIndex.traverseU {
+      case (c, i) => step(dhsClient)(i, c)
+    }
 
-  steps.map(Sequence[Action](obsId, _))
+    steps.map(Sequence[Action](obsId, _))
   }
 }

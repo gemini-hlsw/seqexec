@@ -49,6 +49,16 @@ package object engine {
     // TODO: Make Status an Equal instance
     modify(QState.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
 
+
+
+  /**
+    * Reloads the (for now only) sequence
+    */
+  def sequence(seq: Sequence[Action]): Engine[Unit] = status.flatMap {
+    case Status.Running => unit
+    case _ => put(QState.init( engine.Queue( List(seq) ) ))
+  }
+
   /**
     * Adds the current Execution` to the completed `Queue`, makes the next
     * pending `Execution` the current one, and initiates the actual execution.

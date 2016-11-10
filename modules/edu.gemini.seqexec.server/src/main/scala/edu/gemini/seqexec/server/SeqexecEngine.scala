@@ -1,8 +1,10 @@
 package edu.gemini.seqexec.server
 
+import java.time.LocalDate
+
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.{Event, QState, Sequence, Action, Result}
+import edu.gemini.seqexec.engine.{Action, Event, QState, Result, Sequence}
 
 import scalaz._
 import Scalaz._
@@ -54,26 +56,7 @@ object SeqexecEngine {
 
   val qs: QState = QState.init(
     engine.Queue(
-      List(
-        Sequence(
-          "First",
-          List(
-            engine.Step(
-              1,
-              List(
-                List(configureTcs, configureInst), // Execution
-                List(observe) // Execution
-              )
-            ),
-            engine.Step(
-              2,
-              List(
-                List(configureTcs, configureInst), // Execution
-                List(observe) // Execution
-              )
-            )
-          )
-        )
+      List[Sequence[Action]](
       )
     )
   )
@@ -99,6 +82,17 @@ object SeqexecEngine {
       case (ev, qs) =>
         toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
     }
+
+  def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
+    val t = EitherT( for {
+        odbSeq <- Task(ODBProxy.read(seqId))
+        now <- Task(LocalDate.now)
+      } yield odbSeq.flatMap(s => SeqTranslate.sequence(DhsClientSim(now))(seqId.stringValue(), s))
+    )
+    val u = t.flatMapF(x => q.enqueueOne(Event.load(x)).map(_.right))
+    u.run
+  }
+
 
   private def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
     case Event.EventUser(ue) => ue match {
