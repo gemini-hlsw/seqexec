@@ -84,10 +84,11 @@ object SeqexecEngine {
     }
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
-    val t = EitherT( Task {
-      val odbSeq = ODBProxy.read(seqId)
-      odbSeq.flatMap(s => SeqTranslate.sequence(DhsClientSim(LocalDate.now))(seqId.stringValue(), s))
-    })
+    val t = EitherT( for {
+        odbSeq <- Task(ODBProxy.read(seqId))
+        now <- Task(LocalDate.now)
+      } yield odbSeq.flatMap(s => SeqTranslate.sequence(DhsClientSim(now))(seqId.stringValue(), s))
+    )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(x)).map(_.right))
     u.run
   }

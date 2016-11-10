@@ -54,9 +54,9 @@ package object engine {
   /**
     * Reloads the (for now only) sequence
     */
-  def sequence(seq: Sequence[Action]): Engine[Unit] = modify { st =>
-    if(st.status != Status.Running) QState.init( engine.Queue( List(seq) ) )
-    else st
+  def sequence(seq: Sequence[Action]): Engine[Unit] = status.flatMap {
+    case Status.Running => unit
+    case _ => put(QState.init( engine.Queue( List(seq) ) ))
   }
 
   /**
