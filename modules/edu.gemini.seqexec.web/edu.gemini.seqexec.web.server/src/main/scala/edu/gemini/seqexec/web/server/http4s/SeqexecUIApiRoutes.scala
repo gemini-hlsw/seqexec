@@ -103,7 +103,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) exte
           } yield (obsId, s)
 
           r match {
-            case \/-((i, s)) => SeqexecEngine.loadSequence(q, i) *>
+            case \/-((i, s)) => SeqexecEngine.load(q, i) *>
                 Ok(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None)))
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
           }

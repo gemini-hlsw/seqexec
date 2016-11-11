@@ -123,8 +123,8 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       sc <- executorConf
       _  <- seqexecExecutor.run(sc)
       as <- authService.run(ac)
+      // Put the queue in WebServerConfiguration?
       q = async.boundedQueue[Event.Event](10)
-      _  <- q.enqueueOne(Event.start)
       ws <- webServer(as, q).run(wc)
     } yield ws
 }

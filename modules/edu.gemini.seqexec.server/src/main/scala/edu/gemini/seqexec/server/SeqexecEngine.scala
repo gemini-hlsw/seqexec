@@ -18,51 +18,12 @@ import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
   */
 object SeqexecEngine {
 
-  /**
-    * Emulates TCS configuration in the real world.
-    *
-    */
-  val configureTcs: Action  = for {
-    _ <- Task(println("System: Start TCS configuration"))
-    _ <- Task(Thread.sleep(2000))
-    _ <- Task(println ("System: Complete TCS configuration"))
-  } yield Result.OK(())
-
-  /**
-    * Emulates Instrument configuration in the real world.
-    *
-    */
-  val configureInst: Action  = for {
-    _ <- Task(println("System: Start Instrument configuration"))
-    _ <- Task(Thread.sleep(2000))
-    _ <- Task(println("System: Complete Instrument configuration"))
-  } yield Result.OK(())
-
-  /**
-    * Emulates an observation in the real world.
-    *
-    */
-  val observe: Action  = for {
-    _ <- Task(println("System: Start observation"))
-    _ <- Task(Thread.sleep(2000))
-    _ <- Task(println ("System: Complete observation"))
-  } yield Result.OK(())
-
-  val faulty: Action  = for {
-    _ <- Task(println("System: Start observation"))
-    _ <- Task(Thread.sleep(1000))
-    _ <- Task(println ("System: Complete observation"))
-  } yield Result.Error(())
-
   val qs: QState = QState.init(
     engine.Queue(
       List[Sequence[Action]](
       )
     )
   )
-
-  // Stub for Sequence loading.
-  def loadSequence(q: engine.EventQueue, oid: SPObservationID): Task[SeqexecFailure \/ Unit] = ???
 
   // TODO: Add seqId: SPObservationID as parameter
   def start(q: engine.EventQueue): Task[SeqexecFailure \/ Unit] =
