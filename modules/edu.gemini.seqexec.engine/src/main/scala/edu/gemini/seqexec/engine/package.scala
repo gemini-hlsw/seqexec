@@ -67,8 +67,10 @@ package object engine {
     */
   def next(q: EventQueue): Engine[Unit] =
     gets(_.next).flatMap {
-      // No more Executions left
+      // Empty state
       case None     => send(q)(finished)
+      // Final State
+      case Some(qs: QStateF) => put(qs) *> send(q)(finished)
       // Execution completed, execute next actions
       case Some(qs) => put(qs) *> execute(q)
     }

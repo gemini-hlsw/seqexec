@@ -27,7 +27,8 @@ case class Current(execution: Execution[Action \/ Result]) {
     *
     */
   def status: Status =
-    if (execution.isEmpty || execution.all(_.isLeft)) Status.Waiting
+    if (execution.forall(_.isLeft)) Status.Waiting
+    // Empty execution is handled here
     else if (execution.all(_.isRight)) Status.Completed
     else Status.Running
 
@@ -36,7 +37,7 @@ case class Current(execution: Execution[Action \/ Result]) {
     *
     */
   val uncurrentify: Option[Execution[Result]] =
-    execution.all(_.isRight).option(results)
+    (execution.nonEmpty && execution.all(_.isRight)).option(results)
 
   /**
     * Set the `Result` for the given `Action` index in `Current`.
