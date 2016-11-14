@@ -41,6 +41,7 @@ trait NewBooPicklers {
     .addConcreteType[SequenceStart]
     .addConcreteType[StepExecuted]
     .addConcreteType[SequenceCompleted]
+    .addConcreteType[SequenceLoaded]
     .addConcreteType[StepBreakpointChanged]
     .addConcreteType[StepSkipMarkChanged]
     .addConcreteType[SequencePauseRequested]

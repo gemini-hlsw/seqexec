@@ -14,9 +14,9 @@ object Event {
   sealed trait UserEvent
   case object Start extends UserEvent
   case object Pause extends UserEvent
+  case class Load(sequence: Sequence[Action]) extends UserEvent
   case object Poll extends UserEvent
   case object Exit extends UserEvent
-  case class Load(sequence: Sequence[Action]) extends UserEvent
 
   val start: Event = EventUser(Start)
   val pause: Event = EventUser(Pause)

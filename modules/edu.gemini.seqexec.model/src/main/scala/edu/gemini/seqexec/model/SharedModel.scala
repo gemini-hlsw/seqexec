@@ -11,6 +11,8 @@ object SharedModel {
 
     case class SequenceCompleted(view: List[SequenceView]) extends SeqexecEvent
 
+    case class SequenceLoaded(view: List[SequenceView]) extends SeqexecEvent
+
     case class StepBreakpointChanged(view: List[SequenceView]) extends SeqexecEvent
 
     case class StepSkipMarkChanged(view: List[SequenceView]) extends SeqexecEvent
