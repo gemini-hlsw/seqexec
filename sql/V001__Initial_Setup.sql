@@ -145,7 +145,6 @@ SET default_with_oids = false;
 CREATE TABLE e_f2_disperser (
     id identifier NOT NULL,
     wavelength double precision,
-    tcc_value character varying(64) NOT NULL,
     short_name character varying(20) NOT NULL,
     long_name character varying(64) NOT NULL
 );
@@ -162,7 +161,6 @@ CREATE TABLE e_f2_filter (
     wavelength double precision,
     short_name character varying(20) NOT NULL,
     long_name character varying(20) NOT NULL,
-    tcc_value character varying(20) NOT NULL,
     obsolete boolean NOT NULL
 );
 
@@ -179,8 +177,7 @@ CREATE TABLE e_f2_fpunit (
     slit_width smallint NOT NULL,
     decker f2_decker NOT NULL,
     long_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL,
-    tcc_value character varying(20) NOT NULL
+    obsolete boolean NOT NULL
 );
 
 
@@ -196,8 +193,7 @@ CREATE TABLE e_f2_lyot_wheel (
     plate_scale double precision NOT NULL,
     pixel_scale double precision NOT NULL,
     obsolete boolean NOT NULL,
-    long_name character varying(32) NOT NULL,
-    tcc_value character varying(32) NOT NULL
+    long_name character varying(32) NOT NULL
 );
 
 
@@ -210,8 +206,7 @@ ALTER TABLE e_f2_lyot_wheel OWNER TO postgres;
 CREATE TABLE e_f2_window_cover (
     id identifier NOT NULL,
     short_name character varying(20) NOT NULL,
-    long_name character varying(20) NOT NULL,
-    tcc_value character varying(20) NOT NULL
+    long_name character varying(20) NOT NULL
 );
 
 
@@ -225,7 +220,6 @@ CREATE TABLE e_gcal_filter (
     id character varying(20) NOT NULL,
     short_name character varying(20) NOT NULL,
     obsolete boolean NOT NULL,
-    tcc_value character varying(20) NOT NULL,
     long_name character varying(20) NOT NULL
 );
 
@@ -238,7 +232,6 @@ ALTER TABLE e_gcal_filter OWNER TO postgres;
 
 CREATE TABLE e_gcal_lamp (
     id character varying(20) NOT NULL,
-    tcc_value character varying(20) NOT NULL,
     lamp_type gcal_lamp_type NOT NULL,
     short_name character varying(20) NOT NULL,
     long_name character varying(20) NOT NULL,
@@ -256,7 +249,6 @@ CREATE TABLE e_instrument (
     id identifier NOT NULL,
     short_name character varying(20) NOT NULL,
     long_name character varying(64) NOT NULL,
-    tcc_value character varying(64) NOT NULL,
     obsolete boolean NOT NULL
 );
 
@@ -407,7 +399,6 @@ CREATE TABLE e_template (
     id identifier NOT NULL,
     short_name character varying(32) NOT NULL,
     long_name character varying(64) NOT NULL,
-    tcc_value character varying(64) NOT NULL,
     obsolete boolean NOT NULL
 );
 
@@ -617,11 +608,11 @@ ALTER TABLE step_science OWNER TO postgres;
 -- Data for Name: e_f2_disperser; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_f2_disperser (id, wavelength, tcc_value, short_name, long_name) FROM stdin;
-R1200JH	1.3899999999999999	R1200JH	R1200JH	R=1200 (J + H) grism
-R1200HK	1.871	R1200HK	R1200HK	R=1200 (H + K) grism
-R3000	1.64999999999999991	R3000	R3000	R=3000 (J or H or K) grism
-NoDisperser	\N	NONE	None	None
+COPY e_f2_disperser (id, wavelength, short_name, long_name) FROM stdin;
+R1200JH	1.3899999999999999	R1200JH	R=1200 (J + H) grism
+R1200HK	1.871	R1200HK	R=1200 (H + K) grism
+R3000	1.64999999999999991	R3000	R=3000 (J or H or K) grism
+NoDisperser	\N	None	None
 \.
 
 
@@ -629,19 +620,19 @@ NoDisperser	\N	NONE	None	None
 -- Data for Name: e_f2_filter; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_f2_filter (id, wavelength, short_name, long_name, tcc_value, obsolete) FROM stdin;
-Open	1.60000000000000009	Open	Open	OPEN	f
-Y	1.02000000000000002	Y	Y (1.02 um)	Y	f
-F1056	1.05600000000000005	F1056	F1056 (1.056 um)	F1056	f
-J	1.25	J	J (1.25 um)	J	f
-H	1.64999999999999991	H	H (1.65 um)	H	f
-JH	1.3899999999999999	JH	JH (spectroscopic)	JH	f
-HK	1.871	HK	HK (spectroscopic)	HK	f
-JLow	1.14999999999999991	J-low	J-low (1.15 um)	J_LOW	f
-KLong	2.20000000000000018	K-long	K-long (2.20 um)	K_LONG	f
-KShort	2.14999999999999991	K-short	K-short (2.15 um)	K_SHORT	f
-F1063	1.06299999999999994	F1063	F1063 (1.063 um)	F1063	f
-Dark	\N	Dark	Dark	DARK	f
+COPY e_f2_filter (id, wavelength, short_name, long_name, obsolete) FROM stdin;
+Open	1.60000000000000009	Open	Open	f
+Y	1.02000000000000002	Y	Y (1.02 um)	f
+F1056	1.05600000000000005	F1056	F1056 (1.056 um)	f
+J	1.25	J	J (1.25 um)	f
+H	1.64999999999999991	H	H (1.65 um)	f
+JH	1.3899999999999999	JH	JH (spectroscopic)	f
+HK	1.871	HK	HK (spectroscopic)	f
+JLow	1.14999999999999991	J-low	J-low (1.15 um)	f
+KLong	2.20000000000000018	K-long	K-long (2.20 um)	f
+KShort	2.14999999999999991	K-short	K-short (2.15 um)	f
+F1063	1.06299999999999994	F1063	F1063 (1.063 um)	f
+Dark	\N	Dark	Dark	f
 \.
 
 
@@ -649,17 +640,17 @@ Dark	\N	Dark	Dark	DARK	f
 -- Data for Name: e_f2_fpunit; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_f2_fpunit (id, short_name, slit_width, decker, long_name, obsolete, tcc_value) FROM stdin;
-Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f	PINHOLE
-SubPixPinhole	Sub-Pix Pinhole	0	Imaging	Sub-Pixel Pinhole Gr	f	SUBPIX_PINHOLE
-None	None	0	Imaging	Imaging (none)	f	FPU_NONE
-Custom	Custom	0	MOS	Custom Mask	f	CUSTOM_MASK
-LongSlit1	Long Slit 1px	1	Long Slit	1-Pixel Long Slit	f	LONGSLIT_1
-LongSlit2	Long Slit 2px	2	Long Slit	2-Pixel Long Slit	f	LONGSLIT_2
-LongSlit3	Long Slit 3px	3	Long Slit	3-Pixel Long Slit	f	LONGSLIT_3
-LongSlit4	Long Slit 4px	4	Long Slit	4-Pixel Long Slit	f	LONGSLIT_4
-LongSlit6	Long Slit 6px	6	Long Slit	6-Pixel Long Slit	f	LONGSLIT_6
-LongSlit8	Long Slit 8px	8	Long Slit	8-Pixel Long Slit	f	LONGSLIT_8
+COPY e_f2_fpunit (id, short_name, slit_width, decker, long_name, obsolete) FROM stdin;
+Pinhole	Pinhole	0	Imaging	2-Pixel Pinhole Grid	f
+SubPixPinhole	Sub-Pix Pinhole	0	Imaging	Sub-Pixel Pinhole Gr	f
+None	None	0	Imaging	Imaging (none)	f
+Custom	Custom	0	MOS	Custom Mask	f
+LongSlit1	Long Slit 1px	1	Long Slit	1-Pixel Long Slit	f
+LongSlit2	Long Slit 2px	2	Long Slit	2-Pixel Long Slit	f
+LongSlit3	Long Slit 3px	3	Long Slit	3-Pixel Long Slit	f
+LongSlit4	Long Slit 4px	4	Long Slit	4-Pixel Long Slit	f
+LongSlit6	Long Slit 6px	6	Long Slit	6-Pixel Long Slit	f
+LongSlit8	Long Slit 8px	8	Long Slit	8-Pixel Long Slit	f
 \.
 
 
@@ -667,15 +658,15 @@ LongSlit8	Long Slit 8px	8	Long Slit	8-Pixel Long Slit	f	LONGSLIT_8
 -- Data for Name: e_f2_lyot_wheel; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_f2_lyot_wheel (id, short_name, plate_scale, pixel_scale, obsolete, long_name, tcc_value) FROM stdin;
-F16	f/16	1.6100000000000001	0.179999999999999993	f	f/16 (Open)	OPEN
-F32High	f/32 High	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO high background	HIGH
-F32Low	f/32 Low	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO low background	LOW
-F33Gems	f/33 GeMS	0.78400000000000003	0.0899999999999999967	t	f/33 (GeMS)	GEMS
-GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS under-sized)	GEMS_UNDER
-GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)	GEMS_OVER
-HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)	H1
-HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)	H2
+COPY e_f2_lyot_wheel (id, short_name, plate_scale, pixel_scale, obsolete, long_name) FROM stdin;
+F16	f/16	1.6100000000000001	0.179999999999999993	f	f/16 (Open)
+F32High	f/32 High	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO high background
+F32Low	f/32 Low	0.805000000000000049	0.0899999999999999967	t	f/32 MCAO low background
+F33Gems	f/33 GeMS	0.78400000000000003	0.0899999999999999967	t	f/33 (GeMS)
+GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS under-sized)
+GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)
+HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)
+HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)
 \.
 
 
@@ -683,9 +674,9 @@ HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)	H2
 -- Data for Name: e_f2_window_cover; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_f2_window_cover (id, short_name, long_name, tcc_value) FROM stdin;
-Open	Open	Open	OPEN
-Close	Close	Close	CLOSE
+COPY e_f2_window_cover (id, short_name, long_name) FROM stdin;
+Open	Open	Open
+Close	Close	Close
 \.
 
 
@@ -693,18 +684,18 @@ Close	Close	Close	CLOSE
 -- Data for Name: e_gcal_filter; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_gcal_filter (id, short_name, obsolete, tcc_value, long_name) FROM stdin;
-None	none	f	NONE	none
-Gmos	GMOS balance	f	GMOS	GMOS balance
-Hros	HROS balance	t	HROS	HROS balance
-Nir	NIR balance	f	NIR	NIR balance
-Nd10	ND1.0	f	ND_10	ND1.0
-Nd16	ND1.6	t	ND_16	ND1.6
-Nd20	ND2.0	f	ND_20	ND2.0
-Nd30	ND3.0	f	ND_30	ND3.0
-Nd40	ND4.0	f	ND_40	ND4.0
-Nd45	ND4-5	f	ND_45	ND4-5
-Nd50	ND5.0	t	ND_50	ND5.0
+COPY e_gcal_filter (id, short_name, obsolete, long_name) FROM stdin;
+None	none	f	none
+Gmos	GMOS balance	f	GMOS balance
+Hros	HROS balance	t	HROS balance
+Nir	NIR balance	f	NIR balance
+Nd10	ND1.0	f	ND1.0
+Nd16	ND1.6	t	ND1.6
+Nd20	ND2.0	f	ND2.0
+Nd30	ND3.0	f	ND3.0
+Nd40	ND4.0	f	ND4.0
+Nd45	ND4-5	f	ND4-5
+Nd50	ND5.0	t	ND5.0
 \.
 
 
@@ -712,14 +703,14 @@ Nd50	ND5.0	t	ND_50	ND5.0
 -- Data for Name: e_gcal_lamp; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_gcal_lamp (id, tcc_value, lamp_type, short_name, long_name, obsolete) FROM stdin;
-IrGreyBodyLow	IR grey body - low	flat	IR grey body - low	IR grey body - low	f
-IrGreyBodyHigh	IR grey body - high	flat	IR grey body - high	IR grey body - high	f
-QuartzHalogen	Quartz Halogen	flat	Quartz Halogen	Quartz Halogen	f
-ArArc	Ar arc	arc	Ar arc	Ar arc	f
-ThArArc	ThAr arc	arc	ThAr arc	ThAr arc	f
-CuArArc	CuAr arc	arc	CuAr arc	CuAr arc	f
-XeArc	Xe arc	arc	Xe arc	Xe arc	f
+COPY e_gcal_lamp (id, lamp_type, short_name, long_name, obsolete) FROM stdin;
+IrGreyBodyLow	flat	IR grey body - low	IR grey body - low	f
+IrGreyBodyHigh	flat	IR grey body - high	IR grey body - high	f
+QuartzHalogen	flat	Quartz Halogen	Quartz Halogen	f
+ArArc	arc	Ar arc	Ar arc	f
+ThArArc	arc	ThAr arc	ThAr arc	f
+CuArArc	arc	CuAr arc	CuAr arc	f
+XeArc	arc	Xe arc	Xe arc	f
 \.
 
 
@@ -727,22 +718,22 @@ XeArc	Xe arc	arc	Xe arc	Xe arc	f
 -- Data for Name: e_instrument; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_instrument (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
-Phoenix	Phoenix	Phoenix	Phoenix	f
-Michelle	Michelle	Michelle	Michelle	f
-Gnirs	GNIRS	GNIRS	GNIRS	f
-Niri	NIRI	NIRI	NIRI	f
-Trecs	TReCS	TReCS	TReCS	f
-Nici	NICI	NICI	NICI	f
-Nifs	NIFS	NIFS	NIFS	f
-Gpi	GPI	GPI	GPI	f
-Gsaoi	GSAOI	GSAOI	GSAOI	f
-GmosS	GMOS-S	GMOS South	GMOS-S	f
-AcqCam	AcqCam	Acquisition Camera	AcqCam	f
-GmosN	GMOS-N	GMOS North	GMOS-N	f
-Bhros	bHROS	bHROS	bHROS	t
-Visitor	Visitor Instrument	Visitor Instrument	Visitor Instrument	f
-Flamingos2	Flamingos2	Flamingos 2	Flamingos2	f
+COPY e_instrument (id, short_name, long_name, obsolete) FROM stdin;
+Phoenix	Phoenix	Phoenix	f
+Michelle	Michelle	Michelle	f
+Gnirs	GNIRS	GNIRS	f
+Niri	NIRI	NIRI	f
+Trecs	TReCS	TReCS	f
+Nici	NICI	NICI	f
+Nifs	NIFS	NIFS	f
+Gpi	GPI	GPI	f
+Gsaoi	GSAOI	GSAOI	f
+GmosS	GMOS-S	GMOS South	f
+AcqCam	AcqCam	Acquisition Camera	f
+GmosN	GMOS-N	GMOS North	f
+Bhros	bHROS	bHROS	t
+Visitor	Visitor Instrument	Visitor Instrument	f
+Flamingos2	Flamingos2	Flamingos 2	f
 \.
 
 
@@ -788,7 +779,7 @@ GS	Gemini South	Cerro Pachon	-70.7366867	-30.2407494	2722	America/Santiago	GS
 -- Data for Name: e_template; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_template (id, short_name, long_name, tcc_value, obsolete) FROM stdin;
+COPY e_template (id, short_name, long_name, obsolete) FROM stdin;
 \.
 
 

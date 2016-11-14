@@ -3,18 +3,32 @@ package gem
 import edu.gemini.spModel.core._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.data.YesNoType
-import gem.config._
+
 import gem.enum._
+
 import java.time.Duration
-import java.util.{ Set => JSet }
+import java.util.{Set => JSet}
+
 import scala.reflect.runtime.universe.TypeTag
-import edu.gemini.spModel.gemini.calunit.{ CalUnitParams => OldGCal }
-import edu.gemini.spModel.gemini.flamingos2.{ Flamingos2 => OldF2 }
-import edu.gemini.shared.util.immutable.{ Some => GSome }
+import edu.gemini.spModel.gemini.calunit.{CalUnitParams => OldGCal}
+import edu.gemini.spModel.gemini.flamingos2.{Flamingos2 => OldF2}
+import edu.gemini.shared.util.immutable.{Some => GSome}
 
-import scalaz._, Scalaz._
+import scalaz._
+import Scalaz._
 
-object ConfigReader3 {
+object ConfigReader {
+
+  type Show[A] = A => String
+  type Read[A] = AnyRef => A
+
+  // Clean up classnames in toString, which tells you the type of the key, which should be
+   // helpful for debugging.
+   private def clean(s: String) =
+     s.replace("edu.gemini.spModel.core.", "")
+      .replace("java.lang.", "")
+      .replace("java.time.", "")
+      .replace("gem.", "")
 
   object Enum {
     def find[A](f: A => Boolean)(implicit ev: Enumerated[A]): Option[A] =
@@ -28,7 +42,6 @@ object ConfigReader3 {
   }
 
   // This isn't a typeclass because instances aren't unique
-  type Read[A] = AnyRef => A
   object Read {
     import Enum._
 
@@ -38,72 +51,186 @@ object ConfigReader3 {
     def enum[A: Enumerated: TypeTag](f: A => String): Read[A] =
       cast[String].map(ufindp(f))
 
-    def seq[S <: SequenceableSpType, A: Enumerated: TypeTag](f: A => String): Read[A] =
-      cast[S].map(s => ufindp(f)(s.sequenceValue))
-
     val unit:          Read[Unit         ] = _ => ()
     val string:        Read[String       ] = cast[String]
     val double:        Read[Double       ] = cast[Double]
     val int:           Read[Int          ] = cast[Int]
     val long:          Read[Long         ] = cast[Long]
     val offsetAngle:   Read[Angle        ] = string.map(s => Angle.fromArcsecs(s.toDouble))
-    val offsetP:       Read[OffsetP      ] = offsetAngle.map(OffsetP(_))
-    val offsetQ:       Read[OffsetQ      ] = offsetAngle.map(OffsetQ(_))
-    val instrument:    Read[Instrument   ] = enum(_.tccValue)
     val yesNo:         Read[Boolean      ] = cast[YesNoType].map(_.toBoolean)
     val durSecs:       Read[Duration     ] = double.map(_.toInt).map(Duration.ofSeconds(_))
-    val gcalLamp:      Read[GCalLamp     ] = cast[JSet[Object]].map(_.iterator.next.toString).map(ufindp[GCalLamp, String](_.tccValue))
-    val gcalShutter:   Read[GCalShutter  ] = seq[OldGCal.Shutter, GCalShutter](_.tccValue)
-    val f2fpu:         Read[F2FpUnit     ] = seq[OldF2.FPUnit,      F2FpUnit     ](_.tccValue)
-    val f2filter:      Read[F2Filter     ] = seq[OldF2.Filter,      F2Filter     ](_.tccValue)
-    val f2lyotwheel:   Read[F2LyotWheel  ] = seq[OldF2.LyotWheel,   F2LyotWheel  ](_.tccValue)
-    val f2disperser:   Read[F2Disperser  ] = seq[OldF2.Disperser,   F2Disperser  ](_.tccValue)
+  }
 
-    // It appears that the window cover is sometimes "bare" and someimes wrapped in `Some` ... it is
-    // not `None` in my test data so there's not a mapping for it.
-    val f2windowcover: Read[F2WindowCover] = { a =>
-      ufindp[F2WindowCover, String](_.tccValue) {
-        a match {
-          case a: OldF2.WindowCover        => a.sequenceValue
-          case s: GSome[OldF2.WindowCover] => s.getValue.sequenceValue
+
+  sealed abstract class System(private val system: String) {
+
+    override def toString: String =
+      s"System($system)"
+
+    final class Key[A](val name: String, val write: Show[A], val read: Read[A])(implicit ev: TypeTag[A]) {
+      val path = s"$system:$name"
+
+      def legacyGet(c: Map[String, AnyRef]): Option[AnyRef] =
+        c.get(path)
+
+      override def toString: String =
+        s"Key[${clean(ev.tpe.toString)}]($path)"
+
+      final class Entry private[Key](a: A) {
+        val value = a
+        val key   = Key.this
+        override def toString: String =
+          s"Key.Entry[${clean(ev.tpe.toString)}]($path -> ${write(a)})"
+      }
+
+      def apply(a: A) = new Entry(a)
+    }
+
+    protected object Key {
+      def apply[A: TypeTag](name: String, write: Show[A])(read: Read[A]): Key[A] =
+        new Key(name, write, read)
+
+      // Produces a pair of functions, one from old to new (S => A) and one
+      // from new to old (A => S)
+      private def xlat[S <: SequenceableSpType, A](name: String, m: Seq[(S, A)]): (S => A, A => S) = {
+        val oldToNew = m.toMap
+        val newToOld = m.map(_.swap).toMap
+
+        ((s: S) => oldToNew.getOrElse(s, sys.error(s"new value of '$name': $s not found")),
+         (a: A) => newToOld.getOrElse(a, sys.error(s"old value of '$name': $a not found")))
+      }
+
+      def enum[S <: SequenceableSpType, A: TypeTag](name: String, m: (S, A)*): Key[A] =
+        enumXlat[S, A](name, m: _*)(_.asInstanceOf[S])
+
+      def enumXlat[S <: SequenceableSpType, A: TypeTag](name: String, m: (S, A)*)(f: AnyRef => S): Key[A] = {
+        val (sToA, aToS) = xlat(name, m)
+        val write        = (a: A) => aToS(a).sequenceValue
+        val read         = (any: AnyRef) => sToA(f(any))
+        new Key[A](name, write, read)
+      }
+    }
+
+  }
+
+
+  object Legacy {
+
+    case object Telescope extends System("telescope") {
+      val P = Key[OffsetP]("p", a => f"${a.toAngle.toSignedDegrees * 3600}%4.3f")(Read.offsetAngle.map(OffsetP(_)))
+      val Q = Key[OffsetQ]("q", a => f"${a.toAngle.toSignedDegrees * 3600}%4.3f")(Read.offsetAngle.map(OffsetQ(_)))
+    }
+
+    case object Observe extends System("observe") {
+      val ObserveType   = Key[String  ]("observeType",  identity             )(Read.string)
+      val ExposureTime  = Key[Duration]("exposureTime", _.getSeconds.toString)(Read.durSecs)
+    }
+
+    case object Instrument extends System("instrument") {
+      val Instrument    = Key[Instrument]("instrument",    _.shortName                )(Read.enum(_.shortName))
+      val MosPreImaging = Key[Boolean   ]("mosPreimaging", b => if (b) "YES" else "NO")(Read.yesNo)
+
+      // Instruments share config fields (all filters go into "instrument:filter"
+      // for example) so we repeat them below, name-spaced per instrument for
+      // type safety.
+
+      object F2 {
+
+        import F2FpUnit._
+        val Fpu         = Key.enum[OldF2.FPUnit, F2FpUnit]("fpu",
+          OldF2.FPUnit.PINHOLE        -> Pinhole,
+          OldF2.FPUnit.SUBPIX_PINHOLE -> SubPixPinhole,
+          OldF2.FPUnit.FPU_NONE       -> None,
+          OldF2.FPUnit.CUSTOM_MASK    -> Custom,
+          OldF2.FPUnit.LONGSLIT_1     -> LongSlit1,
+          OldF2.FPUnit.LONGSLIT_2     -> LongSlit2,
+          OldF2.FPUnit.LONGSLIT_3     -> LongSlit3,
+          OldF2.FPUnit.LONGSLIT_4     -> LongSlit4,
+          OldF2.FPUnit.LONGSLIT_6     -> LongSlit6,
+          OldF2.FPUnit.LONGSLIT_8     -> LongSlit8
+        )
+
+        import F2Filter._
+        val Filter      = Key.enum[OldF2.Filter, F2Filter]("filter",
+          OldF2.Filter.OPEN    -> Open,
+          OldF2.Filter.DARK    -> Dark,
+          OldF2.Filter.F1056   -> F1056,
+          OldF2.Filter.F1063   -> F1063,
+          OldF2.Filter.H       -> H,
+          OldF2.Filter.HK      -> HK,
+          OldF2.Filter.J       -> J,
+          OldF2.Filter.J_LOW   -> JLow,
+          OldF2.Filter.JH      -> JH,
+          OldF2.Filter.K_LONG  -> KLong,
+          OldF2.Filter.K_SHORT -> KShort,
+          OldF2.Filter.Y       -> Y
+        )
+
+        import F2LyotWheel._
+        val LyotWheel   = Key.enum[OldF2.LyotWheel, F2LyotWheel]("lyotWheel",
+          OldF2.LyotWheel.GEMS       -> F33Gems,
+          OldF2.LyotWheel.GEMS_OVER  -> GemsUnder,
+          OldF2.LyotWheel.GEMS_UNDER -> GemsOver,
+          OldF2.LyotWheel.H1         -> HartmannA,
+          OldF2.LyotWheel.H2         -> HartmannB,
+          OldF2.LyotWheel.HIGH       -> F32High,
+          OldF2.LyotWheel.LOW        -> F32Low,
+          OldF2.LyotWheel.OPEN       -> F16
+        )
+
+        import F2Disperser._
+        val Disperser   = Key.enum[OldF2.Disperser, F2Disperser]("disperser",
+          OldF2.Disperser.NONE    -> NoDisperser,
+          OldF2.Disperser.R1200HK -> R1200HK,
+          OldF2.Disperser.R1200JH -> R1200JH,
+          OldF2.Disperser.R3000   -> R3000
+        )
+
+        // It appears that the window cover is sometimes "bare" and sometimes
+        // wrapped in `Some` ... it is not `None` in my test data so there's
+        // not a mapping for it.
+        val WindowCover = Key.enumXlat[OldF2.WindowCover, F2WindowCover]("windowCover",
+          OldF2.WindowCover.CLOSE -> F2WindowCover.Close,
+          OldF2.WindowCover.OPEN  -> F2WindowCover.Open
+        ) {
+          case s: OldF2.WindowCover => s
+          case g: GSome[_]          => g.getValue.asInstanceOf[OldF2.WindowCover]
         }
       }
     }
 
-  }
+    case object Calibration extends System("calibration") {
 
-  case class KeyRead[A](k: Tcc.System#Key[A], r: Read[A])
-
-  object Legacy {
-    object Telescope {
-      val P = KeyRead(Tcc.Telescope.P, Read.offsetP)
-      val Q = KeyRead(Tcc.Telescope.Q, Read.offsetQ)
-    }
-    object Observe {
-      val ObserveType  = KeyRead(Tcc.Observe.ObserveType, Read.string)
-      val ExposureTime = KeyRead(Tcc.Observe.ExposureTime, Read.durSecs)
-    }
-    object Instrument {
-      val Instrument    = KeyRead(Tcc.Instrument.Instrument,    Read.instrument)
-      val MosPreImaging = KeyRead(Tcc.Instrument.MosPreImaging, Read.yesNo)
-      object F2 {
-        val Fpu         = KeyRead(Tcc.Instrument.F2.Fpu,         Read.f2fpu)
-        val Filter      = KeyRead(Tcc.Instrument.F2.Filter,      Read.f2filter)
-        val LyotWheel   = KeyRead(Tcc.Instrument.F2.LyotWheel,   Read.f2lyotwheel)
-        val Disperser   = KeyRead(Tcc.Instrument.F2.Disperser,   Read.f2disperser)
-        val WindowCover = KeyRead(Tcc.Instrument.F2.WindowCover, Read.f2windowcover)
+      import GCalLamp._
+      val Lamp    = Key.enumXlat[OldGCal.Lamp, GCalLamp]("lamp",
+          OldGCal.Lamp.AR_ARC            -> ArArc,
+          OldGCal.Lamp.CUAR_ARC          -> CuArArc,
+          OldGCal.Lamp.IR_GREY_BODY_HIGH -> IrGreyBodyHigh,
+          OldGCal.Lamp.IR_GREY_BODY_LOW  -> IrGreyBodyLow,
+          OldGCal.Lamp.QUARTZ            -> QuartzHalogen,
+          OldGCal.Lamp.THAR_ARC          -> ThArArc,
+          OldGCal.Lamp.XE_ARC            -> XeArc
+      ) {
+        // TODO: actually we need to store the entire collection of lamps
+        case js: JSet[_] => js.asInstanceOf[JSet[OldGCal.Lamp]].iterator.next
       }
-    }
-    object Calibration {
-      val Lamp    = KeyRead(Tcc.Calibration.Lamp, Read.gcalLamp)
-      val Shutter = KeyRead(Tcc.Calibration.Shutter, Read.gcalShutter)
+
+      val Shutter = Key.enum[OldGCal.Shutter, GCalShutter]("shutter",
+        OldGCal.Shutter.CLOSED -> GCalShutter.Closed,
+        OldGCal.Shutter.OPEN   -> GCalShutter.Open
+      )
     }
   }
 
   implicit class ConfigOps3(c: Map[String, AnyRef]) {
-    def cget[A](kr: KeyRead[A]): Option[A] = kr.k.legacyGet(c).map(kr.r)
-    def uget[A](k: KeyRead[A]): A = cgetOrElse(k, throw sys.error(s"not found: ${k.k}"))
-    def cgetOrElse[A](k: KeyRead[A], a: => A): A = cget(k).getOrElse(a)
+    def cget[A](k: System#Key[A]): Option[A] =
+      k.legacyGet(c).map(k.read)
+
+    def uget[A](k: System#Key[A]): A =
+      cgetOrElse(k, throw sys.error(s"not found: ${k.path}"))
+
+    def cgetOrElse[A](k: System#Key[A], a: => A): A =
+      cget(k).getOrElse(a)
   }
 
 }

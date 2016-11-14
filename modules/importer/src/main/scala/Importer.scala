@@ -28,7 +28,7 @@ import doobie.imports._
 object Importer extends SafeApp {
   import Program.Id._
   // import ConfigSyntax._
-  import ConfigReader3._
+  import ConfigReader._
 
   val dir = new File("archive")
 
