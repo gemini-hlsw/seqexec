@@ -103,7 +103,11 @@ class HandlerSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
-        q.enqueueOne(start),
+        List(
+          q.enqueueOne(start),
+          Task(Thread.sleep(5000)),
+          q.enqueueOne(exit)
+        ).sequence_,
         processE(q).run.eval(qs1)
       ).unsafePerformSync
     )
@@ -118,7 +122,9 @@ class HandlerSpec extends FlatSpec {
           Task(Thread.sleep(2000)),
           q.enqueueOne(pause),
           Task(Thread.sleep(2000)),
-          q.enqueueOne(start)
+          q.enqueueOne(start),
+          Task(Thread.sleep(3000)),
+          q.enqueueOne(exit)
         ).sequence_,
        processE(q).run.eval(qs1)
       ).unsafePerformSync
