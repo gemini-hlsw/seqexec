@@ -84,8 +84,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) exte
       case req @ GET -> Root / "seqexec" / "events"         =>
         // Stream seqexec events to clients and a ping
         val user = userInRequest(req)
-
-        WS(Exchange(pingProcess merge //(Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+        WS(Exchange(pingProcess ++ Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) merge
           SeqexecEngine.eventProcess(q).map(v => Binary(newTrimmedArray(v))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout"        =>

@@ -18,11 +18,11 @@ object Handler {
         log("Output: Started") *> switch(q)(Status.Running)
       case Pause              =>
         log("Output: Paused") *> switch(q)(Status.Waiting)
+      case Load(seq) => log("Output: Sequence loaded") *> load(seq)
       case Poll               =>
         log("Output: Polling current state")
       case Exit               =>
         log("Bye") *> close(q)
-      case Load(seq) => log("Output: Loaded") *> sequence(seq)
     }
 
     def handleSystemEvent(se: SystemEvent): Engine[Unit] = se match {

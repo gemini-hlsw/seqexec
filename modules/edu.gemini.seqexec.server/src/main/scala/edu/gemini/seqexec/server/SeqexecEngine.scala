@@ -60,10 +60,11 @@ object SeqexecEngine {
 
   private def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
     case Event.EventUser(ue) => ue match {
-      case Event.Start => SequenceStart(svs)
-      case Event.Pause => SequencePauseRequested(svs)
-      case Event.Poll  => NewLogMessage("Immediate State requested")
-      case Event.Exit  => NewLogMessage("Exit requested by user")
+      case Event.Start   => SequenceStart(svs)
+      case Event.Pause   => SequencePauseRequested(svs)
+      case Event.Load(_) => SequenceLoaded(svs)
+      case Event.Poll    => NewLogMessage("Immediate State requested")
+      case Event.Exit    => NewLogMessage("Exit requested by user")
     }
     case Event.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
