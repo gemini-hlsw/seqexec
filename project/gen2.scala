@@ -131,9 +131,15 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
-      enum("GCalLamp") {
-        type GcalLampRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_lamp".query[(String, GcalLampRec)].list
+      enum("GCalContinuum") {
+        type GcalContinuumRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_continuum".query[(String, GcalContinuumRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GCalArc") {
+        type GcalArcRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_arc".query[(String, GcalArcRec)].list
         io.transact(xa).unsafePerformIO
       },
 

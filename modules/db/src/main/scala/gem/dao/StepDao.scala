@@ -38,11 +38,17 @@ object StepDao {
       VALUES (${oid.toString}, ${index})
     """.update.run
 
-  private def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] =
+  private def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] = {
+    val continuum: Option[GCalContinuum] = gcal.lamp.swap.toOption
+    val arcs: Set[GCalArc]               = gcal.lamp.getOrElse(List.empty[GCalArc]).toSet
+
+    import GCalArc._
+
     sql"""
-      INSERT INTO step_gcal (observation_id, index, gcal_lamp, shutter)
-      VALUES (${oid.toString}, ${index}, ${gcal.lamp}, ${gcal.shutter} :: gcal_shutter)
+      INSERT INTO step_gcal (observation_id, index, gcal_continuum, gcal_ar_arc, gcal_cuar_arc, gcal_thar_arc, gcal_xe_arc, shutter)
+      VALUES (${oid.toString}, $index, $continuum, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.shutter} :: gcal_shutter)
     """.update.run
+  }
 
   private def insertScienceSlice(oid: Observation.Id, index: Int, t: TelescopeConfig): ConnectionIO[Int] =
     sql"""
@@ -67,7 +73,7 @@ object StepDao {
   private case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
-    gcal: (Option[GCalLamp], Option[GCalShutter]),
+    gcal: (Option[GCalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GCalShutter]),
     telescope: (Option[OffsetP],  Option[OffsetQ])
   ) {
     def toStep: Step[Instrument] =
@@ -77,9 +83,15 @@ object StepDao {
         case StepType.Dark => DarkStep(i)
 
         case StepType.Gcal =>
-          gcal.apply2(GcalConfig(_, _))
-            .map(GcalStep(i, _))
-            .getOrElse(sys.error("missing gcal information: " + gcal))
+          import GCalArc._
+          val (continuumOpt, ar, cuar, thar, xe, shutterOpt) = gcal
+          val lamp = continuumOpt.toLeftDisjunction {
+            val arcs = Set[(GCalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+            arcs.filter(_._2).unzip._1
+          }
+          shutterOpt.map(GcalConfig(lamp, _))
+                    .map(GcalStep(i, _))
+                    .getOrElse(sys.error("missing gcal information: " + gcal))
 
         case StepType.Science =>
           telescope.apply2(TelescopeConfig(_, _))
@@ -93,7 +105,11 @@ object StepDao {
     sql"""
       SELECT s.instrument,
              s.step_type,
-             sg.gcal_lamp,
+             sg.gcal_continuum,
+             sg.gcal_ar_arc,
+             sg.gcal_cuar_arc,
+             sg.gcal_thar_arc,
+             sg.gcal_xe_arc,
              sg.shutter,
              sc.offset_p,
              sc.offset_q
@@ -102,7 +118,7 @@ object StepDao {
                 ON sg.observation_id = s.observation_id AND sg.index = s.index
              LEFT OUTER JOIN step_science sc
                 ON sc.observation_id = s.observation_id AND sc.index = s.index
-       WHERE s.observation_id = ${oid}
+       WHERE s.observation_id = $oid
     ORDER BY s.index
     """.query[StepKernel].map(_.toStep).list
 

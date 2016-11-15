@@ -101,7 +101,26 @@ object ProgramDao {
 
   // The full program select is a 5-table join. Decoding requires some busywork that's made slightly
   // simpler by factoring out sub-encoders for different subsets of columns.
-  private implicit val OptionGCalConfigComposite      = capply2(GcalConfig)
+  private implicit val OptionGCalConfigComposite: Composite[Option[GcalConfig]] = {
+    import GCalArc._
+    Composite[(Option[GCalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GCalShutter])].xmap({
+      case (None, _, _, _, _, None) =>
+        None
+
+      case (None, ar, cuar, thar, xe, Some(shutter)) =>
+        val arcs = Set[(GCalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+        val lamp = arcs.filter(_._2).unzip._1.right[GCalContinuum]
+        Some(GcalConfig(lamp, shutter))
+
+      case (Some(continuum), _, _, _, _, Some(shutter)) =>
+        val lamp = continuum.left[Set[GCalArc]]
+        Some(GcalConfig(lamp, shutter))
+
+      case x => sys.error("Unexecpted Option[GCalConfig] inputs: " + x)
+    }, _ => sys.error("decode only"))
+  }
+
+
   private implicit val OptionTelescopeConfigComposite = capply2(TelescopeConfig)
 
   private implicit val OptionStepComposite: Composite[Option[Step[_]]] =
@@ -130,7 +149,11 @@ object ProgramDao {
              o.title,
              s.step_type,
              s.instrument,
-             sg.gcal_lamp,
+             sg.gcal_continuum,
+             sg.gcal_ar_arc,
+             sg.gcal_cuar_arc,
+             sg.gcal_thar_arc,
+             sg.gcal_xe_arc,
              sg.shutter,
              sc.offset_p,
              sc.offset_q
