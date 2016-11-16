@@ -244,17 +244,17 @@ object ConfigReader {
         }
 
         def write(l: GcalLamp): String =
-          l.leftMap(c => Set(continuumToLamp(c).sequenceValue)).map { arcs =>
-            (arcs.tail + arcs.head).map(arcToLamp.andThen(_.sequenceValue))
+          l.leftMap(c => List(continuumToLamp(c).sequenceValue)).map { arcs =>
+            (arcs.head :: arcs.tail.toList).map(arcToLamp.andThen(_.sequenceValue))
           }.merge.mkString("[", ",", "]")
 
         Key[GcalLamp]("lamp", write) {
           case js: JSet[_] =>
-            val oldLamps     = js.asInstanceOf[JSet[OldGcal.Lamp]].asScala.toSet
+            val oldLamps     = js.asInstanceOf[JSet[OldGcal.Lamp]].asScala.toList
             val (oldC, oldA) = oldLamps.partition(_.`type` == OldGcal.LampType.flat)
             val newC         = oldC.map(lampToContinuum)
             val newA         = oldA.map(lampToArc)
-            newC.headOption.toLeftDisjunction { GcalConfig.unsafeNonEmptyArcs(newA) }
+            GcalConfig.unsafeMkLamp(newC.headOption, newA.strengthR(true))
         }
       }
 

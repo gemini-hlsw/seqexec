@@ -1,17 +1,18 @@
 package gem
 
-import scalaz.Equal
+import scalaz._
+import Scalaz._
 
-/** 
+/**
  * Typeclass for an enumerated type with unique string tags.
  * unsafeFromTag . tag = id
  */
-trait Enumerated[A] extends Equal[A] {
+trait Enumerated[A] extends Order[A] {
   def all: List[A]
   def tag(a: A): String
   def fromTag(s: String): Option[A] = all.find(tag(_) == s)
   def unsafeFromTag(tag: String): A = fromTag(tag).getOrElse(sys.error("Invalid tag: " + tag))
-  def equal(a: A, b: A): Boolean = tag(a) == tag(b)
+  def order(a: A, b: A): Ordering = Order[String].order(tag(a), tag(b))
 }
 
 object Enumerated {
