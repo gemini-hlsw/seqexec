@@ -101,22 +101,22 @@ object ProgramDao {
 
   // The full program select is a 5-table join. Decoding requires some busywork that's made slightly
   // simpler by factoring out sub-encoders for different subsets of columns.
-  private implicit val OptionGCalConfigComposite: Composite[Option[GcalConfig]] = {
-    import GCalArc._
-    Composite[(Option[GCalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GCalShutter])].xmap({
+  private implicit val OptionGcalConfigComposite: Composite[Option[GcalConfig]] = {
+    import GcalArc._
+    Composite[(Option[GcalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GcalShutter])].xmap({
       case (None, _, _, _, _, None) =>
         None
 
       case (None, ar, cuar, thar, xe, Some(shutter)) =>
-        val arcs = Set[(GCalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
-        val lamp = arcs.filter(_._2).unzip._1.right[GCalContinuum]
+        val arcs = Set[(GcalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+        val lamp = arcs.filter(_._2).unzip._1.right[GcalContinuum]
         Some(GcalConfig(lamp, shutter))
 
       case (Some(continuum), _, _, _, _, Some(shutter)) =>
-        val lamp = continuum.left[Set[GCalArc]]
+        val lamp = continuum.left[Set[GcalArc]]
         Some(GcalConfig(lamp, shutter))
 
-      case x => sys.error("Unexecpted Option[GCalConfig] inputs: " + x)
+      case x => sys.error("Unexecpted Option[GcalConfig] inputs: " + x)
     }, _ => sys.error("decode only"))
   }
 

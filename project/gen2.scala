@@ -125,25 +125,25 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
-      enum("GCalFilter") {
+      enum("GcalFilter") {
         type GcalFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_filter".query[(String, GcalFilterRec)].list
         io.transact(xa).unsafePerformIO
       },
 
-      enum("GCalContinuum") {
+      enum("GcalContinuum") {
         type GcalContinuumRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_continuum".query[(String, GcalContinuumRec)].list
         io.transact(xa).unsafePerformIO
       },
 
-      enum("GCalArc") {
+      enum("GcalArc") {
         type GcalArcRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_arc".query[(String, GcalArcRec)].list
         io.transact(xa).unsafePerformIO
       },
 
-      enum("GCalShutter") {
+      enum("GcalShutter") {
         type GcalShutterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
         val io = sql"""
           SELECT enumlabel x, enumlabel a, enumlabel b, enumlabel c

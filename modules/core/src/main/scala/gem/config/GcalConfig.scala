@@ -1,15 +1,15 @@
 package gem
 package config
 
-import gem.enum.{GCalArc, GCalContinuum, GCalShutter}
+import gem.enum.{GcalArc, GcalContinuum, GcalShutter}
 
 import scalaz.\/
 
-import GcalConfig.GCalLamp
+import GcalConfig.GcalLamp
 
-case class GcalConfig(lamp: GCalLamp, shutter: GCalShutter)
+case class GcalConfig(lamp: GcalLamp, shutter: GcalShutter)
 
 object GcalConfig {
-  type GCalLamp = GCalContinuum \/ Set[GCalArc]
+  type GcalLamp = GcalContinuum \/ Set[GcalArc]
 }
 

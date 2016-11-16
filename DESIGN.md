@@ -25,14 +25,14 @@ The schema now represents the following notions:
 - Observations
   - Structured ID, Name
 - Steps
-  - Bias, Dark, GCal, Science
+  - Bias, Dark, Gcal, Science
   - Instrument-specific (F2 only so far)
 - Enumerated Types
   - Site
   - Program Type
   - Program Role (for users)
   - Instrument
-  - GCal config (Filter, Lamp)
+  - Gcal config (Filter, Lamp)
   - F2 config (Disper, Filter, FPU, Lyot Wheel)
 
 The data model more or less reflects the above, and some read/write database access is provided but it's not totally built out. Basically just what's needed for import and simple queries.

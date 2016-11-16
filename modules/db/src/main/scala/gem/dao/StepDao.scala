@@ -16,7 +16,7 @@ object StepDao {
         case BiasStep(_)       => insertBiasSlice(oid, index)
         case DarkStep(_)       => insertDarkSlice(oid, index)
         case ScienceStep(_, t) => insertScienceSlice(oid, index, t)
-        case GcalStep(_, g)    => insertGCalSlice(oid, index, g)
+        case GcalStep(_, g)    => insertGcalSlice(oid, index, g)
       }
     } *> insertConfigSlice(oid, index, s.instrument)
 
@@ -38,11 +38,11 @@ object StepDao {
       VALUES (${oid.toString}, ${index})
     """.update.run
 
-  private def insertGCalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] = {
-    val continuum: Option[GCalContinuum] = gcal.lamp.swap.toOption
-    val arcs: Set[GCalArc]               = gcal.lamp.getOrElse(List.empty[GCalArc]).toSet
+  private def insertGcalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] = {
+    val continuum: Option[GcalContinuum] = gcal.lamp.swap.toOption
+    val arcs: Set[GcalArc]               = gcal.lamp.getOrElse(List.empty[GcalArc]).toSet
 
-    import GCalArc._
+    import GcalArc._
 
     sql"""
       INSERT INTO step_gcal (observation_id, index, gcal_continuum, gcal_ar_arc, gcal_cuar_arc, gcal_thar_arc, gcal_xe_arc, shutter)
@@ -73,7 +73,7 @@ object StepDao {
   private case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
-    gcal: (Option[GCalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GCalShutter]),
+    gcal: (Option[GcalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GcalShutter]),
     telescope: (Option[OffsetP],  Option[OffsetQ])
   ) {
     def toStep: Step[Instrument] =
@@ -83,10 +83,10 @@ object StepDao {
         case StepType.Dark => DarkStep(i)
 
         case StepType.Gcal =>
-          import GCalArc._
+          import GcalArc._
           val (continuumOpt, ar, cuar, thar, xe, shutterOpt) = gcal
           val lamp = continuumOpt.toLeftDisjunction {
-            val arcs = Set[(GCalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+            val arcs = Set[(GcalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
             arcs.filter(_._2).unzip._1
           }
           shutterOpt.map(GcalConfig(lamp, _))

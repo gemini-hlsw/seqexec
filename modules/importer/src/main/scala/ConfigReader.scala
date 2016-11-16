@@ -5,7 +5,7 @@ import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.data.YesNoType
 
 import gem.config._
-import gem.config.GcalConfig.GCalLamp
+import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 
 import java.time.Duration
@@ -14,7 +14,7 @@ import java.util.{Set => JSet}
 import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe.TypeTag
 
-import edu.gemini.spModel.gemini.calunit.{CalUnitParams => OldGCal}
+import edu.gemini.spModel.gemini.calunit.{CalUnitParams => OldGcal}
 import edu.gemini.spModel.gemini.flamingos2.{Flamingos2 => OldF2}
 import edu.gemini.shared.util.immutable.{Some => GSome}
 
@@ -211,17 +211,17 @@ object ConfigReader {
 
     case object Calibration extends System("calibration") {
 
-      import GCalArc._
-      import GCalContinuum._
+      import GcalArc._
+      import GcalContinuum._
 
       // Lamp is unfortunately complicated.  There was only a single lamp type
       // in the old model and the old model would permit a mixed list of any
       // lamp type.  Here we map the old list to a Continuum \/ List[Arc].
       val Lamp = {
-        val lampToContinuum = Map[OldGCal.Lamp, GCalContinuum](
-          OldGCal.Lamp.IR_GREY_BODY_HIGH -> IrGreyBodyHigh,
-          OldGCal.Lamp.IR_GREY_BODY_LOW  -> IrGreyBodyLow,
-          OldGCal.Lamp.QUARTZ            -> QuartzHalogen
+        val lampToContinuum = Map[OldGcal.Lamp, GcalContinuum](
+          OldGcal.Lamp.IR_GREY_BODY_HIGH -> IrGreyBodyHigh,
+          OldGcal.Lamp.IR_GREY_BODY_LOW  -> IrGreyBodyLow,
+          OldGcal.Lamp.QUARTZ            -> QuartzHalogen
         ).withDefault { l =>
           sys.error(s"could not find continuum for lamp $l")
         }
@@ -230,11 +230,11 @@ object ConfigReader {
           sys.error(s"could not find lamp for continuum $c")
         }
 
-        val lampToArc       = Map[OldGCal.Lamp, GCalArc](
-          OldGCal.Lamp.AR_ARC            -> ArArc,
-          OldGCal.Lamp.CUAR_ARC          -> CuArArc,
-          OldGCal.Lamp.THAR_ARC          -> ThArArc,
-          OldGCal.Lamp.XE_ARC            -> XeArc
+        val lampToArc       = Map[OldGcal.Lamp, GcalArc](
+          OldGcal.Lamp.AR_ARC            -> ArArc,
+          OldGcal.Lamp.CUAR_ARC          -> CuArArc,
+          OldGcal.Lamp.THAR_ARC          -> ThArArc,
+          OldGcal.Lamp.XE_ARC            -> XeArc
         ).withDefault { l =>
           sys.error(s"could not find arc for lamp $l")
         }
@@ -243,22 +243,22 @@ object ConfigReader {
           sys.error(s"could not find lamp for arc $a")
         }
 
-        def write(l: GCalLamp): String =
+        def write(l: GcalLamp): String =
           l.leftMap(c => Set(continuumToLamp(c).sequenceValue)).map(_.map(arcToLamp.andThen(_.sequenceValue))).merge.mkString("[", ",", "]")
 
-        Key[GCalLamp]("lamp", write) {
+        Key[GcalLamp]("lamp", write) {
           case js: JSet[_] =>
-            val oldLamps     = js.asInstanceOf[JSet[OldGCal.Lamp]].asScala.toSet
-            val (oldC, oldA) = oldLamps.partition(_.`type` == OldGCal.LampType.flat)
+            val oldLamps     = js.asInstanceOf[JSet[OldGcal.Lamp]].asScala.toSet
+            val (oldC, oldA) = oldLamps.partition(_.`type` == OldGcal.LampType.flat)
             val newC         = oldC.map(lampToContinuum)
             val newA         = oldA.map(lampToArc)
             newC.headOption.toLeftDisjunction(newA)
         }
       }
 
-      val Shutter = Key.enum[OldGCal.Shutter, GCalShutter]("shutter",
-        OldGCal.Shutter.CLOSED -> GCalShutter.Closed,
-        OldGCal.Shutter.OPEN   -> GCalShutter.Open
+      val Shutter = Key.enum[OldGcal.Shutter, GcalShutter]("shutter",
+        OldGcal.Shutter.CLOSED -> GcalShutter.Closed,
+        OldGcal.Shutter.OPEN   -> GcalShutter.Open
       )
     }
   }
