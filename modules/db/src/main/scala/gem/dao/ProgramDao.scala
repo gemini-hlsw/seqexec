@@ -108,12 +108,17 @@ object ProgramDao {
         None
 
       case (None, ar, cuar, thar, xe, Some(shutter)) =>
-        val arcs = Set[(GcalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
-        val lamp = arcs.filter(_._2).unzip._1.right[GcalContinuum]
-        Some(GcalConfig(lamp, shutter))
+        val arcs = Set[(GcalArc, Boolean)](
+                       ArArc   -> ar,
+                       CuArArc -> cuar,
+                       ThArArc -> thar,
+                       XeArc   -> xe).filter(_._2).unzip._1
+        GcalConfig.nonEmptyArcs(arcs).map { as =>
+          GcalConfig(as.right[GcalContinuum], shutter)
+        }
 
       case (Some(continuum), _, _, _, _, Some(shutter)) =>
-        val lamp = continuum.left[Set[GcalArc]]
+        val lamp = continuum.left[OneAnd[Set, GcalArc]]
         Some(GcalConfig(lamp, shutter))
 
       case x => sys.error("Unexecpted Option[GcalConfig] inputs: " + x)

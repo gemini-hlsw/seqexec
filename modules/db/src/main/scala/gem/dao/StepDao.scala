@@ -40,7 +40,7 @@ object StepDao {
 
   private def insertGcalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] = {
     val continuum: Option[GcalContinuum] = gcal.lamp.swap.toOption
-    val arcs: Set[GcalArc]               = gcal.lamp.getOrElse(Set.empty[GcalArc])
+    val arcs: Set[GcalArc]               = gcal.lamp.map(as => as.tail + as.head).getOrElse(Set.empty[GcalArc])
 
     import GcalArc._
 
@@ -86,8 +86,12 @@ object StepDao {
           import GcalArc._
           val (continuumOpt, ar, cuar, thar, xe, shutterOpt) = gcal
           val lamp = continuumOpt.toLeftDisjunction {
-            val arcs = Set[(GcalArc, Boolean)](ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
-            arcs.filter(_._2).unzip._1
+            val arcs = Set[(GcalArc, Boolean)](
+                         ArArc   -> ar,
+                         CuArArc -> cuar,
+                         ThArArc -> thar,
+                         XeArc   -> xe).filter(_._2).unzip._1
+            GcalConfig.unsafeNonEmptyArcs(arcs)
           }
           shutterOpt.map(GcalConfig(lamp, _))
                     .map(GcalStep(i, _))
