@@ -111,14 +111,6 @@ object ProgramDao {
         GcalConfig.mkLampOption(None, List(ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)).map {
           GcalConfig(_, shutter)
         }
-//        val arcs = List[(GcalArc, Boolean)](
-//                       ArArc   -> ar,
-//                       CuArArc -> cuar,
-//                       ThArArc -> thar,
-//                       XeArc   -> xe).filter(_._2).unzip._1
-//        GcalConfig.nonEmptyArcs(arcs).map { as =>
-//          GcalConfig(as.right[GcalContinuum], shutter)
-//        }
 
       case (Some(continuum), _, _, _, _, Some(shutter)) =>
         val lamp = continuum.left[OneAnd[ISet, GcalArc]]
