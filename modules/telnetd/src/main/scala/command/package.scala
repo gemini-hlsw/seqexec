@@ -7,9 +7,10 @@ import tuco._, Tuco._
 
 package object command {
 
+  /** Our state is a Service with effect type SessionIO. */
   type GemState = Service[SessionIO]
   object GemState {
-    val L = Service.L
+    val L = Service.L // alias the Lens module
   }
 
   val All = Commands[GemState](
@@ -18,6 +19,7 @@ package object command {
     passwd.command
   )
 
+  /** Our commands are in SessionIO, and pass a Session[GemState] around. */
   type GemCommand = Command[SessionIO, Session[GemState]]
 
   // Our commnds are always in SessionIO.

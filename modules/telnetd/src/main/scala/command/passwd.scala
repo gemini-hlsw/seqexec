@@ -6,6 +6,7 @@ import gem.enum.ProgramRole
 import net.bmjames.opts.types._
 import tuco._, Tuco._
 
+/** A command for changing passwords. */
 object passwd {
 
   val command: GemCommand =

@@ -8,6 +8,7 @@ import net.bmjames.opts.types.Parser
 import tuco._, Tuco._
 import scalaz._, Scalaz._
 
+/** A command that lists programs with matching program id and/or title. */
 object ls {
 
   val num: Parser[Int] = {

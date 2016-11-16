@@ -6,6 +6,7 @@ import gem.enum.ProgramRole
 import net.bmjames.opts.types._
 import tuco._, Tuco._
 
+/** A command to show information about the current user. */
 object whoami {
 
   val command: GemCommand =
