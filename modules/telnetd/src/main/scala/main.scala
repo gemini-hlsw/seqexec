@@ -16,6 +16,6 @@ object Main extends SafeApp {
   val txa = DriverManagerTransactor[Task     ]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
 
   override def runc: IO[Unit] =
-    Config(Interaction(xa, txa).main, 6666).run(simpleServer)
+    Config(Interaction.main(xa, txa), 6666).run(simpleServer)
 
 }

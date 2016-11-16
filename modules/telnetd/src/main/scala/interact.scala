@@ -9,7 +9,7 @@ import scalaz._, Scalaz._, scalaz.effect._, scalaz.concurrent.Task
 import tuco._, Tuco._
 
 /** Module defining the behavior of our telnet server, parameterized over transactors. */
-final case class Interaction(xa: Transactor[SessionIO], txa: Transactor[Task]) {
+object Interaction {
 
   /**
    * Initial state for a command shell session has a logged-in Service value, as well as all the
@@ -21,18 +21,29 @@ final case class Interaction(xa: Transactor[SessionIO], txa: Transactor[Task]) {
       prompt   = s"${service.user.id}@gem> "
     )
 
-  /** Login loop. Prompt for a password `remainingTries` times and return a Service on success. */
-  def loginLoop(user: String, remainingTries: Int): SessionIO[Option[Service[SessionIO]]] =
-    if (remainingTries < 1) {
-      Option.empty[Service[SessionIO]].point[SessionIO]
-    } else {
-      for {
-        p <- readLn("Password: ", mask = Some('*'))
-        u <- Service.tryLogin(user, p, xa, txa)
-        r <- if (u.isEmpty) writeLn("Incorrect password.") *> loginLoop(user, remainingTries - 1)
-             else u.point[SessionIO]
-      } yield r
-    }
+  /**
+   * Login loop. Prompt for a password `remainingTries` times and return a Service on success. The
+   * transactors are needed for the `Service`.
+   */
+  def loginLoop(
+    user:     String,
+    maxTries: Int,
+    xa:       Transactor[SessionIO],
+    txa:      Transactor[Task]
+  ): SessionIO[Option[Service[SessionIO]]] = {
+    def go(remaining: Int): SessionIO[Option[Service[SessionIO]]] =
+      if (remaining < 1) {
+        Option.empty[Service[SessionIO]].point[SessionIO]
+      } else {
+        for {
+          p <- readLn("Password: ", mask = Some('*'))
+          u <- Service.tryLogin(user, p, xa, txa)
+          r <- if (u.isEmpty) writeLn("Incorrect password.") *> go(remaining - 1)
+               else u.point[SessionIO]
+        } yield r
+      }
+    go(maxTries)
+  }
 
   /**
    * Command shell. Greet the user and run the command shell. Clean up on exit.
@@ -47,12 +58,15 @@ final case class Interaction(xa: Transactor[SessionIO], txa: Transactor[Task]) {
       _ <- writeLn(s"Goodbye.")
     } yield ()
 
-  /** Entry point for our telnet behavior. */
-  val main: SessionIO[Unit] =
+  /**
+   * Entry point for our telnet behavior. If the user logs in successfully the transactors will be
+   * associated with the Session.
+   */
+  def main(xa: Transactor[SessionIO], txa: Transactor[Task]): SessionIO[Unit] =
     for {
       _ <- writeLn("Welcome to Gem")
       n <- readLn("Username: ")
-      s <- loginLoop(n, 3)
+      s <- loginLoop(n, 3, xa, txa)
       _ <- s.fold(writeLn(s"Login failed."))(runSession)
     } yield ()
 
