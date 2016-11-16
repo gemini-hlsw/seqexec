@@ -40,7 +40,7 @@ object StepDao {
 
   private def insertGcalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] = {
     val continuum: Option[GcalContinuum] = gcal.lamp.swap.toOption
-    val arcs: Set[GcalArc]               = gcal.lamp.getOrElse(List.empty[GcalArc]).toSet
+    val arcs: Set[GcalArc]               = gcal.lamp.getOrElse(Set.empty[GcalArc])
 
     import GcalArc._
 
