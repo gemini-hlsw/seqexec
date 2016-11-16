@@ -101,7 +101,9 @@ object DhsClient {
   */
 object DhsClientHttp extends DhsClient {
 
-  val baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
+  private var baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
+
+  def setBaseURI(s: String): Unit = { baseURI = s }
 
   sealed case class ErrorType(str: String)
   object BadRequest extends ErrorType("BAD_REQUEST")

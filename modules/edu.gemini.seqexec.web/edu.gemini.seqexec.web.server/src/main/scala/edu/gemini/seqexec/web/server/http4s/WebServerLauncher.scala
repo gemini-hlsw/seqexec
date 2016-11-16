@@ -5,7 +5,7 @@ import java.util.logging.Logger
 
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Event
-import edu.gemini.seqexec.server.ODBProxy
+import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine}
 import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.spModel.core.Peer
@@ -24,11 +24,6 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     * Configuration for the web server
     */
   case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
-
-  /**
-    * Configuration for the seqexec engine
-    */
-  case class SeqexecConfiguration(odbHost: String)
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -77,19 +72,6 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey, useSSL, ld)
     }
 
-  val executorConf: Task[SeqexecConfiguration] =
-    config.map { cfg =>
-      val host = cfg.require[String]("seqexec-engine.odb")
-      SeqexecConfiguration(host)
-    }
-
-  /**
-    * Configures the Seqexec executor
-    */
-  def seqexecExecutor: Kleisli[Task, SeqexecConfiguration, Unit] = Kleisli { conf =>
-    Task.delay(ODBProxy.host(new Peer(conf.odbHost, 8443, null)))
-  }
-
   /**
     * Configures the Authentication service
     */
@@ -120,8 +102,8 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       _  <- configLog
       ac <- authConf
       wc <- serverConf
-      sc <- executorConf
-      _  <- seqexecExecutor.run(sc)
+      c <- config
+      _  <- SeqexecEngine.seqexecConfigure.run(c)
       as <- authService.run(ac)
       // Put the queue in WebServerConfiguration?
       q = async.boundedQueue[Event.Event](10)

@@ -10,8 +10,10 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
+import knobs._
 import edu.gemini.seqexec.model.SharedModel._
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
+import edu.gemini.spModel.core.Peer
 
 /**
   * Created by jluhrs on 10/7/16.
@@ -51,7 +53,7 @@ object SeqexecEngine {
     val t = EitherT( for {
         odbSeq <- Task(ODBProxy.read(seqId))
         now <- Task(LocalDate.now)
-      } yield odbSeq.flatMap(s => SeqTranslate.sequence(DhsClientSim(now))(seqId.stringValue(), s))
+      } yield odbSeq.flatMap(s => SeqTranslate.sequence(seqId.stringValue(), s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(x)).map(_.right))
     u.run
@@ -117,4 +119,22 @@ object SeqexecEngine {
 
       seq.steps.map(viewStep)
     }
+
+    // Configuration stuff
+
+
+  def seqexecConfigure: Kleisli[Task, Config, Unit] = Kleisli { cfg: Config => {
+      val odbHost = cfg.require[String]("seqexec-engine.odb")
+      val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
+      val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
+      val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
+      val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
+      val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+
+      Task.delay(ODBProxy.host(new Peer(odbHost, 8443, null))) *>
+        Task.delay(DhsClientHttp.setBaseURI(dhsServer)) *>
+        Task.delay(SeqTranslate.setConfig(SeqTranslate.Settings(dhsSim, tcsSim, instSim, gcalSim)))
+    }
   }
+
+}
