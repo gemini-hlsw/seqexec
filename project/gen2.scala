@@ -96,51 +96,51 @@ object gen2 {
   val enums: List[(String, String)] =
     List(
       enum("F2Disperser") {
-        type F2DisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Option[Double]`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength from e_f2_disperser".query[(String, F2DisperserRec)].list
+        type F2DisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Double]`.T
+        val io = sql"select id, id tag, short_name, long_name, wavelength from e_f2_disperser".query[(String, F2DisperserRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("F2Filter") {
-        type F2FilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'wavelength -> Option[Double], 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, wavelength, obsolete from e_f2_filter".query[(String, F2FilterRec)].list
+        type F2FilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Double], 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, wavelength, obsolete from e_f2_filter".query[(String, F2FilterRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("F2FpUnit") {
-        type F2FpUnitRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'slitWidth -> Int, 'decker -> String, 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, slit_width, decker, obsolete from e_f2_fpunit".query[(String, F2FpUnitRec)].list
+        type F2FpUnitRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Int, 'decker -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, slit_width, decker, obsolete from e_f2_fpunit".query[(String, F2FpUnitRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("F2LyotWheel") {
-        type F2LyotWheelRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'plateScale -> Double, 'pixelScale -> Double, 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, plate_scale, pixel_scale, obsolete from e_f2_lyot_wheel".query[(String, F2LyotWheelRec)].list
+        type F2LyotWheelRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'plateScale -> Double, 'pixelScale -> Double, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, plate_scale, pixel_scale, obsolete from e_f2_lyot_wheel".query[(String, F2LyotWheelRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("F2WindowCover") {
-        type F2WindowCoverRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value from e_f2_window_cover".query[(String, F2WindowCoverRec)].list
+        type F2WindowCoverRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"select id, id tag, short_name, long_name from e_f2_window_cover".query[(String, F2WindowCoverRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("GCalFilter") {
-        type GcalFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_filter".query[(String, GcalFilterRec)].list
+        type GcalFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_filter".query[(String, GcalFilterRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("GCalLamp") {
-        type GcalLampRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_gcal_lamp".query[(String, GcalLampRec)].list
+        type GcalLampRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_lamp".query[(String, GcalLampRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("GCalShutter") {
-        type GcalShutterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String`.T
+        type GcalShutterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
         val io = sql"""
-          SELECT enumlabel x, enumlabel a, enumlabel b, enumlabel c, enumlabel d
+          SELECT enumlabel x, enumlabel a, enumlabel b, enumlabel c
           FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
           WHERE pg_type.typname = 'gcal_shutter'
          """.query[(String, GcalShutterRec)].list
@@ -168,8 +168,8 @@ object gen2 {
       },
 
       enum("Instrument") {
-        type InstrumentRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'tccValue -> String, 'obsolete -> Boolean`.T
-        val io = sql"select id, id tag, short_name, long_name, tcc_value, obsolete from e_instrument".query[(String, InstrumentRec)].list
+        type InstrumentRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_instrument".query[(String, InstrumentRec)].list
         io.transact(xa).unsafePerformIO
       },
 
