@@ -590,8 +590,7 @@ CREATE TABLE step_gcal (
     gcal_thar_arc boolean NOT NULL DEFAULT FALSE,
     gcal_xe_arc boolean NOT NULL DEFAULT FALSE,
     shutter gcal_shutter NOT NULL,
-    CONSTRAINT check_continuum CHECK ((gcal_continuum IS NULL) OR
-                                      (NOT (gcal_ar_arc OR gcal_cuar_arc OR gcal_thar_arc OR gcal_xe_arc)))
+    CONSTRAINT check_lamp CHECK ((gcal_continuum IS NULL) = (gcal_ar_arc OR gcal_cuar_arc OR gcal_thar_arc OR gcal_xe_arc))
 );
 
 
