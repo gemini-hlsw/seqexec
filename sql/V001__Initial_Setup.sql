@@ -584,13 +584,13 @@ COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should 
 CREATE TABLE step_gcal (
     index smallint NOT NULL,
     observation_id character varying(40) NOT NULL,
-    gcal_continuum identifier,
-    gcal_ar_arc boolean NOT NULL DEFAULT FALSE,
-    gcal_cuar_arc boolean NOT NULL DEFAULT FALSE,
-    gcal_thar_arc boolean NOT NULL DEFAULT FALSE,
-    gcal_xe_arc boolean NOT NULL DEFAULT FALSE,
+    continuum identifier,
+    ar_arc boolean NOT NULL DEFAULT FALSE,
+    cuar_arc boolean NOT NULL DEFAULT FALSE,
+    thar_arc boolean NOT NULL DEFAULT FALSE,
+    xe_arc boolean NOT NULL DEFAULT FALSE,
     shutter gcal_shutter NOT NULL,
-    CONSTRAINT check_lamp CHECK ((gcal_continuum IS NULL) = (gcal_ar_arc OR gcal_cuar_arc OR gcal_thar_arc OR gcal_xe_arc))
+    CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
 );
 
 
@@ -886,7 +886,7 @@ COPY step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter,
 -- Data for Name: step_gcal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY step_gcal (index, observation_id, gcal_continuum, shutter) FROM stdin;
+COPY step_gcal (index, observation_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, shutter) FROM stdin;
 \.
 
 
@@ -1273,7 +1273,7 @@ ALTER TABLE ONLY step_f2
 --
 
 ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_continuum_fkey FOREIGN KEY (gcal_continuum) REFERENCES e_gcal_continuum(id);
+    ADD CONSTRAINT step_gcal_gcal_continuum_fkey FOREIGN KEY (continuum) REFERENCES e_gcal_continuum(id);
 
 --
 -- Name: step_gcal_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres

@@ -44,7 +44,7 @@ object StepDao {
     import GcalArc._
 
     sql"""
-      INSERT INTO step_gcal (observation_id, index, gcal_continuum, gcal_ar_arc, gcal_cuar_arc, gcal_thar_arc, gcal_xe_arc, shutter)
+      INSERT INTO step_gcal (observation_id, index, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, shutter)
       VALUES (${oid.toString}, $index, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.shutter} :: gcal_shutter)
     """.update.run
   }
@@ -101,11 +101,11 @@ object StepDao {
     sql"""
       SELECT s.instrument,
              s.step_type,
-             sg.gcal_continuum,
-             sg.gcal_ar_arc,
-             sg.gcal_cuar_arc,
-             sg.gcal_thar_arc,
-             sg.gcal_xe_arc,
+             sg.continuum,
+             sg.ar_arc,
+             sg.cuar_arc,
+             sg.thar_arc,
+             sg.xe_arc,
              sg.shutter,
              sc.offset_p,
              sc.offset_q
