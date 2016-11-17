@@ -27,7 +27,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) extends BooPicklers with NewBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooPicklers with NewBooPicklers {
 
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
@@ -85,7 +85,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) exte
         // Stream seqexec events to clients and a ping
         val user = userInRequest(req)
         WS(Exchange(pingProcess ++ Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) merge
-          SeqexecEngine.eventProcess(q).map(v => Binary(newTrimmedArray(v))), scalaz.stream.Process.empty))
+          se.eventProcess(q).map(v => Binary(newTrimmedArray(v))), scalaz.stream.Process.empty))
 
       case req @ POST -> Root / "seqexec" / "logout"        =>
         // Clean the auth cookie
@@ -98,11 +98,11 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue) exte
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
             obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
-            s     <- ODBProxy.read(obsId)
+            s     <- se.odbProxy.read(obsId)
           } yield (obsId, s)
 
           r match {
-            case \/-((i, s)) => SeqexecEngine.load(q, i) *>
+            case \/-((i, s)) => se.load(q, i) *>
                 Ok(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None)))
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
           }

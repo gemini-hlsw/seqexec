@@ -82,15 +82,15 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, q: engine.EventQueue): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
 
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(conf.devMode).service, "/")
-      .mountService(new SeqexecCommandRoutes(as, q).service, "/api/seqexec/commands")
-      .mountService(new SeqexecUIApiRoutes(as, q).service, "/api")
+      .mountService(new SeqexecCommandRoutes(as, q, se).service, "/api/seqexec/commands")
+      .mountService(new SeqexecUIApiRoutes(as, q, se).service, "/api")
       .start
   }
 
@@ -103,10 +103,10 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       ac <- authConf
       wc <- serverConf
       c <- config
-      _  <- SeqexecEngine.seqexecConfigure.run(c)
+      seqc  <- SeqexecEngine.seqexecConfiguration.run(c)
       as <- authService.run(ac)
       // Put the queue in WebServerConfiguration?
       q = async.boundedQueue[Event.Event](10)
-      ws <- webServer(as, q).run(wc)
+      ws <- webServer(as, q, SeqexecEngine(seqc)).run(wc)
     } yield ws
 }

@@ -99,11 +99,7 @@ object DhsClient {
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
   */
-object DhsClientHttp extends DhsClient {
-
-  private var baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
-
-  def setBaseURI(s: String): Unit = { baseURI = s }
+class DhsClientHttp(val baseURI: String) extends DhsClient {
 
   sealed case class ErrorType(str: String)
   object BadRequest extends ErrorType("BAD_REQUEST")
@@ -182,6 +178,10 @@ object DhsClientHttp extends DhsClient {
     sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
       Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
       "Unable to write keywords for image " + id)
+}
+
+object DhsClientHttp {
+  def apply(uri: String) = new DhsClientHttp(uri)
 }
 
 /**
