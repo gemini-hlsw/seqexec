@@ -39,14 +39,13 @@ object StepDao {
     """.update.run
 
   private def insertGcalSlice(oid: Observation.Id, index: Int, gcal: GcalConfig): ConnectionIO[Int] = {
-    val continuum: Option[GcalContinuum] = gcal.lamp.swap.toOption
-    val arcs: Set[GcalArc]               = gcal.lamp.map(as => as.tail.toSet + as.head).getOrElse(Set.empty[GcalArc])
+    val arcs: GcalArc => Boolean = gcal.arcs.member
 
     import GcalArc._
 
     sql"""
       INSERT INTO step_gcal (observation_id, index, gcal_continuum, gcal_ar_arc, gcal_cuar_arc, gcal_thar_arc, gcal_xe_arc, shutter)
-      VALUES (${oid.toString}, $index, $continuum, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.shutter} :: gcal_shutter)
+      VALUES (${oid.toString}, $index, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.shutter} :: gcal_shutter)
     """.update.run
   }
 
@@ -86,8 +85,7 @@ object StepDao {
           import GcalArc._
           val (continuumOpt, ar, cuar, thar, xe, shutterOpt) = gcal
           (for {
-            l <- GcalConfig.mkLampOption(continuumOpt,
-                    List(ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe))
+            l <- GcalConfig.mkLamp(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
             s <- shutterOpt
           } yield GcalStep(i, GcalConfig(l, s))).getOrElse(sys.error("missing gcal information: " + gcal))
 

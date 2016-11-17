@@ -8,19 +8,25 @@ import Scalaz._
 
 import GcalConfig.GcalLamp
 
-case class GcalConfig(lamp: GcalLamp, shutter: GcalShutter)
+case class GcalConfig(lamp: GcalLamp, shutter: GcalShutter) {
+  def continuum: Option[GcalContinuum] =
+    lamp.swap.toOption
+
+  def arcs: ISet[GcalArc] =
+    lamp.fold(_ => ISet.empty[GcalArc], as => as.tail.insert(as.head))
+}
 
 object GcalConfig {
   type GcalArcs = OneAnd[ISet, GcalArc]
   type GcalLamp = GcalContinuum \/ GcalArcs
 
-  def mkLampOption(continuum: Option[GcalContinuum], arcs: => List[(GcalArc, Boolean)]): Option[GcalLamp] =
-    continuum.map(_.left[GcalArcs]) orElse {
-      val as = arcs.filter(_._2).unzip._1
-      as.headOption.map { a => OneAnd(a, ISet.fromList(as.tail)).right[GcalContinuum] }
-    }
+  def mkLamp(continuum: Option[GcalContinuum], arcs: (GcalArc, Boolean)*): Option[GcalLamp] =
+    continuum.map(_.left[GcalArcs]).orElse(arcs.filter(_._2).unzip._1.toList match {
+      case h :: t => Some(OneAnd(h, ISet.fromList(t)).right[GcalContinuum])
+      case _      => None
+    })
 
-  def unsafeMkLamp(co: Option[GcalContinuum], as: => List[(GcalArc, Boolean)]): GcalLamp =
-    mkLampOption(co, as).getOrElse(sys.error("no Gcal continuum nor arc lamps"))
+  def unsafeMkLamp(co: Option[GcalContinuum], as: (GcalArc, Boolean)*): GcalLamp =
+    mkLamp(co, as: _*).getOrElse(sys.error("no Gcal continuum nor arc lamps"))
 }
 

@@ -216,7 +216,8 @@ object ConfigReader {
 
       // Lamp is unfortunately complicated.  There was only a single lamp type
       // in the old model and the old model would permit a mixed list of any
-      // lamp type.  Here we map the old list to a Continuum \/ List[Arc].
+      // lamp type.  Here we map the old open-ended list to a representative
+      // type: Continuum \/ OneAnd[ISet, Arc].
       val Lamp = {
         val lampToContinuum = Map[OldGcal.Lamp, GcalContinuum](
           OldGcal.Lamp.IR_GREY_BODY_HIGH -> IrGreyBodyHigh,
@@ -254,7 +255,7 @@ object ConfigReader {
             val (oldC, oldA) = oldLamps.partition(_.`type` == OldGcal.LampType.flat)
             val newC         = oldC.map(lampToContinuum)
             val newA         = oldA.map(lampToArc)
-            GcalConfig.unsafeMkLamp(newC.headOption, newA.strengthR(true))
+            GcalConfig.unsafeMkLamp(newC.headOption, newA.strengthR(true): _*)
         }
       }
 

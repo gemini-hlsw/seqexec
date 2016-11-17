@@ -108,13 +108,12 @@ object ProgramDao {
         None
 
       case (None, ar, cuar, thar, xe, Some(shutter)) =>
-        GcalConfig.mkLampOption(None, List(ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)).map {
+        GcalConfig.mkLamp(None, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe).map {
           GcalConfig(_, shutter)
         }
 
       case (Some(continuum), _, _, _, _, Some(shutter)) =>
-        val lamp = continuum.left[OneAnd[ISet, GcalArc]]
-        Some(GcalConfig(lamp, shutter))
+        Some(GcalConfig(continuum.left[OneAnd[ISet, GcalArc]], shutter))
 
       case x => sys.error("Unexecpted Option[GcalConfig] inputs: " + x)
     }, _ => sys.error("decode only"))
