@@ -102,6 +102,7 @@ object ProgramDao {
   // The full program select is a 5-table join. Decoding requires some busywork that's made slightly
   // simpler by factoring out sub-encoders for different subsets of columns.
   private implicit val OptionGcalConfigComposite: Composite[Option[GcalConfig]] = {
+    import GcalConfig.GcalArcs
     import GcalArc._
     Composite[(Option[GcalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GcalShutter])].xmap({
       case (None, _, _, _, _, None) =>
@@ -113,7 +114,7 @@ object ProgramDao {
         }
 
       case (Some(continuum), _, _, _, _, Some(shutter)) =>
-        Some(GcalConfig(continuum.left[OneAnd[ISet, GcalArc]], shutter))
+        Some(GcalConfig(continuum.left[GcalArcs], shutter))
 
       case x => sys.error("Unexecpted Option[GcalConfig] inputs: " + x)
     }, _ => sys.error("decode only"))
