@@ -4,13 +4,17 @@ import edu.gemini.spModel.core._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.data.YesNoType
 
+import gem.config._
+import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 
 import java.time.Duration
 import java.util.{Set => JSet}
 
+import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe.TypeTag
-import edu.gemini.spModel.gemini.calunit.{CalUnitParams => OldGCal}
+
+import edu.gemini.spModel.gemini.calunit.{CalUnitParams => OldGcal}
 import edu.gemini.spModel.gemini.flamingos2.{Flamingos2 => OldF2}
 import edu.gemini.shared.util.immutable.{Some => GSome}
 
@@ -29,6 +33,9 @@ object ConfigReader {
       .replace("java.lang.", "")
       .replace("java.time.", "")
       .replace("gem.", "")
+
+  private def swapMap[A, B](m: Map[A, B]): Map[B, A] =
+    m.map(_.swap).toMap
 
   object Enum {
     def find[A](f: A => Boolean)(implicit ev: Enumerated[A]): Option[A] =
@@ -93,11 +100,14 @@ object ConfigReader {
       // Produces a pair of functions, one from old to new (S => A) and one
       // from new to old (A => S)
       private def xlat[S <: SequenceableSpType, A](name: String, m: Seq[(S, A)]): (S => A, A => S) = {
-        val oldToNew = m.toMap
-        val newToOld = m.map(_.swap).toMap
+        val oldToNew: Map[S, A] = m.toMap.withDefault { o =>
+          sys.error(s"new value of '$name': $o not found")
+        }
+        val newToOld: Map[A, S] = swapMap(oldToNew).withDefault { n =>
+          sys.error(s"old value of '$name': $n not found")
+        }
 
-        ((s: S) => oldToNew.getOrElse(s, sys.error(s"new value of '$name': $s not found")),
-         (a: A) => newToOld.getOrElse(a, sys.error(s"old value of '$name': $a not found")))
+        (oldToNew.apply, newToOld.apply)
       }
 
       def enum[S <: SequenceableSpType, A: TypeTag](name: String, m: (S, A)*): Key[A] =
@@ -105,7 +115,7 @@ object ConfigReader {
 
       def enumXlat[S <: SequenceableSpType, A: TypeTag](name: String, m: (S, A)*)(f: AnyRef => S): Key[A] = {
         val (sToA, aToS) = xlat(name, m)
-        val write        = (a: A) => aToS(a).sequenceValue
+        val write        = aToS.andThen(_.sequenceValue)
         val read         = (any: AnyRef) => sToA(f(any))
         new Key[A](name, write, read)
       }
@@ -201,23 +211,57 @@ object ConfigReader {
 
     case object Calibration extends System("calibration") {
 
-      import GCalLamp._
-      val Lamp    = Key.enumXlat[OldGCal.Lamp, GCalLamp]("lamp",
-          OldGCal.Lamp.AR_ARC            -> ArArc,
-          OldGCal.Lamp.CUAR_ARC          -> CuArArc,
-          OldGCal.Lamp.IR_GREY_BODY_HIGH -> IrGreyBodyHigh,
-          OldGCal.Lamp.IR_GREY_BODY_LOW  -> IrGreyBodyLow,
-          OldGCal.Lamp.QUARTZ            -> QuartzHalogen,
-          OldGCal.Lamp.THAR_ARC          -> ThArArc,
-          OldGCal.Lamp.XE_ARC            -> XeArc
-      ) {
-        // TODO: actually we need to store the entire collection of lamps
-        case js: JSet[_] => js.asInstanceOf[JSet[OldGCal.Lamp]].iterator.next
+      import GcalArc._
+      import GcalContinuum._
+
+      // Lamp is unfortunately complicated.  There was only a single lamp type
+      // in the old model and the old model would permit a mixed list of any
+      // lamp type.  Here we map the old open-ended list to a representative
+      // type: Continuum \/ OneAnd[ISet, Arc].
+      val Lamp = {
+        val lampToContinuum = Map[OldGcal.Lamp, GcalContinuum](
+          OldGcal.Lamp.IR_GREY_BODY_HIGH -> IrGreyBodyHigh,
+          OldGcal.Lamp.IR_GREY_BODY_LOW  -> IrGreyBodyLow,
+          OldGcal.Lamp.QUARTZ            -> QuartzHalogen
+        ).withDefault { l =>
+          sys.error(s"could not find continuum for lamp $l")
+        }
+
+        val continuumToLamp = swapMap(lampToContinuum).withDefault { c =>
+          sys.error(s"could not find lamp for continuum $c")
+        }
+
+        val lampToArc       = Map[OldGcal.Lamp, GcalArc](
+          OldGcal.Lamp.AR_ARC            -> ArArc,
+          OldGcal.Lamp.CUAR_ARC          -> CuArArc,
+          OldGcal.Lamp.THAR_ARC          -> ThArArc,
+          OldGcal.Lamp.XE_ARC            -> XeArc
+        ).withDefault { l =>
+          sys.error(s"could not find arc for lamp $l")
+        }
+
+        val arcToLamp = swapMap(lampToArc).withDefault { a =>
+          sys.error(s"could not find lamp for arc $a")
+        }
+
+        def write(l: GcalLamp): String =
+          l.leftMap(c => List(continuumToLamp(c).sequenceValue)).map { arcs =>
+            (arcs.head :: arcs.tail.toList).map(arcToLamp.andThen(_.sequenceValue))
+          }.merge.mkString("[", ",", "]")
+
+        Key[GcalLamp]("lamp", write) {
+          case js: JSet[_] =>
+            val oldLamps     = js.asInstanceOf[JSet[OldGcal.Lamp]].asScala.toList
+            val (oldC, oldA) = oldLamps.partition(_.`type` == OldGcal.LampType.flat)
+            val newC         = oldC.map(lampToContinuum)
+            val newA         = oldA.map(lampToArc)
+            GcalConfig.unsafeMkLamp(newC.headOption, newA.strengthR(true): _*)
+        }
       }
 
-      val Shutter = Key.enum[OldGCal.Shutter, GCalShutter]("shutter",
-        OldGCal.Shutter.CLOSED -> GCalShutter.Closed,
-        OldGCal.Shutter.OPEN   -> GCalShutter.Open
+      val Shutter = Key.enum[OldGcal.Shutter, GcalShutter]("shutter",
+        OldGcal.Shutter.CLOSED -> GcalShutter.Closed,
+        OldGcal.Shutter.OPEN   -> GcalShutter.Open
       )
     }
   }
@@ -227,7 +271,7 @@ object ConfigReader {
       k.legacyGet(c).map(k.read)
 
     def uget[A](k: System#Key[A]): A =
-      cgetOrElse(k, throw sys.error(s"not found: ${k.path}"))
+      cgetOrElse(k, sys.error(s"not found: ${k.path}"))
 
     def cgetOrElse[A](k: System#Key[A], a: => A): A =
       cget(k).getOrElse(a)

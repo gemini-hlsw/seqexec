@@ -57,18 +57,6 @@ CREATE TYPE f2_decker AS ENUM (
 ALTER TYPE f2_decker OWNER TO postgres;
 
 --
--- Name: gcal_lamp_type; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE gcal_lamp_type AS ENUM (
-    'arc',
-    'flat'
-);
-
-
-ALTER TYPE gcal_lamp_type OWNER TO postgres;
-
---
 -- Name: gcal_shutter; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -227,19 +215,32 @@ CREATE TABLE e_gcal_filter (
 ALTER TABLE e_gcal_filter OWNER TO postgres;
 
 --
--- Name: e_gcal_lamp; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_gcal_continuum; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE e_gcal_lamp (
+CREATE TABLE e_gcal_continuum (
     id character varying(20) NOT NULL,
-    lamp_type gcal_lamp_type NOT NULL,
     short_name character varying(20) NOT NULL,
     long_name character varying(20) NOT NULL,
     obsolete boolean NOT NULL
 );
 
 
-ALTER TABLE e_gcal_lamp OWNER TO postgres;
+ALTER TABLE e_gcal_continuum OWNER TO postgres;
+
+--
+-- Name: e_gcal_arc; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gcal_arc (
+    id character varying(20) NOT NULL,
+    short_name character varying(20) NOT NULL,
+    long_name character varying(20) NOT NULL,
+    obsolete boolean NOT NULL
+);
+
+
+ALTER TABLE e_gcal_arc OWNER TO postgres;
 
 --
 -- Name: e_instrument; Type: TABLE; Schema: public; Owner: postgres
@@ -583,8 +584,13 @@ COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should 
 CREATE TABLE step_gcal (
     index smallint NOT NULL,
     observation_id character varying(40) NOT NULL,
-    gcal_lamp identifier,
-    shutter gcal_shutter NOT NULL
+    continuum identifier,
+    ar_arc boolean NOT NULL DEFAULT FALSE,
+    cuar_arc boolean NOT NULL DEFAULT FALSE,
+    thar_arc boolean NOT NULL DEFAULT FALSE,
+    xe_arc boolean NOT NULL DEFAULT FALSE,
+    shutter gcal_shutter NOT NULL,
+    CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
 );
 
 
@@ -700,17 +706,25 @@ Nd50	ND5.0	t	ND5.0
 
 
 --
--- Data for Name: e_gcal_lamp; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_gcal_continuum; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_gcal_lamp (id, lamp_type, short_name, long_name, obsolete) FROM stdin;
-IrGreyBodyLow	flat	IR grey body - low	IR grey body - low	f
-IrGreyBodyHigh	flat	IR grey body - high	IR grey body - high	f
-QuartzHalogen	flat	Quartz Halogen	Quartz Halogen	f
-ArArc	arc	Ar arc	Ar arc	f
-ThArArc	arc	ThAr arc	ThAr arc	f
-CuArArc	arc	CuAr arc	CuAr arc	f
-XeArc	arc	Xe arc	Xe arc	f
+COPY e_gcal_continuum (id, short_name, long_name, obsolete) FROM stdin;
+IrGreyBodyLow	IR grey body - low	IR grey body - low	f
+IrGreyBodyHigh	IR grey body - high	IR grey body - high	f
+QuartzHalogen	Quartz Halogen	Quartz Halogen	f
+\.
+
+
+--
+-- Data for Name: e_gcal_arc; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gcal_arc (id, short_name, long_name, obsolete) FROM stdin;
+ArArc	Ar arc	Ar arc	f
+ThArArc	ThAr arc	ThAr arc	f
+CuArArc	CuAr arc	CuAr arc	f
+XeArc	Xe arc	Xe arc	f
 \.
 
 
@@ -872,7 +886,7 @@ COPY step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter,
 -- Data for Name: step_gcal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY step_gcal (index, observation_id, gcal_lamp, shutter) FROM stdin;
+COPY step_gcal (index, observation_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, shutter) FROM stdin;
 \.
 
 
@@ -909,11 +923,19 @@ ALTER TABLE ONLY e_gcal_filter
 
 
 --
--- Name: e_gcal_lamp_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: e_gcal_continuum_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY e_gcal_lamp
-    ADD CONSTRAINT e_gcal_lamp_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY e_gcal_continuum
+    ADD CONSTRAINT e_gcal_continuum_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_gcal_arc_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_gcal_arc
+    ADD CONSTRAINT e_gcal_arc_pkey PRIMARY KEY (id);
 
 
 --
@@ -1247,12 +1269,11 @@ ALTER TABLE ONLY step_f2
 
 
 --
--- Name: step_gcal_gcal_lamp_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: step_gcal_gcal_continuum_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_lamp_fkey FOREIGN KEY (gcal_lamp) REFERENCES e_gcal_lamp(id);
-
+    ADD CONSTRAINT step_gcal_gcal_continuum_fkey FOREIGN KEY (continuum) REFERENCES e_gcal_continuum(id);
 
 --
 -- Name: step_gcal_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
