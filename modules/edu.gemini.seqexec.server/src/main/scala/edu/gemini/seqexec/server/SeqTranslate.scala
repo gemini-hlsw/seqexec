@@ -23,6 +23,7 @@ object SeqTranslate {
                     flamingos2: Flamingos2Controller
                     )
 
+  // TODO: Take care of this side effect.
   private val dhsSimulator = DhsClientSim(LocalDate.now)
 
   implicit def toAction[A](x: SeqAction[A]): Action = x.run map {

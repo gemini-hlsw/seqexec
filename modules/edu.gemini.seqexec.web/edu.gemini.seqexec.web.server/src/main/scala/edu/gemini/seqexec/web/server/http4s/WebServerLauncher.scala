@@ -99,14 +99,14 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     */
   override def server(args: List[String]): Task[Server] =
     for {
-      _  <- configLog
-      ac <- authConf
-      wc <- serverConf
-      c <- config
-      seqc  <- SeqexecEngine.seqexecConfiguration.run(c)
-      as <- authService.run(ac)
+      _    <- configLog
+      ac   <- authConf
+      wc   <- serverConf
+      c    <- config
+      seqc <- SeqexecEngine.seqexecConfiguration.run(c)
+      as   <- authService.run(ac)
       // Put the queue in WebServerConfiguration?
-      q = async.boundedQueue[Event.Event](10)
-      ws <- webServer(as, q, SeqexecEngine(seqc)).run(wc)
+      q    = async.boundedQueue[Event.Event](10)
+      ws   <- webServer(as, q, SeqexecEngine(seqc)).run(wc)
     } yield ws
 }
