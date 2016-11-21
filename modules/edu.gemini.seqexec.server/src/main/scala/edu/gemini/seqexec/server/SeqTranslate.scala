@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.server
 
+import java.time.LocalDate
+
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
 import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
@@ -8,47 +10,57 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
 import scalaz.Scalaz._
 import scalaz._
+import scalaz.concurrent.Task
 
 /**
   * Created by jluhrs on 9/14/16.
   */
 object SeqTranslate {
 
+  case class Systems(
+                    dhs: DhsClient,
+                    tcs: TcsController,
+                    flamingos2: Flamingos2Controller
+                    )
+
+  // TODO: Take care of this side effect.
+  private val dhsSimulator = DhsClientSim(LocalDate.now)
+
   implicit def toAction[A](x: SeqAction[A]): Action = x.run map {
     case -\/(e) => Result.Error(e)
     case \/-(r) => Result.OK(r)
   }
 
-  def step(dhsClient: DhsClient)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
+  private def step(systems: Systems)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
 
     val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
     val instrument = instName match {
-      case GmosSouth.name => Some(GmosSouth)
-      case Flamingos2.name => Some(Flamingos2(Flamingos2ControllerSim))
+      case Flamingos2.name => Some(Flamingos2(systems.flamingos2))
       case _ => None
     }
 
     instrument.map { a =>
-      val systems = List(Tcs(TcsControllerSim), a)
+      val sys = List(Tcs(systems.tcs), a)
       // TODO Find a proper way to inject the subsystems
       Step[Action](
         i,
         List(
           // TODO: implicit function doesn't work here, why?
-          systems.map(x => toAction(x.configure(config))),
-          List((a.observe(config)(dhsClient)))
+          sys.map(x => toAction(x.configure(config))),
+          List((a.observe(config)(systems.dhs)))
         )
       ).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[Step[Action]])
   }
 
-  def sequence(dhsClient: DhsClient)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
+  def sequence(systems: Systems)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.traverseU {
-      case (c, i) => step(dhsClient)(i, c)
+      case (c, i) => step(systems)(i, c)
     }
 
     steps.map(Sequence[Action](obsId, _))
   }
+
 }

@@ -10,12 +10,10 @@ import scalaz.\/
 /**
   * Created by jluhrs on 9/6/16.
   */
-object ODBProxy {
-  private var loc = new Peer("localhost", 8443, null)
+class ODBProxy(val loc: Peer) {
 
   def host(): Peer = loc
-  def host(l: Peer): Unit = { loc = l }
   def read(oid: SPObservationID): SeqexecFailure \/ ConfigSequence =
-    SeqExecService.client(ODBProxy.host()).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
+    SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
 
 }

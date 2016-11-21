@@ -10,13 +10,23 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
+import knobs._
 import edu.gemini.seqexec.model.SharedModel._
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
+import edu.gemini.spModel.core.Peer
 
 /**
   * Created by jluhrs on 10/7/16.
   */
-object SeqexecEngine {
+class SeqexecEngine(settings: SeqexecEngine.Settings) {
+
+  val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null))
+
+  val systems = SeqTranslate.Systems(
+    if(settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
+    if(settings.tcsSim) TcsControllerSim else TcsControllerEpics,
+    if(settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
+  )
 
   val qs: QState = QState.init(
     engine.Queue(
@@ -49,9 +59,8 @@ object SeqexecEngine {
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
-        odbSeq <- Task(ODBProxy.read(seqId))
-        now <- Task(LocalDate.now)
-      } yield odbSeq.flatMap(s => SeqTranslate.sequence(DhsClientSim(now))(seqId.stringValue(), s))
+        odbSeq <- Task(odbProxy.read(seqId))
+      } yield odbSeq.flatMap(s => SeqTranslate.sequence(systems)(seqId.stringValue(), s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(x)).map(_.right))
     u.run
@@ -117,4 +126,38 @@ object SeqexecEngine {
 
       seq.steps.map(viewStep)
     }
+
+    // Configuration stuff
+
+
+}
+
+object SeqexecEngine {
+
+  case class Settings(odbHost: String,
+                      date: LocalDate,
+                      dhsURI: String,
+                      dhsSim: Boolean,
+                      tcsSim: Boolean,
+                      instSim: Boolean,
+                      gcalSim: Boolean)
+
+  def apply(settings: Settings) = new SeqexecEngine(settings)
+
+
+  def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
+      val odbHost = cfg.require[String]("seqexec-engine.odb")
+      val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
+      val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
+      val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
+      val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
+      val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+
+      for {
+        now <- Task(LocalDate.now)
+      } yield Settings(odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim)
+
+    }
   }
+
+}

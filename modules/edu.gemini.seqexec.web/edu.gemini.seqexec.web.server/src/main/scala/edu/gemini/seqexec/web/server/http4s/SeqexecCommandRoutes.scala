@@ -13,25 +13,15 @@ import org.http4s.server.middleware.GZip
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue) extends BooPicklers {
+class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooPicklers {
 
   val tokenAuthService = JwtAuthentication(auth)
 
-  val commands = Commands()
+  val commands = Commands(se.odbProxy)
 
   val service = tokenAuthService { GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
       Ok(toCommandResult("host", commands.host()))
-
-    case req @ POST -> Root  / "host" =>
-      req.decode[UrlForm] { data =>
-        data.getFirst("host") match {
-          case Some(h) => Ok(toCommandResult(s"host $h", commands.host(h)))
-          case _ => BadRequest("Missing param host")
-        }
-      }.handleWith {
-        case e: Exception => BadRequest("Bad host request")
-      }
 
     case req @ GET  -> Root  / obsId / "count" =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
@@ -66,18 +56,18 @@ class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue) ex
     case req @ POST -> Root / "start" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(SeqexecEngine.start(q).map(_.toString))
+      Ok(se.start(q).map(_.toString))
 
     // TODO: Add obsId parameter
     case req @ POST -> Root / "pause" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(SeqexecEngine.requestPause(q).map(_.toString))
+      Ok(se.requestPause(q).map(_.toString))
 
     case req @ GET -> Root / "refresh" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(SeqexecEngine.requestRefresh(q).map(_.toString))
+      Ok(se.requestRefresh(q).map(_.toString))
 
   }}}
 }
