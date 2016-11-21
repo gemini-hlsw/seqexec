@@ -22,7 +22,7 @@ object UserDao {
          User(i, f, l, e, s, Map.empty)
        }
 
-  def selectWithRoles(id: String): ConnectionIO[User[ProgramRole]] =
+  def selectWithRoles(id: String, pass: String): ConnectionIO[Option[User[ProgramRole]]] =
     sql"""
       SELECT u.id,
              u.first,
@@ -33,6 +33,7 @@ object UserDao {
              g.program_role
         FROM gem_user u LEFT OUTER JOIN gem_user_program g ON g.user_id = u.id
         WHERE id = $id
+        AND "md5" = md5($pass)
     """
       .query[(String, String, String, String, Boolean, Option[Program.Id], Option[ProgramRole])]
       .list
@@ -43,6 +44,15 @@ object UserDao {
               case (_, _, _, _, _, Some(pid), Some(role)) => Map(pid -> Set(role))
             }.suml
             User(i, f, l, e, s, map)
-        } .getOrElse(sys.error(s"Unknown user: $id"))
+        }
       }
+
+  def changePassword(uid: User.Id, oldPassword: String, newPassword: String): ConnectionIO[Boolean] =
+    sql"""
+      UPDATE gem_user
+      SET    md5 = md5($newPassword)
+      WHERE  id  = ${uid}
+      AND    md5 = md5($oldPassword)
+    """.update.run.map(_ == 1)
+
 }
