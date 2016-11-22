@@ -5,21 +5,31 @@ import gem.enum.Instrument
 
 import doobie.imports._
 
+import scalaz._, Scalaz._
+
 object ObservationDao {
 
   def insert(o: Observation[_]): ConnectionIO[Int] =
     sql"""
-      INSERT INTO observation (observation_id, 
-                              program_id, 
-                              observation_index, 
+      INSERT INTO observation (observation_id,
+                              program_id,
+                              observation_index,
                               title,
                               instrument)
-            VALUES (${o.id}, 
-                    ${o.id.pid}, 
-                    ${o.id.index}, 
+            VALUES (${o.id},
+                    ${o.id.pid},
+                    ${o.id.index},
                     ${o.title},
                     ${o.instrument})
     """.update.run
+
+  /** Select all the observation ids associated with the given program. */
+  def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
+    sql"""
+      SELECT observation_id
+        FROM observation
+       WHERE program_id = $pid
+    """.query[Observation.Id].list
 
   def selectFlat(id: Observation.Id): ConnectionIO[Observation[Nothing]] =
     sql"""
@@ -30,7 +40,7 @@ object ObservationDao {
        .unique
        .map { case (t, i) =>
          Observation(id, t, i, Nil)
-       }      
+       }
 
   def select(id: Observation.Id): ConnectionIO[Observation[Step[_]]] =
     for {
@@ -50,4 +60,9 @@ object ObservationDao {
        }
        .list
 
+  def selectAll(pid: Program.Id): ConnectionIO[List[Observation[Step[_]]]] =
+    for {
+      ids <- selectIds(pid)
+      oss <- ids.traverseU(select)
+    } yield oss
 }

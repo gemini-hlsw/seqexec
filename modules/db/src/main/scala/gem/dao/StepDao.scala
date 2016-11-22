@@ -72,7 +72,7 @@ object StepDao {
   private case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
-    gcal: (Option[GcalContinuum], Boolean, Boolean, Boolean, Boolean, Option[GcalShutter]),
+    gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalShutter]),
     telescope: (Option[OffsetP],  Option[OffsetQ])
   ) {
     def toStep: Step[Instrument] =
@@ -83,10 +83,14 @@ object StepDao {
 
         case StepType.Gcal =>
           import GcalArc._
-          val (continuumOpt, ar, cuar, thar, xe, shutterOpt) = gcal
+          val (continuumOpt, arOpt, cuarOpt, tharOpt, xeOpt, shutterOpt) = gcal
           (for {
-            l <- GcalConfig.mkLamp(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
-            s <- shutterOpt
+            ar   <- arOpt
+            cuar <- cuarOpt
+            thar <- tharOpt
+            xe   <- xeOpt
+            l    <- GcalConfig.mkLamp(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+            s    <- shutterOpt
           } yield GcalStep(i, GcalConfig(l, s))).getOrElse(sys.error("missing gcal information: " + gcal))
 
         case StepType.Science =>
