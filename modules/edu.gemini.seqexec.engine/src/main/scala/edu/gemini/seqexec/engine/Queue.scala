@@ -24,81 +24,84 @@ object Queue {
     def map[A, B](fa: Queue[A])(f: A => B): Queue[B] =
       Queue(fa.sequences.map(_.map(f)))
   }
-}
-
-/**
-  * Queue Zipper. This structure is optimized for the actual `Queue`
-  * execution.
-  *
-  */
-case class QueueZ(
-  pending: List[Sequence[Action]],
-  focus: SequenceZ,
-  done: List[Sequence[Result]]
-) {
 
   /**
-    * Runs the next execution. If the current `Sequence` is completed it adds
-    * the `SequenceZ` under focus to the list of completed `Sequence`s and makes
-    * the next pending `Sequence` the current one.
-    *
-    * If there are still `Step`s that have not finished in the current
-    * `Sequence` or if there are no more pending `Seqeunce`s it returns `None`.
-    */
-  val next: Option[QueueZ] =
-    focus.next match {
-      // Sequence completed
-      case None       =>
-        pending match {
-          case Nil           => None
-          case seqp :: seqps => for {
-            curr <- SequenceZ.currentify(seqp)
-            seqd <- focus.uncurrentify
-          } yield QueueZ(seqps, curr, seqd :: done)
-        }
-      // Current Sequence ongoing
-      case Some(seqz) => Some(QueueZ(pending, seqz, done))
-    }
-
-  /**
-    * Obtain the `Queue` results only if all `Step`s have been completed.
-    * This is a special way of *unzipping* a `SequenceZ`.
+    * Queue Zipper. This structure is optimized for the actual `Queue`
+    * execution.
     *
     */
-  val uncurrentify: Option[Queue[Result]] =
-    if (pending.isEmpty) focus.uncurrentify.map(x => Queue(x :: done))
-    else None
+  case class Zipper(
+    pending: List[Sequence[Action]],
+    focus: Sequence.Zipper,
+    done: List[Sequence[Result]]
+  ) {
 
-  /**
-    * Unzip `QueueZ`. This creates a single `Sequence` with either completed
-    * `Step`s or pending `Step`s.
-    */
-  val toQueue: Queue[Action \/ Result] =
-    Queue(
-      done.map(_.map(_.right)) ++
-      List(focus.toSequence) ++
-      pending.map(_.map(_.left))
-    )
-}
+    /**
+      * Runs the next execution. If the current `Sequence` is completed it adds
+      * the `Sequence.Zipper` under focus to the list of completed `Sequence`s and makes
+      * the next pending `Sequence` the current one.
+      *
+      * If there are still `Step`s that have not finished in the current
+      * `Sequence` or if there are no more pending `Seqeunce`s it returns `None`.
+      */
+    val next: Option[Zipper] =
+      focus.next match {
+        // Sequence completed
+        case None       =>
+          pending match {
+            case Nil           => None
+            case seqp :: seqps => for {
+              curr <- Sequence.Zipper.currentify(seqp)
+              seqd <- focus.uncurrentify
+            } yield Zipper(seqps, curr, seqd :: done)
+          }
+        // Current Sequence ongoing
+        case Some(seqz) => Some(Zipper(pending, seqz, done))
+      }
 
-object QueueZ {
+    /**
+      * Obtain the `Queue` results only if all `Step`s have been completed.
+      * This is a special way of *unzipping* a `Sequence.Zipper`.
+      *
+      */
+    val uncurrentify: Option[Queue[Result]] =
+      if (pending.isEmpty) focus.uncurrentify.map(x => Queue(x :: done))
+      else None
 
-  /**
-    * Make a `QueueZ` from a `Queue` only if all the `Sequence`s in the
-    * `Queue` are pending. This is a special way of *zipping* a `Queue`.
-    *
-    */
-  def currentify(queue: Queue[Action]): Option[QueueZ] =
-    queue.sequences match {
-      case Nil         => None
-      case seq :: seqs =>
-        SequenceZ.currentify(seq).map(
-          QueueZ(seqs, _, Nil)
-        )
-    }
+    /**
+      * Unzip `Zipper`. This creates a single `Sequence` with either completed
+      * `Step`s or pending `Step`s.
+      */
+    val toQueue: Queue[Action \/ Result] =
+      Queue(
+        done.map(_.map(_.right)) ++
+        List(focus.toSequence) ++
+        pending.map(_.map(_.left))
+      )
 
-  private val focus: QueueZ @> SequenceZ =
-    Lens.lensu((q, f) => q.copy(focus = f), _.focus)
+  }
 
-  val current: QueueZ @> Execution = focus >=> SequenceZ.current
+  object Zipper {
+
+    /**
+      * Make a `Zipper` from a `Queue` only if all the `Sequence`s in the
+      * `Queue` are pending. This is a special way of *zipping* a `Queue`.
+      *
+      */
+    def currentify(queue: Queue[Action]): Option[Zipper] =
+      queue.sequences match {
+        case Nil         => None
+        case seq :: seqs =>
+          Sequence.Zipper.currentify(seq).map(
+            Zipper(seqs, _, Nil)
+          )
+      }
+
+    private val focus: Zipper @> Sequence.Zipper =
+      Lens.lensu((q, f) => q.copy(focus = f), _.focus)
+
+    val current: Zipper @> Execution = focus >=> Sequence.Zipper.current
+
+  }
+
 }
