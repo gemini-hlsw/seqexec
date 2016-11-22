@@ -53,6 +53,7 @@ sealed trait QState {
     * or pending `Sequence`s.
     */
   val toQueue: Queue[Action \/ Result]
+
 }
 
 /**

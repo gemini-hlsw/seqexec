@@ -49,8 +49,6 @@ package object engine {
     // TODO: Make Status an Equal instance
     modify(QState.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
 
-
-
   /**
     * Reloads the (for now only) sequence
     */
@@ -139,6 +137,65 @@ package object engine {
     * Enqueue `Event` in the Engine.
     */
   private def send(q: EventQueue)(ev: Event): Engine[Unit] = q.enqueueOne(ev).liftM[EngineStateT]
+
+  /**
+    * Main logical thread to handle events and produce output.
+    */
+  private def run(q: EventQueue)(ev: Event): Engine[QState] = {
+
+    def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
+      case Start              =>
+        log("Output: Started") *> switch(q)(Status.Running)
+      case Pause              =>
+        log("Output: Paused") *> switch(q)(Status.Waiting)
+      case Load(seq) => log("Output: Sequence loaded") *> load(seq)
+      case Poll               =>
+        log("Output: Polling current state")
+      case Exit               =>
+        log("Bye") *> close(q)
+    }
+
+    def handleSystemEvent(se: SystemEvent): Engine[Unit] = se match {
+      case (Completed(i, r)) =>
+        log("Output: Action completed") *> complete(i, r)
+      case (Failed(i, e))    =>
+        log("Output: Action failed") *> fail(q)(i, e)
+      case Executed          =>
+        log("Output: Execution completed, launching next execution") *> next(q)
+      case Finished          =>
+        log("Output: Finished") *> switch(q)(Status.Completed)
+    }
+
+    (ev match {
+        case EventUser(ue)   => handleUserEvent(ue)
+        case EventSystem(se) => handleSystemEvent(se)
+      }) *> get
+  }
+
+  // Kudos to @tpolecat
+  /** Traverse a process with a stateful computation. */
+  private def mapEvalState[F[_]: Monad: Catchable, A, S, B](
+    fs: Process[F, A], s: S, f: A => StateT[F, S, B]
+  ): Process[F, B] = {
+    def go(fs: Process[F, A], s: S): Process[F, B] =
+      Process.eval(fs.unconsOption).flatMap {
+        case None         => Process.halt
+        case Some((h, t)) => Process.eval(f(h).run(s)).flatMap {
+          case (s, a) => Process.emit(a) ++ go(t, s)
+        }
+      }
+    go(fs, s)
+  }
+
+  def runE(q: EventQueue)(ev: Event): Engine[(Event, QState)] =
+    run(q)(ev).map((ev, _))
+
+  def processE(q: EventQueue): Process[Engine, (Event, QState)] =
+    receive(q).evalMap(runE(q))
+
+  def process(q: EventQueue)(qs: QState): Process[Task, (Event, QState)] = {
+    mapEvalState(q.dequeue, qs, runE(q))
+  }
 
   // Functions for type bureaucracy
 
