@@ -2,7 +2,6 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
-import Handler._
 import org.scalatest.FlatSpec
 import scalaz._
 import Scalaz._

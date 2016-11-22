@@ -6,7 +6,7 @@ import Scalaz._
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[+A](id: Int, executions: List[Execution[A]])
+case class Step[+A](id: Int, executions: List[List[A]])
 
 object Step {
 
@@ -33,6 +33,7 @@ object Step {
     def foldRight[A, B](fa: Step[A], z: => B)(f: (A, => B) => B): B =
       fa.executions.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
   }
+
 }
 
 /**
@@ -41,9 +42,9 @@ object Step {
   */
 case class StepZ(
   id: Int,
-  pending: List[Execution[Action]],
-  focus: Current,
-  done: List[Execution[Result]]
+  pending: List[Actions],
+  focus: Execution,
+  done: List[Results]
 ) {
 
   /**
@@ -57,7 +58,7 @@ case class StepZ(
     pending match {
       case Nil           => None
       case exep :: exeps =>
-        (Current.currentify(exep) |@| focus.uncurrentify) (
+        (Execution.currentify(exep) |@| focus.uncurrentify) (
           (curr, exed) => StepZ(id, exeps, curr, exed :: done)
         )
     }
@@ -97,11 +98,12 @@ object StepZ {
     step.executions match {
       case Nil         => None
       case exe :: exes =>
-        Current.currentify(exe).map(
+        Execution.currentify(exe).map(
           StepZ(step.id, exes, _, Nil)
         )
     }
 
-  val current: StepZ @> Current =
+  val current: StepZ @> Execution =
     Lens.lensu((s, f) => s.copy(focus = f), _.focus)
+
 }

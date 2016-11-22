@@ -100,5 +100,5 @@ object QueueZ {
   private val focus: QueueZ @> SequenceZ =
     Lens.lensu((q, f) => q.copy(focus = f), _.focus)
 
-  val current: QueueZ @> Current = focus >=> SequenceZ.current
+  val current: QueueZ @> Execution = focus >=> SequenceZ.current
 }

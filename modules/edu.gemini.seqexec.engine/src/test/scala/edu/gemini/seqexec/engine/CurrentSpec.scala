@@ -5,19 +5,19 @@ import Scalaz._
 import org.scalatest._
 import scalaz.concurrent.Task
 
-class CurrentSpec extends FlatSpec with Matchers {
+class ExecuctionSpec extends FlatSpec with Matchers {
 
   val ok: Result = Result.OK(Unit)
   val action: Action = Task(ok)
-  val curr : Current = Current(List(ok.right, action.left))
+  val curr : Execution = Execution(List(ok.right, action.left))
 
   "currentify" should "be None only when an Execution is empty" in {
-    assert(Current.currentify(List(action, action)).nonEmpty)
-    assert(Current.currentify(Nil).isEmpty)
+    assert(Execution.currentify(List(action, action)).nonEmpty)
+    assert(Execution.currentify(Nil).isEmpty)
   }
 
   "uncurrentify" should "be None when not all actions are completed" in {
-    assert(Current(Nil).uncurrentify.isEmpty)
+    assert(Execution(Nil).uncurrentify.isEmpty)
     assert(curr.uncurrentify.isEmpty)
   }
 
