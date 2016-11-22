@@ -40,24 +40,24 @@ package object engine {
     */
   type Engine[A] = EngineStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type EngineStateT[M[_], A] = StateT[M, QState, A]
+  type EngineStateT[M[_], A] = StateT[M, Queue.State, A]
 
   /**
-    * Changes the `Status` and returns the new `QState`.
+    * Changes the `Status` and returns the new `Queue.State`.
     *
     * It also takes care of initiating the execution when transitioning to
     * `Running` `Status`.
     */
   def switch(q: EventQueue)(st: Status): Engine[Unit] =
     // TODO: Make Status an Equal instance
-    modify(QState.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
+    modify(Queue.State.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
 
   /**
     * Reloads the (for now only) sequence
     */
   def load(seq: Sequence[Action]): Engine[Unit] = status.flatMap {
     case Status.Running => unit
-    case _ => put(QState.init(engine.Queue(List(seq))))
+    case _ => put(Queue.State.init(engine.Queue(List(seq))))
   }
 
   /**
@@ -71,7 +71,7 @@ package object engine {
       // Empty state
       case None     => send(q)(finished)
       // Final State
-      case Some(qs: QState.Final) => put(qs) *> send(q)(finished)
+      case Some(qs: Queue.State.Final) => put(qs) *> send(q)(finished)
       // Execution completed, execute next actions
       case Some(qs) => put(qs) *> execute(q)
     }
@@ -144,7 +144,7 @@ package object engine {
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(q: EventQueue)(ev: Event): Engine[QState] = {
+  private def run(q: EventQueue)(ev: Event): Engine[Queue.State] = {
 
     def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
       case Start              =>
@@ -190,13 +190,13 @@ package object engine {
     go(fs, s)
   }
 
-  def runE(q: EventQueue)(ev: Event): Engine[(Event, QState)] =
+  def runE(q: EventQueue)(ev: Event): Engine[(Event, Queue.State)] =
     run(q)(ev).map((ev, _))
 
-  def processE(q: EventQueue): Process[Engine, (Event, QState)] =
+  def processE(q: EventQueue): Process[Engine, (Event, Queue.State)] =
     receive(q).evalMap(runE(q))
 
-  def process(q: EventQueue)(qs: QState): Process[Task, (Event, QState)] = {
+  def process(q: EventQueue)(qs: Queue.State): Process[Task, (Event, Queue.State)] = {
     mapEvalState(q.dequeue, qs, runE(q))
   }
 
@@ -211,20 +211,20 @@ package object engine {
 
   private val unit: Engine[Unit] = pure(Unit)
 
-  val get: Engine[QState] =
-    MonadState[Engine, QState].get
+  val get: Engine[Queue.State] =
+    MonadState[Engine, Queue.State].get
 
-  private def gets[A](f: (QState) => A): Engine[A] =
-    MonadState[Engine, QState].gets(f)
+  private def gets[A](f: (Queue.State) => A): Engine[A] =
+    MonadState[Engine, Queue.State].gets(f)
 
-  private def modify(f: (QState) => QState) =
-    MonadState[Engine, QState].modify(f)
+  private def modify(f: (Queue.State) => Queue.State) =
+    MonadState[Engine, Queue.State].modify(f)
 
-  private def put(qs: QState): Engine[Unit] =
-    MonadState[Engine, QState].put(qs)
+  private def put(qs: Queue.State): Engine[Unit] =
+    MonadState[Engine, Queue.State].put(qs)
 
   // For instrospection
-  val printQState: Engine[Unit] = gets((qs: QState) => Task.now(println(qs)).liftM[EngineStateT])
+  val printQueueState: Engine[Unit] = gets((qs: Queue.State) => Task.now(println(qs)).liftM[EngineStateT])
 
   // The `Catchable` instance of `Engine`` needs to be manually written.
   // Without it's not possible to use `Engine` as a scalaz-stream process effects.
@@ -251,4 +251,5 @@ package object engine {
     */
   def hoistEngineSink[O](s: Sink[Task, O]): Sink[Engine, O] =
     hoistEngine(s).map(_.map(_.liftM[EngineStateT]))
+
 }
