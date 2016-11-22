@@ -36,7 +36,7 @@ sealed trait QState {
   /**
     * Current Execution
     */
-  val current: Current
+  val current: Execution
 
   val done: List[Sequence[Result]]
 
@@ -68,7 +68,7 @@ case class QStateI(queue: Queue[Action], status: Status) extends QState { self =
 
   val pending: List[Sequence[Action]] = queue.sequences
 
-  val current: Current = Current.empty
+  val current: Execution = Execution.empty
 
   val done: List[Sequence[Result]] = Nil
 
@@ -92,7 +92,7 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
   /**
     * Current Execution
     */
-  val current: Current =
+  val current: Execution =
     // Queue
     zipper
       // Sequence
@@ -111,7 +111,7 @@ case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
     val zipper: QStateZ @> QueueZ =
       Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
 
-    val current: QStateZ @> Current = zipper >=> QueueZ.current
+    val current: QStateZ @> Execution = zipper >=> QueueZ.current
 
     current.mod(_.mark(i)(r), self)
   }
@@ -133,7 +133,7 @@ case class QStateF(queue: Queue[Result], status: Status) extends QState { self =
 
   val next: Option[QState] = None
 
-  val current: Current = Current.empty
+  val current: Execution = Execution.empty
 
   val pending: List[Sequence[Action]] = Nil
 

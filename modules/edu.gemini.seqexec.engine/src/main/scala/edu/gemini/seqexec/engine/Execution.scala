@@ -8,16 +8,16 @@ import Scalaz._
   * information about which `Action`s have been completed.
   *
   */
-case class Current(execution: Execution[Action \/ Result]) {
+case class Execution(execution: List[Action \/ Result]) {
 
   val isEmpty: Boolean = execution.isEmpty
 
-  val actions: List[Action] = {
+  val actions: Actions = {
     def lefts[L, R](xs: List[L \/ R]): List[L] = xs.collect { case -\/(l) => l }
     lefts(execution.toList)
   }
 
-  val results: List[Result] = {
+  val results: Results = {
     def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
     rights(execution.toList)
   }
@@ -36,7 +36,7 @@ case class Current(execution: Execution[Action \/ Result]) {
     * Obtain the resulting `Execution` only if all actions have been completed.
     *
     */
-  val uncurrentify: Option[Execution[Result]] =
+  val uncurrentify: Option[Results] =
     (execution.nonEmpty && execution.all(_.isRight)).option(results)
 
   /**
@@ -44,21 +44,22 @@ case class Current(execution: Execution[Action \/ Result]) {
     *
     * If the index doesn't exist, `Current` is returned unmodified.
     */
-  def mark(i: Int)(r: Result): Current =
-    Current(PLens.listNthPLens(i).setOr(execution, r.right, execution))
+  def mark(i: Int)(r: Result): Execution =
+    Execution(PLens.listNthPLens(i).setOr(execution, r.right, execution))
 }
 
-object Current {
+object Execution {
 
-  val empty: Current = Current(Nil)
+  val empty: Execution = Execution(Nil)
 
   /**
     * Make an `Execution` `Current` only if all the `Action`s in the execution
     * are pending.
     *
     */
-  def currentify(exe: Execution[Action]): Option[Current] =
-    (exe.nonEmpty).option(Current(exe.map(_.left)))
+  def currentify(as: Actions): Option[Execution] =
+    (as.nonEmpty).option(Execution(as.map(_.left)))
+
 }
 
 /**

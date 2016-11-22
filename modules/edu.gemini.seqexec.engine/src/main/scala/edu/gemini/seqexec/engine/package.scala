@@ -28,7 +28,10 @@ package object engine {
     */
   // TODO: This should be a `NonEmptyList`. `Current.results`, `Current.actions`
   // would still need to be plain `List`s.
-  type Execution[A] = List[A]
+
+  type Actions = List[Action]
+
+  type Results = List[Result]
 
   // Engine proper
 
