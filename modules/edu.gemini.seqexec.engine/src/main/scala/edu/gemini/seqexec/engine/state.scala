@@ -56,94 +56,6 @@ sealed trait QState {
 
 }
 
-/**
-  * Initial `State`. This doesn't have any `Sequence` under execution, there are
-  * only pending `Step`s.
-  *
-  */
-case class QStateI(queue: Queue[Action], status: Status) extends QState { self =>
-
-  val next: Option[QState] =
-    QueueZ.currentify(queue).map(QStateZ(_, status))
-
-  val pending: List[Sequence[Action]] = queue.sequences
-
-  val current: Execution = Execution.empty
-
-  val done: List[Sequence[Result]] = Nil
-
-  def mark(i: Int)(r: Result): QState = self
-
-  val toQueue: Queue[Action \/ Result] = queue.map(_.left)
-}
-
-/**
-  * This is the `State` in Zipper mode, which means is under execution.
-  *
-  */
-case class QStateZ(zipper: QueueZ, status: Status) extends QState { self =>
-
-  val next: Option[QState] = zipper.next match {
-    // Last execution
-    case None    => zipper.uncurrentify.map(QStateF(_, status))
-    case Some(x) => Some(QStateZ(x, status))
-  }
-
-  /**
-    * Current Execution
-    */
-  val current: Execution =
-    // Queue
-    zipper
-      // Sequence
-      .focus
-      // Step
-      .focus
-      // Execution
-      .focus
-
-  val pending: List[Sequence[Action]] = zipper.pending
-
-  val done: List[Sequence[Result]] = zipper.done
-
-  def mark(i: Int)(r: Result): QState = {
-
-    val zipper: QStateZ @> QueueZ =
-      Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
-
-    val current: QStateZ @> Execution = zipper >=> QueueZ.current
-
-    current.mod(_.mark(i)(r), self)
-  }
-
-  val toQueue: Queue[Action \/ Result] =
-    Queue(
-      done.map(_.map(_.right)) ++
-      List(zipper.focus.toSequence) ++
-      pending.map(_.map(_.left))
-    )
-}
-
-/**
-  * Final `State`. This doesn't have any `Sequence` under execution, there are
-  * only completed `Step`s.
-  *
-  */
-case class QStateF(queue: Queue[Result], status: Status) extends QState { self =>
-
-  val next: Option[QState] = None
-
-  val current: Execution = Execution.empty
-
-  val pending: List[Sequence[Action]] = Nil
-
-  val done: List[Sequence[Result]] = queue.sequences
-
-  def mark(i: Int)(r: Result): QState = self
-
-  val toQueue: Queue[Action \/ Result] = queue.map(_.right)
-}
-
 object QState {
 
   val status: QState @> Status =
@@ -152,9 +64,9 @@ object QState {
       (qs, s) => (
         qs match {
           // TODO: Isn't there a better way to write this?
-          case QStateI(st, _) => QStateI(st, s)
-          case QStateZ(st, _) => QStateZ(st, s)
-          case QStateF(st, _) => QStateF(st, s)
+          case Initial(st, _) => Initial(st, s)
+          case Zipper(st, _) => Zipper(st, s)
+          case Final(st, _) => Final(st, s)
         }
       ),
       _.status
@@ -164,5 +76,99 @@ object QState {
     * Initialize a `State` passing a `Queue` of pending `Sequence`s.
     */
   // TODO: Make this function `apply`?
-  def init(q: Queue[Action]): QState = QStateI(q, Status.Waiting)
+  def init(q: Queue[Action]): QState = Initial(q, Status.Waiting)
+
+
+  /**
+    * Initial `State`. This doesn't have any `Sequence` under execution, there are
+    * only pending `Step`s.
+    *
+    */
+  case class Initial(queue: Queue[Action], status: Status) extends QState { self =>
+
+    val next: Option[QState] =
+      Queue.Zipper.currentify(queue).map(Zipper(_, status))
+
+    val pending: List[Sequence[Action]] = queue.sequences
+
+    val current: Execution = Execution.empty
+
+    val done: List[Sequence[Result]] = Nil
+
+    def mark(i: Int)(r: Result): QState = self
+
+    val toQueue: Queue[Action \/ Result] = queue.map(_.left)
+
+  }
+
+  /**
+    * This is the `State` in Zipper mode, which means is under execution.
+    *
+    */
+  case class Zipper(zipper: Queue.Zipper, status: Status) extends QState { self =>
+
+    val next: Option[QState] = zipper.next match {
+      // Last execution
+      case None    => zipper.uncurrentify.map(Final(_, status))
+      case Some(x) => Some(Zipper(x, status))
+    }
+
+    /**
+      * Current Execution
+      */
+    val current: Execution =
+      // Queue
+      zipper
+        // Sequence
+        .focus
+        // Step
+        .focus
+        // Execution
+        .focus
+
+    val pending: List[Sequence[Action]] = zipper.pending
+
+    val done: List[Sequence[Result]] = zipper.done
+
+    def mark(i: Int)(r: Result): QState = {
+
+      val zipper: Zipper @> Queue.Zipper =
+        Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
+
+      val current: Zipper @> Execution = zipper >=> Queue.Zipper.current
+
+      current.mod(_.mark(i)(r), self)
+
+    }
+
+    val toQueue: Queue[Action \/ Result] =
+      Queue(
+        done.map(_.map(_.right)) ++
+        List(zipper.focus.toSequence) ++
+        pending.map(_.map(_.left))
+      )
+
+  }
+
+  /**
+    * Final `State`. This doesn't have any `Sequence` under execution, there are
+    * only completed `Step`s.
+    *
+    */
+  case class Final(queue: Queue[Result], status: Status) extends QState { self =>
+
+    val next: Option[QState] = None
+
+    val current: Execution = Execution.empty
+
+    val pending: List[Sequence[Action]] = Nil
+
+    val done: List[Sequence[Result]] = queue.sequences
+
+    def mark(i: Int)(r: Result): QState = self
+
+    val toQueue: Queue[Action \/ Result] = queue.map(_.right)
+
+  }
+
 }
