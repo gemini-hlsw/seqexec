@@ -26,9 +26,6 @@ package object engine {
     * without interruption. A *sequential* `Execution` can be represented with
     * an `Execution` with a single `Action`.
     */
-  // TODO: This should be a `NonEmptyList`. `Current.results`, `Current.actions`
-  // would still need to be plain `List`s.
-
   type Actions = List[Action]
 
   type Results = List[Result]
