@@ -44,14 +44,14 @@ class StepSpec extends FlatSpec {
 
   val result = Result.OK(Unit)
   val action: Action = Task(result)
-  val stepz0: StepZ  = StepZ(0, Nil, Execution.empty, Nil)
-  val stepza0: StepZ = StepZ(1, List(List(action)), Execution.empty, Nil)
-  val stepza1: StepZ = StepZ(1, List(List(action)), Execution(List(result.right)), Nil)
-  val stepzr0: StepZ = StepZ(1, Nil, Execution.empty, List(List(result)))
-  val stepzr1: StepZ = StepZ(1, Nil, Execution(List(result.right, result.right)), Nil)
-  val stepzr2: StepZ = StepZ(1, Nil, Execution(List(result.right, result.right)), List(List(result)))
-  val stepzar0: StepZ = StepZ(1, Nil, Execution(List(result.right, action.left)), Nil)
-  val stepzar1: StepZ = StepZ(1, List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
+  val stepz0: Step.Zipper  = Step.Zipper(0, Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper = Step.Zipper(1, List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper = Step.Zipper(1, List(List(action)), Execution(List(result.right)), Nil)
+  val stepzr0: Step.Zipper = Step.Zipper(1, Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), Nil)
+  val stepzr2: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), List(List(result)))
+  val stepzar0: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, action.left)), Nil)
+  val stepzar1: Step.Zipper = Step.Zipper(1, List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
 
   "uncurrentify" should "be None when not all executions are completed" in {
     assert(stepz0.uncurrentify.isEmpty)
@@ -75,4 +75,14 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
+  val step0: Step[Action] = Step(1, List(Nil))
+  val step1: Step[Action] = Step(1, List(List(action)))
+  val step2: Step[Action] = Step(2, List(List(action, action), List(action)))
+
+  "currentify" should "be None only when a Step is empty of executions" in {
+    assert(Step.Zipper.currentify(Step(0, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(step0).isEmpty)
+    assert(Step.Zipper.currentify(step1).nonEmpty)
+    assert(Step.Zipper.currentify(step2).nonEmpty)
+  }
 }

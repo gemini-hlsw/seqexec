@@ -8,9 +8,8 @@ import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Cause
 import scalaz.stream.async
-import scalaz.stream.Process
 
-class HandlerSpec extends FlatSpec {
+class packageSpec extends FlatSpec {
 
   /**
     * Emulates TCS configuration in the real world.
@@ -48,7 +47,7 @@ class HandlerSpec extends FlatSpec {
     _ <- Task(println ("System: Complete observation"))
   } yield Error(())
 
-  val qs1: QState = QState.init(
+  val qs1: Queue.State = Queue.State.init(
     Queue(
       List(
         Sequence(
