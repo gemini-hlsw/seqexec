@@ -1,14 +1,16 @@
 package gem
 package config
 
-import gem.enum.{GcalArc, GcalContinuum, GcalShutter}
+import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
+
+import java.time.Duration
 
 import scalaz._
 import Scalaz._
 
 import GcalConfig.GcalLamp
 
-case class GcalConfig(lamp: GcalLamp, shutter: GcalShutter) {
+case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Int) {
   def continuum: Option[GcalContinuum] =
     lamp.swap.toOption
 

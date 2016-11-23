@@ -57,18 +57,6 @@ CREATE TYPE f2_decker AS ENUM (
 ALTER TYPE f2_decker OWNER TO postgres;
 
 --
--- Name: gcal_shutter; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE gcal_shutter AS ENUM (
-    'Open',
-    'Closed'
-);
-
-
-ALTER TYPE gcal_shutter OWNER TO postgres;
-
---
 -- Name: identifier; Type: DOMAIN; Schema: public; Owner: postgres
 --
 
@@ -241,6 +229,32 @@ CREATE TABLE e_gcal_arc (
 
 
 ALTER TABLE e_gcal_arc OWNER TO postgres;
+
+--
+-- Name: e_gcal_diffuser; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gcal_diffuser (
+    id character varying(20) NOT NULL,
+    short_name character varying(20) NOT NULL,
+    obsolete boolean NOT NULL,
+    long_name character varying(20) NOT NULL
+);
+
+ALTER TABLE e_gcal_diffuser OWNER TO postgres;
+
+--
+-- Name: e_gcal_shutter; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gcal_shutter (
+    id character varying(20) NOT NULL,
+    short_name character varying(20) NOT NULL,
+    obsolete boolean NOT NULL,
+    long_name character varying(20) NOT NULL
+);
+
+ALTER TABLE e_gcal_shutter OWNER TO postgres;
 
 --
 -- Name: e_instrument; Type: TABLE; Schema: public; Owner: postgres
@@ -589,8 +603,14 @@ CREATE TABLE step_gcal (
     cuar_arc boolean NOT NULL DEFAULT FALSE,
     thar_arc boolean NOT NULL DEFAULT FALSE,
     xe_arc boolean NOT NULL DEFAULT FALSE,
-    shutter gcal_shutter NOT NULL,
-    CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
+    filter identifier NOT NULL,
+    diffuser identifier NOT NULL,
+    shutter identifier NOT NULL,
+    exposure_time integer NOT NULL,
+    coadds integer NOT NULL DEFAULT 1,
+    CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc)),
+    CONSTRAINT check_exposure_time CHECK (exposure_time >= 0),
+    CONSTRAINT check_coadds CHECK (coadds > 0)
 );
 
 
@@ -725,6 +745,26 @@ ArArc	Ar arc	Ar arc	f
 ThArArc	ThAr arc	ThAr arc	f
 CuArArc	CuAr arc	CuAr arc	f
 XeArc	Xe arc	Xe arc	f
+\.
+
+
+--
+-- Data for Name: e_gcal_diffuser; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gcal_diffuser (id, short_name, obsolete, long_name) FROM stdin;
+Ir	IR	f	IR
+Visible	Visible	f	Visible
+\.
+
+
+--
+-- Data for Name: e_gcal_shutter; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gcal_shutter (id, short_name, obsolete, long_name) FROM stdin;
+Open	Open	f	Open
+Closed	Closed	f	Closed
 \.
 
 
@@ -936,6 +976,22 @@ ALTER TABLE ONLY e_gcal_continuum
 
 ALTER TABLE ONLY e_gcal_arc
     ADD CONSTRAINT e_gcal_arc_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_gcal_diffuser; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_gcal_diffuser
+    ADD CONSTRAINT e_gcal_diffuser_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: e_gcal_shutter; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY e_gcal_shutter
+    ADD CONSTRAINT e_gcal_shutter_pkey PRIMARY KEY (id);
 
 
 --
@@ -1274,6 +1330,31 @@ ALTER TABLE ONLY step_f2
 
 ALTER TABLE ONLY step_gcal
     ADD CONSTRAINT step_gcal_gcal_continuum_fkey FOREIGN KEY (continuum) REFERENCES e_gcal_continuum(id);
+
+
+--
+-- Name: step_gcal_gcal_filter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_gcal
+    ADD CONSTRAINT step_gcal_gcal_filter_fkey FOREIGN KEY (filter) REFERENCES e_gcal_filter(id);
+
+
+--
+-- Name: step_gcal_gcal_diffuser_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_gcal
+    ADD CONSTRAINT step_gcal_gcal_diffuser_fkey FOREIGN KEY (diffuser) REFERENCES e_gcal_diffuser(id);
+
+
+--
+-- Name: step_gcal_gcal_shutter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY step_gcal
+    ADD CONSTRAINT step_gcal_gcal_shutter_fkey FOREIGN KEY (shutter) REFERENCES e_gcal_shutter(id);
+
 
 --
 -- Name: step_gcal_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres

@@ -143,13 +143,15 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("GcalDiffuser") {
+        type GcalDiffuserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_diffuser".query[(String, GcalDiffuserRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("GcalShutter") {
-        type GcalShutterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
-        val io = sql"""
-          SELECT enumlabel x, enumlabel a, enumlabel b, enumlabel c
-          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-          WHERE pg_type.typname = 'gcal_shutter'
-         """.query[(String, GcalShutterRec)].list
+        type GcalShutterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"select id, id tag, short_name, long_name, obsolete from e_gcal_shutter".query[(String, GcalShutterRec)].list
         io.transact(xa).unsafePerformIO
       },
 
