@@ -96,6 +96,7 @@ lazy val telnetd = project
   .in(file("modules/telnetd"))
   .dependsOn(service)
   .settings(commonSettings)
+  .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
     libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0"
   )

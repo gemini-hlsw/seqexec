@@ -6,6 +6,8 @@ import gem.config._
 import gem.enum._
 
 import doobie.imports._
+
+import java.time.Duration
 import scalaz._, Scalaz._
 
 object StepDao {
@@ -44,8 +46,8 @@ object StepDao {
     import GcalArc._
 
     sql"""
-      INSERT INTO step_gcal (observation_id, index, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, shutter)
-      VALUES (${oid.toString}, $index, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.shutter} :: gcal_shutter)
+      INSERT INTO step_gcal (observation_id, index, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
+      VALUES (${oid.toString}, $index, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime.getSeconds}, ${gcal.coadds})
     """.update.run
   }
 
@@ -72,7 +74,7 @@ object StepDao {
   private case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
-    gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalShutter]),
+    gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalFilter], Option[GcalDiffuser], Option[GcalShutter], Option[Duration], Option[Int]),
     telescope: (Option[OffsetP],  Option[OffsetQ])
   ) {
     def toStep: Step[Instrument] =
@@ -83,15 +85,19 @@ object StepDao {
 
         case StepType.Gcal =>
           import GcalArc._
-          val (continuumOpt, arOpt, cuarOpt, tharOpt, xeOpt, shutterOpt) = gcal
+          val (continuumOpt, arOpt, cuarOpt, tharOpt, xeOpt, filterOpt, diffuserOpt, shutterOpt, exposureOpt, coaddsOpt) = gcal
           (for {
             ar   <- arOpt
             cuar <- cuarOpt
             thar <- tharOpt
             xe   <- xeOpt
             l    <- GcalConfig.mkLamp(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+            f    <- filterOpt
+            d    <- diffuserOpt
             s    <- shutterOpt
-          } yield GcalStep(i, GcalConfig(l, s))).getOrElse(sys.error("missing gcal information: " + gcal))
+            e    <- exposureOpt
+            c    <- coaddsOpt
+          } yield GcalStep(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error("missing gcal information: " + gcal))
 
         case StepType.Science =>
           telescope.apply2(TelescopeConfig(_, _))
@@ -110,7 +116,11 @@ object StepDao {
              sg.cuar_arc,
              sg.thar_arc,
              sg.xe_arc,
+             sg.filter,
+             sg.diffuser,
              sg.shutter,
+             sg.exposure_time,
+             sg.coadds,
              sc.offset_p,
              sc.offset_q
         FROM step s

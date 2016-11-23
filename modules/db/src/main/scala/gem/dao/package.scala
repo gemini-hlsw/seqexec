@@ -4,7 +4,7 @@ import doobie.imports._
 import edu.gemini.spModel.core._
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Duration, Instant}
 import java.util.logging.Level
 
 import scala.reflect.runtime.universe.TypeTag
@@ -43,6 +43,9 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   implicit val InstantMeta: Meta[Instant] =
     Meta[Timestamp].nxmap(_.toInstant, Timestamp.from)
+
+  implicit val DurationMeta: Meta[Duration] =
+    Meta[Long].xmap(Duration.ofSeconds, _.getSeconds)
 
   def capply2[A, B, T](f: (A, B) => T)(
     implicit ca: Composite[(Option[A], Option[B])]

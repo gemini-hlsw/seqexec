@@ -160,8 +160,12 @@ object Importer extends SafeApp {
 
       case ("ARC" | "FLAT", i) =>
         val l = config.uget(Legacy.Calibration.Lamp)
+        val f = config.uget(Legacy.Calibration.Filter)
+        val d = config.uget(Legacy.Calibration.Diffuser)
         val s = config.uget(Legacy.Calibration.Shutter)
-        GcalStep(i, GcalConfig(l, s))
+        val e = config.uget(Legacy.Calibration.ExposureTime)
+        val c = config.uget(Legacy.Calibration.Coadds)
+        GcalStep(i, GcalConfig(l, f, d, s, e, c))
 
       case x =>
         sys.error("Unknown observeType: " + x + config.mkString("\n>  ", "\n>  ", ""))

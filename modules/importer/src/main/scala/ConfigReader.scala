@@ -259,10 +259,32 @@ object ConfigReader {
         }
       }
 
+      val Filter = Key.enum[OldGcal.Filter, GcalFilter]("filter",
+        OldGcal.Filter.NONE  -> GcalFilter.None,
+        OldGcal.Filter.ND_10 -> GcalFilter.Nd10,
+        OldGcal.Filter.ND_16 -> GcalFilter.Nd16,
+        OldGcal.Filter.ND_20 -> GcalFilter.Nd20,
+        OldGcal.Filter.ND_30 -> GcalFilter.Nd30,
+        OldGcal.Filter.ND_40 -> GcalFilter.Nd40,
+        OldGcal.Filter.ND_45 -> GcalFilter.Nd45,
+        OldGcal.Filter.ND_50 -> GcalFilter.Nd50,
+        OldGcal.Filter.GMOS  -> GcalFilter.Gmos,
+        OldGcal.Filter.HROS  -> GcalFilter.Hros,
+        OldGcal.Filter.NIR   -> GcalFilter.Nir
+      )
+
+      val Diffuser = Key.enum[OldGcal.Diffuser, GcalDiffuser]("diffuser",
+        OldGcal.Diffuser.IR      -> GcalDiffuser.Ir,
+        OldGcal.Diffuser.VISIBLE -> GcalDiffuser.Visible
+      )
+
       val Shutter = Key.enum[OldGcal.Shutter, GcalShutter]("shutter",
         OldGcal.Shutter.CLOSED -> GcalShutter.Closed,
         OldGcal.Shutter.OPEN   -> GcalShutter.Open
       )
+
+      val ExposureTime = Key[Duration]("exposureTime", _.getSeconds.toString)(Read.durSecs)
+      val Coadds       = Key[Int     ]("coadds",       _.toString)(Read.int)
     }
   }
 
