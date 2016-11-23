@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.{Action, Event, QState, Result, Sequence}
+import edu.gemini.seqexec.engine.{Action, Event, Sequence}
 
 import scalaz._
 import Scalaz._
@@ -28,7 +28,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if(settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
   )
 
-  val qs: QState = QState.init(
+  val qs: engine.Queue.State = engine.Queue.State.init(
     engine.Queue(
       List[Sequence[Action]](
       )
@@ -52,7 +52,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
-    engine.Handler.processT(q)(qs).map {
+    engine.process(q)(qs).map {
       case (ev, qs) =>
         toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
     }
@@ -67,20 +67,20 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
 
-  private def toSeqexecEvent(ev: Event.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
-    case Event.EventUser(ue) => ue match {
-      case Event.Start   => SequenceStart(svs)
-      case Event.Pause   => SequencePauseRequested(svs)
-      case Event.Load(_) => SequenceLoaded(svs)
-      case Event.Poll    => NewLogMessage("Immediate State requested")
-      case Event.Exit    => NewLogMessage("Exit requested by user")
+  private def toSeqexecEvent(ev: engine.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
+    case engine.EventUser(ue) => ue match {
+      case engine.Start   => SequenceStart(svs)
+      case engine.Pause   => SequencePauseRequested(svs)
+      case engine.Load(_) => SequenceLoaded(svs)
+      case engine.Poll    => NewLogMessage("Immediate State requested")
+      case engine.Exit    => NewLogMessage("Exit requested by user")
     }
-    case Event.EventSystem(se) => se match {
+    case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
-      case Event.Completed(_, _) => NewLogMessage("Action completed")
-      case Event.Failed(_, _)    => NewLogMessage("Action failed")
-      case Event.Executed        => StepExecuted(svs)
-      case Event.Finished        => NewLogMessage("Execution finished")
+      case engine.Completed(_, _) => NewLogMessage("Action completed")
+      case engine.Failed(_, _)    => NewLogMessage("Action failed")
+      case engine.Executed        => StepExecuted(svs)
+      case engine.Finished        => NewLogMessage("Execution finished")
     }
   }
 
