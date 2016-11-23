@@ -33,14 +33,17 @@ package object engine {
 
   type Results = List[Result]
 
-  // Engine proper
+  // Handle proper
 
   /**
     * Type constructor where all Seqexec side effect are managed.
+    *
+    * It's named `Handle` after `fs2.Handle` in order to facilitate a future
+    * migration.
     */
-  type Engine[A] = EngineStateT[Task, A]
+  type Handle[A] = HandleStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type EngineStateT[M[_], A] = StateT[M, Queue.State, A]
+  type HandleStateT[M[_], A] = StateT[M, Queue.State, A]
 
   /**
     * Changes the `Status` and returns the new `Queue.State`.
@@ -48,14 +51,14 @@ package object engine {
     * It also takes care of initiating the execution when transitioning to
     * `Running` `Status`.
     */
-  def switch(q: EventQueue)(st: Status): Engine[Unit] =
+  def switch(q: EventQueue)(st: Status): Handle[Unit] =
     // TODO: Make Status an Equal instance
     modify(Queue.State.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
 
   /**
     * Reloads the (for now only) sequence
     */
-  def load(seq: Sequence[Action]): Engine[Unit] = status.flatMap {
+  def load(seq: Sequence[Action]): Handle[Unit] = status.flatMap {
     case Status.Running => unit
     case _ => put(Queue.State.init(engine.Queue(List(seq))))
   }
@@ -66,7 +69,7 @@ package object engine {
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  def next(q: EventQueue): Engine[Unit] =
+  def next(q: EventQueue): Handle[Unit] =
     gets(_.next).flatMap {
       // Empty state
       case None     => send(q)(finished)
@@ -81,7 +84,7 @@ package object engine {
     * `Execution` in parallel. When all are done it emits the `Executed` event.
     * It also updates the `State` as needed.
     */
-  private def execute(q: EventQueue): Engine[Unit] = {
+  private def execute(q: EventQueue): Handle[Unit] = {
 
     // Send the expected event when the `Action` is executed
     def act(t: (Action, Int)): Task[Unit] = t match {
@@ -99,7 +102,7 @@ package object engine {
         gets(_.current.actions).flatMap(
           actions => Nondeterminism[Task].gatherUnordered(
             actions.zipWithIndex.map(act)
-          ).liftM[EngineStateT]
+          ).liftM[HandleStateT]
         )
       ) *> send(q)(executed)
     }
@@ -111,42 +114,42 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete[R](i: Int, r: R): Engine[Unit] = modify(_.mark(i)(Result.OK(r)))
+  def complete[R](i: Int, r: R): Handle[Unit] = modify(_.mark(i)(Result.OK(r)))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail[E](q: EventQueue)(i: Int, e: E): Engine[Unit] =
+  def fail[E](q: EventQueue)(i: Int, e: E): Handle[Unit] =
     modify(_.mark(i)(Result.Error(e))) *> switch(q)(Status.Waiting)
 
   /**
-    * Ask for the current Engine `Status`.
+    * Ask for the current Handle `Status`.
     */
-  val status: Engine[Status] = gets(_.status)
+  val status: Handle[Status] = gets(_.status)
 
   /**
     * Log something and return the `State`.
     */
   // XXX: Proper Java logging
-  def log(msg: String): Engine[Unit] = pure(println(msg))
+  def log(msg: String): Handle[Unit] = pure(println(msg))
 
-  /** Terminates the `Engine` returning the final `State`.
+  /** Terminates the `Handle` returning the final `State`.
     */
-  def close(queue: EventQueue): Engine[Unit] = queue.close.liftM[EngineStateT]
+  def close(queue: EventQueue): Handle[Unit] = queue.close.liftM[HandleStateT]
 
   /**
-    * Enqueue `Event` in the Engine.
+    * Enqueue `Event` in the Handle.
     */
-  private def send(q: EventQueue)(ev: Event): Engine[Unit] = q.enqueueOne(ev).liftM[EngineStateT]
+  private def send(q: EventQueue)(ev: Event): Handle[Unit] = q.enqueueOne(ev).liftM[HandleStateT]
 
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(q: EventQueue)(ev: Event): Engine[Queue.State] = {
+  private def run(q: EventQueue)(ev: Event): Handle[Queue.State] = {
 
-    def handleUserEvent(ue: UserEvent): Engine[Unit] = ue match {
+    def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
       case Start              =>
         log("Output: Started") *> switch(q)(Status.Running)
       case Pause              =>
@@ -158,7 +161,7 @@ package object engine {
         log("Bye") *> close(q)
     }
 
-    def handleSystemEvent(se: SystemEvent): Engine[Unit] = se match {
+    def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
       case (Completed(i, r)) =>
         log("Output: Action completed") *> complete(i, r)
       case (Failed(i, e))    =>
@@ -190,10 +193,10 @@ package object engine {
     go(fs, s)
   }
 
-  def runE(q: EventQueue)(ev: Event): Engine[(Event, Queue.State)] =
+  def runE(q: EventQueue)(ev: Event): Handle[(Event, Queue.State)] =
     run(q)(ev).map((ev, _))
 
-  def processE(q: EventQueue): Process[Engine, (Event, Queue.State)] =
+  def processE(q: EventQueue): Process[Handle, (Event, Queue.State)] =
     receive(q).evalMap(runE(q))
 
   def process(q: EventQueue)(qs: Queue.State): Process[Task, (Event, Queue.State)] = {
@@ -203,53 +206,53 @@ package object engine {
   // Functions for type bureaucracy
 
   /**
-    * This creates an `Event` Process with `Engine` as effect.
+    * This creates an `Event` Process with `Handle` as effect.
     */
-  def receive(queue: EventQueue): Process[Engine, Event] = hoistEngine(queue.dequeue)
+  def receive(queue: EventQueue): Process[Handle, Event] = hoistHandle(queue.dequeue)
 
-  def pure[A](a: A): Engine[A] = Applicative[Engine].pure(a)
+  def pure[A](a: A): Handle[A] = Applicative[Handle].pure(a)
 
-  private val unit: Engine[Unit] = pure(Unit)
+  private val unit: Handle[Unit] = pure(Unit)
 
-  val get: Engine[Queue.State] =
-    MonadState[Engine, Queue.State].get
+  val get: Handle[Queue.State] =
+    MonadState[Handle, Queue.State].get
 
-  private def gets[A](f: (Queue.State) => A): Engine[A] =
-    MonadState[Engine, Queue.State].gets(f)
+  private def gets[A](f: (Queue.State) => A): Handle[A] =
+    MonadState[Handle, Queue.State].gets(f)
 
   private def modify(f: (Queue.State) => Queue.State) =
-    MonadState[Engine, Queue.State].modify(f)
+    MonadState[Handle, Queue.State].modify(f)
 
-  private def put(qs: Queue.State): Engine[Unit] =
-    MonadState[Engine, Queue.State].put(qs)
+  private def put(qs: Queue.State): Handle[Unit] =
+    MonadState[Handle, Queue.State].put(qs)
 
   // For instrospection
-  val printQueueState: Engine[Unit] = gets((qs: Queue.State) => Task.now(println(qs)).liftM[EngineStateT])
+  val printQueueState: Handle[Unit] = gets((qs: Queue.State) => Task.now(println(qs)).liftM[HandleStateT])
 
-  // The `Catchable` instance of `Engine`` needs to be manually written.
-  // Without it's not possible to use `Engine` as a scalaz-stream process effects.
-  implicit val engineInstance: Catchable[Engine] =
-    new Catchable[Engine] {
-      def attempt[A](a: Engine[A]): Engine[Throwable \/ A] = a.flatMap(
-        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[EngineStateT]
+  // The `Catchable` instance of `Handle`` needs to be manually written.
+  // Without it's not possible to use `Handle` as a scalaz-stream process effects.
+  implicit val engineInstance: Catchable[Handle] =
+    new Catchable[Handle] {
+      def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(
+        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[HandleStateT]
       )
-      def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[EngineStateT]
+      def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[HandleStateT]
     }
 
   /**
-    * Lifts from `Task` to `Engine` as the effect of a `Process`.
+    * Lifts from `Task` to `Handle` as the effect of a `Process`.
     */
-  def hoistEngine[A](p: Process[Task, A]): Process[Engine, A] = {
-    val toEngine = new (Task ~> Engine) {
-      def apply[B](t: Task[B]): Engine[B] = t.liftM[EngineStateT]
+  def hoistHandle[A](p: Process[Task, A]): Process[Handle, A] = {
+    val toHandle = new (Task ~> Handle) {
+      def apply[B](t: Task[B]): Handle[B] = t.liftM[HandleStateT]
     }
-    p.translate(toEngine)
+    p.translate(toHandle)
   }
 
   /**
-    * Lifts from `Task` to `Engine` as the effect of a `Sink`.
+    * Lifts from `Task` to `Handle` as the effect of a `Sink`.
     */
-  def hoistEngineSink[O](s: Sink[Task, O]): Sink[Engine, O] =
-    hoistEngine(s).map(_.map(_.liftM[EngineStateT]))
+  def hoistHandleSink[O](s: Sink[Task, O]): Sink[Handle, O] =
+    hoistHandle(s).map(_.map(_.liftM[HandleStateT]))
 
 }
