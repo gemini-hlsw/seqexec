@@ -4,7 +4,6 @@ import java.io.File
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.Event
 import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine}
 import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -106,7 +105,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)
       as   <- authService.run(ac)
       // Put the queue in WebServerConfiguration?
-      q    = async.boundedQueue[Event.Event](10)
+      q    = async.boundedQueue[engine.Event](10)
       ws   <- webServer(as, q, SeqexecEngine(seqc)).run(wc)
     } yield ws
 }

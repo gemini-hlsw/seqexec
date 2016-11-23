@@ -10,7 +10,6 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
 import scalaz.Scalaz._
 import scalaz._
-import scalaz.concurrent.Task
 
 /**
   * Created by jluhrs on 9/14/16.
