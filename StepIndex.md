@@ -69,11 +69,13 @@ CREATE TABLE step_science (
 Ordering can take advantage of the Logoot index algorithm that allows steps to
 be inserted between any two other steps at any time without the need to update
 any other table row.  To do this, a `location` column with type `integer[]` could
-be added to the `step` table.  The database orders arrays on an element-by-element
-basis such that `[5, 1]` sorts before `[5, 2]` and both before `[10]`.  In fact,
-given sufficient spacing between step locations the need to introduce a second
-array element will rarely if ever arise.
+be added to the `step` table.   For example, to insert a step between steps at
+locations `[5]` and `[6]`, the location `[5, 5]` could be assigned for example.
 
+The database orders arrays on an element-by-element basis such that `[5]` sorts
+before `[5, 5]` and both before `[5, 8]`, or `[6]`.  In fact, given sufficient
+spacing between subsequent step locations the need to introduce a second array
+element will rarely if ever arise.
 
 ````sql
 CREATE TABLE step (
@@ -87,4 +89,6 @@ CREATE TABLE step (
 ````
 
 Note the `UNIQUE` constraint preventing two steps from residing at the same spot.
+There is no need, of course, to repeat the `location` column in the sub tables
+like `step_science`.
 
