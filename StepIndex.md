@@ -60,7 +60,7 @@ CREATE TABLE step (
 );
 
 CREATE TABLE step_science (
-    step_science id SERIAL                PRIMARY KEY REFERENCES step ON DELETE CASADE,
+    step_science id integer               PRIMARY KEY REFERENCES step ON DELETE CASADE,
     observation_id  character varying(40) NOT NULL,
     ...
 );
