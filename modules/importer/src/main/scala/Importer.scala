@@ -86,7 +86,7 @@ object Importer extends SafeApp {
         val configs = ss.flatMap(unsafeFromConfig)
 
         ObservationDao.insert(newObs) *>
-        configs.zipWithIndex.traverse { case (c, n) => StepDao.insert(newObs.id, n, c) }.void
+        configs.zipWithIndex.traverse { case (c, n) => StepDao.insert(newObs.id, Step.Location(n*100), c) }.void
 
       }
 

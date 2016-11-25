@@ -284,7 +284,7 @@ ALTER TABLE e_gcal_shutter OWNER TO postgres;
 --
 
 CREATE TABLE e_instrument (
-    id identifier NOT NULL,
+    id identifier PRIMARY KEY,
     short_name character varying(20) NOT NULL,
     long_name character varying(64) NOT NULL,
     obsolete boolean NOT NULL
@@ -497,7 +497,7 @@ CREATE TABLE observation (
     program_id character varying(32) NOT NULL,
     observation_index smallint NOT NULL,
     title character varying(255),
-    observation_id character varying(40) NOT NULL,
+    observation_id character varying(40) PRIMARY KEY,
     instrument identifier,
     CONSTRAINT observation_id_check CHECK (((observation_id)::text = (((program_id)::text || '-'::text) || observation_index)))
 );
@@ -555,12 +555,13 @@ COMMENT ON TABLE semester IS '// TODO: start/end dates for site';
 --
 
 CREATE TABLE step (
-    observation_id character varying(40) NOT NULL,
-    index smallint NOT NULL,
-    instrument identifier NOT NULL,
-    step_type step_type NOT NULL
+    step_id        SERIAL                PRIMARY KEY,
+    observation_id character varying(40) NOT NULL REFERENCES observation(observation_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    location       integer[]             NOT NULL,
+    instrument     identifier            NOT NULL REFERENCES e_instrument,
+    step_type      step_type             NOT NULL,
+    UNIQUE (observation_id, location)
 );
-
 
 ALTER TABLE step OWNER TO postgres;
 
@@ -569,8 +570,7 @@ ALTER TABLE step OWNER TO postgres;
 --
 
 CREATE TABLE step_bias (
-    index smallint NOT NULL,
-    observation_id character varying(40) NOT NULL
+    step_bias_id integer PRIMARY KEY REFERENCES step ON DELETE CASCADE
 );
 
 
@@ -581,8 +581,7 @@ ALTER TABLE step_bias OWNER TO postgres;
 --
 
 CREATE TABLE step_dark (
-    index smallint NOT NULL,
-    observation_id character varying(40) NOT NULL
+    step_dark_id integer PRIMARY KEY REFERENCES step ON DELETE CASCADE
 );
 
 
@@ -593,15 +592,14 @@ ALTER TABLE step_dark OWNER TO postgres;
 --
 
 CREATE TABLE step_f2 (
-    observation_id character varying(40) NOT NULL,
-    index smallint NOT NULL,
-    fpu identifier NOT NULL,
-    mos_preimaging boolean NOT NULL,
-    exposure_time exposure_time NOT NULL,
-    filter identifier NOT NULL,
-    lyot_wheel identifier NOT NULL,
-    disperser identifier NOT NULL,
-    window_cover identifier NOT NULL
+    step_f2_id     integer       PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    fpu            identifier    NOT NULL,
+    mos_preimaging boolean       NOT NULL,
+    exposure_time  exposure_time NOT NULL,
+    filter         identifier    NOT NULL,
+    lyot_wheel     identifier    NOT NULL,
+    disperser      identifier    NOT NULL,
+    window_cover   identifier    NOT NULL
 );
 
 
@@ -619,18 +617,17 @@ COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should 
 --
 
 CREATE TABLE step_gcal (
-    index smallint NOT NULL,
-    observation_id character varying(40) NOT NULL,
-    continuum identifier,
-    ar_arc boolean NOT NULL DEFAULT FALSE,
-    cuar_arc boolean NOT NULL DEFAULT FALSE,
-    thar_arc boolean NOT NULL DEFAULT FALSE,
-    xe_arc boolean NOT NULL DEFAULT FALSE,
-    filter identifier NOT NULL,
-    diffuser identifier NOT NULL,
-    shutter identifier NOT NULL,
+    step_gcal_id  integer PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    continuum     identifier,
+    ar_arc        boolean       NOT NULL DEFAULT FALSE,
+    cuar_arc      boolean       NOT NULL DEFAULT FALSE,
+    thar_arc      boolean       NOT NULL DEFAULT FALSE,
+    xe_arc        boolean       NOT NULL DEFAULT FALSE,
+    filter        identifier    NOT NULL,
+    diffuser      identifier    NOT NULL,
+    shutter       identifier    NOT NULL,
     exposure_time exposure_time NOT NULL,
-    coadds coadds NOT NULL,
+    coadds        coadds        NOT NULL,
     CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
 );
 
@@ -642,10 +639,9 @@ ALTER TABLE step_gcal OWNER TO postgres;
 --
 
 CREATE TABLE step_science (
-    index smallint NOT NULL,
-    observation_id character varying(40) NOT NULL,
-    offset_p double precision NOT NULL,
-    offset_q double precision NOT NULL
+    step_science_id integer          PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    offset_p        double precision NOT NULL,
+    offset_q        double precision NOT NULL
 );
 
 
@@ -912,54 +908,6 @@ COPY semester (semester_id, year, half) FROM stdin;
 
 
 --
--- Data for Name: step; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY step (observation_id, index, instrument, step_type) FROM stdin;
-\.
-
-
---
--- Data for Name: step_bias; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY step_bias (index, observation_id) FROM stdin;
-\.
-
-
---
--- Data for Name: step_dark; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY step_dark (index, observation_id) FROM stdin;
-\.
-
-
---
--- Data for Name: step_f2; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY step_f2 (observation_id, index, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser, window_cover) FROM stdin;
-\.
-
-
---
--- Data for Name: step_gcal; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY step_gcal (index, observation_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, shutter) FROM stdin;
-\.
-
-
---
--- Data for Name: step_science; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY step_science (index, observation_id, offset_p, offset_q) FROM stdin;
-\.
-
-
---
 -- Name: e_f2_fpunit_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1013,14 +961,6 @@ ALTER TABLE ONLY e_gcal_diffuser
 
 ALTER TABLE ONLY e_gcal_shutter
     ADD CONSTRAINT e_gcal_shutter_pkey PRIMARY KEY (id);
-
-
---
--- Name: e_instrument_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_instrument
-    ADD CONSTRAINT e_instrument_pkey PRIMARY KEY (id);
 
 
 --
@@ -1096,14 +1036,6 @@ ALTER TABLE ONLY observation
 
 
 --
--- Name: observation_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY observation
-    ADD CONSTRAINT observation_pkey PRIMARY KEY (observation_id);
-
-
---
 -- Name: program_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1117,54 +1049,6 @@ ALTER TABLE ONLY program
 
 ALTER TABLE ONLY semester
     ADD CONSTRAINT semester_pkey PRIMARY KEY (semester_id);
-
-
---
--- Name: step_bias_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_bias
-    ADD CONSTRAINT step_bias_pkey PRIMARY KEY (index, observation_id);
-
-
---
--- Name: step_dark_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_dark
-    ADD CONSTRAINT step_dark_pkey PRIMARY KEY (index, observation_id);
-
-
---
--- Name: step_f2_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_pkey PRIMARY KEY (index, observation_id);
-
-
---
--- Name: step_gcal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_pkey PRIMARY KEY (index, observation_id);
-
-
---
--- Name: step_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step
-    ADD CONSTRAINT step_pkey PRIMARY KEY (index, observation_id);
-
-
---
--- Name: step_science_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_science
-    ADD CONSTRAINT step_science_pkey PRIMARY KEY (index, observation_id);
 
 
 --
@@ -1200,7 +1084,7 @@ CREATE INDEX ix_program_id ON program USING btree (program_id);
 -- Name: ix_step; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX ix_step ON step USING btree (observation_id, index);
+CREATE INDEX ix_step ON step USING btree (observation_id, location);
 
 
 --
@@ -1282,22 +1166,6 @@ ALTER TABLE ONLY program
 
 
 --
--- Name: step_bias_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_bias
-    ADD CONSTRAINT step_bias_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- Name: step_dark_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_dark
-    ADD CONSTRAINT step_dark_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
 -- Name: step_f2_disperser_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1319,14 +1187,6 @@ ALTER TABLE ONLY step_f2
 
 ALTER TABLE ONLY step_f2
     ADD CONSTRAINT step_f2_id_fkey FOREIGN KEY (fpu) REFERENCES e_f2_fpunit(id);
-
-
---
--- Name: step_f2_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1375,38 +1235,6 @@ ALTER TABLE ONLY step_gcal
 
 ALTER TABLE ONLY step_gcal
     ADD CONSTRAINT step_gcal_gcal_shutter_fkey FOREIGN KEY (shutter) REFERENCES e_gcal_shutter(id);
-
-
---
--- Name: step_gcal_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- Name: step_instrument_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step
-    ADD CONSTRAINT step_instrument_fkey FOREIGN KEY (instrument) REFERENCES e_instrument(id);
-
-
---
--- Name: step_observation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step
-    ADD CONSTRAINT step_observation_id_fkey FOREIGN KEY (observation_id) REFERENCES observation(observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- Name: step_science_index_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_science
-    ADD CONSTRAINT step_science_index_fkey FOREIGN KEY (index, observation_id) REFERENCES step(index, observation_id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
