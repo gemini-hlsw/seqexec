@@ -1,6 +1,8 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import edu.gemini.seqexec.server.Commands
+import edu.gemini.seqexec.server.SeqexecEngine
+import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
@@ -11,25 +13,15 @@ import org.http4s.server.middleware.GZip
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService) extends BooPicklers {
+class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooPicklers {
 
   val tokenAuthService = JwtAuthentication(auth)
 
-  val commands = Commands()
+  val commands = Commands(se.odbProxy)
 
   val service = tokenAuthService { GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
       Ok(toCommandResult("host", commands.host()))
-
-    case req @ POST -> Root  / "host" =>
-      req.decode[UrlForm] { data =>
-        data.getFirst("host") match {
-          case Some(h) => Ok(toCommandResult(s"host $h", commands.host(h)))
-          case _ => BadRequest("Missing param host")
-        }
-      }.handleWith {
-        case e: Exception => BadRequest("Bad host request")
-      }
 
     case req @ GET  -> Root  / obsId / "count" =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
@@ -57,5 +49,25 @@ class SeqexecCommandRoutes(auth: AuthenticationService) extends BooPicklers {
 
     case req @ GET  -> Root  / obsId / "state" =>
       Ok(toSequenceConfig("state", commands.state(obsId)))
+
+    // New SeqexecEngine
+
+    // TODO: Add obsId parameter
+    case req @ POST -> Root / "start" =>
+      // TODO: Get rid of `.toString` How do we want to represent input results
+      // now?
+      Ok(se.start(q).map(_.toString))
+
+    // TODO: Add obsId parameter
+    case req @ POST -> Root / "pause" =>
+      // TODO: Get rid of `.toString` How do we want to represent input results
+      // now?
+      Ok(se.requestPause(q).map(_.toString))
+
+    case req @ GET -> Root / "refresh" =>
+      // TODO: Get rid of `.toString` How do we want to represent input results
+      // now?
+      Ok(se.requestRefresh(q).map(_.toString))
+
   }}}
 }

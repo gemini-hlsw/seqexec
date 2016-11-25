@@ -3,7 +3,8 @@ package edu.gemini.seqexec.web.server.http4s
 import java.io.File
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.server.ExecutorImpl
+import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine}
 import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.spModel.core.Peer
@@ -14,6 +15,7 @@ import org.http4s.server.blaze.BlazeBuilder
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.async
 
 object WebServerLauncher extends ServerApp with LogInitialization {
 
@@ -21,11 +23,6 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     * Configuration for the web server
     */
   case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
-
-  /**
-    * Configuration for the seqexec engine
-    */
-  case class SeqexecConfiguration(odbHost: String)
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -74,19 +71,6 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey, useSSL, ld)
     }
 
-  val executorConf: Task[SeqexecConfiguration] =
-    config.map { cfg =>
-      val host = cfg.require[String]("seqexec-engine.odb")
-      SeqexecConfiguration(host)
-    }
-
-  /**
-    * Configures the Seqexec executor
-    */
-  def seqexecExecutor: Kleisli[Task, SeqexecConfiguration, Unit] = Kleisli { conf =>
-    Task.delay(ExecutorImpl.host(new Peer(conf.odbHost, 8443, null)))
-  }
-
   /**
     * Configures the Authentication service
     */
@@ -97,15 +81,15 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
 
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(conf.devMode).service, "/")
-      .mountService(new SeqexecCommandRoutes(as).service, "/api/seqexec/commands")
-      .mountService(new SeqexecUIApiRoutes(as).service, "/api")
+      .mountService(new SeqexecCommandRoutes(as, q, se).service, "/api/seqexec/commands")
+      .mountService(new SeqexecUIApiRoutes(as, q, se).service, "/api")
       .start
   }
 
@@ -114,12 +98,14 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     */
   override def server(args: List[String]): Task[Server] =
     for {
-      _  <- configLog
-      ac <- authConf
-      wc <- serverConf
-      sc <- executorConf
-      _  <- seqexecExecutor.run(sc)
-      as <- authService.run(ac)
-      ws <- webServer(as).run(wc)
+      _    <- configLog
+      ac   <- authConf
+      wc   <- serverConf
+      c    <- config
+      seqc <- SeqexecEngine.seqexecConfiguration.run(c)
+      as   <- authService.run(ac)
+      // Put the queue in WebServerConfiguration?
+      q    = async.boundedQueue[engine.Event](10)
+      ws   <- webServer(as, q, SeqexecEngine(seqc)).run(wc)
     } yield ws
 }

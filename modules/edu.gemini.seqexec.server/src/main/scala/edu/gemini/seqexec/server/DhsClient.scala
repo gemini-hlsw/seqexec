@@ -99,25 +99,8 @@ object DhsClient {
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
   */
-object DhsClientHttp extends DhsClient {
-
-  val baseURI = "http://cpodhsxx:9090/axis2/services/dhs/images"
-
-  sealed case class ErrorType(str: String)
-  object BadRequest extends ErrorType("BAD_REQUEST")
-  object DhsError extends ErrorType("DHS_ERROR")
-  object InternalServerError extends ErrorType("INTERNAL_SERVER_ERROR")
-
-  implicit def errorTypeDecode: DecodeJson[ErrorType] = DecodeJson[ErrorType]( c =>  c.as[String].map {
-      case BadRequest.str          => BadRequest
-      case DhsError.str            => DhsError
-      case InternalServerError.str => InternalServerError
-    }
-  )
-
-  final case class Error(t: ErrorType, msg: String) {
-    override def toString = s"(${t.str}) $msg"
-  }
+class DhsClientHttp(val baseURI: String) extends DhsClient {
+  import DhsClientHttp._
 
   implicit def errorDecode: DecodeJson[Error] = DecodeJson[Error]( c => for {
       t   <- (c --\ "type").as[ErrorType]
@@ -180,6 +163,27 @@ object DhsClientHttp extends DhsClient {
     sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
       Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
       "Unable to write keywords for image " + id)
+}
+
+object DhsClientHttp {
+
+  sealed case class ErrorType(str: String)
+  object BadRequest extends ErrorType("BAD_REQUEST")
+  object DhsError extends ErrorType("DHS_ERROR")
+  object InternalServerError extends ErrorType("INTERNAL_SERVER_ERROR")
+
+  implicit def errorTypeDecode: DecodeJson[ErrorType] = DecodeJson[ErrorType]( c =>  c.as[String].map {
+      case BadRequest.str          => BadRequest
+      case DhsError.str            => DhsError
+      case InternalServerError.str => InternalServerError
+    }
+  )
+
+  final case class Error(t: ErrorType, msg: String) {
+    override def toString = s"(${t.str}) $msg"
+  }
+
+  def apply(uri: String) = new DhsClientHttp(uri)
 }
 
 /**
