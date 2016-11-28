@@ -22,6 +22,7 @@ import org.http4s.server.middleware.GZip
 
 import scalaz._
 import Scalaz._
+import scalaz.concurrent.Task
 import scalaz.stream.{Exchange, Process}
 
 /**
@@ -97,14 +98,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
         val user = userInRequest(req)
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
-            obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
-            s     <- se.odbProxy.read(obsId)
+            obsId <- EitherT[Task, SeqexecFailure, SPObservationID](Task.delay(\/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))))
+            s     <- se.load(q, obsId)
           } yield (obsId, s)
 
-          r match {
-            case \/-((i, s)) => se.load(q, i) *>
-                Ok(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None)))
-            case -\/(e)      => NotFound(SeqexecFailure.explain(e))
+          r.run >>= {
+            case -\/(e) => NotFound(SeqexecFailure.explain(e))
+            case _      => Ok("")
           }
         }
     }}
