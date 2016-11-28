@@ -53,8 +53,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.process(q)(qs).map {
-      case (ev, qs) =>
-        toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
+      case (ev, qState) =>
+        toSeqexecEvent(ev)(qState.toQueue.sequences.map(viewSequence))
     }
 
   def load(q: engine.EventQueue, seqId: SPObservationID): EitherT[Task, SeqexecFailure, Unit] = {
@@ -92,7 +92,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     def viewSequence(seq: SequenceAR): SequenceView =
       // TODO: Implement willStopIn
-      SequenceView(statusSequence(seq), engineSteps(seq), None)
+      SequenceView(seq.metadata, statusSequence(seq), engineSteps(seq), None)
 
     private def statusSequence(seq: SequenceAR): SequenceState =
       engine.Sequence.status(seq) match {

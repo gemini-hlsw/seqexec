@@ -71,7 +71,14 @@ object SharedModel {
     case object Idle      extends SequenceState
   }
 
+  /**
+    * Metadata about the sequence required on the exit point
+    */
+  // TODO Une a proper instrument class
+  case class SequenceMetadata(instrument: String)
+
   case class SequenceView (
+    metadata: SequenceMetadata,
     status: SequenceState,
     steps: List[Step],
     willStopIn: Option[Int]

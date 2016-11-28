@@ -1,16 +1,16 @@
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
+
 import scalaz._
 import Scalaz._
 
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-case class Sequence[+A](id: String, steps: List[Step[A]])
+case class Sequence[+A](id: String, metadata: SequenceMetadata, steps: List[Step[A]])
 
 object Sequence {
-
-  def empty[A](id: String): Sequence[A] = Sequence(id, Nil)
 
   /**
     * Calculate the `Sequence` `Status` based on the underlying `Action`s.
@@ -23,7 +23,7 @@ object Sequence {
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
-      Sequence(fa.id, fa.steps.map(_.map(f)))
+      Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
   }
 
   // TODO: Proof Foldable laws
@@ -43,6 +43,7 @@ object Sequence {
     */
   case class Zipper(
     id: String,
+    metadata: SequenceMetadata,
     pending: List[Step[Action]],
     focus: Step.Zipper,
     done: List[Step[Result]]
@@ -64,11 +65,11 @@ object Sequence {
             case Nil             => None
             case stepp :: stepps =>
               (Step.Zipper.currentify(stepp) |@| focus.uncurrentify) (
-                (curr, stepd) => Zipper(id, stepps, curr, stepd :: done)
+                (curr, stepd) => Zipper(id, metadata, stepps, curr, stepd :: done)
               )
           }
         // Current step ongoing
-        case Some(stz) => Some(Zipper(id, pending, stz, done))
+        case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
       }
 
     /**
@@ -77,7 +78,7 @@ object Sequence {
       *
       */
     val uncurrentify: Option[Sequence[Result]] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, x :: done))
+      if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, metadata, x :: done))
       else None
 
     /**
@@ -87,6 +88,7 @@ object Sequence {
     val toSequence: Sequence[Action \/ Result] =
       Sequence(
         id,
+        metadata,
         // TODO: Functor composition?
         done.map(_.map(_.right)) ++
           List(focus.toStep) ++
@@ -106,7 +108,7 @@ object Sequence {
         case Nil           => None
         case step :: steps =>
           Step.Zipper.currentify(step).map(
-            Zipper(seq.id, steps, _, Nil)
+            Zipper(seq.id, seq.metadata, steps, _, Nil)
           )
       }
 
