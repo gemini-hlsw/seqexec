@@ -66,6 +66,29 @@ CREATE DOMAIN identifier AS character varying(32)
 
 ALTER DOMAIN identifier OWNER TO postgres;
 
+
+--
+-- Name: coadds; Type: DOMAIN; Schema: public; Owner: postgres
+--
+
+CREATE DOMAIN coadds AS smallint
+    DEFAULT    1
+    CONSTRAINT coadds_check CHECK (VALUE > 0);
+
+ALTER DOMAIN coadds OWNER TO postgres;
+
+
+--
+-- Name: exposure_time; Type: DOMAIN; Schema: public; Owner: postgres
+--
+
+CREATE DOMAIN exposure_time AS integer
+    DEFAULT    0
+    CONSTRAINT exposure_time_check CHECK (VALUE >= 0);
+
+ALTER DOMAIN exposure_time OWNER TO postgres;
+
+
 --
 -- Name: log_level; Type: TYPE; Schema: public; Owner: postgres
 --
@@ -574,7 +597,7 @@ CREATE TABLE step_f2 (
     index smallint NOT NULL,
     fpu identifier NOT NULL,
     mos_preimaging boolean NOT NULL,
-    exposure_time integer NOT NULL,
+    exposure_time exposure_time NOT NULL,
     filter identifier NOT NULL,
     lyot_wheel identifier NOT NULL,
     disperser identifier NOT NULL,
@@ -606,11 +629,9 @@ CREATE TABLE step_gcal (
     filter identifier NOT NULL,
     diffuser identifier NOT NULL,
     shutter identifier NOT NULL,
-    exposure_time integer NOT NULL,
-    coadds integer NOT NULL DEFAULT 1,
-    CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc)),
-    CONSTRAINT check_exposure_time CHECK (exposure_time >= 0),
-    CONSTRAINT check_coadds CHECK (coadds > 0)
+    exposure_time exposure_time NOT NULL,
+    coadds coadds NOT NULL,
+    CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
 );
 
 
