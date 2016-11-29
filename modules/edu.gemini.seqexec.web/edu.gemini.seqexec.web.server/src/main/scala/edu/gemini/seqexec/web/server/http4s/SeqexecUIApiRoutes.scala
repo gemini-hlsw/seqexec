@@ -80,35 +80,50 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
 
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
-  val protectedServices: HttpService = tokenAuthService { GZip { HttpService {
-      case req @ GET -> Root / "seqexec" / "events"         =>
-        // Stream seqexec events to clients and a ping
-        val user = userInRequest(req)
-        WS(Exchange(pingProcess ++ Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) merge
-          se.eventProcess(q).map(v => Binary(newTrimmedArray(v))), scalaz.stream.Process.empty))
+  val protectedServices: HttpService =
+    tokenAuthService {
+      GZip {
+        HttpService {
+          case req @ GET -> Root / "seqexec" / "events"         =>
+          // Stream seqexec events to clients and a ping
+            val user = userInRequest(req)
+            WS(
+              Exchange(
+                Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+                  (pingProcess merge se.eventProcess(q).map(v => Binary(newTrimmedArray(v)))),
+                scalaz.stream.Process.empty
+              )
+            )
 
-      case POST -> Root / "seqexec" / "logout"        =>
-        // Clean the auth cookie
-        val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
-          secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
-        Ok("").removeCookie(cookie)
+          case POST -> Root / "seqexec" / "logout"        =>
+            // Clean the auth cookie
+            val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
+                                secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
+            Ok("").removeCookie(cookie)
 
-      case req @ GET -> Root / "seqexec" / "sequence" / oid =>
-        val user = userInRequest(req)
-        user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-          val r = for {
-            obsId <- EitherT[Task, SeqexecFailure, SPObservationID](Task.delay(\/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))))
-            s     <- se.load(q, obsId)
-          } yield (obsId, s)
+          case req @ GET -> Root / "seqexec" / "sequence" / oid =>
+            val user = userInRequest(req)
+            user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
+              val r = for {
+                obsId <- EitherT[Task, SeqexecFailure, SPObservationID](
+                  Task.delay(
+                    \/.fromTryCatchNonFatal(
+                      new SPObservationID(oid)).leftMap(
+                      (t:Throwable) => Unexpected(t.getMessage)
+                    )
+                  )
+                )
+                s     <- se.load(q, obsId)
+              } yield (obsId, s)
 
-          r.run >>= {
-            case -\/(e)      => NotFound(SeqexecFailure.explain(e))
-            case \/-((i, _)) => Ok(s"Loaded sequence $i")
-          }
-        }
-    }}
+              r.run >>= {
+                case -\/(e)      => NotFound(SeqexecFailure.explain(e))
+                case \/-((i, _)) => Ok(s"Loaded sequence $i")
+              }
+            }
+        }}
 
-  }
+    }
 
   def service = publicService || protectedServices || logService
 }
