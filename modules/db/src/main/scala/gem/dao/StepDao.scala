@@ -13,7 +13,7 @@ import scalaz._, Scalaz._
 
 object StepDao {
 
-  def insert[I <: InstrumentConfig](oid: Observation.Id, loc: Step.Location, s: Step[I]): ConnectionIO[Int] =
+  def insert[I <: InstrumentConfig](oid: Observation.Id, loc: Location, s: Step[I]): ConnectionIO[Int] =
     for {
       id <- insertBaseSlice(oid, loc, s.instrument, StepType.forStep(s))
       _  <- s match {
@@ -25,7 +25,7 @@ object StepDao {
       _  <- insertConfigSlice(id, s.instrument)
     } yield id
 
-  private def insertBaseSlice(oid: Observation.Id, loc: Step.Location, i: InstrumentConfig, t: StepType): ConnectionIO[Int] =
+  private def insertBaseSlice(oid: Observation.Id, loc: Location, i: InstrumentConfig, t: StepType): ConnectionIO[Int] =
     for {
       _  <- sql"""INSERT INTO step (observation_id, location, instrument, step_type)
                        VALUES ($oid, $loc, ${Instrument.forConfig(i).tag}, ${t.tag} :: step_type)
