@@ -2,7 +2,9 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
+import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
 import org.scalatest.FlatSpec
+
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
@@ -52,6 +54,7 @@ class packageSpec extends FlatSpec {
       List(
         Sequence(
           "First",
+          SequenceMetadata("F2"),
           List(
             Step(
               1,

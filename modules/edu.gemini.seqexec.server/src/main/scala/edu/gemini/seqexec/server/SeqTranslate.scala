@@ -3,6 +3,7 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
+import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
 import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants._
@@ -32,10 +33,10 @@ object SeqTranslate {
 
   private def step(systems: Systems)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
 
-    val instName = config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP))
+    val instName = extractInstrumentName(config)
     val instrument = instName match {
       case Flamingos2.name => Some(Flamingos2(systems.flamingos2))
-      case _ => None
+      case _               => None
     }
 
     instrument.map { a =>
@@ -46,11 +47,15 @@ object SeqTranslate {
         List(
           // TODO: implicit function doesn't work here, why?
           sys.map(x => toAction(x.configure(config))),
-          List((a.observe(config)(systems.dhs)))
+          List(a.observe(config)(systems.dhs))
         )
       ).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[Step[Action]])
   }
+
+  private def extractInstrumentName(config: Config): String =
+    // This is too weak. We may want to use the extractors used in ITC
+    config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
   def sequence(systems: Systems)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
     val configs = sequenceConfig.getAllSteps.toList
@@ -59,7 +64,9 @@ object SeqTranslate {
       case (c, i) => step(systems)(i, c)
     }
 
-    steps.map(Sequence[Action](obsId, _))
+    val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
+
+    steps.map(Sequence[Action](obsId, SequenceMetadata(instName), _))
   }
 
 }

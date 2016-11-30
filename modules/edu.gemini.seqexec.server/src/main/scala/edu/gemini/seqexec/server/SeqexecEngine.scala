@@ -53,17 +53,17 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.process(q)(qs).map {
-      case (ev, qs) =>
-        toSeqexecEvent(ev)(qs.toQueue.sequences.map(viewSequence))
+      case (ev, qState) =>
+        toSeqexecEvent(ev)(qState.toQueue.sequences.map(viewSequence))
     }
 
-  def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
+  def load(q: engine.EventQueue, seqId: SPObservationID): EitherT[Task, SeqexecFailure, Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
       } yield odbSeq.flatMap(s => SeqTranslate.sequence(systems)(seqId.stringValue(), s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(x)).map(_.right))
-    u.run
+    u
   }
 
 
@@ -92,7 +92,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     def viewSequence(seq: SequenceAR): SequenceView =
       // TODO: Implement willStopIn
-      SequenceView(statusSequence(seq), engineSteps(seq), None)
+      SequenceView(seq.metadata, statusSequence(seq), engineSteps(seq), None)
 
     private def statusSequence(seq: SequenceAR): SequenceState =
       engine.Sequence.status(seq) match {

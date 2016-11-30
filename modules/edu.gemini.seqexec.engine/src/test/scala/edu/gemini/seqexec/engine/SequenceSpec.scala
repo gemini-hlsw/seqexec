@@ -1,8 +1,11 @@
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
+
 import scalaz._
 import Scalaz._
 import org.scalatest.FlatSpec
+
 import scalaz.concurrent.Task
 
 /**
@@ -41,26 +44,28 @@ class SequenceSpec extends FlatSpec {
 
   }
 
+  val metadata = SequenceMetadata("F2")
+
   // TODO: Share these fixtures with StepSpec
   val result = Result.OK(Unit)
   val action: Action = Task(result)
-  val stepz0: Step.Zipper  = Step.Zipper(0, Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper = Step.Zipper(1, List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper = Step.Zipper(1, List(List(action)), Execution(List(result.right)), Nil)
-  val stepzr0: Step.Zipper = Step.Zipper(1, Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), Nil)
-  val stepzr2: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), List(List(result)))
+  val stepz0: Step.Zipper   = Step.Zipper(0, Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper  = Step.Zipper(1, List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper  = Step.Zipper(1, List(List(action)), Execution(List(result.right)), Nil)
+  val stepzr0: Step.Zipper  = Step.Zipper(1, Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper  = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), Nil)
+  val stepzr2: Step.Zipper  = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), List(List(result)))
   val stepzar0: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, action.left)), Nil)
   val stepzar1: Step.Zipper = Step.Zipper(1, List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
 
-  val seqz0: Sequence.Zipper = Sequence.Zipper("id", Nil, stepz0, Nil)
-  val seqza0: Sequence.Zipper = Sequence.Zipper("id", Nil, stepza0, Nil)
-  val seqza1: Sequence.Zipper = Sequence.Zipper("id", Nil, stepza1, Nil)
-  val seqzr0: Sequence.Zipper = Sequence.Zipper("id", Nil, stepzr0, Nil)
-  val seqzr1: Sequence.Zipper = Sequence.Zipper("id", Nil, stepzr1, Nil)
-  val seqzr2: Sequence.Zipper = Sequence.Zipper("id", Nil, stepzr2, Nil)
-  val seqzar0: Sequence.Zipper = Sequence.Zipper("id", Nil, stepzar0, Nil)
-  val seqzar1: Sequence.Zipper = Sequence.Zipper("id", Nil, stepzar1, Nil)
+  val seqz0: Sequence.Zipper   = Sequence.Zipper("id", metadata, Nil, stepz0, Nil)
+  val seqza0: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepza0, Nil)
+  val seqza1: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepza1, Nil)
+  val seqzr0: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepzr0, Nil)
+  val seqzr1: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepzr1, Nil)
+  val seqzr2: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepzr2, Nil)
+  val seqzar0: Sequence.Zipper = Sequence.Zipper("id", metadata, Nil, stepzar0, Nil)
+  val seqzar1: Sequence.Zipper = Sequence.Zipper("id", metadata, Nil, stepzar1, Nil)
 
   "next" should "be None when there are no more pending executions" in {
     assert(seqz0.next.isEmpty)

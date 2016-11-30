@@ -7,10 +7,9 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
-import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine, SeqexecFailure}
+import edu.gemini.seqexec.server.{SeqexecEngine, SeqexecFailure}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
-import edu.gemini.seqexec.web.server.model.Conversions._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import org.http4s._
@@ -22,6 +21,7 @@ import org.http4s.server.middleware.GZip
 
 import scalaz._
 import Scalaz._
+import scalaz.concurrent.Task
 import scalaz.stream.{Exchange, Process}
 
 /**
@@ -87,7 +87,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
         WS(Exchange(pingProcess ++ Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) merge
           se.eventProcess(q).map(v => Binary(newTrimmedArray(v))), scalaz.stream.Process.empty))
 
-      case req @ POST -> Root / "seqexec" / "logout"        =>
+      case POST -> Root / "seqexec" / "logout"        =>
         // Clean the auth cookie
         val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
           secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
@@ -97,14 +97,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
         val user = userInRequest(req)
         user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           val r = for {
-            obsId <- \/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))
-            s     <- se.odbProxy.read(obsId)
+            obsId <- EitherT[Task, SeqexecFailure, SPObservationID](Task.delay(\/.fromTryCatchNonFatal(new SPObservationID(oid)).leftMap((t:Throwable) => Unexpected(t.getMessage))))
+            s     <- se.load(q, obsId)
           } yield (obsId, s)
 
-          r match {
-            case \/-((i, s)) => se.load(q, i) *>
-                Ok(List(Sequence(i.stringValue(), SequenceState.NotRunning, "F2", s.toSequenceSteps, None)))
+          r.run >>= {
             case -\/(e)      => NotFound(SeqexecFailure.explain(e))
+            case \/-((i, _)) => Ok(s"Loaded sequence $i")
           }
         }
     }}
