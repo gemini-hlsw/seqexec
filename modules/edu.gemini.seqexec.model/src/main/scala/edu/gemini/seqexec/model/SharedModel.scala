@@ -48,7 +48,7 @@ object SharedModel {
     case class Running(progress: Double) extends ActionStatus
   }
 
-  trait Step {
+  sealed trait Step {
     val config: StepConfig
     val status: StepState
     val breakpoint: Boolean
@@ -62,7 +62,7 @@ object SharedModel {
     override val skip: Boolean,
     configStatus: Map[SystemName, ActionStatus],
     observeStatus: ActionStatus
-  )  extends Step
+  ) extends Step
   // Other kinds of Steps to be defined.
 
   sealed trait SequenceState
