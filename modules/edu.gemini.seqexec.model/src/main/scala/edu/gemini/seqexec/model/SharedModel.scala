@@ -4,6 +4,7 @@ object SharedModel {
 
   sealed trait SeqexecEvent
   object SeqexecEvent {
+    case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 
     case class SequenceStart(view: List[SequenceView]) extends SeqexecEvent
 

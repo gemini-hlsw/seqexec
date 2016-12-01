@@ -5,9 +5,9 @@ import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
-import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
-import edu.gemini.seqexec.server.{SeqexecEngine, SeqexecFailure}
+import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService
@@ -41,13 +41,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
     import scalaz.concurrent.Strategy
     import scala.concurrent.duration._
 
-    awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { d => Ping() }
+    awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { _ => Ping() }
   }
 
   val tokenAuthService = JwtAuthentication(auth)
 
   val publicService: HttpService = GZip { HttpService {
-    case req @ GET -> Root / "seqexec" / "current" / "queue" =>
+    case GET -> Root / "seqexec" / "current" / "queue" =>
       Ok(CannedModel.currentQueue)
 
     case req @ POST -> Root / "seqexec" / "login" =>
@@ -89,7 +89,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
             val user = userInRequest(req)
             WS(
               Exchange(
-                Process.emit(Binary(trimmedArray(SeqexecConnectionOpenEvent(user)))) ++
+                Process.emit(Binary(newTrimmedArray(ConnectionOpenEvent(user)))) ++
                   (pingProcess merge se.eventProcess(q).map(v => Binary(newTrimmedArray(v)))),
                 scalaz.stream.Process.empty
               )
