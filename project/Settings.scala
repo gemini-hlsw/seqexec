@@ -33,7 +33,7 @@ object Settings {
     val scalaCSS     = "0.5.0"
     val uPickle      = "0.4.0"
     val booPickle    = "1.2.5"
-    val diode        = "1.0.0"
+    val diode        = "1.1.0"
     val javaTimeJS   = "0.2.0"
     val javaLogJS    = "0.1.0"
     val scalaJQuery  = "1.0"

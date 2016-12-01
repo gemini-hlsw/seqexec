@@ -44,9 +44,9 @@ object SequenceSearchResultsBody {
     def status = model()._1
   }
 
-  def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(AddToQueue(u))
+  def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatchCB(AddToQueue(u))
 
-  def removeFromResults[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatch(RemoveFromSearch(u))
+  def removeFromResults[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatchCB(RemoveFromSearch(u))
 
   def onAdding[A](p: ModelProxy[A], u: Sequence):Callback = addToQueue(p, u) >> removeFromResults(p, u)
 
@@ -134,10 +134,10 @@ object SequenceSearch {
       }
 
     def openResultsArea: Callback =
-      $.props >>= { _.model.dispatch(OpenSearchArea) }
+      $.props >>= { _.model.dispatchCB(OpenSearchArea) }
 
     def startSearch: Callback =
-      $.props.zip($.state) >>= { case (p, s) => p.model.dispatch(SearchSequence(s.searchText)) }
+      $.props.zip($.state) >>= { case (p, s) => p.model.dispatchCB(SearchSequence(s.searchText)) }
 
     def search: Callback =
       openResultsArea >> startSearch
