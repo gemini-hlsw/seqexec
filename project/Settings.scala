@@ -29,14 +29,14 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom     = "0.9.1"
-    val scalajsReact = "0.11.2"
+    val scalajsReact = "0.11.3"
     val scalaCSS     = "0.5.0"
     val uPickle      = "0.4.0"
-    val booPickle    = "1.2.4"
+    val booPickle    = "1.2.5"
     val diode        = "1.0.0"
-    val javaTimeJS   = "0.1.0"
+    val javaTimeJS   = "0.2.0"
     val javaLogJS    = "0.1.0"
-    val scalaJQuery  = "1.0-RC6"
+    val scalaJQuery  = "1.0"
 
     // Java libraries
     val scalaZ       = "7.2.2"
