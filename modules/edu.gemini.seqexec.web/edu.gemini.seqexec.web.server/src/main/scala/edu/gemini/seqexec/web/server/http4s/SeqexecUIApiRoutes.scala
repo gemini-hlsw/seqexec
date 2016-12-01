@@ -104,25 +104,16 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
           case req @ GET -> Root / "seqexec" / "sequence" / oid =>
             val user = userInRequest(req)
             user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              val r = for {
-                obsId <- EitherT[Task, SeqexecFailure, SPObservationID](
-                  Task.delay(
-                    \/.fromTryCatchNonFatal(
-                      new SPObservationID(oid)).leftMap(
-                      (t:Throwable) => Unexpected(t.getMessage)
-                    )
-                  )
-                )
-                s     <- se.load(q, obsId)
-              } yield (obsId, s)
-
-              r.run >>= {
-                case -\/(e)      => NotFound(SeqexecFailure.explain(e))
-                case \/-((i, _)) => Ok(s"Loaded sequence $i")
-              }
+              for {
+                obsId <-
+                    \/.fromTryCatchNonFatal(new SPObservationID(oid))
+                      .fold(e => Task.fail(e), Task.now)
+                _     <- se.load(q, obsId)
+                resp  <- Ok(s"Loaded sequence $obsId")
+              } yield resp
             }
-        }}
-
+        }
+      }
     }
 
   def service = publicService || protectedServices || logService
