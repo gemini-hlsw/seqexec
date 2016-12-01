@@ -50,7 +50,7 @@ object Settings {
     val unboundId    = "3.1.1"
     val jwt          = "0.8.1"
     val slf4j        = "1.7.21"
-    val knobs        = "3.8.1a"
+    val knobs        = "3.12.27a"
 
     // test libraries
     val scalaTest    = "3.0.0"
@@ -81,7 +81,7 @@ object Settings {
     val UnboundId   = "com.unboundid"      %  "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
     val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
     val Slf4jJuli   = "org.slf4j"          %  "slf4j-jdk14"                       % LibraryVersions.slf4j
-    val Knobs       = "oncue.knobs"        %% "core"                              % LibraryVersions.knobs
+    val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
 
     val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
