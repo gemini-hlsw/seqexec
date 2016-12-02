@@ -31,13 +31,10 @@ trait NewBooPicklers {
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
 
-  // implicit val sequenceViewEncoder = booEncoderOf[SequenceView]
-
-  // implicit val listSequenceViewEncoder = booEncoderOf[List[SequenceView]]
-
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
   implicit val eventsPickler = compositePickler[SharedModel.SeqexecEvent]
+    .addConcreteType[ConnectionOpenEvent]
     .addConcreteType[SequenceStart]
     .addConcreteType[StepExecuted]
     .addConcreteType[SequenceCompleted]

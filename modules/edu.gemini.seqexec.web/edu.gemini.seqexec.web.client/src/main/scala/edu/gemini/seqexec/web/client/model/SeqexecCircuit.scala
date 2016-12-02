@@ -14,6 +14,7 @@ import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
 import boopickle.Default._
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -232,7 +233,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     def onMessage(e: MessageEvent): Unit = {
       val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
       \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-        case \/-(event) => println(s"Decoding event $event") // SeqexecCircuit.dispatch(NewSeqexecEvent(event))
+        case \/-(event) => SeqexecCircuit.dispatch(NewSeqexecEvent(event))
         case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
       }
     }
@@ -285,13 +286,12 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
   */
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
-  import edu.gemini.seqexec.model._
 
   override def handle = {
-    /*case NewSeqexecEvent(SeqexecConnectionOpenEvent(u)) =>
+    case NewSeqexecEvent(ConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
 
-    case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
+    /*case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
       updated(value.copy(_1 = value._1.map(_.sequenceRunning(id)), _2 = value._2.append(event)), logE)
 

@@ -13,7 +13,7 @@ import org.http4s.server.middleware.GZip
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooPicklers {
+class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
 
   val tokenAuthService = JwtAuthentication(auth)
 
