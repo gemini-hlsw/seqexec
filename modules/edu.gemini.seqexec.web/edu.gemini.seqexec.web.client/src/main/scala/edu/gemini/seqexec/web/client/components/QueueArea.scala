@@ -46,11 +46,11 @@ object QueueTableBody {
 
   def load(p: Props):Callback =
     // Request to load the queue if not present
-    Callback.when(p.queue.value.isEmpty)(p.queue.dispatch(UpdatedQueue(Empty)))
+    Callback.when(p.queue.value.isEmpty)(p.queue.dispatchCB(UpdatedQueue(Empty)))
 
   def showSequence(p: Props,s: Sequence):Callback =
     // Request to display the selected sequence
-    p.queue.dispatch(SelectToDisplay(s))
+    p.queue.dispatchCB(SelectToDisplay(s))
 
   val component = ReactComponentB[Props]("QueueTableBody")
     .render_P( p =>

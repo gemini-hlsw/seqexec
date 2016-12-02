@@ -28,8 +28,6 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     .jvmSettings(
     )
     .jsSettings(
-      scalaJSUseRhino := false,
-      jsEnv := NodeJSEnv().value,
       libraryDependencies += JavaLogJS.value
     )
 
@@ -94,8 +92,6 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings: _*)
     .settings(
-      // Run tests is JsDom
-      jsEnv := JSDOMNodeJSEnv().value,
       // This is a not very nice trick to remove js files that exist on the scala tools
       // library and that conflict with the requested on jsDependencies, in particular
       // with jquery.js
@@ -109,6 +105,8 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       // Write the generated js to the filename seqexec.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
       artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
+      // Requires the DOM
+      jsDependencies += RuntimeDOM,
       // JS dependencies from webjars
       jsDependencies ++= Seq(
         "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
@@ -142,10 +140,11 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings: _*)
     .settings(
-      jsEnv := JSDOMNodeJSEnv().value,
       // Write the generated js to the filename seqexec-cli.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec-cli.js",
       artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-cli-opt.js",
+      // Requires the DOM
+      jsDependencies += RuntimeDOM,
       // JS dependencies from webjars
       jsDependencies ++= Seq(
         "org.webjars" % "jquery"          % LibraryVersions.jQuery         / "jquery.js"            minified "jquery.min.js",
