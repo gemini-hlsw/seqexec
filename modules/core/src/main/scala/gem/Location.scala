@@ -10,7 +10,13 @@ import scalaz.Ordering.{EQ, GT, LT}
   * `Location` is a proper prefex of another, then it sorts ahead of the other
   * `Location`.
   */
-final case class Location(toNel: NonEmptyList[Int]) {
+sealed abstract case class Location(toNel: NonEmptyList[Int]) {
+
+  // Use the sketchy sealed abstract case class technique to control the
+  // NonEmptyList values that are passed to the constructor.  We want to
+  // ensure that trailing Int.MinValue is always trimmed so that EQ and ==
+  // agree.
+
   def toIList: IList[Int] =
     toNel.list
 
@@ -22,14 +28,24 @@ final case class Location(toNel: NonEmptyList[Int]) {
 }
 
 object Location {
+  private def trim(is: Seq[Int]): IList[Int] =
+    trim(IList(is: _*))
+
+  // Remove trailing Int.MinValue so that == agrees with EQ.
+  private def trim(is: IList[Int]): IList[Int] =
+    is.dropRightWhile(_ == Int.MinValue)
+
   def apply(h: Int, t: Int*): Location =
-    Location(NonEmptyList(h, t: _*))
+    new Location(NonEmptyList.nel(h, trim(t))) {}
 
   def fromList(is: List[Int]): Option[Location] =
     is match {
       case Nil    => None
-      case h :: t => Some(Location(NonEmptyList.nel(h, IList.fromList(t))))
+      case h :: t => Some(new Location(NonEmptyList.nel(h, trim(t))) {})
     }
+
+  def fromNel(n: NonEmptyList[Int]): Location =
+    new Location(NonEmptyList.nel(n.head, trim(n.tail))) {}
 
   def unsafeFromList(is: List[Int]): Location =
     fromList(is).get
