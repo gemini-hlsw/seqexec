@@ -27,7 +27,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooPicklers with NewBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooEncoders with NewBooPicklers {
 
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")

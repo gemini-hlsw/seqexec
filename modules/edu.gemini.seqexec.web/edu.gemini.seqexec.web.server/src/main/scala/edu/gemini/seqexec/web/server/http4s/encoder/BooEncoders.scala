@@ -7,7 +7,7 @@ import boopickle.Default._
 /**
   * Contains http4s implicit encoders of model objects
   */
-trait BooPicklers {
+trait BooEncoders {
   import edu.gemini.seqexec.web.common.LogMessage._
   import CliCommand._
 
