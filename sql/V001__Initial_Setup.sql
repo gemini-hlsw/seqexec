@@ -90,6 +90,17 @@ ALTER DOMAIN exposure_time OWNER TO postgres;
 
 
 --
+-- Name: index; Type: DOMAIN; Schema: public; Owner: postgres
+--
+
+CREATE DOMAIN id_index AS smallint
+    DEFAULT    1
+    CONSTRAINT id_index_check CHECK (VALUE > 0);
+
+ALTER DOMAIN id_index OWNER TO postgres;
+
+
+--
 -- Name: log_level; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -495,7 +506,7 @@ ALTER TABLE log OWNER TO postgres;
 
 CREATE TABLE observation (
     program_id character varying(32) NOT NULL,
-    observation_index smallint NOT NULL,
+    observation_index id_index NOT NULL,
     title character varying(255),
     observation_id character varying(40) PRIMARY KEY,
     instrument identifier,
@@ -514,7 +525,7 @@ CREATE TABLE program (
     semester_id character varying(20),
     site identifier,
     program_type identifier,
-    index smallint,
+    index id_index,
     day date,
     title character varying(255) DEFAULT '«Untitled»'::character varying NOT NULL
 );
@@ -646,6 +657,23 @@ CREATE TABLE step_science (
 
 
 ALTER TABLE step_science OWNER TO postgres;
+
+
+--
+-- Data for Name: dataset; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+CREATE TABLE dataset (
+    dataset_label   character varying(46)        PRIMARY KEY,
+    observation_id  character varying(40)        REFERENCES observation ON DELETE CASCADE,
+    dataset_index   id_index                     NOT NULL,
+    step_id         integer                      REFERENCES step        ON DELETE CASCADE,
+    filename        character varying(24)        NOT NULL,
+    "timestamp"     timestamp (5) WITH TIME ZONE NOT NULL
+    CONSTRAINT dataset_id_check CHECK ((dataset_label)::text = (((observation_id)::text || '-'::text) || trim(leading from to_char(dataset_index, '9000'))))
+);
+
+
 
 --
 -- Data for Name: e_f2_disperser; Type: TABLE DATA; Schema: public; Owner: postgres

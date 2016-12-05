@@ -34,6 +34,10 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   implicit val ObservationIdMeta: Meta[Observation.Id] =
     Meta[String].nxmap(Observation.Id.unsafeFromString, _.toString)
 
+  // Dataset.Label as string
+  implicit val DatasetLabelMeta: Meta[Dataset.Label] =
+    Meta[String].nxmap(Dataset.Label.unsafeFromString, _.toString)
+
   // Enumerated by tag as string
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
