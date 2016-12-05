@@ -7,14 +7,14 @@ import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{NewBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
+import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceView}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
+import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import org.scalajs.dom._
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -284,12 +284,16 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (List[SequenceView], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case NewSeqexecEvent(ConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
+
+    case NewSeqexecEvent(SequenceLoaded(sv)) =>
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence loaded")
+      updated(value.copy(_1 = sv), logE)
 
     /*case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
@@ -349,7 +353,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
   val loginBoxHandler        = new LoginBoxHandler(zoomRW(_.loginBox)((m, v) => m.copy(loginBox = v)))
   val userLoginHandler       = new UserLoginHandler(zoomRW(_.user)((m, v) => m.copy(user = v)))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog, m.user))((m, v) => m.copy(queue = v._1, webSocketLog = v._2, user = v._3)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
   val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
