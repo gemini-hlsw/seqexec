@@ -21,7 +21,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, events: (engine.EventQue
 
   val commands = Commands(se.odbProxy)
 
-  val inq = events._1
+  val inputQueue = events._1
 
   val service = tokenAuthService { GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
@@ -60,18 +60,18 @@ class SeqexecCommandRoutes(auth: AuthenticationService, events: (engine.EventQue
     case req @ POST -> Root / "start" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.start(inq).map(_.toString))
+      Ok(se.start(inputQueue).map(_.toString))
 
     // TODO: Add obsId parameter
     case req @ POST -> Root / "pause" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.requestPause(inq).map(_.toString))
+      Ok(se.requestPause(inputQueue).map(_.toString))
 
     case req @ GET -> Root / "refresh" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.requestRefresh(inq).map(_.toString))
+      Ok(se.requestRefresh(inputQueue).map(_.toString))
 
   }}}
 }

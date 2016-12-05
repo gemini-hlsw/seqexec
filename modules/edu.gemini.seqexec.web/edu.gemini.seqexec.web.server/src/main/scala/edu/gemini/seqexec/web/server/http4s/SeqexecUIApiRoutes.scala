@@ -82,7 +82,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
 
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
-  val (inq, out) = events
+  val (inputQueue, engineOutput) = events
   val protectedServices: HttpService =
     tokenAuthService {
       GZip {
@@ -93,7 +93,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
             WS(
               Exchange(
                 Process.emit(Binary(newTrimmedArray(ConnectionOpenEvent(user)))) ++
-                  (pingProcess merge out.subscribe.map(v => Binary(newTrimmedArray(v)))),
+                  (pingProcess merge engineOutput.subscribe.map(v => Binary(newTrimmedArray(v)))),
                 scalaz.stream.Process.empty
               )
             )
@@ -111,7 +111,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                 obsId <-
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
                       .fold(e => Task.fail(e), Task.now)
-                _     <- se.load(inq, obsId)
+                _     <- se.load(inputQueue, obsId)
                 resp  <- Ok(s"Loaded sequence $obsId")
               } yield resp
             }
