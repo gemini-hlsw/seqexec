@@ -7,11 +7,6 @@ import org.scalacheck.Arbitrary._
 trait Arbitraries {
 
   implicit val arbLocation: Arbitrary[Location] =
-    Arbitrary {
-      for {
-        h <- arbitrary[Int]
-        t <- arbitrary[List[Int]]
-      } yield Location(h, t: _*)
-    }
+    Arbitrary { arbitrary[List[Int]].map(Location.fromList) }
 
 }

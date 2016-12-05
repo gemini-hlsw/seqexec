@@ -10,15 +10,12 @@ import scalaz.Ordering.{EQ, GT, LT}
   * `Location` is a proper prefex of another, then it sorts ahead of the other
   * `Location`.
   */
-sealed abstract case class Location(toNel: NonEmptyList[Int]) {
+sealed abstract case class Location(toIList: IList[Int]) {
 
   // Use the sketchy sealed abstract case class technique to control the
   // NonEmptyList values that are passed to the constructor.  We want to
   // ensure that trailing Int.MinValue is always trimmed so that EQ and ==
   // agree.
-
-  def toIList: IList[Int] =
-    toNel.list
 
   def toList: List[Int] =
     toIList.toList
@@ -35,31 +32,17 @@ object Location {
   private def trim(is: IList[Int]): IList[Int] =
     is.dropRightWhile(_ == Int.MinValue)
 
-  def apply(h: Int, t: Int*): Location =
-    new Location(NonEmptyList.nel(h, trim(t))) {}
+  def apply(is: Int*): Location =
+    new Location(trim(is)) {}
 
-  def fromList(is: List[Int]): Option[Location] =
-    is match {
-      case Nil    => None
-      case h :: t => Some(new Location(NonEmptyList.nel(h, trim(t))) {})
-    }
+  def fromList(is: List[Int]): Location =
+    new Location(trim(is)) {}
+
+  def fromIList(is: IList[Int]): Location =
+    new Location(trim(is)) {}
 
   def fromNel(n: NonEmptyList[Int]): Location =
-    new Location(NonEmptyList.nel(n.head, trim(n.tail))) {}
-
-  def unsafeFromList(is: List[Int]): Location =
-    fromList(is).get
-
-  private val LocationRegex = """^\{(\s*[-+]?[0-9]+\s*(?:,\s*[-+]?[0-9]+\s*)*)\}$""".r
-
-  def parse(s: String): Option[Location] =
-    s match {
-      case LocationRegex(ds) => Location.fromList(ds.split(',').toList.map(_.trim.toInt))
-      case _                 => None
-    }
-
-  def unsafeParse(s: String): Location =
-    parse(s).getOrElse(sys.error(s"Could not parse location '$s'"))
+    new Location(trim(n.list)) {}
 
   implicit val OrderLocation: Order[Location] = Order.order { (l0, l1) =>
     l0.toList
@@ -69,5 +52,4 @@ object Location {
   }
 
   implicit val ShowLocation: Show[Location] = Show.shows(_.toString)
-
 }

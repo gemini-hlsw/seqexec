@@ -7,25 +7,9 @@ import scala.util.Random
 import scalaz._, Scalaz._
 
 class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
-  "toString output" should "always parse" in {
-    forAll { (l: Location) =>
-      Location.parse(l.toString) shouldEqual Some(l)
-    }
-  }
-
-  "parse" should "handle whitespace" in {
-    import LocationSpec.randomWhitespace
-
-    forAll { (i: Int, is: List[Int]) =>
-      val s  = is.map { i => s"$randomWhitespace,$randomWhitespace$i" }.mkString
-      val ls = s"{$randomWhitespace$i$s$randomWhitespace}"
-      Location.unsafeParse(ls) shouldEqual Location(i, is: _*)
-    }
-  }
-
   "construction" should "trim trailing min values" in {
     forAll { (l: Location) =>
-      val t = l.toIList.tailOption.get
+      val t = l.toIList
       t shouldEqual t.dropRightWhile(_ == Int.MinValue)
     }
   }
