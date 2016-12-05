@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.model
 
+import edu.gemini.seqexec.model.dhs.ObsId
+
 object SharedModel {
 
   sealed trait SeqexecEvent
@@ -77,7 +79,7 @@ object SharedModel {
     * Metadata about the sequence required on the exit point
     */
   // TODO Une a proper instrument class
-  case class SequenceMetadata(instrument: String)
+  case class SequenceMetadata(id: ObsId, instrument: String)
 
   case class SequenceView (
     metadata: SequenceMetadata,
