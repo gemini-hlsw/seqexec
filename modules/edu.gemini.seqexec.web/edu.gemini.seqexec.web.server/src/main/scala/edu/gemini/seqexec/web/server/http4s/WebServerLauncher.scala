@@ -4,6 +4,7 @@ import java.io.File
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
 import edu.gemini.seqexec.server.{ODBProxy, SeqexecEngine}
 import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -16,6 +17,7 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.async
+import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ServerApp with LogInitialization {
 
@@ -81,31 +83,44 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
 
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(conf.devMode).service, "/")
-      .mountService(new SeqexecCommandRoutes(as, q, se).service, "/api/seqexec/commands")
-      .mountService(new SeqexecUIApiRoutes(as, q, se).service, "/api")
+      .mountService(new SeqexecCommandRoutes(as, events, se).service, "/api/seqexec/commands")
+      .mountService(new SeqexecUIApiRoutes(as, events, se).service, "/api")
       .start
   }
 
   /**
     * Reads the configuration and launches the web server
     */
-  override def server(args: List[String]): Task[Server] =
-    for {
-      _    <- configLog
-      ac   <- authConf
-      wc   <- serverConf
+  override def server(args: List[String]): Task[Server] = {
+    val engineTask = for {
       c    <- config
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)
-      as   <- authService.run(ac)
-      // Put the queue in WebServerConfiguration?
-      q    = async.boundedQueue[engine.Event](10)
-      ws   <- webServer(as, q, SeqexecEngine(seqc)).run(wc)
-    } yield ws
+    } yield SeqexecEngine(seqc)
+
+    val inq  = async.boundedQueue[engine.Event](10)
+    val out  = async.topic[SeqexecEvent]()
+
+    engineTask flatMap (
+      se => Nondeterminism[Task].both(
+        // Launch engine and broadcast channel
+        se.eventProcess(inq).to(out.publish).run,
+        // Launch web server
+        for {
+          _  <- configLog
+          ac <- authConf
+          as <- authService.run(ac)
+          wc <- serverConf
+          ws <- webServer(as, (inq, out), se).run(wc)
+        } yield ws
+      ).map(_._2)
+    )
+  }
+
 }

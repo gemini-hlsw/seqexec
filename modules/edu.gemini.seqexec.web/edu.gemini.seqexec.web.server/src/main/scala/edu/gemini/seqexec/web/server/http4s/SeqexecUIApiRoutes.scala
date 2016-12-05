@@ -5,6 +5,7 @@ import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
@@ -22,12 +23,13 @@ import org.http4s.server.middleware.GZip
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.async.mutable.Topic
 import scalaz.stream.{Exchange, Process}
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooEncoders with NewBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with NewBooPicklers {
 
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
@@ -80,6 +82,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
 
   def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
 
+  val (inq, out) = events
   val protectedServices: HttpService =
     tokenAuthService {
       GZip {
@@ -90,7 +93,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
             WS(
               Exchange(
                 Process.emit(Binary(newTrimmedArray(ConnectionOpenEvent(user)))) ++
-                  (pingProcess merge se.eventProcess(q).map(v => Binary(newTrimmedArray(v)))),
+                  (pingProcess merge out.subscribe.map(v => Binary(newTrimmedArray(v)))),
                 scalaz.stream.Process.empty
               )
             )
@@ -108,7 +111,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, q: engine.EventQueue, se: 
                 obsId <-
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
                       .fold(e => Task.fail(e), Task.now)
-                _     <- se.load(q, obsId)
+                _     <- se.load(inq, obsId)
                 resp  <- Ok(s"Loaded sequence $obsId")
               } yield resp
             }

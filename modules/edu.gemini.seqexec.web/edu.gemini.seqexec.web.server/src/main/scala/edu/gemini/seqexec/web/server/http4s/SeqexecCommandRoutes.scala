@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.server.http4s
 
+import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.engine
@@ -9,15 +10,18 @@ import edu.gemini.seqexec.web.server.security.AuthenticationService
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
+import scalaz.stream.async.mutable.Topic
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
+class SeqexecCommandRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders {
 
   val tokenAuthService = JwtAuthentication(auth)
 
   val commands = Commands(se.odbProxy)
+
+  val inq = events._1
 
   val service = tokenAuthService { GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
@@ -56,18 +60,18 @@ class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se
     case req @ POST -> Root / "start" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.start(q).map(_.toString))
+      Ok(se.start(inq).map(_.toString))
 
     // TODO: Add obsId parameter
     case req @ POST -> Root / "pause" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.requestPause(q).map(_.toString))
+      Ok(se.requestPause(inq).map(_.toString))
 
     case req @ GET -> Root / "refresh" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.requestRefresh(q).map(_.toString))
+      Ok(se.requestRefresh(inq).map(_.toString))
 
   }}}
 }
