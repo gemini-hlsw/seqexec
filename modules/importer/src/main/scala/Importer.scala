@@ -14,7 +14,7 @@ import edu.gemini.spModel.config.map.ConfigValMapInstances.IDENTITY_MAP;
 import java.io._
 import java.{ util => JU }
 import java.util.logging.{ Logger, Level }
-import java.time.Duration
+import java.time.{Duration, Instant}
 
 import scala.collection.JavaConverters._
 
@@ -24,6 +24,7 @@ import scalaz.concurrent.Task
 import scalaz.std.effect.closeable._
 
 import doobie.imports._
+import doobie.free.connection.ConnectionOp
 
 object Importer extends SafeApp {
   import Program.Id._
@@ -83,10 +84,26 @@ object Importer extends SafeApp {
           Nil
         )
 
+        import edu.gemini.spModel.dataset.{Dataset => OldDataset}
+        import edu.gemini.spModel.obslog.ObsLog
+
         val configs = ss.flatMap(unsafeFromConfig)
+        val obsLog  = Option(ObsLog.getIfExists(o)).fold(Map.empty[Int, OldDataset]) {
+                        _.getAllDatasetRecords.asScala.map(_.exec.dataset).map(d => d.getIndex -> d).toMap
+                      }
 
         ObservationDao.insert(newObs) *>
-        configs.zipWithIndex.traverse { case (c, n) => StepDao.insert(newObs.id, n, c) }.void
+        configs.zipWithIndex.traverseU { case (c, n) =>
+          for {
+            id <- StepDao.insert(newObs.id, Location(n * 100), c)
+            _  <- obsLog.get(n).foldMap { oldDataset =>
+                    val lab = Dataset.Label.unsafeFromString(oldDataset.getLabel.toString)
+                    val tim = Instant.ofEpochMilli(oldDataset.getTimestamp)
+                    val dst = Dataset(lab, oldDataset.getDhsFilename, tim)
+                    DatasetDao.insert(id, dst).void
+                  }
+          } yield id
+        }.void
 
       }
 

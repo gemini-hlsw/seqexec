@@ -1,5 +1,6 @@
 package gem
 
+import doobie.contrib.postgresql.pgtypes._
 import doobie.imports._
 import edu.gemini.spModel.core._
 
@@ -33,6 +34,10 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   implicit val ObservationIdMeta: Meta[Observation.Id] =
     Meta[String].nxmap(Observation.Id.unsafeFromString, _.toString)
 
+  // Dataset.Label as string
+  implicit val DatasetLabelMeta: Meta[Dataset.Label] =
+    Meta[String].nxmap(Dataset.Label.unsafeFromString, _.toString)
+
   // Enumerated by tag as string
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
@@ -43,6 +48,9 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   implicit val InstantMeta: Meta[Instant] =
     Meta[Timestamp].nxmap(_.toInstant, Timestamp.from)
+
+  implicit val LocationMeta: Meta[Location] =
+    Meta[List[Int]].nxmap(Location.fromList, _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
     Meta[Long].xmap(Duration.ofSeconds, _.getSeconds)
