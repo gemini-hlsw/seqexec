@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
-import diode.react.ReactPot._
 import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView, StepState}
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
@@ -169,7 +168,7 @@ object SequenceStepsTableContainer {
                           case _                   => iconEmpty
                         }
                       ),
-                      <.td(i),
+                      <.td(i + 1),
                       <.td(step.status.shows),
                       <.td(step.file.getOrElse(""): String),
                       <.td(

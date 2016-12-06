@@ -1,15 +1,12 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.data.{Empty, Pot}
-import diode.react.ReactPot._
 import diode.react._
 import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
-import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
@@ -45,11 +42,11 @@ object QueueTableBody {
     )
   }
 
-  def load(p: Props):Callback =
+  def load(p: Props): Callback = Callback.log("here")
     // Request to load the queue if not present
-    Callback.when(p.sequences.value.isEmpty)(p.sequences.dispatchCB(UpdatedQueue(Empty)))
+    //Callback.when(p.sequences.value.isEmpty)(p.sequences.dispatchCB(UpdatedQueue(Empty)))
 
-  def showSequence(p: Props,s: SequenceView):Callback =
+  def showSequence(p: Props,s: SequenceView): Callback =
     // Request to display the selected sequence
     p.sequences.dispatchCB(SelectToDisplay(s))
 

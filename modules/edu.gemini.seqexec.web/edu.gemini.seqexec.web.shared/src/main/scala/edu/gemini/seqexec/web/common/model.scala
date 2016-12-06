@@ -177,5 +177,5 @@ object Instrument {
 
   // TODO Replace these for  a real list of instruments
   // TODO This list should be site-specific
-  val instruments = NonEmptyList[Instrument]("F2", List[Instrument]("GMOS-S", "GPI", "GSAOI"): _*)
+  val instruments = NonEmptyList[Instrument]("Flamingos2", List[Instrument]("GMOS-S", "GPI", "GSAOI"): _*)
 }
