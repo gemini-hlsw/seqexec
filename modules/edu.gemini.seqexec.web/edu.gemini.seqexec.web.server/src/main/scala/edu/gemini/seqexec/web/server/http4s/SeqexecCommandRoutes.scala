@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.server.http4s
 
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.engine
@@ -10,18 +9,15 @@ import edu.gemini.seqexec.web.server.security.AuthenticationService
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
-import scalaz.stream.async.mutable.Topic
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders {
+class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
 
   val tokenAuthService = JwtAuthentication(auth)
 
   val commands = Commands(se.odbProxy)
-
-  val inputQueue = events._1
 
   val service = tokenAuthService { GZip { HttpService {
     case req @ GET  -> Root  / "host" =>
