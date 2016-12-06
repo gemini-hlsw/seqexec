@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.SharedModel.StepConfig
+import edu.gemini.seqexec.model.SharedModel.{StepConfig, StepState}
 
 import scalaz._
 import Scalaz._
@@ -16,10 +16,27 @@ object Step {
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     *
     */
-  def status(step: Step[Action \/ Result]): Status =
-    if (step.executions.isEmpty || step.all(_.isLeft)) Status.Waiting
-    else if (step.all(_.isRight)) Status.Completed
-    else Status.Running
+  def status(step: Step[Action \/ Result]): StepState = {
+
+    def errored(ar: Action \/ Result): Boolean =
+      ar match {
+        case (-\/(_)) => false
+        case (\/-(r)) => r match {
+          case Result.OK(_)    => false
+          case Result.Error(_) => true
+        }
+      }
+
+    // At least an Action in this Step errored.
+    if (step.executions.isEmpty || step.any(errored)) StepState.Error("An action errored")
+    // All actions in this Step are pending.
+    else if (step.all(_.isLeft)) StepState.Pending
+    // All actions in this Step were completed successfully.
+    else if (step.all(_.isRight)) StepState.Completed
+    // Not all actions are completed or pending.
+    else StepState.Running
+
+  }
 
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
@@ -111,4 +128,3 @@ object Step {
   }
 
 }
-

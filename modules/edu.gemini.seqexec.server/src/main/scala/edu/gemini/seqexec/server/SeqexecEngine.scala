@@ -95,12 +95,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     private def engineSteps(seq: SequenceAR): List[Step] = {
 
-      def statusStep(step: StepAR): StepState =
-        engine.Step.status(step) match {
-          case engine.Status.Waiting   => StepState.Pending
-          case engine.Status.Completed => StepState.Completed
-          case engine.Status.Running   => StepState.Running
-        }
+      def statusStep(step: StepAR): StepState = engine.Step.status(step)
 
       def viewStep(step: StepAR): Step =
         StandardStep(
@@ -119,7 +114,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
     // Configuration stuff
-
 
 }
 
