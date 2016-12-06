@@ -13,7 +13,7 @@ import org.http4s.server.middleware.GZip
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
+class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
 
   val tokenAuthService = JwtAuthentication(auth)
 
@@ -56,18 +56,18 @@ class SeqexecCommandRoutes(auth: AuthenticationService, q: engine.EventQueue, se
     case req @ POST -> Root / "start" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.start(q).map(_.toString))
+      Ok(se.start(inputQueue).map(_.toString))
 
     // TODO: Add obsId parameter
     case req @ POST -> Root / "pause" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.requestPause(q).map(_.toString))
+      Ok(se.requestPause(inputQueue).map(_.toString))
 
     case req @ GET -> Root / "refresh" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
-      Ok(se.requestRefresh(q).map(_.toString))
+      Ok(se.requestRefresh(inputQueue).map(_.toString))
 
   }}}
 }
