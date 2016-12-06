@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
-import edu.gemini.seqexec.engine.Sequence.State.Zipper
+import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, SequenceState}
 
 import scalaz._
 import Scalaz._
@@ -21,10 +20,13 @@ object Sequence {
     * Calculate the `Sequence` `Status` based on the underlying `Action`s.
     *
     */
-  def status(seq: Sequence[Action \/ Result]): Status =
-    if (seq.steps.isEmpty || seq.all(_.isLeft)) Status.Waiting
-    else if (seq.all(_.isRight)) Status.Completed
-    else Status.Running
+  def status(seq: Sequence[Action \/ Result]): SequenceState = {
+
+    if (seq.steps.isEmpty || seq.any(Execution.errored)) SequenceState.Error("An action errored")
+    else if (seq.all(_.isLeft)) SequenceState.Idle
+    else if (seq.all(_.isRight)) SequenceState.Completed
+    else SequenceState.Running
+  }
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
