@@ -3,7 +3,6 @@ package edu.gemini.seqexec.web.client.model
 import diode.ActionResult.ModelUpdate
 import diode.RootModelRW
 import edu.gemini.seqexec.model.SharedModel.SequenceView
-import edu.gemini.seqexec.web.common.Sequence
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 

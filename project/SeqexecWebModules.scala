@@ -48,7 +48,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
     .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings: _*)
     .settings(
-      libraryDependencies ++= Seq(ScalaZCore.value, UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s,
+      libraryDependencies ++= Seq(UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s,
 
       // Settings to optimize the use of sbt-revolver
 
@@ -132,7 +132,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       buildInfoObject := "OcsBuildInfo",
       buildInfoPackage := "edu.gemini.seqexec.web.client"
     )
-    .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test", edu_gemini_seqexec_model_JS)
+    .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test", edu_gemini_seqexec_model_JS % "compile->compile;test->test")
 
   // Client side project using Scala.js
   lazy val edu_gemini_seqexec_web_client_cli = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client.cli"))
