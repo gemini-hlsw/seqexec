@@ -46,7 +46,7 @@ case class AddToQueue(s: Sequence) extends Action
 // Action to remove a sequence from the search results
 case class RemoveFromSearch(s: Sequence) extends Action
 // Action to select a sequence for display
-case class SelectToDisplay(s: Sequence) extends Action
+case class SelectToDisplay(s: SequenceView) extends Action
 
 // Actions related to executing sequences
 case class RequestRun(s: Sequence) extends Action
@@ -76,7 +76,7 @@ sealed trait SectionVisibilityState
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
-case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Sequence]], stepConfigDisplayed: Option[Int])
+case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
@@ -88,9 +88,9 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def unshowStep:SequencesOnDisplay =
     copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
-  def focusOnSequence(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
+  def focusOnSequence(s: RefTo[Option[SequenceView]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
-    val q = instrumentSequences.findZ(i => s().exists(_.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
+    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
     copy(q | instrumentSequences)
   }
 }
@@ -123,7 +123,7 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
   * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
   */
 object SequencesOnDisplay {
-  val emptySeqRef:RefTo[Pot[Sequence]] = RefTo(new RootModelR[Pot[Sequence]](Empty))
+  val emptySeqRef:RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
   val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }

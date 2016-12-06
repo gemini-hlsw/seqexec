@@ -49,7 +49,7 @@ object QueueTableBody {
     // Request to load the queue if not present
     Callback.when(p.sequences.value.isEmpty)(p.sequences.dispatchCB(UpdatedQueue(Empty)))
 
-  def showSequence(p: Props,s: Sequence):Callback =
+  def showSequence(p: Props,s: SequenceView):Callback =
     // Request to display the selected sequence
     p.sequences.dispatchCB(SelectToDisplay(s))
 
@@ -67,7 +67,7 @@ object QueueTableBody {
                   //"negative" -> (s.status == SequenceState.Abort)
                 ),
                 ^.key := s"item.queue.$i",
-                //^.onClick --> showSequence(p, s),
+                ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
                   s.status match {

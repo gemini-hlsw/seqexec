@@ -268,11 +268,11 @@ object SequenceTabContent {
         ^.classSet(
           "active" -> p.isActive
         ),
-        dataTab := p.st.instrument,
+        dataTab := p.st.instrument/*,
         p.st.sequence().render { s =>
           SequenceStepsTableContainer(s, p.status, p.st.stepConfigDisplayed)
         },
-        p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))
+        p.st.sequence().renderEmpty(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)))*/
       )
     )
     .build

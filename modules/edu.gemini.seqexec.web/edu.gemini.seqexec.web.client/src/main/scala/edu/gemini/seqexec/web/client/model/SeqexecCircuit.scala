@@ -171,18 +171,18 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SelectToDisplay(s) =>
-      val ref = SeqexecCircuit.sequenceRef(s.id)
+      val ref = SeqexecCircuit.sequenceRef(s.metadata.id)
       updated(value.focusOnSequence(ref))
 
     case ShowStep(s, i) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.id)) {
         updated(value.showStep(i))
       } else {
         noChange
       }
 
     case UnShowStep(s) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.id)) {
         updated(value.unshowStep)
       } else {
         noChange
@@ -363,8 +363,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Some useful readers
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: String):ModelR[_, Pot[Sequence]] =
-    zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s)))
+  def sequenceReader(id: String):ModelR[_, Option[SequenceView]] =
+    zoom(_.sequences.find(_.metadata.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
 
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
@@ -382,7 +382,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     * Makes a reference to a sequence on the queue.
     * This way we have a normalized model and need to update it in only one place
     */
-  def sequenceRef(id: String):RefTo[Pot[Sequence]] =
+  def sequenceRef(id: String): RefTo[Option[SequenceView]] =
     RefTo(sequenceReader(id))
 
   override protected def actionHandler = composeHandlers(
