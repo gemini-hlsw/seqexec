@@ -85,8 +85,8 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
 
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
-      updated(value.map(_.abortSequence(s.id)), logE)
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.metadata.id} aborted")
+      updated(value.map(_.abortSequence(s.metadata.id)), logE)
 
     case RunStopFailed(s) =>
       noChange
@@ -175,14 +175,14 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       updated(value.focusOnSequence(ref))
 
     case ShowStep(s, i) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.id)) {
+      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.metadata.id)) {
         updated(value.showStep(i))
       } else {
         noChange
       }
 
     case UnShowStep(s) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.id)) {
+      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.metadata.id)) {
         updated(value.unshowStep)
       } else {
         noChange

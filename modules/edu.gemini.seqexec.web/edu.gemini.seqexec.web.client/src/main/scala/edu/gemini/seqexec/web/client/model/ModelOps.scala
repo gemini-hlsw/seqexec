@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView, StepState}
+import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView, Step, StepState}
 
 import scalaz.Show
 
@@ -14,6 +14,13 @@ object ModelOps {
     case SequenceState.Idle      => "Idle"
   }
 
+  implicit val steStateShow = Show.shows[StepState] {
+    case StepState.Pending    => "Pending"
+    case StepState.Completed  => "Done"
+    case StepState.Skipped    => "Skipped"
+    case StepState.Error(msg) => s"Error $msg"
+    case StepState.Running    => "Running"
+  }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
     private def progress: (Int, Int) = (s.steps.count(_.status == StepState.Completed), s.steps.length)
@@ -24,5 +31,11 @@ object ModelOps {
       //case SequenceState.Error      => Some(progress)
       case _                        => None
     }
+
+    def allStepsDone: Boolean = s.steps.forall(_.status == StepState.Completed)
+  }
+
+  implicit class StepOps(val s: Step) extends AnyVal {
+    def file: Option[String] = None
   }
 }

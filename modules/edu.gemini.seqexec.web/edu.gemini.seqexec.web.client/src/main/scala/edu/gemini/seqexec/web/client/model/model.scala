@@ -49,15 +49,15 @@ case class RemoveFromSearch(s: Sequence) extends Action
 case class SelectToDisplay(s: SequenceView) extends Action
 
 // Actions related to executing sequences
-case class RequestRun(s: Sequence) extends Action
-case class RequestStop(s: Sequence) extends Action
-case class RunStarted(s: Sequence) extends Action
-case class RunStopped(s: Sequence) extends Action
-case class RunStartFailed(s: Sequence) extends Action
-case class RunStopFailed(s: Sequence) extends Action
+case class RequestRun(s: SequenceView) extends Action
+case class RequestStop(s: SequenceView) extends Action
+case class RunStarted(s: SequenceView) extends Action
+case class RunStopped(s: SequenceView) extends Action
+case class RunStartFailed(s: SequenceView) extends Action
+case class RunStopFailed(s: SequenceView) extends Action
 
-case class ShowStep(s: Sequence, i: Int) extends Action
-case class UnShowStep(s: Sequence) extends Action
+case class ShowStep(s: SequenceView, i: Int) extends Action
+case class UnShowStep(s: SequenceView) extends Action
 
 case class AppendToLog(s: String) extends Action
 

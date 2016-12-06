@@ -7,6 +7,7 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import boopickle.Default._
+import edu.gemini.seqexec.model.SharedModel.SequenceView
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
@@ -44,9 +45,9 @@ object SeqexecWebClient {
   /**
     * Requests the backend to execute a sequence
     */
-  def run(s: Sequence): Future[RegularCommand] = {
+  def run(s: SequenceView): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/run",
+      url = s"$baseUrl/commands/${s.metadata.id}/run",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -54,9 +55,9 @@ object SeqexecWebClient {
   /**
     * Requests the backend to stop a sequence
     */
-  def stop(s: Sequence): Future[RegularCommand] = {
+  def stop(s: SequenceView): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/stop",
+      url = s"$baseUrl/commands/${s.metadata.id}/stop",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
