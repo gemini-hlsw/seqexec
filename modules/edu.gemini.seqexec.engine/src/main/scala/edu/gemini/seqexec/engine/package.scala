@@ -65,7 +65,7 @@ package object engine {
       Task {
         s.get(id).map(t => t.status match {
           case Status.Running => (s, ())
-          case _ => (s.updated(id, Sequence.State.init(seq)), ())
+          case _              => (s.updated(id, Sequence.State.init(seq)), ())
         }).getOrElse((s.updated(id, Sequence.State.init(seq)), ()))
       }
     }
@@ -80,11 +80,11 @@ package object engine {
   def next(q: EventQueue)(id: Sequence.Id): Handle[Unit] = getS(id).flatMap(_.map { seq =>
       seq.next match {
         // Empty state
-        case None => send(q)(finished(id))
+        case None                           => send(q)(finished(id))
         // Final State
         case Some(qs: Sequence.State.Final) => putS(id)(qs) *> send(q)(finished(id))
         // Execution completed, execute next actions
-        case Some(qs) => putS(id)(qs) *> execute(q)(id)
+        case Some(qs)                       => putS(id)(qs) *> execute(q)(id)
       }
     }.getOrElse(unit)
   )
@@ -108,9 +108,9 @@ package object engine {
 
     getS(id).flatMap(_.map { seq =>
         seq.status match {
-          case Status.Waiting => unit
+          case Status.Waiting   => unit
           case Status.Completed => unit
-          case Status.Running => {
+          case Status.Running   => {
             val a = Nondeterminism[Task].gatherUnordered(seq.current.actions.zipWithIndex.map(act))
             a.liftM[HandleStateT] *> send(q)(executed(id))
           }
@@ -162,26 +162,19 @@ package object engine {
   private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start(id)              =>
-        log("Output: Started") *> switch(q)(id)(Status.Running)
-      case Pause(id)              =>
-        log("Output: Paused") *> switch(q)(id)(Status.Waiting)
+      case Start(id)     => log("Output: Started") *> switch(q)(id)(Status.Running)
+      case Pause(id)     => log("Output: Paused") *> switch(q)(id)(Status.Waiting)
       case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
-      case Poll               =>
-        log("Output: Polling current state")
-      case Exit               =>
-        log("Bye") *> close(q)
+      case Poll          => log("Output: Polling current state")
+      case Exit          => log("Bye") *> close(q)
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
-      case (Completed(id, i, r)) =>
-        log("Output: Action completed") *> complete(id, i, r)
-      case (Failed(id, i, e))    =>
-        log("Output: Action failed") *> fail(q)(id)(i, e)
+      case (Completed(id, i, r)) => log("Output: Action completed") *> complete(id, i, r)
+      case (Failed(id, i, e))    => log("Output: Action failed") *> fail(q)(id)(i, e)
       case Executed(id)          =>
         log("Output: Execution completed, launching next execution") *> next(q)(id)
-      case Finished(id)          =>
-        log("Output: Finished") *> switch(q)(id)(Status.Completed)
+      case Finished(id)          => log("Output: Finished") *> switch(q)(id)(Status.Completed)
     }
 
     (ev match {

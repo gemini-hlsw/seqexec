@@ -51,57 +51,54 @@ class packageSpec extends FlatSpec {
 
   val config: StepConfig = Map()
 
-  val qs1: Queue.State = Queue.State.init(
-    Queue(
+  val seqId ="TEST-01"
+  val qs1: EngineState = Map((seqId, Sequence.State.init(
+    Sequence(
+      "First",
+      SequenceMetadata("F2"),
       List(
-        Sequence(
-          "First",
-          SequenceMetadata("F2"),
+        Step(
+          1,
+          config,
           List(
-            Step(
-              1,
-              config,
-              List(
-                List(configureTcs, configureInst), // Execution
-                List(observe) // Execution
-              )
-            ),
-            Step(
-              2,
-              config,
-              List(
-                List(configureTcs, configureInst), // Execution
-                List(observe) // Execution
-              )
-            )
+            List(configureTcs, configureInst), // Execution
+            List(observe) // Execution
+          )
+        ),
+        Step(
+          2,
+          config,
+          List(
+            List(configureTcs, configureInst), // Execution
+            List(observe) // Execution
           )
         )
       )
     )
-  )
+  )))
 
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
-    val qs = (q.enqueueOne(start) *> processE(q).take(1).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.status === Status.Running)
+    val qs = (q.enqueueOne(start(seqId)) *> processE(q).take(1).runLast.eval(qs1)).unsafePerformSync.get._2
+    assert(qs.get(seqId).get.status === Status.Running)
   }
 
   it should "be 0 pending executions after execution" in {
     val q = async.boundedQueue[Event](10)
     val qs = (
-      q.enqueueOne(start) *>
+      q.enqueueOne(start(seqId)) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
         processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.pending.isEmpty)
+    assert(qs.get(seqId).get.pending.isEmpty)
   }
 
   it should "be 1 Sequence done after execution" in {
     val q = async.boundedQueue[Event](10)
     val qs = (
-      q.enqueueOne(start) *>
+      q.enqueueOne(start(seqId)) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
         processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.done.length == 1)
+    assert(qs.get(seqId).get.done.length == 1)
   }
 
   it should "Print execution" in {
@@ -109,7 +106,7 @@ class packageSpec extends FlatSpec {
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
         List(
-          q.enqueueOne(start),
+          q.enqueueOne(start(seqId)),
           Task(Thread.sleep(5000)),
           q.enqueueOne(exit)
         ).sequence_,
@@ -123,11 +120,11 @@ class packageSpec extends FlatSpec {
     intercept[Cause.Terminated](
       Nondeterminism[Task].both(
         List(
-          q.enqueueOne(start),
+          q.enqueueOne(start(seqId)),
           Task(Thread.sleep(2000)),
-          q.enqueueOne(pause),
+          q.enqueueOne(pause(seqId)),
           Task(Thread.sleep(2000)),
-          q.enqueueOne(start),
+          q.enqueueOne(start(seqId)),
           Task(Thread.sleep(3000)),
           q.enqueueOne(exit)
         ).sequence_,
