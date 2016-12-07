@@ -19,7 +19,10 @@ object Step {
   def status(step: Step[Action \/ Result]): StepState = {
 
     // At least an Action in this Step errored.
-    if (step.executions.isEmpty || step.any(Execution.errored)) StepState.Error("An action errored")
+    // TODO: These errors for empty cases should be enforced at the type level
+    if (step.executions.isEmpty || step.executions.all(_.isEmpty)
+          || step.any(Execution.errored)
+    ) StepState.Error("An action errored")
     // All actions in this Step are pending.
     else if (step.all(_.isLeft)) StepState.Pending
     // All actions in this Step were completed successfully.
