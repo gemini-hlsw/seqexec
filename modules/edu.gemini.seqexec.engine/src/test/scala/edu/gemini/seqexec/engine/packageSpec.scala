@@ -98,7 +98,7 @@ class packageSpec extends FlatSpec {
       q.enqueueOne(start(seqId)) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
         processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.get(seqId).get.done.length == 1)
+    assert(qs.get(seqId).get.done.length == 2)
   }
 
   it should "Print execution" in {

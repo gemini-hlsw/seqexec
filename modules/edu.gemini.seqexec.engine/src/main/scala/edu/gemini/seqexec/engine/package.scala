@@ -236,7 +236,7 @@ package object engine {
   private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): Handle[Option[A]] = gets(x => x.get(id).map(f))
 
   private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): Handle[Unit] =
-    modify(st => st.get(id).map(s => st.updated(id, s)).getOrElse(st))
+    modify(st => st.get(id).map(s => st.updated(id, f(s))).getOrElse(st))
 
   private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] = modify(_.updated(id, s))
 
