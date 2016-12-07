@@ -5,6 +5,7 @@ import gem.enum.Instrument
 import gem.config._
 import java.time.Duration
 import argonaut._, Argonaut._, ArgonautShapeless._
+import scalaz.{ ISet, OneAnd, Order }
 
 // These json codecs are provided for primitive types that have no natural mapping that would
 // otherwise be inferred via argonaut-shapeless. For now we'll treat the JSON format as an
@@ -36,11 +37,19 @@ package object json {
     casecodec2(Observation.Id.apply, Observation.Id.unapply)("program-id", "index")
 
   // OffsetP maps to a signed angle in arcseconds
-  implicit val OffsetPMeta: CodecJson[OffsetP] =
+  implicit val OffsetPCodec: CodecJson[OffsetP] =
     AngleMetaAsSignedArcseconds.xmap(OffsetP(_))(_.toAngle)
 
   // OffsetQ maps to a signed angle in arcseconds
-  implicit val OffsetQMeta: CodecJson[OffsetQ] =
+  implicit val OffsetQCodec: CodecJson[OffsetQ] =
     AngleMetaAsSignedArcseconds.xmap(OffsetQ(_))(_.toAngle)
+
+  // Codec for ISet
+  implicit def isetCodec[A: CodecJson: Order]: CodecJson[ISet[A]] =
+    CodecJson.derived[List[A]].xmap(ISet.fromList(_))(_.toList)
+
+  // Codec for OneAnd
+  implicit def oneAndCodec[F[_], A: CodecJson](implicit ev: CodecJson[F[A]]): CodecJson[OneAnd[F, A]] =
+    CodecJson.derived[(A, F[A])].xmap { case (a, fa) => OneAnd(a, fa) } { oa => (oa.head, oa.tail) }
 
 }
