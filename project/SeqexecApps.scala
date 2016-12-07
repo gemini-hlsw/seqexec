@@ -129,12 +129,13 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
     .settings(embeddedJreSettingsLinux64: _*)
     .settings(configurationFromSVN: _*)
     .settings(
-      description := "Seqexec server production on linux 64",
+      description := "Seqexec Gemini South server production on linux 64",
       applicationConfName := "seqexec",
       applicationConfSite := DeploymentSite.GS,
 
       // Download the configuration from svn
-      dist in Universal <<= (dist in Universal).dependsOn(downloadConfiguration),
+      packageZipTarball in Universal <<= (packageZipTarball in Universal).dependsOn(downloadConfiguration),
+      packageBin in Rpm <<= (packageBin in Rpm).dependsOn(downloadConfiguration),
 
       // Put the jre on the RPM
       linuxPackageMappings in Rpm += {

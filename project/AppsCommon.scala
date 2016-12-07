@@ -10,7 +10,7 @@ trait AppsCommon {
   lazy val ocsJreDir = settingKey[File]("Directory where distribution JREs are stored.")
   lazy val applicationConfName = settingKey[String]("Name of the application to lookup the configuration")
   lazy val applicationConfSite = settingKey[DeploymentSite]("Name of the site for the application configuration")
-  lazy val downloadConfiguration = taskKey[Unit]("Download a configuration file for an application")
+  lazy val downloadConfiguration = taskKey[Seq[File]]("Download a configuration file for an application")
 
   sealed trait LogType
   object LogType {
@@ -103,7 +103,10 @@ trait AppsCommon {
       import sys.process._
       // This incarnation will get the configuration from svn. Note that we use the local svn client so you need
       // to have it setup including your credentials
-      s"svn co http://source.gemini.edu/software/ocs3/trunk/configurations/${applicationConfName.value}/production/${applicationConfSite.value.site}/ ${((resourceDirectory in Compile).value / "app.conf").getParentFile.getAbsolutePath}" !
+      val targetFile = (resourceDirectory in Compile).value / "app.conf"
+      val targetDir = targetFile.getParentFile.getAbsolutePath
+      val exitCode = s"svn co http://source.gemini.edu/software/ocs3/trunk/configurations/${applicationConfName.value}/production/${applicationConfSite.value.site}/ $targetDir".!
+      if (exitCode == 0) Seq(targetFile) else throw new RuntimeException("Settings download failed")
     }
 
   )
