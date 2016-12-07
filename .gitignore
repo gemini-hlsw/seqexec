@@ -29,3 +29,6 @@ buildinfo.properties
 
 # Node modules
 node_modules/
+
+# Resources for standalone apps
+app/seqexec-server-l64/src/main/resources/
