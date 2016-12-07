@@ -22,5 +22,5 @@ before_script:
 script:
   - sbt ++$TRAVIS_SCALA_VERSION test:compile test
   - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server/universal:packageZipTarball; fi'
+  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server_test_l64/universal:packageZipTarball; fi'
   - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server_test_l64/rpm:packageBin; fi'
-  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server_test/rpm:packageBin; fi'
