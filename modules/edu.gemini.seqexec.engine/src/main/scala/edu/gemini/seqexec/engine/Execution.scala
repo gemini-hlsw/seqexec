@@ -14,12 +14,12 @@ case class Execution(execution: List[Action \/ Result]) {
 
   val actions: Actions = {
     def lefts[L, R](xs: List[L \/ R]): List[L] = xs.collect { case -\/(l) => l }
-    lefts(execution.toList)
+    lefts(execution)
   }
 
   val results: Results = {
     def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
-    rights(execution.toList)
+    rights(execution)
   }
 
   /**
@@ -58,7 +58,7 @@ object Execution {
     *
     */
   def currentify(as: Actions): Option[Execution] =
-    (as.nonEmpty).option(Execution(as.map(_.left)))
+    as.nonEmpty.option(Execution(as.map(_.left)))
 
 }
 

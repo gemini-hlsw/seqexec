@@ -18,7 +18,7 @@ class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with Propert
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSize = 10, sizeRange = 20)
 
-  "SeqexecCircuit QueueHandler" should "support queue updates" in {
+  ignore should "support queue updates" in {
     forAll { (sequences: List[Sequence]) =>
       val result = emptyQueueHandler.handle(UpdatedQueue(Ready(SeqexecQueue(sequences))))
       result should matchPattern {
@@ -39,7 +39,7 @@ class SeqexecCircuitQueueHandlerSpec extends FlatSpec with Matchers with Propert
     }
   }
 
-  "SeqexecCircuit QueueHandler" should "support adding a sequence when empty" in {
+  ignore should "support adding a sequence when empty" in {
     forAll { (sequence: Sequence) =>
       val queueHandler = new QueueHandler(new RootModelRW(Ready(SeqexecQueue(Nil))))
       // add one

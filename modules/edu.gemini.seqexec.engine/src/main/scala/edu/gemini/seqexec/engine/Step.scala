@@ -1,12 +1,14 @@
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.model.SharedModel.StepConfig
+
 import scalaz._
 import Scalaz._
 
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[+A](id: Int, executions: List[List[A]])
+case class Step[+A](id: Int, config: StepConfig, executions: List[List[A]])
 
 object Step {
 
@@ -21,7 +23,7 @@ object Step {
 
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
-      Step(fa.id, fa.executions.map(_.map(f)))
+      Step(fa.id, fa.config, fa.executions.map(_.map(f)))
   }
 
   // TODO: Proof Foldable laws
@@ -40,6 +42,7 @@ object Step {
     */
   case class Zipper(
     id: Int,
+    config: StepConfig,
     pending: List[Actions],
     focus: Execution,
     done: List[Results]
@@ -57,7 +60,7 @@ object Step {
         case Nil           => None
         case exep :: exeps =>
           (Execution.currentify(exep) |@| focus.uncurrentify) (
-            (curr, exed) => Zipper(id, exeps, curr, exed :: done)
+            (curr, exed) => Zipper(id, config, exeps, curr, exed :: done)
           )
       }
 
@@ -67,7 +70,7 @@ object Step {
       *
       */
     val uncurrentify: Option[Step[Result]] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, x :: done))
+      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, config, x :: done))
       else None
 
     /**
@@ -77,6 +80,7 @@ object Step {
     val toStep: Step[Action \/ Result] =
       Step(
         id,
+        config,
         // TODO: Functor composition?
         done.map(_.map(_.right)) ++
           List(focus.execution) ++
@@ -97,7 +101,7 @@ object Step {
         case Nil         => None
         case exe :: exes =>
           Execution.currentify(exe).map(
-            Zipper(step.id, exes, _, Nil)
+            Zipper(step.id, step.config, exes, _, Nil)
           )
       }
 

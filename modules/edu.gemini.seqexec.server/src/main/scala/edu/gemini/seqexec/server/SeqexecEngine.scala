@@ -111,13 +111,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
       def viewStep(step: StepAR): Step =
         StandardStep(
-          // TODO: Add configuration parameter to Engine Step
-          Map.empty,
+          step.config,
           statusStep(step),
           // TODO: Implement breakpoints at Engine level
-          false,
+          breakpoint = false,
           // TODO: Implement skipping at Engine level
-          false,
+          skip = false,
           Map.empty,
           // TODO: Implement standard step at Engine level
           ActionStatus.Pending

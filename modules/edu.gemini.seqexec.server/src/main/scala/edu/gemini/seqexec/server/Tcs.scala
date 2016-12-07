@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.server.ConfigUtil._
+import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ}
@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scalaz.concurrent.Task
 import scalaz._, Scalaz._
-import squants.space.{ Millimeters, LengthConversions } 
+import squants.space.{ Millimeters, LengthConversions }
 
 /**
  * Created by jluhrs on 4/23/15.
@@ -32,7 +32,7 @@ final case class Tcs(tcsController: TcsController) extends System {
       case MountGuideOff => s0.gc.setMountGuide(MountGuideOff)
       case _             => s0.gc
     }
-    
+
     val g1 = s1.self.gc.m1Guide match {
       case M1GuideOff => g0.setM1Guide(M1GuideOff)
       case _          => g0
