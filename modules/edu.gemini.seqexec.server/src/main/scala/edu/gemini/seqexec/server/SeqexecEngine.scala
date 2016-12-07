@@ -84,7 +84,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     def viewSequence(seq: SequenceAR): SequenceView =
       // TODO: Implement willStopIn
-      SequenceView(seq.metadata, statusSequence(seq), engineSteps(seq), None)
+      SequenceView(seq.id, seq.metadata, statusSequence(seq), engineSteps(seq), None)
 
     private def statusSequence(seq: SequenceAR): SequenceState = engine.Sequence.status(seq)
 

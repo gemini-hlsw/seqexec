@@ -50,35 +50,31 @@ class packageSpec extends FlatSpec {
   } yield Error(())
 
   val config: StepConfig = Map()
-
-  val qs1: Queue.State = Queue.State.init(
-    Queue(
+  val seqId ="TEST-01"
+  val qs1: EngineState = Map((seqId, Sequence.State.init(
+    Sequence(
+      "First",
+      SequenceMetadata("F2"),
       List(
-        Sequence(
-          "First",
-          SequenceMetadata("GS-2017A-Q-0-1", "F2"),
+        Step(
+          1,
+          config,
           List(
-            Step(
-              1,
-              config,
-              List(
-                List(configureTcs, configureInst), // Execution
-                List(observe) // Execution
-              )
-            ),
-            Step(
-              2,
-              config,
-              List(
-                List(configureTcs, configureInst), // Execution
-                List(observe) // Execution
-              )
-            )
+            List(configureTcs, configureInst), // Execution
+            List(observe) // Execution
+          )
+        ),
+        Step(
+          2,
+          config,
+          List(
+            List(configureTcs, configureInst), // Execution
+            List(observe) // Execution
           )
         )
       )
     )
-  )
+  )))
 
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)

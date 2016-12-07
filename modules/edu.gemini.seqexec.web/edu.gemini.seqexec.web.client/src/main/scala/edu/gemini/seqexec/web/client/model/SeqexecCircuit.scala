@@ -85,8 +85,8 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
 
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.metadata.id} aborted")
-      updated(value.map(_.abortSequence(s.metadata.id)), logE)
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
+      updated(value.map(_.abortSequence(s.id)), logE)
 
     case RunStopFailed(s) =>
       noChange
@@ -171,18 +171,18 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SelectToDisplay(s) =>
-      val ref = SeqexecCircuit.sequenceRef(s.metadata.id)
+      val ref = SeqexecCircuit.sequenceRef(s.id)
       updated(value.focusOnSequence(ref))
 
     case ShowStep(s, i) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.metadata.id)) {
+      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
         updated(value.showStep(i))
       } else {
         noChange
       }
 
     case UnShowStep(s) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.metadata.id == s.metadata.id)) {
+      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
         updated(value.unshowStep)
       } else {
         noChange
@@ -364,7 +364,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader for a specific sequence if available
   def sequenceReader(id: String):ModelR[_, Option[SequenceView]] =
-    zoom(_.sequences.find(_.metadata.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
+    zoom(_.sequences.find(_.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
 
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))

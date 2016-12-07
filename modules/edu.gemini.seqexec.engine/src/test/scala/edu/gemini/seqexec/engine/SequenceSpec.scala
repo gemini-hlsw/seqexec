@@ -44,7 +44,7 @@ class SequenceSpec extends FlatSpec {
 
   }
 
-  val metadata = SequenceMetadata("GS-2017A-Q-0-1", "F2")
+  val metadata = SequenceMetadata("F2")
 
   // TODO: Share these fixtures with StepSpec
   val result = Result.OK(Unit)

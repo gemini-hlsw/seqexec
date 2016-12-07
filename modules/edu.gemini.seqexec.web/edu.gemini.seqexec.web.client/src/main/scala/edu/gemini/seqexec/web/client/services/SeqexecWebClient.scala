@@ -47,7 +47,7 @@ object SeqexecWebClient {
     */
   def run(s: SequenceView): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.metadata.id}/run",
+      url = s"$baseUrl/commands/${s.id}/run",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -57,7 +57,7 @@ object SeqexecWebClient {
     */
   def stop(s: SequenceView): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.metadata.id}/stop",
+      url = s"$baseUrl/commands/${s.id}/stop",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

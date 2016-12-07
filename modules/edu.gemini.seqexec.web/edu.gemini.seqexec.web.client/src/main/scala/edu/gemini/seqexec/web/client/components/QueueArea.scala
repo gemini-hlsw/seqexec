@@ -77,7 +77,7 @@ object QueueTableBody {
                 <.td(
                   ^.cls := "collapsing",
                   p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
-                  s.metadata.id
+                  s.id
                 ),
                 <.td(
                   p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,

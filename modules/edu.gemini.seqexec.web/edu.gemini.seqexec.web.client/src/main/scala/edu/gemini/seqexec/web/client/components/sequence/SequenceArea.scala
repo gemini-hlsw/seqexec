@@ -187,7 +187,7 @@ object SequenceStepsTableContainer {
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
       val div = scrollRef(f.$)
-      if (f.nextProps.s.metadata.id != f.currentProps.s.metadata.id) {
+      if (f.nextProps.s.id != f.currentProps.s.id) {
         // It will reset to 0 if the sequence changes
         // TODO It may be better to remember the pos of executed steps per sequence
         f.$.setState(State(0, autoScrolled = true))
