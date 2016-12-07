@@ -115,9 +115,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
           Map.empty,
           statusStep(step),
           // TODO: Implement breakpoints at Engine level
-          false,
+          breakpoint = false,
           // TODO: Implement skipping at Engine level
-          false,
+          skip = false,
           Map.empty,
           // TODO: Implement standard step at Engine level
           ActionStatus.Pending

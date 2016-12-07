@@ -31,6 +31,8 @@ trait NewBooPicklers {
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
 
+  implicit val stepConfigPickler = generatePickler[SequenceView]
+
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
   implicit val eventsPickler = compositePickler[SharedModel.SeqexecEvent]

@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
-import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
+import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
 import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants._
