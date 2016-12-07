@@ -61,4 +61,11 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
         c.extract(k).as[String].toEither.left.value should startWith("Missing config value for key")
       }
     }
+    it should "convert to StepConfig" in {
+      forAll { (c: Config) =>
+        // Not much to check but at least verify the amount of subsystems
+        val subsystems = c.getKeys.map(_.getRoot.getName).distinct
+        c.toStepConfig.keys should contain theSameElementsAs subsystems
+      }
+    }
 }
