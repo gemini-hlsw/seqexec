@@ -1,6 +1,7 @@
 package edu.gemini.seqexec
 
 import edu.gemini.seqexec.engine.Event._
+
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
@@ -30,6 +31,9 @@ package object engine {
 
   type Results = List[Result]
 
+  type EngineState = Map[Sequence.Id, Sequence.State]
+  val initState: EngineState = Map.empty[Sequence.Id, Sequence.State]
+
   // Handle proper
 
   /**
@@ -40,7 +44,8 @@ package object engine {
     */
   type Handle[A] = HandleStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type HandleStateT[M[_], A] = StateT[M, Queue.State, A]
+  type HandleStateT[M[_], A] = StateT[M, EngineState, A]
+
 
   /**
     * Changes the `Status` and returns the new `Queue.State`.
@@ -48,61 +53,71 @@ package object engine {
     * It also takes care of initiating the execution when transitioning to
     * `Running` `Status`.
     */
-  def switch(q: EventQueue)(st: Status): Handle[Unit] =
+  def switch(q: EventQueue)(id: Sequence.Id)(st: Status): Handle[Unit] =
     // TODO: Make Status an Equal instance
-    modify(Queue.State.status.set(_, st)) *> whenM(st == Status.Running)(next(q))
+    modifyS(id)(Sequence.State.status.set(_, st)) *> whenM(st == Status.Running)(next(q)(id))
 
   /**
-    * Reloads the (for now only) sequence
+    * Loads a sequence
     */
-  def load(seq: Sequence[Action]): Handle[Unit] = status.flatMap {
-    case Status.Running => unit
-    case _ => put(Queue.State.init(engine.Queue(List(seq))))
-  }
+  def load(id: Sequence.Id, seq: Sequence[Action]): Handle[Unit] =
+    StateT[Task, EngineState, Unit] { s =>
+      Task {
+        s.get(id).map(t => t.status match {
+          case Status.Running => (s, ())
+          case _              => (s.updated(id, Sequence.State.init(seq)), ())
+        }).getOrElse((s.updated(id, Sequence.State.init(seq)), ()))
+      }
+    }
+
 
   /**
-    * Adds the current Execution` to the completed `Queue`, makes the next
+    * Adds the current `Execution` to the completed `Queue`, makes the next
     * pending `Execution` the current one, and initiates the actual execution.
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  def next(q: EventQueue): Handle[Unit] =
-    gets(_.next).flatMap {
-      // Empty state
-      case None     => send(q)(finished)
-      // Final State
-      case Some(qs: Queue.State.Final) => put(qs) *> send(q)(finished)
-      // Execution completed, execute next actions
-      case Some(qs) => put(qs) *> execute(q)
-    }
+  def next(q: EventQueue)(id: Sequence.Id): Handle[Unit] = getS(id).flatMap(_.map { seq =>
+      seq.next match {
+        // Empty state
+        case None                           => send(q)(finished(id))
+        // Final State
+        case Some(qs: Sequence.State.Final) => putS(id)(qs) *> send(q)(finished(id))
+        // Execution completed, execute next actions
+        case Some(qs)                       => putS(id)(qs) *> execute(q)(id)
+      }
+    }.getOrElse(unit)
+  )
+
 
   /**
     * Checks the `Status` is `Running` and executes all actions in the `Current`
     * `Execution` in parallel. When all are done it emits the `Executed` event.
     * It also updates the `State` as needed.
     */
-  private def execute(q: EventQueue): Handle[Unit] = {
+  private def execute(q: EventQueue)(id: Sequence.Id): Handle[Unit] = {
 
     // Send the expected event when the `Action` is executed
     def act(t: (Action, Int)): Task[Unit] = t match {
       case (action, i) =>
         action.flatMap {
-          case Result.OK(r)    => q.enqueueOne(completed(i, r))
-          case Result.Error(e) => q.enqueueOne(failed(i, e))
+          case Result.OK(r)    => q.enqueueOne(completed(id, i, r))
+          case Result.Error(e) => q.enqueueOne(failed(id, i, e))
         }
     }
 
-    status.flatMap {
-      case Status.Waiting   => unit
-      case Status.Completed => unit
-      case Status.Running   => (
-        gets(_.current.actions).flatMap(
-          actions => Nondeterminism[Task].gatherUnordered(
-            actions.zipWithIndex.map(act)
-          ).liftM[HandleStateT]
-        )
-      ) *> send(q)(executed)
-    }
+    getS(id).flatMap(_.map { seq =>
+        seq.status match {
+          case Status.Waiting   => unit
+          case Status.Completed => unit
+          case Status.Running   => {
+            val a = Nondeterminism[Task].gatherUnordered(seq.current.actions.zipWithIndex.map(act))
+            a.liftM[HandleStateT] *> send(q)(executed(id))
+          }
+        }
+      }.getOrElse(unit)
+    )
+
   }
 
   /**
@@ -111,20 +126,20 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete[R](i: Int, r: R): Handle[Unit] = modify(_.mark(i)(Result.OK(r)))
+  def complete[R](id: Sequence.Id, i: Int, r: R): Handle[Unit] = modifyS(id)(_.mark(i)(Result.OK(r)))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail[E](q: EventQueue)(i: Int, e: E): Handle[Unit] =
-    modify(_.mark(i)(Result.Error(e))) *> switch(q)(Status.Waiting)
+  def fail[E](q: EventQueue)(id: Sequence.Id)(i: Int, e: E): Handle[Unit] =
+    modifyS(id)(_.mark(i)(Result.Error(e))) *> switch(q)(id)(Status.Waiting)
 
   /**
     * Ask for the current Handle `Status`.
     */
-  val status: Handle[Status] = gets(_.status)
+  def status(id: Sequence.Id): Handle[Option[Status]] = gets(_.get(id).map(_.status))
 
   /**
     * Log something and return the `State`.
@@ -144,29 +159,22 @@ package object engine {
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(q: EventQueue)(ev: Event): Handle[Queue.State] = {
+  private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start              =>
-        log("Output: Started") *> switch(q)(Status.Running)
-      case Pause              =>
-        log("Output: Paused") *> switch(q)(Status.Waiting)
-      case Load(seq) => log("Output: Sequence loaded") *> load(seq)
-      case Poll               =>
-        log("Output: Polling current state")
-      case Exit               =>
-        log("Bye") *> close(q)
+      case Start(id)     => log("Output: Started") *> switch(q)(id)(Status.Running)
+      case Pause(id)     => log("Output: Paused") *> switch(q)(id)(Status.Waiting)
+      case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
+      case Poll          => log("Output: Polling current state")
+      case Exit          => log("Bye") *> close(q)
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
-      case (Completed(i, r)) =>
-        log("Output: Action completed") *> complete(i, r)
-      case (Failed(i, e))    =>
-        log("Output: Action failed") *> fail(q)(i, e)
-      case Executed          =>
-        log("Output: Execution completed, launching next execution") *> next(q)
-      case Finished          =>
-        log("Output: Finished") *> switch(q)(Status.Completed)
+      case (Completed(id, i, r)) => log("Output: Action completed") *> complete(id, i, r)
+      case (Failed(id, i, e))    => log("Output: Action failed") *> fail(q)(id)(i, e)
+      case Executed(id)          =>
+        log("Output: Execution completed, launching next execution") *> next(q)(id)
+      case Finished(id)          => log("Output: Finished") *> switch(q)(id)(Status.Completed)
     }
 
     (ev match {
@@ -190,13 +198,13 @@ package object engine {
     go(fs, s)
   }
 
-  def runE(q: EventQueue)(ev: Event): Handle[(Event, Queue.State)] =
+  def runE(q: EventQueue)(ev: Event): Handle[(Event, EngineState)] =
     run(q)(ev).map((ev, _))
 
-  def processE(q: EventQueue): Process[Handle, (Event, Queue.State)] =
+  def processE(q: EventQueue): Process[Handle, (Event, EngineState)] =
     receive(q).evalMap(runE(q))
 
-  def process(q: EventQueue)(qs: Queue.State): Process[Task, (Event, Queue.State)] = {
+  def process(q: EventQueue)(qs: EngineState): Process[Task, (Event, EngineState)] = {
     mapEvalState(q.dequeue, qs, runE(q))
   }
 
@@ -211,23 +219,32 @@ package object engine {
 
   private val unit: Handle[Unit] = pure(Unit)
 
-  val get: Handle[Queue.State] =
-    MonadState[Handle, Queue.State].get
+  val get: Handle[EngineState] =
+    MonadState[Handle, EngineState].get
 
-  private def gets[A](f: (Queue.State) => A): Handle[A] =
-    MonadState[Handle, Queue.State].gets(f)
+  private def gets[A](f: (EngineState) => A): Handle[A] =
+    MonadState[Handle, EngineState].gets(f)
 
-  private def modify(f: (Queue.State) => Queue.State) =
-    MonadState[Handle, Queue.State].modify(f)
+  private def modify(f: (EngineState) => EngineState): Handle[Unit] =
+    MonadState[Handle, EngineState].modify(f)
 
-  private def put(qs: Queue.State): Handle[Unit] =
-    MonadState[Handle, Queue.State].put(qs)
+  private def put(qs: EngineState): Handle[Unit] =
+    MonadState[Handle, EngineState].put(qs)
 
-  // For instrospection
-  val printQueueState: Handle[Unit] = gets((qs: Queue.State) => Task.now(println(qs)).liftM[HandleStateT])
+  private def getS(id: Sequence.Id): Handle[Option[Sequence.State]] = get.map(_.get(id))
+
+  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): Handle[Option[A]] = gets(x => x.get(id).map(f))
+
+  private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): Handle[Unit] =
+    modify(st => st.get(id).map(s => st.updated(id, f(s))).getOrElse(st))
+
+  private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] = modify(_.updated(id, s))
+
+  // For introspection
+  def printSequenceState(id: Sequence.Id): Handle[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])
 
   // The `Catchable` instance of `Handle`` needs to be manually written.
-  // Without it's not possible to use `Handle` as a scalaz-stream process effects.
+  // Without it it's not possible to use `Handle` as a scalaz-stream process effects.
   implicit val engineInstance: Catchable[Handle] =
     new Catchable[Handle] {
       def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(

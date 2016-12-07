@@ -10,6 +10,8 @@ case class Queue[+A](sequences: List[Sequence[A]])
 
 object Queue {
 
+  type Id = String
+
   def sequences[A]: Queue[A] @> List[Sequence[A]] =
     Lens.lensu((q, s) => q.copy(sequences = s), _.sequences)
 

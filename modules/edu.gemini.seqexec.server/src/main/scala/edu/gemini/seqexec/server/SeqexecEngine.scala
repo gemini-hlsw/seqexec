@@ -28,33 +28,26 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if(settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
   )
 
-  val qs: engine.Queue.State = engine.Queue.State.init(
-    engine.Queue(
-      List[Sequence[Action]](
-      )
-    )
-  )
+  // TODO: Add seqId: SPObservationID as parameter
+  def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.start(id.stringValue())).map(_.right)
 
   // TODO: Add seqId: SPObservationID as parameter
-  def start(q: engine.EventQueue): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.start).map(_.right)
+  def requestPause(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit ]=
+    q.enqueueOne(Event.pause(id.stringValue())).map(_.right)
 
   // TODO: Add seqId: SPObservationID as parameter
-  def requestPause(q: engine.EventQueue): Task[SeqexecFailure \/ Unit ]=
-    q.enqueueOne(Event.pause).map(_.right)
+  def setBreakpoint(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit]= ???
 
   // TODO: Add seqId: SPObservationID as parameter
-  def setBreakpoint(q: engine.EventQueue): Task[SeqexecFailure \/ Unit]= ???
-
-  // TODO: Add seqId: SPObservationID as parameter
-  def setSkipMark(q: engine.EventQueue): Task[SeqexecFailure \/ Unit] = ???
+  def setSkipMark(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] = ???
 
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
-    engine.process(q)(qs).map {
+    engine.process(q)(engine.initState).map {
       case (ev, qState) =>
-        toSeqexecEvent(ev)(qState.toQueue.sequences.map(viewSequence))
+        toSeqexecEvent(ev)(qState.values.map(s => viewSequence(s.toSequence)).toList)
     }
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
@@ -62,24 +55,24 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         odbSeq <- Task(odbProxy.read(seqId))
       } yield odbSeq.flatMap(s => SeqTranslate.sequence(systems)(seqId.stringValue(), s))
     )
-    val u = t.flatMapF(x => q.enqueueOne(Event.load(x)).map(_.right))
+    val u = t.flatMapF(x => q.enqueueOne(Event.load(seqId.stringValue(), x)).map(_.right))
     u.run
   }
 
   private def toSeqexecEvent(ev: engine.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
-      case engine.Start   => SequenceStart(svs)
-      case engine.Pause   => SequencePauseRequested(svs)
-      case engine.Load(_) => SequenceLoaded(svs)
-      case engine.Poll    => NewLogMessage("Immediate State requested")
-      case engine.Exit    => NewLogMessage("Exit requested by user")
+      case engine.Start(_)    => SequenceStart(svs)
+      case engine.Pause(_)    => SequencePauseRequested(svs)
+      case engine.Load(_, _)  => SequenceLoaded(svs)
+      case engine.Poll        => NewLogMessage("Immediate State requested")
+      case engine.Exit        => NewLogMessage("Exit requested by user")
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
-      case engine.Completed(_, _) => NewLogMessage("Action completed")
-      case engine.Failed(_, _)    => NewLogMessage("Action failed")
-      case engine.Executed        => StepExecuted(svs)
-      case engine.Finished        => NewLogMessage("Execution finished")
+      case engine.Completed(_, _, _) => NewLogMessage("Action completed")
+      case engine.Failed(_, _, _)    => NewLogMessage("Action failed")
+      case engine.Executed(_)        => StepExecuted(svs)
+      case engine.Finished(_)        => NewLogMessage("Execution finished")
     }
   }
 
