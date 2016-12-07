@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
+import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
 
 import scalaz._
 import Scalaz._
@@ -49,14 +49,15 @@ class SequenceSpec extends FlatSpec {
   // TODO: Share these fixtures with StepSpec
   val result = Result.OK(Unit)
   val action: Action = Task(result)
-  val stepz0: Step.Zipper   = Step.Zipper(0, Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper  = Step.Zipper(1, List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper  = Step.Zipper(1, List(List(action)), Execution(List(result.right)), Nil)
-  val stepzr0: Step.Zipper  = Step.Zipper(1, Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper  = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), Nil)
-  val stepzr2: Step.Zipper  = Step.Zipper(1, Nil, Execution(List(result.right, result.right)), List(List(result)))
-  val stepzar0: Step.Zipper = Step.Zipper(1, Nil, Execution(List(result.right, action.left)), Nil)
-  val stepzar1: Step.Zipper = Step.Zipper(1, List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
+  val config: StepConfig = Map()
+  val stepz0: Step.Zipper   = Step.Zipper(0, config, Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution(List(result.right)), Nil)
+  val stepzr0: Step.Zipper  = Step.Zipper(1, config, Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), Nil)
+  val stepzr2: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), List(List(result)))
+  val stepzar0: Step.Zipper = Step.Zipper(1, config, Nil, Execution(List(result.right, action.left)), Nil)
+  val stepzar1: Step.Zipper = Step.Zipper(1, config, List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
 
   val seqz0: Sequence.Zipper   = Sequence.Zipper("id", metadata, Nil, stepz0, Nil)
   val seqza0: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepza0, Nil)

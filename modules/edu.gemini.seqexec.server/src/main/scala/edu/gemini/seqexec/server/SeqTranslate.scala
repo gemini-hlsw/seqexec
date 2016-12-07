@@ -3,8 +3,9 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
-import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
+import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
 import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
+import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -44,6 +45,7 @@ object SeqTranslate {
       // TODO Find a proper way to inject the subsystems
       Step[Action](
         i,
+        config.toStepConfig,
         List(
           // TODO: implicit function doesn't work here, why?
           sys.map(x => toAction(x.configure(config))),

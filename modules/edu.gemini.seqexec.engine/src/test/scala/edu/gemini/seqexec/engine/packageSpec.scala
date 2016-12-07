@@ -2,7 +2,7 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
-import edu.gemini.seqexec.model.SharedModel.SequenceMetadata
+import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
 import org.scalatest.FlatSpec
 
 import scalaz._
@@ -49,6 +49,8 @@ class packageSpec extends FlatSpec {
     _ <- Task(println ("System: Complete observation"))
   } yield Error(())
 
+  val config: StepConfig = Map()
+
   val qs1: Queue.State = Queue.State.init(
     Queue(
       List(
@@ -58,6 +60,7 @@ class packageSpec extends FlatSpec {
           List(
             Step(
               1,
+              config,
               List(
                 List(configureTcs, configureInst), // Execution
                 List(observe) // Execution
@@ -65,6 +68,7 @@ class packageSpec extends FlatSpec {
             ),
             Step(
               2,
+              config,
               List(
                 List(configureTcs, configureInst), // Execution
                 List(observe) // Execution

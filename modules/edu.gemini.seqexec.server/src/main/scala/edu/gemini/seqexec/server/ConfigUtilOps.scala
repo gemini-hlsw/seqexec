@@ -14,7 +14,7 @@ import Scalaz._
 /**
  * Utility operations to work with Configs from the ODB
  */
-object ConfigUtil {
+object ConfigUtilOps {
 
   type ExtractFailure = String // for now
 

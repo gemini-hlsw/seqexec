@@ -37,7 +37,7 @@ object ConfigArbitraries {
 }
 
 class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with PropertyChecks {
-  import ConfigUtil._
+  import ConfigUtilOps._
   import ConfigArbitraries._
 
   "ConfigUtil" should

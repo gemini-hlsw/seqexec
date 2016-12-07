@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.dhs.ObsId
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.Flamingos2Controller._
-import edu.gemini.seqexec.server.ConfigUtil._
+import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
