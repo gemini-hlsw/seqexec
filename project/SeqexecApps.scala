@@ -1,7 +1,7 @@
 import com.typesafe.sbt.SbtNativePackager.autoImport._
-import com.typesafe.sbt.packager.MappingsHelper._
-import com.typesafe.sbt.packager.archetypes.JavaAppPackaging.autoImport._
 import com.typesafe.sbt.packager.archetypes.JavaServerAppPackaging
+import com.typesafe.sbt.packager.archetypes.scripts.BatStartScriptPlugin.autoImport._
+import com.typesafe.sbt.packager.archetypes.scripts.BashStartScriptPlugin.autoImport._
 import com.typesafe.sbt.packager.linux.LinuxPlugin
 import com.typesafe.sbt.packager.linux.LinuxPlugin.autoImport._
 import com.typesafe.sbt.packager.rpm.RpmPlugin
@@ -35,7 +35,7 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
     // No javadocs
     mappings in (Compile, packageDoc) := Seq(),
     // Don't create launchers for Windows
-    makeBatScript := None,
+    makeBatScripts := Seq.empty,
     // Specify a different name for the config file
     bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
     // Launch options
