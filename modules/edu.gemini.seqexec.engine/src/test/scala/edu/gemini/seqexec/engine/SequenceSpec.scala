@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
+import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, SequenceState, StepConfig}
 
 import scalaz._
 import Scalaz._
@@ -77,6 +77,11 @@ class SequenceSpec extends FlatSpec {
     assert(seqzr2.next.isEmpty)
     assert(seqzar0.next.isEmpty)
     assert(seqzar1.next.nonEmpty)
+  }
+
+  "status" should "be Error when empty" in {
+    assert(Sequence.status(seqz0.toSequence) ===
+             SequenceState.Error("An action errored"))
   }
 
 }

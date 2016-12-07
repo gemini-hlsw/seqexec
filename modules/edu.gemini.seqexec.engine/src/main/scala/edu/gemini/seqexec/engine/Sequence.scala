@@ -22,7 +22,10 @@ object Sequence {
     */
   def status(seq: Sequence[Action \/ Result]): SequenceState = {
 
-    if (seq.steps.isEmpty || seq.any(Execution.errored)) SequenceState.Error("An action errored")
+    // TODO: Get rid of this
+    if (seq.steps.isEmpty || seq.steps.all(_.executions.all(_.isEmpty))
+          || seq.any(Execution.errored)
+    ) SequenceState.Error("An action errored")
     else if (seq.all(_.isLeft)) SequenceState.Idle
     else if (seq.all(_.isRight)) SequenceState.Completed
     else SequenceState.Running

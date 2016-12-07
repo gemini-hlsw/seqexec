@@ -102,6 +102,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          Map.empty,
           Nil,
           Execution(List(action.left, failure.right, result.right)),
           Nil
@@ -115,6 +116,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          Map.empty,
           Nil,
           Execution(List(result.right, result.right, result.right)),
           Nil
@@ -128,6 +130,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          Map.empty,
           Nil,
           Execution(List(result.right, action.left, result.right)),
           Nil
@@ -141,6 +144,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          Map.empty,
           Nil,
           Execution(List(action.left, action.left, action.left)),
           Nil
@@ -148,4 +152,5 @@ class StepSpec extends FlatSpec {
       ) === StepState.Pending
     )
   }
+
 }
