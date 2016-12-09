@@ -67,9 +67,10 @@ object SharedModel {
 
   sealed trait SequenceState
   object SequenceState {
-    case object Completed extends SequenceState
-    case object Running   extends SequenceState
-    case object Idle      extends SequenceState
+    case object Completed         extends SequenceState
+    case object Running           extends SequenceState
+    case object Idle              extends SequenceState
+    case class Error(msg: String) extends SequenceState
   }
 
   /**

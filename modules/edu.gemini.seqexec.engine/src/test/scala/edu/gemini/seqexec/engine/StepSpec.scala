@@ -8,6 +8,8 @@ import org.scalatest.FlatSpec
 
 import scalaz.concurrent.Task
 
+import edu.gemini.seqexec.model.SharedModel.StepState
+
 /**
   * Created by jluhrs on 9/29/16.
   */
@@ -46,6 +48,7 @@ class StepSpec extends FlatSpec {
   }
 
   val result = Result.OK(Unit)
+  val failure = Result.Error(Unit)
   val action: Action = Task(result)
   val config: StepConfig = Map()
   val stepz0: Step.Zipper   = Step.Zipper(0, config, Nil, Execution.empty, Nil)
@@ -89,4 +92,65 @@ class StepSpec extends FlatSpec {
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
   }
+
+  "status" should "be Error when empty" in {
+    assert(Step.status(stepz0.toStep) === StepState.Error("An action errored"))
+  }
+
+  "status" should "be Error when at least one Action failed" in {
+    assert(
+      Step.status(
+        Step.Zipper(
+          1,
+          Map.empty,
+          Nil,
+          Execution(List(action.left, failure.right, result.right)),
+          Nil
+        ).toStep
+      ) === StepState.Error("An action errored")
+    )
+  }
+
+  "status" should "be Completed when all actions succeeded" in {
+    assert(
+      Step.status(
+        Step.Zipper(
+          1,
+          Map.empty,
+          Nil,
+          Execution(List(result.right, result.right, result.right)),
+          Nil
+        ).toStep
+      ) === StepState.Completed
+    )
+  }
+
+  "status" should "be Running when there are both actions and results" in {
+    assert(
+      Step.status(
+        Step.Zipper(
+          1,
+          Map.empty,
+          Nil,
+          Execution(List(result.right, action.left, result.right)),
+          Nil
+        ).toStep
+      ) === StepState.Running
+    )
+  }
+
+  "status" should "be Pending when there are only pending actions" in {
+    assert(
+      Step.status(
+        Step.Zipper(
+          1,
+          Map.empty,
+          Nil,
+          Execution(List(action.left, action.left, action.left)),
+          Nil
+        ).toStep
+      ) === StepState.Pending
+    )
+  }
+
 }

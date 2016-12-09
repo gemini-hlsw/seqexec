@@ -14,6 +14,7 @@ trait NewBooPicklers {
   implicit val sequenceStatePickler = compositePickler[SequenceState]
     .addConcreteType[SequenceState.Completed.type]
     .addConcreteType[SequenceState.Running.type]
+    .addConcreteType[SequenceState.Error]
     .addConcreteType[SequenceState.Idle.type]
 
   implicit val actionStatusPickler = compositePickler[ActionStatus]

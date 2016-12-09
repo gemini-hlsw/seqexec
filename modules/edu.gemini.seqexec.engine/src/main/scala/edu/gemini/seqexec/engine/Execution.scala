@@ -60,6 +60,15 @@ object Execution {
   def currentify(as: Actions): Option[Execution] =
     as.nonEmpty.option(Execution(as.map(_.left)))
 
+  def errored(ar: Action \/ Result): Boolean =
+    ar match {
+      case (-\/(_)) => false
+      case (\/-(r)) => r match {
+        case Result.OK(_)    => false
+        case Result.Error(_) => true
+      }
+    }
+
 }
 
 /**

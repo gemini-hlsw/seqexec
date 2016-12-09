@@ -86,21 +86,11 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       // TODO: Implement willStopIn
       SequenceView(seq.metadata, statusSequence(seq), engineSteps(seq), None)
 
-    private def statusSequence(seq: SequenceAR): SequenceState =
-      engine.Sequence.status(seq) match {
-          case engine.Status.Waiting   => SequenceState.Idle
-          case engine.Status.Completed => SequenceState.Completed
-          case engine.Status.Running   => SequenceState.Running
-        }
+    private def statusSequence(seq: SequenceAR): SequenceState = engine.Sequence.status(seq)
 
     private def engineSteps(seq: SequenceAR): List[Step] = {
 
-      def statusStep(step: StepAR): StepState =
-        engine.Step.status(step) match {
-          case engine.Status.Waiting   => StepState.Pending
-          case engine.Status.Completed => StepState.Completed
-          case engine.Status.Running   => StepState.Running
-        }
+      def statusStep(step: StepAR): StepState = engine.Step.status(step)
 
       def viewStep(step: StepAR): Step =
         StandardStep(
@@ -119,7 +109,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
     // Configuration stuff
-
 
 }
 
