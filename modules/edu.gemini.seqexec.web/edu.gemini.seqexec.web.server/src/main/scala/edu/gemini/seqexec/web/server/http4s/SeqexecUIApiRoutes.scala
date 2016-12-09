@@ -49,7 +49,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
   val tokenAuthService = JwtAuthentication(auth)
 
   val publicService: HttpService = GZip { HttpService {
-    case GET -> Root / "seqexec" / "current" / "queue" =>
+    case GET -> Root / "seqexec" / "current" / "queue"     =>
       Ok(CannedModel.currentQueue)
 
     case req @ POST -> Root / "seqexec" / "login" =>
@@ -98,7 +98,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
               )
             )
 
-          case POST -> Root / "seqexec" / "logout"        =>
+          case POST -> Root / "seqexec" / "logout"              =>
             // Clean the auth cookie
             val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
                                 secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
@@ -115,6 +115,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                 resp  <- Ok(s"Loaded sequence $obsId")
               } yield resp
             }
+
         }
       }
     }

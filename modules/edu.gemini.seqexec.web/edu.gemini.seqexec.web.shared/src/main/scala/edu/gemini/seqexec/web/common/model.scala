@@ -6,13 +6,16 @@ import Scalaz._
 /**
   * Minimal models to be exchanged between client and server
   */
+@Deprecated
 case class StepConfig(key: String, value: String)
 
+@Deprecated
 sealed trait StepState
 
 /**
   * Possible states for given step
   */
+@Deprecated
 object StepState {
   case object NotDone extends StepState
   case object Running extends StepState
@@ -32,14 +35,17 @@ object StepState {
 
 }
 
+@Deprecated
 case class Step(id: Int, state: StepState, config: List[StepConfig], file: Option[String])
 
+@Deprecated
 object Step {
   // Lenses
   val fileLens: Step @> Option[String] = Lens.lensu((s, f) => s.copy(file = f), s => s.file)
   val stateLens: Step @> StepState     = Lens.lensu((s, f) => s.copy(state = f), s => s.state)
 }
 
+@Deprecated
 case class SequenceSteps(steps: List[Step]) {
   /**
     * Find the currently running step
@@ -64,8 +70,10 @@ case class SequenceSteps(steps: List[Step]) {
   }
 }
 
+@Deprecated
 sealed trait SequenceState
 
+@Deprecated
 object SequenceState {
   case object NotRunning extends SequenceState
   case object Running    extends SequenceState
@@ -82,6 +90,7 @@ object SequenceState {
   }
 }
 
+@Deprecated
 case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[String]) {
 
   // Update the running state and mark the next step
@@ -98,6 +107,7 @@ case class Sequence(id: String, state: SequenceState, instrument: Instrument.Ins
   }
 }
 
+@Deprecated
 object Sequence {
   // Lenses
   val stepsLens: Sequence @> SequenceSteps          = Lens.lensu((a, b) => a.copy(steps = b), _.steps)
@@ -110,6 +120,7 @@ object Sequence {
   def stepState(i: Int): Sequence @?> StepState     = step(i) andThen Step.stateLens.partial
 }
 
+@Deprecated
 case class SeqexecQueue(queue: List[Sequence]) {
 
   // Make a virtual abort
@@ -171,6 +182,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
     })
 }
 
+@Deprecated
 object Instrument {
   // Placeholder for the instrument type
   type Instrument = String

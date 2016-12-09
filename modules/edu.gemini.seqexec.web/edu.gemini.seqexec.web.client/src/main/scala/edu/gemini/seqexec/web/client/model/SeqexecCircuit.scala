@@ -11,7 +11,6 @@ import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceView}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
-import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import boopickle.Default._
@@ -40,7 +39,7 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
 /**
   * Handles sequence execution actions
   */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, List[SequenceView]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
@@ -60,7 +59,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
       val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
-      updated(value.map(_.abortSequence(s.id)), logE)
+      noChange
 
     case RunStopFailed(s) =>
       noChange
@@ -296,9 +295,9 @@ object PotEq {
     override def eqv(a: Pot[A], b: Pot[A]): Boolean = a.state == b.state
   }
 
-  val seqexecQueueEq = potStateEq[SeqexecQueue]
+  val seqexecQueueEq = potStateEq[List[SequenceView]]
   val searchResultsEq = potStateEq[SearchResults]
-  val sequenceEq = potStateEq[Sequence]
+  val sequenceEq = potStateEq[SequenceView]
 }
 
 /**
@@ -328,7 +327,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val userLoginHandler       = new UserLoginHandler(zoomRW(_.user)((m, v) => m.copy(user = v)))
   val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.sequences)((m, v) => m.copy(sequences = v)))
   val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
