@@ -6,7 +6,7 @@ import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceView}
-import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
+import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue}
 import org.scalajs.dom.WebSocket
 
 import scalaz._
@@ -14,16 +14,10 @@ import Scalaz._
 
 // Actions
 
-// Request loading the queue
-case class UpdatedQueue(potResult: Pot[SeqexecQueue]) extends PotAction[SeqexecQueue, UpdatedQueue] {
-  override def next(newResult: Pot[SeqexecQueue]) = {
-    UpdatedQueue(newResult)
-  }
-}
 // Request a search
-case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Empty) extends PotAction[List[Sequence], SearchSequence] {
-  override def next(newResult: Pot[List[Sequence]]) = {
-    SearchSequence(criteria, newResult)
+case class LoadSequence(criteria: String, potResult: Pot[List[SequenceView]] = Empty) extends PotAction[List[SequenceView], LoadSequence] {
+  override def next(newResult: Pot[List[SequenceView]]) = {
+    LoadSequence(criteria, newResult)
   }
 }
 
@@ -41,10 +35,6 @@ case object CloseLoginBox extends Action
 case class LoggedIn(u: UserDetails) extends Action
 case object Logout extends Action
 
-// Action to add a sequence to the queue
-case class AddToQueue(s: Sequence) extends Action
-// Action to remove a sequence from the search results
-case class RemoveFromSearch(s: Sequence) extends Action
 // Action to select a sequence for display
 case class SelectToDisplay(s: SequenceView) extends Action
 
@@ -140,7 +130,7 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
                                loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
-                               searchResults: Pot[List[Sequence]],
+                               searchResults: Pot[List[SequenceView]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {

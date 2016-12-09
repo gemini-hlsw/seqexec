@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.services
 
 import java.util.logging.LogRecord
 
-import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
+import edu.gemini.seqexec.model.{NewBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
@@ -17,7 +17,7 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 /**
   * Encapsulates remote calls to the Seqexec Web API
   */
-object SeqexecWebClient {
+object SeqexecWebClient extends NewBooPicklers {
   val baseUrl = "/api/seqexec"
 
   // Decodes the binary response with BooPickle, errors are not handled
@@ -26,12 +26,12 @@ object SeqexecWebClient {
     Unpickle[A].fromBytes(ab)
   }
 
-  def read(id: String): Future[List[Sequence]] =
+  def read(id: String): Future[List[SequenceView]] =
     Ajax.get(
       url = s"$baseUrl/sequence/$id",
       responseType = "arraybuffer"
     )
-    .map(unpickle[List[Sequence]])
+    .map(unpickle[List[SequenceView]])
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
     }

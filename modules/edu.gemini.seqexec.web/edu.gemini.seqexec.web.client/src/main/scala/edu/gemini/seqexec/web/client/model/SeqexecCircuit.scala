@@ -12,6 +12,7 @@ import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
+import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import boopickle.Default._
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
@@ -23,43 +24,16 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz.{-\/, \/, \/-}
 
 /**
-  * Handles actions related to the queue like loading and adding new elements
-  */
-class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action: UpdatedQueue =>
-      // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
-      action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
-
-    case AddToQueue(s) =>
-      // Append to the current queue if not in the queue already
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} added to the queue")
-      val u = value.map(u => u.copy((s :: u.queue.filter(_.id != s.id)).reverse))
-      updated(u, logE)
-  }
-}
-
-/**
   * Handles actions related to search
   */
-class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
+class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action: SearchSequence =>
+    case action: LoadSequence =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
-    case RemoveFromSearch(s) =>
-      val empty = value.map(l => l.size == 1 && l.exists(_.id == s.id)).getOrElse(false)
-      // TODO, this should be an effect, but somehow it breaks the queue tracking
-      if (empty) {
-        SeqexecCircuit.dispatch(CloseSearchArea)
-      }
-      updated(value.map(_.filterNot(_ == s)))
   }
 }
 
@@ -254,7 +228,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     ws.onclose = onClose _
     Connecting
   }.recover {
-    case e: Throwable => NoAction
+    case _: Throwable => NoAction
   }
 
   // This is essentially a state machine to handle the connection status and
@@ -339,7 +313,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
-  type SearchResults = List[Sequence]
+  type SearchResults = List[SequenceView]
 
   val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
 
@@ -347,8 +321,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomRW(_.ws)((m, v) => m.copy(ws = v)))
-  val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
-  val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
+  val searchHandler          = new LoadHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
   val loginBoxHandler        = new LoginBoxHandler(zoomRW(_.loginBox)((m, v) => m.copy(loginBox = v)))
@@ -370,7 +343,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
 
   // Reader for search results
-  val searchResults: ModelR[SeqexecAppRootModel, Pot[List[Sequence]]] = zoom(_.searchResults)
+  val searchResults: ModelR[SeqexecAppRootModel, Pot[List[SequenceView]]] = zoom(_.searchResults)
 
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
@@ -387,7 +360,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    queueHandler,
     searchHandler,
     searchAreaHandler,
     devConsoleHandler,
