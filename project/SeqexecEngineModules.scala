@@ -16,6 +16,20 @@ trait SeqexecEngineModules {
   lazy val edu_gemini_seqexec_server = project
     .in(file("modules/edu.gemini.seqexec.server"))
     .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM)
+    .settings(
+      libraryDependencies ++=
+        Seq(ScalaZStream,
+            Argonaut,
+            CommonsHttp,
+            Squants.value,
+            // OCS bundles
+            SpModelCore,
+            SeqexecOdb,
+            POT,
+            EpicsACM,
+            Knobs
+        ) ++ TestLibs.value
+    )
 
   // This should eventually replaced by seqexec_server
   lazy val edu_gemini_seqexec_engine = project
