@@ -91,7 +91,7 @@ object SequenceState {
 }
 
 @Deprecated
-case class Sequence(id: String, state: SequenceState, instrument: Instrument.Instrument, steps: SequenceSteps, error: Option[String]) {
+case class Sequence(id: String, state: SequenceState, steps: SequenceSteps, error: Option[String]) {
 
   // Update the running state and mark the next step
   def abortAtNextStep: Sequence = state match {
@@ -126,7 +126,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
   // Make a virtual abort
   // TODO implement abort at the engine level
   def abortSequence(id: String): SeqexecQueue = copy(queue.collect {
-      case s @ Sequence(i, _, _, _, _) if i === id => s.abortAtNextStep
+      case s @ Sequence(i, _, _, _) if i === id => s.abortAtNextStep
       case s                                       => s
     })
 
@@ -136,7 +136,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
 
   // Update the sequence if found
   def sequenceRunning(id: String): SeqexecQueue = copy(queue.collect {
-    case s @ Sequence(i, _, _, _, _) if i === id =>
+    case s @ Sequence(i, _, _, _) if i === id =>
       (for {
         _ <- stepRunning(s, 0)
         t <- Sequence.stateLens := SequenceState.Running
@@ -146,7 +146,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
 
   // Update the sequence as done if found
   def sequenceCompleted(id: String): SeqexecQueue = copy(queue.collect {
-      case s @ Sequence(i, _, _, _, _) if i === id => (Sequence.stateLens := SequenceState.Completed).exec(s)
+      case s @ Sequence(i, _, _, _) if i === id => (Sequence.stateLens := SequenceState.Completed).exec(s)
       case s                                       => s
     })
 
@@ -171,7 +171,7 @@ case class SeqexecQueue(queue: List[Sequence]) {
 
   // Update a step of a sequence
   def markStepAsCompleted(id: String, step: Int, fileId: String): SeqexecQueue = copy(queue.collect {
-      case s @ Sequence(i, _, _, _, _) if i === id => Sequence.step(step).flatMap {
+      case s @ Sequence(i, _, _, _) if i === id => Sequence.step(step).flatMap {
         // The step maybe was aborted, in that case mark the sequence as aborted too
         case Some(Step(_, StepState.Abort, _, _)) =>
           stepAborted(s, step, fileId)
@@ -180,14 +180,4 @@ case class SeqexecQueue(queue: List[Sequence]) {
       }.exec(s)
       case s                                       => s
     })
-}
-
-@Deprecated
-object Instrument {
-  // Placeholder for the instrument type
-  type Instrument = String
-
-  // TODO Replace these for  a real list of instruments
-  // TODO This list should be site-specific
-  val instruments = NonEmptyList[Instrument]("Flamingos2", List[Instrument]("GMOS-S", "GPI", "GSAOI"): _*)
 }

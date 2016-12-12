@@ -33,6 +33,7 @@ object SharedModel {
   type StepConfig = Map[SystemName, Parameters]
   // TODO This should be a richer type
   type SequenceId = String
+  type Instrument = String
 
   sealed trait StepState
   object StepState {
@@ -79,7 +80,7 @@ object SharedModel {
     * Metadata about the sequence required on the exit point
     */
   // TODO Une a proper instrument class
-  case class SequenceMetadata(instrument: String)
+  case class SequenceMetadata(instrument: Instrument)
 
   case class SequenceView (
     id: SequenceId,
