@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react._
-import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView}
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._

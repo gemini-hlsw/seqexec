@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.StepConfig
+import edu.gemini.seqexec.model.Model.StepConfig
 
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 

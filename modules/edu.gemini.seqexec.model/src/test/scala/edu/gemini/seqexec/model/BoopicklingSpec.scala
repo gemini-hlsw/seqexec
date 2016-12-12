@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.model
 
-import SharedModel._
-import SharedModel.SeqexecEvent._
+import Model._
+import Model.SeqexecEvent._
 import boopickle.Default._
 import org.scalacheck.Arbitrary
 import org.scalatest.{FlatSpec, Matchers}
@@ -28,7 +28,7 @@ object SharedModelArbitraries {
 /**
   * Tests Serialization/Deserialization using BooPickle
   */
-class NewBoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with NewBooPicklers {
+class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with ModelBooPicklers {
   import SharedModelArbitraries._
 
   def testPickleUnpickle[A](implicit pickler: Pickler[A], arb: Arbitrary[A]) = {

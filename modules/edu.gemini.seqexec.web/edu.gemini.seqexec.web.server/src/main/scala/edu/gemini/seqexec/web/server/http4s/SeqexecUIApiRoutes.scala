@@ -5,8 +5,8 @@ import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceId, SequencesQueue}
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
+import edu.gemini.seqexec.model.Model.{SeqexecEvent, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
@@ -28,7 +28,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with NewBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
 
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")

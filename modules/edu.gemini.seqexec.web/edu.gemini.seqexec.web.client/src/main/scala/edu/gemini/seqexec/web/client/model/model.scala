@@ -5,7 +5,7 @@ import java.time.LocalTime
 import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.seqexec.model.SharedModel._
+import edu.gemini.seqexec.model.Model._
 import org.scalajs.dom.WebSocket
 
 import scalaz._

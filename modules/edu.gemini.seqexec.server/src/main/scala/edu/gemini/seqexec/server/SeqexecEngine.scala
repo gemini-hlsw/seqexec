@@ -11,8 +11,8 @@ import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 import knobs._
-import edu.gemini.seqexec.model.SharedModel._
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
+import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.spModel.core.Peer
 
 /**

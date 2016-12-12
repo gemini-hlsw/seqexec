@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView, Step, StepState}
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState}
 
 import scalaz.Show
 

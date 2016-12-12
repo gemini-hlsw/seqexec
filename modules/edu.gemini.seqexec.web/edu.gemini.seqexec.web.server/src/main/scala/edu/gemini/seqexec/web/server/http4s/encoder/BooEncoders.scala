@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server.http4s.encoder
 
 import edu.gemini.seqexec.model._
-import edu.gemini.seqexec.model.SharedModel.{SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue}
 import edu.gemini.seqexec.web.common._
 import boopickle.Default._
 

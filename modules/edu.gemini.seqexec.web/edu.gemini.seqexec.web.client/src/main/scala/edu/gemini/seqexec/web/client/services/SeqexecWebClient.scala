@@ -2,12 +2,12 @@ package edu.gemini.seqexec.web.client.services
 
 import java.util.logging.LogRecord
 
-import edu.gemini.seqexec.model.{NewBooPicklers, UserDetails, UserLoginRequest}
+import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.{SequenceId, SequencesQueue, SequenceView}
+import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue, SequenceView}
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
@@ -17,7 +17,7 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 /**
   * Encapsulates remote calls to the Seqexec Web API
   */
-object SeqexecWebClient extends NewBooPicklers {
+object SeqexecWebClient extends ModelBooPicklers {
   val baseUrl = "/api/seqexec"
 
   // Decodes the binary response with BooPickle, errors are not handled

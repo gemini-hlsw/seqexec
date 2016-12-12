@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.SharedModel.StepConfig
+import edu.gemini.seqexec.model.Model.StepConfig
 
 import scalaz._
 import Scalaz._
@@ -8,7 +8,7 @@ import org.scalatest.FlatSpec
 
 import scalaz.concurrent.Task
 
-import edu.gemini.seqexec.model.SharedModel.StepState
+import edu.gemini.seqexec.model.Model.StepState
 
 /**
   * Created by jluhrs on 9/29/16.

@@ -1,15 +1,15 @@
 package edu.gemini.seqexec.model
 
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel._
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
+import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.SeqexecEvent._
 
 /**
   * Contains boopickle implicit picklers of model objects
   * Boopickle can auto derived encoders but it is preferred to make
   * them explicitly
   */
-trait NewBooPicklers {
+trait ModelBooPicklers {
 
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
@@ -40,7 +40,7 @@ trait NewBooPicklers {
 
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
-  implicit val eventsPickler = compositePickler[SharedModel.SeqexecEvent]
+  implicit val eventsPickler = compositePickler[Model.SeqexecEvent]
     .addConcreteType[ConnectionOpenEvent]
     .addConcreteType[SequenceStart]
     .addConcreteType[StepExecuted]
@@ -55,7 +55,7 @@ trait NewBooPicklers {
     * In most cases http4s will use the limit of a byte buffer but not for websockets
     * This method trims the binary array to be sent on the WS channel
     */
-  def newTrimmedArray(e: SharedModel.SeqexecEvent): Array[Byte] = {
+  def newTrimmedArray(e: Model.SeqexecEvent): Array[Byte] = {
     val byteBuffer = Pickle.intoBytes(e)
     val bytes = new Array[Byte](byteBuffer.limit())
     byteBuffer.get(bytes, 0, byteBuffer.limit)

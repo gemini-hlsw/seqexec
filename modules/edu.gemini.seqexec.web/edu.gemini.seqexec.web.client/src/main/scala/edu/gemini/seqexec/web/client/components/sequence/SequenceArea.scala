@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
-import edu.gemini.seqexec.model.SharedModel.{SequenceState, SequenceView, StepState}
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, StepState}
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._

@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.common
 
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.StepConfig
+import edu.gemini.seqexec.model.Model.StepConfig
 
 sealed trait CliCommand {
   def command: String

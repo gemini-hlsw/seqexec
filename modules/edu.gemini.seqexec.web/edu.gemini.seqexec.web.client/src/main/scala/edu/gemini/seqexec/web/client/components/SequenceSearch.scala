@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.SharedModel.{SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon

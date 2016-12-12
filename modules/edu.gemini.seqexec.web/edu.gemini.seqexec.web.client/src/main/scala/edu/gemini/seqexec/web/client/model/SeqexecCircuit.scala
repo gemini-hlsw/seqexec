@@ -6,15 +6,15 @@ import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
-import edu.gemini.seqexec.model.{NewBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceId, SequenceView, SequencesQueue}
+import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
+import edu.gemini.seqexec.model.Model.{SeqexecEvent, SequenceId, SequenceView, SequencesQueue}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -178,7 +178,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles the WebSocket connection and performs reconnection if needed
   */
-class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with NewBooPicklers {
+class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with ModelBooPicklers {
   // Import explicitly the custom pickler
   implicit val runner = new RunAfterJS
 

@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.config2.{Config, ItemKey}
-import edu.gemini.seqexec.model.SharedModel.StepConfig
+import edu.gemini.seqexec.model.Model.StepConfig
 
 import java.beans.PropertyDescriptor
 

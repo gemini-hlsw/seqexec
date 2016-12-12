@@ -2,7 +2,7 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
-import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig}
 import org.scalatest.FlatSpec
 
 import scalaz._

@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.model
 
-object SharedModel {
+object Model {
 
   sealed trait SeqexecEvent
   object SeqexecEvent {
