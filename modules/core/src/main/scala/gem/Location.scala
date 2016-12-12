@@ -46,15 +46,15 @@ object Location {
 
   /** A Location that falls somewhere between the Beginning and End.
     */
-  sealed abstract case class Middle(posList: OneAnd[IList, Int]) extends Location {
+  sealed abstract case class Middle(posList: OneAnd[Vector, Int]) extends Location {
     def positions: Stream[Int] =
       posList.toStream #::: Stream.continually(Int.MinValue)
 
     def toIList: IList[Int] =
-      posList.head +: posList.tail
+      IList.fromFoldable(posList.head +: posList.tail)
 
     def toList: List[Int] =
-      posList.head :: posList.tail.toList
+      posList.head +: posList.tail.toList
 
     protected def minPrefixLength: Int =
       1 + posList.tail.length
@@ -82,30 +82,36 @@ object Location {
   // Constructors
 
   def apply(is: Int*): Location =
-    fromTrimmedIList(IList(is: _*))
+    fromTrimmedFoldable(is)(new Foldable[Seq] with Foldable.FromFoldr[Seq] {
+      def foldRight[A, B](fa: Seq[A], z: => B)(f: (A, => B) => B): B =
+        fa.foldRight(z) { (a, b) => f(a, b) }
+    })
 
   def fromFoldable[F[_]: Foldable](fi: F[Int]): Location =
-    fromTrimmedIList(IList.fromFoldable(fi))
+    fromTrimmedFoldable(fi)
 
-  private def fromTrimmedIList(is: IList[Int]): Location =
-    is.dropRightWhile(_ === Int.MinValue) match {
-      case INil()      => Beginning
-      case ICons(h, t) => new Location.Middle(OneAnd(h, t)) {}
+  def fromTrimmedFoldable[F[_]: Foldable](fi: F[Int]): Location = {
+    fi.foldRight(Vector.empty[Int]) { (i, v) =>
+      (v.isEmpty && i === Int.MinValue) ? v | i +: v
+    } match {
+      case h +: t => new Middle(OneAnd(h, t)) {}
+      case _      => Beginning
     }
+  }
 
   /** Assuming not all provided Ints are `Int.MinValue`, produces a `Middle`
     * `Location`.
     */
-  def unsafeMiddle(i: Int, is: Int*): Location.Middle =
+  def unsafeMiddle(i: Int, is: Int*): Middle =
     unsafeMiddle(i :: is.toList)
 
   /** Assuming not all provided Ints are `Int.MinValue`, produces a `Middle`
     * `Location`.
     */
-  def unsafeMiddle[F[_]: Foldable](fi: F[Int]): Location.Middle =
+  def unsafeMiddle[F[_]: Foldable](fi: F[Int]): Middle =
     fromFoldable(fi) match {
-      case m: Location.Middle => m
-      case _                  => sys.error("Location arguments do not form a Middle position: " + fi.toList.mkString(", "))
+      case m: Middle => m
+      case _         => sys.error("Location arguments do not form a Middle position: " + fi.toList.mkString(", "))
     }
 
 
@@ -121,7 +127,7 @@ object Location {
     * @return sorted list of `Location` where every element is GT l0 and LT l1
     *         (or vice versa if l0 is GT l1)
     */
-  def find(count: Int, start: Location, end: Location): IList[Location.Middle] = {
+  def find(count: Int, start: Location, end: Location): IList[Middle] = {
     val Zero  = BigInt(0)
     val One   = BigInt(1)
     val Max   = BigInt(Int.MaxValue)
@@ -133,18 +139,18 @@ object Location {
         (acc + (BigInt(i) + Min.abs) * pow, pow * Radix)
       }._1
 
-    def fromBase10(bi: BigInt): Location.Middle = {
+    def fromBase10(bi: BigInt): Middle = {
       @tailrec
-      def go(rem: BigInt, tail: IList[Int]): Location.Middle = {
+      def go(rem: BigInt, tail: Vector[Int]): Middle = {
         val (a, b) = rem /% Radix
         val head   = (b + Min).intValue
-        if (a === Zero) new Location.Middle(OneAnd(head, tail)) {} else go(a, head +: tail)
+        if (a === Zero) new Middle(OneAnd(head, tail)) {} else go(a, head +: tail)
       }
-      go(bi, IList.empty)
+      go(bi, Vector.empty)
     }
 
     @tailrec
-    def go(len: Int): IList[Location.Middle] = {
+    def go(len: Int): IList[Middle] = {
       val start10 = toBase10(start, len)
       val end10   = toBase10(end, len)
       val avail   = end10 - start10 - One
@@ -157,7 +163,7 @@ object Location {
       }
     }
 
-    if ((count <= 0) || (start >= end)) INil[Location.Middle]
+    if ((count <= 0) || (start >= end)) INil[Middle]
     else go(start.minPrefixLength max end.minPrefixLength)
   }
 
