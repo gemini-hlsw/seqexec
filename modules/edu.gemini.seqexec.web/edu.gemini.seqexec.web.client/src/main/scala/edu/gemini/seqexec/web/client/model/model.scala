@@ -6,7 +6,6 @@ import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.SharedModel._
-import edu.gemini.seqexec.web.common.SeqexecQueue
 import org.scalajs.dom.WebSocket
 
 import scalaz._
@@ -132,7 +131,6 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
                                sequences: List[SequenceView],
-                               queue: Pot[SeqexecQueue],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                loginBox: SectionVisibilityState,
@@ -142,6 +140,6 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Nil, Empty,
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Nil,
     SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

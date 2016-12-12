@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.model
 import diode.ActionResult.{ModelUpdate, ModelUpdateEffect}
 import diode.RootModelRW
 import diode.data._
-import edu.gemini.seqexec.web.common.{ArbitrariesWebCommon, Sequence}
+import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 

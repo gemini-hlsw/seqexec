@@ -25,6 +25,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
   // a special crossProject for configuring a JS/JVM/shared structure
   lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
     .settings(commonSettings: _*)
+    .dependsOn(edu_gemini_seqexec_model)
     .jvmSettings(
     )
     .jsSettings(

@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.model
 
 import diode.data._
-import edu.gemini.seqexec.web.common.{ArbitrariesWebCommon, Instrument}
+import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 
@@ -21,7 +21,7 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =
     Arbitrary {
       for {
-        i <- Gen.oneOf(Instrument.instruments.list.toList)
+        i <- Gen.oneOf(InstrumentNames.instruments.list.toList)
         idx <- arbitrary[Option[Int]]
       } yield SequenceTab(i, SequencesOnDisplay.emptySeqRef, idx)
     }

@@ -9,13 +9,14 @@ import org.scalajs.dom.document
 import org.scalajs.dom.ext.Ajax
 import org.querki.jquery.$
 import JQueryTerminal.{Terminal, _}
-import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig, StepConfig}
+import edu.gemini.seqexec.web.common.{CliCommand, SequenceConfig}
 import edu.gemini.seqexec.model.{UserDetails, UserLoginRequest}
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import boopickle.Default._
+import edu.gemini.seqexec.model.SharedModel.StepConfig
 
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 
@@ -102,17 +103,17 @@ object SeqexecTerminal extends js.JSApp {
   }
 
   object ShowHandler extends CommandHandler {
-    def width(ks: List[StepConfig]): Int = ks match {
-      case Nil => 0
-      case _   => ks.map(_.key.length).max
+    def width(ks: StepConfig): Int = ks match {
+      case m if m.isEmpty => 0
+      case _              => ks.map(_._2.length).max
     }
 
     def staticResponse(c: CliCommand) = c match {
       case SequenceConfig(_, _, _, k) =>
         val pad = width(k)
-        k.sortBy(_.key).map(s => {
-          val paddedKey = s"%-${pad}s".format(s.key)
-          s"$paddedKey -> ${s.value}"}).mkString("\n")
+        k.toList.sortBy(_._1).map(s => {
+          val paddedKey = s"%-${pad}s".format(s._2)
+          s"$paddedKey -> ${s._2}"}).mkString("\n")
       case _                          => defaultResponse(c)
     }
 

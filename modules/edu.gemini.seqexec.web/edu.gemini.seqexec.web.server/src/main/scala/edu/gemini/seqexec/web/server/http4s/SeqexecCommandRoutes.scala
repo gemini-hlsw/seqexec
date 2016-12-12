@@ -30,7 +30,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
     case req @ GET  -> Root  / obsId / "count" =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
-    case req @ GET  -> Root  / obsId / "static" =>
+    /*case req @ GET  -> Root  / obsId / "static" =>
       Ok(toSequenceConfig("show", commands.showStatic(obsId)))
 
     case req @ GET  -> Root  / obsId / "static" / system =>
@@ -40,7 +40,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
       Ok(toSequenceConfig("show", commands.showDynamic(obsId, step)))
 
     case req @ GET  -> Root  / obsId / "dynamic" / step / system =>
-      Ok(toSequenceConfig("show", commands.showDynamic(obsId, step, system)))
+      Ok(toSequenceConfig("show", commands.showDynamic(obsId, step, system)))*/
 
     case req @ POST -> Root  / obsId / "run" =>
       Ok(toCommandResult("run", commands.run(obsId)))
@@ -51,8 +51,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
     case req @ POST -> Root  / obsId / "continue" =>
       Ok(toCommandResult("continue", commands.continue(obsId)))
 
-    case req @ GET  -> Root  / obsId / "state" =>
-      Ok(toSequenceConfig("state", commands.state(obsId)))
+    /*case req @ GET  -> Root  / obsId / "state" =>
+      Ok(toSequenceConfig("state", commands.state(obsId)))*/
 
     // New SeqexecEngine
 
