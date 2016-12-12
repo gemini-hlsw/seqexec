@@ -5,7 +5,9 @@ import edu.gemini.seqexec.model.SharedModel._
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
 
 /**
-  * Contains http4s implicit encoders of model objects
+  * Contains boopickle implicit picklers of model objects
+  * Boopickle can auto derived encoders but it is preferred to make
+  * them explicitly
   */
 trait NewBooPicklers {
 
@@ -33,6 +35,8 @@ trait NewBooPicklers {
     .addConcreteType[StandardStep]
 
   implicit val stepConfigPickler = generatePickler[SequenceView]
+
+  implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[SequenceId]]
 
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js

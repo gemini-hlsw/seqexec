@@ -7,7 +7,7 @@ import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{NewBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceView}
+import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceId, SequenceView, SequencesQueue}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
@@ -180,8 +180,6 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with NewBooPicklers {
   // Import explicitly the custom pickler
-  import SeqexecEvent._
-
   implicit val runner = new RunAfterJS
 
   val logger = Logger.getLogger(this.getClass.getSimpleName)
@@ -312,7 +310,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
-  type SearchResults = List[SequenceView]
+  type SearchResults = SequencesQueue[SequenceId]
 
   val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
 
@@ -335,14 +333,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Some useful readers
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: String):ModelR[_, Option[SequenceView]] =
+  def sequenceReader(id: SequenceId):ModelR[_, Option[SequenceView]] =
     zoom(_.sequences.find(_.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
 
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
 
   // Reader for search results
-  val searchResults: ModelR[SeqexecAppRootModel, Pot[List[SequenceView]]] = zoom(_.searchResults)
+  val searchResults: ModelR[SeqexecAppRootModel, Pot[SequencesQueue[SequenceId]]] = zoom(_.searchResults)
 
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
@@ -354,7 +352,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     * Makes a reference to a sequence on the queue.
     * This way we have a normalized model and need to update it in only one place
     */
-  def sequenceRef(id: String): RefTo[Option[SequenceView]] =
+  def sequenceRef(id: SequenceId): RefTo[Option[SequenceView]] =
     RefTo(sequenceReader(id))
 
   override protected def actionHandler = composeHandlers(

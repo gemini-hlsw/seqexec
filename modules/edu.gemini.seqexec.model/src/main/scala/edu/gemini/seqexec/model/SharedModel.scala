@@ -31,6 +31,8 @@ object SharedModel {
   type ParamValue = String
   type Parameters = Map[ParamName, ParamValue]
   type StepConfig = Map[SystemName, Parameters]
+  // TODO This should be a richer type
+  type SequenceId = String
 
   sealed trait StepState
   object StepState {
@@ -80,12 +82,18 @@ object SharedModel {
   case class SequenceMetadata(instrument: String)
 
   case class SequenceView (
-    id: String,
+    id: SequenceId,
     metadata: SequenceMetadata,
     status: SequenceState,
     steps: List[Step],
     willStopIn: Option[Int]
   )
+
+  /**
+    * Represents a queue with different levels of details. E.g. it could be a list of Ids
+    * Or a list of fully hydrated SequenceViews
+    */
+  case class SequencesQueue[T](queue: List[T])
 
   // Log message types
   type Time = java.time.Instant

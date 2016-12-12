@@ -22,6 +22,7 @@ object SharedModelArbitraries {
   implicit val smeArb = implicitly[Arbitrary[StepSkipMarkChanged]]
   implicit val speArb = implicitly[Arbitrary[SequencePauseRequested]]
   implicit val lmArb  = implicitly[Arbitrary[NewLogMessage]]
+  implicit val sqiArb = implicitly[Arbitrary[SequencesQueue[SequenceId]]]
 }
 
 /**
@@ -51,5 +52,6 @@ class NewBoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with
     testPickleUnpickle[StepSkipMarkChanged]
     testPickleUnpickle[SequencePauseRequested]
     testPickleUnpickle[NewLogMessage]
+    testPickleUnpickle[SequencesQueue[SequenceId]]
   }
 }

@@ -5,7 +5,7 @@ import java.time.LocalTime
 import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceView}
+import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceId, SequencesQueue, SequenceView}
 import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue}
 import org.scalajs.dom.WebSocket
 
@@ -15,8 +15,8 @@ import Scalaz._
 // Actions
 
 // Request a search
-case class LoadSequence(criteria: String, potResult: Pot[List[SequenceView]] = Empty) extends PotAction[List[SequenceView], LoadSequence] {
-  override def next(newResult: Pot[List[SequenceView]]) = {
+case class LoadSequence(criteria: String, potResult: Pot[SequencesQueue[SequenceId]] = Empty) extends PotAction[SequencesQueue[SequenceId], LoadSequence] {
+  override def next(newResult: Pot[SequencesQueue[SequenceId]]) = {
     LoadSequence(criteria, newResult)
   }
 }
@@ -130,7 +130,7 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
                                loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
-                               searchResults: Pot[List[SequenceView]],
+                               searchResults: Pot[SequencesQueue[SequenceId]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {

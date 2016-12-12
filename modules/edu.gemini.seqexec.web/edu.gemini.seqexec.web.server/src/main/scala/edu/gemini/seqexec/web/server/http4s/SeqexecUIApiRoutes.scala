@@ -5,7 +5,7 @@ import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
+import edu.gemini.seqexec.model.SharedModel.{SeqexecEvent, SequenceId, SequencesQueue}
 import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
@@ -107,13 +107,16 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
           case req @ GET -> Root / "seqexec" / "sequence" / oid =>
             val user = userInRequest(req)
             user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              for {
+              val r = for {
                 obsId <-
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
-                      .fold(e => Task.fail(e), Task.now)
+                      .fold(Task.fail, Task.now)
                 _     <- se.load(inputQueue, obsId)
-                resp  <- Ok(s"Loaded sequence $obsId")
+                resp  <- Ok(SequencesQueue[SequenceId](List(oid)))
               } yield resp
+              r.handleWith {
+                case _ => NotFound(s"Not found sequence $oid")
+              }
             }
 
         }

@@ -7,7 +7,7 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.SequenceView
+import edu.gemini.seqexec.model.SharedModel.{SequenceId, SequencesQueue, SequenceView}
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
@@ -26,14 +26,14 @@ object SeqexecWebClient extends NewBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def read(id: String): Future[List[SequenceView]] =
+  def read(id: String): Future[SequencesQueue[SequenceId]] =
     Ajax.get(
       url = s"$baseUrl/sequence/$id",
       responseType = "arraybuffer"
     )
-    .map(unpickle[List[SequenceView]])
+    .map(unpickle[SequencesQueue[SequenceId]])
     .recover {
-      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => Nil // If not found, we'll consider it like an empty response
+      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => SequencesQueue(Nil) // If not found, we'll consider it like an empty response
     }
 
   def readQueue(): Future[SeqexecQueue] =
