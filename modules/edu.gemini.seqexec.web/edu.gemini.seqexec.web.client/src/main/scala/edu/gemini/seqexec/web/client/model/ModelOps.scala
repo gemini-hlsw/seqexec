@@ -12,6 +12,7 @@ object ModelOps {
     case SequenceState.Completed => "Complete"
     case SequenceState.Running   => "Running"
     case SequenceState.Idle      => "Idle"
+    case SequenceState.Error(e)  => s"Error $e"
   }
 
   implicit val steStateShow = Show.shows[StepState] {
@@ -28,7 +29,7 @@ object ModelOps {
     // Returns where on the sequence the execution is at
     def runningStep: Option[(Int, Int)] = s.status match {
       case SequenceState.Running    => Some(progress)
-      //case SequenceState.Error      => Some(progress)
+      case SequenceState.Error(_)   => Some(progress)
       case _                        => None
     }
 

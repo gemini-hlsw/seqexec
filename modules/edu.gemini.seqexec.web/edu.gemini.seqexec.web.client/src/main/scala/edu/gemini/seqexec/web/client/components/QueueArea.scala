@@ -5,7 +5,7 @@ import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched, IconAttention}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
@@ -70,7 +70,7 @@ object QueueTableBody {
                   s.status match {
                     case SequenceState.Completed                   => IconCheckmark
                     case SequenceState.Running                     => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                    //case SequenceState.Error | SequenceState.Abort => IconAttention
+                    case SequenceState.Error(_)                    => IconAttention
                     case _                                         => iconEmpty
                   }
                 ),
@@ -82,7 +82,6 @@ object QueueTableBody {
                 <.td(
                   p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
                   s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
-                  //s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
                 ),
                 <.td(
                   p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,

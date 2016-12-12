@@ -10,10 +10,8 @@ trait ArbitrariesWebCommon {
   implicit val arbLevel: Arbitrary[LogMessage] =
     Arbitrary {
       for {
-        m  <- arbitrary[String]
+        m <- arbitrary[String]
         l <- Gen.oneOf(Seq(Level.SEVERE, Level.WARNING, Level.INFO, Level.CONFIG, Level.FINE, Level.FINER, Level.FINEST))
-      } yield {
-        LogMessage(l, m)
-      }
+      } yield LogMessage(l, m)
     }
 }
