@@ -36,12 +36,6 @@ object SeqexecWebClient extends NewBooPicklers {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  => SequencesQueue(Nil) // If not found, we'll consider it like an empty response
     }
 
-  def readQueue(): Future[SeqexecQueue] =
-    Ajax.get(
-      url = s"$baseUrl/current/queue",
-      responseType = "arraybuffer"
-    ).map(unpickle[SeqexecQueue])
-
   /**
     * Requests the backend to execute a sequence
     */

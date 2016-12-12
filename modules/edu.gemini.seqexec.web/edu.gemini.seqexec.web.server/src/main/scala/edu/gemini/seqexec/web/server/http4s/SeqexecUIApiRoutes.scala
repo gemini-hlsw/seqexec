@@ -10,7 +10,6 @@ import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import org.http4s._
@@ -49,8 +48,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
   val tokenAuthService = JwtAuthentication(auth)
 
   val publicService: HttpService = GZip { HttpService {
-    case GET -> Root / "seqexec" / "current" / "queue"     =>
-      Ok(CannedModel.currentQueue)
 
     case req @ POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
