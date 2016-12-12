@@ -21,14 +21,13 @@ trait SeqexecEngineModules {
   lazy val edu_gemini_seqexec_engine = project
     .in(file("modules/edu.gemini.seqexec.engine"))
     .dependsOn(edu_gemini_seqexec_model_JVM)
+    .settings(libraryDependencies ++= Seq(ScalaZStream) ++ TestLibs.value)
 
   // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
   // We have to define the project properties at this level
   lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
     .in(file("modules/edu.gemini.seqexec.model"))
-    .settings(
-      libraryDependencies ++= Seq(BooPickle.value) ++ TestLibs.value
-    )
+    .settings(libraryDependencies ++= Seq(BooPickle.value) ++ TestLibs.value)
 
   lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
 
