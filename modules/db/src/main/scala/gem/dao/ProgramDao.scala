@@ -10,6 +10,8 @@ import edu.gemini.spModel.core.ProgramId._
 import doobie.imports._
 import doobie.contrib.postgresql.syntax._
 
+import java.util.{Calendar, GregorianCalendar}
+
 import scalaz._, Scalaz._
 
 object ProgramDao {
@@ -49,7 +51,12 @@ object ProgramDao {
                    ${pid.index})
     """.update.run
 
-  private def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
+  private def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] = {
+    val cal = new GregorianCalendar(pid.siteVal.timezone())
+    // Calendar month is 0-based, day starts at 2PM / 14:00 local time
+    cal.set(pid.year, pid.month - 1, pid.day, 14, 0, 0)
+    cal.set(Calendar.MILLISECOND, 0)
+
     sql"""
       INSERT INTO program (program_id,
                           site,
@@ -58,8 +65,9 @@ object ProgramDao {
             VALUES (${pid: Program.Id},
                     ${pid.siteVal.toString},
                     ${pid.ptypeVal.toString},
-                    ${new java.util.Date(pid.year + "/" + pid.month + "/" + pid.day)}) -- TODO: not this
+                    ${cal.getTime})
     """.update.run
+  }
 
   private def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
     pid.semester.traverse(SemesterDao.canonicalize) *>
