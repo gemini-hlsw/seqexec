@@ -20,9 +20,11 @@ lazy val commonSettings = Seq(
 )
 
 lazy val flywaySettings = Seq(
-  flywayUrl             := "jdbc:postgresql:gem",
-  flywayUser            := "postgres",
-  flywayLocations       := Seq("filesystem:sql")
+  flywayUrl  := "jdbc:postgresql:gem",
+  flywayUser := "postgres",
+  flywayLocations := Seq(
+    s"filesystem:${baseDirectory.value}/src/main/resources/db/migration"
+  )
 )
 
 // N.B. `describe` is not a project yet. It doesn't quite compile. Will need some rejiggering.
@@ -96,14 +98,19 @@ lazy val service = project
   .settings(commonSettings)
 
 lazy val sql = project
-  .in(file("sql"))
-  .settings(flywaySettings)
+  .in(file("modules/sql"))
+  .settings(commonSettings ++ flywaySettings)
+  .settings(
+    libraryDependencies += "org.flywaydb" % "flyway-core" % "4.0.3"
+  )
 
 lazy val telnetd = project
   .in(file("modules/telnetd"))
-  .dependsOn(service)
+  .dependsOn(service, sql)
+  .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
-    libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0"
+    libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0",
+    dockerExposedPorts  := List(6666)
   )

@@ -1,0 +1,169 @@
+#!/bin/bash
+
+HOST=localhost
+NET=GemNet
+
+# Create a new Postgres container with the specified deployment number.
+# Usage: createDatabaseContainer <int>
+createDatabaseContainer() {
+  echo "[gemctl] Deploying Postgres container db-$1."
+  docker run --detach                 \
+             --net=$NET               \
+             --label gemini.db        \
+             --label gemini.deploy=$1 \
+             --name db-$1             \
+             postgres:9.6.0   > /dev/null
+}
+
+# Create the `gem` database on the Postgres container with the specified deployment number. Since
+# this is called immediately after `createDatabaseContainer` we include code to retry if the
+# database isn't up yet.
+# Usage: createDatabase <int>
+createDatabase() {
+  echo "[gemctl] Creating database."
+  until docker exec db-$1                                \
+                    psql --host=db-$1                    \
+                         --command='create database gem' \
+                         --username=postgres  &> /dev/null
+  do
+    sleep 0.75
+  done
+}
+
+
+# Create a new Gem container with the specified deployment number, exposing the telnet port as
+# localhost port 1234. Note that the server will fail to start if the port is in use; there can
+# only be one running Gem container at a time.
+# Usage: gem <deploy-id>
+createGemContainer() {
+  echo "[gemctl] Creating Gem container gem-$1."
+  docker run --detach                                     \
+             --tty                                        \
+             --interactive                                \
+             --net=$NET                                   \
+             --label gemini.gem                           \
+             --label gemini.deploy=$1                     \
+             --name gem-$1                                \
+             --publish 6666                               \
+             --env GEM_DB_URL=jdbc:postgresql://db-$1/gem \
+             telnetd:0.1-SNAPSHOT > /dev/null
+  port=$(docker inspect -f '{{ (index (index .NetworkSettings.Ports "6666/tcp") 0).HostPort }}' gem-$1)
+  echo "[gemctl] Telnet is exposed on $port."
+}
+
+# Stop (if needed) and remove all containers. This is just for development really; it's very
+# destructuve.
+# Usage: clean
+clean() {
+  echo "[gemctl] TODO: prompt for confirmation."
+  echo "[gemctl] Stopping and removing all containers."
+  docker stop $(docker ps -a -q) &> /dev/null
+  docker rm   $(docker ps -a -q) &> /dev/null
+}
+
+# Perform an "initial" deployment which will have deployment ID 1. This assumes you have already
+# checked to be sure there are no other deployments here.
+# Usage: deployInitial
+deployInitial() {
+  echo "[gemctl] This is the first deployment on $HOST."
+  createDatabaseContainer 1
+  createDatabase 1
+  createGemContainer 1
+  echo "[gemctl] *** TODO: import existing data. We will need a mount point and machinery for this."
+}
+
+# Copy data from `oldDb` to `newDb`.
+# Usage: copyDatabase old new
+copyDatabase() {
+  echo "[gemctl] Copying data from $1 into $2."
+  docker run --rm           \
+             --net=$NET     \
+             postgres:9.6.0 \
+    sh -c "pg_dump -h $1 -U postgres gem | psql -h $2 -U postgres -d gem" > /dev/null
+}
+
+# Stop the given container.
+# Usage: stop id
+stop() {
+  echo "[gemctl] Stopping container $1."
+  docker stop $1 &> /dev/null
+}
+
+# Echo the container IDs of database containers with the given label, both running and stopped.
+# Usage: ids=($(containersWithLabel gemini.db))
+containersWithLabel() {
+  echo $(docker ps -q -a --filter label=$1)
+}
+
+# Echo the maximum deployment ID for the given container IDs.
+# Usage: max=$(maxDeployId 876 809 233)
+#        max=$(maxDeployId ${ids[*]})
+maxDeployId() {
+  arr=($(docker inspect --format "{{ index .Config.Labels \"gemini.deploy\"}}" $@))
+  current=${arr[0]}
+  for n in "${arr[@]}" ; do
+      ((n > current)) && current=$n
+  done
+  echo $current
+}
+
+# Show some information about deployed containers.
+# Usage: ps
+ps() {
+  docker inspect --format "{{ index .Config.Labels \"gemini.deploy\"}} {{ .Name }} {{ .State.Status }}" $(docker ps -a -q --filter label=gemini.deploy)
+}
+
+# Show a usage messsage.
+# Usage: usage
+usage() {
+  echo "Usage: gemctl [clean | deploy]"
+  echo "  clean   Stop and remove all containers"
+  echo "  deploy  Deploy a new version of gem on localhost"
+  echo "  ps      Show some information on containers"
+}
+
+tryDeploy() {
+
+  # Get the ids, total, and current/next deployment number for db containers
+  ids=($(containersWithLabel gemini.db))
+  total=${#ids[@]}
+  current=$(maxDeployId ${ids[*]})
+  next=$((current + 1))
+
+  # switch on the size of the array
+  case $total in
+    0)  deployInitial;;
+    *)  echo "[gemctl] Found $total existing deployment(s) on $HOST. Current is $current."
+        # Find the id of the *running* current deployed db, if any.
+        rids=($(docker ps -q --filter label=gemini.db --filter label=gemini.deploy=$current))
+        case ${#rids[@]} in
+          0) echo "[gemctl] *** ERROR: The current deployed database container is stopped. Please start it."
+             exit -1
+             ;;
+          1) oldDb=${rids[0]}
+             echo "[gemctl] Located current database container for deploy $current."
+             createDatabaseContainer $next
+             createDatabase $next
+             copyDatabase $oldDb db-$next
+             stop gem-$current
+             createGemContainer $next
+             ;;
+          2) echo "[gemctl] *** ERROR: There are ${rids[0]} database containers for deployment $current."
+             exit -1
+             ;;
+        esac
+        ;;
+  esac
+
+}
+
+case $1 in
+  "ps")     ps;;
+  "clean")  clean;;
+  "deploy") tryDeploy;;
+  *)
+    echo "Usage: gemctl [clean | deploy]"
+    echo "  clean   Stop and remove all containers"
+    echo "  deploy  Deploy a new version of gem on localhost"
+
+esac

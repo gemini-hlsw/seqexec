@@ -2,8 +2,9 @@ package gem
 package telnetd
 
 import tuco._, Tuco._
-import doobie.imports.DriverManagerTransactor
-import scalaz.effect._, scalaz.concurrent.Task
+import doobie.imports._
+import org.flywaydb.core.Flyway
+import scalaz._, Scalaz._, effect._, scalaz.concurrent.Task
 
 /**
  * Entry point for running Gem with a telnet server. This will go away at some point and the telnet
@@ -11,11 +12,37 @@ import scalaz.effect._, scalaz.concurrent.Task
  */
 object Main extends SafeApp {
 
-  // We need two transactors, one for things we do inside our telnet session and another for logging.
-  val xa  = DriverManagerTransactor[SessionIO]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
-  val txa = DriverManagerTransactor[Task     ]("org.postgresql.Driver","jdbc:postgresql:gem","postgres","")
+  /** When we start the app with docker we pass arguments as environment variables. */
+  val ENV_GEM_DB_URL  = "GEM_DB_URL"
+  val ENV_GEM_DB_USER = "GEM_DB_USER"
+  val ENV_GEM_DB_PASS = "GEM_DB_PASS"
+
+  /** Get an environment variable. */
+  def getEnv(key: String, default: String): IO[String] =
+    IO(sys.env.getOrElse(key, default))
+
+  /** Construct a transactor with the give effect type. */
+  def xa[M[_]: Monad: Capture: Catchable](url: String, user: String, pass: String): Transactor[M] =
+    DriverManagerTransactor[M]("org.postgresql.Driver", url, user, pass)
+
+  /** Run migrations. */
+  def mirgrate(url: String, user: String, pass: String): IO[Unit] =
+    IO {
+      val flyway = new Flyway()
+      flyway.setDataSource(url, user, pass);
+      flyway.migrate()
+    }
 
   override def runc: IO[Unit] =
-    Config(Interaction.main(xa, txa), 6666).run(simpleServer)
+    for {
+      url  <- getEnv(ENV_GEM_DB_URL,  "jdbc:postgresql:gem")
+      user <- getEnv(ENV_GEM_DB_USER, "postgres")
+      pass <- getEnv(ENV_GEM_DB_URL,  "")
+      _    <- IO.putStrLn(s"Connecting with URL $url, user $user, pass «hidden»")
+      _    <- mirgrate(url, user, pass)
+      sxa  = xa[SessionIO](url, user, pass)
+      txa  = xa[Task     ](url, user, pass)
+      _    <- Config(Interaction.main(sxa, txa), 6666).run(simpleServer)
+    } yield ()
 
 }

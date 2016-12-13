@@ -83,3 +83,46 @@ If you need to update the schema you can just make changes locally and then trun
 psql -c "truncate log; truncate program cascade; delete from gem_user where id != 'root'" -d gem -U postgres
 pg_dump -U postgres -d gem > create.sql
 ```
+
+### Running with Docker
+
+First you must install [Docker](https://www.docker.com/) and have it running. Then from the sbt prompt you can say
+
+```
+> telnetd/docker:publishLocal
+```
+
+Which will produce a new image called `telnetd:0.1-SNAPSHOT` (or whatever the version is). This image can be shared. It has everything you need to run the gem app.
+
+You can run it via
+
+```
+docker run -itd -p 1234:6666 --name woozle telnetd:0.1-SNAPSHOT
+```
+
+- `run` the image, which creates a new container.
+- `-i` means it's interactive, so keep stdin hooked up
+- `-t` means it needs a TTY
+- `-d` means detach … it runs in the background.
+- `-p 1234:6666` means map localhost port 1234 to host port 6666. Otherwise the telnet server isn't reachable.
+- `--name woozle` specifies the new container's name (one will be generated if left unspecified).
+- `telnetd:0.1-SNAPSHOT` is the name of the image. It has nothing on it but a bare-bones linux setup and a JDK and our app.
+
+We can now telnet to the server:
+
+```
+docker (master *)$ telnet localhost 1234
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+Welcome to Gem
+Username:
+```
+
+We can stop the app by destroying the container.
+
+```
+docker stop woozle
+```
+
+It's now gone. When we restart the app we get a fresh container.
