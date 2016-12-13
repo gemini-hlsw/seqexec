@@ -1,18 +1,50 @@
 #!/bin/bash
 
+## TODO: - deploy to another machine, possibly via docker-machine
+##       - set up namespaced filesystem mounts for db storage
+
+# Some globals for now.
 HOST=localhost
 NET=GemNet
+
+# Fail and exit with a message.
+# Usage: err "oh noes"
+err() {
+  log "ERROR: $1"
+  exit 1
+}
+
+# Warn with a message.
+# Usage: warn "uhh"
+warn() {
+  log "WARNING: $1"
+}
+
+# Log a message.
+# Usage: log "herro"
+log() {
+  echo "[gemctl] $1"
+}
+
+# Log a TODO item.
+# Usage: todo "do something else here"
+todo() {
+  log "TODO: $1"
+}
 
 # Create a new Postgres container with the specified deployment number.
 # Usage: createDatabaseContainer <int>
 createDatabaseContainer() {
-  echo "[gemctl] Deploying Postgres container db-$1."
+  log "Deploying Postgres container db-$1."
   docker run --detach                 \
              --net=$NET               \
              --label gemini.db        \
              --label gemini.deploy=$1 \
              --name db-$1             \
              postgres:9.6.0   > /dev/null
+   if [ $? -ne 0 ]; then
+     err "Failed to create container ($?)."
+   fi
 }
 
 # Create the `gem` database on the Postgres container with the specified deployment number. Since
@@ -20,23 +52,28 @@ createDatabaseContainer() {
 # database isn't up yet.
 # Usage: createDatabase <int>
 createDatabase() {
-  echo "[gemctl] Creating database."
-  until docker exec db-$1                                \
+  log "Creating database."
+  count=1
+  retries=10 # seconds
+  until [ $count -eq $retries ] || docker exec db-$1                                \
                     psql --host=db-$1                    \
                          --command='create database gem' \
                          --username=postgres  &> /dev/null
   do
-    sleep 0.75
+    count=$((count + 1))
+    sleep 0.5
   done
+  if [ $count -eq $retries ]; then
+    err "Timed out (re)trying to create database."
+  fi
 }
-
 
 # Create a new Gem container with the specified deployment number, exposing the telnet port as
 # localhost port 1234. Note that the server will fail to start if the port is in use; there can
 # only be one running Gem container at a time.
 # Usage: gem <deploy-id>
 createGemContainer() {
-  echo "[gemctl] Creating Gem container gem-$1."
+  log "Creating Gem container gem-$1."
   docker run --detach                                     \
              --tty                                        \
              --interactive                                \
@@ -47,16 +84,19 @@ createGemContainer() {
              --publish 6666                               \
              --env GEM_DB_URL=jdbc:postgresql://db-$1/gem \
              telnetd:0.1-SNAPSHOT > /dev/null
+  if [ $? -ne 0 ]; then
+    err "Failed to create container ($?)."
+  fi
   port=$(docker inspect -f '{{ (index (index .NetworkSettings.Ports "6666/tcp") 0).HostPort }}' gem-$1)
-  echo "[gemctl] Telnet is exposed on $port."
+  log "Telnet is exposed on $port."
 }
 
 # Stop (if needed) and remove all containers. This is just for development really; it's very
 # destructuve.
 # Usage: clean
 clean() {
-  echo "[gemctl] TODO: prompt for confirmation."
-  echo "[gemctl] Stopping and removing all containers."
+  todo "prompt for confirmation."
+  log "Stopping and removing all containers."
   docker stop $(docker ps -a -q) &> /dev/null
   docker rm   $(docker ps -a -q) &> /dev/null
 }
@@ -65,28 +105,35 @@ clean() {
 # checked to be sure there are no other deployments here.
 # Usage: deployInitial
 deployInitial() {
-  echo "[gemctl] This is the first deployment on $HOST."
+  log "This is the first deployment on $HOST."
   createDatabaseContainer 1
   createDatabase 1
   createGemContainer 1
-  echo "[gemctl] *** TODO: import existing data. We will need a mount point and machinery for this."
+  todo "Import existing data. We will need a mount point and machinery for this."
 }
 
 # Copy data from `oldDb` to `newDb`.
 # Usage: copyDatabase old new
 copyDatabase() {
-  echo "[gemctl] Copying data from $1 into $2."
+  log "Copying data from previous deployment."
+  todo "Use docker exec here."
   docker run --rm           \
              --net=$NET     \
              postgres:9.6.0 \
     sh -c "pg_dump -h $1 -U postgres gem | psql -h $2 -U postgres -d gem" > /dev/null
+  if [ $? -ne 0 ]; then
+    err "Failed to copy data ($?)."
+  fi
 }
 
 # Stop the given container.
 # Usage: stop id
 stop() {
-  echo "[gemctl] Stopping container $1."
+  log "Stopping container $1."
   docker stop $1 &> /dev/null
+  if [ $? -ne 0 ]; then
+    err "Failed to stop container ($?)."
+  fi
 }
 
 # Echo the container IDs of database containers with the given label, both running and stopped.
@@ -99,7 +146,7 @@ containersWithLabel() {
 # Usage: max=$(maxDeployId 876 809 233)
 #        max=$(maxDeployId ${ids[*]})
 maxDeployId() {
-  arr=($(docker inspect --format "{{ index .Config.Labels \"gemini.deploy\"}}" $@))
+  arr=($(docker inspect --format "{{ index .Config.Labels \"gemini.deploy\"}}" $@ 2> /dev/null))
   current=${arr[0]}
   for n in "${arr[@]}" ; do
       ((n > current)) && current=$n
@@ -110,60 +157,117 @@ maxDeployId() {
 # Show some information about deployed containers.
 # Usage: ps
 ps() {
-  docker inspect --format "{{ index .Config.Labels \"gemini.deploy\"}} {{ .Name }} {{ .State.Status }}" $(docker ps -a -q --filter label=gemini.deploy)
+  echo "deploy/name state"
+  docker inspect \
+         --format "{{ index .Config.Labels \"gemini.deploy\"}}{{ .Name }} {{ .State.Status }}" \
+         $(docker ps -a -q --filter label=gemini.deploy) \
+    | sort 2> /dev/null
+}
+
+# Verify that there is exactly one running database container for the given deployment, and that
+# it is responding to requests. Returns 0 on success, nonzero otherwise.
+# Usage: verifyDb 123
+verifyDb() {
+  # IDs of running database containers for the given deployment. There should be exactly 1.
+  rids=($(docker ps -q --filter label=gemini.db --filter label=gemini.deploy=$1))
+  case ${#rids[@]} in
+    0)  warn "Cannot find a running database for deployment $1. There should be exactly one."
+        return 1
+        ;;
+    1)  # run a trivial query on the 'gem' database to ensure it's responding.
+        docker exec ${rids[0]}                \
+                    psql --dbnam=gem          \
+                         --command='select 1' \
+                         --username=postgres  &> /dev/null
+        if [ $? -ne 0 ]; then
+          warn "Could not connect to database 'gem' for deployment $1."
+          return 1
+        fi
+        log "Deployment $1 database looks ok."
+        ;;
+    *) warn "Found ${#rids[@]} running databases for deployment $1. There should be exactly one."
+       return 1
+       ;;
+  esac
+}
+
+# Verify that there is exactly one running Gem container for the given deployment, and that
+# it is responding to requests. Returns 0 on success, nonzero otherwise.
+# Usage: verifyDb 123
+verifyGem() {
+  todo "Verify that Gem deployment $1 is available."
+  return 0
+}
+
+# Verify the health of the given deployment, returning 0 if everything is ok, otherwise nonzero.
+# Usage: verify 42
+verify() {
+  log "Verifying deployment $1."
+  verifyDb $1
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
+  verifyGem $1
 }
 
 # Show a usage messsage.
 # Usage: usage
 usage() {
-  echo "Usage: gemctl [clean | deploy]"
-  echo "  clean   Stop and remove all containers"
-  echo "  deploy  Deploy a new version of gem on localhost"
-  echo "  ps      Show some information on containers"
+  echo
+  echo "Gem control thingy. This script knows how to deploy Gem via docker on localhost. It will"
+  echo "eventually be able to do this on remote hosts, and will do so automatically as part of"
+  echo "continuous integration."
+  echo
+  echo "This assume you have done 'sbt docker:publishLocal' and have an image available."
+  echo
+  echo "Usage: gemctl <command>"
+  echo "  clean     Stop and remove all containers."
+  echo "  deploy    Deploy a new version of gem on localhost."
+  echo "  ps        Show some information on containers."
+  echo "  rm <id>   Stop and remove the specified deployment."
+  echo "  rollback  Stop end remove the current deployment and restart the previous one."
+  echo
 }
 
-tryDeploy() {
+deploy() {
 
-  # Get the ids, total, and current/next deployment number for db containers
-  ids=($(containersWithLabel gemini.db))
+  # Get the ids, total, and current/next deployment number
+  ids=($(containersWithLabel gemini.deploy))
   total=${#ids[@]}
   current=$(maxDeployId ${ids[*]})
   next=$((current + 1))
 
-  # switch on the size of the array
-  case $total in
-    0)  deployInitial;;
-    *)  echo "[gemctl] Found $total existing deployment(s) on $HOST. Current is $current."
-        # Find the id of the *running* current deployed db, if any.
-        rids=($(docker ps -q --filter label=gemini.db --filter label=gemini.deploy=$current))
-        case ${#rids[@]} in
-          0) echo "[gemctl] *** ERROR: The current deployed database container is stopped. Please start it."
-             exit -1
-             ;;
-          1) oldDb=${rids[0]}
-             echo "[gemctl] Located current database container for deploy $current."
-             createDatabaseContainer $next
-             createDatabase $next
-             copyDatabase $oldDb db-$next
-             stop gem-$current
-             createGemContainer $next
-             ;;
-          2) echo "[gemctl] *** ERROR: There are ${rids[0]} database containers for deployment $current."
-             exit -1
-             ;;
-        esac
-        ;;
-  esac
+  # initial or update
+  if [ $total -eq 0 ]; then
+    deployInitial
+  else
+
+    log "Previous deployment was $current. This will be deployment $next."
+
+    # Make sure current deployment is healthy
+    verify $current
+    if [ $? -ne 0 ]; then
+      err "Previous deployment ($current) is not available."
+    fi
+
+    # Ready to deploy new one
+    createDatabaseContainer $next
+    createDatabase $next
+    copyDatabase db-$current db-$next
+    stop db-$current
+    stop gem-$current
+    createGemContainer $next
+    verify $next
+
+  fi
 
 }
 
 case $1 in
-  "ps")     ps;;
-  "clean")  clean;;
-  "deploy") tryDeploy;;
-  *)
-    echo "Usage: gemctl [clean | deploy]"
-    echo "  clean   Stop and remove all containers"
-    echo "  deploy  Deploy a new version of gem on localhost"
-
+  "ps")       ps;;
+  "clean")    clean;;
+  "deploy")   deploy;;
+  "rm")       err "Not implemented yet.";;
+  "rollback") err "Not implemented yet.";;
+  *)          usage;;
 esac
