@@ -6,6 +6,7 @@
 # Some globals for now.
 HOST=localhost
 NET=GemNet
+PORT=1234
 
 # Fail and exit with a message.
 # Usage: err "oh noes"
@@ -81,13 +82,14 @@ createGemContainer() {
              --label gemini.gem                           \
              --label gemini.deploy=$1                     \
              --name gem-$1                                \
-             --publish 6666                               \
+             --publish $PORT:6666                         \
              --env GEM_DB_URL=jdbc:postgresql://db-$1/gem \
              telnetd:0.1-SNAPSHOT > /dev/null
   if [ $? -ne 0 ]; then
     err "Failed to create container ($?)."
   fi
-  port=$(docker inspect -f '{{ (index (index .NetworkSettings.Ports "6666/tcp") 0).HostPort }}' gem-$1)
+  #  port=$(docker inspect -f '{{ (index (index .NetworkSettings.Ports "6666/tcp") 0).HostPort }}' gem-$1)
+  port=$PORT
   log "Telnet is exposed on $port."
 }
 
@@ -110,17 +112,14 @@ deployInitial() {
   createDatabase 1
   createGemContainer 1
   todo "Import existing data. We will need a mount point and machinery for this."
+  verify 1
 }
 
 # Copy data from `oldDb` to `newDb`.
 # Usage: copyDatabase old new
 copyDatabase() {
   log "Copying data from previous deployment."
-  todo "Use docker exec here."
-  docker run --rm           \
-             --net=$NET     \
-             postgres:9.6.0 \
-    sh -c "pg_dump -h $1 -U postgres gem | psql -h $2 -U postgres -d gem" > /dev/null
+  docker exec $2 sh -c "pg_dump -h $1 -U postgres gem | psql -U postgres -d gem" > /dev/null
   if [ $? -ne 0 ]; then
     err "Failed to copy data ($?)."
   fi
@@ -191,12 +190,16 @@ verifyDb() {
   esac
 }
 
-# Verify that there is exactly one running Gem container for the given deployment, and that
-# it is responding to requests. Returns 0 on success, nonzero otherwise.
-# Usage: verifyDb 123
+# Verify that we can connect to Gem on the well-known telnet port. Returns 0 on success, nonzero
+# otherwise. This should turn into a robust health check.
+# Usage: verifyGem 123
 verifyGem() {
-  todo "Verify that Gem deployment $1 is available."
-  return 0
+  nc -z localhost $PORT &> /dev/null
+  if [ $? -ne 0 ]; then
+    warn "Gem telnet port for deployment $1 is not available."
+    return 1
+  fi
+  log "Deployment $1 Gem server looks ok."
 }
 
 # Verify the health of the given deployment, returning 0 if everything is ok, otherwise nonzero.
