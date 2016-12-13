@@ -95,7 +95,7 @@ object Importer extends SafeApp {
         ObservationDao.insert(newObs) *>
         configs.zipWithIndex.traverseU { case (c, n) =>
           for {
-            id <- StepDao.insert(newObs.id, Location(n * 100), c)
+            id <- StepDao.insert(newObs.id, Location.unsafeMiddle(n * 100), c)
             _  <- obsLog.get(n).foldMap { oldDataset =>
                     val lab = Dataset.Label.unsafeFromString(oldDataset.getLabel.toString)
                     val tim = Instant.ofEpochMilli(oldDataset.getTimestamp)

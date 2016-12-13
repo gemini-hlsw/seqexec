@@ -49,8 +49,8 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   implicit val InstantMeta: Meta[Instant] =
     Meta[Timestamp].nxmap(_.toInstant, Timestamp.from)
 
-  implicit val LocationMeta: Meta[Location] =
-    Meta[List[Int]].nxmap(Location.fromList, _.toList)
+  implicit val LocationMeta: Meta[Location.Middle] =
+    Meta[List[Int]].nxmap(Location.unsafeMiddle(_), _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
     Meta[Long].xmap(Duration.ofSeconds, _.getSeconds)
