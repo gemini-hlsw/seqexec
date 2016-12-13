@@ -21,7 +21,7 @@ object StepDao {
               case DarkStep(_)         => insertDarkSlice(id)
               case ScienceStep(_, t)   => insertScienceSlice(id, t)
               case GcalStep(_, g)      => insertGcalSlice(id, g)
-              case SmartGcalStep(_, s) => insertSmartGcalSlice(id, s)
+              case SmartGcalStep(_, t) => insertSmartGcalSlice(id, t)
             }
       _  <- insertConfigSlice(id, s.instrument)
     } yield id
@@ -72,10 +72,10 @@ object StepDao {
     """.update.run
   }
 
-  private def insertSmartGcalSlice(id: Int, s: SmartGcalConfig): ConnectionIO[Int] =
+  private def insertSmartGcalSlice(id: Int, t: SmartGcalType): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_smart_gcal (step_smart_gcal_id, type)
-      VALUES ($id, $s)
+      VALUES ($id, $t)
     """.update.run
 
   private def insertScienceSlice(id: Int, t: TelescopeConfig): ConnectionIO[Int] =
@@ -128,7 +128,7 @@ object StepDao {
           } yield GcalStep(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error("missing gcal information: " + gcal))
 
         case StepType.SmartGcal =>
-          smartGcalType.map(t => SmartGcalStep(i, SmartGcalConfig(t))).getOrElse(sys.error("missing smart gcal type"))
+          smartGcalType.map(t => SmartGcalStep(i, t)).getOrElse(sys.error("missing smart gcal type"))
 
         case StepType.Science =>
           telescope.apply2(TelescopeConfig(_, _))
