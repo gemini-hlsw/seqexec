@@ -2,7 +2,7 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
-import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, StepConfig}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig}
 import org.scalatest.FlatSpec
 
 import scalaz._
@@ -50,7 +50,6 @@ class packageSpec extends FlatSpec {
   } yield Error(())
 
   val config: StepConfig = Map()
-
   val seqId ="TEST-01"
   val qs1: EngineState = Map((seqId, Sequence.State.init(
     Sequence(

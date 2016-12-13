@@ -5,8 +5,7 @@ import java.time.LocalTime
 import diode.{Action, RootModelR}
 import diode.data.{Empty, Pot, PotAction, RefTo}
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
-import edu.gemini.seqexec.web.common.{Instrument, SeqexecQueue, Sequence}
+import edu.gemini.seqexec.model.Model._
 import org.scalajs.dom.WebSocket
 
 import scalaz._
@@ -14,16 +13,10 @@ import Scalaz._
 
 // Actions
 
-// Request loading the queue
-case class UpdatedQueue(potResult: Pot[SeqexecQueue]) extends PotAction[SeqexecQueue, UpdatedQueue] {
-  override def next(newResult: Pot[SeqexecQueue]) = {
-    UpdatedQueue(newResult)
-  }
-}
 // Request a search
-case class SearchSequence(criteria: String, potResult: Pot[List[Sequence]] = Empty) extends PotAction[List[Sequence], SearchSequence] {
-  override def next(newResult: Pot[List[Sequence]]) = {
-    SearchSequence(criteria, newResult)
+case class LoadSequence(criteria: String, potResult: Pot[SequencesQueue[SequenceId]] = Empty) extends PotAction[SequencesQueue[SequenceId], LoadSequence] {
+  override def next(newResult: Pot[SequencesQueue[SequenceId]]) = {
+    LoadSequence(criteria, newResult)
   }
 }
 
@@ -41,23 +34,19 @@ case object CloseLoginBox extends Action
 case class LoggedIn(u: UserDetails) extends Action
 case object Logout extends Action
 
-// Action to add a sequence to the queue
-case class AddToQueue(s: Sequence) extends Action
-// Action to remove a sequence from the search results
-case class RemoveFromSearch(s: Sequence) extends Action
 // Action to select a sequence for display
-case class SelectToDisplay(s: Sequence) extends Action
+case class SelectToDisplay(s: SequenceView) extends Action
 
 // Actions related to executing sequences
-case class RequestRun(s: Sequence) extends Action
-case class RequestStop(s: Sequence) extends Action
-case class RunStarted(s: Sequence) extends Action
-case class RunStopped(s: Sequence) extends Action
-case class RunStartFailed(s: Sequence) extends Action
-case class RunStopFailed(s: Sequence) extends Action
+case class RequestRun(s: SequenceView) extends Action
+case class RequestStop(s: SequenceView) extends Action
+case class RunStarted(s: SequenceView) extends Action
+case class RunStopped(s: SequenceView) extends Action
+case class RunStartFailed(s: SequenceView) extends Action
+case class RunStopFailed(s: SequenceView) extends Action
 
-case class ShowStep(s: Sequence, i: Int) extends Action
-case class UnShowStep(s: Sequence) extends Action
+case class ShowStep(s: SequenceView, i: Int) extends Action
+case class UnShowStep(s: SequenceView) extends Action
 
 case class AppendToLog(s: String) extends Action
 
@@ -76,7 +65,7 @@ sealed trait SectionVisibilityState
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
-case class SequenceTab(instrument: Instrument.Instrument, sequence: RefTo[Pot[Sequence]], stepConfigDisplayed: Option[Int])
+case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
@@ -88,11 +77,28 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def unshowStep:SequencesOnDisplay =
     copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
-  def focusOnSequence(s: RefTo[Pot[Sequence]]):SequencesOnDisplay = {
+  def focusOnSequence(s: RefTo[Option[SequenceView]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
-    val q = instrumentSequences.findZ(i => s().exists(_.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
+    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
     copy(q | instrumentSequences)
   }
+}
+
+/**
+  * Internal list of object names.
+  * TODO This should belong to the model
+  */
+object InstrumentNames {
+  val instruments = NonEmptyList[Instrument]("Flamingos2", "GMOS-S", "GPI", "GSAOI")
+}
+
+/**
+  * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
+  */
+object SequencesOnDisplay {
+  val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
+
+  val empty = SequencesOnDisplay(InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)
@@ -120,29 +126,20 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 }
 
 /**
-  * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
-  */
-object SequencesOnDisplay {
-  val emptySeqRef:RefTo[Pot[Sequence]] = RefTo(new RootModelR[Pot[Sequence]](Empty))
-
-  val empty = SequencesOnDisplay(Instrument.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
-}
-
-/**
   * Root of the UI Model of the application
   */
 case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
-                               queue: Pot[SeqexecQueue],
+                               sequences: List[SequenceView],
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
-                               searchResults: Pot[List[Sequence]],
+                               searchResults: Pot[SequencesQueue[SequenceId]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Empty,
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Nil,
     SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

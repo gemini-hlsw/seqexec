@@ -6,15 +6,15 @@ import diode.data._
 import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
-import edu.gemini.seqexec.model.{NewBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
+import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
+import edu.gemini.seqexec.model.Model.{SeqexecEvent, SequenceId, SequenceView, SequencesQueue}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
-import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence}
+import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import boopickle.Default._
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -23,50 +23,23 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz.{-\/, \/, \/-}
 
 /**
-  * Handles actions related to the queue like loading and adding new elements
-  */
-class QueueHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action: UpdatedQueue =>
-      // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.readQueue())(identity)
-      action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
-
-    case AddToQueue(s) =>
-      // Append to the current queue if not in the queue already
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} added to the queue")
-      val u = value.map(u => u.copy((s :: u.queue.filter(_.id != s.id)).reverse))
-      updated(u, logE)
-  }
-}
-
-/**
   * Handles actions related to search
   */
-class SearchHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
+class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action: SearchSequence =>
+    case action: LoadSequence =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
-    case RemoveFromSearch(s) =>
-      val empty = value.map(l => l.size == 1 && l.exists(_.id == s.id)).getOrElse(false)
-      // TODO, this should be an effect, but somehow it breaks the queue tracking
-      if (empty) {
-        SeqexecCircuit.dispatch(CloseSearchArea)
-      }
-      updated(value.map(_.filterNot(_ == s)))
   }
 }
 
 /**
   * Handles sequence execution actions
   */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extends ActionHandler(modelRW) {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, List[SequenceView]]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
@@ -86,7 +59,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, Pot[SeqexecQueue]]) extend
     case RunStopped(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
       val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
-      updated(value.map(_.abortSequence(s.id)), logE)
+      noChange
 
     case RunStopFailed(s) =>
       noChange
@@ -205,10 +178,8 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles the WebSocket connection and performs reconnection if needed
   */
-class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with NewBooPicklers {
+class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with ModelBooPicklers {
   // Import explicitly the custom pickler
-  import SeqexecEvent._
-
   implicit val runner = new RunAfterJS
 
   val logger = Logger.getLogger(this.getClass.getSimpleName)
@@ -254,7 +225,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     ws.onclose = onClose _
     Connecting
   }.recover {
-    case e: Throwable => NoAction
+    case _: Throwable => NoAction
   }
 
   // This is essentially a state machine to handle the connection status and
@@ -284,12 +255,16 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (Pot[SeqexecQueue], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (List[SequenceView], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case NewSeqexecEvent(ConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
+
+    case NewSeqexecEvent(SequenceLoaded(sv)) =>
+      val logE = SeqexecCircuit.appendToLogE(s"Sequence loaded")
+      updated(value.copy(_1 = sv), logE)
 
     /*case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
@@ -318,9 +293,9 @@ object PotEq {
     override def eqv(a: Pot[A], b: Pot[A]): Boolean = a.state == b.state
   }
 
-  val seqexecQueueEq = potStateEq[SeqexecQueue]
+  val seqexecQueueEq = potStateEq[List[SequenceView]]
   val searchResultsEq = potStateEq[SearchResults]
-  val sequenceEq = potStateEq[Sequence]
+  val sequenceEq = potStateEq[SequenceView]
 }
 
 /**
@@ -335,7 +310,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
   * Contains the model for Diode
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
-  type SearchResults = List[Sequence]
+  type SearchResults = SequencesQueue[SequenceId]
 
   val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
 
@@ -343,15 +318,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomRW(_.ws)((m, v) => m.copy(ws = v)))
-  val queueHandler           = new QueueHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
-  val searchHandler          = new SearchHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
+  val searchHandler          = new LoadHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
   val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
   val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
   val loginBoxHandler        = new LoginBoxHandler(zoomRW(_.loginBox)((m, v) => m.copy(loginBox = v)))
   val userLoginHandler       = new UserLoginHandler(zoomRW(_.user)((m, v) => m.copy(user = v)))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.queue, m.webSocketLog, m.user))((m, v) => m.copy(queue = v._1, webSocketLog = v._2, user = v._3)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.queue)((m, v) => m.copy(queue = v)))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.sequences)((m, v) => m.copy(sequences = v)))
   val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
 
   override protected def initialModel = SeqexecAppRootModel.initial
@@ -359,14 +333,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Some useful readers
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: String):ModelR[_, Pot[Sequence]] =
-    zoomFlatMap(_.queue)(_.queue.find(_.id == id).fold(Empty: Pot[Sequence])(s => Ready(s)))
+  def sequenceReader(id: SequenceId):ModelR[_, Option[SequenceView]] =
+    zoom(_.sequences.find(_.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
 
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
 
   // Reader for search results
-  val searchResults: ModelR[SeqexecAppRootModel, Pot[List[Sequence]]] = zoom(_.searchResults)
+  val searchResults: ModelR[SeqexecAppRootModel, Pot[SequencesQueue[SequenceId]]] = zoom(_.searchResults)
 
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
@@ -378,12 +352,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     * Makes a reference to a sequence on the queue.
     * This way we have a normalized model and need to update it in only one place
     */
-  def sequenceRef(id: String):RefTo[Pot[Sequence]] =
+  def sequenceRef(id: SequenceId): RefTo[Option[SequenceView]] =
     RefTo(sequenceReader(id))
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    queueHandler,
     searchHandler,
     searchAreaHandler,
     devConsoleHandler,

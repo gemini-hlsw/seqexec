@@ -3,12 +3,11 @@ package edu.gemini.seqexec.web.client.components
 import diode.data.Pot
 import diode.react.ReactPot._
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.components.SequenceSearch.Props
+import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCircleNotched, IconPlus, IconRemove, IconSearch}
-import edu.gemini.seqexec.web.common.Sequence
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.KeyCode
@@ -21,47 +20,47 @@ import scalacss.ScalaCssReact._
 object SequenceSearchResultsHeader {
   def closeArea = Callback { SeqexecCircuit.dispatch(CloseSearchArea) }
 
-  val component = ReactComponentB[ModelProxy[Pot[List[Sequence]]]]("SequenceSearchResultHeader")
+  val component = ReactComponentB[ModelProxy[Pot[SequencesQueue[SequenceId]]]]("SequenceSearchResultHeader")
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
         p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Searching...")),
-        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = closeArea), s"Found ${u.size} sequence(s)")),
+        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = closeArea), s"Found ${u.queue.size} sequence(s)")),
         p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
       )
     )
     .build
 
-  def apply(searchResults: ModelProxy[Pot[List[Sequence]]]) = component(searchResults)
+  def apply(searchResults: ModelProxy[Pot[SequencesQueue[SequenceId]]]) = component(searchResults)
 }
 
 /**
   * Displays the results of the search
+  * NOTE This component is not in use at the moment
   */
 object SequenceSearchResultsBody {
-  case class Props(model: ModelProxy[(ClientStatus, Pot[List[Sequence]])]) {
+  case class Props(model: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) {
     def searchResults = model()._2
     def status = model()._1
   }
 
-  def addToQueue[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatchCB(AddToQueue(u))
+  def addToQueue[A](p: ModelProxy[A], u: SequenceId): Callback = Callback.empty
 
-  def removeFromResults[A](p: ModelProxy[A], u: Sequence):Callback = p.dispatchCB(RemoveFromSearch(u))
+  def removeFromResults[A](p: ModelProxy[A], u: SequenceId):Callback = Callback.empty
 
-  def onAdding[A](p: ModelProxy[A], u: Sequence):Callback = addToQueue(p, u) >> removeFromResults(p, u)
+  def onAdding[A](p: ModelProxy[A], u: SequenceId):Callback = addToQueue(p, u) >> removeFromResults(p, u)
 
   val component = ReactComponentB[Props]("SequenceSearchResultBody")
     .stateless
     .render_P(p =>
       <.tbody(
-        p.searchResults.renderReady(s => s.zipWithIndex.collect { case (u, i) =>
+        p.searchResults.renderReady(s => s.queue.zipWithIndex.collect { case (u, i) =>
             <.tr(
               ^.key := i,
               <.td(
                 ^.cls := "collapsing",
-                u.id
+                u
               ),
-              <.td(u.instrument),
               <.td(
                 ^.cls := "collapsing",
                 Button(Button.Props(icon = Some(IconPlus), circular = true,
@@ -74,7 +73,7 @@ object SequenceSearchResultsBody {
     )
     .build
 
-  def apply(p: ModelProxy[(ClientStatus, Pot[List[Sequence]])]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) = component(Props(p))
 }
 
 /**
@@ -102,7 +101,6 @@ object SequenceSearchResults {
               <.thead(
                 <.tr(
                   <.th("Obs ID"),
-                  <.th("Instrument"),
                   <.th("\u00a0")
                 )
               ),
@@ -121,7 +119,7 @@ object SequenceSearchResults {
   * Search field, it lets the user search for obs ids
   */
 object SequenceSearch {
-  case class Props(model: ModelProxy[(ClientStatus, Pot[List[Sequence]])]) {
+  case class Props(model: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) {
     def searchResults = model()._2
     def status = model()._1
   }
@@ -136,11 +134,11 @@ object SequenceSearch {
     def openResultsArea: Callback =
       $.props >>= { _.model.dispatchCB(OpenSearchArea) }
 
-    def startSearch: Callback =
-      $.props.zip($.state) >>= { case (p, s) => p.model.dispatchCB(SearchSequence(s.searchText)) }
+    def attemptLoad: Callback =
+      $.props.zip($.state) >>= { case (p, s) => p.model.dispatchCB(LoadSequence(s.searchText)) }
 
     def search: Callback =
-      openResultsArea >> startSearch
+      openResultsArea >> attemptLoad
 
     def onChange(e: ReactEventI): Callback =
       // For some reason the simple call $.modState(_.copy(searchText = e.target.value)) gives an NPE on e.target
@@ -154,7 +152,7 @@ object SequenceSearch {
           ^.cls := "ui focus icon input",
           <.input(
             ^.`type` := "text",
-            ^.placeholder := "Search...",
+            ^.placeholder := "Load...",
             ^.onKeyDown ==> onEnter,
             ^.onChange ==> onChange,
             ^.value := s.searchText,
@@ -170,5 +168,5 @@ object SequenceSearch {
     .renderBackend[Backend]
     .build.withKey("key.sequence.search")
 
-  def apply(p: ModelProxy[(ClientStatus, Pot[List[Sequence]])]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) = component(Props(p))
 }

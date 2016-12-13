@@ -10,11 +10,11 @@ object CommandsModel {
       m => RegularCommand(s, error = false, m.msg)
     )
 
-  def toSequenceConfig(s: String, r: CommandResult): CliCommand =
+  /*def toSequenceConfig(s: String, r: CommandResult): CliCommand =
     r.fold(
       l => SequenceConfig(s, error = true, l.msg, Nil),
       m => SequenceConfig(s, error = false, m.msg, m.keys.map(Function.tupled(StepConfig.apply)))
-    )
+    )*/
 
   def toSequenceStatus(s: String, r: CommandResult): CliCommand =
     r.fold(

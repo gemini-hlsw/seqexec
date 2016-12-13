@@ -1,14 +1,12 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.data.{Empty, Pot}
-import diode.react.ReactPot._
 import diode.react._
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
-import edu.gemini.seqexec.web.client.semanticui.elements.message.CloseableMessage
+import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched, IconAttention}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
-import edu.gemini.seqexec.web.common.{SeqexecQueue, Sequence, SequenceState}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
 
@@ -17,7 +15,7 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
 object QueueTableBody {
-  case class Props(queue: ModelProxy[Pot[SeqexecQueue]], sectionOpen: SectionVisibilityState)
+  case class Props(sequences: ModelProxy[List[SequenceView]], sectionOpen: SectionVisibilityState)
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
@@ -44,36 +42,35 @@ object QueueTableBody {
     )
   }
 
-  def load(p: Props):Callback =
+  def load(p: Props): Callback = Callback.log("here")
     // Request to load the queue if not present
-    Callback.when(p.queue.value.isEmpty)(p.queue.dispatchCB(UpdatedQueue(Empty)))
+    //Callback.when(p.sequences.value.isEmpty)(p.sequences.dispatchCB(UpdatedQueue(Empty)))
 
-  def showSequence(p: Props,s: Sequence):Callback =
+  def showSequence(p: Props,s: SequenceView): Callback =
     // Request to display the selected sequence
-    p.queue.dispatchCB(SelectToDisplay(s))
+    p.sequences.dispatchCB(SelectToDisplay(s))
 
   val component = ReactComponentB[Props]("QueueTableBody")
     .render_P( p =>
       <.tbody(
         // Render after data arrives
-        p.queue().render( q =>
-          q.queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
+        p.sequences().map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
             case (Some(s), i) =>
               <.tr(
                 ^.classSet(
-                  "positive" -> (s.state == SequenceState.Completed),
-                  "warning"  -> (s.state == SequenceState.Running),
-                  "negative" -> (s.state == SequenceState.Error),
-                  "negative" -> (s.state == SequenceState.Abort)
+                  "positive" -> (s.status == SequenceState.Completed),
+                  "warning"  -> (s.status == SequenceState.Running)//,
+                  //"negative" -> (s.status == SequenceState.Error),
+                  //"negative" -> (s.status == SequenceState.Abort)
                 ),
                 ^.key := s"item.queue.$i",
                 ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
-                  s.state match {
+                  s.status match {
                     case SequenceState.Completed                   => IconCheckmark
                     case SequenceState.Running                     => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                    case SequenceState.Error | SequenceState.Abort => IconAttention
+                    case SequenceState.Error(_)                    => IconAttention
                     case _                                         => iconEmpty
                   }
                 ),
@@ -84,31 +81,26 @@ object QueueTableBody {
                 ),
                 <.td(
                   p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
-                  s.state.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
+                  s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
                 ),
                 <.td(
                   p.sectionOpen == SectionOpen ?= SeqexecStyles.notInMobile,
-                  s.instrument
+                  s.metadata.instrument
                 ),
                 <.td(
-                  SeqexecStyles.notInMobile,
-                  s.error.map(e => <.p(IconAttention, s" $e")).getOrElse(<.p("-"))
+                  SeqexecStyles.notInMobile//,
+                  //s.error.map(e => <.p(IconAttention, s" $e")).getOrElse(<.p("-"))
                 )
               )
             case (_, i) =>
               emptyRow(s"item.queue.$i", p.sectionOpen)
           }
-        ),
-        // Render some rows when pending
-        p.queue().renderPending(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i", p.sectionOpen))),
-        // Render some rows even if it failed
-        p.queue().renderFailed(_ => (0 until minRows).map(i => emptyRow(s"item.queue.$i", p.sectionOpen)))
       )
     )
     .componentDidMount($ => load($.props))
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]], s: SectionVisibilityState) = component(Props(p, s))
+  def apply(p: ModelProxy[List[SequenceView]], s: SectionVisibilityState) = component(Props(p, s))
 
 }
 
@@ -116,35 +108,36 @@ object QueueTableBody {
   * Shows a message when there is an error loading the queue
   */
 object LoadingErrorMsg {
-  case class Props(queue :ModelProxy[Pot[SeqexecQueue]])
+  case class Props(queue :ModelProxy[List[SequenceView]])
 
   val component = ReactComponentB[Props]("LoadingErrorMessage")
     .stateless
     .render_P( p =>
       <.div(
-        p.queue().renderFailed(_ =>
+        /*p.queue().renderFailed(_ =>
           CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
-        )
+        )*/
       )
     )
     .build
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p))
+  def apply(p: ModelProxy[List[SequenceView]]) = component(Props(p))
 }
 
 object QueueTableLoading {
-  case class Props(queue: Pot[SeqexecQueue])
+  case class Props(queue: List[SequenceView])
 
   val component = ReactComponentB[Props]("QueueTableLoading")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui header item",
-        p.queue.renderPending(_ => <.span(IconCircleNotched.copyIcon(loading = true), "Loading..."))
+          "Loading"
+        //p.queue.renderPending(_ => <.span(IconCircleNotched.copyIcon(loading = true), "Loading..."))
       )
     ).build.withKey("key.queue.loading")
 
-  def apply(p: ModelProxy[Pot[SeqexecQueue]]) = component(Props(p()))
+  def apply(p: ModelProxy[List[SequenceView]]) = component(Props(p()))
 }
 
 /**
@@ -152,7 +145,7 @@ object QueueTableLoading {
   */
 object QueueAreaTitle {
   val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults, "key.queue.search": js.Any)
-  val queueConnect = SeqexecCircuit.connect(_.queue, "key.queue.area": js.Any)
+  val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue.area": js.Any)
 
   case class Props(user: ModelProxy[Option[UserDetails]])
 
@@ -182,7 +175,7 @@ object QueueAreaTitle {
   * Container for the queue table
   */
 object QueueTableSection {
-  val queueConnect = SeqexecCircuit.connect(_.queue, "key.queue": js.Any)
+  val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue": js.Any)
 
   case class Props(opened: SectionVisibilityState)
 
@@ -228,7 +221,7 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  val queueConnect = SeqexecCircuit.connect(_.queue)
+  val sequencesConnect = SeqexecCircuit.connect(_.sequences)
   val userConnect = SeqexecCircuit.connect(_.user)
 
   case class Props(searchArea: ModelProxy[SectionVisibilityState])
@@ -251,7 +244,7 @@ object QueueArea {
                   "sixteen wide column"                                      -> (p.searchArea() == SectionClosed)
                 ),
                 // If there was an error on the process display a message
-                queueConnect(LoadingErrorMsg(_)),
+                sequencesConnect(LoadingErrorMsg(_)),
                 QueueTableSection(p.searchArea())
               ),
               p.searchArea() == SectionOpen ?= SequenceSearchResults() // Display the search area if open

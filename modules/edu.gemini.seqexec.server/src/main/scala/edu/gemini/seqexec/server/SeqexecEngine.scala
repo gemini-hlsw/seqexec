@@ -11,8 +11,8 @@ import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 import knobs._
-import edu.gemini.seqexec.model.SharedModel._
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent._
+import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.spModel.core.Peer
 
 /**
@@ -84,7 +84,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     def viewSequence(seq: SequenceAR): SequenceView =
       // TODO: Implement willStopIn
-      SequenceView(seq.metadata, statusSequence(seq), engineSteps(seq), None)
+      SequenceView(seq.id, seq.metadata, statusSequence(seq), engineSteps(seq), None)
 
     private def statusSequence(seq: SequenceAR): SequenceState = engine.Sequence.status(seq)
 

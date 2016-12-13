@@ -13,7 +13,7 @@ import sbt._
 
 
 /**
-  * Application level wodules for the Seqexec
+  * Application level modules for the Seqexec
   */
 trait SeqexecApps extends AppsCommon with SeqexecWebModules {
   /**

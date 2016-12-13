@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.SharedModel.{SequenceMetadata, SequenceState, StepConfig}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 
 import scalaz._
 import Scalaz._

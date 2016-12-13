@@ -5,12 +5,11 @@ import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent
-import edu.gemini.seqexec.model.SharedModel.SeqexecEvent.ConnectionOpenEvent
+import edu.gemini.seqexec.model.Model.{SeqexecEvent, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.model.CannedModel
 import edu.gemini.seqexec.web.server.security.AuthenticationService
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import org.http4s._
@@ -29,7 +28,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with NewBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
 
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
@@ -49,8 +48,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
   val tokenAuthService = JwtAuthentication(auth)
 
   val publicService: HttpService = GZip { HttpService {
-    case GET -> Root / "seqexec" / "current" / "queue" =>
-      Ok(CannedModel.currentQueue)
 
     case req @ POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
@@ -98,7 +95,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
               )
             )
 
-          case POST -> Root / "seqexec" / "logout"        =>
+          case POST -> Root / "seqexec" / "logout"              =>
             // Clean the auth cookie
             val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
                                 secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
@@ -107,14 +104,18 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
           case req @ GET -> Root / "seqexec" / "sequence" / oid =>
             val user = userInRequest(req)
             user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              for {
+              val r = for {
                 obsId <-
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
-                      .fold(e => Task.fail(e), Task.now)
+                      .fold(Task.fail, Task.now)
                 _     <- se.load(inputQueue, obsId)
-                resp  <- Ok(s"Loaded sequence $obsId")
+                resp  <- Ok(SequencesQueue[SequenceId](List(oid)))
               } yield resp
+              r.handleWith {
+                case _ => NotFound(s"Not found sequence $oid")
+              }
             }
+
         }
       }
     }
