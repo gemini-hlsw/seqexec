@@ -1,8 +1,6 @@
 package gem
 
 import edu.gemini.spModel.core._
-import gem.enum.Instrument
-import gem.config._
 import java.time.Duration
 import argonaut._, Argonaut._, ArgonautShapeless._
 import scalaz.{ ISet, OneAnd, Order }

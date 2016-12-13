@@ -1,11 +1,8 @@
 package gem
 package telnetd
 
-import gem.dao.UserDao
-import gem.enum.ProgramRole
-
-import doobie.imports.{ Capture => DCapture, Transactor }
-import scalaz._, Scalaz._, scalaz.effect._, scalaz.concurrent.Task
+import doobie.imports.Transactor
+import scalaz._, Scalaz._, scalaz.concurrent.Task
 import tuco._, Tuco._
 
 /** Module defining the behavior of our telnet server, parameterized over transactors. */

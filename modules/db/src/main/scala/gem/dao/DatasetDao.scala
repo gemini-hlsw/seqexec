@@ -6,9 +6,6 @@ import doobie.imports._
 
 import java.time.Instant
 
-import scalaz._, Scalaz._
-
-
 object DatasetDao {
   def insert(sid: Int, d: Dataset): ConnectionIO[Int] =
     sql"""

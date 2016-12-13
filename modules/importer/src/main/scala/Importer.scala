@@ -5,9 +5,7 @@ import gem.enum._
 import gem.config._
 
 import edu.gemini.pot.sp.{ISPProgram, ISPObservation}
-import edu.gemini.spModel.io.SpImportService
 import edu.gemini.spModel.core._
-import edu.gemini.pot.spdb.{ IDBDatabaseService, DBLocalDatabase }
 import edu.gemini.spModel.config.ConfigBridge
 import edu.gemini.spModel.config.map.ConfigValMapInstances.IDENTITY_MAP;
 
@@ -21,13 +19,10 @@ import scala.collection.JavaConverters._
 import scalaz._, Scalaz._
 import scalaz.effect._
 import scalaz.concurrent.Task
-import scalaz.std.effect.closeable._
 
 import doobie.imports._
-import doobie.free.connection.ConnectionOp
 
 object Importer extends SafeApp {
-  import Program.Id._
   // import ConfigSyntax._
   import ConfigReader._
 

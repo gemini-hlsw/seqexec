@@ -1,14 +1,11 @@
 package gem
 package dao
 
-import gem.enum._
-import gem.config._
-
 import edu.gemini.spModel.core._
 import edu.gemini.spModel.core.ProgramId._
 
 import doobie.imports._
-import doobie.contrib.postgresql.syntax._
+//import doobie.contrib.postgresql.syntax._
 
 import scalaz._, Scalaz._
 

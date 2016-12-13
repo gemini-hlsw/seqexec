@@ -8,8 +8,6 @@ import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew
 import java.time.Instant
 import doobie.imports._
 
-import scalaz._, Scalaz._
-
 
 object EventLogDao {
 

@@ -2,8 +2,6 @@ package gem
 
 import gem.enum.ProgramRole
 
-import java.time._
-
 import scala.language.implicitConversions
 
 import scalaz._, Scalaz._, scalaz.syntax.Ops
