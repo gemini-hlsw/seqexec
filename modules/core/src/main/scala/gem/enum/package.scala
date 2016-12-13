@@ -20,11 +20,11 @@ package object enum {
   implicit class StepTypeCompanionOps(companion: StepType.type) {
     def forStep(s: Step[_]): StepType =
       s match {
-        case BiasStep(_)        => StepType.Bias
-        case DarkStep(_)        => StepType.Dark
-        case GcalStep(_, _)     => StepType.Gcal
-        case ScienceStep(_, _)  => StepType.Science
-        case SmartStep(_, _)    => StepType.Smart
+        case BiasStep(_)         => StepType.Bias
+        case DarkStep(_)         => StepType.Dark
+        case GcalStep(_, _)      => StepType.Gcal
+        case ScienceStep(_, _)   => StepType.Science
+        case SmartGcalStep(_, _) => StepType.SmartGcal
       }
   }
 
