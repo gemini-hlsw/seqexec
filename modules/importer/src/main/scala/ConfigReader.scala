@@ -65,7 +65,7 @@ object ConfigReader {
     val long:          Read[Long         ] = cast[Long]
     val offsetAngle:   Read[Angle        ] = string.map(s => Angle.fromArcsecs(s.toDouble))
     val yesNo:         Read[Boolean      ] = cast[YesNoType].map(_.toBoolean)
-    val durSecs:       Read[Duration     ] = double.map(_.toInt).map(s => Duration.ofSeconds(s.toLong))
+    val durSecs:       Read[Duration     ] = double.map(_.toLong).map(Duration.ofSeconds(_))
   }
 
 

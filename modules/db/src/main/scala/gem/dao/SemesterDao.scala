@@ -4,7 +4,6 @@ package dao
 import edu.gemini.spModel.core._
 
 import doobie.imports._
-//import doobie.contrib.postgresql.syntax._
 
 import scalaz._, Scalaz._
 
