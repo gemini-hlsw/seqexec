@@ -126,7 +126,7 @@ CREATE TYPE step_type AS ENUM (
     'Dark',
     'Gcal',
     'Science',
-    'Smart'
+    'SmartGcal'
 );
 
 
@@ -664,8 +664,8 @@ ALTER TABLE step_gcal OWNER TO postgres;
 --
 
 CREATE TABLE step_smart_gcal (
-    step_smart_id integer PRIMARY KEY REFERENCES step ON DELETE CASCADE,
-    type          smart_gcal_type NOT NULL
+    step_smart_gcal_id integer PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    type               smart_gcal_type NOT NULL
 );
 
 
