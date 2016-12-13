@@ -133,6 +133,20 @@ CREATE TYPE step_type AS ENUM (
 ALTER TYPE step_type OWNER TO postgres;
 
 --
+-- Name: smart_gcal_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE smart_gcal_type AS ENUM (
+    'Arc',
+    'Flat',
+    'DayBaseline',
+    'NightBaseline'
+);
+
+ALTER TYPE smart_gcal_type OWNER TO postgres;
+
+
+--
 -- Name: target_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -644,6 +658,18 @@ CREATE TABLE step_gcal (
 
 
 ALTER TABLE step_gcal OWNER TO postgres;
+
+--
+-- Name: step_gcal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_smart_gcal (
+    step_smart_id integer PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    type          smart_gcal_type NOT NULL
+);
+
+
+ALTER TABLE step_smart_gcal OWNER TO postgres;
 
 --
 -- Name: step_science; Type: TABLE; Schema: public; Owner: postgres

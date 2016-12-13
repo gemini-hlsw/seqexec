@@ -21,6 +21,7 @@ object StepDao {
               case DarkStep(_)       => insertDarkSlice(id)
               case ScienceStep(_, t) => insertScienceSlice(id, t)
               case GcalStep(_, g)    => insertGcalSlice(id, g)
+              case SmartStep(_, s)   => insertSmartSlice(id, s)
             }
       _  <- insertConfigSlice(id, s.instrument)
     } yield id
@@ -71,32 +72,39 @@ object StepDao {
     """.update.run
   }
 
+  private def insertSmartSlice(id: Int, s: SmartCalConfig): ConnectionIO[Int] =
+    sql"""
+      INSERT INTO step_smart_gcal (step_smart_id, type)
+      VALUES ($id, $s)
+    """.update.run
+
   private def insertScienceSlice(id: Int, t: TelescopeConfig): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_science (step_science_id, offset_p, offset_q)
       VALUES ($id, ${t.p}, ${t.q})
     """.update.run
 
-    private def insertConfigSlice(id: Int, i: InstrumentConfig): ConnectionIO[Int] =
-      i match {
+  private def insertConfigSlice(id: Int, i: InstrumentConfig): ConnectionIO[Int] =
+    i match {
 
-        case F2Config(fpu, mosPreimaging, exposureTime, filter, lyotWheel, disperser, windowCover) =>
-          sql"""
-            INSERT INTO step_f2 (step_f2_id, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser, window_cover)
-            VALUES ($id, $fpu, $mosPreimaging, ${exposureTime.getSeconds}, $filter, $lyotWheel, $disperser, $windowCover)
-          """.update.run
+      case F2Config(fpu, mosPreimaging, exposureTime, filter, lyotWheel, disperser, windowCover) =>
+        sql"""
+          INSERT INTO step_f2 (step_f2_id, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser, window_cover)
+          VALUES ($id, $fpu, $mosPreimaging, ${exposureTime.getSeconds}, $filter, $lyotWheel, $disperser, $windowCover)
+        """.update.run
 
-        case GenericConfig(i) => 0.point[ConnectionIO]
+      case GenericConfig(i) => 0.point[ConnectionIO]
 
-      }
+    }
 
   // The type we get when we select the fully joined step
   private case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
     gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalFilter], Option[GcalDiffuser], Option[GcalShutter], Option[Duration], Option[Int]),
-    telescope: (Option[OffsetP],  Option[OffsetQ])
-  ) {
+    telescope: (Option[OffsetP],  Option[OffsetQ]),
+    smartGcalType: Option[SmartGcalType])
+  {
     def toStep: Step[Instrument] =
       stepType match {
 
@@ -118,6 +126,9 @@ object StepDao {
             e    <- exposureOpt
             c    <- coaddsOpt
           } yield GcalStep(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error("missing gcal information: " + gcal))
+
+        case StepType.Smart =>
+          smartGcalType.map(t => SmartStep(i, SmartCalConfig(t))).getOrElse(sys.error("missing smart gcal type"))
 
         case StepType.Science =>
           telescope.apply2(TelescopeConfig(_, _))
@@ -142,12 +153,15 @@ object StepDao {
              sg.exposure_time,
              sg.coadds,
              sc.offset_p,
-             sc.offset_q
+             sc.offset_q,
+             ss.type
         FROM step s
              LEFT OUTER JOIN step_gcal sg
-                ON sg.step_gcal_id = s.step_id
+                ON sg.step_gcal_id    = s.step_id
              LEFT OUTER JOIN step_science sc
                 ON sc.step_science_id = s.step_id
+             LEFT OUTER JOIN step_smart_gcal ss
+                ON ss.step_smart_id   = s.step_id
        WHERE s.observation_id = $oid
     ORDER BY s.location
     """.query[StepKernel].map(_.toStep).list

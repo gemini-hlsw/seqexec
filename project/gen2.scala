@@ -165,6 +165,16 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("SmartGcalType") {
+        type SmartGcalTypeRec = Record.`'tag -> String`.T
+        val io = sql"""
+          SELECT enumlabel x, enumlabel y
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'smart_gcal_type'
+        """.query[(String, SmartGcalTypeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("EventType") {
         type EventTypeRec = Record.`'tag -> String`.T
         val io = sql"""
