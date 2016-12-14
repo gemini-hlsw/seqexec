@@ -2,7 +2,6 @@ package gem
 package telnetd
 package command
 
-import gem.enum.ProgramRole
 import net.bmjames.opts.types._
 import tuco._, Tuco._
 

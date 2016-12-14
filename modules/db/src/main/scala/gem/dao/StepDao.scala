@@ -6,7 +6,6 @@ import gem.config._
 import gem.enum._
 
 import doobie.imports._
-import doobie.contrib.postgresql.pgtypes._
 
 import java.time.Duration
 import scalaz._, Scalaz._

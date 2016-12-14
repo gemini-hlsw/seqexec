@@ -2,7 +2,6 @@ package gem
 package telnetd
 package command
 
-import gem.dao.ProgramDao
 import net.bmjames.opts.{ intOption, help, metavar, short, long, value, strArgument }
 import net.bmjames.opts.types.Parser
 import tuco._, Tuco._

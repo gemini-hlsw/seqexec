@@ -1,9 +1,7 @@
 package gem
 
 import gem.config._
-import gem.enum.{SmartGcalType, StepType}
-
-import scalaz._, Scalaz._
+import gem.enum.SmartGcalType
 
 sealed abstract class Step[A] extends Product with Serializable {
   def instrument: A

@@ -3,7 +3,6 @@ package gem
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
-import scala.util.Random
 import scalaz._, Scalaz._
 import scalaz.Ordering._
 
@@ -60,8 +59,8 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     forAll { (i: Int, l0: Location, l1: Location) =>
       val count = (i % 10000).abs + 1
       Order[Location].order(l0, l1) match {
-        case LT => Location.find(count, l0, l1) should have length count
-        case GT => Location.find(count, l1, l0) should have length count
+        case LT => Location.find(count, l0, l1).length shouldEqual count
+        case GT => Location.find(count, l1, l0).length shouldEqual count
         case EQ => Location.find(count, l0, l1) should have length 0
       }
     }

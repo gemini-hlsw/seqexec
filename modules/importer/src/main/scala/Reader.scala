@@ -2,13 +2,9 @@ package gem
 
 import edu.gemini.pot.sp.ISPProgram
 import edu.gemini.spModel.io.impl.PioSpXmlParser
-import edu.gemini.spModel.io.SpImportService
-import edu.gemini.spModel.core.ProgramId
-import edu.gemini.spModel.core.ProgramId._
 import edu.gemini.pot.spdb.{ IDBDatabaseService, DBLocalDatabase }
 
 import java.io._
-import java.util.logging.{ Logger, Level }
 
 import scalaz.Scalaz._
 import scalaz.effect._
@@ -20,7 +16,7 @@ case class ProgramReader(parser: PioSpXmlParser) {
       IO(new InputStreamReader(fis, "UTF-8")).using { r =>
         IO {
           parser.parseDocument(r) match {
-            case p: ISPProgram => Some(p) 
+            case p: ISPProgram => Some(p)
             case _             => None // not a science program
           }
         }
@@ -29,7 +25,7 @@ case class ProgramReader(parser: PioSpXmlParser) {
 }
 
 object ProgramReader {
-  
+
   implicit val IDBDatabaseServiceResource: Resource[IDBDatabaseService] =
     new Resource[IDBDatabaseService] {
       def close(db: IDBDatabaseService) = IO(db.getDBAdmin.shutdown())

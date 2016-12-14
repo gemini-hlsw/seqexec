@@ -15,6 +15,21 @@ lazy val testLibs = Seq(
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.8",
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-encoding", "UTF-8",
+    "-feature",
+    "-language:higherKinds",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Xlint",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-value-discard",
+    "-Xfuture",
+    "-Ywarn-unused-import"
+  ),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
   libraryDependencies ++= ("org.scala-lang" %  "scala-reflect" % scalaVersion.value +: testLibs)
 )

@@ -2,8 +2,9 @@ package gem
 
 import gem.enum.ProgramRole
 
+import scala.language.implicitConversions
+
 import scalaz._, Scalaz._, scalaz.syntax.Ops
-import java.time._
 
 final case class User[A](
   id: User.Id,

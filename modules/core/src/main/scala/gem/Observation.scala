@@ -5,8 +5,8 @@ import gem.enum.Instrument
 import scalaz._, Scalaz._
 
 case class Observation[S](
-  id: Observation.Id, 
-  title: String, 
+  id: Observation.Id,
+  title: String,
   instrument: Option[Instrument], // redundant? this is on the steps too
   steps: List[S])
 

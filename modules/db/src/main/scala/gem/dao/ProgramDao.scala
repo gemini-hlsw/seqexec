@@ -1,14 +1,11 @@
 package gem
 package dao
 
-import gem.enum._
-import gem.config._
-
 import edu.gemini.spModel.core._
 import edu.gemini.spModel.core.ProgramId._
 
 import doobie.imports._
-import doobie.contrib.postgresql.syntax._
+//import doobie.contrib.postgresql.syntax._
 
 import scalaz._, Scalaz._
 
@@ -58,7 +55,7 @@ object ProgramDao {
             VALUES (${pid: Program.Id},
                     ${pid.siteVal.toString},
                     ${pid.ptypeVal.toString},
-                    ${new java.util.Date(pid.year + "/" + pid.month + "/" + pid.day)}) -- TODO: not this
+                    ${new java.util.Date(pid.start)})
     """.update.run
 
   private def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
