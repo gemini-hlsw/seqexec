@@ -39,7 +39,7 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
 /**
   * Handles sequence execution actions
   */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, List[SequenceView]]) extends ActionHandler(modelRW) {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.LoadedSequences]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
@@ -209,10 +209,9 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       }
     }
 
-    def onError(e: ErrorEvent): Unit = {
+    def onError(e: ErrorEvent): Unit =
       // Unfortunately reading the event is not cross-browser safe
       logger.severe("Error on websocket")
-    }
 
     def onClose(e: CloseEvent): Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
@@ -255,7 +254,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (List[SequenceView], WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedSequences, WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
@@ -263,8 +262,8 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (List[SequenceView], WebSock
       updated(value.copy(_3 = u))
 
     case NewSeqexecEvent(SequenceLoaded(sv)) =>
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence loaded")
-      updated(value.copy(_1 = sv), logE)
+      val logAndCloseE = SeqexecCircuit.appendToLogE(s"Sequence loaded") + Effect.action(CloseSearchArea)
+      updated(value.copy(_1 = SequencesQueue(sv)), logAndCloseE)
 
     /*case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
@@ -311,7 +310,6 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = SequencesQueue[SequenceId]
-
   val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
 
   def appendToLogE(s: String) =
@@ -333,8 +331,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Some useful readers
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: SequenceId):ModelR[_, Option[SequenceView]] =
-    zoom(_.sequences.find(_.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
+  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] = {
+    zoom(_.sequences.queue.find(_.id == id))
+  }
 
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))

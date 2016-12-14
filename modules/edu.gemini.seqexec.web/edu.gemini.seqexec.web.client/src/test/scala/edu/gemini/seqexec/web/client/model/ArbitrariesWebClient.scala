@@ -1,6 +1,8 @@
 package edu.gemini.seqexec.web.client.model
 
+import diode.RootModelR
 import diode.data._
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceView}
 import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
@@ -9,6 +11,7 @@ import scalaz._
 import Scalaz._
 
 trait ArbitrariesWebClient extends ArbitrariesWebCommon {
+  import edu.gemini.seqexec.model.SharedModelArbitraries._
 
   implicit def arbPot[A](implicit a: Arbitrary[A]): Arbitrary[Pot[A]] =
     Arbitrary {
@@ -21,15 +24,20 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =
     Arbitrary {
       for {
-        i <- Gen.oneOf(InstrumentNames.instruments.list.toList)
+        i   <- arbitrary[Instrument]
         idx <- arbitrary[Option[Int]]
-      } yield SequenceTab(i, SequencesOnDisplay.emptySeqRef, idx)
+        sv  <- arbitrary[Option[SequenceView]]
+      } yield SequenceTab(i, RefTo(new RootModelR(sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))))), idx)
     }
 
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =
     Arbitrary {
       for {
         s <- Gen.nonEmptyListOf(arbitrary[SequenceTab])
-      } yield SequencesOnDisplay(NonEmptyList(s.head, s.tail: _*).toZipper)
+        if s.exists(_.sequence().isDefined)
+      } yield {
+        val sequences = NonEmptyList(s.head, s.tail: _*)
+        SequencesOnDisplay(sequences.toZipper)
+      }
     }
 }

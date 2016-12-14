@@ -104,16 +104,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
           case req @ GET -> Root / "seqexec" / "sequence" / oid =>
             val user = userInRequest(req)
             user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              val r = for {
+              for {
                 obsId <-
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
                       .fold(Task.fail, Task.now)
-                _     <- se.load(inputQueue, obsId)
-                resp  <- Ok(SequencesQueue[SequenceId](List(oid)))
+                u     <- se.load(inputQueue, obsId)
+                resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ => Ok(SequencesQueue[SequenceId](List(oid))))
               } yield resp
-              r.handleWith {
-                case _ => NotFound(s"Not found sequence $oid")
-              }
             }
 
         }
