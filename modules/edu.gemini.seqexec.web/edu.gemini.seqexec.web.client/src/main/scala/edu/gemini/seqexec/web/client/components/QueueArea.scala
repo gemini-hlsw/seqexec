@@ -15,7 +15,7 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
 object QueueTableBody {
-  case class Props(sequences: ModelProxy[List[SequenceView]], sectionOpen: SectionVisibilityState)
+  case class Props(sequences: ModelProxy[SeqexecAppRootModel.LoadedSequences], sectionOpen: SectionVisibilityState)
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
@@ -54,7 +54,7 @@ object QueueTableBody {
     .render_P( p =>
       <.tbody(
         // Render after data arrives
-        p.sequences().map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
+        p.sequences().queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
             case (Some(s), i) =>
               <.tr(
                 ^.classSet(
@@ -100,7 +100,7 @@ object QueueTableBody {
     .componentDidMount($ => load($.props))
     .build
 
-  def apply(p: ModelProxy[List[SequenceView]], s: SectionVisibilityState) = component(Props(p, s))
+  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences], s: SectionVisibilityState) = component(Props(p, s))
 
 }
 
@@ -108,7 +108,7 @@ object QueueTableBody {
   * Shows a message when there is an error loading the queue
   */
 object LoadingErrorMsg {
-  case class Props(queue :ModelProxy[List[SequenceView]])
+  case class Props(queue :ModelProxy[SeqexecAppRootModel.LoadedSequences])
 
   val component = ReactComponentB[Props]("LoadingErrorMessage")
     .stateless
@@ -121,11 +121,11 @@ object LoadingErrorMsg {
     )
     .build
 
-  def apply(p: ModelProxy[List[SequenceView]]) = component(Props(p))
+  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p))
 }
 
 object QueueTableLoading {
-  case class Props(queue: List[SequenceView])
+  case class Props(queue: SeqexecAppRootModel.LoadedSequences)
 
   val component = ReactComponentB[Props]("QueueTableLoading")
     .stateless
@@ -137,7 +137,7 @@ object QueueTableLoading {
       )
     ).build.withKey("key.queue.loading")
 
-  def apply(p: ModelProxy[List[SequenceView]]) = component(Props(p()))
+  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p()))
 }
 
 /**
@@ -247,7 +247,7 @@ object QueueArea {
                 sequencesConnect(LoadingErrorMsg(_)),
                 QueueTableSection(p.searchArea())
               ),
-              p.searchArea() == SectionOpen ?= SequenceSearchResults() // Display the search area if open
+              p.searchArea() == SectionOpen ?= SequenceLoad() // Display the search area if open
             )
           )
         )

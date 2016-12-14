@@ -130,7 +130,7 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
   */
 case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
-                               sequences: List[SequenceView],
+                               sequences: SeqexecAppRootModel.LoadedSequences,
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                loginBox: SectionVisibilityState,
@@ -140,6 +140,9 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Nil,
+  type LoadedSequences = SequencesQueue[SequenceView]
+  val noSequencesLoaded = SequencesQueue[SequenceView](Nil)
+
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
     SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

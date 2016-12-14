@@ -17,16 +17,16 @@ import scalacss.ScalaCssReact._
 /**
   * Header of the search area, it shows the amount of items found
   */
-object SequenceSearchResultsHeader {
+object LoadSequenceResultsHeader {
   def closeArea = Callback { SeqexecCircuit.dispatch(CloseSearchArea) }
 
   val component = ReactComponentB[ModelProxy[Pot[SequencesQueue[SequenceId]]]]("SequenceSearchResultHeader")
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
-        p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Searching...")),
-        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = closeArea), s"Found ${u.queue.size} sequence(s)")),
-        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during search"))
+        p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Loading...")),
+        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = closeArea), s"Loading ${u.queue.size} sequence(s)")),
+        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during load"))
       )
     )
     .build
@@ -79,7 +79,7 @@ object SequenceSearchResultsBody {
 /**
   * Shows a table with search results
   */
-object SequenceSearchResults {
+object SequenceLoad {
   val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults)
   val searchResultsConnect = SeqexecCircuit.connect(_.searchResults)
 
@@ -91,22 +91,8 @@ object SequenceSearchResults {
         <.div(
           ^.cls := "segment", {
             implicit val eq = PotEq.searchResultsEq
-            searchResultsConnect(SequenceSearchResultsHeader.apply)
-          },
-          <.div(
-            ^.cls := "ui scroll pane bottom attached segment",
-            SeqexecStyles.searchResultListPane,
-            <.table(
-              ^.cls := "ui selectable compact table unstackable",
-              <.thead(
-                <.tr(
-                  <.th("Obs ID"),
-                  <.th("\u00a0")
-                )
-              ),
-              statusAndSearchResultsConnect(SequenceSearchResultsBody.apply)
-            )
-          )
+            searchResultsConnect(LoadSequenceResultsHeader.apply)
+          }
         )
       )
     )
