@@ -14,11 +14,10 @@ class SequenceDisplayHandlerSpec extends FlatSpec with Matchers with PropertyChe
 
   "SequenceDisplayHandler" should "ignore setting a sequence for an unknown sequence" in {
     forAll { (sequence: SequenceView) =>
-      val seq = sequence//.copy(id = "")
       val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay.empty))
-      val result = handler.handle(SelectToDisplay(seq))
+      val result = handler.handle(SelectToDisplay(sequence))
       result should matchPattern {
-        case ModelUpdate(SequencesOnDisplay(t)) if t.findNext(_.sequence === SeqexecCircuit.sequenceRef(seq.id)).isEmpty =>
+        case ModelUpdate(SequencesOnDisplay(t)) if t.findNext(_.sequence === SeqexecCircuit.sequenceRef(sequence.id)).isEmpty =>
       }
     }
   }

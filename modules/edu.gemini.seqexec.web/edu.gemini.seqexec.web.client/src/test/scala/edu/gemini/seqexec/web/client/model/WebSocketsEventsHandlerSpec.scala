@@ -29,7 +29,7 @@ class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers with PropertyCh
       val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
       val result = handler.handle(NewSeqexecEvent(SequenceLoaded(List(sequence))))
       // No user set
-      result.newModelOpt.exists(_.sequences.contains(sequence)) shouldBe true
+      result.newModelOpt.exists(_.sequences.queue.contains(sequence)) shouldBe true
     }
   }
   it should "accept many loaded Sequences" in {
@@ -37,7 +37,7 @@ class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers with PropertyCh
       val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
       val result = handler.handle(NewSeqexecEvent(SequenceLoaded(sequences)))
       // No user set
-      result.newModelOpt.exists(_.sequences === sequences) shouldBe true
+      result.newModelOpt.exists(_.sequences.queue === sequences) shouldBe true
     }
   }
 

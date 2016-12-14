@@ -262,8 +262,8 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
       updated(value.copy(_3 = u))
 
     case NewSeqexecEvent(SequenceLoaded(sv)) =>
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence loaded")
-      updated(value.copy(_1 = SequencesQueue(sv)), logE)
+      val logAndCloseE = SeqexecCircuit.appendToLogE(s"Sequence loaded") + Effect.action(CloseSearchArea)
+      updated(value.copy(_1 = SequencesQueue(sv)), logAndCloseE)
 
     /*case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
