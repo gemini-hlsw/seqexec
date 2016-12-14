@@ -43,7 +43,7 @@ lazy val core = project
       "com.chuusai" %% "shapeless"   % shapelessVersion
     ),
     sourceGenerators in Compile +=
-      Def.task { gen2(sourceManaged.value / "gem").unsafePerformIO }.taskValue
+      Def.task { gen2((sourceManaged in Compile).value / "gem").unsafePerformIO }.taskValue
   )
 
 lazy val db = project

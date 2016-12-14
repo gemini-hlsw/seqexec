@@ -5,7 +5,7 @@
 
 # Some globals for now.
 HOST=localhost
-NET=GemNet
+NET=gem-net
 PORT=1234
 
 # Fail and exit with a message.
@@ -103,6 +103,19 @@ clean() {
   docker rm   $(docker ps -a -q) &> /dev/null
 }
 
+verifyOrCreateGemNet() {
+  id=$(docker network ls -q --filter name=gem-net)
+  if [ -z $id ]; then
+    log "Creating gem-net bridge network."
+    docker network create gem-net > /dev/null
+    if [ $? -ne 0 ]; then
+      err "Unable to create gem-net bridge network."
+    fi
+  else
+    log "Found gem-net bridge network."
+  fi
+}
+
 # Perform an "initial" deployment which will have deployment ID 1. This assumes you have already
 # checked to be sure there are no other deployments here.
 # Usage: deployInitial
@@ -156,11 +169,10 @@ maxDeployId() {
 # Show some information about deployed containers.
 # Usage: ps
 ps() {
-  echo "deploy/name state"
   docker inspect \
          --format "{{ index .Config.Labels \"gemini.deploy\"}}{{ .Name }} {{ .State.Status }}" \
-         $(docker ps -a -q --filter label=gemini.deploy) \
-    | sort 2> /dev/null
+         $(docker ps -a -q --filter label=gemini.deploy) 2> /dev/null \
+    | sort
 }
 
 # Verify that there is exactly one running database container for the given deployment, and that
@@ -213,6 +225,22 @@ verify() {
   verifyGem $1
 }
 
+verifyGemImage() {
+  id=$(docker images -q telnetd:0.1-SNAPSHOT)
+  if [ -z $id ]; then
+    err "Could not find telnetd:0.1-SNAPSHOT image. You may need to do 'sbt docker:publishLocal'."
+  else
+    log "Found telnetd:0.1-SNAPSHOT image."
+  fi
+}
+
+verifyDocker() {
+  docker ps &> /dev/null
+  if [ $? -ne 0 ]; then
+    err "Docker isn't installed or isn't running. Download at https://www.docker.com/"
+  fi
+}
+
 # Show a usage messsage.
 # Usage: usage
 usage() {
@@ -233,6 +261,10 @@ usage() {
 }
 
 deploy() {
+
+  # Make sure prerequisites are available
+  verifyOrCreateGemNet
+  verifyGemImage
 
   # Get the ids, total, and current/next deployment number
   ids=($(containersWithLabel gemini.deploy))
@@ -265,6 +297,9 @@ deploy() {
   fi
 
 }
+
+# We can't really do anythig unless Docker is available
+verifyDocker
 
 case $1 in
   "ps")       ps;;
