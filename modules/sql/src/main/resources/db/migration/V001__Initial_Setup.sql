@@ -241,10 +241,10 @@ ALTER TABLE e_f2_window_cover OWNER TO postgres;
 --
 
 CREATE TABLE e_gcal_filter (
-    id character varying(20) NOT NULL,
+    id         character varying(20) PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL,
-    long_name character varying(20) NOT NULL
+    obsolete   boolean               NOT NULL,
+    long_name  character varying(20) NOT NULL
 );
 
 
@@ -255,10 +255,10 @@ ALTER TABLE e_gcal_filter OWNER TO postgres;
 --
 
 CREATE TABLE e_gcal_continuum (
-    id character varying(20) NOT NULL,
+    id         character varying(20) PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    long_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL
+    long_name  character varying(20) NOT NULL,
+    obsolete   boolean               NOT NULL
 );
 
 
@@ -269,10 +269,10 @@ ALTER TABLE e_gcal_continuum OWNER TO postgres;
 --
 
 CREATE TABLE e_gcal_arc (
-    id character varying(20) NOT NULL,
+    id         character varying(20) PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    long_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL
+    long_name  character varying(20) NOT NULL,
+    obsolete   boolean               NOT NULL
 );
 
 
@@ -283,10 +283,10 @@ ALTER TABLE e_gcal_arc OWNER TO postgres;
 --
 
 CREATE TABLE e_gcal_diffuser (
-    id character varying(20) NOT NULL,
+    id         character varying(20) PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL,
-    long_name character varying(20) NOT NULL
+    obsolete   boolean               NOT NULL,
+    long_name  character varying(20) NOT NULL
 );
 
 ALTER TABLE e_gcal_diffuser OWNER TO postgres;
@@ -296,10 +296,10 @@ ALTER TABLE e_gcal_diffuser OWNER TO postgres;
 --
 
 CREATE TABLE e_gcal_shutter (
-    id character varying(20) NOT NULL,
+    id         character varying(20) PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL,
-    long_name character varying(20) NOT NULL
+    obsolete   boolean               NOT NULL,
+    long_name  character varying(20) NOT NULL
 );
 
 ALTER TABLE e_gcal_shutter OWNER TO postgres;
@@ -641,19 +641,32 @@ COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should 
 -- Name: step_gcal; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE step_gcal (
-    step_gcal_id  integer PRIMARY KEY REFERENCES step ON DELETE CASCADE,
-    continuum     identifier,
+CREATE TABLE gcal (
+    gcal_id       SERIAL        PRIMARY KEY,
+    continuum     identifier                            REFERENCES e_gcal_continuum ON DELETE CASCADE,
     ar_arc        boolean       NOT NULL DEFAULT FALSE,
     cuar_arc      boolean       NOT NULL DEFAULT FALSE,
     thar_arc      boolean       NOT NULL DEFAULT FALSE,
     xe_arc        boolean       NOT NULL DEFAULT FALSE,
-    filter        identifier    NOT NULL,
-    diffuser      identifier    NOT NULL,
-    shutter       identifier    NOT NULL,
+    filter        identifier    NOT NULL                REFERENCES e_gcal_filter    ON DELETE CASCADE,
+    diffuser      identifier    NOT NULL                REFERENCES e_gcal_diffuser  ON DELETE CASCADE,
+    shutter       identifier    NOT NULL                REFERENCES e_gcal_shutter   ON DELETE CASCADE,
     exposure_time exposure_time NOT NULL,
     coadds        coadds        NOT NULL,
     CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
+);
+
+
+ALTER TABLE gcal OWNER TO postgres;
+
+
+--
+-- Name: step_gcal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_gcal (
+    step_gcal_id  integer PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    gcal_id       integer NOT NULL    REFERENCES gcal ON DELETE CASCADE
 );
 
 
@@ -976,47 +989,6 @@ ALTER TABLE ONLY e_f2_fpunit
 ALTER TABLE ONLY e_f2_window_cover
     ADD CONSTRAINT e_f2_window_cover_pkey PRIMARY KEY (id);
 
-
---
--- Name: e_gcal_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_gcal_filter
-    ADD CONSTRAINT e_gcal_filter_pkey PRIMARY KEY (id);
-
-
---
--- Name: e_gcal_continuum_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_gcal_continuum
-    ADD CONSTRAINT e_gcal_continuum_pkey PRIMARY KEY (id);
-
-
---
--- Name: e_gcal_arc_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_gcal_arc
-    ADD CONSTRAINT e_gcal_arc_pkey PRIMARY KEY (id);
-
-
---
--- Name: e_gcal_diffuser; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_gcal_diffuser
-    ADD CONSTRAINT e_gcal_diffuser_pkey PRIMARY KEY (id);
-
-
---
--- Name: e_gcal_shutter; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_gcal_shutter
-    ADD CONSTRAINT e_gcal_shutter_pkey PRIMARY KEY (id);
-
-
 --
 -- Name: e_program_role_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
@@ -1257,39 +1229,6 @@ ALTER TABLE ONLY step_f2
 
 ALTER TABLE ONLY step_f2
     ADD CONSTRAINT step_f2_window_cover_fkey FOREIGN KEY (window_cover) REFERENCES e_f2_window_cover(id);
-
-
---
--- Name: step_gcal_gcal_continuum_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_continuum_fkey FOREIGN KEY (continuum) REFERENCES e_gcal_continuum(id);
-
-
---
--- Name: step_gcal_gcal_filter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_filter_fkey FOREIGN KEY (filter) REFERENCES e_gcal_filter(id);
-
-
---
--- Name: step_gcal_gcal_diffuser_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_diffuser_fkey FOREIGN KEY (diffuser) REFERENCES e_gcal_diffuser(id);
-
-
---
--- Name: step_gcal_gcal_shutter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_gcal
-    ADD CONSTRAINT step_gcal_gcal_shutter_fkey FOREIGN KEY (shutter) REFERENCES e_gcal_shutter(id);
-
 
 --
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
