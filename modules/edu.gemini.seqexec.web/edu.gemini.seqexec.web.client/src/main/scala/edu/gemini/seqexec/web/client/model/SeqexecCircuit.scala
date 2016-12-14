@@ -209,10 +209,9 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       }
     }
 
-    def onError(e: ErrorEvent): Unit = {
+    def onError(e: ErrorEvent): Unit =
       // Unfortunately reading the event is not cross-browser safe
       logger.severe("Error on websocket")
-    }
 
     def onClose(e: CloseEvent): Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
