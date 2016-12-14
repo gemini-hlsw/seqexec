@@ -13,17 +13,36 @@ class SeqexecCircuitSequenceDisplayHandlerSpec extends FlatSpec with Matchers wi
   import edu.gemini.seqexec.model.SharedModelArbitraries._
 
   // Reduce the space search as List[Sequence] can be pretty large
-  implicit override val generatorDrivenConfig =
-    PropertyCheckConfiguration(minSize = 10, sizeRange = 20)
+  /*implicit override val generatorDrivenConfig =
+    PropertyCheckConfiguration(minSize = 10, sizeRange = 20)*/
 
-  ignore should "ignore setting a sequence for an uknown sequence" in {
+  "SequenceDisplayHandler" should /*"ignore setting a sequence for an unknown sequence" in {
     forAll { (sequence: SequenceView) =>
-        val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay.empty))
-        val result = handler.handle(SelectToDisplay(sequence))
+      val seq = sequence//.copy(id = "")
+      val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay.empty))
+      val result = handler.handle(SelectToDisplay(seq))
+      result should matchPattern {
+        case ModelUpdate(SequencesOnDisplay(t)) if t.findNext(_.sequence === SeqexecCircuit.sequenceRef(seq.id)).isEmpty =>
+      }
+    }
+  }
+  it should */"set the current sequence when present" in {
+    forAll { (sod: SequencesOnDisplay) =>
+      val sequenceTab = sod.instrumentSequences.rights.headOption.orElse(sod.instrumentSequences.lefts.headOption).getOrElse(sod.instrumentSequences.focus)
+      val sequence = sequenceTab.sequence()
+      println("SEQ " + sod)
+      val handler = new SequenceDisplayHandler(new RootModelRW(sod))
+      //println("FOC " + handler.modelRW.apply().instrumentSequences.focus)
+      sequence.fold(fail()) { s =>
+        println("FOC " + handler.modelRW.apply().instrumentSequences.toStream.toList.map(_.sequence().forall(_.id == s.id)))
+        //println("SEQ " + s)
+        val result = handler.handle(SelectToDisplay(s))
+        println(result)
         result should matchPattern {
-          case ModelUpdate(SequencesOnDisplay(t)) if t.findNext(_.sequence == SeqexecCircuit.sequenceRef(sequence.id)).isEmpty =>
+          case ModelUpdate(SequencesOnDisplay(t)) if t.focus === sequenceTab =>
         }
       }
     }
+  }
 
 }

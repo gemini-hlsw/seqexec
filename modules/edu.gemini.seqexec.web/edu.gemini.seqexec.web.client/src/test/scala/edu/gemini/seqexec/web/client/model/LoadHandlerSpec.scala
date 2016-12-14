@@ -1,13 +1,13 @@
 package edu.gemini.seqexec.web.client.model
 
-import diode.ActionResult.{ModelUpdate, ModelUpdateEffect}
+import diode.ActionResult.ModelUpdateEffect
 import diode.RootModelRW
 import diode.data._
 import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
-class SeqexecCircuitLoadHandlerSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebCommon {
+class LoadHandlerSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebCommon {
 
   // Reduce the space search as List[Sequence] can be pretty large
   implicit override val generatorDrivenConfig =
