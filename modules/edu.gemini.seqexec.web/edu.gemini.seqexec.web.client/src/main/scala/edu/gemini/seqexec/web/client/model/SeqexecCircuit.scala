@@ -333,8 +333,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Some useful readers
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: SequenceId):ModelR[_, Option[SequenceView]] =
-    zoom(_.sequences.find(_.id == id))//.fold(Empty: Pot[Sequence])(s => Ready(s)))
+  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] = {
+    zoom(_.sequences.find(_.id == id))
+  }
 
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
