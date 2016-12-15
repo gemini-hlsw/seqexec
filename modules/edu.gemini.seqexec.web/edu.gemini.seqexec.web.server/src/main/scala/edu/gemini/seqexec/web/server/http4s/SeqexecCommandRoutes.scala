@@ -42,22 +42,13 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
     case req @ GET  -> Root  / obsId / "dynamic" / step / system =>
       Ok(toSequenceConfig("show", commands.showDynamic(obsId, step, system)))*/
 
-    case req @ POST -> Root  / obsId / "run" =>
-      Ok(toCommandResult("run", commands.run(obsId)))
-
-    case req @ POST -> Root  / obsId / "stop" =>
-      Ok(toCommandResult("stop", commands.stop(obsId)))
-
-    case req @ POST -> Root  / obsId / "continue" =>
-      Ok(toCommandResult("continue", commands.continue(obsId)))
-
     /*case req @ GET  -> Root  / obsId / "state" =>
       Ok(toSequenceConfig("state", commands.state(obsId)))*/
 
     // New SeqexecEngine
 
     // TODO: Add obsId parameter
-    case req @ POST -> Root / obsId / "start" =>
+    case POST -> Root / obsId / "start" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
       for {
@@ -69,7 +60,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
       } yield resp
 
     // TODO: Add obsId parameter
-    case req @ POST -> Root / obsId / "pause" =>
+    case POST -> Root / obsId / "pause" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
       for {
@@ -80,7 +71,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         resp  <- Ok(s"Pause sequence $obsId")
       } yield resp
 
-    case req @ GET -> Root / "refresh" =>
+    case GET -> Root / "refresh" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
       Ok(se.requestRefresh(inputQueue).map(_.toString))

@@ -32,10 +32,6 @@ sealed trait Commands {
   def showStatic(obsId: String, system: String): CommandResult
   def showDynamic(obsId: String, step: String): CommandResult
   def showDynamic(obsId: String, step: String, system: String): CommandResult
-  def run(obsId: String): CommandResult
-  def stop(obsId: String): CommandResult
-  def continue(obsId: String): CommandResult
-  def state(obsId: String): CommandResult
 
 }
 
@@ -103,14 +99,6 @@ object Commands {
         s   <- ifStepValid(oid, seq, step)
         ks  = seq.getStaticKeys.filter(sysFilter(system))
       } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(seq, s, ks), Nil)
-
-    override def run(obsId: String): CommandResult = ???
-
-    override def stop(obsId: String): CommandResult = ???
-
-    override def continue(obsId: String): CommandResult = ???
-
-    override def state(obsId: String): CommandResult = ???
 
     def seqValue(o: Object): String = o match {
       case s: SequenceableSpType => s.sequenceValue()
