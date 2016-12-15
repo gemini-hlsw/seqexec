@@ -14,7 +14,7 @@ import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import boopickle.Default._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -263,7 +263,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
 
     case NewSeqexecEvent(SequenceLoaded(sv)) =>
       val logAndCloseE = SeqexecCircuit.appendToLogE(s"Sequence loaded") + Effect.action(CloseSearchArea)
-      updated(value.copy(_1 = SequencesQueue(sv)), logAndCloseE)
+      updated(value.copy(_1 = sv), logAndCloseE)
 
     /*case NewSeqexecEvent(event @ SequenceStartEvent(id)) =>
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id started")
