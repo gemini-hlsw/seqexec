@@ -23,6 +23,7 @@ object SharedModelArbitraries {
   implicit val speArb = implicitly[Arbitrary[SequencePauseRequested]]
   implicit val lmArb  = implicitly[Arbitrary[NewLogMessage]]
   implicit val sqiArb = implicitly[Arbitrary[SequencesQueue[SequenceId]]]
+  implicit val sqvArb = implicitly[Arbitrary[SequencesQueue[SequenceView]]]
 }
 
 /**

@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.{Action, Event, Sequence}
+import edu.gemini.seqexec.engine.Event
 
 import scalaz._
 import Scalaz._
@@ -47,7 +47,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.process(q)(engine.initState).map {
       case (ev, qState) =>
-        toSeqexecEvent(ev)(qState.values.map(s => viewSequence(s.toSequence)).toList)
+        toSeqexecEvent(ev)(SequencesQueue(qState.values.map(s => viewSequence(s.toSequence)).toList))
     }
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
@@ -59,7 +59,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     u.run
   }
 
-  private def toSeqexecEvent(ev: engine.Event)(svs: List[SequenceView]): SeqexecEvent = ev match {
+  private def toSeqexecEvent(ev: engine.Event)(svs: SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_)    => SequenceStart(svs)
       case engine.Pause(_)    => SequencePauseRequested(svs)

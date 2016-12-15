@@ -41,7 +41,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def run(s: SequenceView): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/run",
+      url = s"$baseUrl/commands/${s.id}/start",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

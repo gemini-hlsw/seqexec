@@ -42,10 +42,6 @@ object QueueTableBody {
     )
   }
 
-  def load(p: Props): Callback = Callback.log("here")
-    // Request to load the queue if not present
-    //Callback.when(p.sequences.value.isEmpty)(p.sequences.dispatchCB(UpdatedQueue(Empty)))
-
   def showSequence(p: Props,s: SequenceView): Callback =
     // Request to display the selected sequence
     p.sequences.dispatchCB(SelectToDisplay(s))
@@ -97,7 +93,6 @@ object QueueTableBody {
           }
       )
     )
-    .componentDidMount($ => load($.props))
     .build
 
   def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences], s: SectionVisibilityState) = component(Props(p, s))

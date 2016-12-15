@@ -6,19 +6,19 @@ object Model {
   object SeqexecEvent {
     case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 
-    case class SequenceStart(view: List[SequenceView]) extends SeqexecEvent
+    case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
-    case class StepExecuted(view: List[SequenceView]) extends SeqexecEvent
+    case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
-    case class SequenceCompleted(view: List[SequenceView]) extends SeqexecEvent
+    case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
-    case class SequenceLoaded(view: List[SequenceView]) extends SeqexecEvent
+    case class SequenceLoaded(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
-    case class StepBreakpointChanged(view: List[SequenceView]) extends SeqexecEvent
+    case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
-    case class StepSkipMarkChanged(view: List[SequenceView]) extends SeqexecEvent
+    case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
-    case class SequencePauseRequested(view: List[SequenceView]) extends SeqexecEvent
+    case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecEvent
 
     // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
     // has to be embedded in a `Task`

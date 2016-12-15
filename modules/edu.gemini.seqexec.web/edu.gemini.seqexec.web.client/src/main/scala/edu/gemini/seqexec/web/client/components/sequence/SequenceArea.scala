@@ -14,7 +14,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLe
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactNode, Ref}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNode, Ref}
 
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
@@ -26,26 +26,17 @@ import org.scalajs.dom.document
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class State(nextScrollPos: Double, autoScrolled: Boolean)
+  case class State(runRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
-  def requestRun(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestRun(s))}
+  class Backend($: BackendScope[Props, State]) {
 
-  def requestPause(s: SequenceView): Callback = Callback.log("Request pause")
+    def requestRun(s: SequenceView): Callback = $.modState(_.copy(runRequested = true)) >> Callback {
+      SeqexecCircuit.dispatch(RequestRun(s))
+    }
 
-  def requestStop(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestStop(s))}
-
-  def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
-
-  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
-
-  // Reference to the specifc DOM marked by the name `scrollRef`
-  val scrollRef = Ref[HTMLElement]("scrollRef")
-
-  val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(0, autoScrolled = false))
-    .renderPS { ($, p, s) =>
+    def render(p: Props, s: State) = {
       <.div(
         ^.cls := "ui raised secondary segment",
         p.stepConfigDisplayed.fold {
@@ -62,7 +53,7 @@ object SequenceStepsTableContainer {
                 "Sequence completed"
               ),
             p.status.isLogged && p.s.status == SequenceState.Idle ?=
-              Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected), "Run"),
+              Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected || s.runRequested), "Run"),
             p.status.isLogged && p.s.status == SequenceState.Running ?=
               Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
             p.status.isLogged && p.s.status == SequenceState.Running ?=
@@ -183,6 +174,22 @@ object SequenceStepsTableContainer {
         )
       )
     }
+  }
+
+  def requestPause(s: SequenceView): Callback = Callback.log("Request pause")
+
+  def requestStop(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestStop(s))}
+
+  def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
+
+  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
+
+  // Reference to the specifc DOM marked by the name `scrollRef`
+  val scrollRef = Ref[HTMLElement]("scrollRef")
+
+  val component = ReactComponentB[Props]("HeadersSideBar")
+    .initialState(State(runRequested = false, 0, autoScrolled = false))
+    .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
@@ -190,7 +197,7 @@ object SequenceStepsTableContainer {
       if (f.nextProps.s.id != f.currentProps.s.id) {
         // It will reset to 0 if the sequence changes
         // TODO It may be better to remember the pos of executed steps per sequence
-        f.$.setState(State(0, autoScrolled = true))
+        f.$.modState(_.copy(nextScrollPos = 0, autoScrolled = true))
       } else {
         div.fold(Callback.empty) { scrollPane =>
           /**
@@ -207,9 +214,9 @@ object SequenceStepsTableContainer {
                 case e: Element if e.classList.contains(SeqexecStyles.stepsListPane.htmlClass) =>
                   (top + height) <= (e.getBoundingClientRect().top + e.getBoundingClientRect().height)
                 // Fallback to the document in nothing else
-                case e if el.parentNode == document.body                                       =>
+                case _ if el.parentNode == document.body                                       =>
                   top <= document.documentElement.clientHeight
-                case e: Element                                                                =>
+                case _: Element                                                                =>
                   go(el.parentNode)
               }
 
@@ -235,7 +242,7 @@ object SequenceStepsTableContainer {
 
           // If the scroll position is defined update the state
           scrollPosition.fold(Callback.empty) { p =>
-            f.$.setState(State(p, autoScrolled = true))
+            f.$.modState(_.copy(nextScrollPos = p, autoScrolled = true))
           }
         }
       }
