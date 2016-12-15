@@ -42,6 +42,10 @@ createDatabaseContainer() {
              --label gemini.db        \
              --label gemini.deploy=$1 \
              --name db-$1             \
+             --health-cmd "psql -U postgres -d gem -c 'select 1'" \
+             --health-interval 10s    \
+             --health-retries 2       \
+             --health-timeout 2s      \
              postgres:9.6.0   > /dev/null
    if [ $? -ne 0 ]; then
      err "Failed to create container ($?)."
@@ -185,16 +189,17 @@ verifyDb() {
     0)  warn "Cannot find a running database for deployment $1. There should be exactly one."
         return 1
         ;;
-    1)  # run a trivial query on the 'gem' database to ensure it's responding.
-        docker exec ${rids[0]}                \
-                    psql --dbnam=gem          \
-                         --command='select 1' \
-                         --username=postgres  &> /dev/null
-        if [ $? -ne 0 ]; then
-          warn "Could not connect to database 'gem' for deployment $1."
-          return 1
+    1)  status="starting"
+        until [ "$status" != "starting" ]
+        do
+          sleep 0.5
+          status=$(docker inspect -f "{{ .State.Health.Status }}" db-$1)
+        done
+        if [ "$status" = "healthy" ]; then
+          log "Deployment $1 database status: $status"
+        else
+          err "Deployment $1 database status: $status"
         fi
-        log "Deployment $1 database looks ok."
         ;;
     *) warn "Found ${#rids[@]} running databases for deployment $1. There should be exactly one."
        return 1
