@@ -204,7 +204,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     def onMessage(e: MessageEvent): Unit = {
       val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
       \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-        case \/-(event) => println(s"Decoding event: $event"); SeqexecCircuit.dispatch(NewSeqexecEvent(event))
+        case \/-(event) => println(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(NewSeqexecEvent(event))
         case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
       }
     }
