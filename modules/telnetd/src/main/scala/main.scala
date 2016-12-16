@@ -31,7 +31,7 @@ object Main extends SafeApp {
       val flyway = new Flyway()
       flyway.setDataSource(url, user, pass);
       flyway.migrate()
-    }
+    }.void
 
   override def runc: IO[Unit] =
     for {
