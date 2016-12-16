@@ -15,6 +15,7 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
 
   override def observe(obsid: ObsId): SeqAction[ObsId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
+    Thread.sleep(5000)
     TrySeq(obsid)
   } )
 

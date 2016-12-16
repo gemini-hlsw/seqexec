@@ -195,7 +195,9 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
   val format = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: ImageParameters): SeqAction[ObsId] =
-    EitherT(Task.now(TrySeq(f"S${date.format(format)}${counter.incrementAndGet()}%04d")))
+    EitherT(Task.delay{
+      TrySeq(f"S${date.format(format)}${counter.incrementAndGet()}%04d")
+    })
 
   override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: JsonBoolean): SeqAction[Unit] =
     EitherT(Task.now(TrySeq(())))

@@ -2,6 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.time.LocalDate
 
+import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Event
@@ -133,9 +134,29 @@ object SeqexecEngine {
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
 
-      for {
-        now <- Task(LocalDate.now)
-      } yield Settings(odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim)
+
+    // TODO: Review initialization of EPICS systems
+    def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
+          case None => throw new Exception("Unable to start EPICS service.")
+          case Some(s) => {
+            (sys.init(s)).leftMap {
+                case SeqexecFailure.SeqexecException(ex) => throw ex
+                case c: SeqexecFailure => throw new Exception(SeqexecFailure.explain(c))
+            }
+          }
+        }
+      )
+
+      val tcsInit = if(tcsSim) Task(()) else initEpicsSystem(TcsEpics)
+      // More instruments to be added to the list here
+      val instInit = if(instSim) Task(())
+        else Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
+
+      tcsInit *>
+        instInit *>
+        (for {
+          now <- Task(LocalDate.now)
+        } yield Settings(odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim) )
 
     }
   }
