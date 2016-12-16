@@ -9,7 +9,7 @@ object SmartGcalDao {
     def insertSmartF2(gcalId: Int, k: F2SmartGcalKey): ConnectionIO[Int] =
       sql"""
         INSERT INTO smart_f2 (lamp, baseline, disperser, filter, fpu, gcal_id)
-             VALUES ($l, $b, ${k.disperser}, ${k.filter}, ${k.fpu}, $gcalId)
+             VALUES ($l :: gcal_lamp_type, $b :: gcal_baseline_type, ${k.disperser}, ${k.filter}, ${k.fpu}, $gcalId)
       """.update.run
 
     for {

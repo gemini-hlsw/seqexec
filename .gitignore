@@ -29,6 +29,7 @@ bin/
 .ensime_cache/
 
 archive
+smartgcal
 
 .idea
 *.ipr
