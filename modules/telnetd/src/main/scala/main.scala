@@ -4,7 +4,7 @@ package telnetd
 import tuco._, Tuco._
 import doobie.imports._
 import org.flywaydb.core.Flyway
-import scalaz._, Scalaz._, effect._, scalaz.concurrent.Task
+import scalaz._, scalaz.effect._, scalaz.concurrent.Task
 
 /**
  * Entry point for running Gem with a telnet server. This will go away at some point and the telnet
@@ -26,7 +26,7 @@ object Main extends SafeApp {
     DriverManagerTransactor[M]("org.postgresql.Driver", url, user, pass)
 
   /** Run migrations. */
-  def mirgrate(url: String, user: String, pass: String): IO[Unit] =
+  def mirgrate(url: String, user: String, pass: String): IO[Int] =
     IO {
       val flyway = new Flyway()
       flyway.setDataSource(url, user, pass);

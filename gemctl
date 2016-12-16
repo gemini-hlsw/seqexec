@@ -37,15 +37,16 @@ todo() {
 # Usage: createDatabaseContainer <int>
 createDatabaseContainer() {
   log "Deploying Postgres container db-$1."
-  docker run --detach                 \
-             --net=$NET               \
-             --label gemini.db        \
-             --label gemini.deploy=$1 \
-             --name db-$1             \
+  docker run --detach                       \
+             --net=$NET                     \
+             --label gemini.db              \
+             --label gemini.deploy=$1       \
+             --label gemini.commit=$VERSION \
+             --name db-$1                   \
              --health-cmd "psql -U postgres -d gem -c 'select 1'" \
-             --health-interval 10s    \
-             --health-retries 2       \
-             --health-timeout 2s      \
+             --health-interval 10s          \
+             --health-retries 2             \
+             --health-timeout 2s            \
              postgres:9.6.0   > /dev/null
    if [ $? -ne 0 ]; then
      err "Failed to create container ($?)."
@@ -85,10 +86,11 @@ createGemContainer() {
              --net=$NET                                   \
              --label gemini.gem                           \
              --label gemini.deploy=$1                     \
+             --label gemini.commit=$VERSION               \
              --name gem-$1                                \
              --publish $PORT:6666                         \
              --env GEM_DB_URL=jdbc:postgresql://db-$1/gem \
-             telnetd:0.1-SNAPSHOT > /dev/null
+             gem-telnetd:$VERSION > /dev/null
   if [ $? -ne 0 ]; then
     err "Failed to create container ($?)."
   fi
@@ -231,11 +233,11 @@ verify() {
 }
 
 verifyGemImage() {
-  id=$(docker images -q telnetd:0.1-SNAPSHOT)
+  id=$(docker images -q gem-telnetd:$VERSION)
   if [ -z $id ]; then
-    err "Could not find telnetd:0.1-SNAPSHOT image. You may need to do 'sbt docker:publishLocal'."
+    err "Could not find gem-telnetd:$VERSION image. You may need to do 'sbt docker:publishLocal'."
   else
-    log "Found telnetd:0.1-SNAPSHOT image."
+    log "Found Gem image."
   fi
 }
 
@@ -265,7 +267,37 @@ usage() {
   echo
 }
 
+setVersion() {
+  if [ -z $1 ]; then
+    log "No version specified, assuming local working version."
+    local gitHash=$(git rev-parse HEAD 2> /dev/null)
+    if [ $? -ne 0 ]; then
+      err "Can't determine current Git hash. Are you in the right directory?"
+    fi
+    local delta=$(git status -s)
+    if [ -z "$delta" ]; then
+      log "No uncommitted changes."
+      VERSION=$gitHash
+    else
+      log "Found uncommitted changes."
+      VERSION="$gitHash-SNAPSHOT"
+    fi
+  else
+    VERSION=$1
+  fi
+  log "Deploying version $VERSION"
+}
+
 deploy() {
+
+  todo "Can we get rid of deploy versions?"
+  # There will only be one running Gem server and it must be an ancestor of $VERSION
+  # otherwise we can't deploy. However if there is no running gem version we need to
+  # *find* the most recent one, which we can do by sorting them by commit date with
+  # git show -s --format=%at
+
+  # Determine the version we wish to deploy
+  setVersion $1
 
   # Make sure prerequisites are available
   verifyOrCreateGemNet
@@ -283,6 +315,12 @@ deploy() {
   else
 
     log "Previous deployment was $current. This will be deployment $next."
+
+    todo "Verify that previous deployment is an ancestor of current deployment."
+    # git merge-base --is-ancestor prev next
+    #   will exit with 0 if true, 1 if false, 128 on error
+
+    todo "Don't deploy if current and next are identical non-snapshot versions."
 
     # Make sure current deployment is healthy
     verify $current
@@ -309,7 +347,7 @@ verifyDocker
 case $1 in
   "ps")       ps;;
   "clean")    clean;;
-  "deploy")   deploy;;
+  "deploy")   deploy $2;;
   "rm")       err "Not implemented yet.";;
   "rollback") err "Not implemented yet.";;
   *)          usage;;
