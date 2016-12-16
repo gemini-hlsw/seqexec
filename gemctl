@@ -47,7 +47,7 @@ createDatabaseContainer() {
              --health-interval 10s          \
              --health-retries 2             \
              --health-timeout 2s            \
-             postgres:9.6.0   > /dev/null
+             $POSTGRES_IMAGE   > /dev/null
    if [ $? -ne 0 ]; then
      err "Failed to create container ($?)."
    fi
@@ -267,25 +267,58 @@ usage() {
   echo
 }
 
-setVersion() {
+setCommit() {
   if [ -z $1 ]; then
-    log "No version specified, assuming local working version."
-    local gitHash=$(git rev-parse HEAD 2> /dev/null)
+    log "No commit specified, assuming local working version."
+    COMMIT=$(git rev-parse HEAD 2> /dev/null)
     if [ $? -ne 0 ]; then
       err "Can't determine current Git hash. Are you in the right directory?"
     fi
-    local delta=$(git status -s)
-    if [ -z "$delta" ]; then
-      log "No uncommitted changes."
-      VERSION=$gitHash
-    else
-      log "Found uncommitted changes."
-      VERSION="$gitHash-SNAPSHOT"
+  else
+    COMMIT=$1
+  fi
+  log "Deploying from commit $COMMIT"
+}
+
+setVersion() {
+  local delta=$(git status -s)
+  if [ -z "$delta" ]; then
+    log "No uncommitted changes."
+    SNAPSHOT=0
+    VERSION=$COMMIT
+  else
+    log "Found uncommitted changes. This is a SNAPSHOT deployment."
+    SNAPSHOT=1
+    VERSION="$COMMIT-SNAPSHOT"
+  fi
+}
+
+# Set POSTGRES_IMAGE to the correct value at commit COMMIT.
+setPgImage() {
+  if [ -z $SNAPSHOT ]; then
+    POSTGRES_IMAGE=$(
+      git show $COMMIT:pg-image.txt | \
+      grep -v '^[[:space:]]*$'      | \
+      grep -v '^#'
+    )
+    if [ $? -ne 0 ]; then
+      err "Couldn't find 'pg-image.txt' at the specified commit."
     fi
   else
-    VERSION=$1
+    POSTGRES_IMAGE=$(
+      cat pg-image.txt | \
+      grep -v '^[[:space:]]*$'      | \
+      grep -v '^#'
+    )
+    if [ $? -ne 0 ]; then
+      err "Couldn't find 'pg-image.txt' in working directory."
+    fi
   fi
-  log "Deploying version $VERSION"
+  if [ -z POSTGRES_IMAGE ]; then
+    err "Could not determine database image from 'pg-image.txt' at specified commit."
+  else
+    log "Using database image $POSTGRES_IMAGE."
+  fi
 }
 
 deploy() {
@@ -294,10 +327,28 @@ deploy() {
   # There will only be one running Gem server and it must be an ancestor of $VERSION
   # otherwise we can't deploy. However if there is no running gem version we need to
   # *find* the most recent one, which we can do by sorting them by commit date with
-  # git show -s --format=%at
+  #
+  #   git show -s --format=%at
+  #
+  # There can be at most one SNAPSHOT deployment, and it must be current. It is not
+  # possible to upgrade from a SNAPSHOT, only to replace or roll it back. SNAPSHOT
+  # deployments are only allowed on localhost.
+  #
+  # We need a way to identify the current *production* deployment because that's
+  # usually what we want to be developing against. There may be a bunch of intervening
+  # commits but the upgrade needs to target the production "tip". What if we tag each
+  # commit as it's deployed to production with some kind of recognizable pattern.
+  # This way we can find it via
+  #
+  #   git describe --match <pat> --abbrev=0
+  #
+  # The initial deployment must have such a tag. Rolling back a production deployment
+  # must also remove the tag.
 
   # Determine the version we wish to deploy
-  setVersion $1
+  setCommit $1
+  setVersion
+  setPgImage
 
   # Make sure prerequisites are available
   verifyOrCreateGemNet
