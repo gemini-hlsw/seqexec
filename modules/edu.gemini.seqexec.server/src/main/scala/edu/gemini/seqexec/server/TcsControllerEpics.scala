@@ -43,7 +43,7 @@ object TcsControllerEpics extends TcsController {
     if (r == BinaryOnOff.Off) M1GuideOff
     else M1GuideOn(s)
 
-  private def decodeGuideSourceOption(s: String): Boolean = s.trim == "ON"
+  private def decodeGuideSourceOption(s: String): Boolean = s.trim != "OFF"
 
   implicit private val decodeComaOption: DecodeEpicsValue[String, ComaOption] = DecodeEpicsValue((s: String)
   => if (s.trim == "Off") ComaOption.ComaOff else ComaOption.ComaOn)
@@ -372,6 +372,7 @@ object TcsControllerEpics extends TcsController {
     _ <- setM1Guide(gc.m1Guide)
     _ <- setM2Guide(gc.m2Guide)
     _ <- TcsEpics.instance.post
+    _ <- EitherT(Task(Log.info("TCS guide command post").right))
   } yield TrySeq(())
 
 }
