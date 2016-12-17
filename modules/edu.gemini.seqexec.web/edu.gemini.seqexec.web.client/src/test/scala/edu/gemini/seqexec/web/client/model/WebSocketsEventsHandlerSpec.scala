@@ -16,21 +16,21 @@ class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers with PropertyCh
 
   "WebSocketsEventsHandler" should "accept connection open events anonymously" in {
     val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
-    val result = handler.handle(NewSeqexecEvent(ConnectionOpenEvent(None)))
+    val result = handler.handle(ServerMessage(ConnectionOpenEvent(None)))
     // No user set
     result.newModelOpt.flatMap(_.user) shouldBe None
   }
   it should "set the user if the response contains one" in {
     val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
     val user = UserDetails("user", "User name")
-    val result = handler.handle(NewSeqexecEvent(ConnectionOpenEvent(Some(user))))
+    val result = handler.handle(ServerMessage(ConnectionOpenEvent(Some(user))))
     // No user set
     result.newModelOpt.flatMap(_.user) shouldBe Some(user)
   }
   it should "accept a loaded SequencesQueue" in {
     forAll { (sequences: SequencesQueue[SequenceView]) =>
       val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
-      val result = handler.handle(NewSeqexecEvent(SequenceLoaded(sequences)))
+      val result = handler.handle(ServerMessage(SequenceLoaded(sequences)))
       // No user set
       result.newModelOpt.exists(_.sequences === sequences) shouldBe true
     }
