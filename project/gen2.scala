@@ -175,6 +175,26 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("GcalBaselineType") {
+        type GcalBaselineTypeRec = Record.`'tag -> String`.T
+        val io = sql"""
+          SELECT enumlabel x, enumlabel y
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'gcal_baseline_type'
+        """.query[(String, GcalBaselineTypeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GcalLampType") {
+        type GcalLampTypeRec = Record.`'tag -> String`.T
+        val io = sql"""
+          SELECT enumlabel x, enumlabel y
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'gcal_lamp_type'
+        """.query[(String, GcalLampTypeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("EventType") {
         type EventTypeRec = Record.`'tag -> String`.T
         val io = sql"""

@@ -61,14 +61,16 @@ object StepDao {
     """.update.run
 
   private def insertGcalSlice(id: Int, gcal: GcalConfig): ConnectionIO[Int] = {
-    val arcs: GcalArc => Boolean = gcal.arcs.member
+    def insertGcalStep(gcal_id: Int): ConnectionIO[Int] =
+      sql"""
+        INSERT into step_gcal (step_gcal_id, gcal_id)
+        VALUES ($id, $gcal_id)
+      """.update.run
 
-    import GcalArc._
-
-    sql"""
-      INSERT INTO step_gcal (step_gcal_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
-      VALUES ($id, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime.getSeconds}, ${gcal.coadds})
-    """.update.run
+    for {
+      gcal_id <- GcalDao.insert(gcal)
+      r       <- insertGcalStep(gcal_id)
+    } yield r
   }
 
   private def insertSmartGcalSlice(id: Int, t: SmartGcalType): ConnectionIO[Int] =
@@ -141,22 +143,24 @@ object StepDao {
     sql"""
       SELECT s.instrument,
              s.step_type,
-             sg.continuum,
-             sg.ar_arc,
-             sg.cuar_arc,
-             sg.thar_arc,
-             sg.xe_arc,
-             sg.filter,
-             sg.diffuser,
-             sg.shutter,
-             sg.exposure_time,
-             sg.coadds,
+             gc.continuum,
+             gc.ar_arc,
+             gc.cuar_arc,
+             gc.thar_arc,
+             gc.xe_arc,
+             gc.filter,
+             gc.diffuser,
+             gc.shutter,
+             gc.exposure_time,
+             gc.coadds,
              sc.offset_p,
              sc.offset_q,
              ss.type
         FROM step s
              LEFT OUTER JOIN step_gcal sg
                 ON sg.step_gcal_id    = s.step_id
+             LEFT OUTER JOIN gcal gc
+                ON gc.gcal_id         = sq.gcal_id
              LEFT OUTER JOIN step_science sc
                 ON sc.step_science_id = s.step_id
              LEFT OUTER JOIN step_smart_gcal ss
