@@ -24,9 +24,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null))
 
   val systems = SeqTranslate.Systems(
-    if(settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
-    if(settings.tcsSim) TcsControllerSim else TcsControllerEpics,
-    if(settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
+    if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
+    if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
+    if (settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
   )
 
   // TODO: Add seqId: SPObservationID as parameter
@@ -73,7 +73,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Completed(_, _, _) => NewLogMessage("Action completed")
       case engine.Failed(_, _, _)    => NewLogMessage("Action failed")
       case engine.Executed(_)        => StepExecuted(svs)
-      case engine.Finished(_)        => NewLogMessage("Execution finished")
+      case engine.Finished(_)        => SequenceCompleted(svs)
     }
   }
 
