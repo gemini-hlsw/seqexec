@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState}
+import edu.gemini.seqexec.model.Model.SequenceMetadata
 
 import scalaz._
 import Scalaz._
@@ -15,21 +15,6 @@ object Sequence {
   type Id = String
 
   def empty[A](id: String): Sequence[A] = Sequence(id, SequenceMetadata(""), Nil)
-
-  /**
-    * Calculate the `Sequence` `Status` based on the underlying `Action`s.
-    *
-    */
-  def status(seq: Sequence[Action \/ Result]): SequenceState = {
-
-    // TODO: Get rid of this
-    if (seq.steps.isEmpty || seq.steps.all(_.executions.all(_.isEmpty))
-          || seq.any(Execution.errored)
-    ) SequenceState.Error("An action errored")
-    else if (seq.all(_.isLeft)) SequenceState.Idle
-    else if (seq.all(_.isRight)) SequenceState.Completed
-    else SequenceState.Running
-  }
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
@@ -177,8 +162,8 @@ object Sequence {
           qs match {
             // TODO: Isn't there a better way to write this?
             case Initial(st, _) => Initial(st, s)
-            case Zipper(st, _) => Zipper(st, s)
-            case Final(st, _) => Final(st, s)
+            case Zipper(st, _)  => Zipper(st, s)
+            case Final(st, _)   => Final(st, s)
           }
           ),
         _.status

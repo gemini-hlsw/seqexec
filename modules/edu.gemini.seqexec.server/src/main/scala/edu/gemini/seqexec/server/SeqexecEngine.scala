@@ -45,11 +45,27 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
-  def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
+  def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] = {
+
+    implicit def toSequenceState(st: engine.Status): SequenceState = st match {
+      case engine.Status.Waiting   => SequenceState.Idle
+      case engine.Status.Completed => SequenceState.Completed
+      case engine.Status.Running   => SequenceState.Running
+    }
+
     engine.process(q)(engine.initState).map {
       case (ev, qState) =>
-        toSeqexecEvent(ev)(SequencesQueue(qState.values.map(s => viewSequence(s.toSequence)).toList))
+        toSeqexecEvent(ev)(
+          SequencesQueue(
+            qState.values.map(
+              s => viewSequence(s.toSequence, s.status
+              )
+            ).toList
+          )
+        )
     }
+  }
+
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
@@ -83,11 +99,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     type StepAR = engine.Step[engine.Action \/ engine.Result]
 
 
-    def viewSequence(seq: SequenceAR): SequenceView =
+    def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView =
       // TODO: Implement willStopIn
-      SequenceView(seq.id, seq.metadata, statusSequence(seq), engineSteps(seq), None)
-
-    private def statusSequence(seq: SequenceAR): SequenceState = engine.Sequence.status(seq)
+      SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
 
     private def engineSteps(seq: SequenceAR): List[Step] = {
 
