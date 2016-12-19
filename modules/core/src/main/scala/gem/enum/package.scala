@@ -28,4 +28,14 @@ package object enum {
       }
   }
 
+  /** Add fold on SmartGcalType. */
+  implicit class SmartGcalTypeOps(t: SmartGcalType) {
+    def fold[X](lamp: GcalLampType => X, baseline: GcalBaselineType => X): X =
+      t match {
+        case SmartGcalType.Arc           => lamp(GcalLampType.Arc)
+        case SmartGcalType.Flat          => lamp(GcalLampType.Flat)
+        case SmartGcalType.DayBaseline   => baseline(GcalBaselineType.Day)
+        case SmartGcalType.NightBaseline => baseline(GcalBaselineType.Night)
+      }
+  }
 }

@@ -1,18 +1,11 @@
 package gem.dao
 
 import gem.config.{F2SmartGcalKey, GcalConfig, SmartGcalKey}
-import gem.enum.{GcalBaselineType, GcalLampType, SmartGcalType}
+import gem.enum._
 import doobie.imports._
 import scalaz._, Scalaz._
 
 object SmartGcalDao {
-  def split(t: SmartGcalType): GcalLampType \/ GcalBaselineType =
-    t match {
-      case SmartGcalType.Arc           => GcalLampType.Arc.left
-      case SmartGcalType.Flat          => GcalLampType.Flat.left
-      case SmartGcalType.DayBaseline   => GcalBaselineType.Day.right
-      case SmartGcalType.NightBaseline => GcalBaselineType.Night.right
-    }
 
   def selectF2(k: F2SmartGcalKey, t: SmartGcalType): ConnectionIO[List[Int]] = {
     def byLamp(l: GcalLampType): ConnectionIO[List[Int]] =
@@ -35,7 +28,7 @@ object SmartGcalDao {
            AND fpu       = ${k.fpu}
       """.query[Int].list
 
-    split(t).fold(byLamp, byBaseline)
+    t.fold(byLamp, byBaseline)
   }
 
   def select(k: SmartGcalKey, t: SmartGcalType): ConnectionIO[List[GcalConfig]] =
