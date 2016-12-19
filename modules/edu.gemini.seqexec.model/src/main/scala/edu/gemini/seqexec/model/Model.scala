@@ -3,22 +3,25 @@ package edu.gemini.seqexec.model
 object Model {
 
   sealed trait SeqexecEvent
+  sealed trait SeqexecModelUpdate extends SeqexecEvent {
+    def view: SequencesQueue[SequenceView]
+  }
   object SeqexecEvent {
     case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 
-    case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceLoaded(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class SequenceLoaded(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecEvent
+    case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
     // has to be embedded in a `Task`

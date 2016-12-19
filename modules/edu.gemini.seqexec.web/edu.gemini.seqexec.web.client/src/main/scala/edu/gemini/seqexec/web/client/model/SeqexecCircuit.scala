@@ -7,14 +7,14 @@ import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.Model.{SeqexecEvent, SequenceId, SequenceView, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import boopickle.Default._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -204,7 +204,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     def onMessage(e: MessageEvent): Unit = {
       val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
       \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-        case \/-(event) => println(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(NewSeqexecEvent(event))
+        case \/-(event) => println(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
         case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
       }
     }
@@ -258,24 +258,18 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
   implicit val runner = new RunAfterJS
 
   override def handle = {
-    case NewSeqexecEvent(ConnectionOpenEvent(u)) =>
+    case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
 
-    case NewSeqexecEvent(SequenceLoaded(sv)) =>
-      updated(value.copy(_1 = sv))
-
-    case NewSeqexecEvent(SequenceStart(sv)) =>
-      updated(value.copy(_1 = sv))
-
-    case NewSeqexecEvent(StepExecuted(sv)) =>
-      updated(value.copy(_1 = sv))
+    case ServerMessage(s: SeqexecModelUpdate) =>
+      updated(value.copy(_1 = s.view))
 
     /*case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
       val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
       updated(value.copy(_1 = value._1.map(_.sequenceCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)*/
 
-    case NewSeqexecEvent(s) =>
+    case ServerMessage(s) =>
       // Ignore unknown events
       noChange
   }
