@@ -37,24 +37,27 @@ object SmartGcalSample {
   def nextKey(): SmartGcalKey =
     allF2(rand.nextInt(allF2.size))
 
-  def runSelects: ConnectionIO[List[(SmartGcalKey, SmartGcalType, List[GcalConfig])]] =
-    (1 to 1000).toList.map(_ => (nextKey, nextType)).traverseU { case (k, t) =>
+  def runSelects(qs: List[(SmartGcalKey, SmartGcalType)]): ConnectionIO[List[(SmartGcalKey, SmartGcalType, List[GcalConfig])]] =
+    qs.traverseU { case (k, t) =>
       SmartGcalDao.select(k, t).map { g => (k, t, g) }
     }
 
-  def runc: IO[Unit] =
-    for {
-      l <- runSelects.transact(xa)
-      _ <- IO.putStrLn(l.mkString(",\n"))
-      _ <- IO.putStrLn("Done.")
-    } yield ()
-
   def main(args: Array[String]): Unit = {
-    val start = Instant.now()
-    runc.unsafePerformIO()
-    val end   = Instant.now()
+    val querys = (1 to 1000).toList.map(_ => (nextKey, nextType))
+    val start  = Instant.now()
+    val result = runSelects(querys).transact(xa).unsafePerformIO()
+    val end    = Instant.now()
 
+    println(result.mkString(", \n"))
     println(Duration.ofMillis(end.toEpochMilli - start.toEpochMilli))
-    // A bit less than 1.6 seconds ...
+
+    //
+    // A bit less than 1.6 seconds ...  adding indices doesn't seem to make a
+    // difference:
+    //
+    //    "smart_f2_baseline_disperser_filter_fpu_idx" btree (baseline, disperser, filter, fpu)
+    //    "smart_f2_lamp_disperser_filter_fpu_idx" btree (lamp, disperser, filter, fpu)
+    //
+
   }
 }
