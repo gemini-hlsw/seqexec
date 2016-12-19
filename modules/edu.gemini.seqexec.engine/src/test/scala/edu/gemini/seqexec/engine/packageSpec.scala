@@ -2,7 +2,7 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import org.scalatest.FlatSpec
 
 import scalaz._
@@ -79,7 +79,7 @@ class packageSpec extends FlatSpec {
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
     val qs = (q.enqueueOne(start(seqId)) *> processE(q).take(1).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.get(seqId).get.status === Status.Running)
+    assert(qs.get(seqId).get.status === SequenceState.Running)
   }
 
   it should "be 0 pending executions after execution" in {

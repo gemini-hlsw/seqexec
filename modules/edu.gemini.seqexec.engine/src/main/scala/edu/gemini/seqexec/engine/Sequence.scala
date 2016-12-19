@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.SequenceMetadata
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState}
 
 import scalaz._
 import Scalaz._
@@ -126,7 +126,7 @@ object Sequence {
       */
     val next: Option[State]
 
-    val status: Status
+    val status: SequenceState
 
     val pending: List[Step[Action]]
 
@@ -155,7 +155,7 @@ object Sequence {
 
   object State {
 
-    val status: State @> Status =
+    val status: State @> SequenceState =
     // `State` doesn't provide `.copy`
       Lens.lensu(
         (qs, s) => (
@@ -173,7 +173,7 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action]): State = Initial(q, Status.Waiting)
+    def init(q: Sequence[Action]): State = Initial(q, SequenceState.Idle)
 
 
     /**
@@ -181,7 +181,7 @@ object Sequence {
       * only pending `Step`s.
       *
       */
-    case class Initial(seq: Sequence[Action], status: Status) extends State {
+    case class Initial(seq: Sequence[Action], status: SequenceState) extends State {
       self =>
 
       override val next: Option[State] =
@@ -202,7 +202,7 @@ object Sequence {
       * This is the `State` in Zipper mode, which means is under execution.
       *
       */
-    case class Zipper(zipper: Sequence.Zipper, status: Status) extends State { self =>
+    case class Zipper(zipper: Sequence.Zipper, status: SequenceState) extends State { self =>
 
       override val next: Option[State] = zipper.next match {
         // Last execution
@@ -245,7 +245,7 @@ object Sequence {
       * only completed `Step`s.
       *
       */
-    case class Final(seq: Sequence[Result], status: Status) extends State { self =>
+    case class Final(seq: Sequence[Result], status: SequenceState) extends State { self =>
 
       override val next: Option[State] = None
 
@@ -260,7 +260,6 @@ object Sequence {
       override val toSequence: Sequence[Action \/ Result] = seq.map(_.right)
 
     }
-
 
   }
 

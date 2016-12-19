@@ -45,26 +45,18 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
-  def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] = {
-
-    implicit def toSequenceState(st: engine.Status): SequenceState = st match {
-      case engine.Status.Waiting   => SequenceState.Idle
-      case engine.Status.Completed => SequenceState.Completed
-      case engine.Status.Running   => SequenceState.Running
-    }
-
+  def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.process(q)(engine.initState).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
             qState.values.map(
-              s => viewSequence(s.toSequence, s.status
-              )
+              s => viewSequence(s.toSequence, s.status)
             ).toList
           )
         )
     }
-  }
+
 
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
