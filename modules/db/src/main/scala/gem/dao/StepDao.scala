@@ -159,7 +159,7 @@ object StepDao {
         FROM step s
              LEFT OUTER JOIN step_gcal sg
                 ON sg.step_gcal_id    = s.step_id
-             LEFT OUTER JOING gcal gc
+             LEFT OUTER JOIN gcal gc
                 ON gc.gcal_id         = sq.gcal_id
              LEFT OUTER JOIN step_science sc
                 ON sc.step_science_id = s.step_id
