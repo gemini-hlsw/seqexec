@@ -14,6 +14,7 @@ import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
+import org.scalajs.dom.ext.AjaxException
 import boopickle.Default._
 
 import scala.concurrent.Future
@@ -35,6 +36,9 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
       action.handleWith(this, loadEffect)(PotAction.handler())
 
     case action @ LoadSequence(_, Ready(r: SeqexecCircuit.SearchResults)) if r.queue.isEmpty =>
+      updated(action.potResult)
+
+    case action @ LoadSequence(_, Failed(a: AjaxException)) =>
       updated(action.potResult)
 
     case action: LoadSequence =>

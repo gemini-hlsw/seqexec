@@ -29,7 +29,7 @@ object LoadSequenceResultsHeader {
           case Nil => "No sequences found"
           case x   => s"Loaded ${x.size} sequence(s)"
         })),
-        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during load"))
+        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during load (bad id?)"))
       )
     )
     .build
