@@ -8,10 +8,10 @@ import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import org.scalajs.dom.ext.AjaxException
@@ -272,13 +272,12 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
 
+    case ServerMessage(SequenceCompleted(sv)) =>
+      val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
+      updated(value.copy(_1 = sv), audioEffect)
+
     case ServerMessage(s: SeqexecModelUpdate) =>
       updated(value.copy(_1 = s.view))
-
-    /*case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
-      val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
-      updated(value.copy(_1 = value._1.map(_.sequenceCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)*/
 
     case ServerMessage(s) =>
       // Ignore unknown events
