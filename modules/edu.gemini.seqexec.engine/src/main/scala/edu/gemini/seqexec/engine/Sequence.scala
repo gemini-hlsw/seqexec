@@ -16,21 +16,6 @@ object Sequence {
 
   def empty[A](id: String): Sequence[A] = Sequence(id, SequenceMetadata(""), Nil)
 
-  /**
-    * Calculate the `Sequence` `Status` based on the underlying `Action`s.
-    *
-    */
-  def status(seq: Sequence[Action \/ Result]): SequenceState = {
-
-    // TODO: Get rid of this
-    if (seq.steps.isEmpty || seq.steps.all(_.executions.all(_.isEmpty))
-          || seq.any(Execution.errored)
-    ) SequenceState.Error("An action errored")
-    else if (seq.all(_.isLeft)) SequenceState.Idle
-    else if (seq.all(_.isRight)) SequenceState.Completed
-    else SequenceState.Running
-  }
-
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
       Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
@@ -141,7 +126,7 @@ object Sequence {
       */
     val next: Option[State]
 
-    val status: Status
+    val status: SequenceState
 
     val pending: List[Step[Action]]
 
@@ -170,15 +155,15 @@ object Sequence {
 
   object State {
 
-    val status: State @> Status =
+    val status: State @> SequenceState =
     // `State` doesn't provide `.copy`
       Lens.lensu(
         (qs, s) => (
           qs match {
             // TODO: Isn't there a better way to write this?
             case Initial(st, _) => Initial(st, s)
-            case Zipper(st, _) => Zipper(st, s)
-            case Final(st, _) => Final(st, s)
+            case Zipper(st, _)  => Zipper(st, s)
+            case Final(st, _)   => Final(st, s)
           }
           ),
         _.status
@@ -188,7 +173,7 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action]): State = Initial(q, Status.Waiting)
+    def init(q: Sequence[Action]): State = Initial(q, SequenceState.Idle)
 
 
     /**
@@ -196,7 +181,7 @@ object Sequence {
       * only pending `Step`s.
       *
       */
-    case class Initial(seq: Sequence[Action], status: Status) extends State {
+    case class Initial(seq: Sequence[Action], status: SequenceState) extends State {
       self =>
 
       override val next: Option[State] =
@@ -217,7 +202,7 @@ object Sequence {
       * This is the `State` in Zipper mode, which means is under execution.
       *
       */
-    case class Zipper(zipper: Sequence.Zipper, status: Status) extends State { self =>
+    case class Zipper(zipper: Sequence.Zipper, status: SequenceState) extends State { self =>
 
       override val next: Option[State] = zipper.next match {
         // Last execution
@@ -260,7 +245,7 @@ object Sequence {
       * only completed `Step`s.
       *
       */
-    case class Final(seq: Sequence[Result], status: Status) extends State { self =>
+    case class Final(seq: Sequence[Result], status: SequenceState) extends State { self =>
 
       override val next: Option[State] = None
 
@@ -275,7 +260,6 @@ object Sequence {
       override val toSequence: Sequence[Action \/ Result] = seq.map(_.right)
 
     }
-
 
   }
 

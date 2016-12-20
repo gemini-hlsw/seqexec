@@ -1,6 +1,7 @@
 package edu.gemini.seqexec
 
 import edu.gemini.seqexec.engine.Event._
+import edu.gemini.seqexec.model.Model.SequenceState
 
 import scalaz._
 import Scalaz._
@@ -53,9 +54,9 @@ package object engine {
     * It also takes care of initiating the execution when transitioning to
     * `Running` `Status`.
     */
-  def switch(q: EventQueue)(id: Sequence.Id)(st: Status): Handle[Unit] =
+  def switch(q: EventQueue)(id: Sequence.Id)(st: SequenceState): Handle[Unit] =
     // TODO: Make Status an Equal instance
-    modifyS(id)(Sequence.State.status.set(_, st)) *> whenM(st == Status.Running)(next(q)(id))
+    modifyS(id)(Sequence.State.status.set(_, st)) *> whenM(st == SequenceState.Running)(next(q)(id))
 
   /**
     * Loads a sequence
@@ -64,8 +65,8 @@ package object engine {
     StateT[Task, EngineState, Unit] { s =>
       Task {
         s.get(id).map(t => t.status match {
-          case Status.Running => (s, ())
-          case _              => (s.updated(id, Sequence.State.init(seq)), ())
+          case SequenceState.Running => (s, ())
+          case _                     => (s.updated(id, Sequence.State.init(seq)), ())
         }).getOrElse((s.updated(id, Sequence.State.init(seq)), ()))
       }
     }
@@ -108,12 +109,11 @@ package object engine {
 
     getS(id).flatMap(_.map { seq =>
         seq.status match {
-          case Status.Waiting   => unit
-          case Status.Completed => unit
-          case Status.Running   => {
+          case SequenceState.Running => {
             val a = Nondeterminism[Task].gatherUnordered(seq.current.actions.zipWithIndex.map(act))
             a.liftM[HandleStateT] *> send(q)(executed(id))
           }
+          case _                     => unit
         }
       }.getOrElse(unit)
     )
@@ -134,12 +134,13 @@ package object engine {
     * action.
     */
   def fail[E](q: EventQueue)(id: Sequence.Id)(i: Int, e: E): Handle[Unit] =
-    modifyS(id)(_.mark(i)(Result.Error(e))) *> switch(q)(id)(Status.Waiting)
+    modifyS(id)(_.mark(i)(Result.Error(e))) *>
+      switch(q)(id)(SequenceState.Error("There was an error"))
 
   /**
     * Ask for the current Handle `Status`.
     */
-  def status(id: Sequence.Id): Handle[Option[Status]] = gets(_.get(id).map(_.status))
+  def status(id: Sequence.Id): Handle[Option[SequenceState]] = gets(_.get(id).map(_.status))
 
   /**
     * Log something and return the `State`.
@@ -162,8 +163,8 @@ package object engine {
   private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start(id)     => log("Output: Started") *> switch(q)(id)(Status.Running)
-      case Pause(id)     => log("Output: Paused") *> switch(q)(id)(Status.Waiting)
+      case Start(id)     => log("Output: Started") *> switch(q)(id)(SequenceState.Running)
+      case Pause(id)     => log("Output: Paused") *> switch(q)(id)(SequenceState.Idle)
       case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
       case Poll          => log("Output: Polling current state")
       case Exit          => log("Bye") *> close(q)
@@ -174,7 +175,7 @@ package object engine {
       case (Failed(id, i, e))    => log("Output: Action failed") *> fail(q)(id)(i, e)
       case Executed(id)          =>
         log("Output: Execution completed, launching next execution") *> next(q)(id)
-      case Finished(id)          => log("Output: Finished") *> switch(q)(id)(Status.Completed)
+      case Finished(id)          => log("Output: Finished") *> switch(q)(id)(SequenceState.Completed)
     }
 
     (ev match {

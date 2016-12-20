@@ -24,9 +24,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null))
 
   val systems = SeqTranslate.Systems(
-    if(settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
-    if(settings.tcsSim) TcsControllerSim else TcsControllerEpics,
-    if(settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
+    if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
+    if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
+    if (settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
   )
 
   // TODO: Add seqId: SPObservationID as parameter
@@ -48,8 +48,16 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.process(q)(engine.initState).map {
       case (ev, qState) =>
-        toSeqexecEvent(ev)(SequencesQueue(qState.values.map(s => viewSequence(s.toSequence)).toList))
+        toSeqexecEvent(ev)(
+          SequencesQueue(
+            qState.values.map(
+              s => viewSequence(s.toSequence, s.status)
+            ).toList
+          )
+        )
     }
+
+
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
@@ -73,7 +81,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Completed(_, _, _) => NewLogMessage("Action completed")
       case engine.Failed(_, _, _)    => NewLogMessage("Action failed")
       case engine.Executed(_)        => StepExecuted(svs)
-      case engine.Finished(_)        => NewLogMessage("Execution finished")
+      case engine.Finished(_)        => SequenceCompleted(svs)
     }
   }
 
@@ -83,11 +91,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     type StepAR = engine.Step[engine.Action \/ engine.Result]
 
 
-    def viewSequence(seq: SequenceAR): SequenceView =
+    def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView =
       // TODO: Implement willStopIn
-      SequenceView(seq.id, seq.metadata, statusSequence(seq), engineSteps(seq), None)
-
-    private def statusSequence(seq: SequenceAR): SequenceState = engine.Sequence.status(seq)
+      SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
 
     private def engineSteps(seq: SequenceAR): List[Step] = {
 
