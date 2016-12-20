@@ -29,10 +29,17 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action: LoadSequence =>
+    case action @ LoadSequence(_, Empty) =>
       // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity) >> Effect.action(CloseSearchArea).after(1.second)
-      action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
+      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
+      action.handleWith(this, loadEffect)(PotAction.handler())
+
+    case action @ LoadSequence(_, Ready(r: SeqexecCircuit.SearchResults)) if r.queue.isEmpty =>
+      updated(action.potResult)
+
+    case action: LoadSequence =>
+      // If there is a response close the search area in 1 sec
+      updated(action.potResult, Effect.action(CloseSearchArea).after(1.second))
   }
 }
 
