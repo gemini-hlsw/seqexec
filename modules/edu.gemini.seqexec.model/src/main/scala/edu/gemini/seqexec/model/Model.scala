@@ -23,6 +23,8 @@ object Model {
 
     case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
     // has to be embedded in a `Task`
     case class NewLogMessage(msg: String) extends SeqexecEvent

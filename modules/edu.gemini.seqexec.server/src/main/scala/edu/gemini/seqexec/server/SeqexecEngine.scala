@@ -65,7 +65,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Start(_)    => SequenceStart(svs)
       case engine.Pause(_)    => SequencePauseRequested(svs)
       case engine.Load(_, _)  => SequenceLoaded(svs)
-      case engine.Poll        => NewLogMessage("Immediate State requested")
+      case engine.Poll        => SequenceRefreshed(svs)
       case engine.Exit        => NewLogMessage("Exit requested by user")
     }
     case engine.EventSystem(se) => se match {
