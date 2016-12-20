@@ -31,7 +31,7 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case action: LoadSequence =>
       // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
+      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity) >> Effect.action(CloseSearchArea).after(1.second)
       action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
   }
 }

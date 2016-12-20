@@ -85,7 +85,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
       GZip {
         HttpService {
           case req @ GET -> Root / "seqexec" / "events"         =>
-          // Stream seqexec events to clients and a ping
+            // Stream seqexec events to clients and a ping
             val user = userInRequest(req)
             WS(
               Exchange(
