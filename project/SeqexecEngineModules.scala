@@ -41,7 +41,7 @@ trait SeqexecEngineModules {
   // We have to define the project properties at this level
   lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
     .in(file("modules/edu.gemini.seqexec.model"))
-    .settings(libraryDependencies ++= Seq(BooPickle.value) ++ TestLibs.value)
+    .settings(libraryDependencies ++= Seq(BooPickle.value, ScalaZCore.value) ++ TestLibs.value)
 
   lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
 

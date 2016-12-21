@@ -1,5 +1,8 @@
 package edu.gemini.seqexec.model
 
+import scalaz._
+import Scalaz._
+
 object Model {
 
   sealed trait SeqexecEvent
@@ -47,6 +50,8 @@ object Model {
     case object Skipped extends StepState
     case class Error(msg: String) extends StepState
     case object Running extends StepState
+
+    implicit val equal: Equal[StepState] = Equal.equalA[StepState]
   }
 
   sealed trait ActionStatus
@@ -79,6 +84,8 @@ object Model {
     case object Running           extends SequenceState
     case object Idle              extends SequenceState
     case class Error(msg: String) extends SequenceState
+
+    implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
   }
 
   /**
@@ -113,4 +120,6 @@ object Model {
   }
 
   case class LogMsg(t: LogType, timestamp: Time, msg: String)
+
+  implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
 }

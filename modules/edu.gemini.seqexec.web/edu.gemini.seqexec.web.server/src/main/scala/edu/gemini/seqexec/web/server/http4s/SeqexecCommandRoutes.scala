@@ -11,7 +11,8 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
 
-import scalaz.\/
+import scalaz._
+import Scalaz._
 import scalaz.concurrent.Task
 
 /**
@@ -72,9 +73,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
       } yield resp
 
     case GET -> Root / "refresh" =>
-      // TODO: Get rid of `.toString` How do we want to represent input results
-      // now?
-      Ok(se.requestRefresh(inputQueue).map(_.toString))
+      se.requestRefresh(inputQueue) *> NoContent()
 
   }}}
 }

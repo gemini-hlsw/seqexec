@@ -49,13 +49,14 @@ trait ModelBooPicklers {
     .addConcreteType[StepBreakpointChanged]
     .addConcreteType[StepSkipMarkChanged]
     .addConcreteType[SequencePauseRequested]
+    .addConcreteType[SequenceRefreshed]
     .addConcreteType[NewLogMessage]
 
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets
     * This method trims the binary array to be sent on the WS channel
     */
-  def newTrimmedArray(e: Model.SeqexecEvent): Array[Byte] = {
+  def trimmedArray(e: Model.SeqexecEvent): Array[Byte] = {
     val byteBuffer = Pickle.intoBytes(e)
     val bytes = new Array[Byte](byteBuffer.limit())
     byteBuffer.get(bytes, 0, byteBuffer.limit)

@@ -8,12 +8,13 @@ import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
+import org.scalajs.dom.ext.AjaxException
 import boopickle.Default._
 
 import scala.concurrent.Future
@@ -29,10 +30,22 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action: LoadSequence =>
+    case action @ LoadSequence(_, Empty) =>
       // Request loading the queue with ajax
       val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
-      action.handleWith(this, loadEffect)(PotAction.handler(250.milli))
+      action.handleWith(this, loadEffect)(PotAction.handler())
+
+    case action @ LoadSequence(_, Ready(r: SeqexecCircuit.SearchResults)) if r.queue.isEmpty =>
+      // Don't close the search area on an empty response
+      updated(action.potResult)
+
+    case action @ LoadSequence(_, Failed(a: AjaxException)) =>
+      // Don't close the search area on errors
+      updated(action.potResult)
+
+    case action: LoadSequence =>
+      // If there is a non-empty response close the search area in 1 sec
+      updated(action.potResult, Effect.action(CloseSearchArea).after(1.second))
   }
 }
 
@@ -237,8 +250,9 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       noChange
 
     case Connected(ws, delay) =>
-      val effect = Effect.action(AppendToLog("Connected"))
-      updated(WebSocketConnection(Ready(ws), delay), effect)
+      // After connected to the Websocket request a refresh
+      val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
+      updated(WebSocketConnection(Ready(ws), delay), refreshRequest)
 
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
@@ -261,13 +275,13 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(_3 = u))
 
+    case ServerMessage(SequenceCompleted(sv)) =>
+      // Play audio when the sequence completes
+      val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
+      updated(value.copy(_1 = sv), audioEffect)
+
     case ServerMessage(s: SeqexecModelUpdate) =>
       updated(value.copy(_1 = s.view))
-
-    /*case NewSeqexecEvent(event @ SequenceCompletedEvent(id)) =>
-      val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence $id completed")
-      updated(value.copy(_1 = value._1.map(_.sequenceCompleted(id)), _2 = value._2.append(event)), audioEffect >> logE)*/
 
     case ServerMessage(s) =>
       // Ignore unknown events

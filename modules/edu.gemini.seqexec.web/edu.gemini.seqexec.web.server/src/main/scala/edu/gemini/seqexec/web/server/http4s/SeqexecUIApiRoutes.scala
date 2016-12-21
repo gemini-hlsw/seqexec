@@ -12,6 +12,7 @@ import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
 import edu.gemini.seqexec.web.server.http4s.encoder._
+import edu.gemini.spModel.core.SPBadIDException
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
@@ -85,12 +86,12 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
       GZip {
         HttpService {
           case req @ GET -> Root / "seqexec" / "events"         =>
-          // Stream seqexec events to clients and a ping
+            // Stream seqexec events to clients and a ping
             val user = userInRequest(req)
             WS(
               Exchange(
-                Process.emit(Binary(newTrimmedArray(ConnectionOpenEvent(user)))) ++
-                  (pingProcess merge engineOutput.subscribe.map(v => Binary(newTrimmedArray(v)))),
+                Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user)))) ++
+                  (pingProcess merge engineOutput.subscribe.map(v => Binary(trimmedArray(v)))),
                 scalaz.stream.Process.empty
               )
             )
@@ -111,6 +112,8 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                 u     <- se.load(inputQueue, obsId)
                 resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ => Ok(SequencesQueue[SequenceId](List(oid))))
               } yield resp
+            }.handleWith {
+              case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")
             }
 
         }

@@ -5,8 +5,10 @@ import Event._
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import org.scalatest.FlatSpec
 
-import scalaz._
-import Scalaz._
+import scalaz.syntax.apply._
+import scalaz.syntax.foldable._
+import scalaz.Nondeterminism
+import scalaz.std.AllInstances._
 import scalaz.concurrent.Task
 import scalaz.stream.Cause
 import scalaz.stream.async
@@ -79,7 +81,7 @@ class packageSpec extends FlatSpec {
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
     val qs = (q.enqueueOne(start(seqId)) *> processE(q).take(1).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.get(seqId).get.status === SequenceState.Running)
+    assert(qs(seqId).status === SequenceState.Running)
   }
 
   it should "be 0 pending executions after execution" in {
@@ -88,7 +90,7 @@ class packageSpec extends FlatSpec {
       q.enqueueOne(start(seqId)) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
         processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.get(seqId).get.pending.isEmpty)
+    assert(qs(seqId).pending.isEmpty)
   }
 
   it should "be 1 Sequence done after execution" in {
@@ -97,7 +99,7 @@ class packageSpec extends FlatSpec {
       q.enqueueOne(start(seqId)) *>
         // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
         processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
-    assert(qs.get(seqId).get.done.length == 2)
+    assert(qs(seqId).done.length == 2)
   }
 
   it should "Print execution" in {

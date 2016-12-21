@@ -25,8 +25,11 @@ object LoadSequenceResultsHeader {
       <.div(
         ^.cls := "ui top attached segment header",
         p().renderPending(_ => <.div(IconCircleNotched.copyIcon(loading = true), "Loading...")),
-        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = closeArea), s"Loading ${u.queue.size} sequence(s)")),
-        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during load"))
+        p().renderReady(u => <.div(IconRemove.copyIcon(link = true, onClick = closeArea), u.queue match {
+          case Nil => "No sequences found"
+          case x   => s"Loaded ${x.size} sequence(s)"
+        })),
+        p().renderFailed(e => <.span(SeqexecStyles.errorText, "Got an error during load (bad id?)"))
       )
     )
     .build
