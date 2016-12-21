@@ -251,6 +251,7 @@ object SequenceStepsTableContainer {
           }
         }
       }
+      // Run both callbacks, to update the runRequested state and the scroll position
       runStateCB *> scrollStateCB
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance

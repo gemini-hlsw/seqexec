@@ -36,13 +36,15 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
       action.handleWith(this, loadEffect)(PotAction.handler())
 
     case action @ LoadSequence(_, Ready(r: SeqexecCircuit.SearchResults)) if r.queue.isEmpty =>
+      // Don't close the search area on an empty response
       updated(action.potResult)
 
     case action @ LoadSequence(_, Failed(a: AjaxException)) =>
+      // Don't close the search area on errors
       updated(action.potResult)
 
     case action: LoadSequence =>
-      // If there is a response close the search area in 1 sec
+      // If there is a non-empty response close the search area in 1 sec
       updated(action.potResult, Effect.action(CloseSearchArea).after(1.second))
   }
 }
@@ -248,9 +250,9 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       noChange
 
     case Connected(ws, delay) =>
-      val effect = Effect.action(AppendToLog("Connected"))
+      // After connected to the Websocket request a refresh
       val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
-      updated(WebSocketConnection(Ready(ws), delay), effect + refreshRequest)
+      updated(WebSocketConnection(Ready(ws), delay), refreshRequest)
 
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
@@ -274,6 +276,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
       updated(value.copy(_3 = u))
 
     case ServerMessage(SequenceCompleted(sv)) =>
+      // Play audio when the sequence completes
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
       updated(value.copy(_1 = sv), audioEffect)
 
