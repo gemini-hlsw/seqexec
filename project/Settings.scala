@@ -43,8 +43,8 @@ object Settings {
     val scalaZStream = "0.8a"
 
     // Scala libraries
-    val http4s       = "0.14.7a"
-    val squants      = "0.6.2"
+    val http4s       = "0.15.1a"
+    val squants      = "1.0.0"
     val argonaut     = "6.2-M1"
     val commonsHttp  = "2.0"
     val unboundId    = "3.1.1"
@@ -84,11 +84,11 @@ object Settings {
     val Slf4jJuli   = "org.slf4j"          %  "slf4j-jdk14"                       % LibraryVersions.slf4j
     val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
 
-    val Squants     = Def.setting("com.squants"  %%% "squants"              % LibraryVersions.squants)
-    val UPickle     = Def.setting("com.lihaoyi"  %%% "upickle"              % LibraryVersions.uPickle)
-    val BooPickle   = Def.setting("me.chrons"    %%% "boopickle"            % LibraryVersions.booPickle)
-    val JavaTimeJS  = Def.setting("org.scala-js" %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
-    val JavaLogJS   = Def.setting("org.scala-js" %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
+    val Squants     = Def.setting("org.typelevel" %%% "squants"              % LibraryVersions.squants)
+    val UPickle     = Def.setting("com.lihaoyi"   %%% "upickle"              % LibraryVersions.uPickle)
+    val BooPickle   = Def.setting("me.chrons"     %%% "boopickle"            % LibraryVersions.booPickle)
+    val JavaTimeJS  = Def.setting("org.scala-js"  %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
+    val JavaLogJS   = Def.setting("org.scala-js"  %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
     val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"         % LibraryVersions.scalaZ)
