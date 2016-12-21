@@ -90,8 +90,8 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
             val user = userInRequest(req)
             WS(
               Exchange(
-                Process.emit(Binary(newTrimmedArray(ConnectionOpenEvent(user)))) ++
-                  (pingProcess merge engineOutput.subscribe.map(v => Binary(newTrimmedArray(v)))),
+                Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user)))) ++
+                  (pingProcess merge engineOutput.subscribe.map(v => Binary(trimmedArray(v)))),
                 scalaz.stream.Process.empty
               )
             )

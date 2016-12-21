@@ -1,5 +1,8 @@
 package edu.gemini.seqexec.model
 
+import scalaz._
+import Scalaz._
+
 object Model {
 
   sealed trait SeqexecEvent
@@ -79,6 +82,8 @@ object Model {
     case object Running           extends SequenceState
     case object Idle              extends SequenceState
     case class Error(msg: String) extends SequenceState
+
+    implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
   }
 
   /**

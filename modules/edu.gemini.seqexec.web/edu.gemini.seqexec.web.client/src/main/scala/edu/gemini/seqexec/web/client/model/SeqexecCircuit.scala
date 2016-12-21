@@ -249,7 +249,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 
     case Connected(ws, delay) =>
       val effect = Effect.action(AppendToLog("Connected"))
-      updated(WebSocketConnection(Ready(ws), delay), effect)
+      val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
+      updated(WebSocketConnection(Ready(ws), delay), effect + refreshRequest)
 
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))

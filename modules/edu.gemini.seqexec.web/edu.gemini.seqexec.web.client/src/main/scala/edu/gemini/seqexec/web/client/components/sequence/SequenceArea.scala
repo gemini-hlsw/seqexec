@@ -19,6 +19,7 @@ import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNod
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
+import scalaz.syntax.equal._
 import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 
@@ -191,10 +192,14 @@ object SequenceStepsTableContainer {
     .initialState(State(runRequested = false, 0, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
+      // Update state of run requested depending on the run state
+      val runStateCB =
+        Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
+
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
       val div = scrollRef(f.$)
-      if (f.nextProps.s.id != f.currentProps.s.id) {
+      val scrollStateCB = if (f.nextProps.s.id != f.currentProps.s.id) {
         // It will reset to 0 if the sequence changes
         // TODO It may be better to remember the pos of executed steps per sequence
         f.$.modState(_.copy(nextScrollPos = 0, autoScrolled = true))
@@ -246,6 +251,7 @@ object SequenceStepsTableContainer {
           }
         }
       }
+      runStateCB *> scrollStateCB
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed

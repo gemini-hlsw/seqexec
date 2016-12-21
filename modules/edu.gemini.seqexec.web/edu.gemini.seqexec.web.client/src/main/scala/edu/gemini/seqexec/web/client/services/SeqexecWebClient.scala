@@ -47,6 +47,16 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
+    * Requests the backend to send a copy of the current state
+    */
+  def refresh(): Future[RegularCommand] = {
+    Ajax.get(
+      url = s"$baseUrl/commands/refresh",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Requests the backend to stop a sequence
     */
   def stop(s: SequenceView): Future[RegularCommand] = {
