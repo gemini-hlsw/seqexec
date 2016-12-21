@@ -240,11 +240,19 @@ object StepDao {
     * exception.
     *
     * @param oid observation whose step configurations are sought
-    * @param i instrument associated with the observation
     */
-  def selectAll(oid: Observation.Id, i: Instrument): ConnectionIO[List[Step[InstrumentConfig]]] =
-    (i match {
-      case Instrument.Flamingos2 => selectAllF2(oid)
-      case _                     => selectAllGeneric(oid)
-    }).map(_.map(_.widen[InstrumentConfig]))
+  def selectAll(oid: Observation.Id): ConnectionIO[List[Step[InstrumentConfig]]] = {
+    def instrumentConfig(ss: List[Step[Instrument]]): ConnectionIO[List[InstrumentConfig]] =
+      ss.headOption.fold(List.empty[InstrumentConfig].point[ConnectionIO]) { s =>
+        (s.instrument match {
+          case Instrument.Flamingos2 => selectF2(oid)
+          case _                     => selectGeneric(oid)
+        }).map(_.map(c => c: InstrumentConfig))  // List isn't a scalaz Functor? So no widen on List?
+      }
+
+    for {
+      ss <- selectEmpty(oid)
+      is <- instrumentConfig(ss)
+    } yield ss.zip(is).map { case (s, i) => s.as(i) }
+  }
 }
