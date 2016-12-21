@@ -175,7 +175,6 @@ object Sequence {
     // TODO: Make this function `apply`?
     def init(q: Sequence[Action]): State = Initial(q, SequenceState.Idle)
 
-
     /**
       * Initial `State`. This doesn't have any `Sequence` under execution, there are
       * only pending `Step`s.

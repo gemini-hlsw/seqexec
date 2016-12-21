@@ -57,8 +57,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         )
     }
 
-
-
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
@@ -91,7 +89,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     type QueueAR = engine.Queue[engine.Action \/ engine.Result]
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
     type StepAR = engine.Step[engine.Action \/ engine.Result]
-
 
     def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView =
       // TODO: Implement willStopIn
@@ -133,7 +130,6 @@ object SeqexecEngine {
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
-
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
       val odbHost = cfg.require[String]("seqexec-engine.odb")
       val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
@@ -141,7 +137,6 @@ object SeqexecEngine {
       val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
-
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
