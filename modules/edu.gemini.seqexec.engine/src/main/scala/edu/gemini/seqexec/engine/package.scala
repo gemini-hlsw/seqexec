@@ -47,7 +47,6 @@ package object engine {
   // Helper alias to facilitate lifting.
   type HandleStateT[M[_], A] = StateT[M, EngineState, A]
 
-
   /**
     * Changes the `Status` and returns the new `Queue.State`.
     *
@@ -56,7 +55,7 @@ package object engine {
     */
   def switch(q: EventQueue)(id: Sequence.Id)(st: SequenceState): Handle[Unit] =
     // TODO: Make Status an Equal instance
-    modifyS(id)(Sequence.State.status.set(_, st)) *> whenM(st == SequenceState.Running)(next(q)(id))
+    modifyS(id)(Sequence.State.status.set(_, st))
 
   /**
     * Loads a sequence
@@ -71,25 +70,24 @@ package object engine {
       }
     }
 
-
   /**
     * Adds the current `Execution` to the completed `Queue`, makes the next
     * pending `Execution` the current one, and initiates the actual execution.
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  def next(q: EventQueue)(id: Sequence.Id): Handle[Unit] = getS(id).flatMap(_.map { seq =>
+  def next(q: EventQueue)(id: Sequence.Id): Handle[Unit] =
+    getS(id).flatMap(_.map { seq =>
       seq.next match {
         // Empty state
         case None                           => send(q)(finished(id))
         // Final State
         case Some(qs: Sequence.State.Final) => putS(id)(qs) *> send(q)(finished(id))
-        // Execution completed, execute next actions
-        case Some(qs)                       => putS(id)(qs) *> execute(q)(id)
+        // Execution completed
+        case Some(qs)                       => putS(id)(qs) *> send(q)(executing(id))
       }
     }.getOrElse(unit)
   )
-
 
   /**
     * Checks the `Status` is `Running` and executes all actions in the `Current`
@@ -109,10 +107,10 @@ package object engine {
 
     getS(id).flatMap(_.map { seq =>
         seq.status match {
-          case SequenceState.Running => {
-            val a = Nondeterminism[Task].gatherUnordered(seq.current.actions.zipWithIndex.map(act))
-            a.liftM[HandleStateT] *> send(q)(executed(id))
-          }
+          case SequenceState.Running =>
+            Nondeterminism[Task].gatherUnordered(
+              seq.current.actions.zipWithIndex.map(act)
+            ).liftM[HandleStateT] *> send(q)(executed(id))
           case _                     => unit
         }
       }.getOrElse(unit)
@@ -163,7 +161,7 @@ package object engine {
   private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start(id)     => log("Output: Started") *> switch(q)(id)(SequenceState.Running)
+      case Start(id)     => log("Output: Started") *> switch(q)(id)(SequenceState.Running) *> send(q)(Event.next(id))
       case Pause(id)     => log("Output: Paused") *> switch(q)(id)(SequenceState.Idle)
       case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
       case Poll          => log("Output: Polling current state")
@@ -171,11 +169,12 @@ package object engine {
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
-      case (Completed(id, i, r)) => log("Output: Action completed") *> complete(id, i, r)
-      case (Failed(id, i, e))    => log("Output: Action failed") *> fail(q)(id)(i, e)
-      case Executed(id)          =>
-        log("Output: Execution completed, launching next execution") *> next(q)(id)
-      case Finished(id)          => log("Output: Finished") *> switch(q)(id)(SequenceState.Completed)
+      case Completed(id, i, r) => log("Output: Action completed") *> complete(id, i, r)
+      case Failed(id, i, e)    => log("Output: Action failed") *> fail(q)(id)(i, e)
+      case Executed(id)        => log("Output: Execution completed")
+      case Executing(id)       => log("Output: Executing") *> execute(q)(id) *> send(q)(Event.next(id))
+      case Next(id)            => log("Output: Moving to next Execution") *> next(q)(id)
+      case Finished(id)        => log("Output: Finished") *> switch(q)(id)(SequenceState.Completed)
     }
 
     (ev match {
@@ -205,9 +204,8 @@ package object engine {
   def processE(q: EventQueue): Process[Handle, (Event, EngineState)] =
     receive(q).evalMap(runE(q))
 
-  def process(q: EventQueue)(qs: EngineState): Process[Task, (Event, EngineState)] = {
+  def process(q: EventQueue)(qs: EngineState): Process[Task, (Event, EngineState)] =
     mapEvalState(q.dequeue, qs, runE(q))
-  }
 
   // Functions for type bureaucracy
 

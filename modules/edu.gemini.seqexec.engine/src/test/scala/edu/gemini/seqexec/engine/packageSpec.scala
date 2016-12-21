@@ -88,17 +88,17 @@ class packageSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs = (
       q.enqueueOne(start(seqId)) *>
-        // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
-        processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
+        // 6 Actions + 4 Nexts + 4 Executing + 4 Executions + 1 start + 1 finished => take(20)
+        processE(q).take(20).runLast.eval(qs1)).unsafePerformSync.get._2
     assert(qs(seqId).pending.isEmpty)
   }
 
-  it should "be 1 Sequence done after execution" in {
+  it should "be 2 Steps done after execution" in {
     val q = async.boundedQueue[Event](10)
     val qs = (
       q.enqueueOne(start(seqId)) *>
-        // 6 Actions + 4 Executions + 1 start + 1 finished => take(12)
-        processE(q).take(12).runLast.eval(qs1)).unsafePerformSync.get._2
+        // 6 Actions + 4 Nexts + 4 Executing + 4 Executions + 1 start + 1 finished => take(20)
+        processE(q).take(20).runLast.eval(qs1)).unsafePerformSync.get._2
     assert(qs(seqId).done.length == 2)
   }
 
