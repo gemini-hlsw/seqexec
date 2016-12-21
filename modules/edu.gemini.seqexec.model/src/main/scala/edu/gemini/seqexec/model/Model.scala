@@ -66,6 +66,8 @@ object Model {
     val status: StepState
     val breakpoint: Boolean
     val skip: Boolean
+    val configStatus: Map[SystemName, ActionStatus]
+    val observeStatus: ActionStatus
   }
 
   case class StandardStep(
@@ -73,8 +75,8 @@ object Model {
     override val status: StepState,
     override val breakpoint: Boolean,
     override val skip: Boolean,
-    configStatus: Map[SystemName, ActionStatus],
-    observeStatus: ActionStatus
+    override val configStatus: Map[SystemName, ActionStatus],
+    override val observeStatus: ActionStatus
   ) extends Step
   // Other kinds of Steps to be defined.
 
