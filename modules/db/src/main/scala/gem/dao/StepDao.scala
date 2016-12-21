@@ -243,11 +243,9 @@ object StepDao {
     */
   def selectAll(oid: Observation.Id): ConnectionIO[List[Step[InstrumentConfig]]] = {
     def instrumentConfig(ss: List[Step[Instrument]]): ConnectionIO[List[InstrumentConfig]] =
-      ss.headOption.fold(List.empty[InstrumentConfig].point[ConnectionIO]) { s =>
-        (s.instrument match {
-          case Instrument.Flamingos2 => selectF2(oid)
-          case _                     => selectGeneric(oid)
-        }).map(_.map(c => c: InstrumentConfig))  // List isn't a scalaz Functor? So no widen on List?
+      ss.headOption.map(_.instrument).foldMap {
+        case Instrument.Flamingos2 => selectF2(oid)     .map(_.widen[InstrumentConfig])
+        case _                     => selectGeneric(oid).map(_.widen[InstrumentConfig])
       }
 
     for {
