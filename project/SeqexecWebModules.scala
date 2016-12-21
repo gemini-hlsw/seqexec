@@ -72,7 +72,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       buildInfoObject := "OcsBuildInfo",
       buildInfoPackage := "edu.gemini.seqexec.web.server"
     )
-    .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server)
+    .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server, edu_gemini_web_server_common)
 
   // Client side project using Scala.js
   lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))

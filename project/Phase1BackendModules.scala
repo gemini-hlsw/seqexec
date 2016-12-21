@@ -56,7 +56,7 @@ trait Phase1BackendModules extends Common {
       buildInfoObject := "OcsBuildInfo",
       buildInfoPackage := "edu.gemini.p1backend.server"
     )
-    .dependsOn(edu_gemini_p1backend_shared_JVM)
+    .dependsOn(edu_gemini_p1backend_shared_JVM, edu_gemini_web_server_common)
 
   // Client side project using Scala.js
   lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1backend/edu.gemini.p1backend.client"))

@@ -6,8 +6,8 @@ import java.util.logging.Logger
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
-import edu.gemini.seqexec.web.server.common.LogInitialization
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
+import edu.gemini.web.server.common.LogInitialization
 import knobs._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder

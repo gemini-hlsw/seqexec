@@ -1,5 +1,6 @@
-import Settings.Libraries.{BooPickle, ScalaZCore, TestLibs}
+import Settings.Libraries._
 import sbt.Keys._
+import sbt.{file, project}
 
 /**
   * Define tasks and settings used by module definitions
@@ -7,7 +8,7 @@ import sbt.Keys._
 trait Common {
   lazy val commonSettings = Seq(
     // Common libraries
-    libraryDependencies ++= Seq(ScalaZCore.value, BooPickle.value) ++ TestLibs.value
+    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, BooPickle.value) ++ TestLibs.value
   )
 
   // This function allows triggered compilation to run only when scala files changes
@@ -17,4 +18,12 @@ trait Common {
       val name = f.getName.toLowerCase
       name.endsWith(".scala") || name.endsWith(".js")
     }
+
+  lazy val edu_gemini_web_server_common = project
+    .in(file("modules/edu.gemini.web.server.common"))
+    .settings(commonSettings: _*)
+    .settings(
+      libraryDependencies += ScalaZConcurrent
+    )
+
 }
