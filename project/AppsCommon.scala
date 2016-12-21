@@ -1,6 +1,7 @@
 import com.typesafe.sbt.packager.MappingsHelper._
 import sbt.Keys._
 import sbt.{Def, IO, Project, Resolver, _}
+import Settings.Libraries.{BooPickle, ScalaZCore, TestLibs}
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 
 /**

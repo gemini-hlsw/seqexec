@@ -8,7 +8,7 @@ import Settings.Libraries._
 /**
   * Defines the modules used for the Seqexec Engine
   */
-trait SeqexecEngineModules {
+trait SeqexecEngineModules extends Common {
   // The variables defined at this level can be referred
   // by the build.sbt files at the module level
 

@@ -17,11 +17,6 @@ trait SeqexecWebModules extends SeqexecEngineModules {
   lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
     .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
 
-  lazy val commonSettings = Seq(
-    // Common libraries
-    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, BooPickle.value) ++ TestLibs.value
-  )
-
   // a special crossProject for configuring a JS/JVM/shared structure
   lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
     .settings(commonSettings: _*)
@@ -35,14 +30,6 @@ trait SeqexecWebModules extends SeqexecEngineModules {
   lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
 
   lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
-
-  // This function allows triggered compilation to run only when scala files changes
-  // It lets change static files freely
-  def includeInTrigger(f: java.io.File): Boolean =
-    f.isFile && {
-      val name = f.getName.toLowerCase
-      name.endsWith(".scala") || name.endsWith(".js")
-    }
 
   // Project for the server side application
   lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
