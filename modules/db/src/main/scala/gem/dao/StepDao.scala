@@ -139,7 +139,12 @@ object StepDao {
       }
   }
 
-  def selectAll(oid: Observation.Id): ConnectionIO[List[Step[Instrument]]] =
+  /** Selects `Step`s with an `Instrument` element but without any instrument
+    * configuration information.
+    *
+    * @param oid observation whose steps should be selected
+    */
+  def selectEmpty(oid: Observation.Id): ConnectionIO[List[Step[Instrument]]] =
     sql"""
       SELECT s.instrument,
              s.step_type,
@@ -158,15 +163,88 @@ object StepDao {
              ss.type
         FROM step s
              LEFT OUTER JOIN step_gcal sg
-                ON sg.step_gcal_id    = s.step_id
+                ON sg.step_gcal_id       = s.step_id
              LEFT OUTER JOIN gcal gc
-                ON gc.gcal_id         = sq.gcal_id
+                ON gc.gcal_id            = sg.gcal_id
              LEFT OUTER JOIN step_science sc
-                ON sc.step_science_id = s.step_id
+                ON sc.step_science_id    = s.step_id
              LEFT OUTER JOIN step_smart_gcal ss
-                ON ss.step_smart_id   = s.step_id
+                ON ss.step_smart_gcal_id = s.step_id
        WHERE s.observation_id = $oid
     ORDER BY s.location
     """.query[StepKernel].map(_.toStep).list
 
+
+  /** Selects the series of `F2Config` information associated with the
+    * observation.
+    *
+    * @param oid observation whose F2 configurations should be selected
+    */
+  def selectF2(oid: Observation.Id): ConnectionIO[List[F2Config]] =
+    sql"""
+      SELECT i.fpu,
+             i.mos_preimaging,
+             i.exposure_time,
+             i.filter,
+             i.lyot_wheel,
+             i.disperser,
+             i.window_cover
+        FROM step s
+             LEFT OUTER JOIN step_f2 i
+               ON i.step_f2_id = s.step_id
+       WHERE s.observation_id = $oid
+    ORDER BY s.location
+    """.query[F2Config].list
+
+  /** Selects the series of `GenericConfig` information associated with the
+    * observation.
+    *
+    * Note, this is only needed until all instruments have been included in
+    * the codebase.
+    *
+    * @param oid observation whose generic configurations should be selected
+    */
+  def selectGeneric(oid: Observation.Id): ConnectionIO[List[GenericConfig]] =
+    sql"""
+      SELECT instrument
+        FROM step
+       WHERE observation_id = $oid
+    ORDER BY location
+    """.query[Instrument].map(GenericConfig).list
+
+
+  private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[List[I]]): ConnectionIO[List[Step[I]]] =
+    for {
+      ss <- selectEmpty(oid)
+      is <- f(oid)
+    } yield ss.zip(is).map { case (s, i) => s.as(i) }
+
+  /** Selects all steps with their F2 instrument configuration data, assuming
+    * the indicated observation is an F2 observation.  If not, fails with an
+    * exception.
+    *
+    * @param oid F2 observation whose steps are sought
+    */
+  def selectAllF2(oid: Observation.Id): ConnectionIO[List[Step[F2Config]]] =
+    selectAll(oid, selectF2)
+
+  /** Selects all steps with a generic instrument configuration data.
+    *
+    * @param oid observation whose steps are sought
+    */
+  def selectAllGeneric(oid: Observation.Id): ConnectionIO[List[Step[GenericConfig]]] =
+    selectAll(oid, selectGeneric)
+
+  /** Selects all steps with their instrument configuration data, assuming the
+    * steps correspond to the given instrument.  If not, fails with an
+    * exception.
+    *
+    * @param oid observation whose step configurations are sought
+    * @param i instrument associated with the observation
+    */
+  def selectAll(oid: Observation.Id, i: Instrument): ConnectionIO[List[Step[InstrumentConfig]]] =
+    (i match {
+      case Instrument.Flamingos2 => selectAllF2(oid)
+      case _                     => selectAllGeneric(oid)
+    }).map(_.map(_.widen[InstrumentConfig]))
 }
