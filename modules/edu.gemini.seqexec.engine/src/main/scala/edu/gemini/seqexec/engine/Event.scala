@@ -24,6 +24,8 @@ sealed trait SystemEvent
 case class Completed[R](id: Sequence.Id, i: Int, r: R) extends SystemEvent
 case class Failed[E](id: Sequence.Id, i: Int, e: E) extends SystemEvent
 case class Executed(id: Sequence.Id) extends SystemEvent
+case class Executing(id: Sequence.Id) extends SystemEvent
+case class Next(id: Sequence.Id) extends SystemEvent
 case class Finished(id: Sequence.Id) extends SystemEvent
 
 object Event {
@@ -34,9 +36,11 @@ object Event {
   val exit: Event = EventUser(Exit)
   def load(id: Sequence.Id, sequence: Sequence[Action]): Event = EventUser(Load(id, sequence))
 
-  def completed[R](id: Sequence.Id, i: Int, r: R): Event = EventSystem(Completed(id, i, r))
   def failed[E](id: Sequence.Id, i: Int, e: E): Event = EventSystem(Failed(id, i, e))
+  def completed[R](id: Sequence.Id, i: Int, r: R): Event = EventSystem(Completed(id, i, r))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
+  def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
+  def next(id: Sequence.Id): Event = EventSystem(Next(id))
   def finished(id: Sequence.Id): Event = EventSystem(Finished(id))
 
 }
