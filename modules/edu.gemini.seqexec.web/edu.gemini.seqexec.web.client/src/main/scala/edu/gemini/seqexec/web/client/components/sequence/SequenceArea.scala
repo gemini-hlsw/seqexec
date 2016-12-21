@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, StepState}
+import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -48,16 +48,16 @@ object SequenceStepsTableContainer {
                 ^.cls := "ui red header",
                 "Sequence aborted"
               ),*/
-            p.status.isLogged && p.s.status == SequenceState.Completed ?=
+            p.status.isLogged && p.s.status === SequenceState.Completed ?=
               <.h3(
                 ^.cls := "ui green header",
                 "Sequence completed"
               ),
-            p.status.isLogged && p.s.status == SequenceState.Idle ?=
+            p.status.isLogged && p.s.status === SequenceState.Idle ?=
               Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected || s.runRequested), "Run"),
-            p.status.isLogged && p.s.status == SequenceState.Running ?=
+            p.status.isLogged && p.s.status === SequenceState.Running ?=
               Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
-            p.status.isLogged && p.s.status == SequenceState.Running ?=
+            p.status.isLogged && p.s.status === SequenceState.Running ?=
               Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected), "Stop")
           )
         } { i =>
@@ -145,11 +145,11 @@ object SequenceStepsTableContainer {
                   case (step, i) =>
                     <.tr(
                       ^.classSet(
-                        "positive" -> (step.status == StepState.Completed),
-                        "warning"  -> (step.status == StepState.Running),
+                        "positive" -> (step.status === StepState.Completed),
+                        "warning"  -> (step.status === StepState.Running),
                         // TODO Show error case
                         //"negative" -> (step.status == StepState.Error),
-                        "negative" -> (step.status == StepState.Skipped)
+                        "negative" -> (step.status === StepState.Skipped)
                       ),
                       step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                       <.td(
@@ -199,7 +199,7 @@ object SequenceStepsTableContainer {
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
       val div = scrollRef(f.$)
-      val scrollStateCB = if (f.nextProps.s.id != f.currentProps.s.id) {
+      val scrollStateCB = if (f.nextProps.s.id =/= f.currentProps.s.id) {
         // It will reset to 0 if the sequence changes
         // TODO It may be better to remember the pos of executed steps per sequence
         f.$.modState(_.copy(nextScrollPos = 0, autoScrolled = true))

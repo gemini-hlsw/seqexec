@@ -2,8 +2,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.StepConfig
 
-import scalaz._
-import Scalaz._
+import scalaz.syntax.either._
 import org.scalatest.FlatSpec
 
 import scalaz.concurrent.Task
