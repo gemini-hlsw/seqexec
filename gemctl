@@ -117,8 +117,6 @@ verifyOrCreateGemNet() {
     if [ $? -ne 0 ]; then
       err "Unable to create gem-net bridge network."
     fi
-  else
-    log "Found gem-net bridge network."
   fi
 }
 
@@ -138,7 +136,7 @@ deployInitial() {
 # Usage: copyDatabase old new
 copyDatabase() {
   log "Copying data from previous deployment."
-  docker exec $2 sh -c "pg_dump -h $1 -U postgres gem | psql -U postgres -d gem" > /dev/null
+  docker exec $2 sh -c "pg_dump -h $1 -U postgres gem | psql -q -U postgres -d gem" > /dev/null
   if [ $? -ne 0 ]; then
     err "Failed to copy data ($?)."
   fi
@@ -236,8 +234,6 @@ verifyGemImage() {
   id=$(docker images -q gem-telnetd:$VERSION)
   if [ -z $id ]; then
     err "Could not find gem-telnetd:$VERSION image. You may need to do 'sbt docker:publishLocal'."
-  else
-    log "Found Gem image."
   fi
 }
 
@@ -259,38 +255,49 @@ usage() {
   echo "This assume you have done 'sbt docker:publishLocal' and have an image available."
   echo
   echo "Usage: gemctl <command>"
-  echo "  clean     Stop and remove all containers."
-  echo "  deploy    Deploy a new version of gem on localhost."
-  echo "  ps        Show some information on containers."
-  echo "  rm <id>   Stop and remove the specified deployment."
-  echo "  rollback  Stop end remove the current deployment and restart the previous one."
+  echo "  clean               Stop and remove all containers."
+  echo "  deploy [<commit>]   Deploy a new version of gem on localhost at the specified commit, or"
+  echo "                      at the current HEAD with local changes."
+  echo "  ps                  Show some information on containers."
+  echo "  rm <id>             Stop and remove the specified deployment."
+  echo "  rollback            Stop end remove the current deployment and restart the previous one."
   echo
 }
 
 setCommit() {
   if [ -z $1 ]; then
-    log "No commit specified, assuming local working version."
+    log "No deploy commit specified, assuming local working version."
     COMMIT=$(git rev-parse HEAD 2> /dev/null)
     if [ $? -ne 0 ]; then
       err "Can't determine current Git hash. Are you in the right directory?"
     fi
   else
+    # Try to find the requested commit in the log.
+    git log -n 1 --pretty=oneline $1 &> /dev/null
+    if [ $? -ne 0 ]; then
+      err "Commit $1 was not found."
+    fi
     COMMIT=$1
   fi
-  log "Deploying from commit $COMMIT"
+  log "Deploy commit is $(git rev-parse --short $COMMIT)."
 }
 
 setVersion() {
-  local delta=$(git status -s)
-  if [ -z "$delta" ]; then
-    log "No uncommitted changes."
-    SNAPSHOT=0
-    VERSION=$COMMIT
+  if [ -z $1 ]; then
+    local delta=$(git status -s)
+    if [ -z "$delta" ]; then
+      log "No uncommitted changes. This is a normal deployment."
+      SNAPSHOT=0
+      VERSION=$COMMIT
+    else
+      log "Found uncommitted changes. This is a SNAPSHOT deployment."
+      SNAPSHOT=1
+      VERSION="$COMMIT-SNAPSHOT"
+    fi
   else
-    log "Found uncommitted changes. This is a SNAPSHOT deployment."
-    SNAPSHOT=1
-    VERSION="$COMMIT-SNAPSHOT"
+    VERSION=$1
   fi
+  log "Gem image is $VERSION."
 }
 
 # Set POSTGRES_IMAGE to the correct value at commit COMMIT.
@@ -317,18 +324,17 @@ setPgImage() {
   if [ -z POSTGRES_IMAGE ]; then
     err "Could not determine database image from 'pg-image.txt' at specified commit."
   else
-    log "Using database image $POSTGRES_IMAGE."
+    log "Postgres image is $POSTGRES_IMAGE."
   fi
 }
 
 deploy() {
 
-  todo "Can we get rid of deploy versions?"
   # There will only be one running Gem server and it must be an ancestor of $VERSION
   # otherwise we can't deploy. However if there is no running gem version we need to
   # *find* the most recent one, which we can do by sorting them by commit date with
   #
-  #   git show -s --format=%at
+  #   git show -s --format=%at <commit>
   #
   # There can be at most one SNAPSHOT deployment, and it must be current. It is not
   # possible to upgrade from a SNAPSHOT, only to replace or roll it back. SNAPSHOT
@@ -345,52 +351,72 @@ deploy() {
   # The initial deployment must have such a tag. Rolling back a production deployment
   # must also remove the tag.
 
+
+  # Find the last production deployment
+  log "No base commit specified. Using most recent deploy-* tag."
+  tag=$(git describe --match deploy-* --abbrev=0)
+  base=$(git rev-list -n 1 $tag)
+  log "Base commit is $(git rev-parse --short $base)."
+
   # Determine the version we wish to deploy
   setCommit $1
-  setVersion
+  setVersion $1
+
+  # There may be nothing to do.
+  log "$base"
+  log "$VERSION"
+  if [ "$base" = "$VERSION" ]; then
+    log "Base and deploy commits are identical. Nothing to do."
+    exit 0
+  fi
+
+
   setPgImage
 
   # Make sure prerequisites are available
   verifyOrCreateGemNet
   verifyGemImage
 
-  # Get the ids, total, and current/next deployment number
-  ids=($(containersWithLabel gemini.deploy))
-  total=${#ids[@]}
-  current=$(maxDeployId ${ids[*]})
-  next=$((current + 1))
 
-  # initial or update
-  if [ $total -eq 0 ]; then
-    deployInitial
-  else
 
-    log "Previous deployment was $current. This will be deployment $next."
-
-    todo "Verify that previous deployment is an ancestor of current deployment."
-    # git merge-base --is-ancestor prev next
-    #   will exit with 0 if true, 1 if false, 128 on error
-
-    todo "Don't deploy if current and next are identical non-snapshot versions."
-
-    # Make sure current deployment is healthy
-    verify $current
-    if [ $? -ne 0 ]; then
-      err "Previous deployment ($current) is not available."
-    fi
-
-    # Ready to deploy new one
-    createDatabaseContainer $next
-    createDatabase $next
-    copyDatabase db-$current db-$next
-    stop db-$current
-    stop gem-$current
-    createGemContainer $next
-    verify $next
-
-  fi
+  # # Get the ids, total, and current/next deployment number
+  # ids=($(containersWithLabel gemini.deploy))
+  # total=${#ids[@]}
+  # current=$(maxDeployId ${ids[*]})
+  # next=$((current + 1))
+  #
+  # # initial or update
+  # if [ $total -eq 0 ]; then
+  #   deployInitial
+  # else
+  #
+  #   log "Previous deployment was $current. This will be deployment $next."
+  #
+  #   todo "Verify that previous deployment is an ancestor of current deployment."
+  #   # git merge-base --is-ancestor prev next
+  #   #   will exit with 0 if true, 1 if false, 128 on error
+  #
+  #   todo "Don't deploy if current and next are identical non-snapshot versions."
+  #
+  #   # Make sure current deployment is healthy
+  #   verify $current
+  #   if [ $? -ne 0 ]; then
+  #     err "Previous deployment ($current) is not available."
+  #   fi
+  #
+  #   # Ready to deploy new one
+  #   createDatabaseContainer $next
+  #   createDatabase $next
+  #   copyDatabase db-$current db-$next
+  #   stop db-$current
+  #   stop gem-$current
+  #   createGemContainer $next
+  #   verify $next
+  #
+  # fi
 
 }
+
 
 # We can't really do anythig unless Docker is available
 verifyDocker
