@@ -17,7 +17,7 @@ class LoadHandlerSpec extends FlatSpec with Matchers with PropertyChecks with Ar
     def handler = new LoadHandler(new RootModelRW(Empty))
     val result = handler.handle(LoadSequence("", Empty))
     result should matchPattern {
-      case ModelUpdateEffect(newValue: Pot[_], effects) if newValue.isPending && effects.size == 2 =>
+      case ModelUpdateEffect(newValue: Pot[_], effects) if newValue.isPending && effects.size == 1 =>
     }
   }
 
