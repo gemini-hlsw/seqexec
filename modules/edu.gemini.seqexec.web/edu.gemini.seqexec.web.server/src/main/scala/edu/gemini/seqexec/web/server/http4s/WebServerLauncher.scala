@@ -6,15 +6,15 @@ import java.util.logging.Logger
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
-import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.seqexec.web.server.OcsBuildInfo
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
-import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.server.{Server, ServerApp}
 
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.async
 import scalaz.stream.async.mutable.Topic
