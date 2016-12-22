@@ -7,7 +7,7 @@ import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import edu.gemini.seqexec.web.server.{OcsBuildInfo, http4s}
+import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
 import org.http4s.server.{Server, ServerApp}
@@ -89,7 +89,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
 
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
-      .mountService(new StaticRoutes(http4s.index(conf.devMode), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
+      .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
       .mountService(new SeqexecUIApiRoutes(as, events, se).service, "/api")
       .start

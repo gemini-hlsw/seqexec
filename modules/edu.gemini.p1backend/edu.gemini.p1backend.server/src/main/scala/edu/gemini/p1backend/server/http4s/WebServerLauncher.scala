@@ -1,19 +1,17 @@
-package edu.gemini.p1backend.server
+package edu.gemini.p1backend.server.http4s
 
 import java.io.File
 import java.util.logging.Logger
 
+import edu.gemini.p1backend.server.OcsBuildInfo
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
-
 import knobs._
-import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.server.{Server, ServerApp}
 
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.async
-import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ServerApp with LogInitialization {
 
@@ -57,7 +55,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
 
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
-      .mountService(new StaticRoutes("", conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
+      .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .start
   }
 
