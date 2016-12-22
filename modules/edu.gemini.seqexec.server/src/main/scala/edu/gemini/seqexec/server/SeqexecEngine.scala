@@ -94,7 +94,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
       def engineSteps(seq: SequenceAR): List[Step] = {
 
-        def viewStep(step: StepAR): Step =
+        def viewStep(step: StepAR): StandardStep =
           StandardStep(
             step.config,
             engine.Step.status(step),
@@ -113,19 +113,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
         seq.steps.map(viewStep) match {
           // Find first Pending Step when no Step is Running and mark it as Running
-          case steps if st === SequenceState.Running && steps.toList.all(_.status =/= StepState.Running)=>
+          case steps if st === SequenceState.Running && steps.all(_.status =/= StepState.Running) =>
             val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
-            xs ++ (
-              // TODO: Why it doesn't have `.copy`?
-              StandardStep(
-                y.config,
-                StepState.Running,
-                y.breakpoint,
-                y.skip,
-                y.configStatus, // Map.empty,
-                y.observeStatus
-              ) :: ys
-            )
+            xs ++ (y.copy(status = StepState.Running) :: ys)
           case x => x
         }
       }
