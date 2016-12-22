@@ -107,7 +107,7 @@ object SmartGcalImporter extends SafeApp {
     val f = Filter.read(OldGcal.Filter.getFilter(filterS))
     val d = Diffuser.read(OldGcal.Diffuser.getDiffuser(diffuserS))
     val s = Shutter.read(OldGcal.Shutter.getShutter(shutterS))
-    val e = Duration.ofSeconds(expS.toLong)
+    val e = Duration.ofMillis(expS.toLong * 1000)
     val c = coaddsS.toInt
 
     val b = GcalBaselineType.unsafeFromTag(baselineS)

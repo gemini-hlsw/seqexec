@@ -192,7 +192,7 @@ object Importer extends SafeApp {
 
         val fpu           = config.uget(Legacy.Instrument.F2.Fpu)
         val mosPreimaging = config.uget(Legacy.Instrument.MosPreImaging)
-        val exposureTime  = config.cgetOrElse(Legacy.Observe.ExposureTime, Duration.ofSeconds(0))
+        val exposureTime  = config.cgetOrElse(Legacy.Observe.ExposureTime, Duration.ofMillis(0))
         val filter        = config.uget(Legacy.Instrument.F2.Filter)
         val lyoutWheel    = config.uget(Legacy.Instrument.F2.LyotWheel)
         val disperser     = config.uget(Legacy.Instrument.F2.Disperser)

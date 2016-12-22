@@ -79,14 +79,14 @@ ALTER DOMAIN coadds OWNER TO postgres;
 
 
 --
--- Name: seconds; Type: DOMAIN; Schema: public; Owner: postgres
+-- Name: milliseconds; Type: DOMAIN; Schema: public; Owner: postgres
 --
 
-CREATE DOMAIN seconds AS integer
+CREATE DOMAIN milliseconds AS integer
     DEFAULT    0
-    CONSTRAINT seconds_check CHECK (VALUE >= 0);
+    CONSTRAINT miliseconds_check CHECK (VALUE >= 0);
 
-ALTER DOMAIN seconds OWNER TO postgres;
+ALTER DOMAIN milliseconds OWNER TO postgres;
 
 
 --
@@ -619,7 +619,7 @@ ALTER TABLE step_dark OWNER TO postgres;
 CREATE TABLE step_f2 (
     step_f2_id     integer       PRIMARY KEY REFERENCES step              ON DELETE CASCADE,
     disperser      identifier    NOT NULL    REFERENCES e_f2_disperser    ON DELETE CASCADE,
-    exposure_time  seconds       NOT NULL,
+    exposure_time  milliseconds  NOT NULL,
     filter         identifier    NOT NULL    REFERENCES e_f2_filter       ON DELETE CASCADE,
     fpu            identifier    NOT NULL    REFERENCES e_f2_fpunit       ON DELETE CASCADE,
     lyot_wheel     identifier    NOT NULL    REFERENCES e_f2_lyot_wheel   ON DELETE CASCADE,
@@ -636,17 +636,17 @@ ALTER TABLE step_f2 OWNER TO postgres;
 --
 
 CREATE TABLE gcal (
-    gcal_id       SERIAL      PRIMARY KEY,
+    gcal_id       SERIAL       PRIMARY KEY,
     continuum     identifier                          REFERENCES e_gcal_continuum ON DELETE CASCADE,
-    ar_arc        boolean     NOT NULL DEFAULT FALSE,
-    cuar_arc      boolean     NOT NULL DEFAULT FALSE,
-    thar_arc      boolean     NOT NULL DEFAULT FALSE,
-    xe_arc        boolean     NOT NULL DEFAULT FALSE,
-    filter        identifier  NOT NULL                REFERENCES e_gcal_filter    ON DELETE CASCADE,
-    diffuser      identifier  NOT NULL                REFERENCES e_gcal_diffuser  ON DELETE CASCADE,
-    shutter       identifier  NOT NULL                REFERENCES e_gcal_shutter   ON DELETE CASCADE,
-    exposure_time seconds     NOT NULL,
-    coadds        coadds      NOT NULL,
+    ar_arc        boolean      NOT NULL DEFAULT FALSE,
+    cuar_arc      boolean      NOT NULL DEFAULT FALSE,
+    thar_arc      boolean      NOT NULL DEFAULT FALSE,
+    xe_arc        boolean      NOT NULL DEFAULT FALSE,
+    filter        identifier   NOT NULL                REFERENCES e_gcal_filter    ON DELETE CASCADE,
+    diffuser      identifier   NOT NULL                REFERENCES e_gcal_diffuser  ON DELETE CASCADE,
+    shutter       identifier   NOT NULL                REFERENCES e_gcal_shutter   ON DELETE CASCADE,
+    exposure_time milliseconds NOT NULL,
+    coadds        coadds       NOT NULL,
     CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
 );
 

@@ -65,7 +65,7 @@ object ConfigReader {
     val long:          Read[Long         ] = cast[Long]
     val offsetAngle:   Read[Angle        ] = string.map(s => Angle.fromArcsecs(s.toDouble))
     val yesNo:         Read[Boolean      ] = cast[YesNoType].map(_.toBoolean)
-    val durSecs:       Read[Duration     ] = double.map(_.toLong).map(Duration.ofSeconds(_))
+    val durSecs:       Read[Duration     ] = double.map(d => (d * 1000).round).map(Duration.ofMillis(_))
   }
 
 
@@ -132,8 +132,8 @@ object ConfigReader {
     }
 
     case object Observe extends System("observe") {
-      val ObserveType   = Key[String  ]("observeType",  identity             )(Read.string)
-      val ExposureTime  = Key[Duration]("exposureTime", _.getSeconds.toString)(Read.durSecs)
+      val ObserveType   = Key[String  ]("observeType",  identity           )(Read.string)
+      val ExposureTime  = Key[Duration]("exposureTime", _.toMillis.toString)(Read.durSecs)
     }
 
     case object Instrument extends System("instrument") {
@@ -283,7 +283,7 @@ object ConfigReader {
         OldGcal.Shutter.OPEN   -> GcalShutter.Open
       )
 
-      val ExposureTime = Key[Duration]("exposureTime", _.getSeconds.toString)(Read.durSecs)
+      val ExposureTime = Key[Duration]("exposureTime", _.toMillis.toString)(Read.durSecs)
       val Coadds       = Key[Int     ]("coadds",       _.toString)(Read.int)
     }
   }

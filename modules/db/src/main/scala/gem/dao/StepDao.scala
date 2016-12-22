@@ -91,7 +91,7 @@ object StepDao {
       case F2Config(fpu, mosPreimaging, exposureTime, filter, lyotWheel, disperser, windowCover) =>
         sql"""
           INSERT INTO step_f2 (step_f2_id, fpu, mos_preimaging, exposure_time, filter, lyot_wheel, disperser, window_cover)
-          VALUES ($id, $fpu, $mosPreimaging, ${exposureTime.getSeconds}, $filter, $lyotWheel, $disperser, $windowCover)
+          VALUES ($id, $fpu, $mosPreimaging, $exposureTime, $filter, $lyotWheel, $disperser, $windowCover)
         """.update.run
 
       case GenericConfig(i) => 0.point[ConnectionIO]
