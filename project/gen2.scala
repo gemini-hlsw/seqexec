@@ -127,8 +127,8 @@ object gen2 {
       },
 
       enum("F2ReadMode") {
-        type F2ReadModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'logName -> String, 'minimumExposureTime -> Duration, 'recommendedExposureTime -> Duration, 'readoutTime -> Duration, 'readCount -> Int, 'readNoise -> Double`.T
-        val io = sql"select id, id tag, short_name, long_name, log_name, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise from e_f2_read_mode".query[(String, F2ReadModeRec)].list
+        type F2ReadModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'description -> String, 'minimumExposureTime -> Duration, 'recommendedExposureTime -> Duration, 'readoutTime -> Duration, 'readCount -> Int, 'readNoise -> Double`.T
+        val io = sql"select id, id tag, short_name, long_name, description, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise from e_f2_read_mode".query[(String, F2ReadModeRec)].list
         io.transact(xa).unsafePerformIO
       },
 

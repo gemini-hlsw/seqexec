@@ -230,9 +230,9 @@ ALTER TABLE e_f2_lyot_wheel OWNER TO postgres;
 
 CREATE TABLE e_f2_read_mode (
     id                        identifier            PRIMARY KEY,
-    short_name                character varying(20) NOT NULL,
+    short_name                character varying(8)  NOT NULL,
     long_name                 character varying(20) NOT NULL,
-    log_name                  character varying(8)  NOT NULL,
+    description               character varying(20) NOT NULL,
     minimum_exposure_time     milliseconds          NOT NULL,
     recommended_exposure_time milliseconds          NOT NULL,
     readout_time              milliseconds          NOT NULL,
@@ -800,10 +800,10 @@ HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)
 -- Data for Name: e_f2_read_mode; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_f2_read_mode (id, short_name, long_name, log_name, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise) FROM stdin;
-Bright	Bright Object	Strong Source	bright	1500	5000	8000	1	11.7
-Medium	Medium Object	Medium Source	medium	6000	21000	14000	4	6.0
-Faint	Faint Object	Weak Source	faint	12000	85000	20000	8	5.0
+COPY e_f2_read_mode (id, short_name, long_name, description, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise) FROM stdin;
+Bright	bright	Bright Object	Strong Source	1500	5000	8000	1	11.7
+Medium	medium	Medium Object	Medium Source	6000	21000	14000	4	6.0
+Faint	faint	Faint Object	Weak Source	12000	85000	20000	8	5.0
 \.
 
 
