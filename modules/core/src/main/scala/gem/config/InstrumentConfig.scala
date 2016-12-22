@@ -10,23 +10,23 @@ sealed abstract class InstrumentConfig extends Product with Serializable
 sealed trait SmartGcalKey
 
 final case class F2SmartGcalKey(
-  fpu:       F2FpUnit,
+  disperser: F2Disperser,
   filter:    F2Filter,
-  disperser: F2Disperser
+  fpu:       F2FpUnit
 ) extends SmartGcalKey
 
 final case class F2Config(
-  fpu:           F2FpUnit,
-  mosPreimaging: Boolean,
+  disperser:     F2Disperser,
   exposureTime:  Duration,
   filter:        F2Filter,
+  fpu:           F2FpUnit,
   lyotWheel:     F2LyotWheel,
-  disperser:     F2Disperser,
+  mosPreimaging: Boolean,
   windowCover:   F2WindowCover
 ) extends InstrumentConfig {
 
   def smartGcalKey: F2SmartGcalKey =
-    F2SmartGcalKey(fpu, filter, disperser)
+    F2SmartGcalKey(disperser, filter, fpu)
 }
 
 // TODO: temporary, until all instruments are supported

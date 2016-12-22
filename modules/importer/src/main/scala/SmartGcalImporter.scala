@@ -46,11 +46,11 @@ object SmartGcalImporter extends SafeApp {
 
     val disperserS :: filterS :: fpuS :: gcal = input
 
-    val u = Fpu.read(OldF2.FPUnit.byName(fpuS).getValue)
-    val f = Filter.read(OldF2.Filter.byName(filterS).getValue)
     val d = Disperser.read(OldF2.Disperser.byName(disperserS).getValue)
+    val f = Filter.read(OldF2.Filter.byName(filterS).getValue)
+    val u = Fpu.read(OldF2.FPUnit.byName(fpuS).getValue)
 
-    (F2SmartGcalKey(u, f, d), gcal)
+    (F2SmartGcalKey(d, f, u), gcal)
   }
 
   // -------------------------------------------------------------------------

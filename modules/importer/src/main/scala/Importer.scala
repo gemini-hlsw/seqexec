@@ -190,14 +190,14 @@ object Importer extends SafeApp {
     i match {
       case Instrument.Flamingos2 =>
 
-        val fpu           = config.uget(Legacy.Instrument.F2.Fpu)
-        val mosPreimaging = config.uget(Legacy.Instrument.MosPreImaging)
+        val disperser     = config.uget(Legacy.Instrument.F2.Disperser)
         val exposureTime  = config.cgetOrElse(Legacy.Observe.ExposureTime, Duration.ofMillis(0))
         val filter        = config.uget(Legacy.Instrument.F2.Filter)
+        val fpu           = config.uget(Legacy.Instrument.F2.Fpu)
         val lyoutWheel    = config.uget(Legacy.Instrument.F2.LyotWheel)
-        val disperser     = config.uget(Legacy.Instrument.F2.Disperser)
+        val mosPreimaging = config.uget(Legacy.Instrument.MosPreImaging)
         val windowCover   = config.cgetOrElse(Legacy.Instrument.F2.WindowCover, F2WindowCover.Open)
-        F2Config(fpu, mosPreimaging, exposureTime, filter, lyoutWheel, disperser, windowCover)
+        F2Config(disperser, exposureTime, filter, fpu, lyoutWheel, mosPreimaging, windowCover)
 
       case _ => GenericConfig(i)
     }

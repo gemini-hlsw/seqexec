@@ -146,18 +146,12 @@ object ConfigReader {
 
       object F2 {
 
-        import F2FpUnit._
-        val Fpu         = Key.enum[OldF2.FPUnit, F2FpUnit]("fpu",
-          OldF2.FPUnit.PINHOLE        -> Pinhole,
-          OldF2.FPUnit.SUBPIX_PINHOLE -> SubPixPinhole,
-          OldF2.FPUnit.FPU_NONE       -> None,
-          OldF2.FPUnit.CUSTOM_MASK    -> Custom,
-          OldF2.FPUnit.LONGSLIT_1     -> LongSlit1,
-          OldF2.FPUnit.LONGSLIT_2     -> LongSlit2,
-          OldF2.FPUnit.LONGSLIT_3     -> LongSlit3,
-          OldF2.FPUnit.LONGSLIT_4     -> LongSlit4,
-          OldF2.FPUnit.LONGSLIT_6     -> LongSlit6,
-          OldF2.FPUnit.LONGSLIT_8     -> LongSlit8
+        import F2Disperser._
+        val Disperser   = Key.enum[OldF2.Disperser, F2Disperser]("disperser",
+          OldF2.Disperser.NONE    -> NoDisperser,
+          OldF2.Disperser.R1200HK -> R1200HK,
+          OldF2.Disperser.R1200JH -> R1200JH,
+          OldF2.Disperser.R3000   -> R3000
         )
 
         import F2Filter._
@@ -176,6 +170,20 @@ object ConfigReader {
           OldF2.Filter.Y       -> Y
         )
 
+        import F2FpUnit._
+        val Fpu         = Key.enum[OldF2.FPUnit, F2FpUnit]("fpu",
+          OldF2.FPUnit.PINHOLE        -> Pinhole,
+          OldF2.FPUnit.SUBPIX_PINHOLE -> SubPixPinhole,
+          OldF2.FPUnit.FPU_NONE       -> None,
+          OldF2.FPUnit.CUSTOM_MASK    -> Custom,
+          OldF2.FPUnit.LONGSLIT_1     -> LongSlit1,
+          OldF2.FPUnit.LONGSLIT_2     -> LongSlit2,
+          OldF2.FPUnit.LONGSLIT_3     -> LongSlit3,
+          OldF2.FPUnit.LONGSLIT_4     -> LongSlit4,
+          OldF2.FPUnit.LONGSLIT_6     -> LongSlit6,
+          OldF2.FPUnit.LONGSLIT_8     -> LongSlit8
+        )
+
         import F2LyotWheel._
         val LyotWheel   = Key.enum[OldF2.LyotWheel, F2LyotWheel]("lyotWheel",
           OldF2.LyotWheel.GEMS       -> F33Gems,
@@ -186,14 +194,6 @@ object ConfigReader {
           OldF2.LyotWheel.HIGH       -> F32High,
           OldF2.LyotWheel.LOW        -> F32Low,
           OldF2.LyotWheel.OPEN       -> F16
-        )
-
-        import F2Disperser._
-        val Disperser   = Key.enum[OldF2.Disperser, F2Disperser]("disperser",
-          OldF2.Disperser.NONE    -> NoDisperser,
-          OldF2.Disperser.R1200HK -> R1200HK,
-          OldF2.Disperser.R1200JH -> R1200JH,
-          OldF2.Disperser.R3000   -> R3000
         )
 
         // It appears that the window cover is sometimes "bare" and sometimes
