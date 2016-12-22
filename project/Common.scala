@@ -23,7 +23,7 @@ trait Common {
     .in(file("modules/edu.gemini.web.server.common"))
     .settings(commonSettings: _*)
     .settings(
-      libraryDependencies += ScalaZConcurrent
+      libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s
     )
 
 }

@@ -1,6 +1,5 @@
-package edu.gemini.seqexec.web.server.http4s
+package edu.gemini.web.server.common
 
-import edu.gemini.seqexec.web.server.OcsBuildInfo
 import org.http4s.MediaType._
 import org.http4s.dsl._
 import org.http4s.headers.{`Cache-Control`, `Content-Type`}
@@ -10,62 +9,13 @@ import org.http4s.{Charset, Request, Response, StaticFile}
 import org.http4s.HttpService
 import org.http4s.util.NonEmptyList
 
-import scalaz.concurrent.Task
 import scala.concurrent.duration._
+import scalaz.concurrent.Task
 
-class StaticRoutes(devMode: Boolean) {
+class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
   val oneYear = 365 * 24 * 60 * 60
 
   val cacheHeaders = if (devMode) List(`Cache-Control`(NonEmptyList(`no-cache`()))) else List(`Cache-Control`(NonEmptyList(`max-age`(oneYear.seconds))))
-
-  val index = {
-    val style = """
-                  |   @media screen and (-webkit-min-device-pixel-ratio:0) {
-                  |        select,
-                  |        textarea,
-                  |        input {
-                  |          font-size: 16px !important;
-                  |        }
-                  |      }
-                  |"""
-    val deps = if (devMode) "edu_gemini_seqexec_web_client-jsdeps.js" else s"edu_gemini_seqexec_web_client-jsdeps.min.${OcsBuildInfo.builtAtMillis}.js"
-    val seqexecScript = if (devMode) s"seqexec.js" else s"seqexec-opt.${OcsBuildInfo.builtAtMillis}.js"
-    val xml = <html lang="en">
-      <head>
-        <meta charset="utf-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-        <meta name="description" content="Seqexec"/>
-        <meta name="author" content="Gemini Software Group"/>
-        <link rel="icon" href={s"images/launcher.${OcsBuildInfo.builtAtMillis}.ico"}/>
-
-        <!-- Add to homescreen for Safari on iOS -->
-        <meta name="apple-mobile-web-app-capable" content="yes"/>
-        <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
-        <meta name="apple-mobile-web-app-title" content="Seqexec"/>
-        <link rel="apple-touch-icon-precomposed" href={s"images/launcher.${OcsBuildInfo.builtAtMillis}.png"}/>
-
-        <title>Seqexec</title>
-
-        <link rel="stylesheet" href={s"css/semantic.${OcsBuildInfo.builtAtMillis}.css"}/>
-        <style>{style.stripMargin}</style>
-      </head>
-
-      <body>
-
-        <div id="content">
-        </div>
-
-        <script src={deps}></script>
-        <script src={seqexecScript}></script>
-        <script type="text/javascript">
-          edu.gemini.seqexec.web.client.SeqexecApp().main();
-        </script>
-      </body>
-    </html>
-    s"<!DOCTYPE html>$xml"
-  }
 
   val indexResponse =
     Ok(index).withContentType(Some(`Content-Type`(`text/html`, Charset.`UTF-8`))).putHeaders(`Cache-Control`(NonEmptyList(`no-cache`())))
@@ -81,7 +31,7 @@ class StaticRoutes(devMode: Boolean) {
   }
 
   implicit class ReqOps(req: Request) {
-    val timestampRegex = s"(.*)\\.${OcsBuildInfo.builtAtMillis}\\.(.*)".r
+    val timestampRegex = s"(.*)\\.$builtAtMillis\\.(.*)".r
 
     /**
       * If a request contains the timestamp remove it to find the original file name

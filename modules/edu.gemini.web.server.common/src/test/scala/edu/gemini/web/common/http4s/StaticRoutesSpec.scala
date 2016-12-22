@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.http4s
 
 import edu.gemini.seqexec.web.server.OcsBuildInfo
-import edu.gemini.seqexec.web.server.http4s.StaticRoutes
+import edu.gemini.web.server.common.StaticRoutes
 import org.http4s.CacheDirective.{`max-age`, `no-cache`}
 import org.http4s.MediaType._
 import org.http4s.headers.{`Cache-Control`, `Content-Type`}
