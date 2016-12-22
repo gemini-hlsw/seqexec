@@ -33,7 +33,7 @@ package object http4s {
         <script src={deps}></script>
         <script src={scalajsScript}></script>
         <script type="text/javascript">
-          edu.gemini.p1backend.client.Phase1App().main();
+          P1BackendApp().main();
         </script>
       </body>
     </html>
