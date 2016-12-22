@@ -57,8 +57,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         )
     }
 
-
-
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
@@ -92,35 +90,51 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
     type StepAR = engine.Step[engine.Action \/ engine.Result]
 
+    def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView = {
 
-    def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView =
+      def engineSteps(seq: SequenceAR): List[Step] = {
+
+        def viewStep(step: StepAR): Step =
+          StandardStep(
+            step.config,
+            engine.Step.status(step),
+            // TODO: Implement breakpoints at Engine level
+            breakpoint = false,
+            // TODO: Implement skipping at Engine level
+            skip = false,
+            configStatus = Map.empty,
+            // TODO: Implement standard step at Engine level
+            observeStatus = ActionStatus.Pending
+          )
+
+        // Couldn't find this on Scalaz
+        def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
+          l.splitAt(l.indexWhere(p))
+
+        seq.steps.map(viewStep) match {
+          // Find first Pending Step when no Step is Running and mark it as Running
+          case steps if st === SequenceState.Running && steps.toList.all(_.status =/= StepState.Running)=>
+            val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
+            xs ++ (
+              // TODO: Why it doesn't have `.copy`?
+              StandardStep(
+                y.config,
+                StepState.Running,
+                y.breakpoint,
+                y.skip,
+                y.configStatus, // Map.empty,
+                y.observeStatus
+              ) :: ys
+            )
+          case x => x
+        }
+      }
       // TODO: Implement willStopIn
       SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
-
-    private def engineSteps(seq: SequenceAR): List[Step] = {
-
-      def statusStep(step: StepAR): StepState = engine.Step.status(step)
-
-      def viewStep(step: StepAR): Step =
-        StandardStep(
-          step.config,
-          statusStep(step),
-          // TODO: Implement breakpoints at Engine level
-          breakpoint = false,
-          // TODO: Implement skipping at Engine level
-          skip = false,
-          Map.empty,
-          // TODO: Implement standard step at Engine level
-          ActionStatus.Pending
-        )
-
-      seq.steps.map(viewStep)
     }
-
-    // Configuration stuff
-
 }
 
+// Configuration stuff
 object SeqexecEngine {
 
   case class Settings(odbHost: String,
@@ -133,7 +147,6 @@ object SeqexecEngine {
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
-
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
       val odbHost = cfg.require[String]("seqexec-engine.odb")
       val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
@@ -141,7 +154,6 @@ object SeqexecEngine {
       val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
-
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
