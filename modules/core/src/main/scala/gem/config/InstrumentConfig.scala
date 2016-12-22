@@ -22,6 +22,7 @@ final case class F2Config(
   fpu:           F2FpUnit,
   lyotWheel:     F2LyotWheel,
   mosPreimaging: Boolean,
+  readMode:      F2ReadMode,
   windowCover:   F2WindowCover
 ) extends InstrumentConfig {
 

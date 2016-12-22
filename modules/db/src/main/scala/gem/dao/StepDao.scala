@@ -88,10 +88,10 @@ object StepDao {
   private def insertConfigSlice(id: Int, i: InstrumentConfig): ConnectionIO[Int] =
     i match {
 
-      case F2Config(disperser, exposureTime, filter, fpu, lyotWheel, mosPreimaging, windowCover) =>
+      case F2Config(disperser, exposureTime, filter, fpu, lyotWheel, mosPreimaging, readMode, windowCover) =>
         sql"""
-          INSERT INTO step_f2 (step_f2_id, disperser, exposure_time, filter, fpu, lyot_wheel, mos_preimaging, window_cover)
-          VALUES ($id, $disperser, $exposureTime, $filter, $fpu, $lyotWheel, $mosPreimaging, $windowCover)
+          INSERT INTO step_f2 (step_f2_id, disperser, exposure_time, filter, fpu, lyot_wheel, mos_preimaging, read_mode, window_cover)
+          VALUES ($id, $disperser, $exposureTime, $filter, $fpu, $lyotWheel, $mosPreimaging, $readMode, $windowCover)
         """.update.run
 
       case GenericConfig(i) => 0.point[ConnectionIO]
@@ -188,6 +188,7 @@ object StepDao {
              i.fpu,
              i.lyot_wheel,
              i.mos_preimaging,
+             i.read_mode,
              i.window_cover
         FROM step s
              LEFT OUTER JOIN step_f2 i

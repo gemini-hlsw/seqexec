@@ -2,6 +2,8 @@ import doobie.imports._
 
 import java.io.File
 
+import java.time.Duration
+
 import scalaz._, Scalaz._
 import scalaz.effect._
 import scala.reflect.runtime.universe.TypeTag
@@ -22,21 +24,26 @@ object gen2 {
     ""
   )
 
+  implicit val DurationMeta: Meta[Duration] =
+    Meta[Long].xmap(Duration.ofMillis, _.toMillis)
+
   object ToDeclaration extends Poly1 {
-    implicit def caseString [S <: Symbol] = at[(S, String) ] { case (s, _) => "  val " + s.name + ": String" }
-    implicit def caseInt    [S <: Symbol] = at[(S, Int)    ] { case (s, _) => "  val " + s.name + ": Int" }
-    implicit def caseBoolean[S <: Symbol] = at[(S, Boolean)] { case (s, _) => "  val " + s.name + ": Boolean" }
-    implicit def caseDouble [S <: Symbol] = at[(S, Double) ] { case (s, _) => "  val " + s.name + ": Double" }
+    implicit def caseString  [S <: Symbol] = at[(S, String)  ] { case (s, _) => "  val " + s.name + ": String" }
+    implicit def caseInt     [S <: Symbol] = at[(S, Int)     ] { case (s, _) => "  val " + s.name + ": Int" }
+    implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
+    implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
+    implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": java.time.Duration" }
 
     implicit def caseOptionDouble [S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
   }
 
   object ToLiteral extends Poly1 {
-    implicit val caseString  = at[String ](a => "\"" + a + "\"")
-    implicit val caseInt     = at[Int    ](a => a.toString)
-    implicit val caseBoolean = at[Boolean](a => a.toString)
-    implicit val caseDouble = at[Double](a => a.toString)
-    implicit val caseOptionDouble  = at[Option[Double]](a => a.toString)
+    implicit val caseString       = at[String  ](a => "\"" + a + "\"")
+    implicit val caseInt          = at[Int     ](a => a.toString)
+    implicit val caseBoolean      = at[Boolean ](a => a.toString)
+    implicit val caseDouble       = at[Double  ](a => a.toString)
+    implicit val caseDuration     = at[Duration](a => s"java.time.Duration.ofMillis(${a.toMillis})")
+    implicit val caseOptionDouble = at[Option[Double]](a => a.toString)
   }
 
   def cons[H <: HList, O <: HList, L](name: String, id: String, h: H)(
@@ -116,6 +123,12 @@ object gen2 {
       enum("F2LyotWheel") {
         type F2LyotWheelRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'plateScale -> Double, 'pixelScale -> Double, 'obsolete -> Boolean`.T
         val io = sql"select id, id tag, short_name, long_name, plate_scale, pixel_scale, obsolete from e_f2_lyot_wheel".query[(String, F2LyotWheelRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("F2ReadMode") {
+        type F2ReadModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'logName -> String, 'minimumExposureTime -> Duration, 'recommendedExposureTime -> Duration, 'readoutTime -> Duration, 'readCount -> Int, 'readNoise -> Double`.T
+        val io = sql"select id, id tag, short_name, long_name, log_name, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise from e_f2_read_mode".query[(String, F2ReadModeRec)].list
         io.transact(xa).unsafePerformIO
       },
 

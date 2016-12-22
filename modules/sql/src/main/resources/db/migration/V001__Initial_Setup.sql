@@ -223,6 +223,27 @@ CREATE TABLE e_f2_lyot_wheel (
 
 ALTER TABLE e_f2_lyot_wheel OWNER TO postgres;
 
+
+--
+-- Name: e_f2_read_mode; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_f2_read_mode (
+    id                        identifier            PRIMARY KEY,
+    short_name                character varying(20) NOT NULL,
+    long_name                 character varying(20) NOT NULL,
+    log_name                  character varying(8)  NOT NULL,
+    minimum_exposure_time     milliseconds          NOT NULL,
+    recommended_exposure_time milliseconds          NOT NULL,
+    readout_time              milliseconds          NOT NULL,
+    read_count                smallint              NOT NULL,
+    read_noise                double precision      NOT NULL
+);
+
+
+ALTER TABLE e_f2_read_mode OWNER TO postgres;
+
+
 --
 -- Name: e_f2_window_cover; Type: TABLE; Schema: public; Owner: postgres
 --
@@ -624,6 +645,7 @@ CREATE TABLE step_f2 (
     fpu            identifier    NOT NULL    REFERENCES e_f2_fpunit       ON DELETE CASCADE,
     lyot_wheel     identifier    NOT NULL    REFERENCES e_f2_lyot_wheel   ON DELETE CASCADE,
     mos_preimaging boolean       NOT NULL,
+    read_mode      identifier    NOT NULL    REFERENCES e_f2_read_mode    ON DELETE CASCADE,
     window_cover   identifier    NOT NULL    REFERENCES e_f2_window_cover ON DELETE CASCADE
 );
 
@@ -771,6 +793,17 @@ GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS unde
 GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)
 HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)
 HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)
+\.
+
+
+--
+-- Data for Name: e_f2_read_mode; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_f2_read_mode (id, short_name, long_name, log_name, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise) FROM stdin;
+Bright	Bright Object	Strong Source	bright	1500	5000	8000	1	11.7
+Medium	Medium Object	Medium Source	medium	6000	21000	14000	4	6.0
+Faint	Faint Object	Weak Source	faint	12000	85000	20000	8	5.0
 \.
 
 

@@ -196,6 +196,13 @@ object ConfigReader {
           OldF2.LyotWheel.OPEN       -> F16
         )
 
+        import F2ReadMode._
+        val ReadMode    = Key.enum[OldF2.ReadMode, F2ReadMode]("readMode",
+          OldF2.ReadMode.BRIGHT_OBJECT_SPEC -> Bright,
+          OldF2.ReadMode.MEDIUM_OBJECT_SPEC -> Medium,
+          OldF2.ReadMode.FAINT_OBJECT_SPEC  -> Faint
+        )
+
         // It appears that the window cover is sometimes "bare" and sometimes
         // wrapped in `Some` ... it is not `None` in my test data so there's
         // not a mapping for it.
