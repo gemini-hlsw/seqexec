@@ -1,11 +1,11 @@
-package edu.gemini.seqexec.web.server.common
+package edu.gemini.web.server.common
 
 import java.io.{ByteArrayInputStream, File}
 import java.util.logging.LogManager
 
 import scala.io.{Codec, Source}
-import scalaz._
-import Scalaz._
+import scalaz.syntax.bind._
+import scalaz.syntax.std.boolean._
 import scalaz.concurrent.Task
 
 trait AppBaseDir {
