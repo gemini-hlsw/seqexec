@@ -194,11 +194,11 @@ object Importer extends SafeApp {
         val exposureTime  = config.cgetOrElse(Legacy.Observe.ExposureTime, Duration.ofMillis(0))
         val filter        = config.uget(Legacy.Instrument.F2.Filter)
         val fpu           = config.uget(Legacy.Instrument.F2.Fpu)
-        val lyoutWheel    = config.uget(Legacy.Instrument.F2.LyotWheel)
+        val lyotWheel     = config.uget(Legacy.Instrument.F2.LyotWheel)
         val mosPreimaging = config.uget(Legacy.Instrument.MosPreImaging)
         val readMode      = config.uget(Legacy.Instrument.F2.ReadMode)
         val windowCover   = config.cgetOrElse(Legacy.Instrument.F2.WindowCover, F2WindowCover.Open)
-        F2Config(disperser, exposureTime, filter, fpu, lyoutWheel, mosPreimaging, readMode, windowCover)
+        F2Config(disperser, exposureTime, filter, fpu, lyotWheel, mosPreimaging, readMode, windowCover)
 
       case _ => GenericConfig(i)
     }
