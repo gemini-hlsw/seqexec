@@ -4,11 +4,12 @@ package dao
 import edu.gemini.spModel.core._
 import gem.config._
 import gem.enum._
-
 import doobie.imports._
 
 import java.time.Duration
-import scalaz._, Scalaz._
+
+import scalaz._
+import Scalaz._
 
 object StepDao {
 
@@ -139,12 +140,42 @@ object StepDao {
       }
   }
 
+  def selectOneEmpty(oid: Observation.Id, loc: Location.Middle): ConnectionIO[Option[Step[Instrument]]] =
+    sql"""
+      SELECT s.instrument,
+             s.step_type,
+             gc.continuum,
+             gc.ar_arc,
+             gc.cuar_arc,
+             gc.thar_arc,
+             gc.xe_arc,
+             gc.filter,
+             gc.diffuser,
+             gc.shutter,
+             gc.exposure_time,
+             gc.coadds,
+             sc.offset_p,
+             sc.offset_q,
+             ss.type
+        FROM step s
+             LEFT OUTER JOIN step_gcal sg
+                ON sg.step_gcal_id       = s.step_id
+             LEFT OUTER JOIN gcal gc
+                ON gc.gcal_id            = sg.gcal_id
+             LEFT OUTER JOIN step_science sc
+                ON sc.step_science_id    = s.step_id
+             LEFT OUTER JOIN step_smart_gcal ss
+                ON ss.step_smart_gcal_id = s.step_id
+       WHERE s.observation_id = $oid AND s.location = $loc
+    """.query[StepKernel].map(_.toStep).option
+
+
   /** Selects `Step`s with an `Instrument` element but without any instrument
     * configuration information.
     *
     * @param oid observation whose steps should be selected
     */
-  def selectEmpty(oid: Observation.Id): ConnectionIO[List[Step[Instrument]]] =
+  def selectAllEmpty(oid: Observation.Id): ConnectionIO[List[Step[Instrument]]] =
     sql"""
       SELECT s.instrument,
              s.step_type,
@@ -175,12 +206,23 @@ object StepDao {
     """.query[StepKernel].map(_.toStep).list
 
 
-  /** Selects the series of `F2Config` information associated with the
-    * observation.
-    *
-    * @param oid observation whose F2 configurations should be selected
-    */
-  def selectF2(oid: Observation.Id): ConnectionIO[List[F2Config]] =
+  private def oneF2Only(oid: Observation.Id, loc: Location.Middle): ConnectionIO[Option[F2Config]] =
+    sql"""
+      SELECT i.disperser,
+             i.exposure_time,
+             i.filter,
+             i.fpu,
+             i.lyot_wheel,
+             i.mos_preimaging,
+             i.read_mode,
+             i.window_cover
+        FROM step s
+             LEFT OUTER JOIN step_f2 i
+               ON i.step_f2_id = s.step_id
+       WHERE s.observation_id = $oid AND s.location = $loc
+    """.query[F2Config].option
+
+  private def allF2Only(oid: Observation.Id): ConnectionIO[List[F2Config]] =
     sql"""
       SELECT i.disperser,
              i.exposure_time,
@@ -197,15 +239,14 @@ object StepDao {
     ORDER BY s.location
     """.query[F2Config].list
 
-  /** Selects the series of `GenericConfig` information associated with the
-    * observation.
-    *
-    * Note, this is only needed until all instruments have been included in
-    * the codebase.
-    *
-    * @param oid observation whose generic configurations should be selected
-    */
-  def selectGeneric(oid: Observation.Id): ConnectionIO[List[GenericConfig]] =
+  private def oneGenericOnly(oid: Observation.Id, loc: Location.Middle): ConnectionIO[Option[GenericConfig]] =
+    sql"""
+      SELECT instrument
+        FROM step
+       WHERE observation_id = $oid AND location = $loc
+    """.query[Instrument].map(GenericConfig).option
+
+  private def allGenericOnly(oid: Observation.Id): ConnectionIO[List[GenericConfig]] =
     sql"""
       SELECT instrument
         FROM step
@@ -216,7 +257,7 @@ object StepDao {
 
   private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[List[I]]): ConnectionIO[List[Step[I]]] =
     for {
-      ss <- selectEmpty(oid)
+      ss <- selectAllEmpty(oid)
       is <- f(oid)
     } yield ss.zip(is).map { case (s, i) => s.as(i) }
 
@@ -227,14 +268,14 @@ object StepDao {
     * @param oid F2 observation whose steps are sought
     */
   def selectAllF2(oid: Observation.Id): ConnectionIO[List[Step[F2Config]]] =
-    selectAll(oid, selectF2)
+    selectAll(oid, allF2Only)
 
   /** Selects all steps with a generic instrument configuration data.
     *
     * @param oid observation whose steps are sought
     */
   def selectAllGeneric(oid: Observation.Id): ConnectionIO[List[Step[GenericConfig]]] =
-    selectAll(oid, selectGeneric)
+    selectAll(oid, allGenericOnly)
 
   /** Selects all steps with their instrument configuration data, assuming the
     * steps correspond to the given instrument.  If not, fails with an
@@ -245,13 +286,27 @@ object StepDao {
   def selectAll(oid: Observation.Id): ConnectionIO[List[Step[InstrumentConfig]]] = {
     def instrumentConfig(ss: List[Step[Instrument]]): ConnectionIO[List[InstrumentConfig]] =
       ss.headOption.map(_.instrument).foldMap {
-        case Instrument.Flamingos2 => selectF2(oid)     .map(_.widen[InstrumentConfig])
-        case _                     => selectGeneric(oid).map(_.widen[InstrumentConfig])
+        case Instrument.Flamingos2 => allF2Only(oid)     .map(_.widen[InstrumentConfig])
+        case _                     => allGenericOnly(oid).map(_.widen[InstrumentConfig])
       }
 
     for {
-      ss <- selectEmpty(oid)
+      ss <- selectAllEmpty(oid)
       is <- instrumentConfig(ss)
     } yield ss.zip(is).map { case (s, i) => s.as(i) }
   }
+
+  def selectOne(oid: Observation.Id, loc: Location.Middle): ConnectionIO[Option[Step[InstrumentConfig]]] = {
+    def instrumentConfig(s: Step[Instrument]): ConnectionIO[Option[InstrumentConfig]] =
+      s.instrument match {
+        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .map(_.widen[InstrumentConfig])
+        case _                     => oneGenericOnly(oid, loc).map(_.widen[InstrumentConfig])
+      }
+
+    for {
+      so <- selectOneEmpty(oid, loc)
+      io <- so.fold(Option.empty[InstrumentConfig].point[ConnectionIO]) { instrumentConfig }
+    } yield (so |@| io)((s, i) => s.as(i))
+  }
+
 }
