@@ -142,6 +142,12 @@ object StepDao {
       }
   }
 
+  /** Selects a `Step` with an `Instrument` element at the given location in the
+    * sequence but without any instrument configuration information.
+    *
+    * @param oid observation whose step should be selected
+    * @param loc position of the step to select
+    */
   def selectOneEmpty(oid: Observation.Id, loc: Loc): ConnectionIO[Option[Step[Instrument]]] =
     sql"""
       SELECT s.instrument,
@@ -280,9 +286,26 @@ object StepDao {
   def selectAllGeneric(oid: Observation.Id): ConnectionIO[List[(Loc, Step[GenericConfig])]] =
     selectAll(oid, allGenericOnly)
 
-  /** Selects all steps with their instrument configuration data, assuming the
-    * steps correspond to the given instrument.  If not, fails with an
-    * exception.
+  /** Selects the step at the indicated location in the sequence associated with
+    * the indicated observation.
+    *
+    * @param oid observation whose step configuration is sought
+    * @param loc location within the sequence to find
+    */
+  def selectOne(oid: Observation.Id, loc: Loc): ConnectionIO[Option[Step[InstrumentConfig]]] = {
+    def instrumentConfig(s: Step[Instrument]): ConnectionIO[Option[InstrumentConfig]] =
+      s.instrument match {
+        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .map(_.widen[InstrumentConfig])
+        case _                     => oneGenericOnly(oid, loc).map(_.widen[InstrumentConfig])
+      }
+
+    for {
+      so <- selectOneEmpty(oid, loc)
+      io <- so.fold(Option.empty[InstrumentConfig].point[ConnectionIO]) { instrumentConfig }
+    } yield (so |@| io)((s, i) => s.as(i))
+  }
+
+  /** Selects all steps with their instrument configuration data.
     *
     * @param oid observation whose step configurations are sought
     */
@@ -297,19 +320,6 @@ object StepDao {
       ss <- selectAllEmpty(oid)
       is <- instrumentConfig(ss.unzip._2)
     } yield ss.zip(is).map { case ((l, s), i) => (l, s.as(i)) }
-  }
-
-  def selectOne(oid: Observation.Id, loc: Loc): ConnectionIO[Option[Step[InstrumentConfig]]] = {
-    def instrumentConfig(s: Step[Instrument]): ConnectionIO[Option[InstrumentConfig]] =
-      s.instrument match {
-        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .map(_.widen[InstrumentConfig])
-        case _                     => oneGenericOnly(oid, loc).map(_.widen[InstrumentConfig])
-      }
-
-    for {
-      so <- selectOneEmpty(oid, loc)
-      io <- so.fold(Option.empty[InstrumentConfig].point[ConnectionIO]) { instrumentConfig }
-    } yield (so |@| io)((s, i) => s.as(i))
   }
 
 }
