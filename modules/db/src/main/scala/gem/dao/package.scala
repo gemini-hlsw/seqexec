@@ -53,7 +53,7 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
     Meta[List[Int]].nxmap(Location.unsafeMiddle(_), _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
-    Meta[Long].xmap(Duration.ofSeconds, _.getSeconds)
+    Meta[Long].xmap(Duration.ofMillis, _.toMillis)
 
   def capply2[A, B, T](f: (A, B) => T)(
     implicit ca: Composite[(Option[A], Option[B])]

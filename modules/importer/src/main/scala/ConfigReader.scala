@@ -65,7 +65,7 @@ object ConfigReader {
     val long:          Read[Long         ] = cast[Long]
     val offsetAngle:   Read[Angle        ] = string.map(s => Angle.fromArcsecs(s.toDouble))
     val yesNo:         Read[Boolean      ] = cast[YesNoType].map(_.toBoolean)
-    val durSecs:       Read[Duration     ] = double.map(_.toLong).map(Duration.ofSeconds(_))
+    val durSecs:       Read[Duration     ] = double.map(d => (d * 1000).round).map(Duration.ofMillis(_))
   }
 
 
@@ -132,8 +132,8 @@ object ConfigReader {
     }
 
     case object Observe extends System("observe") {
-      val ObserveType   = Key[String  ]("observeType",  identity             )(Read.string)
-      val ExposureTime  = Key[Duration]("exposureTime", _.getSeconds.toString)(Read.durSecs)
+      val ObserveType   = Key[String  ]("observeType",  identity           )(Read.string)
+      val ExposureTime  = Key[Duration]("exposureTime", _.toMillis.toString)(Read.durSecs)
     }
 
     case object Instrument extends System("instrument") {
@@ -146,18 +146,12 @@ object ConfigReader {
 
       object F2 {
 
-        import F2FpUnit._
-        val Fpu         = Key.enum[OldF2.FPUnit, F2FpUnit]("fpu",
-          OldF2.FPUnit.PINHOLE        -> Pinhole,
-          OldF2.FPUnit.SUBPIX_PINHOLE -> SubPixPinhole,
-          OldF2.FPUnit.FPU_NONE       -> None,
-          OldF2.FPUnit.CUSTOM_MASK    -> Custom,
-          OldF2.FPUnit.LONGSLIT_1     -> LongSlit1,
-          OldF2.FPUnit.LONGSLIT_2     -> LongSlit2,
-          OldF2.FPUnit.LONGSLIT_3     -> LongSlit3,
-          OldF2.FPUnit.LONGSLIT_4     -> LongSlit4,
-          OldF2.FPUnit.LONGSLIT_6     -> LongSlit6,
-          OldF2.FPUnit.LONGSLIT_8     -> LongSlit8
+        import F2Disperser._
+        val Disperser   = Key.enum[OldF2.Disperser, F2Disperser]("disperser",
+          OldF2.Disperser.NONE    -> NoDisperser,
+          OldF2.Disperser.R1200HK -> R1200HK,
+          OldF2.Disperser.R1200JH -> R1200JH,
+          OldF2.Disperser.R3000   -> R3000
         )
 
         import F2Filter._
@@ -176,6 +170,20 @@ object ConfigReader {
           OldF2.Filter.Y       -> Y
         )
 
+        import F2FpUnit._
+        val Fpu         = Key.enum[OldF2.FPUnit, F2FpUnit]("fpu",
+          OldF2.FPUnit.PINHOLE        -> Pinhole,
+          OldF2.FPUnit.SUBPIX_PINHOLE -> SubPixPinhole,
+          OldF2.FPUnit.FPU_NONE       -> None,
+          OldF2.FPUnit.CUSTOM_MASK    -> Custom,
+          OldF2.FPUnit.LONGSLIT_1     -> LongSlit1,
+          OldF2.FPUnit.LONGSLIT_2     -> LongSlit2,
+          OldF2.FPUnit.LONGSLIT_3     -> LongSlit3,
+          OldF2.FPUnit.LONGSLIT_4     -> LongSlit4,
+          OldF2.FPUnit.LONGSLIT_6     -> LongSlit6,
+          OldF2.FPUnit.LONGSLIT_8     -> LongSlit8
+        )
+
         import F2LyotWheel._
         val LyotWheel   = Key.enum[OldF2.LyotWheel, F2LyotWheel]("lyotWheel",
           OldF2.LyotWheel.GEMS       -> F33Gems,
@@ -188,12 +196,11 @@ object ConfigReader {
           OldF2.LyotWheel.OPEN       -> F16
         )
 
-        import F2Disperser._
-        val Disperser   = Key.enum[OldF2.Disperser, F2Disperser]("disperser",
-          OldF2.Disperser.NONE    -> NoDisperser,
-          OldF2.Disperser.R1200HK -> R1200HK,
-          OldF2.Disperser.R1200JH -> R1200JH,
-          OldF2.Disperser.R3000   -> R3000
+        import F2ReadMode._
+        val ReadMode    = Key.enum[OldF2.ReadMode, F2ReadMode]("readMode",
+          OldF2.ReadMode.BRIGHT_OBJECT_SPEC -> Bright,
+          OldF2.ReadMode.MEDIUM_OBJECT_SPEC -> Medium,
+          OldF2.ReadMode.FAINT_OBJECT_SPEC  -> Faint
         )
 
         // It appears that the window cover is sometimes "bare" and sometimes
@@ -283,7 +290,7 @@ object ConfigReader {
         OldGcal.Shutter.OPEN   -> GcalShutter.Open
       )
 
-      val ExposureTime = Key[Duration]("exposureTime", _.getSeconds.toString)(Read.durSecs)
+      val ExposureTime = Key[Duration]("exposureTime", _.toMillis.toString)(Read.durSecs)
       val Coadds       = Key[Int     ]("coadds",       _.toString)(Read.int)
     }
   }

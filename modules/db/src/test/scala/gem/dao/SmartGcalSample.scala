@@ -14,10 +14,10 @@ object SmartGcalSample extends TimedSample {
 
   val allF2: Vector[SmartGcalKey] =
     (for {
-      u <- F2FpUnit.all
-      f <- F2Filter.all
       d <- F2Disperser.all
-    } yield F2SmartGcalKey(u, f, d)).toVector
+      f <- F2Filter.all
+      u <- F2FpUnit.all
+    } yield F2SmartGcalKey(d, f, u)).toVector
 
 
   val rand = new Random(0)

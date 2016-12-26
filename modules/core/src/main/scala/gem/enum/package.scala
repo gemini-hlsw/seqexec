@@ -11,8 +11,8 @@ package object enum {
   implicit class InstrumentCompanionOps(companion: Instrument.type) {
     def forConfig(c: InstrumentConfig): Instrument =
       c match {
-        case F2Config(_, _, _, _, _, _, _) => Instrument.Flamingos2
-        case GenericConfig(i)              => i
+        case F2Config(_, _, _, _, _, _, _, _) => Instrument.Flamingos2
+        case GenericConfig(i)                 => i
       }
   }
 

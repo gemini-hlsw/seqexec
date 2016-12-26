@@ -79,14 +79,14 @@ ALTER DOMAIN coadds OWNER TO postgres;
 
 
 --
--- Name: exposure_time; Type: DOMAIN; Schema: public; Owner: postgres
+-- Name: milliseconds; Type: DOMAIN; Schema: public; Owner: postgres
 --
 
-CREATE DOMAIN exposure_time AS integer
+CREATE DOMAIN milliseconds AS integer
     DEFAULT    0
-    CONSTRAINT exposure_time_check CHECK (VALUE >= 0);
+    CONSTRAINT miliseconds_check CHECK (VALUE >= 0);
 
-ALTER DOMAIN exposure_time OWNER TO postgres;
+ALTER DOMAIN milliseconds OWNER TO postgres;
 
 
 --
@@ -167,10 +167,10 @@ SET default_with_oids = false;
 --
 
 CREATE TABLE e_f2_disperser (
-    id identifier NOT NULL,
-    wavelength double precision,
-    short_name character varying(20) NOT NULL,
-    long_name character varying(64) NOT NULL
+    id          identifier            PRIMARY KEY,
+    wavelength  double precision,
+    short_name  character varying(20) NOT NULL,
+    long_name   character varying(64) NOT NULL
 );
 
 
@@ -181,11 +181,11 @@ ALTER TABLE e_f2_disperser OWNER TO postgres;
 --
 
 CREATE TABLE e_f2_filter (
-    id identifier NOT NULL,
+    id         identifier            PRIMARY KEY,
     wavelength double precision,
     short_name character varying(20) NOT NULL,
-    long_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL
+    long_name  character varying(20) NOT NULL,
+    obsolete   boolean               NOT NULL
 );
 
 
@@ -196,12 +196,12 @@ ALTER TABLE e_f2_filter OWNER TO postgres;
 --
 
 CREATE TABLE e_f2_fpunit (
-    id identifier NOT NULL,
+    id         identifier            PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    slit_width smallint NOT NULL,
-    decker f2_decker NOT NULL,
-    long_name character varying(20) NOT NULL,
-    obsolete boolean NOT NULL
+    slit_width smallint              NOT NULL,
+    decker     f2_decker             NOT NULL,
+    long_name  character varying(20) NOT NULL,
+    obsolete   boolean               NOT NULL
 );
 
 
@@ -212,25 +212,46 @@ ALTER TABLE e_f2_fpunit OWNER TO postgres;
 --
 
 CREATE TABLE e_f2_lyot_wheel (
-    id identifier NOT NULL,
-    short_name character varying(20) NOT NULL,
-    plate_scale double precision NOT NULL,
-    pixel_scale double precision NOT NULL,
-    obsolete boolean NOT NULL,
-    long_name character varying(32) NOT NULL
+    id          identifier            PRIMARY KEY,
+    short_name  character varying(20) NOT NULL,
+    plate_scale double precision      NOT NULL,
+    pixel_scale double precision      NOT NULL,
+    obsolete    boolean               NOT NULL,
+    long_name   character varying(32) NOT NULL
 );
 
 
 ALTER TABLE e_f2_lyot_wheel OWNER TO postgres;
+
+
+--
+-- Name: e_f2_read_mode; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_f2_read_mode (
+    id                        identifier            PRIMARY KEY,
+    short_name                character varying(8)  NOT NULL,
+    long_name                 character varying(20) NOT NULL,
+    description               character varying(20) NOT NULL,
+    minimum_exposure_time     milliseconds          NOT NULL,
+    recommended_exposure_time milliseconds          NOT NULL,
+    readout_time              milliseconds          NOT NULL,
+    read_count                smallint              NOT NULL,
+    read_noise                double precision      NOT NULL
+);
+
+
+ALTER TABLE e_f2_read_mode OWNER TO postgres;
+
 
 --
 -- Name: e_f2_window_cover; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE e_f2_window_cover (
-    id identifier NOT NULL,
+    id         identifier            PRIMARY KEY,
     short_name character varying(20) NOT NULL,
-    long_name character varying(20) NOT NULL
+    long_name  character varying(20) NOT NULL
 );
 
 
@@ -617,24 +638,19 @@ ALTER TABLE step_dark OWNER TO postgres;
 --
 
 CREATE TABLE step_f2 (
-    step_f2_id     integer       PRIMARY KEY REFERENCES step ON DELETE CASCADE,
-    fpu            identifier    NOT NULL,
+    step_f2_id     integer       PRIMARY KEY REFERENCES step              ON DELETE CASCADE,
+    disperser      identifier    NOT NULL    REFERENCES e_f2_disperser    ON DELETE CASCADE,
+    exposure_time  milliseconds  NOT NULL,
+    filter         identifier    NOT NULL    REFERENCES e_f2_filter       ON DELETE CASCADE,
+    fpu            identifier    NOT NULL    REFERENCES e_f2_fpunit       ON DELETE CASCADE,
+    lyot_wheel     identifier    NOT NULL    REFERENCES e_f2_lyot_wheel   ON DELETE CASCADE,
     mos_preimaging boolean       NOT NULL,
-    exposure_time  exposure_time NOT NULL,
-    filter         identifier    NOT NULL,
-    lyot_wheel     identifier    NOT NULL,
-    disperser      identifier    NOT NULL,
-    window_cover   identifier    NOT NULL
+    read_mode      identifier    NOT NULL    REFERENCES e_f2_read_mode    ON DELETE CASCADE,
+    window_cover   identifier    NOT NULL    REFERENCES e_f2_window_cover ON DELETE CASCADE
 );
 
 
 ALTER TABLE step_f2 OWNER TO postgres;
-
---
--- Name: COLUMN step_f2.exposure_time; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should this be another type?';
 
 
 --
@@ -642,17 +658,17 @@ COMMENT ON COLUMN step_f2.exposure_time IS 'exposure time in seconds ... should 
 --
 
 CREATE TABLE gcal (
-    gcal_id       SERIAL        PRIMARY KEY,
-    continuum     identifier                            REFERENCES e_gcal_continuum ON DELETE CASCADE,
-    ar_arc        boolean       NOT NULL DEFAULT FALSE,
-    cuar_arc      boolean       NOT NULL DEFAULT FALSE,
-    thar_arc      boolean       NOT NULL DEFAULT FALSE,
-    xe_arc        boolean       NOT NULL DEFAULT FALSE,
-    filter        identifier    NOT NULL                REFERENCES e_gcal_filter    ON DELETE CASCADE,
-    diffuser      identifier    NOT NULL                REFERENCES e_gcal_diffuser  ON DELETE CASCADE,
-    shutter       identifier    NOT NULL                REFERENCES e_gcal_shutter   ON DELETE CASCADE,
-    exposure_time exposure_time NOT NULL,
-    coadds        coadds        NOT NULL,
+    gcal_id       SERIAL       PRIMARY KEY,
+    continuum     identifier                          REFERENCES e_gcal_continuum ON DELETE CASCADE,
+    ar_arc        boolean      NOT NULL DEFAULT FALSE,
+    cuar_arc      boolean      NOT NULL DEFAULT FALSE,
+    thar_arc      boolean      NOT NULL DEFAULT FALSE,
+    xe_arc        boolean      NOT NULL DEFAULT FALSE,
+    filter        identifier   NOT NULL                REFERENCES e_gcal_filter    ON DELETE CASCADE,
+    diffuser      identifier   NOT NULL                REFERENCES e_gcal_diffuser  ON DELETE CASCADE,
+    shutter       identifier   NOT NULL                REFERENCES e_gcal_shutter   ON DELETE CASCADE,
+    exposure_time milliseconds NOT NULL,
+    coadds        coadds       NOT NULL,
     CONSTRAINT check_lamp CHECK ((continuum IS NULL) = (ar_arc OR cuar_arc OR thar_arc OR xe_arc))
 );
 
@@ -777,6 +793,17 @@ GemsUnder	GeMS Under	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS unde
 GemsOver	GeMS Over	0.78400000000000003	0.0899999999999999967	f	f/33 (GeMS over-sized)
 HartmannA	Hartmann A (H1)	0	0	f	Hartmann A (H1)
 HartmannB	Hartmann B (H2)	0	0	f	Hartmann B (H2)
+\.
+
+
+--
+-- Data for Name: e_f2_read_mode; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_f2_read_mode (id, short_name, long_name, description, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise) FROM stdin;
+Bright	bright	Bright Object	Strong Source	1500	5000	8000	1	11.7
+Medium	medium	Medium Object	Medium Source	6000	21000	14000	4	6.0
+Faint	faint	Faint Object	Weak Source	12000	85000	20000	8	5.0
 \.
 
 
@@ -975,21 +1002,6 @@ COPY semester (semester_id, year, half) FROM stdin;
 
 
 --
--- Name: e_f2_fpunit_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_f2_fpunit
-    ADD CONSTRAINT e_f2_fpunit_pkey PRIMARY KEY (id);
-
-
---
--- Name: e_f2_window_cover_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_f2_window_cover
-    ADD CONSTRAINT e_f2_window_cover_pkey PRIMARY KEY (id);
-
---
 -- Name: e_program_role_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1019,30 +1031,6 @@ ALTER TABLE ONLY e_program_type
 
 ALTER TABLE ONLY e_site
     ADD CONSTRAINT e_site_pkey PRIMARY KEY (id);
-
-
---
--- Name: f2_disperser_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_f2_disperser
-    ADD CONSTRAINT f2_disperser_pkey PRIMARY KEY (id);
-
-
---
--- Name: f2_filter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_f2_filter
-    ADD CONSTRAINT f2_filter_pkey PRIMARY KEY (id);
-
-
---
--- Name: f2_lyot_wheel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY e_f2_lyot_wheel
-    ADD CONSTRAINT f2_lyot_wheel_pkey PRIMARY KEY (id);
 
 
 --
@@ -1190,45 +1178,6 @@ ALTER TABLE ONLY observation
 ALTER TABLE ONLY program
     ADD CONSTRAINT program_site_fkey FOREIGN KEY (site) REFERENCES e_site(id);
 
-
---
--- Name: step_f2_disperser_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_disperser_fkey FOREIGN KEY (disperser) REFERENCES e_f2_disperser(id);
-
-
---
--- Name: step_f2_filter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_filter_fkey FOREIGN KEY (filter) REFERENCES e_f2_filter(id);
-
-
---
--- Name: step_f2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_id_fkey FOREIGN KEY (fpu) REFERENCES e_f2_fpunit(id);
-
-
---
--- Name: step_f2_lyot_wheel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_lyot_wheel_fkey FOREIGN KEY (lyot_wheel) REFERENCES e_f2_lyot_wheel(id);
-
-
---
--- Name: step_f2_window_cover_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY step_f2
-    ADD CONSTRAINT step_f2_window_cover_fkey FOREIGN KEY (window_cover) REFERENCES e_f2_window_cover(id);
 
 --
 -- Name: public; Type: ACL; Schema: -; Owner: postgres

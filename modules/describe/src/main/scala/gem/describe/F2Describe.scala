@@ -44,7 +44,7 @@ trait F2Describe {
   object LyotWheelProp extends Prop[F2Config] {
     type B = F2LyotWheel
     val eq: Equal[F2LyotWheel]  = implicitly
-    val lens: F2Config @> F2LyotWheel = Lens.lensu((a,b) => a.copy(lyoutWheel = b), _.lyoutWheel)
+    val lens: F2Config @> F2LyotWheel = Lens.lensu((a,b) => a.copy(lyotWheel = b), _.lyotWheel)
     val meta = forEnumerated[F2LyotWheel](Attrs(lab("Lyot Wheel"), Science, SingleStep))
   }
 
