@@ -12,6 +12,7 @@ import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.server.{Server, ServerApp}
+import squants.time.Hours
 
 import scalaz.Scalaz._
 import scalaz._
@@ -70,7 +71,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       val cookieName = cfg.require[String]("authentication.cookieName")
       val secretKey = cfg.require[String]("authentication.secretKey")
       val useSSL = cfg.require[Boolean]("authentication.useSSL")
-      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), sessionTimeout, cookieName, secretKey, useSSL, ld)
+      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), Hours(sessionTimeout), cookieName, secretKey, useSSL, ld)
     }
 
   /**
