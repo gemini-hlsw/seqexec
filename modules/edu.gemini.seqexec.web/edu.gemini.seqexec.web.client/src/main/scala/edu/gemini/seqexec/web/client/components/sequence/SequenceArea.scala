@@ -27,7 +27,7 @@ import org.scalajs.dom.document
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class State(runRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
+  case class State(runRequested: Boolean, stopRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
@@ -35,6 +35,10 @@ object SequenceStepsTableContainer {
 
     def requestRun(s: SequenceView): Callback = $.modState(_.copy(runRequested = true)) >> Callback {
       SeqexecCircuit.dispatch(RequestRun(s))
+    }
+
+    def requestStop(s: SequenceView): Callback = $.modState(_.copy(stopRequested = true)) >> Callback {
+      SeqexecCircuit.dispatch(RequestStop(s))
     }
 
     def render(p: Props, s: State) = {
@@ -56,7 +60,7 @@ object SequenceStepsTableContainer {
             p.status.isLogged && p.s.status === SequenceState.Idle ?=
               Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected || s.runRequested), "Run"),
             p.status.isLogged && p.s.status === SequenceState.Running ?=
-              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected), "Stop")
+              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected || s.stopRequested), "Stop")
           )
         } { i =>
           <.div(
@@ -189,7 +193,7 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, 0, autoScrolled = false))
+    .initialState(State(runRequested = false, stopRequested = false, 0, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
