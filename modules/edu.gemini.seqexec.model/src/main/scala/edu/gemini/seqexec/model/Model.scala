@@ -67,6 +67,7 @@ object Model {
     val breakpoint: Boolean
     val skip: Boolean
     val configStatus: Map[SystemName, ActionStatus]
+    val fileId: Option[dhs.ObsId]
     val observeStatus: ActionStatus
   }
 
@@ -76,6 +77,7 @@ object Model {
     override val breakpoint: Boolean,
     override val skip: Boolean,
     override val configStatus: Map[SystemName, ActionStatus],
+    override val fileId: Option[dhs.ObsId],
     override val observeStatus: ActionStatus
   ) extends Step
   // Other kinds of Steps to be defined.

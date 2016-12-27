@@ -103,6 +103,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
             // TODO: Implement skipping at Engine level
             skip = false,
             configStatus = Map.empty,
+            // Where do I get the file id from?
+            None,
             // TODO: Implement standard step at Engine level
             observeStatus = ActionStatus.Pending
           )
