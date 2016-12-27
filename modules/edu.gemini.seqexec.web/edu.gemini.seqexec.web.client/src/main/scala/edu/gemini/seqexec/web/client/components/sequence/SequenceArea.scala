@@ -142,9 +142,11 @@ object SequenceStepsTableContainer {
                 p.s.steps.zipWithIndex.map {
                   case (step, i) =>
                     <.tr(
+                      // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                       ^.classSet(
                         "positive" -> (step.status === StepState.Completed),
                         "warning"  -> (step.status === StepState.Running),
+                        "active"   -> (step.status === StepState.Stopped),
                         // TODO Show error case
                         //"negative" -> (step.status == StepState.Error),
                         "negative" -> (step.status === StepState.Skipped)
