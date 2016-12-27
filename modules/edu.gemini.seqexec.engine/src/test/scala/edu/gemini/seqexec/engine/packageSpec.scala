@@ -124,9 +124,9 @@ class packageSpec extends FlatSpec {
           q.enqueueOne(start(seqId)),
           Task(Thread.sleep(2000)),
           q.enqueueOne(pause(seqId)),
-          Task(Thread.sleep(2000)),
+          Task(Thread.sleep(1000)),
           q.enqueueOne(start(seqId)),
-          Task(Thread.sleep(3000)),
+          Task(Thread.sleep(5000)),
           q.enqueueOne(exit)
         ).sequence_,
        processE(q).run.eval(qs1)

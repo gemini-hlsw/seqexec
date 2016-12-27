@@ -111,11 +111,16 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
           l.splitAt(l.indexWhere(p))
 
+        // TODO: Calculate the whole status here and remove `Engine.Step.status`
+        // This will be easier once the exact status labels in the UI are fixed.
         seq.steps.map(viewStep) match {
           // Find first Pending Step when no Step is Running and mark it as Running
           case steps if st === SequenceState.Running && steps.all(_.status =/= StepState.Running) =>
             val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
             xs ++ (y.copy(status = StepState.Running) :: ys)
+          case steps if st === SequenceState.Idle =>
+            val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
+            xs ++ (y.copy(status = StepState.Paused) :: ys)
           case x => x
         }
       }

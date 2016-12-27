@@ -20,7 +20,8 @@ object Step {
 
     // At least an Action in this Step errored.
     // TODO: These errors for empty cases should be enforced at the type level
-    if (step.executions.isEmpty || step.executions.all(_.isEmpty)
+    if (step.executions.isEmpty
+          || step.executions.all(_.isEmpty)
           || step.any(Execution.errored)
     ) StepState.Error("An action errored")
     // All actions in this Step are pending.
