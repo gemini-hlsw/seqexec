@@ -120,7 +120,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
             xs ++ (y.copy(status = StepState.Running) :: ys)
           case steps if st === SequenceState.Idle =>
             val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
-            xs ++ (y.copy(status = StepState.Paused) :: ys)
+            xs ++ (y.copy(status = StepState.Stopped) :: ys)
           case x => x
         }
       }

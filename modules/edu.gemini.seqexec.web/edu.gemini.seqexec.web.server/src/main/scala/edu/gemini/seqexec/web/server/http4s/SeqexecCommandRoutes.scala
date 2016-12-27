@@ -31,23 +31,6 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
     case req @ GET  -> Root  / obsId / "count" =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
-    /*case req @ GET  -> Root  / obsId / "static" =>
-      Ok(toSequenceConfig("show", commands.showStatic(obsId)))
-
-    case req @ GET  -> Root  / obsId / "static" / system =>
-      Ok(toSequenceConfig("show", commands.showStatic(obsId, system)))
-
-    case req @ GET  -> Root  / obsId / "dynamic" / step =>
-      Ok(toSequenceConfig("show", commands.showDynamic(obsId, step)))
-
-    case req @ GET  -> Root  / obsId / "dynamic" / step / system =>
-      Ok(toSequenceConfig("show", commands.showDynamic(obsId, step, system)))*/
-
-    /*case req @ GET  -> Root  / obsId / "state" =>
-      Ok(toSequenceConfig("state", commands.state(obsId)))*/
-
-    // New SeqexecEngine
-
     // TODO: Add obsId parameter
     case POST -> Root / obsId / "start" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
@@ -61,7 +44,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
       } yield resp
 
     // TODO: Add obsId parameter
-    case POST -> Root / obsId / "pause" =>
+    case POST -> Root / obsId / "stop" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
       for {

@@ -50,7 +50,7 @@ object Model {
     case object Skipped extends StepState
     case class Error(msg: String) extends StepState
     case object Running extends StepState
-    case object Paused extends StepState
+    case object Stopped extends StepState
 
     implicit val equal: Equal[StepState] = Equal.equalA[StepState]
   }

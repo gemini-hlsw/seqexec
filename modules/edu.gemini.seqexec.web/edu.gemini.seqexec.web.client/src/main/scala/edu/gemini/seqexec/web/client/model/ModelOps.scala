@@ -18,10 +18,10 @@ object ModelOps {
   implicit val steStateShow = Show.shows[StepState] {
     case StepState.Pending    => "Pending"
     case StepState.Completed  => "Done"
-    case StepState.Paused     => "Paused"
     case StepState.Skipped    => "Skipped"
     case StepState.Error(msg) => s"Error $msg"
     case StepState.Running    => "Running"
+    case StepState.Stopped    => "Stopped"
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
