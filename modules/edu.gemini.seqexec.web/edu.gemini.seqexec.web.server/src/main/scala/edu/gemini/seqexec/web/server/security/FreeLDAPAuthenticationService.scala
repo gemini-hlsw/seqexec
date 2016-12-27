@@ -98,9 +98,14 @@ class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthServ
   val Timeout = 1000
   val Domain = "@gemini.edu"
 
+  lazy val ldapOptions: LDAPConnectionOptions = {
+    val opts = new LDAPConnectionOptions()
+    opts.setConnectTimeoutMillis(Timeout)
+    opts
+  }
+
   // Will attempt several servers in case they fail
-  lazy val failoverServerSet = new FailoverServerSet(hosts.map(_._1).toArray, hosts.map(_._2).toArray,
-    new LDAPConnectionOptions() <| {_.setConnectTimeoutMillis(Timeout)})
+  lazy val failoverServerSet = new FailoverServerSet(hosts.map(_._1).toArray, hosts.map(_._2).toArray, ldapOptions)
 
   override def authenticateUser(username: String, password: String): AuthResult = {
     // We should always return the domain
