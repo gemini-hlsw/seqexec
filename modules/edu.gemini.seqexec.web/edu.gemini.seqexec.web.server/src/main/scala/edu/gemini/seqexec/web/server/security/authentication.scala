@@ -5,6 +5,8 @@ import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import upickle.default._
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
+import squants.Time
+import squants.time.Seconds
 
 import scala.annotation.tailrec
 import scalaz._
@@ -43,7 +45,7 @@ case class LDAPConfig(ldapHosts: List[String]) {
   * @param useSSL Whether we use SSL setting the cookie to be https only
   * @param ldap Configuration for the ldap client
   */
-case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Int, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
+case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Time, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
 
 // Intermediate class to decode the claim stored in the JWT token
 case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
@@ -62,7 +64,7 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
     */
   def buildToken(u: UserDetails): String =
     // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
-    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(3600), config.secretKey, JwtAlgorithm.HmacSHA256)
+    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(sessionTimeout.toSeconds.toLong), config.secretKey, JwtAlgorithm.HmacSHA256)
 
   /**
     * Decodes a token out of JSON Web Token
@@ -73,7 +75,7 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
       token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))
     } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
 
-  val sessionTimeout: Long = config.sessionLifeHrs * 3600
+  val sessionTimeout: Time = config.sessionLifeHrs in Seconds
 
   override def authenticateUser(username: String, password: String): AuthResult =
     authServices.authenticateUser(username, password)
