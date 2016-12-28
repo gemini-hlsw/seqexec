@@ -57,7 +57,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
           case \/-(user) =>
             // if successful set a cookie
             val cookieVal = auth.buildToken(user)
-            val expiration = Instant.now().plusSeconds(auth.sessionTimeout)
+            val expiration = Instant.now().plusSeconds(auth.sessionTimeout.toSeconds.toLong)
             val cookie = Cookie(auth.config.cookieName, cookieVal,
               path = "/".some, expires = expiration.some, secure = auth.config.useSSL, httpOnly = true)
             Ok(user).addCookie(cookie)
