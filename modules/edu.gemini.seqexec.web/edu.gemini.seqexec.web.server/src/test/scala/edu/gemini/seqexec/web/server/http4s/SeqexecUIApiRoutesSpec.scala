@@ -6,23 +6,24 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server.SeqexecEngine.Settings
-
 import org.http4s._
-import org.http4s.headers.`Set-Cookie`
+import org.http4s.headers.{`Set-Cookie`, Cookie => CookieHeader}
 import org.http4s.util.CaseInsensitiveStringSyntax
-
+import org.http4s.util.NonEmptyList._
 import scodec.bits.ByteVector
 import squants.time._
 import boopickle.Default._
 
 import scalaz.stream.Process.emit
 import scalaz.stream.async
-
 import java.nio.charset.StandardCharsets
 import java.time.{Instant, LocalDate}
 import java.time.temporal.ChronoUnit
 
 import org.scalatest.{FlatSpec, Matchers}
+
+import scalaz.OptionT
+import scalaz.concurrent.Task
 
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with CaseInsensitiveStringSyntax {
   val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
@@ -34,7 +35,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
 
   val service = new SeqexecUIApiRoutes(authService, queues, engine).service
 
-  "SeqexecUIApiRoutes" should
+  "SeqexecUIApiRoutes login" should
     "reject requests without body" in {
       service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).unsafePerformSync.status should equal(Status.BadRequest)
     }
@@ -65,5 +66,26 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       val minExp = Instant.now().plus(7, ChronoUnit.HOURS)
       val maxExp = Instant.now().plus(9, ChronoUnit.HOURS)
       cookieOpt.flatMap(_.cookie.expires).map(i => i.isAfter(minExp) && i.isBefore(maxExp)) shouldBe Some(true)
+    }
+
+  "SeqexecUIApiRoutes logout" should
+    "reject GET requests" in {
+      // This should in principle return a 405
+      // see https://github.com/http4s/http4s/issues/234
+      service.apply(Request(uri = uri("/seqexec/logout"))).unsafePerformSync.status should equal(Status.NotFound)
+    }
+    it should "reject unauthorized requests" in {
+      service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout"))).unsafePerformSync.status should equal(Status.Unauthorized)
+    }
+    it should "remove the cookie on logout" in {
+      // First make a valid cookie
+      val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
+      for {
+        loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
+        cookieHeader = loginResp.headers.find(_.name === "Set-Cookie".ci)
+        setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
+        authCookie   = new CookieHeader(nels(setCookie.cookie))
+        logoutResp   <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout")).putHeaders(authCookie)).map(Option.apply))
+      } yield logoutResp
     }
 }
