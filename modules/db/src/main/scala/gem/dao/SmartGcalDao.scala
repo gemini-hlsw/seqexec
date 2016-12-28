@@ -1,8 +1,12 @@
 package gem.dao
 
-import gem.config.{F2SmartGcalKey, GcalConfig, SmartGcalKey}
+import gem._
+import gem.SmartGcal._
+import gem.config._
 import gem.enum._
+
 import doobie.imports._
+
 import scalaz._, Scalaz._
 
 object SmartGcalDao {
@@ -56,4 +60,55 @@ object SmartGcalDao {
     } yield r
   }
 
+  private def lookup(step: Option[Step[InstrumentConfig]], loc: Location.Middle): ConnectionIO[LookupResult] = {
+    type SmartContext  = (SmartGcalKey, SmartGcalType, InstrumentConfig)
+
+    // Get the key, type, and instrument config from the step.  We'll need this
+    // information to lookup the corresponding GcalConfig.
+    val context: ExpansionResult[SmartContext] =
+      step.fold(stepNotFound(loc).left[SmartContext]) {
+        case SmartGcalStep(inst, sgType) =>
+          (inst.smartGcalKey \/> noMappingDefined).map { k => (k, sgType, inst) }
+        case _                           =>
+          notSmartGcal.left[SmartContext]
+      }
+
+    // Find the corresponding smart gcal mapping, if any.
+    context.fold(e => e.left[ExpandedSteps].point[ConnectionIO], {
+      case (k, t, i) => select(k, t).map {
+        case Nil  => noMappingDefined.left[ExpandedSteps]
+        case gcal => gcal.map { configs => GcalStep(i, configs) }.right[ExpansionError]
+      }
+    })
+  }
+
+  def lookup(oid: Observation.Id, loc: Location.Middle): ConnectionIO[LookupResult] =
+    StepDao.selectOne(oid, loc).flatMap(lookup(_, loc))
+
+  def expand(oid: Observation.Id, loc: Location.Middle): ConnectionIO[LookupResult] = {
+    // Find the previous and next location for the smart gcal step that we are
+    // replacing.  This is needed to generate locations for the steps that will
+    // be inserted.
+    def bounds(steps: Location.Middle ==>> Step[InstrumentConfig]): (Location, Location) =
+      steps.split(loc) match {
+        case (prev, next) => (prev.findMax.map(_._1).widen[Location] | Location.beginning,
+                              next.findMin.map(_._1).widen[Location] | Location.end)
+      }
+
+    def insert(before: Location, gcal: ExpandedSteps, after: Location): ConnectionIO[Unit] =
+      Location.find(gcal.size, before, after).toList.zip(gcal).traverseU { case (l, s) =>
+        StepDao.insert(oid, l, s)
+      }.void
+
+    for {
+      steps <- StepDao.selectAll(oid)
+      (locBefore, locAfter) = bounds(steps)
+      gcal  <- lookup(steps.lookup(loc), loc)
+      _     <- gcal.fold(_ => ().point[ConnectionIO], gs =>
+                 for {
+                   _ <- StepDao.delete(oid, loc)
+                   _ <- insert(locBefore, gs, locAfter)
+                 } yield ())
+    } yield gcal
+  }
 }

@@ -5,9 +5,15 @@ import gem.enum._
 
 import java.time.Duration
 
-sealed abstract class InstrumentConfig extends Product with Serializable
-
 sealed trait SmartGcalKey
+
+sealed abstract class InstrumentConfig extends Product with Serializable {
+  def smartGcalKey: Option[SmartGcalKey] =
+    this match {
+      case f2: F2Config     => Some(f2.key)
+      case GenericConfig(_) => None
+    }
+}
 
 final case class F2SmartGcalKey(
   disperser: F2Disperser,
@@ -26,7 +32,7 @@ final case class F2Config(
   windowCover:   F2WindowCover
 ) extends InstrumentConfig {
 
-  def smartGcalKey: F2SmartGcalKey =
+  def key: F2SmartGcalKey =
     F2SmartGcalKey(disperser, filter, fpu)
 }
 

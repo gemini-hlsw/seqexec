@@ -5,8 +5,10 @@ import gem.config.InstrumentConfig
 
 import doobie.imports._
 
+import scalaz.==>>
+
 object StepDaoSample extends TimedSample {
-  type Result = List[(Location.Middle, Step[InstrumentConfig])]
+  type Result = Location.Middle ==>> Step[InstrumentConfig]
 
   val oid = Observation.Id.unsafeFromString("GS-2016A-Q-102-108")
 
@@ -14,5 +16,5 @@ object StepDaoSample extends TimedSample {
     StepDao.selectAll(oid)
 
   override def format(r: Result): String =
-    r.mkString(", \n")
+    r.toAscList.map { case (l, s) => f"$l%10s -> $s" }.mkString(", \n")
 }
