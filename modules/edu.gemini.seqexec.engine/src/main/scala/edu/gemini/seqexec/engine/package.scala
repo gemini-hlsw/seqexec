@@ -77,15 +77,23 @@ package object engine {
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
   def next(q: EventQueue)(id: Sequence.Id): Handle[Unit] =
-    getS(id).flatMap(_.map { seq =>
-      seq.next match {
-        // Empty state
-        case None                           => send(q)(finished(id))
-        // Final State
-        case Some(qs: Sequence.State.Final) => putS(id)(qs) *> send(q)(finished(id))
-        // Execution completed
-        case Some(qs)                       => putS(id)(qs) *> send(q)(executing(id))
-      }
+    getS(id).flatMap(
+      _.map { seq =>
+        seq.status match {
+          case SequenceState.Running =>
+            seq.next match {
+              // Empty state
+              case None =>
+                send(q)(finished(id))
+              // Final State
+              case Some(qs: Sequence.State.Final) =>
+                putS(id)(qs) *> send(q)(finished(id))
+              // Execution completed
+              case Some(qs) =>
+                putS(id)(qs) *> send(q)(executing(id))
+            }
+          case _ => unit
+        }
     }.getOrElse(unit)
   )
 
@@ -105,17 +113,13 @@ package object engine {
         }
     }
 
-    getS(id).flatMap(_.map { seq =>
-        seq.status match {
-          case SequenceState.Running =>
-            Nondeterminism[Task].gatherUnordered(
-              seq.current.actions.zipWithIndex.map(act)
-            ).liftM[HandleStateT] *> send(q)(executed(id))
-          case _                     => unit
-        }
+    getS(id).flatMap(
+      _.map { seq =>
+        Nondeterminism[Task].gatherUnordered(
+          seq.current.actions.zipWithIndex.map(act)
+        ).liftM[HandleStateT] *> send(q)(executed(id))
       }.getOrElse(unit)
     )
-
   }
 
   /**
@@ -171,9 +175,9 @@ package object engine {
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
       case Completed(id, i, r) => log("Output: Action completed") *> complete(id, i, r)
       case Failed(id, i, e)    => log("Output: Action failed") *> fail(q)(id)(i, e)
-      case Executed(id)        => log("Output: Execution completed")
-      case Executing(id)       => log("Output: Executing") *> execute(q)(id) *> send(q)(Event.next(id))
-      case Next(id)            => log("Output: Moving to next Execution") *> next(q)(id)
+      case Executed(id)        => log("Output: Execution completed") *> send(q)(Event.next(id))
+      case Executing(id)       => log("Output: Executing") *> execute(q)(id)
+      case Next(id)            => log("Output: Moving to next Execution if possible") *> next(q)(id)
       case Finished(id)        => log("Output: Finished") *> switch(q)(id)(SequenceState.Completed)
     }
 

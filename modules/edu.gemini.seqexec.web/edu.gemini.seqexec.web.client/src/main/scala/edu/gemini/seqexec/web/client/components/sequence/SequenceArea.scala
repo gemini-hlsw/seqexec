@@ -27,15 +27,21 @@ import org.scalajs.dom.document
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class State(runRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
+  case class State(runRequested: Boolean, stopRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
   class Backend($: BackendScope[Props, State]) {
 
-    def requestRun(s: SequenceView): Callback = $.modState(_.copy(runRequested = true)) >> Callback {
-      SeqexecCircuit.dispatch(RequestRun(s))
-    }
+    def requestRun(s: SequenceView): Callback =
+      $.modState(_.copy(runRequested = true, stopRequested = false)) >> Callback {
+        SeqexecCircuit.dispatch(RequestRun(s))
+      }
+
+    def requestStop(s: SequenceView): Callback =
+      $.modState(_.copy(stopRequested = true, runRequested = false)) >> Callback {
+        SeqexecCircuit.dispatch(RequestStop(s))
+      }
 
     def render(p: Props, s: State) = {
       <.div(
@@ -56,9 +62,7 @@ object SequenceStepsTableContainer {
             p.status.isLogged && p.s.status === SequenceState.Idle ?=
               Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected || s.runRequested), "Run"),
             p.status.isLogged && p.s.status === SequenceState.Running ?=
-              Button(Button.Props(icon = Some(IconPause), labeled = true, disabled = true, onClick = requestPause(p.s)), "Pause"),
-            p.status.isLogged && p.s.status === SequenceState.Running ?=
-              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected), "Stop")
+              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected || s.stopRequested), "Stop")
           )
         } { i =>
           <.div(
@@ -144,9 +148,11 @@ object SequenceStepsTableContainer {
                 p.s.steps.zipWithIndex.map {
                   case (step, i) =>
                     <.tr(
+                      // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                       ^.classSet(
                         "positive" -> (step.status === StepState.Completed),
                         "warning"  -> (step.status === StepState.Running),
+                        "active"   -> (step.status === StepState.Stopped),
                         // TODO Show error case
                         //"negative" -> (step.status == StepState.Error),
                         "negative" -> (step.status === StepState.Skipped)
@@ -189,7 +195,7 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, 0, autoScrolled = false))
+    .initialState(State(runRequested = false, stopRequested = false, 0, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state

@@ -21,6 +21,7 @@ object ModelOps {
     case StepState.Skipped    => "Skipped"
     case StepState.Error(msg) => s"Error $msg"
     case StepState.Running    => "Running"
+    case StepState.Stopped    => "Stopped"
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
