@@ -33,13 +33,15 @@ object SequenceStepsTableContainer {
 
   class Backend($: BackendScope[Props, State]) {
 
-    def requestRun(s: SequenceView): Callback = $.modState(_.copy(runRequested = true)) >> Callback {
-      SeqexecCircuit.dispatch(RequestRun(s))
-    }
+    def requestRun(s: SequenceView): Callback =
+      $.modState(_.copy(runRequested = true, stopRequested = false)) >> Callback {
+        SeqexecCircuit.dispatch(RequestRun(s))
+      }
 
-    def requestStop(s: SequenceView): Callback = $.modState(_.copy(stopRequested = true)) >> Callback {
-      SeqexecCircuit.dispatch(RequestStop(s))
-    }
+    def requestStop(s: SequenceView): Callback =
+      $.modState(_.copy(stopRequested = true, runRequested = false)) >> Callback {
+        SeqexecCircuit.dispatch(RequestStop(s))
+      }
 
     def render(p: Props, s: State) = {
       <.div(
