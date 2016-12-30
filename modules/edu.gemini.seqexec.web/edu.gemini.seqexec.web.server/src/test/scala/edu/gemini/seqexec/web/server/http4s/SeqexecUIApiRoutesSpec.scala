@@ -1,17 +1,22 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.time.{Instant, LocalDate}
+import java.time.temporal.ChronoUnit
 
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.seqexec.engine.Event
 import edu.gemini.seqexec.model.Model.SeqexecEvent
+import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server.SeqexecEngine.Settings
+
 import org.http4s._
-import org.http4s.headers.{`Set-Cookie`, Cookie => CookieHeader}
+import org.http4s.headers.`Set-Cookie`
 import org.http4s.util.CaseInsensitiveStringSyntax
-import org.http4s.util.NonEmptyList._
+import org.http4s.websocket.WebsocketBits
 import scodec.bits.ByteVector
 import squants.time._
 import boopickle.Default._
@@ -19,17 +24,11 @@ import boopickle.Default._
 import scalaz.stream.Process.emit
 import scalaz.stream.Process
 import scalaz.stream.async
-import java.nio.charset.StandardCharsets
-import java.time.{Instant, LocalDate}
-import java.time.temporal.ChronoUnit
-
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
-import org.http4s.websocket.WebsocketBits
-import org.scalatest.{FlatSpec, Matchers}
-
 import scalaz.OptionT
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.{Queue, Topic}
+
+import org.scalatest.{FlatSpec, Matchers}
 
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with CaseInsensitiveStringSyntax {
   val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
@@ -106,8 +105,8 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
     "return no user if logged anonymously" in {
       val openEvent =
         for {
-          events     <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*)).map(Option.apply))
-          exchange   <- OptionT(Task.now(events.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
+          response   <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*)).map(Option.apply))
+          exchange   <- OptionT(Task.now(response.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
           frames     <- OptionT(exchange.run(Process.empty).take(1).runLog.map(Option.apply))
           firstFrame <- OptionT(Task.now(frames.headOption.collect {case WebsocketBits.Binary(data, _) => data}))
           firstEvent <- OptionT(Task.now(Unpickle[SeqexecEvent].fromBytes(ByteBuffer.wrap(firstFrame))).map(Option.apply))
@@ -123,8 +122,8 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
           loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
           cookieHeader =  loginResp.headers.find(_.name === "Set-Cookie".ci)
           setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
-          events       <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*).addCookie(setCookie.cookie)).map(Option.apply))
-          exchange     <- OptionT(Task.now(events.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
+          response     <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*).addCookie(setCookie.cookie)).map(Option.apply))
+          exchange     <- OptionT(Task.now(response.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
           frames       <- OptionT(exchange.run(Process.empty).take(1).runLog.map(Option.apply))
           firstFrame   <- OptionT(Task.now(frames.headOption.collect {case WebsocketBits.Binary(data, _) => data}))
           firstEvent   <- OptionT(Task.now(Unpickle[SeqexecEvent].fromBytes(ByteBuffer.wrap(firstFrame))).map(Option.apply))
