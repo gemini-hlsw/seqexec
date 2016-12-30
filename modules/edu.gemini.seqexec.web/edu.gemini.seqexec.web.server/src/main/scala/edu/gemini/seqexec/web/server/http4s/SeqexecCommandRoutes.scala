@@ -31,10 +31,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
     case req @ GET  -> Root  / obsId / "count" =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
-    // TODO: Add obsId parameter
     case POST -> Root / obsId / "start" =>
-      // TODO: Get rid of `.toString` How do we want to represent input results
-      // now?
       for {
         obsId <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))
@@ -43,10 +40,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         resp  <- Ok(s"Started sequence $obsId")
       } yield resp
 
-    // TODO: Add obsId parameter
-    case POST -> Root / obsId / "stop" =>
-      // TODO: Get rid of `.toString` How do we want to represent input results
-      // now?
+    case POST -> Root / obsId / "pause" =>
       for {
         obsId <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))

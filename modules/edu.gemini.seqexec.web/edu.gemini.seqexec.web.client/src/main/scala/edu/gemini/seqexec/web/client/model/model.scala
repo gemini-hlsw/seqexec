@@ -39,11 +39,11 @@ case class SelectToDisplay(s: SequenceView) extends Action
 
 // Actions related to executing sequences
 case class RequestRun(s: SequenceView) extends Action
-case class RequestStop(s: SequenceView) extends Action
+case class RequestPause(s: SequenceView) extends Action
 case class RunStarted(s: SequenceView) extends Action
-case class RunStopped(s: SequenceView) extends Action
+case class RunPaused(s: SequenceView) extends Action
 case class RunStartFailed(s: SequenceView) extends Action
-case class RunStopFailed(s: SequenceView) extends Action
+case class RunPauseFailed(s: SequenceView) extends Action
 
 case class ShowStep(s: SequenceView, i: Int) extends Action
 case class UnShowStep(s: SequenceView) extends Action

@@ -59,8 +59,8 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
 
-    case RequestStop(s) =>
-      effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunStopFailed(s) else RunStopped(s))))
+    case RequestPause(s) =>
+      effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))
 
     // We could react to these events but we rather wait for the command from the event queue
     case RunStarted(s) =>
@@ -69,12 +69,12 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
     case RunStartFailed(s) =>
       noChange
 
-    case RunStopped(s) =>
+    case RunPaused(s) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
       val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
       noChange
 
-    case RunStopFailed(s) =>
+    case RunPauseFailed(s) =>
       noChange
   }
 }

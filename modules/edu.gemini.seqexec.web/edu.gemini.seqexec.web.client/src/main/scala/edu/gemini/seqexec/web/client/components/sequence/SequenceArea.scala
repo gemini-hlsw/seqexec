@@ -27,20 +27,20 @@ import org.scalajs.dom.document
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class State(runRequested: Boolean, stopRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
+  case class State(runRequested: Boolean, pauseRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
   class Backend($: BackendScope[Props, State]) {
 
     def requestRun(s: SequenceView): Callback =
-      $.modState(_.copy(runRequested = true, stopRequested = false)) >> Callback {
+      $.modState(_.copy(runRequested = true, pauseRequested = false)) >> Callback {
         SeqexecCircuit.dispatch(RequestRun(s))
       }
 
-    def requestStop(s: SequenceView): Callback =
-      $.modState(_.copy(stopRequested = true, runRequested = false)) >> Callback {
-        SeqexecCircuit.dispatch(RequestStop(s))
+    def requestPause(s: SequenceView): Callback =
+      $.modState(_.copy(runRequested = false, pauseRequested = true)) >> Callback {
+        SeqexecCircuit.dispatch(RequestPause(s))
       }
 
     def render(p: Props, s: State) = {
@@ -60,9 +60,23 @@ object SequenceStepsTableContainer {
                 "Sequence completed"
               ),
             p.status.isLogged && p.s.status === SequenceState.Idle ?=
-              Button(Button.Props(icon = Some(IconPlay), labeled = true, onClick = requestRun(p.s), disabled = !p.status.isConnected || s.runRequested), "Run"),
+              Button(
+                Button.Props(
+                  icon = Some(IconPlay),
+                  labeled = true,
+                  onClick = requestRun(p.s),
+                  disabled = !p.status.isConnected || s.runRequested),
+                "Run"
+              ),
             p.status.isLogged && p.s.status === SequenceState.Running ?=
-              Button(Button.Props(icon = Some(IconStop), labeled = true, onClick = requestStop(p.s), disabled = !p.status.isConnected || s.stopRequested), "Stop")
+              Button(
+                Button.Props(
+                  icon = Some(IconPause),
+                  labeled = true,
+                  onClick = requestPause(p.s),
+                  disabled = !p.status.isConnected || s.pauseRequested),
+                "Pause"
+              )
           )
         } { i =>
           <.div(
@@ -152,16 +166,17 @@ object SequenceStepsTableContainer {
                       ^.classSet(
                         "positive" -> (step.status === StepState.Completed),
                         "warning"  -> (step.status === StepState.Running),
-                        "active"   -> (step.status === StepState.Stopped),
+                        "negative" -> (step.status === StepState.Paused),
                         // TODO Show error case
                         //"negative" -> (step.status == StepState.Error),
-                        "negative" -> (step.status === StepState.Skipped)
+                        "active"   -> (step.status === StepState.Skipped)
                       ),
                       step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                       <.td(
                         step.status match {
                           case StepState.Completed => IconCheckmark
                           case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
+                          case StepState.Paused    => IconPause
                           case StepState.Error(_)  => IconAttention
                           case _                   => iconEmpty
                         }
@@ -183,9 +198,7 @@ object SequenceStepsTableContainer {
     }
   }
 
-  def requestPause(s: SequenceView): Callback = Callback.log("Request pause")
-
-  def requestStop(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestStop(s))}
+  def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s))}
 
   def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
@@ -195,7 +208,7 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, stopRequested = false, 0, autoScrolled = false))
+    .initialState(State(runRequested = false, pauseRequested = false, 0, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
