@@ -44,7 +44,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
       } yield resp
 
     // TODO: Add obsId parameter
-    case POST -> Root / obsId / "stop" =>
+    case POST -> Root / obsId / "pause" =>
       // TODO: Get rid of `.toString` How do we want to represent input results
       // now?
       for {

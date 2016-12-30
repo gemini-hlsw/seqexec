@@ -30,7 +30,7 @@ trait ModelBooPicklers {
     .addConcreteType[StepState.Skipped.type]
     .addConcreteType[StepState.Error]
     .addConcreteType[StepState.Running.type]
-    .addConcreteType[StepState.Stopped.type]
+    .addConcreteType[StepState.Paused.type]
 
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
