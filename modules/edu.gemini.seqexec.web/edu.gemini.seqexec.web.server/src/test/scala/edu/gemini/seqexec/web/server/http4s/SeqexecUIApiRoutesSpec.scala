@@ -90,8 +90,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
         loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
         cookieHeader = loginResp.headers.find(_.name === "Set-Cookie".ci)
         setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
-        authCookie   = new CookieHeader(nels(setCookie.cookie))
-        logoutResp   <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout")).putHeaders(authCookie)).map(Option.apply))
+        logoutResp   <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout")).addCookie(setCookie.cookie)).map(Option.apply))
       } yield logoutResp
     }
 
@@ -124,8 +123,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
           loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
           cookieHeader =  loginResp.headers.find(_.name === "Set-Cookie".ci)
           setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
-          authCookie   =  new CookieHeader(nels(setCookie.cookie))
-          events       <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*).putHeaders(authCookie)).map(Option.apply))
+          events       <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*).addCookie(setCookie.cookie)).map(Option.apply))
           exchange     <- OptionT(Task.now(events.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
           frames       <- OptionT(exchange.run(Process.empty).take(1).runLog.map(Option.apply))
           firstFrame   <- OptionT(Task.now(frames.headOption.collect {case WebsocketBits.Binary(data, _) => data}))

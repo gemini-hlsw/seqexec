@@ -43,7 +43,7 @@ object Settings {
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
-    val http4s       = "0.15.1a"
+    val http4s       = "0.15.2a"
     val squants      = "1.0.0"
     val argonaut     = "6.2-M1"
     val commonsHttp  = "2.0"
