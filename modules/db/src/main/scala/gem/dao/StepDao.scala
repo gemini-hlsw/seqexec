@@ -322,6 +322,11 @@ object StepDao {
     } yield ss.intersectionWith(is) { (s, i) => s.as(i) }
   }
 
+  /** Deletes the step at the indicated location, if any.
+    *
+    * @param oid observation whose step should be deleted
+    * @param loc location of the step to delete
+    */
   def delete(oid: Observation.Id, loc: Loc): ConnectionIO[Int] = {
     // Cascading delete takes care of the subtype steps like step_bias,
     // step_dark, etc., but will leave a step_gcal's calibration configuration

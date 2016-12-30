@@ -48,6 +48,7 @@ class SmartGcalSpec extends FlatSpec with Matchers {
   it should "fail when the location is not found" in {
     runF2Expansion(SmartGcalType.Arc, loc1, loc2) { (expansion, steps) =>
       expansion shouldEqual stepNotFound(loc2).left[ExpandedSteps]
+      steps.values shouldEqual List(SmartGcalStep(f2, SmartGcalType.Arc))
     }
   }
 
