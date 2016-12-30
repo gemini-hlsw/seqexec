@@ -22,6 +22,12 @@ object GcalConfig {
   type GcalArcs = OneAnd[ISet, GcalArc]
   type GcalLamp = GcalContinuum \/ GcalArcs
 
+  def mkLamp(continuum: GcalContinuum): GcalLamp =
+    continuum.left
+
+  def mkLamp(arc0: GcalArc, arcs: GcalArc*): GcalLamp =
+    OneAnd(arc0, ISet.fromList(arcs.toList)).right
+
   def mkLamp(continuum: Option[GcalContinuum], arcs: (GcalArc, Boolean)*): Option[GcalLamp] = {
     // Extract the arc lamps to include, if any.
     val as = arcs.filter(_._2).unzip._1.toList
