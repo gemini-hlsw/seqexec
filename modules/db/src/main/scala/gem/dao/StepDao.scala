@@ -4,6 +4,7 @@ package dao
 import edu.gemini.spModel.core._
 import gem.Location
 import gem.config._
+import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 import doobie.imports._
 
@@ -124,7 +125,7 @@ object StepDao {
             cuar <- cuarOpt
             thar <- tharOpt
             xe   <- xeOpt
-            l    <- GcalConfig.mkLamp(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+            l    <- GcalLamp.fromConfig(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
             f    <- filterOpt
             d    <- diffuserOpt
             s    <- shutterOpt

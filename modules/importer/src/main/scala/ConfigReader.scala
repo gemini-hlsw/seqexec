@@ -4,7 +4,6 @@ import edu.gemini.spModel.core._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.data.YesNoType
 
-import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 
@@ -262,7 +261,7 @@ object ConfigReader {
             val (oldC, oldA) = oldLamps.partition(_.`type` == OldGcal.LampType.flat)
             val newC         = oldC.map(lampToContinuum)
             val newA         = oldA.map(lampToArc)
-            GcalConfig.unsafeMkLamp(newC.headOption, newA.strengthR(true): _*)
+            GcalLamp.unsafeFromConfig(newC.headOption, newA.strengthR(true): _*)
         }
       }
 

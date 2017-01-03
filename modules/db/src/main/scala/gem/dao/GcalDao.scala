@@ -1,6 +1,7 @@
 package gem.dao
 
 import gem.config.GcalConfig
+import gem.config.GcalConfig.GcalLamp
 import doobie.imports._
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
@@ -33,7 +34,7 @@ object GcalDao {
     coadds:    Int)
   {
     def toGcalConfig: Option[GcalConfig] =
-      GcalConfig.mkLamp(continuum, ArArc -> ar_arc, CuArArc -> cuar_arc, ThArArc -> thar_arc, XeArc -> xe_arc).map { lamp =>
+      GcalLamp.fromConfig(continuum, ArArc -> ar_arc, CuArArc -> cuar_arc, ThArArc -> thar_arc, XeArc -> xe_arc).map { lamp =>
         GcalConfig(lamp, filter, diffuser, shutter, expTime, coadds)
       }
   }

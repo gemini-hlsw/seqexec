@@ -3,6 +3,7 @@ package gem.dao
 import gem._
 import gem.SmartGcal._
 import gem.config._
+import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 import GcalLampType.{Arc, Flat}
 import GcalBaselineType.Night
@@ -119,7 +120,7 @@ object SmartGcalSpec {
   private val gcals: List[(GcalLampType, GcalBaselineType, GcalConfig)] =
     List(
       (Arc, Night, GcalConfig(
-        GcalConfig.mkLamp(GcalArc.ArArc),
+        GcalLamp.fromArcs(GcalArc.ArArc),
         GcalFilter.Nir,
         GcalDiffuser.Ir,
         GcalShutter.Closed,
@@ -127,7 +128,7 @@ object SmartGcalSpec {
         1
       )),
       (Flat, Night, GcalConfig(
-        GcalConfig.mkLamp(GcalContinuum.IrGreyBodyHigh),
+        GcalLamp.fromContinuum(GcalContinuum.IrGreyBodyHigh),
         GcalFilter.Nd20,
         GcalDiffuser.Ir,
         GcalShutter.Open,

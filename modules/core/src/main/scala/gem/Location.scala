@@ -79,8 +79,8 @@ object Location {
       "{ω}"
   }
 
-  def beginning: Location = Beginning
-  def end: Location       = End
+  val beginning: Location = Beginning
+  val end: Location       = End
 
   // Constructors
 
@@ -181,7 +181,7 @@ object Location {
   })
 
   implicit val OrderMiddle: Order[Location.Middle] =
-    Order.orderBy(m => m: Location)
+    OrderLocation.contramap[Location.Middle](lm => lm: Location)
 
   implicit val ShowLocation: Show[Location] = Show.shows(_.toString)
 }

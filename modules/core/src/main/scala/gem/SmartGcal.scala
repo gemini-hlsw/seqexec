@@ -17,6 +17,6 @@ object SmartGcal {
   case object      NoMappingDefined                   extends ExpansionError
 
   def stepNotFound(loc: Location.Middle): ExpansionError = StepNotFound(loc)
-  def notSmartGcal: ExpansionError                       = NotSmartGcal
-  def noMappingDefined: ExpansionError                   = NoMappingDefined
+  val notSmartGcal: ExpansionError                       = NotSmartGcal
+  val noMappingDefined: ExpansionError                   = NoMappingDefined
 }
