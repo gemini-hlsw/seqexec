@@ -57,7 +57,7 @@ class SmartGcalSpec extends FlatSpec with Matchers {
     val expansion = doTest {
       for {
         _  <- StepDao.insert(oid, loc1, BiasStep(f2))
-        ex <- SmartGcalDao.expand(oid, loc1)
+        ex <- SmartGcalDao.expand(oid, loc1).run
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
       } yield ex
@@ -72,7 +72,7 @@ class SmartGcalSpec extends FlatSpec with Matchers {
         _  <- StepDao.insert(oid, loc1, BiasStep(f2))
         _  <- StepDao.insert(oid, loc2, SmartGcalStep(f2, SmartGcalType.NightBaseline))
         _  <- StepDao.insert(oid, loc9, DarkStep(f2))
-        _  <- SmartGcalDao.expand(oid, loc2)
+        _  <- SmartGcalDao.expand(oid, loc2).run
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
       } yield ss
@@ -137,14 +137,14 @@ object SmartGcalSpec {
       ))
     )
 
-  private def runF2Expansion(t: SmartGcalType)(verify: (LookupResult, Location.Middle ==>> Step[InstrumentConfig]) => Assertion): Assertion =
+  private def runF2Expansion(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[InstrumentConfig]) => Assertion): Assertion =
     runF2Expansion(t, loc1, loc1)(verify)
 
-  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (LookupResult, Location.Middle ==>> Step[InstrumentConfig]) => Assertion): Assertion = {
+  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[InstrumentConfig]) => Assertion): Assertion = {
     val (expansion, steps) = doTest {
       for {
         _  <- StepDao.insert(oid, insertionLoc, SmartGcalStep(f2, t))
-        ex <- SmartGcalDao.expand(oid, searchLoc)
+        ex <- SmartGcalDao.expand(oid, searchLoc).run
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
       } yield (ex, ss)

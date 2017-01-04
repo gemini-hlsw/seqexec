@@ -150,7 +150,7 @@ object StepDao {
     * @param oid observation whose step should be selected
     * @param loc position of the step to select
     */
-  def selectOneEmpty(oid: Observation.Id, loc: Loc): ConnectionIO[Option[Step[Instrument]]] =
+  def selectOneEmpty(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[Instrument]] =
     sql"""
       SELECT s.instrument,
              s.step_type,
@@ -177,7 +177,7 @@ object StepDao {
              LEFT OUTER JOIN step_smart_gcal ss
                 ON ss.step_smart_gcal_id = s.step_id
        WHERE s.observation_id = $oid AND s.location = $loc
-    """.query[StepKernel].map(_.toStep).option
+    """.query[StepKernel].map(_.toStep).maybe
 
 
   /** Selects `Step`s with an `Instrument` element but without any instrument
@@ -216,7 +216,7 @@ object StepDao {
     """.query[(Loc, StepKernel)].map(_.map(_.toStep)).list.map(==>>.fromList(_))
 
 
-  private def oneF2Only(oid: Observation.Id, loc: Loc): ConnectionIO[Option[F2Config]] =
+  private def oneF2Only(oid: Observation.Id, loc: Loc): MaybeConnectionIO[F2Config] =
     sql"""
       SELECT i.disperser,
              i.exposure_time,
@@ -230,7 +230,7 @@ object StepDao {
              LEFT OUTER JOIN step_f2 i
                ON i.step_f2_id = s.step_id
        WHERE s.observation_id = $oid AND s.location = $loc
-    """.query[F2Config].option
+    """.query[F2Config].maybe
 
   private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2Config] =
     sql"""
@@ -249,12 +249,12 @@ object StepDao {
        WHERE s.observation_id = $oid
     """.query[(Loc, F2Config)].list.map(==>>.fromList(_))
 
-  private def oneGenericOnly(oid: Observation.Id, loc: Loc): ConnectionIO[Option[GenericConfig]] =
+  private def oneGenericOnly(oid: Observation.Id, loc: Loc): MaybeConnectionIO[GenericConfig] =
     sql"""
       SELECT instrument
         FROM step
        WHERE observation_id = $oid AND location = $loc
-    """.query[Instrument].map(GenericConfig).option
+    """.query[Instrument].map(GenericConfig).maybe
 
   private def allGenericOnly(oid: Observation.Id): ConnectionIO[Loc ==>> GenericConfig] =
     sql"""
@@ -293,17 +293,17 @@ object StepDao {
     * @param oid observation whose step configuration is sought
     * @param loc location within the sequence to find
     */
-  def selectOne(oid: Observation.Id, loc: Loc): ConnectionIO[Option[Step[InstrumentConfig]]] = {
-    def instrumentConfig(s: Step[Instrument]): ConnectionIO[Option[InstrumentConfig]] =
+  def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[InstrumentConfig]] = {
+    def instrumentConfig(s: Step[Instrument]): MaybeConnectionIO[InstrumentConfig] =
       s.instrument match {
-        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .map(_.widen[InstrumentConfig])
-        case _                     => oneGenericOnly(oid, loc).map(_.widen[InstrumentConfig])
+        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .widen[InstrumentConfig]
+        case _                     => oneGenericOnly(oid, loc).widen[InstrumentConfig]
       }
 
     for {
-      so <- selectOneEmpty(oid, loc)
-      io <- so.fold(Option.empty[InstrumentConfig].point[ConnectionIO]) { instrumentConfig }
-    } yield (so |@| io)((s, i) => s.as(i))
+      s <- selectOneEmpty(oid, loc)
+      i <- instrumentConfig(s)
+    } yield s.as(i)
   }
 
   /** Selects all steps with their instrument configuration data.
