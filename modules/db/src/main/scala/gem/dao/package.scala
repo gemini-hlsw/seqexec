@@ -60,10 +60,10 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   }
 
   implicit class ConnectionIOOps[T](c: ConnectionIO[T]) {
-    def left[B]: EitherConnectionIO[T, B] =
+    def injectLeft[B]: EitherConnectionIO[T, B] =
       EitherConnectionIO.left[T, B](c)
 
-    def right[A]: EitherConnectionIO[A, T] =
+    def injectRight[A]: EitherConnectionIO[A, T] =
       EitherConnectionIO.right[A, T](c)
   }
 

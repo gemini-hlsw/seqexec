@@ -139,14 +139,12 @@ object SmartGcalDao {
       }.void
 
     for {
-      steps <- StepDao.selectAll(oid).right
+      steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
       gcal  <- lookup(MaybeConnectionIO.fromOption(steps.lookup(loc)), loc)
-      _     <- for {
-                 // replaces the smart gcal step with the expanded manual gcal steps
-                 _ <- StepDao.delete(oid, loc).right[ExpansionError]
-                 _ <- insert(locBefore, gcal, locAfter).right[ExpansionError]
-               } yield ()
+      // replaces the smart gcal step with the expanded manual gcal steps
+      _     <- StepDao.delete(oid, loc).injectRight
+      _     <- insert(locBefore, gcal, locAfter).injectRight
     } yield gcal
   }
 }
