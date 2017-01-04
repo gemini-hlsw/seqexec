@@ -2,17 +2,22 @@ package gem
 package dao
 
 import edu.gemini.spModel.core._
+import gem.Location
 import gem.config._
+import gem.config.GcalConfig.GcalLamp
 import gem.enum._
-
 import doobie.imports._
 
 import java.time.Duration
-import scalaz._, Scalaz._
+
+import scalaz._
+import Scalaz._
 
 object StepDao {
 
-  def insert[I <: InstrumentConfig](oid: Observation.Id, loc: Location.Middle, s: Step[I]): ConnectionIO[Int] =
+  type Loc = Location.Middle
+
+  def insert[I <: InstrumentConfig](oid: Observation.Id, loc: Loc, s: Step[I]): ConnectionIO[Int] =
     for {
       id <- insertBaseSlice(oid, loc, s.instrument, StepType.forStep(s))
       _  <- s match {
@@ -25,7 +30,7 @@ object StepDao {
       _  <- insertConfigSlice(id, s.instrument)
     } yield id
 
-  private def insertBaseSlice(oid: Observation.Id, loc: Location.Middle, i: InstrumentConfig, t: StepType): ConnectionIO[Int] =
+  private def insertBaseSlice(oid: Observation.Id, loc: Loc, i: InstrumentConfig, t: StepType): ConnectionIO[Int] =
     for {
       _  <- sql"""INSERT INTO step (observation_id, location, instrument, step_type)
                        VALUES ($oid, $loc, ${Instrument.forConfig(i).tag}, ${t.tag} :: step_type)
@@ -76,7 +81,7 @@ object StepDao {
   private def insertSmartGcalSlice(id: Int, t: SmartGcalType): ConnectionIO[Int] =
     sql"""
       INSERT INTO step_smart_gcal (step_smart_gcal_id, type)
-      VALUES ($id, $t)
+      VALUES ($id, $t :: smart_gcal_type)
     """.update.run
 
   private def insertScienceSlice(id: Int, t: TelescopeConfig): ConnectionIO[Int] =
@@ -120,7 +125,7 @@ object StepDao {
             cuar <- cuarOpt
             thar <- tharOpt
             xe   <- xeOpt
-            l    <- GcalConfig.mkLamp(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
+            l    <- GcalLamp.fromConfig(continuumOpt, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe)
             f    <- filterOpt
             d    <- diffuserOpt
             s    <- shutterOpt
@@ -139,12 +144,13 @@ object StepDao {
       }
   }
 
-  /** Selects `Step`s with an `Instrument` element but without any instrument
-    * configuration information.
+  /** Selects a `Step` with an `Instrument` element at the given location in the
+    * sequence but without any instrument configuration information.
     *
-    * @param oid observation whose steps should be selected
+    * @param oid observation whose step should be selected
+    * @param loc position of the step to select
     */
-  def selectEmpty(oid: Observation.Id): ConnectionIO[List[Step[Instrument]]] =
+  def selectOneEmpty(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[Instrument]] =
     sql"""
       SELECT s.instrument,
              s.step_type,
@@ -170,17 +176,47 @@ object StepDao {
                 ON sc.step_science_id    = s.step_id
              LEFT OUTER JOIN step_smart_gcal ss
                 ON ss.step_smart_gcal_id = s.step_id
-       WHERE s.observation_id = $oid
-    ORDER BY s.location
-    """.query[StepKernel].map(_.toStep).list
+       WHERE s.observation_id = $oid AND s.location = $loc
+    """.query[StepKernel].map(_.toStep).maybe
 
 
-  /** Selects the series of `F2Config` information associated with the
-    * observation.
+  /** Selects `Step`s with an `Instrument` element but without any instrument
+    * configuration information.
     *
-    * @param oid observation whose F2 configurations should be selected
+    * @param oid observation whose steps should be selected
     */
-  def selectF2(oid: Observation.Id): ConnectionIO[List[F2Config]] =
+  def selectAllEmpty(oid: Observation.Id): ConnectionIO[Loc ==>> Step[Instrument]] =
+    sql"""
+      SELECT s.location,
+             s.instrument,
+             s.step_type,
+             gc.continuum,
+             gc.ar_arc,
+             gc.cuar_arc,
+             gc.thar_arc,
+             gc.xe_arc,
+             gc.filter,
+             gc.diffuser,
+             gc.shutter,
+             gc.exposure_time,
+             gc.coadds,
+             sc.offset_p,
+             sc.offset_q,
+             ss.type
+        FROM step s
+             LEFT OUTER JOIN step_gcal sg
+                ON sg.step_gcal_id       = s.step_id
+             LEFT OUTER JOIN gcal gc
+                ON gc.gcal_id            = sg.gcal_id
+             LEFT OUTER JOIN step_science sc
+                ON sc.step_science_id    = s.step_id
+             LEFT OUTER JOIN step_smart_gcal ss
+                ON ss.step_smart_gcal_id = s.step_id
+       WHERE s.observation_id = $oid
+    """.query[(Loc, StepKernel)].map(_.map(_.toStep)).list.map(==>>.fromList(_))
+
+
+  private def oneF2Only(oid: Observation.Id, loc: Loc): MaybeConnectionIO[F2Config] =
     sql"""
       SELECT i.disperser,
              i.exposure_time,
@@ -193,32 +229,47 @@ object StepDao {
         FROM step s
              LEFT OUTER JOIN step_f2 i
                ON i.step_f2_id = s.step_id
-       WHERE s.observation_id = $oid
-    ORDER BY s.location
-    """.query[F2Config].list
+       WHERE s.observation_id = $oid AND s.location = $loc
+    """.query[F2Config].maybe
 
-  /** Selects the series of `GenericConfig` information associated with the
-    * observation.
-    *
-    * Note, this is only needed until all instruments have been included in
-    * the codebase.
-    *
-    * @param oid observation whose generic configurations should be selected
-    */
-  def selectGeneric(oid: Observation.Id): ConnectionIO[List[GenericConfig]] =
+  private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2Config] =
+    sql"""
+      SELECT s.location,
+             i.disperser,
+             i.exposure_time,
+             i.filter,
+             i.fpu,
+             i.lyot_wheel,
+             i.mos_preimaging,
+             i.read_mode,
+             i.window_cover
+        FROM step s
+             LEFT OUTER JOIN step_f2 i
+               ON i.step_f2_id = s.step_id
+       WHERE s.observation_id = $oid
+    """.query[(Loc, F2Config)].list.map(==>>.fromList(_))
+
+  private def oneGenericOnly(oid: Observation.Id, loc: Loc): MaybeConnectionIO[GenericConfig] =
     sql"""
       SELECT instrument
         FROM step
+       WHERE observation_id = $oid AND location = $loc
+    """.query[Instrument].map(GenericConfig).maybe
+
+  private def allGenericOnly(oid: Observation.Id): ConnectionIO[Loc ==>> GenericConfig] =
+    sql"""
+      SELECT location,
+             instrument
+        FROM step
        WHERE observation_id = $oid
-    ORDER BY location
-    """.query[Instrument].map(GenericConfig).list
+    """.query[(Loc, Instrument)].map(_.map(GenericConfig)).list.map(==>>.fromList(_))
 
 
-  private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[List[I]]): ConnectionIO[List[Step[I]]] =
+  private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[Loc ==>> I]): ConnectionIO[Loc ==>> Step[I]] =
     for {
-      ss <- selectEmpty(oid)
+      ss <- selectAllEmpty(oid)
       is <- f(oid)
-    } yield ss.zip(is).map { case (s, i) => s.as(i) }
+    } yield ss.intersectionWith(is) { (s, i) => s.as(i) } // .map { case ((l, s), i) => (l, s.as(i)) }
 
   /** Selects all steps with their F2 instrument configuration data, assuming
     * the indicated observation is an F2 observation.  If not, fails with an
@@ -226,32 +277,89 @@ object StepDao {
     *
     * @param oid F2 observation whose steps are sought
     */
-  def selectAllF2(oid: Observation.Id): ConnectionIO[List[Step[F2Config]]] =
-    selectAll(oid, selectF2)
+  def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2Config]] =
+    selectAll(oid, allF2Only)
 
   /** Selects all steps with a generic instrument configuration data.
     *
     * @param oid observation whose steps are sought
     */
-  def selectAllGeneric(oid: Observation.Id): ConnectionIO[List[Step[GenericConfig]]] =
-    selectAll(oid, selectGeneric)
+  def selectAllGeneric(oid: Observation.Id): ConnectionIO[Loc ==>> Step[GenericConfig]] =
+    selectAll(oid, allGenericOnly)
 
-  /** Selects all steps with their instrument configuration data, assuming the
-    * steps correspond to the given instrument.  If not, fails with an
-    * exception.
+  /** Selects the step at the indicated location in the sequence associated with
+    * the indicated observation.
     *
-    * @param oid observation whose step configurations are sought
+    * @param oid observation whose step configuration is sought
+    * @param loc location within the sequence to find
     */
-  def selectAll(oid: Observation.Id): ConnectionIO[List[Step[InstrumentConfig]]] = {
-    def instrumentConfig(ss: List[Step[Instrument]]): ConnectionIO[List[InstrumentConfig]] =
-      ss.headOption.map(_.instrument).foldMap {
-        case Instrument.Flamingos2 => selectF2(oid)     .map(_.widen[InstrumentConfig])
-        case _                     => selectGeneric(oid).map(_.widen[InstrumentConfig])
+  def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[InstrumentConfig]] = {
+    def instrumentConfig(s: Step[Instrument]): MaybeConnectionIO[InstrumentConfig] =
+      s.instrument match {
+        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .widen[InstrumentConfig]
+        case _                     => oneGenericOnly(oid, loc).widen[InstrumentConfig]
       }
 
     for {
-      ss <- selectEmpty(oid)
-      is <- instrumentConfig(ss)
-    } yield ss.zip(is).map { case (s, i) => s.as(i) }
+      s <- selectOneEmpty(oid, loc)
+      i <- instrumentConfig(s)
+    } yield s.as(i)
   }
+
+  /** Selects all steps with their instrument configuration data.
+    *
+    * @param oid observation whose step configurations are sought
+    */
+  def selectAll(oid: Observation.Id): ConnectionIO[Loc ==>> Step[InstrumentConfig]] = {
+    def instrumentConfig(ss: Loc ==>> Step[Instrument]): ConnectionIO[Loc ==>> InstrumentConfig] =
+      ss.findMin.map(_._2.instrument).fold(==>>.empty[Loc, InstrumentConfig].point[ConnectionIO]) {
+        case Instrument.Flamingos2 => allF2Only(oid)     .map(_.widen[InstrumentConfig])
+        case _                     => allGenericOnly(oid).map(_.widen[InstrumentConfig])
+      }
+
+    for {
+      ss <- selectAllEmpty(oid)
+      is <- instrumentConfig(ss)
+    } yield ss.intersectionWith(is) { (s, i) => s.as(i) }
+  }
+
+  /** Deletes the step at the indicated location, if any.
+    *
+    * @param oid observation whose step should be deleted
+    * @param loc location of the step to delete
+    */
+  def delete(oid: Observation.Id, loc: Loc): ConnectionIO[Int] = {
+    // Cascading delete takes care of the subtype steps like step_bias,
+    // step_dark, etc., but will leave a step_gcal's calibration configuration
+    // in the gcal table.  That means we have to explicitly remove the gcal
+    // configuration if we're deleting a gcal step.
+
+    val sel: ConnectionIO[(Int, StepType)] =
+      sql"""
+        SELECT step_id,
+               step_type
+          FROM step
+         WHERE observation_id = $oid AND location = $loc
+      """.query[(Int, StepType)].unique
+
+    def delGcal(id: Int, t: StepType): ConnectionIO[Int] =
+      t match {
+        case StepType.Gcal =>
+          for {
+            gid <- sql"""SELECT gcal_id FROM step_gcal WHERE step_gcal_id = $id""".query[Int].unique
+            res <- sql"""DELETE FROM gcal WHERE gcal_id = $gid""".update.run
+          } yield res
+
+        case _    =>
+          1.point[ConnectionIO]
+      }
+
+    for {
+      tup <- sel
+      (id, ty) = tup
+      _   <- delGcal(id, ty)
+      res <- sql"""DELETE FROM step WHERE observation_id = $oid AND location = $loc""".update.run
+    } yield res
+  }
+
 }

@@ -14,6 +14,59 @@ import Scalaz._
 
 package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
+  type MaybeConnectionIO[A] = OptionT[ConnectionIO, A]
+
+  object MaybeConnectionIO {
+    def apply[A](coa: ConnectionIO[Option[A]]): MaybeConnectionIO[A] =
+      OptionT(coa)
+
+    def fromOption[A](oa: Option[A]): MaybeConnectionIO[A] =
+      oa.fold(OptionT.none[ConnectionIO, A]) { a =>
+        OptionT.some[ConnectionIO, A](a)
+      }
+
+    def none[A]: MaybeConnectionIO[A] =
+      OptionT.none[ConnectionIO, A]
+
+    def some[A](a: => A): MaybeConnectionIO[A] =
+      OptionT.some[ConnectionIO, A](a)
+  }
+
+  implicit class Query0Ops[A](a: Query0[A]) {
+    def maybe: MaybeConnectionIO[A] =
+      MaybeConnectionIO(a.option)
+  }
+
+  type EitherConnectionIO[A, B] = EitherT[ConnectionIO, A, B]
+
+  object EitherConnectionIO {
+    def apply[A, B](ceab: ConnectionIO[\/[A, B]]): EitherConnectionIO[A, B] =
+      EitherT(ceab)
+
+    def left[A, B](a: ConnectionIO[A]): EitherConnectionIO[A, B] =
+      EitherT.left[ConnectionIO, A, B](a)
+
+    def pointLeft[A, B](a: A): EitherConnectionIO[A, B] =
+      left(a.point[ConnectionIO])
+
+    def right[A, B](b: ConnectionIO[B]): EitherConnectionIO[A, B] =
+      EitherT.right[ConnectionIO, A, B](b)
+
+    def pointRight[A, B](b: B): EitherConnectionIO[A, B] =
+      right(b.point[ConnectionIO])
+
+    def fromDisjunction[A, B](eab: A \/ B): EitherConnectionIO[A, B] =
+      EitherT.fromDisjunction(eab)
+  }
+
+  implicit class ConnectionIOOps[T](c: ConnectionIO[T]) {
+    def injectLeft[B]: EitherConnectionIO[T, B] =
+      EitherConnectionIO.left[T, B](c)
+
+    def injectRight[A]: EitherConnectionIO[A, T] =
+      EitherConnectionIO.right[A, T](c)
+  }
+
   // Angle mapping to signed arcseconds. NOT implicit.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
     Meta[Double].xmap(Angle.fromArcsecs, _.toSignedDegrees * 3600)

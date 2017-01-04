@@ -11,7 +11,7 @@ import scalaz.Ordering.{EQ, GT, LT}
   * `Location` is a proper prefex of another, then it sorts ahead of the other
   * `Location`.
   */
-sealed trait Location {
+sealed trait Location extends Product with Serializable {
 
   // These functions aren't of any use to clients.  Instead they are involved
   // in the cacluation of Locations that fall between two other locations.
@@ -78,6 +78,9 @@ object Location {
     override def toString: String =
       "{ω}"
   }
+
+  val beginning: Location = Beginning
+  val end: Location       = End
 
   // Constructors
 
@@ -176,6 +179,9 @@ object Location {
         .find { case (a, b) => a =/= b }
         .fold[Ordering](EQ) { case (a, b) => (a < b) ?[Ordering] LT | GT }
   })
+
+  implicit val OrderMiddle: Order[Location.Middle] =
+    OrderLocation.contramap[Location.Middle](lm => lm: Location)
 
   implicit val ShowLocation: Show[Location] = Show.shows(_.toString)
 }

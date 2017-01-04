@@ -45,8 +45,8 @@ object ObservationDao {
   def select(id: Observation.Id): ConnectionIO[Observation[Step[_]]] =
     for {
       on <- selectFlat(id)
-      ss <- StepDao.selectEmpty(id)
-    } yield on.copy(steps = ss)
+      ss <- StepDao.selectAllEmpty(id)
+    } yield on.copy(steps = ss.values)
 
   def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[Nothing]]] =
     sql"""
