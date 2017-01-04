@@ -43,56 +43,56 @@ object SequenceStepsTableContainer {
         SeqexecCircuit.dispatch(RequestPause(s))
       }
 
+    def defaultToolbar(p: Props, s: State): ReactNode =
+      <.div(
+        ^.cls := "row",
+        /*p.status.isLogged && p.s.status == SequenceState.Abort ?=
+          <.h3(
+            ^.cls := "ui red header",
+            "Sequence aborted"
+          ),*/
+        p.status.isLogged && p.s.status === SequenceState.Completed ?=
+          <.h3(
+            ^.cls := "ui green header",
+            "Sequence completed"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Idle ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPlay),
+              labeled = true,
+              onClick = requestRun(p.s),
+              color = Some("blue"),
+              disabled = !p.status.isConnected || s.runRequested),
+            "Run"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Running ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPause),
+              labeled = true,
+              onClick = requestPause(p.s),
+              color = Some("teal"),
+              disabled = !p.status.isConnected || s.pauseRequested),
+            "Pause"
+          )
+      )
+
+    def configToolbar(p: Props)(i: Int): ReactNode =
+      <.div(
+        ^.cls := "row",
+        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+        <.h5(
+          ^.cls := "ui header",
+          SeqexecStyles.inline,
+          s" Configuration for step ${i + 1}"
+        )
+      )
+
     def render(p: Props, s: State) = {
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold {
-          <.div(
-            ^.cls := "row",
-            /*p.status.isLogged && p.s.status == SequenceState.Abort ?=
-              <.h3(
-                ^.cls := "ui red header",
-                "Sequence aborted"
-              ),*/
-            p.status.isLogged && p.s.status === SequenceState.Completed ?=
-              <.h3(
-                ^.cls := "ui green header",
-                "Sequence completed"
-              ),
-            p.status.isLogged && p.s.status === SequenceState.Idle ?=
-              Button(
-                Button.Props(
-                  icon     = Some(IconPlay),
-                  labeled  = true,
-                  onClick  = requestRun(p.s),
-                  color    = Some("blue"),
-                  disabled = !p.status.isConnected || s.runRequested
-                ),
-                "Run"
-              ),
-            p.status.isLogged && p.s.status === SequenceState.Running ?=
-              Button(
-                Button.Props(
-                  icon     = Some(IconPause),
-                  labeled  = true,
-                  onClick  = requestPause(p.s),
-                  color    = Some("teal"),
-                  disabled = !p.status.isConnected || s.pauseRequested
-                ),
-                "Pause"
-              )
-          )
-        } { i =>
-          <.div(
-            ^.cls := "row",
-            Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
-            <.h5(
-              ^.cls := "ui header",
-              SeqexecStyles.inline,
-              s" Configuration for step ${i + 1}"
-            )
-          )
-        },
+        p.stepConfigDisplayed.fold(defaultToolbar(p, s))(configToolbar(p)),
         Divider(),
         <.div(
           ^.cls := "ui row scroll pane",
