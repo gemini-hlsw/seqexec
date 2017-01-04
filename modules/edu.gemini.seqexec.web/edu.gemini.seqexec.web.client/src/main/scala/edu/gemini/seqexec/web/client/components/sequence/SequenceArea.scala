@@ -89,6 +89,104 @@ object SequenceStepsTableContainer {
         )
       )
 
+    def configTable(step: Step): TagMod =
+      <.table(
+        ^.cls := "ui selectable compact celled table unstackable",
+        <.thead(
+          <.tr(
+            <.th(
+              ^.cls := "collapsing",
+              "Name"
+            ),
+            <.th(
+              ^.cls := "six wide",
+              "Value"
+            )
+          )
+        ),
+        <.tbody(
+          step.config.map {
+            case (sub, c) =>
+              c.map {
+                case (k, v) =>
+                  <.tr(
+                    ^.classSet(
+                      "positive" -> sub.startsWith("instrument"),
+                      "warning"  -> sub.startsWith("telescope")
+                    ),
+                    k.startsWith("observe") ?= SeqexecStyles.observeConfig,
+                    k.startsWith("ocs") ?= SeqexecStyles.observeConfig,
+                    <.td(k),
+                    <.td(v)
+                  )
+              }
+            }
+        )
+      )
+
+    def stepsTable(p: Props): TagMod =
+      <.table(
+        ^.cls := "ui selectable compact celled table unstackable",
+        <.thead(
+          <.tr(
+            <.th(
+              ^.cls := "collapsing",
+              iconEmpty
+            ),
+            <.th(
+              ^.cls := "collapsing",
+              "Step"
+            ),
+            <.th(
+              ^.cls := "six wide",
+              "State"
+            ),
+            <.th(
+              ^.cls := "ten wide",
+              "File"
+            ),
+            <.th(
+              ^.cls := "collapsing",
+              "Config"
+            )
+          )
+        ),
+        <.tbody(
+          SeqexecStyles.stepsListBody,
+          p.s.steps.zipWithIndex.map {
+            case (step, i) =>
+              <.tr(
+                // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
+                ^.classSet(
+                  "positive" -> (step.status === StepState.Completed),
+                  "warning"  -> (step.status === StepState.Running),
+                  "negative" -> (step.status === StepState.Paused),
+                  // TODO Show error case
+                  //"negative" -> (step.status == StepState.Error),
+                  "active"   -> (step.status === StepState.Skipped)
+                ),
+                step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                <.td(
+                  step.status match {
+                    case StepState.Completed => IconCheckmark
+                    case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
+                    case StepState.Paused    => IconPause
+                    case StepState.Error(_)  => IconAttention
+                    case _                   => iconEmpty
+                  }
+                ),
+                <.td(i + 1),
+                <.td(step.status.shows),
+                <.td(step.file.getOrElse(""): String),
+                <.td(
+                  ^.cls := "collapsing right aligned",
+                  IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                )
+              )
+          }
+        )
+      )
+
     def render(p: Props, s: State) = {
       <.div(
         ^.cls := "ui raised secondary segment",
@@ -101,101 +199,9 @@ object SequenceStepsTableContainer {
           p.stepConfigDisplayed.map { i =>
             // TODO consider the failure case
             val step = p.s.steps(i)
-            <.table(
-              ^.cls := "ui selectable compact celled table unstackable",
-              <.thead(
-                <.tr(
-                  <.th(
-                    ^.cls := "collapsing",
-                    "Name"
-                  ),
-                  <.th(
-                    ^.cls := "six wide",
-                    "Value"
-                  )
-                )
-              ),
-              <.tbody(
-                step.config.map {
-                  case (sub, c) =>
-                    c.map {
-                      case (k, v) =>
-                        <.tr(
-                          ^.classSet(
-                            "positive" -> sub.startsWith("instrument"),
-                            "warning"  -> sub.startsWith("telescope")
-                          ),
-                          k.startsWith("observe") ?= SeqexecStyles.observeConfig,
-                          k.startsWith("ocs") ?= SeqexecStyles.observeConfig,
-                          <.td(k),
-                          <.td(v)
-                        )
-                    }
-                  }
-              )
-            )
+            configTable(step)
           }.getOrElse {
-            <.table(
-              ^.cls := "ui selectable compact celled table unstackable",
-              <.thead(
-                <.tr(
-                  <.th(
-                    ^.cls := "collapsing",
-                    iconEmpty
-                  ),
-                  <.th(
-                    ^.cls := "collapsing",
-                    "Step"
-                  ),
-                  <.th(
-                    ^.cls := "six wide",
-                    "State"
-                  ),
-                  <.th(
-                    ^.cls := "ten wide",
-                    "File"
-                  ),
-                  <.th(
-                    ^.cls := "collapsing",
-                    "Config"
-                  )
-                )
-              ),
-              <.tbody(
-                SeqexecStyles.stepsListBody,
-                p.s.steps.zipWithIndex.map {
-                  case (step, i) =>
-                    <.tr(
-                      // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
-                      ^.classSet(
-                        "positive" -> (step.status === StepState.Completed),
-                        "warning"  -> (step.status === StepState.Running),
-                        "negative" -> (step.status === StepState.Paused),
-                        // TODO Show error case
-                        //"negative" -> (step.status == StepState.Error),
-                        "active"   -> (step.status === StepState.Skipped)
-                      ),
-                      step.status == StepState.Running ?= SeqexecStyles.stepRunning,
-                      <.td(
-                        step.status match {
-                          case StepState.Completed => IconCheckmark
-                          case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
-                          case StepState.Paused    => IconPause
-                          case StepState.Error(_)  => IconAttention
-                          case _                   => iconEmpty
-                        }
-                      ),
-                      <.td(i + 1),
-                      <.td(step.status.shows),
-                      <.td(step.file.getOrElse(""): String),
-                      <.td(
-                        ^.cls := "collapsing right aligned",
-                        IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
-                      )
-                    )
-                }
-              )
-            )
+            stepsTable(p)
           }
         )
       )
