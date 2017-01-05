@@ -75,6 +75,23 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.none
   )
 
+  val tdNoPadding = style(
+    padding(0.px).important
+  )
+
+  val segmentLittlePadding = style("ui.segment.running")(
+    padding(0.2.em),
+    margin(0.px),
+    borderLeft.none.important
+  )
+
+  val segmentsLittlePadding = style("ui.segments.running")(
+    padding(0.px),
+    margin(0.px),
+    border.none,
+    borderRadius(0.px)
+  )
+
   val rowNoPadding = style(
     paddingBottom(0.px).important,
     paddingTop(0.px).important
