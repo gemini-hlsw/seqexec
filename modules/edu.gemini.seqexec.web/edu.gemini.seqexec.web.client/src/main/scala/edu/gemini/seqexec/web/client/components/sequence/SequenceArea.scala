@@ -187,7 +187,7 @@ object SequenceStepsTableContainer {
                       ),
                       <.td(i + 1),
                       <.td(step.status.shows),
-                      <.td(step.file.getOrElse(""): String),
+                      <.td(step.fileId.getOrElse(""): String),
                       <.td(
                         ^.cls := "collapsing right aligned",
                         IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
