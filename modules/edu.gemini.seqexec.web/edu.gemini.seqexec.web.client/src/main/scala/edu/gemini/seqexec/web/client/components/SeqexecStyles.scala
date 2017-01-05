@@ -79,17 +79,31 @@ object SeqexecStyles extends StyleSheet.Inline {
     padding(0.px).important
   )
 
+  val progressVCentered = style("ui.progress.vcentered")(
+    marginBottom(0.px)
+  )
+
+  val warningSegment = style("ui.segment.warning")(
+    backgroundColor(c"#FFFAF3").important,
+    color(c"#573A08")
+  )
+
   val segmentLittlePadding = style("ui.segment.running")(
-    padding(0.2.em),
+    padding(0.em),
     margin(0.px),
-    borderLeft.none.important
+    borderLeft.none.important,
+    alignSelf.center,
+    (boxShadow := ("none")).important
   )
 
   val segmentsLittlePadding = style("ui.segments.running")(
     padding(0.px),
     margin(0.px),
     border.none,
-    borderRadius(0.px)
+    borderRadius(0.px),
+    (boxShadow := ("none")).important,
+    backgroundColor(c"#FFFAF3").important,
+    color(c"#573A08")
   )
 
   val rowNoPadding = style(

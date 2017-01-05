@@ -162,23 +162,41 @@ object SequenceStepsTableContainer {
       }
     }*/
 
+    def stepProgress(step: Step): ReactNode =
+      step.status match {
+        case StepState.Running =>
+          <.div(
+            ^.cls := "ui progress vcentered",
+            <.div(
+              ^.cls := "bar",
+              <.div(
+                ^.cls := "progress")
+            )
+          )
+        case StepState.Completed =>
+          "File completed"
+        case _ =>
+          step.file.getOrElse(""): String
+      }
+
     def stepDisplay(step: Step): ReactNode =
       step.status match {
         case StepState.Running =>
           <.div(
             ^.cls := "ui horizontal segments running",
             <.div(
-              ^.cls := "ui basic segment running",
+              ^.cls := "ui basic segment running warning",
+              //step.status.shows
               <.p(step.status.shows)
             ),
             <.div(
-              ^.cls := "ui basic segment right aligned running",
+              ^.cls := "ui basic segment right aligned running warning",
               <.div(
                 ^.cls := "ui icon buttons",
                 Button(
                   Button.Props(icon = Some(IconPause), color = Some("teal"))),
                 Button(
-                  Button.Props(icon = Some(IconStop), color = Some("violet")))
+                  Button.Props(icon = Some(IconStop), color = Some("red")))
               )
             )
           )
@@ -238,10 +256,12 @@ object SequenceStepsTableContainer {
                 ),
                 <.td(i + 1),
                 <.td(
-                  step.status == StepState.Running ?= SeqexecStyles.tdNoPadding,
+                  //step.status == StepState.Running ?= SeqexecStyles.tdNoPadding,
                   ^.cls := "middle aligned",
                   stepDisplay(step)),
-                <.td(step.file.getOrElse(""): String),
+                <.td(
+                  ^.cls := "middle aligned",
+                  stepProgress(step)),
                 <.td(
                   ^.cls := "collapsing right aligned",
                   IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
