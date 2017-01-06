@@ -34,6 +34,16 @@ object SemanticUI {
   }
 
   @js.native
+  trait JsProgressOptions extends js.Object
+
+  object JsProgressOptions extends JsProgressOptionBuilder(noOpts)
+
+  class JsProgressOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsProgressOptions, JsProgressOptionBuilder](new JsProgressOptionBuilder(_)) {
+    def total(v: Int) = jsOpt("total", v)
+    def value(v: Int) = jsOpt("value", v)
+  }
+
+  @js.native
   trait SemanticCommands extends JQuery {
     def visibility(o: JsVisiblityOptions): this.type = js.native
 
@@ -47,6 +57,8 @@ object SemanticUI {
     def modal(s: String): this.type = js.native
 
     def modal(o: JsModalOptions): this.type = js.native
+
+    def progress(o: JsProgressOptions): this.type = js.native
   }
 
   implicit def jq2Semantic(jq: JQuery): SemanticCommands = jq.asInstanceOf[SemanticCommands]

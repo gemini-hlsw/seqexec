@@ -75,9 +75,35 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.none
   )
 
-  val rowNoPadding = style(
-    paddingBottom(0.px).important,
-    paddingTop(0.px).important
+  val tdNoPadding = style(
+    padding(0.px).important
+  )
+
+  val progressVCentered = style("ui.progress.vcentered")(
+    marginBottom(0.px)
+  )
+
+  // Common properties for a segment displayed when running
+  val segmentRunningMixin = mixin(
+    backgroundColor(rgba(0, 0, 0, 0.0)).important,
+    color.inherit,
+    padding(0.em),
+    margin(0.px),
+    (boxShadow := ("none")).important
+  )
+
+  // CSS for a segment where a step is running
+  val segmentRunning = style("ui.segment.running")(
+    segmentRunningMixin,
+    borderLeft.none.important,
+    alignSelf.center
+  )
+
+  // CSS for a segments where a step is running
+  val segmentsRunning = style("ui.segments.running")(
+    segmentRunningMixin,
+    border.none,
+    borderRadius(0.px)
   )
 
   // Media queries to hide/display items for mobile

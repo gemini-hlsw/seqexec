@@ -119,22 +119,6 @@ object LoadingErrorMsg {
   def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p))
 }
 
-object QueueTableLoading {
-  case class Props(queue: SeqexecAppRootModel.LoadedSequences)
-
-  val component = ReactComponentB[Props]("QueueTableLoading")
-    .stateless
-    .render_P(p =>
-      <.div(
-        ^.cls := "ui header item",
-          "Loading"
-        //p.queue.renderPending(_ => <.span(IconCircleNotched.copyIcon(loading = true), "Loading..."))
-      )
-    ).build.withKey("key.queue.loading")
-
-  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p()))
-}
-
 /**
   * Component for the title of the queue area, including the search component
   */
@@ -147,13 +131,7 @@ object QueueAreaTitle {
   val component = ReactComponentB[Props]("QueueAreaTitle")
     .stateless
     .render_P(p =>
-      TextMenuSegment("Queue", "key.queue.menu",
-        // Show a loading indicator if we are waiting for server data
-        {
-          // Special equality check to avoid certain UI artifacts
-          implicit val eq = PotEq.seqexecQueueEq
-          queueConnect(QueueTableLoading.apply)
-        },
+      TextMenuSegment("Night Queue", "key.queue.menu",
         p.user().fold(<.div()) { _ =>
           <.div(
             ^.cls := "right menu",

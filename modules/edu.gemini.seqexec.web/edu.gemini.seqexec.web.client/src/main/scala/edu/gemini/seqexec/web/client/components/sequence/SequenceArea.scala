@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
@@ -43,56 +43,200 @@ object SequenceStepsTableContainer {
         SeqexecCircuit.dispatch(RequestPause(s))
       }
 
+    def defaultToolbar(p: Props, s: State): ReactNode =
+      <.div(
+        ^.cls := "row",
+        /*p.status.isLogged && p.s.status == SequenceState.Abort ?=
+          <.h3(
+            ^.cls := "ui red header",
+            "Sequence aborted"
+          ),*/
+        p.status.isLogged && p.s.status === SequenceState.Completed ?=
+          <.h3(
+            ^.cls := "ui green header",
+            "Sequence completed"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Idle ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPlay),
+              labeled = true,
+              onClick = requestRun(p.s),
+              color = Some("blue"),
+              disabled = !p.status.isConnected || s.runRequested),
+            "Run"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Running ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPause),
+              labeled = true,
+              onClick = requestPause(p.s),
+              color = Some("teal"),
+              disabled = !p.status.isConnected || s.pauseRequested),
+            "Pause"
+          )
+      )
+
+    def configToolbar(p: Props)(i: Int): ReactNode =
+      <.div(
+        ^.cls := "row",
+        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+        <.h5(
+          ^.cls := "ui header",
+          SeqexecStyles.inline,
+          s" Configuration for step ${i + 1}"
+        )
+      )
+
+    def configTable(step: Step): TagMod =
+      <.table(
+        ^.cls := "ui selectable compact celled table unstackable",
+        <.thead(
+          <.tr(
+            <.th(
+              ^.cls := "collapsing",
+              "Name"
+            ),
+            <.th(
+              ^.cls := "six wide",
+              "Value"
+            )
+          )
+        ),
+        <.tbody(
+          step.config.map {
+            case (sub, c) =>
+              c.map {
+                case (k, v) =>
+                  <.tr(
+                    ^.classSet(
+                      "positive" -> sub.startsWith("instrument"),
+                      "warning"  -> sub.startsWith("telescope")
+                    ),
+                    k.startsWith("observe") ?= SeqexecStyles.observeConfig,
+                    k.startsWith("ocs") ?= SeqexecStyles.observeConfig,
+                    <.td(k),
+                    <.td(v)
+                  )
+              }
+            }
+        )
+      )
+
+    def stepProgress(step: Step): ReactNode =
+      step.status match {
+        case StepState.Running =>
+          <.div(
+            ^.cls := "ui progress vcentered",
+            <.div(
+              ^.cls := "bar",
+              <.div(
+                ^.cls := "progress")
+            )
+          )
+        case StepState.Completed =>
+          "File completed"
+        case _ =>
+          step.file.getOrElse(""): String
+      }
+
+    def stepDisplay(step: Step): ReactNode =
+      step.status match {
+        case StepState.Running =>
+          <.div(
+            ^.cls := "ui horizontal segments running",
+            <.div(
+              ^.cls := "ui basic segment running",
+              <.p(step.status.shows)
+            ),
+            <.div(
+              ^.cls := "ui basic segment right aligned running",
+              <.div(
+                ^.cls := "ui icon buttons",
+                Button(
+                  Button.Props(icon = Some(IconPause), color = Some("teal"))),
+                Button(
+                  Button.Props(icon = Some(IconStop), color = Some("orange"))),
+                Button(
+                  Button.Props(icon = Some(IconTrash), color = Some("red")))
+              )
+            )
+          )
+        case _ => <.p(step.status.shows)
+      }
+
+    def stepsTable(p: Props): TagMod =
+      <.table(
+        ^.cls := "ui selectable compact celled table unstackable",
+        <.thead(
+          <.tr(
+            <.th(
+              ^.cls := "collapsing",
+              iconEmpty
+            ),
+            <.th(
+              ^.cls := "collapsing",
+              "Step"
+            ),
+            <.th(
+              ^.cls := "six wide",
+              "State"
+            ),
+            <.th(
+              ^.cls := "ten wide",
+              "File"
+            ),
+            <.th(
+              ^.cls := "collapsing",
+              "Config"
+            )
+          )
+        ),
+        <.tbody(
+          SeqexecStyles.stepsListBody,
+          p.s.steps.zipWithIndex.map {
+            case (step, i) =>
+              <.tr(
+                // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
+                ^.classSet(
+                  "positive" -> (step.status === StepState.Completed),
+                  "warning"  -> (step.status === StepState.Running),
+                  "negative" -> (step.status === StepState.Paused),
+                  // TODO Show error case
+                  //"negative" -> (step.status == StepState.Error),
+                  "active"   -> (step.status === StepState.Skipped)
+                ),
+                step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                <.td(
+                  step.status match {
+                    case StepState.Completed => IconCheckmark
+                    case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
+                    case StepState.Paused    => IconPause
+                    case StepState.Error(_)  => IconAttention
+                    case _                   => iconEmpty
+                  }
+                ),
+                <.td(i + 1),
+                <.td(
+                  ^.cls := "middle aligned",
+                  stepDisplay(step)),
+                <.td(
+                  ^.cls := "middle aligned",
+                  stepProgress(step)),
+                <.td(
+                  ^.cls := "collapsing right aligned",
+                  IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                )
+              )
+          }
+        )
+      )
+
     def render(p: Props, s: State) = {
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold {
-          <.div(
-            ^.cls := "row",
-            /*p.status.isLogged && p.s.status == SequenceState.Abort ?=
-              <.h3(
-                ^.cls := "ui red header",
-                "Sequence aborted"
-              ),*/
-            p.status.isLogged && p.s.status === SequenceState.Completed ?=
-              <.h3(
-                ^.cls := "ui green header",
-                "Sequence completed"
-              ),
-            p.status.isLogged && p.s.status === SequenceState.Idle ?=
-              Button(
-                Button.Props(
-                  icon     = Some(IconPlay),
-                  labeled  = true,
-                  onClick  = requestRun(p.s),
-                  color    = Some("blue"),
-                  disabled = !p.status.isConnected || s.runRequested
-                ),
-                "Run"
-              ),
-            p.status.isLogged && p.s.status === SequenceState.Running ?=
-              Button(
-                Button.Props(
-                  icon     = Some(IconPause),
-                  labeled  = true,
-                  onClick  = requestPause(p.s),
-                  color    = Some("teal"),
-                  disabled = !p.status.isConnected || s.pauseRequested
-                ),
-                "Pause"
-              )
-          )
-        } { i =>
-          <.div(
-            ^.cls := "row",
-            Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
-            <.h5(
-              ^.cls := "ui header",
-              SeqexecStyles.inline,
-              s" Configuration for step ${i + 1}"
-            )
-          )
-        },
+        p.stepConfigDisplayed.fold(defaultToolbar(p, s))(configToolbar(p)),
         Divider(),
         <.div(
           ^.cls := "ui row scroll pane",
@@ -101,101 +245,9 @@ object SequenceStepsTableContainer {
           p.stepConfigDisplayed.map { i =>
             // TODO consider the failure case
             val step = p.s.steps(i)
-            <.table(
-              ^.cls := "ui selectable compact celled table unstackable",
-              <.thead(
-                <.tr(
-                  <.th(
-                    ^.cls := "collapsing",
-                    "Name"
-                  ),
-                  <.th(
-                    ^.cls := "six wide",
-                    "Value"
-                  )
-                )
-              ),
-              <.tbody(
-                step.config.map {
-                  case (sub, c) =>
-                    c.map {
-                      case (k, v) =>
-                        <.tr(
-                          ^.classSet(
-                            "positive" -> sub.startsWith("instrument"),
-                            "warning"  -> sub.startsWith("telescope")
-                          ),
-                          k.startsWith("observe") ?= SeqexecStyles.observeConfig,
-                          k.startsWith("ocs") ?= SeqexecStyles.observeConfig,
-                          <.td(k),
-                          <.td(v)
-                        )
-                    }
-                  }
-              )
-            )
+            configTable(step)
           }.getOrElse {
-            <.table(
-              ^.cls := "ui selectable compact celled table unstackable",
-              <.thead(
-                <.tr(
-                  <.th(
-                    ^.cls := "collapsing",
-                    iconEmpty
-                  ),
-                  <.th(
-                    ^.cls := "collapsing",
-                    "Step"
-                  ),
-                  <.th(
-                    ^.cls := "six wide",
-                    "State"
-                  ),
-                  <.th(
-                    ^.cls := "ten wide",
-                    "File"
-                  ),
-                  <.th(
-                    ^.cls := "collapsing",
-                    "Config"
-                  )
-                )
-              ),
-              <.tbody(
-                SeqexecStyles.stepsListBody,
-                p.s.steps.zipWithIndex.map {
-                  case (step, i) =>
-                    <.tr(
-                      // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
-                      ^.classSet(
-                        "positive" -> (step.status === StepState.Completed),
-                        "warning"  -> (step.status === StepState.Running),
-                        "negative" -> (step.status === StepState.Paused),
-                        // TODO Show error case
-                        //"negative" -> (step.status == StepState.Error),
-                        "active"   -> (step.status === StepState.Skipped)
-                      ),
-                      step.status == StepState.Running ?= SeqexecStyles.stepRunning,
-                      <.td(
-                        step.status match {
-                          case StepState.Completed => IconCheckmark
-                          case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
-                          case StepState.Paused    => IconPause
-                          case StepState.Error(_)  => IconAttention
-                          case _                   => iconEmpty
-                        }
-                      ),
-                      <.td(i + 1),
-                      <.td(step.status.shows),
-                      <.td(step.file.getOrElse(""): String),
-                      <.td(
-                        ^.cls := "collapsing right aligned",
-                        IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
-                      )
-                    )
-                }
-              )
-            )
+            stepsTable(p)
           }
         )
       )
