@@ -124,44 +124,6 @@ object SequenceStepsTableContainer {
         )
       )
 
-
-    /*def stepDisplay(step: Step): ReactNode = {
-      println(step.status)
-      step.status match {
-        case StepState.Running => <.div(<.div(step.status.shows))
-        case  _ => <.table(
-          ^.cls := "ui fixed table"
-          <.tr(
-            <.td(step.status.shows)
-          <.div(
-            ^.cls := "ui icon buttons",
-            <.button(
-              ^.cls := "ui button",
-              "Cancel"),
-            <.div(
-              ^.cls := "or"),
-            <.button(
-              ^.cls := "ui positive button",
-              "Save")
-          ))
-        ),
-        <.tr(
-          ^.cls := "right aligned",
-          <.td(
-            ^.cls := "ui icon buttons tiny",
-            Button(
-              Button.Props(size = Size.Tiny, icon = Some(IconPause.copyIcon(size = Size.Tiny)))),
-            Button(
-              Button.Props(size = Size.Tiny, icon = Some(IconPlay.copyIcon(size = Size.Tiny))))
-          )
-        ))
-          <.div(Button(
-            Button.Props(size = Size.Tiny, icon = Some(IconPause.copyIcon(size = Size.Tiny)
-          )))
-        //case _                 => step.status.shows
-      }
-    }*/
-
     def stepProgress(step: Step): ReactNode =
       step.status match {
         case StepState.Running =>
@@ -185,12 +147,11 @@ object SequenceStepsTableContainer {
           <.div(
             ^.cls := "ui horizontal segments running",
             <.div(
-              ^.cls := "ui basic segment running warning",
-              //step.status.shows
+              ^.cls := "ui basic segment running",
               <.p(step.status.shows)
             ),
             <.div(
-              ^.cls := "ui basic segment right aligned running warning",
+              ^.cls := "ui basic segment right aligned running",
               <.div(
                 ^.cls := "ui icon buttons",
                 Button(
@@ -256,7 +217,6 @@ object SequenceStepsTableContainer {
                 ),
                 <.td(i + 1),
                 <.td(
-                  //step.status == StepState.Running ?= SeqexecStyles.tdNoPadding,
                   ^.cls := "middle aligned",
                   stepDisplay(step)),
                 <.td(
