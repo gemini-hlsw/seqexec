@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
@@ -157,7 +157,9 @@ object SequenceStepsTableContainer {
                 Button(
                   Button.Props(icon = Some(IconPause), color = Some("teal"))),
                 Button(
-                  Button.Props(icon = Some(IconStop), color = Some("red")))
+                  Button.Props(icon = Some(IconStop), color = Some("orange"))),
+                Button(
+                  Button.Props(icon = Some(IconTrash), color = Some("red")))
               )
             )
           )
