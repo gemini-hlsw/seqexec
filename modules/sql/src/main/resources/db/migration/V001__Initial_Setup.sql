@@ -705,9 +705,9 @@ ALTER TABLE step_smart_gcal OWNER TO postgres;
 --
 
 CREATE TABLE step_science (
-    step_science_id integer          PRIMARY KEY REFERENCES step ON DELETE CASCADE,
-    offset_p        double precision NOT NULL,
-    offset_q        double precision NOT NULL
+    step_science_id integer      PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    offset_p        numeric(9,3) NOT NULL,
+    offset_q        numeric(9,3) NOT NULL
 );
 
 
