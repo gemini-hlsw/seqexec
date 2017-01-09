@@ -75,6 +75,26 @@ object SequenceStepsTableContainer {
               color = Some("teal"),
               disabled = !p.status.isConnected || s.pauseRequested),
             "Pause"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Paused ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPause),
+              labeled = true,
+              onClick = requestPause(p.s),
+              color = Some("teal"),
+              disabled = !p.status.isConnected),
+            "Continue"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Running ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPause),
+              labeled = true,
+              onClick = requestPause(p.s),
+              color = Some("orange"),
+              disabled = !p.status.isConnected),
+            "Stop"
           )
       )
 

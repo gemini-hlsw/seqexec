@@ -88,6 +88,7 @@ object Model {
     case object Completed         extends SequenceState
     case object Running           extends SequenceState
     case object Idle              extends SequenceState
+    case object Paused            extends SequenceState
     case class Error(msg: String) extends SequenceState
 
     implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
