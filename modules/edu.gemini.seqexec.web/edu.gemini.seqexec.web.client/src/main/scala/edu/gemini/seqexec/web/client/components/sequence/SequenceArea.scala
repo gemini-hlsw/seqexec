@@ -154,7 +154,7 @@ object SequenceStepsTableContainer {
       }
     }
 
-    def stepDisplay(sequenceView: SequenceView, step: Step): ReactNode =
+    def stepDisplay(p: Props, step: Step): ReactNode =
       step.status match {
         case StepState.Running =>
           <.div(
@@ -163,11 +163,11 @@ object SequenceStepsTableContainer {
               ^.cls := "ui basic segment running",
               <.p(step.status.shows)
             ),
-            <.div(
+            p.status.isLogged ?= <.div(
               ^.cls := "ui basic segment right aligned running",
               <.div(
                 ^.cls := "ui icon buttons",
-                observationControlButtons(sequenceView)
+                observationControlButtons(p.s)
               )
             )
           )
@@ -228,7 +228,7 @@ object SequenceStepsTableContainer {
                 <.td(i + 1),
                 <.td(
                   ^.cls := "middle aligned",
-                  stepDisplay(p.s, step)),
+                  stepDisplay(p, step)),
                 <.td(
                   ^.cls := "middle aligned",
                   stepProgress(step)),
