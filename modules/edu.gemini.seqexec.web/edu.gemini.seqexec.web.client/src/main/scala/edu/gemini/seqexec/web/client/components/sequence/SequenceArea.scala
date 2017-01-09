@@ -141,7 +141,20 @@ object SequenceStepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def stepDisplay(step: Step): ReactNode =
+    def observationControlButtons(s: SequenceView): List[ReactNode] = {
+      s.allowedObservationOperations.map {
+        case PauseObservation  =>
+          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
+        case ResumeObservation =>
+          Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
+        case StopObservation   =>
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early")))
+        case AbortObservation  =>
+          Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
+      }
+    }
+
+    def stepDisplay(sequenceView: SequenceView, step: Step): ReactNode =
       step.status match {
         case StepState.Running =>
           <.div(
@@ -154,16 +167,11 @@ object SequenceStepsTableContainer {
               ^.cls := "ui basic segment right aligned running",
               <.div(
                 ^.cls := "ui icon buttons",
-                Button(
-                  Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"))),
-                Button(
-                  Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"))),
-                Button(
-                  Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
+                observationControlButtons(sequenceView)
               )
             )
           )
-        case _ => <.p(step.status.shows)
+        case _                => <.p(step.status.shows)
       }
 
     def stepsTable(p: Props): TagMod =
@@ -220,7 +228,7 @@ object SequenceStepsTableContainer {
                 <.td(i + 1),
                 <.td(
                   ^.cls := "middle aligned",
-                  stepDisplay(step)),
+                  stepDisplay(p.s, step)),
                 <.td(
                   ^.cls := "middle aligned",
                   stepProgress(step)),

@@ -43,6 +43,8 @@ object Model {
   type SequenceId = String
   type Instrument = String
 
+  implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
+
   sealed trait StepState
   object StepState {
     case object Pending extends StepState
@@ -103,7 +105,25 @@ object Model {
     status: SequenceState,
     steps: List[Step],
     willStopIn: Option[Int]
-  )
+  ) {
+    /**
+     * Returns the observation operations allowed
+     * TODO Convert to an Instrument-level typeclass
+     */
+    def allowedObservationOperations: List[ObservationOperations] =
+      metadata.instrument match {
+        // Note the F2 doesn't suppor these operations but we'll simulate them
+        // for demonstration purposes
+        case "Flamingos2" if status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
+        case _                                               => Nil
+      }
+
+    /**
+     * Returns the observation operations allowed
+     * TODO Convert to an Instrument-level typeclass
+     */
+    def allowedSequenceOperations: List[SequenceOperations] = Nil
+  }
 
   /**
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
@@ -124,5 +144,17 @@ object Model {
 
   case class LogMsg(t: LogType, timestamp: Time, msg: String)
 
-  implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
+  // Operations possible at the sequence level
+  sealed trait SequenceOperations
+  case object PauseSequence extends SequenceOperations
+  case object ContinueSequence extends SequenceOperations
+  case object StopSequence extends SequenceOperations
+  case object RunSequence extends SequenceOperations
+
+  // Operations possible at the observation level
+  sealed trait ObservationOperations
+  case object PauseObservation extends ObservationOperations
+  case object ResumeObservation extends ObservationOperations
+  case object StopObservation extends ObservationOperations
+  case object AbortObservation extends ObservationOperations
 }
