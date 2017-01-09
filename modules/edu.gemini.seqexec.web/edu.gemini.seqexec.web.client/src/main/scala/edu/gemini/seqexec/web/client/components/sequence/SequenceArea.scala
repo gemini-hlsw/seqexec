@@ -155,11 +155,11 @@ object SequenceStepsTableContainer {
               <.div(
                 ^.cls := "ui icon buttons",
                 Button(
-                  Button.Props(icon = Some(IconPause), color = Some("teal"))),
+                  Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"))),
                 Button(
-                  Button.Props(icon = Some(IconStop), color = Some("orange"))),
+                  Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"))),
                 Button(
-                  Button.Props(icon = Some(IconTrash), color = Some("red")))
+                  Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
               )
             )
           )

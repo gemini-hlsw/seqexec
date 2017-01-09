@@ -27,21 +27,22 @@ object Button {
   case object ResetType extends Type
   case object SubmitType extends Type
 
-  case class Props(state: ButtonState    = Inactive,
-                   emphasis: Emphasis    = NoEmphasis,
-                   animated: Animated    = NotAnimated,
-                   icon: Option[Icon]    = None,
-                   size: Size            = Size.NotSized,
-                   buttonType: Type      = ButtonType,
-                   form: Option[String]  = None,
-                   basic: Boolean        = false,
-                   inverted: Boolean     = false,
-                   circular: Boolean     = false,
-                   labeled: Boolean      = false,
-                   disabled: Boolean     = false,
-                   tabIndex: Option[Int] = None,
-                   color: Option[String] = None,
-                   onClick: Callback     = Callback.empty)
+  case class Props(state      : ButtonState    = Inactive,
+                   emphasis   : Emphasis       = NoEmphasis,
+                   animated   : Animated       = NotAnimated,
+                   icon       : Option[Icon]   = None,
+                   size       : Size           = Size.NotSized,
+                   buttonType : Type           = ButtonType,
+                   form       : Option[String] = None,
+                   basic      : Boolean        = false,
+                   inverted   : Boolean        = false,
+                   circular   : Boolean        = false,
+                   labeled    : Boolean        = false,
+                   disabled   : Boolean        = false,
+                   tabIndex   : Option[Int]    = None,
+                   color      : Option[String] = None,
+                   onClick    : Callback       = Callback.empty,
+                   dataTooltip: Option[String] = None)
 
   def classSet(p: Props) =
     ^.classSet(
@@ -78,6 +79,7 @@ object Button {
           }),
           p.form.map(f => formId := f),
           p.color.map(u => ^.cls := u),
+          p.dataTooltip.map(t => dataTooltip := t),
           classSet(p),
           ^.onClick --> p.onClick,
           p.icon,
