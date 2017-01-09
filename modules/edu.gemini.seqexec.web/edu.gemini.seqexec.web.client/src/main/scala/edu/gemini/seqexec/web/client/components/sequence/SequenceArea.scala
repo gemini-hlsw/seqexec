@@ -63,6 +63,7 @@ object SequenceStepsTableContainer {
               labeled = true,
               onClick = requestRun(p.s),
               color = Some("blue"),
+              dataTooltip = Some("Run the sequence from the first unexecuted step"),
               disabled = !p.status.isConnected || s.runRequested),
             "Run"
           ),
@@ -73,6 +74,7 @@ object SequenceStepsTableContainer {
               labeled = true,
               onClick = requestPause(p.s),
               color = Some("teal"),
+              dataTooltip = Some("Pause the sequence after the current step completes"),
               disabled = !p.status.isConnected || s.pauseRequested),
             "Pause"
           ),
