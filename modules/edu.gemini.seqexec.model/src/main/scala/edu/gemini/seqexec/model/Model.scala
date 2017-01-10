@@ -110,11 +110,12 @@ object Model {
      * Returns the observation operations allowed
      * TODO Convert to an Instrument-level typeclass
      */
-    def allowedObservationOperations: List[ObservationOperations] =
+    def allowedObservationOperations(stepStatus: StepState): List[ObservationOperations] =
       metadata.instrument match {
         // Note the F2 doesn't suppor these operations but we'll simulate them
         // for demonstration purposes
         case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation)
+        case "Flamingos2" if stepStatus == StepState.Paused  => List(ResumeObservation)
         case _                                               => Nil
       }
 

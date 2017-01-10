@@ -141,8 +141,8 @@ object SequenceStepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(s: SequenceView): List[ReactNode] = {
-      s.allowedObservationOperations.map {
+    def observationControlButtons(s: SequenceView, step: Step): List[ReactNode] = {
+      s.allowedObservationOperations(step.status).map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
@@ -163,24 +163,27 @@ object SequenceStepsTableContainer {
       }
     }
 
-    def stepDisplay(p: Props, step: Step): ReactNode =
-      step.status match {
-        case StepState.Running =>
+    def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): ReactNode =
+        <.div(
+          ^.cls := "ui horizontal segments running",
           <.div(
-            ^.cls := "ui horizontal segments running",
+            ^.cls := "ui basic segment running",
+            <.p(step.status.shows)
+          ),
+          loggedIn ?= <.div(
+            ^.cls := "ui basic segment right aligned running",
             <.div(
-              ^.cls := "ui basic segment running",
-              <.p(step.status.shows)
-            ),
-            p.status.isLogged ?= <.div(
-              ^.cls := "ui basic segment right aligned running",
-              <.div(
-                ^.cls := "ui icon buttons",
-                observationControlButtons(p.s)
-              )
+              ^.cls := "ui icon buttons",
+              observationControlButtons(sequenceView, step)
             )
           )
-        case _                => <.p(step.status.shows)
+        )
+
+
+    def stepDisplay(p: Props, step: Step): ReactNode =
+      step.status match {
+        case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
+        case _                                    => <.p(step.status.shows)
       }
 
     def stepsTable(p: Props): TagMod =
