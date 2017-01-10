@@ -5,6 +5,7 @@ import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
+import scalacss.ScalaCssReact._
 
 object Button {
   sealed trait ButtonState
@@ -27,22 +28,23 @@ object Button {
   case object ResetType extends Type
   case object SubmitType extends Type
 
-  case class Props(state      : ButtonState    = Inactive,
-                   emphasis   : Emphasis       = NoEmphasis,
-                   animated   : Animated       = NotAnimated,
-                   icon       : Option[Icon]   = None,
-                   size       : Size           = Size.NotSized,
-                   buttonType : Type           = ButtonType,
-                   form       : Option[String] = None,
-                   basic      : Boolean        = false,
-                   inverted   : Boolean        = false,
-                   circular   : Boolean        = false,
-                   labeled    : Boolean        = false,
-                   disabled   : Boolean        = false,
-                   tabIndex   : Option[Int]    = None,
-                   color      : Option[String] = None,
-                   onClick    : Callback       = Callback.empty,
-                   dataTooltip: Option[String] = None)
+  case class Props(state      : ButtonState                    = Inactive,
+                   emphasis   : Emphasis                       = NoEmphasis,
+                   animated   : Animated                       = NotAnimated,
+                   icon       : Option[Icon]                   = None,
+                   size       : Size                           = Size.NotSized,
+                   buttonType : Type                           = ButtonType,
+                   form       : Option[String]                 = None,
+                   basic      : Boolean                        = false,
+                   inverted   : Boolean                        = false,
+                   circular   : Boolean                        = false,
+                   labeled    : Boolean                        = false,
+                   disabled   : Boolean                        = false,
+                   tabIndex   : Option[Int]                    = None,
+                   color      : Option[String]                 = None,
+                   onClick    : Callback                       = Callback.empty,
+                   dataTooltip: Option[String]                 = None,
+                   extraStyles: List[scalacss.internal.StyleA] = Nil)
 
   def classSet(p: Props) =
     ^.classSet(
@@ -72,6 +74,7 @@ object Button {
       if (p.animated == NotAnimated)
         <.button(
           ^.cls := "ui button",
+          p.extraStyles.map(styleaToTagMod),
           ^.`type` := (p.buttonType match {
             case ButtonType => "button"
             case SubmitType => "submit"
