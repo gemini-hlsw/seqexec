@@ -141,29 +141,49 @@ object SequenceStepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def stepDisplay(step: Step): ReactNode =
-      step.status match {
-        case StepState.Running =>
+    def observationControlButtons(s: SequenceView, step: Step): List[ReactNode] = {
+      s.allowedObservationOperations(step.status).map {
+        case PauseObservation            =>
+          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
+        case StopObservation             =>
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early")))
+        case AbortObservation            =>
+          Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
+        case ResumeObservation           =>
+          Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
+        // Hamamatsu operations
+        case PauseImmediatelyObservation =>
+          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
+        case PauseGracefullyObservation  =>
+          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true, dataTooltip = Some("Pause the current exposure gracefully")))
+        case StopImmediatelyObservation  =>
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
+        case StopGracefullyObservation   =>
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
+      }
+    }
+
+    def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): ReactNode =
+        <.div(
+          ^.cls := "ui horizontal segments running",
           <.div(
-            ^.cls := "ui horizontal segments running",
+            ^.cls := "ui basic segment running",
+            <.p(step.status.shows)
+          ),
+          loggedIn ?= <.div(
+            ^.cls := "ui basic segment right aligned running",
             <.div(
-              ^.cls := "ui basic segment running",
-              <.p(step.status.shows)
-            ),
-            <.div(
-              ^.cls := "ui basic segment right aligned running",
-              <.div(
-                ^.cls := "ui icon buttons",
-                Button(
-                  Button.Props(icon = Some(IconPause), color = Some("teal"))),
-                Button(
-                  Button.Props(icon = Some(IconStop), color = Some("orange"))),
-                Button(
-                  Button.Props(icon = Some(IconTrash), color = Some("red")))
-              )
+              ^.cls := "ui icon buttons",
+              observationControlButtons(sequenceView, step)
             )
           )
-        case _ => <.p(step.status.shows)
+        )
+
+
+    def stepDisplay(p: Props, step: Step): ReactNode =
+      step.status match {
+        case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
+        case _                                    => <.p(step.status.shows)
       }
 
     def stepsTable(p: Props): TagMod =
@@ -180,11 +200,11 @@ object SequenceStepsTableContainer {
               "Step"
             ),
             <.th(
-              ^.cls := "six wide",
+              ^.cls := "eight wide",
               "State"
             ),
             <.th(
-              ^.cls := "ten wide",
+              ^.cls := "eight wide",
               "File"
             ),
             <.th(
@@ -220,7 +240,7 @@ object SequenceStepsTableContainer {
                 <.td(i + 1),
                 <.td(
                   ^.cls := "middle aligned",
-                  stepDisplay(step)),
+                  stepDisplay(p, step)),
                 <.td(
                   ^.cls := "middle aligned",
                   stepProgress(step)),
