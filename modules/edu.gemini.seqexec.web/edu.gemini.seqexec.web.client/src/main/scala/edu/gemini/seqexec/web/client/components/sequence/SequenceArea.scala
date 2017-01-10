@@ -143,14 +143,23 @@ object SequenceStepsTableContainer {
 
     def observationControlButtons(s: SequenceView): List[ReactNode] = {
       s.allowedObservationOperations.map {
-        case PauseObservation  =>
+        case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
-        case ResumeObservation =>
-          Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
-        case StopObservation   =>
+        case StopObservation             =>
           Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early")))
-        case AbortObservation  =>
+        case AbortObservation            =>
           Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
+        case ResumeObservation           =>
+          Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
+        // Hamamatsu operations
+        case PauseImmediatelyObservation =>
+          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
+        case PauseGracefullyObservation  =>
+          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true, dataTooltip = Some("Pause the current exposure gracefully")))
+        case StopImmediatelyObservation  =>
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
+        case StopGracefullyObservation   =>
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
       }
     }
 
@@ -188,11 +197,11 @@ object SequenceStepsTableContainer {
               "Step"
             ),
             <.th(
-              ^.cls := "six wide",
+              ^.cls := "eight wide",
               "State"
             ),
             <.th(
-              ^.cls := "ten wide",
+              ^.cls := "eight wide",
               "File"
             ),
             <.th(

@@ -114,7 +114,7 @@ object Model {
       metadata.instrument match {
         // Note the F2 doesn't suppor these operations but we'll simulate them
         // for demonstration purposes
-        case "Flamingos2" if status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
+        case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation)
         case _                                               => Nil
       }
 
@@ -154,7 +154,12 @@ object Model {
   // Operations possible at the observation level
   sealed trait ObservationOperations
   case object PauseObservation extends ObservationOperations
-  case object ResumeObservation extends ObservationOperations
   case object StopObservation extends ObservationOperations
   case object AbortObservation extends ObservationOperations
+  case object ResumeObservation extends ObservationOperations
+  // Operations for Hamamatsu
+  case object PauseImmediatelyObservation extends ObservationOperations
+  case object StopImmediatelyObservation extends ObservationOperations
+  case object PauseGracefullyObservation extends ObservationOperations
+  case object StopGracefullyObservation extends ObservationOperations
 }
