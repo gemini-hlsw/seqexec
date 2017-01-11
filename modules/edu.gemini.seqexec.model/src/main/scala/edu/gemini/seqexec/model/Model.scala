@@ -114,8 +114,10 @@ object Model {
       metadata.instrument match {
         // Note the F2 doesn't suppor these operations but we'll simulate them
         // for demonstration purposes
-        case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation)
-        case "Flamingos2" if stepStatus == StepState.Paused  => List(ResumeObservation)
+        //case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation, AbortObservation)
+        // Regular instrument that support pause/stop/abort
+        case "Flamingos2" if status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
+        case "Flamingos2" if stepStatus == StepState.Paused  => List(ResumeObservation, StopObservation, AbortObservation)
         case _                                               => Nil
       }
 
