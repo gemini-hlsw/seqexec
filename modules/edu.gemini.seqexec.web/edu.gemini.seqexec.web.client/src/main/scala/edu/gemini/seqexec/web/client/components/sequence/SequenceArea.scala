@@ -10,7 +10,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -64,7 +64,7 @@ object SequenceStepsTableContainer {
               color = Some("blue"),
               dataTooltip = Some(s"Run the sequence from the step ${s.nextStepToRun + 1}"),
               disabled = !p.status.isConnected || s.runRequested),
-            s"Run from step ${s.nextStepToRun}"
+            s"Run from step ${s.nextStepToRun + 1}"
           ),
         p.status.isLogged && p.s.status === SequenceState.Running ?=
           Button(
@@ -197,7 +197,10 @@ object SequenceStepsTableContainer {
         case _                                    => <.p(step.status.shows)
       }
 
-    def stepsTable(p: Props): TagMod =
+    def selectRow(step: Step, index: Int): Callback =
+      $.modState(_.copy(nextStepToRun = index))
+
+    def stepsTable(p: Props, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
@@ -229,6 +232,7 @@ object SequenceStepsTableContainer {
           p.s.steps.zipWithIndex.map {
             case (step, i) =>
               <.tr(
+                ^.onClick --> selectRow(step, i),
                 // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                 ^.classSet(
                   "positive" -> (step.status === StepState.Completed),
@@ -241,11 +245,12 @@ object SequenceStepsTableContainer {
                 step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                 <.td(
                   step.status match {
-                    case StepState.Completed => IconCheckmark
-                    case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
-                    case StepState.Paused    => IconPause
-                    case StepState.Error(_)  => IconAttention
-                    case _                   => iconEmpty
+                    case StepState.Completed       => IconCheckmark
+                    case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
+                    case StepState.Paused          => IconPause
+                    case StepState.Error(_)        => IconAttention
+                    case _ if i == s.nextStepToRun => IconChevronRight
+                    case _                         => iconEmpty
                   }
                 ),
                 <.td(i + 1),
@@ -278,7 +283,7 @@ object SequenceStepsTableContainer {
             val step = p.s.steps(i)
             configTable(step)
           }.getOrElse {
-            stepsTable(p)
+            stepsTable(p, s)
           }
         )
       )
@@ -295,7 +300,7 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 1, autoScrolled = false))
+    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
