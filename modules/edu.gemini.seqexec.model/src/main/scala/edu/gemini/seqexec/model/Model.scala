@@ -45,14 +45,22 @@ object Model {
 
   implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
 
-  sealed trait StepState
+  sealed trait StepState {
+    def canRunFrom: Boolean = false
+  }
   object StepState {
-    case object Pending extends StepState
+    case object Pending extends StepState {
+      override val canRunFrom = true
+    }
     case object Completed extends StepState
     case object Skipped extends StepState
-    case class Error(msg: String) extends StepState
+    case class Error(msg: String) extends StepState {
+      override val canRunFrom = true
+    }
     case object Running extends StepState
-    case object Paused extends StepState
+    case object Paused extends StepState {
+      override val canRunFrom = true
+    }
 
     implicit val equal: Equal[StepState] = Equal.equalA[StepState]
   }

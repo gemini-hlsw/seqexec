@@ -198,7 +198,7 @@ object SequenceStepsTableContainer {
       }
 
     def selectRow(step: Step, index: Int): Callback =
-      $.modState(_.copy(nextStepToRun = index))
+      Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
 
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
