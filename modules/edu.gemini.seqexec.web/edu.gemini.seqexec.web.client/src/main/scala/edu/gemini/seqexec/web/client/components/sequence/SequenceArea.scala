@@ -27,7 +27,11 @@ import org.scalajs.dom.document
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class State(runRequested: Boolean, pauseRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
+  case class State(runRequested   : Boolean,
+                   pauseRequested : Boolean,
+                   nextScrollPos  : Double,
+                   nextStepToRun  : Int,
+                   autoScrolled   : Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
@@ -46,11 +50,6 @@ object SequenceStepsTableContainer {
     def defaultToolbar(p: Props, s: State): ReactNode =
       <.div(
         ^.cls := "row",
-        /*p.status.isLogged && p.s.status == SequenceState.Abort ?=
-          <.h3(
-            ^.cls := "ui red header",
-            "Sequence aborted"
-          ),*/
         p.status.isLogged && p.s.status === SequenceState.Completed ?=
           <.h3(
             ^.cls := "ui green header",
@@ -63,9 +62,9 @@ object SequenceStepsTableContainer {
               labeled = true,
               onClick = requestRun(p.s),
               color = Some("blue"),
-              dataTooltip = Some("Run the sequence from the first unexecuted step"),
+              dataTooltip = Some(s"Run the sequence from the step ${s.nextStepToRun + 1}"),
               disabled = !p.status.isConnected || s.runRequested),
-            "Run"
+            s"Run from step ${s.nextStepToRun}"
           ),
         p.status.isLogged && p.s.status === SequenceState.Running ?=
           Button(
@@ -81,22 +80,12 @@ object SequenceStepsTableContainer {
         p.status.isLogged && p.s.status === SequenceState.Paused ?=
           Button(
             Button.Props(
-              icon = Some(IconPause),
+              icon = Some(IconPlay),
               labeled = true,
               onClick = requestPause(p.s),
               color = Some("teal"),
               disabled = !p.status.isConnected),
-            "Continue"
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Running ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPause),
-              labeled = true,
-              onClick = requestPause(p.s),
-              color = Some("orange"),
-              disabled = !p.status.isConnected),
-            "Stop"
+            "Continue from step 1"
           )
       )
 
@@ -306,7 +295,7 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, pauseRequested = false, 0, autoScrolled = false))
+    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 1, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
