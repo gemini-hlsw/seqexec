@@ -307,6 +307,10 @@ object SequenceStepsTableContainer {
       val runStateCB =
         Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
 
+      // Override the manually selected step to run if the state changes
+      val nextStepToRunCB =
+        Callback.when(f.nextProps.s.status != f.currentProps.s.status)(f.$.modState(_.copy(nextStepToRun = f.nextProps.s.nextStepToRun.getOrElse(0))))
+
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
       val div = scrollRef(f.$)
@@ -363,7 +367,7 @@ object SequenceStepsTableContainer {
         }
       }
       // Run both callbacks, to update the runRequested state and the scroll position
-      runStateCB *> scrollStateCB
+      runStateCB *> scrollStateCB *> nextStepToRunCB
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed
