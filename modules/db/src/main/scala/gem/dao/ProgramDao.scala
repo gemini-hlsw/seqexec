@@ -44,6 +44,7 @@ object ProgramDao {
                    ${pid.semesterVal.toString},
                    ${pid.ptypeVal.toString},
                    ${pid.index})
+       ON CONFLICT DO NOTHING
     """.update.run
 
   private def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
@@ -56,6 +57,7 @@ object ProgramDao {
                     ${pid.siteVal.toString},
                     ${pid.ptypeVal.toString},
                     ${new java.util.Date(pid.start)})
+       ON CONFLICT DO NOTHING
     """.update.run
 
   private def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
@@ -69,6 +71,7 @@ object ProgramDao {
                     ${pid.site.map(_.toString)},
                     ${pid.semester.map(_.toString)},
                     ${pid.ptype.map(_.toString)})
+       ON CONFLICT DO NOTHING
     """.update.run
 
   ///

@@ -13,6 +13,15 @@ sealed abstract class InstrumentConfig extends Product with Serializable {
       case f2: F2Config     => Some(f2.key)
       case GenericConfig(_) => None
     }
+
+  def instrument: Instrument = {
+    import gem.enum.Instrument._
+
+    this match {
+      case _: F2Config      => Flamingos2
+      case GenericConfig(i) => i
+    }
+  }
 }
 
 final case class F2SmartGcalKey(

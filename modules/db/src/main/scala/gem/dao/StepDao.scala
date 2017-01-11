@@ -362,4 +362,34 @@ object StepDao {
     } yield res
   }
 
+  /** Deletes all steps for the given observation, if any.
+    *
+    * @param oid observation whose steps should be deleted
+    */
+  def delete(oid: Observation.Id): ConnectionIO[Unit] = {
+    // Cascading delete takes care of the subtype steps like step_bias,
+    // step_dark, etc., but will leave a step_gcal's calibration configuration
+    // in the gcal table.  That means we have to explicitly remove the gcal
+    // configuration if we're deleting a gcal step.
+
+    val delGcal =
+      sql"""
+        DELETE FROM gcal g
+              USING step_gcal sg, step s
+              WHERE s.observation_id = $oid
+                AND s.step_id        = sg.step_gcal_id
+                AND sg.gcal_id       = g.gcal_id
+      """.update.run
+
+    val delSteps =
+      sql"""
+        DELETE FROM step
+              WHERE observation_id = $oid
+      """.update.run
+
+    for {
+      _ <- delGcal
+      _ <- delSteps
+    } yield ()
+  }
 }

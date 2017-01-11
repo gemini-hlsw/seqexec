@@ -24,20 +24,35 @@ import scalaz.concurrent.Task
 object SequenceServer extends ServerApp {
   val Log = Logger.getLogger(SequenceServer.getClass.getName)
 
-  private def fetchSequence(obsIdStr: String): Throwable \/ List[Step[(InstrumentConfig, Boolean)]] =
+  private def withOid[A](obsIdStr: String)(f: Observation.Id => Task[A]): Throwable \/ A =
     for {
       oid <- Observation.Id.fromString(obsIdStr) \/> new RuntimeException(s"Could not parse '$obsIdStr' as an observation id")
-      seq <- SequenceImporter.fetchSequence(oid).unsafePerformSyncAttemptFor(30 seconds)
-    } yield seq
+      a   <- f(oid).unsafePerformSyncAttemptFor(30 seconds)
+    } yield a
+
+  private def fetchSequence(obsIdStr: String): Throwable \/ List[Step[(InstrumentConfig, Boolean)]] =
+    withOid(obsIdStr) { SequenceImporter.fetchSequence }
+
+  private def importSequence(obsIdStr: String): Throwable \/ Unit =
+    withOid(obsIdStr) { SequenceImporter.importSequence }
 
   val service = HttpService {
-    case GET -> Root / obsId =>
+    case GET -> Root / "import" / obsId =>
       // TODO: all errors are mapped to "Not Found" which is a bit dubious.
-      fetchSequence(obsId) match {
+      importSequence(obsId) match {
         case -\/(t) =>
           Log.log(Level.WARNING, s"Could not import '$obsId'", t)
           NotFound(s"Sorry, could not import '$obsId'.")
 
+        case \/-(_) =>
+          Ok(s"Imported $obsId")
+      }
+
+    case GET -> Root / "show" / obsId =>
+      fetchSequence(obsId) match {
+        case -\/(t) =>
+          Log.log(Level.WARNING, s"Could not show '$obsId'", t)
+          NotFound(s"Sorry, could not show '$obsId'.")
         case \/-(s) =>
           Ok(s.mkString("\n"))
       }
