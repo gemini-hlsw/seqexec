@@ -233,7 +233,6 @@ object SequenceStepsTableContainer {
           p.s.steps.zipWithIndex.map {
             case (step, i) =>
               <.tr(
-                ^.onClick --> selectRow(step, i),
                 // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                 ^.classSet(
                   "positive" -> (step.status === StepState.Completed),
@@ -245,6 +244,7 @@ object SequenceStepsTableContainer {
                 ),
                 step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                 <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
                   step.status match {
                     case StepState.Completed       => IconCheckmark
                     case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
@@ -254,11 +254,15 @@ object SequenceStepsTableContainer {
                     case _                         => iconEmpty
                   }
                 ),
-                <.td(i + 1),
                 <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
+                  i + 1),
+                <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
                   ^.cls := "middle aligned",
                   stepDisplay(p, step)),
                 <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
                   ^.cls := "middle aligned",
                   stepProgress(step)),
                 <.td(
