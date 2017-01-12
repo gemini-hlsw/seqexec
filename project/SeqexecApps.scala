@@ -86,7 +86,8 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
       },
 
       // Put the jar files in the lib dir
-      mappings in Universal <+= (packageBin in Compile) map { jar =>
+      mappings in Universal += {
+        val jar = (packageBin in Compile).value
         jar -> ("lib/" + jar.getName)
       }
     )
@@ -154,8 +155,8 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
       applicationConfSite := DeploymentSite.GS,
 
       // Download the configuration from svn
-      packageZipTarball in Universal <<= (packageZipTarball in Universal).dependsOn(downloadConfiguration),
-      packageBin in Rpm <<= (packageBin in Rpm).dependsOn(downloadConfiguration),
+      packageZipTarball in Universal := ((packageZipTarball in Universal).dependsOn(downloadConfiguration)).value,
+      packageBin in Rpm := ((packageBin in Rpm).dependsOn(downloadConfiguration)).value,
 
       // Put the jre on the RPM
       linuxPackageMappings in Rpm += {

@@ -49,7 +49,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       // Support stopping the running server
       mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
       // do a fastOptJS on reStart
-      reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client, Compile)),
+      reStart := (reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client, Compile))).evaluated,
       // This settings makes reStart to rebuild if a scala.js file changes on the client
       watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value,
       // On recompilation only consider changes to .scala and .js files
@@ -62,7 +62,7 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       // Lets the server read the jsdeps file
       (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client_cli, Compile, packageJSDependencies)).value,
       // do a fastOptJS on reStart
-      reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client_cli, Compile))
+      reStart := (reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client_cli, Compile))).evaluated
     )
     .settings(
       buildInfoUsePackageAsPath := true,
@@ -84,12 +84,12 @@ trait SeqexecWebModules extends SeqexecEngineModules {
       // library and that conflict with the requested on jsDependencies, in particular
       // with jquery.js
       // See http://stackoverflow.com/questions/35374131/scala-js-missing-js-library, UPDATE #1
-      (scalaJSNativeLibraries in Test) <<= (scalaJSNativeLibraries in Test).map { l =>
+      (scalaJSNativeLibraries in Test) := (scalaJSNativeLibraries in Test).map { l =>
         l.map(virtualFiles => virtualFiles.filter(vf => {
           val f = vf.toURI.toString
           !(f.endsWith(".js") && f.contains("scala/tools"))
         }))
-      },
+      }.value,
       // Write the generated js to the filename seqexec.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
       artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",

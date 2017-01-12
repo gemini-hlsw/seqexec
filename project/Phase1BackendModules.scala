@@ -42,7 +42,7 @@ trait Phase1BackendModules extends Common {
       // Support stopping the running server
       mainClass in reStart := Some("edu.gemini.p1backend.server.http4s.WebServerLauncher"),
       // do a fastOptJS on reStart
-      reStart <<= reStart dependsOn (fastOptJS in (edu_gemini_p1backend_client, Compile)),
+      reStart := (reStart dependsOn (fastOptJS in (edu_gemini_p1backend_client, Compile))).evaluated,
       // This settings makes reStart to rebuild if a scala.js file changes on the client
       watchSources ++= (watchSources in edu_gemini_p1backend_client).value,
       // On recompilation only consider changes to .scala and .js files
@@ -68,12 +68,12 @@ trait Phase1BackendModules extends Common {
       // library and that conflict with the requested on jsDependencies, in particular
       // with jquery.js
       // See http://stackoverflow.com/questions/35374131/scala-js-missing-js-library, UPDATE #1
-      (scalaJSNativeLibraries in Test) <<= (scalaJSNativeLibraries in Test).map { l =>
+      (scalaJSNativeLibraries in Test) := (scalaJSNativeLibraries in Test).map { l =>
         l.map(virtualFiles => virtualFiles.filter(vf => {
           val f = vf.toURI.toString
           !(f.endsWith(".js") && f.contains("scala/tools"))
         }))
-      },
+      }.value,
       // Write the generated js to the filename seqexec.js
       artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "p1backend.js",
       artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "p1backend-opt.js",
