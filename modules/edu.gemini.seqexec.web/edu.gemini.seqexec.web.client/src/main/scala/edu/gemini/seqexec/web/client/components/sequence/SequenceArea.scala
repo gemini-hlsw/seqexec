@@ -20,6 +20,7 @@ import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
+import scalaz.syntax.std.boolean._
 import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 
@@ -62,9 +63,9 @@ object SequenceStepsTableContainer {
               labeled = true,
               onClick = requestRun(p.s),
               color = Some("blue"),
-              dataTooltip = Some(s"Run the sequence from the step ${s.nextStepToRun + 1}"),
+              dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
               disabled = !p.status.isConnected || s.runRequested),
-            s"Run from step ${s.nextStepToRun + 1}"
+            s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
           ),
         p.status.isLogged && p.s.status === SequenceState.Running ?=
           Button(

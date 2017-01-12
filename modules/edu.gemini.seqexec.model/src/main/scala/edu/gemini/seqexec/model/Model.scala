@@ -142,6 +142,8 @@ object Model {
         case x if x.forall(_.status == StepState.Completed) => None // All steps have been executed
         case x                                              => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1)
       }
+
+    def isPartiallyExecuted: Boolean = steps.exists(_.status == StepState.Completed)
   }
 
   /**
