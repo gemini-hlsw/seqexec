@@ -1,6 +1,8 @@
 package gem.seqimporter
 
+import doobie.contrib.postgresql.syntax._
 import doobie.imports._
+
 import gem.{Dataset, Location, Log, Observation, Program, Step}
 import gem.config.InstrumentConfig
 import gem.dao._
@@ -105,10 +107,10 @@ object SequenceImporter {
     val p = Program[Nothing](oid.pid, "", Nil)
     val o = Observation[Nothing](oid, "", i, Nil)
 
-    (for {
-      _ <- ProgramDao.insert(p)
-      _ <- ObservationDao.insert(o)
-    } yield ()).transact(lxa)
+    for {
+      _ <- ProgramDao.insert(p).onUniqueViolation(0.point[ConnectionIO]).transact(lxa)
+      _ <- ObservationDao.insert(o).onUniqueViolation(0.point[ConnectionIO]).transact(lxa)
+    } yield ()
   }
 
   // Writes the sequence to the database.

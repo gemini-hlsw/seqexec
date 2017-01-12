@@ -21,7 +21,6 @@ object ObservationDao {
                     ${o.id.index},
                     ${o.title},
                     ${o.instrument})
-       ON CONFLICT DO NOTHING
     """.update.run
 
   /** Select all the observation ids associated with the given program. */
