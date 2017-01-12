@@ -373,6 +373,8 @@ object SequenceStepsTableContainer {
       }
       // Run both callbacks, to update the runRequested state and the scroll position
       runStateCB *> scrollStateCB *> nextStepToRunCB
+    }.componentWillMount { f =>
+      f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed
