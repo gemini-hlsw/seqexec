@@ -67,6 +67,8 @@ object Sequence {
         case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
       }
 
+    def rollback: Zipper = this.copy(focus = focus.rollback)
+
     /**
       * Obtain the resulting `Sequence` only if all `Step`s have been completed.
       * This is a special way of *unzipping* a `Zipper`.
@@ -130,6 +132,8 @@ object Sequence {
 
     val pending: List[Step[Action]]
 
+    def rollback: State
+
     /**
       * Current Execution
       */
@@ -188,6 +192,8 @@ object Sequence {
 
       override val pending: List[Step[Action]] = seq.steps
 
+      override def rollback = self
+
       override val current: Execution = Execution.empty
 
       override val done: List[Step[Result]] = Nil
@@ -222,6 +228,8 @@ object Sequence {
 
       override val pending: List[Step[Action]] = zipper.pending
 
+      override def rollback = self.copy(zipper = zipper.rollback)
+
       override val done: List[Step[Result]] = zipper.done
 
       override def mark(i: Int)(r: Result): State = {
@@ -251,6 +259,8 @@ object Sequence {
       override val current: Execution = Execution.empty
 
       override val pending: List[Step[Action]] = Nil
+
+      override def rollback = self
 
       override val done: List[Step[Result]] = seq.steps
 

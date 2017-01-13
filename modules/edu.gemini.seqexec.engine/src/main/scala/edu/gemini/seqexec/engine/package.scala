@@ -57,6 +57,9 @@ package object engine {
     // TODO: Make Status an Equal instance
     modifyS(id)(Sequence.State.status.set(_, st))
 
+  def rollback(q: EventQueue)(id: Sequence.Id): Handle[Unit] =
+    modifyS(id)(_.rollback)
+
   /**
     * Loads a sequence
     */
@@ -165,7 +168,7 @@ package object engine {
   private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start(id)     => log("Output: Started") *> switch(q)(id)(SequenceState.Running) *> send(q)(Event.next(id))
+      case Start(id)     => log("Output: Started") *> rollback(q)(id) *> switch(q)(id)(SequenceState.Running) *> send(q)(Event.next(id))
       case Pause(id)     => log("Output: Paused") *> switch(q)(id)(SequenceState.Idle)
       case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
       case Poll          => log("Output: Polling current state")
