@@ -12,6 +12,7 @@ object ModelOps {
     case SequenceState.Completed => "Complete"
     case SequenceState.Running   => "Running"
     case SequenceState.Idle      => "Idle"
+    case SequenceState.Paused    => "Paused"
     case SequenceState.Error(e)  => s"Error $e"
   }
 
