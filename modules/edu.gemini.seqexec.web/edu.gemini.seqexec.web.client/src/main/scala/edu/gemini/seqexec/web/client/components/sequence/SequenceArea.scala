@@ -10,7 +10,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight, IconSettings, IconReply}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -201,11 +202,18 @@ object SequenceStepsTableContainer {
     def selectRow(step: Step, index: Int): Callback =
       Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
 
+    def markAsSkipped(view: SequenceView, step: Step): Callback =
+      Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
+
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
           <.tr(
+            <.th(
+              ^.cls := "collapsing",
+              IconSettings
+            ),
             <.th(
               ^.cls := "collapsing",
               iconEmpty
@@ -243,6 +251,10 @@ object SequenceStepsTableContainer {
                   "active"   -> (step.status === StepState.Skipped)
                 ),
                 step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                <.td(
+                  ^.onClick --> markAsSkipped(p.s, step),
+                  step.skip ?= IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+                ),
                 <.td(
                   ^.onDoubleClick --> selectRow(step, i),
                   step.status match {

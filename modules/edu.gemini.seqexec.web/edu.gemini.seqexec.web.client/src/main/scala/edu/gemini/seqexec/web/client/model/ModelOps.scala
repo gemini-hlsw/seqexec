@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState}
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
 
 import scalaz.Show
 
@@ -36,6 +36,11 @@ object ModelOps {
     }
 
     def allStepsDone: Boolean = s.steps.forall(_.status == StepState.Completed)
+
+    def flipStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
+      case st: StandardStep if st == step => st.copy(skip = !st.skip)
+      case st               => st
+    })
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {

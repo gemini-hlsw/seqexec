@@ -10,6 +10,7 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
+import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import edu.gemini.seqexec.web.common.LogMessage._
@@ -76,6 +77,12 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
 
     case RunPauseFailed(s) =>
       noChange
+
+    case FlipSkipStep(sequence, step) =>
+      updated(value.copy(queue = value.queue.collect {
+        case s if s == sequence => sequence.flipStep(step)
+        case s                  => s
+      }))
   }
 }
 
@@ -173,6 +180,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       } else {
         noChange
       }
+
   }
 }
 
