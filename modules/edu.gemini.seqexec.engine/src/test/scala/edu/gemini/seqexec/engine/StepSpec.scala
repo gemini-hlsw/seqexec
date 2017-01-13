@@ -1,18 +1,59 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.StepConfig
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig, StepState}
 
 import scalaz.syntax.either._
-import org.scalatest.FlatSpec
+import org.scalatest._
+import Matchers._
+import Inside._
 
 import scalaz.concurrent.Task
+import scalaz.stream.async
+import edu.gemini.seqexec.engine.Result.{Error, OK}
+import edu.gemini.seqexec.engine.Event.{pause, start}
+import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running}
 
-import edu.gemini.seqexec.model.Model.StepState
 
 /**
   * Created by jluhrs on 9/29/16.
   */
 class StepSpec extends FlatSpec {
+
+  val seqId ="TEST-01"
+
+  /**
+    * Emulates TCS configuration in the real world.
+    *
+    */
+  val configureTcs: Action  = for {
+    _ <- Task(println("System: Start TCS configuration"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println ("System: Complete TCS configuration"))
+  } yield OK(())
+
+  /**
+    * Emulates Instrument configuration in the real world.
+    *
+    */
+  val configureInst: Action  = for {
+    _ <- Task(println("System: Start Instrument configuration"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println("System: Complete Instrument configuration"))
+  } yield OK(())
+
+  /**
+    * Emulates an observation in the real world.
+    *
+    */
+  val observe: Action  = for {
+    _ <- Task(println("System: Start observation"))
+    _ <- Task(Thread.sleep(2000))
+    _ <- Task(println ("System: Complete observation"))
+  } yield OK(())
+
+  def triggerPause(q: async.mutable.Queue[Event]): Action = for {
+    _ <- q.enqueueOne(pause(seqId))
+  } yield OK(())
 
   // All tests check the output of running a step against the expected sequence of updates.
 
@@ -23,12 +64,78 @@ class StepSpec extends FlatSpec {
   }
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
-  ignore should "stop execution in response to a pause command" in {
+  "pause" should "stop execution in response to a pause command" in {
+    val q = async.boundedQueue[Event](10)
+    val qs0: EngineState = Map((seqId, Sequence.State.init(
+      Sequence(
+        "First",
+        SequenceMetadata("F2"),
+        List(
+          Step(
+            1,
+            config,
+            List(
+              List(configureTcs, configureInst, triggerPause(q)), // Execution
+              List(observe) // Execution
+            )
+          )
+        )
+      )
+    )))
+
+    val qs1 = (
+      q.enqueueOne(start(seqId)).flatMap( _ =>
+        // 3 Actions + 3 Nexts + 1 Executions + 1 start + 1 pauseRequest => take(6)
+        // It must be a better way to stop the process
+        processE(q).take(9).runLast.eval(qs0))).unsafePerformSync.get._2
+
+     inside (qs1.get(seqId).get) {
+      case Sequence.State.Zipper(zipper, status) =>
+        status should be (Idle)
+        inside (zipper.focus.toStep) {
+          case Step(_, _, ex1::ex2::Nil) =>
+            assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
+
+        }
+    }
 
   }
 
-  // It should reuse code from the previous test to set initial state.
-  ignore should "resume execution from the non-running state in response to a resume command." in {
+  it should "resume execution from the non-running state in response to a resume command, rolling back a partially run step." in {
+    val q = async.boundedQueue[Event](10)
+    // Engine state with one idle sequence partially executed. One Step completed, two to go.
+    val qs0: EngineState = Map((seqId, Sequence.State.Zipper(
+      Sequence.Zipper(
+        "First",
+        SequenceMetadata("F2"),
+        List(),
+        Step.Zipper(
+          2,
+          config,
+          List(),
+          Execution(List(observe.left)),
+          List(List(result, result)),
+          (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
+        List()
+      ),
+      Idle
+    )
+    ))
+
+    val qs1 = (
+      q.enqueueOne(start(seqId)).flatMap( _ =>
+        // 3 Actions + 3 Nexts + 1 Executions + 1 start + 1 pauseRequest => take(6)
+        // It must be a better way to stop the process
+        processE(q).take(1).runLast.eval(qs0))).unsafePerformSync.get._2
+
+    inside (qs1.get(seqId).get) {
+      case Sequence.State.Zipper(zipper, status) =>
+        status should be (Running)
+        inside (zipper.focus.toStep) {
+          case Step(_, _, ex1::ex2::Nil) =>
+            assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
+        }
+    }
 
   }
 
@@ -50,14 +157,14 @@ class StepSpec extends FlatSpec {
   val failure = Result.Error(Unit)
   val action: Action = Task(result)
   val config: StepConfig = Map()
-  val stepz0: Step.Zipper   = Step.Zipper(0, config, Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution(List(result.right)), Nil)
-  val stepzr0: Step.Zipper  = Step.Zipper(1, config, Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), Nil)
-  val stepzr2: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), List(List(result)))
-  val stepzar0: Step.Zipper = Step.Zipper(1, config, Nil, Execution(List(result.right, action.left)), Nil)
-  val stepzar1: Step.Zipper = Step.Zipper(1, config, List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
+  val stepz0: Step.Zipper   = Step.Zipper(0, config, Nil, Execution.empty, Nil, (Execution.empty, Nil))
+  val stepza0: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution.empty, Nil, (Execution.empty, List(List(action))))
+  val stepza1: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution(List(result.right)), Nil, (Execution(List(action.left)), List(List(action))))
+  val stepzr0: Step.Zipper  = Step.Zipper(1, config, Nil, Execution.empty, List(List(result)), (Execution(List(action.left)), Nil))
+  val stepzr1: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), Nil, (Execution(List(action.left, action.left)), Nil))
+  val stepzr2: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), List(List(result)), (Execution(List(action.left)), List(List(action, action))))
+  val stepzar0: Step.Zipper = Step.Zipper(1, config, Nil, Execution(List(result.right, action.left)), Nil, (Execution(List(action.left, action.left)), Nil))
+  val stepzar1: Step.Zipper = Step.Zipper(1, config, List(List(action)), Execution(List(result.right, result.right)), List(List(result)), (Execution(List(action.left)), List(List(action, action), List(action))))
 
   "uncurrentify" should "be None when not all executions are completed" in {
     assert(stepz0.uncurrentify.isEmpty)
@@ -104,7 +211,8 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Nil,
           Execution(List(action.left, failure.right, result.right)),
-          Nil
+          Nil,
+          (Execution(List(action.left, action.left, action.left)), Nil)
         ).toStep
       ) === StepState.Error("An action errored")
     )
@@ -118,7 +226,8 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Nil,
           Execution(List(result.right, result.right, result.right)),
-          Nil
+          Nil,
+          (Execution(List(action.left, action.left, action.left)), Nil)
         ).toStep
       ) === StepState.Completed
     )
@@ -132,7 +241,8 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Nil,
           Execution(List(result.right, action.left, result.right)),
-          Nil
+          Nil,
+          (Execution(List(action.left, action.left, action.left)), Nil)
         ).toStep
       ) === StepState.Running
     )
@@ -146,7 +256,8 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Nil,
           Execution(List(action.left, action.left, action.left)),
-          Nil
+          Nil,
+          (Execution(List(action.left, action.left, action.left)), Nil)
         ).toStep
       ) === StepState.Pending
     )

@@ -57,7 +57,8 @@ object Step {
     config: StepConfig,
     pending: List[Actions],
     focus: Execution,
-    done: List[Results]
+    done: List[Results],
+    rolledback: (Execution, List[Actions])
   ) {
 
     /**
@@ -72,9 +73,11 @@ object Step {
         case Nil           => None
         case exep :: exeps =>
           (Execution.currentify(exep) |@| focus.uncurrentify) (
-            (curr, exed) => Zipper(id, config, exeps, curr, exed :: done)
+            (curr, exed) => Zipper(id, config, exeps, curr, exed :: done, rolledback)
           )
       }
+
+    def rollback: Zipper = Zipper(id, config, rolledback._2, rolledback._1, Nil, rolledback)
 
     /**
       * Obtain the resulting `Step` only if all `Execution`s have been completed.
@@ -112,8 +115,8 @@ object Step {
       step.executions match {
         case Nil         => None
         case exe :: exes =>
-          Execution.currentify(exe).map(
-            Zipper(step.id, step.config, exes, _, Nil)
+          Execution.currentify(exe).map( x =>
+            Zipper(step.id, step.config, exes, x, Nil, (x, exes))
           )
       }
 
