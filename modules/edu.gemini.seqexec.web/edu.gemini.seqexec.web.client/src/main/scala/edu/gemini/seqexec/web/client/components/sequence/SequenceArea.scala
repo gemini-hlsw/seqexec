@@ -10,7 +10,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight}
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -20,6 +20,7 @@ import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
+import scalaz.syntax.std.boolean._
 import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 
@@ -27,7 +28,11 @@ import org.scalajs.dom.document
   * Container for a table with the steps
   */
 object SequenceStepsTableContainer {
-  case class State(runRequested: Boolean, pauseRequested: Boolean, nextScrollPos: Double, autoScrolled: Boolean)
+  case class State(runRequested   : Boolean,
+                   pauseRequested : Boolean,
+                   nextScrollPos  : Double,
+                   nextStepToRun  : Int,
+                   autoScrolled   : Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
 
@@ -46,11 +51,6 @@ object SequenceStepsTableContainer {
     def defaultToolbar(p: Props, s: State): ReactNode =
       <.div(
         ^.cls := "row",
-        /*p.status.isLogged && p.s.status == SequenceState.Abort ?=
-          <.h3(
-            ^.cls := "ui red header",
-            "Sequence aborted"
-          ),*/
         p.status.isLogged && p.s.status === SequenceState.Completed ?=
           <.h3(
             ^.cls := "ui green header",
@@ -63,8 +63,9 @@ object SequenceStepsTableContainer {
               labeled = true,
               onClick = requestRun(p.s),
               color = Some("blue"),
+              dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
               disabled = !p.status.isConnected || s.runRequested),
-            "Run"
+            s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
           ),
         p.status.isLogged && p.s.status === SequenceState.Running ?=
           Button(
@@ -73,8 +74,19 @@ object SequenceStepsTableContainer {
               labeled = true,
               onClick = requestPause(p.s),
               color = Some("teal"),
+              dataTooltip = Some("Pause the sequence after the current step completes"),
               disabled = !p.status.isConnected || s.pauseRequested),
             "Pause"
+          ),
+        p.status.isLogged && p.s.status === SequenceState.Paused ?=
+          Button(
+            Button.Props(
+              icon = Some(IconPlay),
+              labeled = true,
+              onClick = requestPause(p.s),
+              color = Some("teal"),
+              disabled = !p.status.isConnected),
+            "Continue from step 1"
           )
       )
 
@@ -186,7 +198,10 @@ object SequenceStepsTableContainer {
         case _                                    => <.p(step.status.shows)
       }
 
-    def stepsTable(p: Props): TagMod =
+    def selectRow(step: Step, index: Int): Callback =
+      Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
+
+    def stepsTable(p: Props, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
@@ -229,19 +244,25 @@ object SequenceStepsTableContainer {
                 ),
                 step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                 <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
                   step.status match {
-                    case StepState.Completed => IconCheckmark
-                    case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
-                    case StepState.Paused    => IconPause
-                    case StepState.Error(_)  => IconAttention
-                    case _                   => iconEmpty
+                    case StepState.Completed       => IconCheckmark
+                    case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
+                    case StepState.Paused          => IconPause
+                    case StepState.Error(_)        => IconAttention
+                    case _ if i == s.nextStepToRun => IconChevronRight
+                    case _                         => iconEmpty
                   }
                 ),
-                <.td(i + 1),
                 <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
+                  i + 1),
+                <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
                   ^.cls := "middle aligned",
                   stepDisplay(p, step)),
                 <.td(
+                  ^.onDoubleClick --> selectRow(step, i),
                   ^.cls := "middle aligned",
                   stepProgress(step)),
                 <.td(
@@ -267,7 +288,7 @@ object SequenceStepsTableContainer {
             val step = p.s.steps(i)
             configTable(step)
           }.getOrElse {
-            stepsTable(p)
+            stepsTable(p, s)
           }
         )
       )
@@ -284,12 +305,16 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, pauseRequested = false, 0, autoScrolled = false))
+    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
       val runStateCB =
         Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
+
+      // Override the manually selected step to run if the state changes
+      val nextStepToRunCB =
+        Callback.when(f.nextProps.s.status != f.currentProps.s.status)(f.$.modState(_.copy(nextStepToRun = f.nextProps.s.nextStepToRun.getOrElse(0))))
 
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
@@ -347,7 +372,9 @@ object SequenceStepsTableContainer {
         }
       }
       // Run both callbacks, to update the runRequested state and the scroll position
-      runStateCB *> scrollStateCB
+      runStateCB *> scrollStateCB *> nextStepToRunCB
+    }.componentWillMount { f =>
+      f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed

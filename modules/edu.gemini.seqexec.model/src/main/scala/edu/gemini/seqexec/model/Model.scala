@@ -45,14 +45,22 @@ object Model {
 
   implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
 
-  sealed trait StepState
+  sealed trait StepState {
+    def canRunFrom: Boolean = false
+  }
   object StepState {
-    case object Pending extends StepState
+    case object Pending extends StepState {
+      override val canRunFrom = true
+    }
     case object Completed extends StepState
     case object Skipped extends StepState
-    case class Error(msg: String) extends StepState
+    case class Error(msg: String) extends StepState {
+      override val canRunFrom = true
+    }
     case object Running extends StepState
-    case object Paused extends StepState
+    case object Paused extends StepState {
+      override val canRunFrom = true
+    }
 
     implicit val equal: Equal[StepState] = Equal.equalA[StepState]
   }
@@ -88,6 +96,7 @@ object Model {
     case object Completed         extends SequenceState
     case object Running           extends SequenceState
     case object Idle              extends SequenceState
+    case object Paused            extends SequenceState
     case class Error(msg: String) extends SequenceState
 
     implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
@@ -126,6 +135,16 @@ object Model {
      * TODO Convert to an Instrument-level typeclass
      */
     def allowedSequenceOperations: List[SequenceOperations] = Nil
+
+    def nextStepToRun: Option[Int] =
+      steps match {
+        case x if x.forall(_.status == StepState.Pending)   => Some(0) // No steps have been executed, start at 0
+        case x if x.forall(_.status == StepState.Completed) => None // All steps have been executed
+        case x if x.exists(_.status == StepState.Paused)    => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1).map(_ + 1)
+        case x                                              => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1)
+      }
+
+    def isPartiallyExecuted: Boolean = steps.exists(_.status == StepState.Completed)
   }
 
   /**

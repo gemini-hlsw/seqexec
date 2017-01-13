@@ -17,6 +17,7 @@ trait ModelBooPicklers {
     .addConcreteType[SequenceState.Completed.type]
     .addConcreteType[SequenceState.Running.type]
     .addConcreteType[SequenceState.Error]
+    .addConcreteType[SequenceState.Paused.type]
     .addConcreteType[SequenceState.Idle.type]
 
   implicit val actionStatusPickler = compositePickler[ActionStatus]
