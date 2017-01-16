@@ -248,7 +248,8 @@ object SequenceStepsTableContainer {
                   "negative" -> (step.status === StepState.Paused),
                   // TODO Show error case
                   //"negative" -> (step.status == StepState.Error),
-                  "active"   -> (step.status === StepState.Skipped)
+                  "active"   -> (step.status === StepState.Skipped),
+                  "disabled" -> step.skip
                 ),
                 step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                 <.td(
