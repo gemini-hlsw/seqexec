@@ -240,47 +240,56 @@ object SequenceStepsTableContainer {
           SeqexecStyles.stepsListBody,
           p.s.steps.zipWithIndex.map {
             case (step, i) =>
-              <.tr(
-                // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
-                ^.classSet(
-                  "positive" -> (step.status === StepState.Completed),
-                  "warning"  -> (step.status === StepState.Running),
-                  "negative" -> (step.status === StepState.Paused),
-                  // TODO Show error case
-                  //"negative" -> (step.status == StepState.Error),
-                  "active"   -> (step.status === StepState.Skipped),
-                  "disabled" -> step.skip
+              List(
+                <.tr(
+                  SeqexecStyles.breakpointTrOn,
+                  <.td(
+                    SeqexecStyles.tdNoPadding,
+                    ^.colSpan := 6
+                  )
                 ),
-                step.status == StepState.Running ?= SeqexecStyles.stepRunning,
-                <.td(
-                  ^.onClick --> markAsSkipped(p.s, step),
-                  step.skip ?= IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-                ),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  step.status match {
-                    case StepState.Completed       => IconCheckmark
-                    case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
-                    case StepState.Paused          => IconPause
-                    case StepState.Error(_)        => IconAttention
-                    case _ if i == s.nextStepToRun => IconChevronRight
-                    case _                         => iconEmpty
-                  }
-                ),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  i + 1),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  ^.cls := "middle aligned",
-                  stepDisplay(p, step)),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  ^.cls := "middle aligned",
-                  stepProgress(step)),
-                <.td(
-                  ^.cls := "collapsing right aligned",
-                  IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                <.tr(
+                  // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
+                  ^.classSet(
+                    "positive" -> (step.status === StepState.Completed),
+                    "warning"  -> (step.status === StepState.Running),
+                    "negative" -> (step.status === StepState.Paused),
+                    // TODO Show error case
+                    //"negative" -> (step.status == StepState.Error),
+                    "active"   -> (step.status === StepState.Skipped),
+                    "disabled" -> step.skip
+                  ),
+                  step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                  <.td(
+                    ^.onClick --> markAsSkipped(p.s, step),
+                    step.skip ?= IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+                  ),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    step.status match {
+                      case StepState.Completed       => IconCheckmark
+                      case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
+                      case StepState.Paused          => IconPause
+                      case StepState.Error(_)        => IconAttention
+                      case _ if i == s.nextStepToRun => IconChevronRight
+                      case _                         => iconEmpty
+                    }
+                  ),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    i + 1),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    ^.cls := "middle aligned",
+                    stepDisplay(p, step)),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    ^.cls := "middle aligned",
+                    stepProgress(step)),
+                  <.td(
+                    ^.cls := "collapsing right aligned",
+                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                  )
                 )
               )
           }

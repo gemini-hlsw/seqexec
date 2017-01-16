@@ -126,4 +126,15 @@ object SeqexecStyles extends StyleSheet.Inline {
     fontSize.smaller
   )
 
+  val breakpointTrOff = style(
+    maxHeight(0.px),
+    overflow.hidden
+  )
+
+  val breakpointTrOn = style(
+    height(3.px),
+    backgroundColor(brown),
+    border(2.px, red)
+  )
+
 }
