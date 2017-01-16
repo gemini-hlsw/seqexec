@@ -32,7 +32,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with CaseInsensitiveStringSyntax {
   val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
-  val engine = SeqexecEngine(Settings("", LocalDate.now(), "", dhsSim = true, tcsSim = true, instSim = true, gcalSim = true))
+  val engine = SeqexecEngine(Settings("", LocalDate.now(), "", dhsSim = true, tcsSim = true, instSim = true, gcalSim = true, instForceError = false))
   val authService = AuthenticationService(config)
   val inq: Queue[Event] = async.boundedQueue[Event](10)
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()
