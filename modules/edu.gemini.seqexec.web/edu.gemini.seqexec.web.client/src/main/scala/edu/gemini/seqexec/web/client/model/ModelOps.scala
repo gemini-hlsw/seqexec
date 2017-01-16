@@ -41,6 +41,11 @@ object ModelOps {
       case st: StandardStep if st == step => st.copy(skip = !st.skip)
       case st               => st
     })
+
+    def flipBreakpaintAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
+      case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
+      case st               => st
+    })
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {

@@ -126,15 +126,43 @@ object SeqexecStyles extends StyleSheet.Inline {
     fontSize.smaller
   )
 
-  val breakpointTrOff = style(
-    maxHeight(0.px),
-    overflow.hidden
+  val breakpointIcon = style(
+    visibility.hidden
   )
 
   val breakpointTrOn = style(
     height(3.px),
     backgroundColor(brown),
-    border(2.px, red)
+    &.hover(
+      unsafeChild("." + breakpointIcon.className.value)(
+        visibility.visible
+      )
+    )
   )
 
+  val breakpointTrOff = style(
+    height(1.px),
+    backgroundColor(lightgray),
+    &.hover(
+      unsafeChild("." + breakpointIcon.className.value)(
+        visibility.visible
+      )
+    )
+  )
+
+  val breakpointHandleContainer = style(
+    position.relative,
+    left(-17.px),
+    top(-9.px),
+    height(0.px),
+    overflow.visible
+  )
+
+  val stepsTable = style(
+    paddingLeft(16.px)
+    //backgroundClip
+    /*backgroundColor(rgb(249, 250, 251)),
+    background-image:linear-gradient(to bottom, rgba(240, 255, 40, 0) 0%, rgba(240, 255, 40, 0) 100%), linear-gradient(to bottom, rgba(240, 0, 255, 1) 0%, rgba(240, 0, 255, 1) 100%);
+    backgroundClip.content-box, padding-box;*/
+  )
 }

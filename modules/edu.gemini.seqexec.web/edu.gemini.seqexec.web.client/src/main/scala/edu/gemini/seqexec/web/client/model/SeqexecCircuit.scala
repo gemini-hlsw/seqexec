@@ -83,6 +83,12 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
         case s if s == sequence => sequence.flipStep(step)
         case s                  => s
       }))
+
+    case FlipBreakpointStep(sequence, step) =>
+      updated(value.copy(queue = value.queue.collect {
+        case s if s == sequence => sequence.flipBreakpaintAtStep(step)
+        case s                  => s
+      }))
   }
 }
 

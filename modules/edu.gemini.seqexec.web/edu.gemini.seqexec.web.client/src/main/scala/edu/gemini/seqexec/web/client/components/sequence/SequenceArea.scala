@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight, IconSettings, IconReply}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconMinusSquare, IconMinusSquareOutline}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
@@ -205,9 +206,13 @@ object SequenceStepsTableContainer {
     def markAsSkipped(view: SequenceView, step: Step): Callback =
       Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
 
+    def breakpointAt(view: SequenceView, step: Step): Callback =
+      Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(view, step)) }
+
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
+        SeqexecStyles.stepsTable,
         <.thead(
           <.tr(
             <.th(
@@ -242,10 +247,18 @@ object SequenceStepsTableContainer {
             case (step, i) =>
               List(
                 <.tr(
-                  SeqexecStyles.breakpointTrOn,
+                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   <.td(
                     SeqexecStyles.tdNoPadding,
-                    ^.colSpan := 6
+                    ^.colSpan := 6,
+                    <.div(
+                      SeqexecStyles.breakpointHandleContainer,
+                      if (step.breakpoint) {
+                        Icon.IconMinusSquareOutline.copyIcon(extraStyles = List(SeqexecStyles.breakpointIcon), onClick = breakpointAt(p.s, step))
+                      } else {
+                        Icon.IconMinusSquare.copyIcon(extraStyles = List(SeqexecStyles.breakpointIcon), onClick = breakpointAt(p.s, step))
+                      }
+                    )
                   )
                 ),
                 <.tr(
