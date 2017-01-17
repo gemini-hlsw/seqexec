@@ -12,6 +12,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRig
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight, IconSettings, IconReply}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconMinusSquare, IconMinusSquareOutline}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconToggleOn, IconToggleOff}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
@@ -198,7 +199,9 @@ object SequenceStepsTableContainer {
     def stepDisplay(p: Props, step: Step): ReactNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
+        case StepState.Completed                  => <.p(step.status.shows)
         // TODO Remove the 2 conditions below when supported by the engine
+        case s if step.breakpoint && step.skip   => <.p("Skipped/Breakpoint")
         case s if step.breakpoint                 => <.p("Breakpoint")
         case s if step.skip                       => <.p("Skipped")
         case _                                    => <.p(step.status.shows)
@@ -264,9 +267,9 @@ object SequenceStepsTableContainer {
                       ^.onMouseOut  --> mouseLeave(i),
                       SeqexecStyles.breakpointHandleContainer,
                       if (step.breakpoint) {
-                        Icon.IconMinusSquareOutline.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
                       } else {
-                        Icon.IconMinusSquare.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquare.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
                       }
                     ),
                     <.div(
@@ -274,9 +277,9 @@ object SequenceStepsTableContainer {
                       ^.onMouseOut  --> mouseLeave(i),
                       SeqexecStyles.skipHandleContainer,
                       if (step.skip) {
-                        IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                        IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
                       } else {
-                        IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                        IconToggleOn.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
                       }
                     )
                   )
@@ -303,6 +306,7 @@ object SequenceStepsTableContainer {
                       case StepState.Paused          => IconPause
                       case StepState.Error(_)        => IconAttention
                       case _ if i == s.nextStepToRun => IconChevronRight
+                      case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
                       case _                         => iconEmpty
                     }
                   ),

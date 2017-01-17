@@ -168,7 +168,7 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val skipHandleContainer = style(
     position.relative,
-    left(-17.px),
+    left(-19.px),
     top(10.px),
     height(0.px),
     overflow.visible,
@@ -180,10 +180,10 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val stepsTable = style(
-    paddingLeft(16.px)
-    //backgroundClip
-    /*backgroundColor(rgb(249, 250, 251)),
-    background-image:linear-gradient(to bottom, rgba(240, 255, 40, 0) 0%, rgba(240, 255, 40, 0) 100%), linear-gradient(to bottom, rgba(240, 0, 255, 1) 0%, rgba(240, 0, 255, 1) 100%);
-    backgroundClip.content-box, padding-box;*/
+    paddingLeft(16.px),
+    // CSS Dark magic to get the gutter background, see
+    // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
+    (backgroundImage := "linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) 17px)").important,
+    (backgroundClip := "content-box, padding-box").important
   )
 }
