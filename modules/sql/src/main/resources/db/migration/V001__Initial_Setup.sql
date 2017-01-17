@@ -659,6 +659,7 @@ ALTER TABLE step_f2 OWNER TO postgres;
 
 CREATE TABLE gcal (
     gcal_id       SERIAL       PRIMARY KEY,
+    step_id       integer                             REFERENCES step             ON DELETE CASCADE,
     continuum     identifier                          REFERENCES e_gcal_continuum ON DELETE CASCADE,
     ar_arc        boolean      NOT NULL DEFAULT FALSE,
     cuar_arc      boolean      NOT NULL DEFAULT FALSE,

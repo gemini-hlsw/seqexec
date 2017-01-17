@@ -52,7 +52,7 @@ object SmartGcalDao {
       """.update.run
 
     for {
-      id <- GcalDao.insert(g)
+      id <- GcalDao.insert(g, None)
       r  <-
         k match {
           case f2: F2SmartGcalKey => insertSmartF2(id, f2)

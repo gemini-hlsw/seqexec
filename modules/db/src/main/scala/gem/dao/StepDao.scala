@@ -73,7 +73,7 @@ object StepDao {
       """.update.run
 
     for {
-      gcal_id <- GcalDao.insert(gcal)
+      gcal_id <- GcalDao.insert(gcal, Some(id))
       r       <- insertGcalStep(gcal_id)
     } yield r
   }
@@ -328,68 +328,20 @@ object StepDao {
     * @param oid observation whose step should be deleted
     * @param loc location of the step to delete
     */
-  def delete(oid: Observation.Id, loc: Loc): ConnectionIO[Int] = {
-    // Cascading delete takes care of the subtype steps like step_bias,
-    // step_dark, etc., but will leave a step_gcal's calibration configuration
-    // in the gcal table.  That means we have to explicitly remove the gcal
-    // configuration if we're deleting a gcal step.
-
-    val sel: ConnectionIO[(Int, StepType)] =
-      sql"""
-        SELECT step_id,
-               step_type
-          FROM step
-         WHERE observation_id = $oid AND location = $loc
-      """.query[(Int, StepType)].unique
-
-    def delGcal(id: Int, t: StepType): ConnectionIO[Int] =
-      t match {
-        case StepType.Gcal =>
-          for {
-            gid <- sql"""SELECT gcal_id FROM step_gcal WHERE step_gcal_id = $id""".query[Int].unique
-            res <- sql"""DELETE FROM gcal WHERE gcal_id = $gid""".update.run
-          } yield res
-
-        case _    =>
-          1.point[ConnectionIO]
-      }
-
-    for {
-      tup <- sel
-      (id, ty) = tup
-      _   <- delGcal(id, ty)
-      res <- sql"""DELETE FROM step WHERE observation_id = $oid AND location = $loc""".update.run
-    } yield res
-  }
+  def delete(oid: Observation.Id, loc: Loc): ConnectionIO[Int] =
+    sql"""
+      DELETE FROM step
+            WHERE observation_id = $oid
+              AND location       = $loc
+    """.update.run
 
   /** Deletes all steps for the given observation, if any.
     *
     * @param oid observation whose steps should be deleted
     */
-  def delete(oid: Observation.Id): ConnectionIO[Unit] = {
-    // Cascading delete takes care of the subtype steps like step_bias,
-    // step_dark, etc., but will leave a step_gcal's calibration configuration
-    // in the gcal table.  That means we have to explicitly remove the gcal
-    // configuration if we're deleting a gcal step.
-
-    val delGcal =
-      sql"""
-        DELETE FROM gcal g
-              USING step_gcal sg, step s
-              WHERE s.observation_id = $oid
-                AND s.step_id        = sg.step_gcal_id
-                AND sg.gcal_id       = g.gcal_id
-      """.update.run
-
-    val delSteps =
-      sql"""
-        DELETE FROM step
-              WHERE observation_id = $oid
-      """.update.run
-
-    for {
-      _ <- delGcal
-      _ <- delSteps
-    } yield ()
-  }
+  def delete(oid: Observation.Id): ConnectionIO[Int] =
+    sql"""
+      DELETE FROM step
+            WHERE observation_id = $oid
+    """.update.run
 }
