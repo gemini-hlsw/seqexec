@@ -198,6 +198,9 @@ object SequenceStepsTableContainer {
     def stepDisplay(p: Props, step: Step): ReactNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
+        // TODO Remove the 2 conditions below when supported by the engine
+        case s if step.breakpoint                 => <.p("Breakpoint")
+        case s if step.skip                       => <.p("Skipped")
         case _                                    => <.p(step.status.shows)
       }
 
