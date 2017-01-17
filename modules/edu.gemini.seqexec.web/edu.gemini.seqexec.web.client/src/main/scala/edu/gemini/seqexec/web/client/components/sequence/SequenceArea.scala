@@ -255,6 +255,8 @@ object SequenceStepsTableContainer {
               List(
                 <.tr(
                   if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                  ^.onMouseOver --> mouseEnter(i),
+                  ^.onMouseOut  --> mouseLeave(i),
                   <.td(
                     SeqexecStyles.tdNoPadding,
                     ^.colSpan := 6,

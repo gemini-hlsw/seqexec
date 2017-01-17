@@ -152,13 +152,18 @@ object SeqexecStyles extends StyleSheet.Inline {
       )
     )*/
   )
-  
+
   val breakpointHandleContainer = style(
     position.relative,
     left(-17.px),
     top(-9.px),
     height(0.px),
-    overflow.visible
+    overflow.visible,
+    &.hover(
+      unsafeChild("." + breakpointIconHidden.className.value)(
+        visibility.visible
+      )
+    )
   )
 
   val stepsTable = style(
