@@ -126,30 +126,33 @@ object SeqexecStyles extends StyleSheet.Inline {
     fontSize.smaller
   )
 
-  val breakpointIcon = style(
+  val breakpointIconVisible = style(
+    visibility.visible
+  )
+  val breakpointIconHidden = style(
     visibility.hidden
   )
 
   val breakpointTrOn = style(
     height(3.px),
-    backgroundColor(brown),
+    backgroundColor(brown)/*,
     &.hover(
       unsafeChild("." + breakpointIcon.className.value)(
         visibility.visible
       )
-    )
+    )*/
   )
 
   val breakpointTrOff = style(
     height(1.px),
-    backgroundColor(lightgray),
+    backgroundColor(lightgray)/*,
     &.hover(
       unsafeChild("." + breakpointIcon.className.value)(
         visibility.visible
       )
-    )
+    )*/
   )
-
+  
   val breakpointHandleContainer = style(
     position.relative,
     left(-17.px),

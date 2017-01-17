@@ -34,6 +34,7 @@ object SequenceStepsTableContainer {
                    pauseRequested : Boolean,
                    nextScrollPos  : Double,
                    nextStepToRun  : Int,
+                   onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
@@ -203,6 +204,12 @@ object SequenceStepsTableContainer {
     def selectRow(step: Step, index: Int): Callback =
       Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
 
+    def mouseEnter(index: Int): Callback =
+      $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
+
+    def mouseLeave(index: Int): Callback =
+      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
+
     def markAsSkipped(view: SequenceView, step: Step): Callback =
       Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
 
@@ -253,15 +260,19 @@ object SequenceStepsTableContainer {
                     ^.colSpan := 6,
                     <.div(
                       SeqexecStyles.breakpointHandleContainer,
+
                       if (step.breakpoint) {
-                        Icon.IconMinusSquareOutline.copyIcon(extraStyles = List(SeqexecStyles.breakpointIcon), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquareOutline.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.breakpointIconVisible else SeqexecStyles.breakpointIconHidden), onClick = breakpointAt(p.s, step))
                       } else {
-                        Icon.IconMinusSquare.copyIcon(extraStyles = List(SeqexecStyles.breakpointIcon), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquare.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.breakpointIconVisible else SeqexecStyles.breakpointIconHidden), onClick = breakpointAt(p.s, step))
                       }
+
                     )
                   )
                 ),
                 <.tr(
+                  ^.onMouseOver --> mouseEnter(i),
+                  ^.onMouseOut  --> mouseLeave(i),
                   // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                   ^.classSet(
                     "positive" -> (step.status === StepState.Completed),
@@ -340,7 +351,7 @@ object SequenceStepsTableContainer {
   val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, autoScrolled = false))
+    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
