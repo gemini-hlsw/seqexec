@@ -228,10 +228,6 @@ object SequenceStepsTableContainer {
             ),
             <.th(
               ^.cls := "collapsing",
-              iconEmpty
-            ),
-            <.th(
-              ^.cls := "collapsing",
               "Step"
             ),
             <.th(
@@ -259,7 +255,7 @@ object SequenceStepsTableContainer {
                   ^.onMouseOut  --> mouseLeave(i),
                   <.td(
                     SeqexecStyles.tdNoPadding,
-                    ^.colSpan := 6,
+                    ^.colSpan := 5,
                     <.div(
                       ^.onMouseOver --> mouseEnter(i),
                       ^.onMouseOut  --> mouseLeave(i),
@@ -296,10 +292,6 @@ object SequenceStepsTableContainer {
                     "disabled" -> step.skip
                   ),
                   step.status == StepState.Running ?= SeqexecStyles.stepRunning,
-                  <.td(
-                    ^.onClick --> markAsSkipped(p.s, step),
-                    step.skip ?= IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-                  ),
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
