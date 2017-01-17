@@ -201,7 +201,7 @@ object SequenceStepsTableContainer {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
         // TODO Remove the 2 conditions below when supported by the engine
-        case s if step.breakpoint && step.skip   => <.p("Skipped/Breakpoint")
+        case s if step.breakpoint && step.skip    => <.p("Skipped/Breakpoint")
         case s if step.breakpoint                 => <.p("Breakpoint")
         case s if step.skip                       => <.p("Skipped")
         case _                                    => <.p(step.status.shows)
@@ -211,10 +211,10 @@ object SequenceStepsTableContainer {
       Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
 
     def mouseEnter(index: Int): Callback =
-      $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
+      $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index))) >> Callback.log("enter")))
 
     def mouseLeave(index: Int): Callback =
-      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
+      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None)) >> Callback.log("Leave")))
 
     def markAsSkipped(view: SequenceView, step: Step): Callback =
       Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
@@ -224,6 +224,8 @@ object SequenceStepsTableContainer {
 
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
+          ^.onMouseOver --> Callback.log("Body over,"),
+          ^.onMouseOut --> Callback.log("Body leaveover,"),
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         <.thead(
@@ -263,8 +265,8 @@ object SequenceStepsTableContainer {
                     SeqexecStyles.tdNoPadding,
                     ^.colSpan := 5,
                     <.div(
-                      ^.onMouseOver --> mouseEnter(i),
-                      ^.onMouseOut  --> mouseLeave(i),
+                  ^.onMouseOver --> mouseEnter(i),
+                  ^.onMouseOut  --> mouseLeave(i),
                       SeqexecStyles.breakpointHandleContainer,
                       if (step.breakpoint) {
                         Icon.IconMinusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
@@ -273,8 +275,8 @@ object SequenceStepsTableContainer {
                       }
                     ),
                     <.div(
-                      ^.onMouseOver --> mouseEnter(i),
-                      ^.onMouseOut  --> mouseLeave(i),
+                  ^.onMouseOver --> mouseEnter(i),
+                  ^.onMouseOut  --> mouseLeave(i),
                       SeqexecStyles.skipHandleContainer,
                       if (step.skip) {
                         IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))

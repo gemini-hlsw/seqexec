@@ -127,30 +127,38 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val gutterIconVisible = style(
-    visibility.visible
+    visibility.visible,
+    border(1.px, red)
   )
   val gutterIconHidden = style(
-    visibility.hidden
+    visibility.hidden,
+    border(1.px, red)
   )
+
+  val r = style(unsafeRoot("tr")(
+    unsafeChild(".SeqexecStyles-breakpointTrOff") {
+    &.hover(
+      backgroundColor(yellow)
+  )}))
 
   val breakpointTrOn = style(
     height(3.px),
-    backgroundColor(brown)/*,
+    backgroundColor(brown),
     &.hover(
-      unsafeChild("." + breakpointIcon.className.value)(
+      unsafeChild("." + gutterIconHidden.className.value)(
         visibility.visible
       )
-    )*/
+    )
   )
 
   val breakpointTrOff = style(
     height(1.px),
-    backgroundColor(lightgray)/*,
+    backgroundColor(lightgray),
     &.hover(
-      unsafeChild("." + breakpointIcon.className.value)(
+      unsafeChild("." + gutterIconHidden.className.value)(
         visibility.visible
       )
-    )*/
+    )
   )
 
   val breakpointHandleContainer = style(
@@ -169,7 +177,7 @@ object SeqexecStyles extends StyleSheet.Inline {
   val skipHandleContainer = style(
     position.relative,
     left(-19.px),
-    top(10.px),
+    top(9.px),
     height(0.px),
     overflow.visible,
     &.hover(
