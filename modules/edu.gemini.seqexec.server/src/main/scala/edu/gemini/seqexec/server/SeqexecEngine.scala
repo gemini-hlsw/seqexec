@@ -26,7 +26,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   val systems = SeqTranslate.Systems(
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
-    if (settings.instSim) Flamingos2ControllerSim else Flamingos2ControllerEpics
+    if (settings.instSim) {
+      if (settings.instForceError) Flamingos2ControllerSimBad
+      else Flamingos2ControllerSim
+    } else Flamingos2ControllerEpics
   )
 
   // TODO: Add seqId: SPObservationID as parameter
@@ -138,7 +141,8 @@ object SeqexecEngine {
                       dhsSim: Boolean,
                       tcsSim: Boolean,
                       instSim: Boolean,
-                      gcalSim: Boolean)
+                      gcalSim: Boolean,
+                      instForceError: Boolean)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
@@ -149,6 +153,7 @@ object SeqexecEngine {
       val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+      val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
@@ -171,7 +176,7 @@ object SeqexecEngine {
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings(odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim) )
+        } yield Settings(odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, instForceError) )
 
     }
   }
