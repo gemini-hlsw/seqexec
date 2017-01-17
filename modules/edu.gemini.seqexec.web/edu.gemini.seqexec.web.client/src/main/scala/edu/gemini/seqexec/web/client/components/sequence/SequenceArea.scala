@@ -261,14 +261,24 @@ object SequenceStepsTableContainer {
                     SeqexecStyles.tdNoPadding,
                     ^.colSpan := 6,
                     <.div(
+                      ^.onMouseOver --> mouseEnter(i),
+                      ^.onMouseOut  --> mouseLeave(i),
                       SeqexecStyles.breakpointHandleContainer,
-
                       if (step.breakpoint) {
-                        Icon.IconMinusSquareOutline.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.breakpointIconVisible else SeqexecStyles.breakpointIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquareOutline.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
                       } else {
-                        Icon.IconMinusSquare.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.breakpointIconVisible else SeqexecStyles.breakpointIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquare.copyIcon(extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
                       }
-
+                    ),
+                    <.div(
+                      ^.onMouseOver --> mouseEnter(i),
+                      ^.onMouseOut  --> mouseLeave(i),
+                      SeqexecStyles.skipHandleContainer,
+                      if (step.skip) {
+                        IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      } else {
+                        IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      }
                     )
                   )
                 ),

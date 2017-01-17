@@ -126,10 +126,10 @@ object SeqexecStyles extends StyleSheet.Inline {
     fontSize.smaller
   )
 
-  val breakpointIconVisible = style(
+  val gutterIconVisible = style(
     visibility.visible
   )
-  val breakpointIconHidden = style(
+  val gutterIconHidden = style(
     visibility.hidden
   )
 
@@ -160,7 +160,20 @@ object SeqexecStyles extends StyleSheet.Inline {
     height(0.px),
     overflow.visible,
     &.hover(
-      unsafeChild("." + breakpointIconHidden.className.value)(
+      unsafeChild("." + gutterIconHidden.className.value)(
+        visibility.visible
+      )
+    )
+  )
+
+  val skipHandleContainer = style(
+    position.relative,
+    left(-17.px),
+    top(10.px),
+    height(0.px),
+    overflow.visible,
+    &.hover(
+      unsafeChild("." + gutterIconHidden.className.value)(
         visibility.visible
       )
     )
