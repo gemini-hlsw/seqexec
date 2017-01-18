@@ -142,6 +142,8 @@ object SeqexecStyles extends StyleSheet.Inline {
   val breakpointTrOn = style(
     height(3.px),
     backgroundColor(brown),
+    borderTop.none.important,
+    borderBottom.none,
     &.hover(
       unsafeChild("." + gutterIconHidden.className.value)(
         visibility.visible
@@ -152,6 +154,8 @@ object SeqexecStyles extends StyleSheet.Inline {
   val breakpointTrOff = style(
     height(1.px),
     backgroundColor(lightgray),
+    borderTop.none.important,
+    borderBottom.none,
     &.hover(
       unsafeChild("." + gutterIconHidden.className.value)(
         visibility.visible
@@ -172,6 +176,10 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
+  val trNoBorder = style(
+    borderTop.none.important,
+    borderBottom.none.important
+  )
   val skipHandleContainer = style(
     position.relative,
     left(-11.px),
@@ -188,7 +196,9 @@ object SeqexecStyles extends StyleSheet.Inline {
   val gutterTd = style(
     width(20.px),
     maxWidth(20.px),
-    minWidth(20.px)
+    minWidth(20.px),
+    borderTop.none.important,
+    borderBottom.none.important
   )
 
   val stepsTable = style(

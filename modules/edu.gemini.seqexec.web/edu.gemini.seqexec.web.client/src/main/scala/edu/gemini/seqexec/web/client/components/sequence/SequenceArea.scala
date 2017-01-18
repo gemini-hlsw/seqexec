@@ -260,20 +260,22 @@ object SequenceStepsTableContainer {
             case (step, i) =>
               List(
                 <.tr(
+                  SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
                   ^.onMouseOut  --> mouseLeave(i),
-                  <.td(
-                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                    if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                  /*<.td(
                     SeqexecStyles.tdNoPadding,
                     SeqexecStyles.gutterTd
-                  ),
-                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                  ),*/
+                  //if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   <.td(
                     SeqexecStyles.tdNoPadding,
-                    ^.colSpan := 5
+                    ^.colSpan := 6
                   )
                 ),
                 <.tr(
+                  SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
                   ^.onMouseOut  --> mouseLeave(i),
                   // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
@@ -289,6 +291,7 @@ object SequenceStepsTableContainer {
                   step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                   <.td(
                     SeqexecStyles.gutterTd,
+                    ^.rowSpan := 2,
                     <.div(
                       SeqexecStyles.breakpointHandleContainer,
                       if (step.breakpoint) {
