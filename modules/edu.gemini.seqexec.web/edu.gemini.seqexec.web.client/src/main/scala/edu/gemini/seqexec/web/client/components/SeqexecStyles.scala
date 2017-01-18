@@ -127,12 +127,10 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val gutterIconVisible = style(
-    visibility.visible,
-    border(1.px, red)
+    visibility.visible
   )
   val gutterIconHidden = style(
-    visibility.hidden,
-    border(1.px, red)
+    visibility.hidden
   )
 
   val r = style(unsafeRoot("tr")(
@@ -163,8 +161,8 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val breakpointHandleContainer = style(
     position.relative,
-    left(-17.px),
-    top(-9.px),
+    left(-8.px),
+    top(-28.px),
     height(0.px),
     overflow.visible,
     &.hover(
@@ -176,8 +174,8 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val skipHandleContainer = style(
     position.relative,
-    left(-19.px),
-    top(9.px),
+    left(-11.px),
+    top(-8.px),
     height(0.px),
     overflow.visible,
     &.hover(
@@ -187,8 +185,14 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
+  val gutterTd = style(
+    width(20.px),
+    maxWidth(20.px),
+    minWidth(20.px)
+  )
+
   val stepsTable = style(
-    paddingLeft(16.px),
+    //paddingLeft(16.px),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := "linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) 17px)").important,

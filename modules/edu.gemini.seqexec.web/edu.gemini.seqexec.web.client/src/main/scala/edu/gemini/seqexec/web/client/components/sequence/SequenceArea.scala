@@ -224,15 +224,17 @@ object SequenceStepsTableContainer {
 
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
-          ^.onMouseOver --> Callback.log("Body over,"),
-          ^.onMouseOut --> Callback.log("Body leaveover,"),
+        //  ^.onMouseOver --> Callback.log("Body over,"),
+         // ^.onMouseOut --> Callback.log("Body leaveover,"),
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         <.thead(
           <.tr(
             <.th(
               ^.cls := "collapsing",
-              IconSettings
+              //SeqexecStyles.gutterTd,
+              IconSettings,
+              ^.colSpan := 2
             ),
             <.th(
               ^.cls := "collapsing",
@@ -258,32 +260,17 @@ object SequenceStepsTableContainer {
             case (step, i) =>
               List(
                 <.tr(
-                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   ^.onMouseOver --> mouseEnter(i),
                   ^.onMouseOut  --> mouseLeave(i),
                   <.td(
+                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                     SeqexecStyles.tdNoPadding,
-                    ^.colSpan := 5,
-                    <.div(
-                  ^.onMouseOver --> mouseEnter(i),
-                  ^.onMouseOut  --> mouseLeave(i),
-                      SeqexecStyles.breakpointHandleContainer,
-                      if (step.breakpoint) {
-                        Icon.IconMinusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
-                      } else {
-                        Icon.IconMinusSquare.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
-                      }
-                    ),
-                    <.div(
-                  ^.onMouseOver --> mouseEnter(i),
-                  ^.onMouseOut  --> mouseLeave(i),
-                      SeqexecStyles.skipHandleContainer,
-                      if (step.skip) {
-                        IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
-                      } else {
-                        IconToggleOn.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
-                      }
-                    )
+                    SeqexecStyles.gutterTd
+                  ),
+                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                  <.td(
+                    SeqexecStyles.tdNoPadding,
+                    ^.colSpan := 5
                   )
                 ),
                 <.tr(
@@ -300,6 +287,25 @@ object SequenceStepsTableContainer {
                     "disabled" -> step.skip
                   ),
                   step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                  <.td(
+                    SeqexecStyles.gutterTd,
+                    <.div(
+                      SeqexecStyles.breakpointHandleContainer,
+                      if (step.breakpoint) {
+                        Icon.IconMinusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                      } else {
+                        Icon.IconMinusSquare.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                      }
+                    ),
+                    <.div(
+                      SeqexecStyles.skipHandleContainer,
+                      if (step.skip) {
+                        IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      } else {
+                        IconToggleOn.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      }
+                    )
+                  ),
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
