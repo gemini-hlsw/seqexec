@@ -211,10 +211,10 @@ object SequenceStepsTableContainer {
       Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
 
     def mouseEnter(index: Int): Callback =
-      $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index))) >> Callback.log("enter")))
+      $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
 
     def mouseLeave(index: Int): Callback =
-      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None)) >> Callback.log("Leave")))
+      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
 
     def markAsSkipped(view: SequenceView, step: Step): Callback =
       Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
@@ -224,15 +224,12 @@ object SequenceStepsTableContainer {
 
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
-        //  ^.onMouseOver --> Callback.log("Body over,"),
-         // ^.onMouseOut --> Callback.log("Body leaveover,"),
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         <.thead(
           <.tr(
             <.th(
               ^.cls := "collapsing",
-              //SeqexecStyles.gutterTd,
               IconSettings,
               ^.colSpan := 2
             ),
@@ -264,11 +261,6 @@ object SequenceStepsTableContainer {
                   ^.onMouseOver --> mouseEnter(i),
                   ^.onMouseOut  --> mouseLeave(i),
                     if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
-                  /*<.td(
-                    SeqexecStyles.tdNoPadding,
-                    SeqexecStyles.gutterTd
-                  ),*/
-                  //if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   <.td(
                     SeqexecStyles.tdNoPadding,
                     ^.colSpan := 6
@@ -291,13 +283,14 @@ object SequenceStepsTableContainer {
                   step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                   <.td(
                     SeqexecStyles.gutterTd,
+                    SeqexecStyles.tdNoPadding,
                     ^.rowSpan := 2,
                     <.div(
                       SeqexecStyles.breakpointHandleContainer,
                       if (step.breakpoint) {
-                        Icon.IconMinusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquareOutline.copyIcon(link = true, color = Some("brown"), extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
                       } else {
-                        Icon.IconMinusSquare.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinusSquare.copyIcon(link = true, color = Some("brown"), extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
                       }
                     ),
                     <.div(

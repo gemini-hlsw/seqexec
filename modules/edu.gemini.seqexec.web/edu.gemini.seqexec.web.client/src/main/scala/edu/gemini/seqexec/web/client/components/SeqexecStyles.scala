@@ -165,7 +165,7 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val breakpointHandleContainer = style(
     position.relative,
-    left(-8.px),
+    left(2.px),
     top(-28.px),
     height(0.px),
     overflow.visible,
@@ -182,7 +182,7 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
   val skipHandleContainer = style(
     position.relative,
-    left(-11.px),
+    left(0.px),
     top(-8.px),
     height(0.px),
     overflow.visible,
