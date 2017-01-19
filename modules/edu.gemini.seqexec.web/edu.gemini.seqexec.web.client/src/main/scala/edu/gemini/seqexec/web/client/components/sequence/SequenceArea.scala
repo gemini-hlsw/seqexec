@@ -10,7 +10,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.message.{IconMessage, CloseableMessage}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -193,11 +193,31 @@ object SequenceStepsTableContainer {
           )
         )
 
+    def stepInError(loggedIn: Boolean, msg: String): ReactNode =
+        <.div(
+          <.p(s"Error: $msg"),
+          loggedIn ?=
+            IconMessage(
+              IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
+              <.div(
+                ^.cls := "ui two column grid",
+                  <.div(
+                    ^.cls := "left floated column",
+                  <.p(s"Msg: $msg")
+                ),
+                  <.div(
+                    ^.cls := "column right aligned floated",
+                    Button(Button.Props(size = Size.Small), "Ack")
+                  )
+                )
+              )
+        )
 
     def stepDisplay(p: Props, step: Step): ReactNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
+        case StepState.Error(msg)                  => stepInError(p.status.isLogged, msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)
@@ -256,6 +276,10 @@ object SequenceStepsTableContainer {
           SeqexecStyles.stepsListBody,
           p.s.steps.zipWithIndex.map {
             case (step, i) =>
+              val stepInError = step.status match {
+                case StepState.Error(_) => true
+                case _                  => false
+              }
               List(
                 <.tr(
                   SeqexecStyles.trNoBorder,
@@ -298,11 +322,34 @@ object SequenceStepsTableContainer {
                     "warning"  -> (step.status === StepState.Running),
                     "negative" -> (step.status === StepState.Paused),
                     // TODO Show error case
-                    //"negative" -> (step.status == StepState.Error),
+                    "negative" -> stepInError,
                     "active"   -> (step.status === StepState.Skipped),
                     "disabled" -> step.skip
                   ),
                   step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                  <.td(
+                    SeqexecStyles.gutterTd,
+                    SeqexecStyles.tdNoPadding,
+                    ^.rowSpan := 2,
+                    <.div(
+                      SeqexecStyles.breakpointHandleContainer,
+                      step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
+                      if (step.breakpoint) {
+                        Icon.IconSquare.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
+                      } else {
+                        Icon.IconStopCircle.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
+                      }
+                    ),
+                    <.div(
+                      SeqexecStyles.skipHandleContainer,
+                      if (stepInError) SeqexecStyles.handleContainerOff else SeqexecStyles.handleContainerOn,
+                      if (step.skip) {
+                        IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      } else {
+                        IconToggleOn.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      }
+                    )
+                  ),
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {

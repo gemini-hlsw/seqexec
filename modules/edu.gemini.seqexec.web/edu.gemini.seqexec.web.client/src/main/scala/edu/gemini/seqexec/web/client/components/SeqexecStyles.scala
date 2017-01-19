@@ -91,9 +91,16 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.inline
   }
 
-  val scrollPaneSegment: StyleA = style("ui.scroll.pane.segment")(
-    padding(0.px),
-    marginTop(0.px),
+  val noPadding = mixin(
+    padding(0.px).important
+  )
+
+  val noMargin = mixin(
+    margin(0.px)
+  )
+
+  val scrollPaneSegment = style("ui.scroll.pane.segment")(
+    noPadding,
     unsafeChild("> .ui.table")(
       border(0.px),
       borderSpacing(0.px)
@@ -104,8 +111,8 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.none
   )
 
-  val tdNoPadding: StyleA = style(
-    padding(0.px).important
+  val tdNoPadding = style(
+    noPadding
   )
 
   val progressVCentered: StyleA = style("ui.progress.vcentered")(
@@ -117,7 +124,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     backgroundColor(rgba(0, 0, 0, 0.0)).important,
     color.inherit,
     padding(0.em),
-    margin(0.px),
+    noMargin,
     (boxShadow := ("none")).important
   )
 
@@ -189,7 +196,14 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderBottom.none.important
   )
 
-  val skipHandleContainer: StyleA = style(
+  val handleContainerOff = style(
+    display.none
+  )
+
+  val handleContainerOn = style(
+  )
+
+  val skipHandleContainer = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
     top(-12.px),
