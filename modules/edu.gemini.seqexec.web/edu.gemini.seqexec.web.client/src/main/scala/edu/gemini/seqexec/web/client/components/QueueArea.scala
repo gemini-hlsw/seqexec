@@ -52,11 +52,15 @@ object QueueTableBody {
         // Render after data arrives
         p.sequences().queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
             case (Some(s), i) =>
+              val stepInError = s.status match {
+                case SequenceState.Error(_) => true
+                case _                  => false
+              }
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status == SequenceState.Completed),
-                  "warning"  -> (s.status == SequenceState.Running)//,
-                  //"negative" -> (s.status == SequenceState.Error),
+                  "warning"  -> (s.status == SequenceState.Running),
+                  "negative" -> stepInError
                   //"negative" -> (s.status == SequenceState.Abort)
                 ),
                 ^.key := s"item.queue.$i",
