@@ -276,10 +276,6 @@ object SequenceStepsTableContainer {
           SeqexecStyles.stepsListBody,
           p.s.steps.zipWithIndex.map {
             case (step, i) =>
-              val stepInError = step.status match {
-                case StepState.Error(_) => true
-                case _                  => false
-              }
               List(
                 <.tr(
                   SeqexecStyles.trNoBorder,
@@ -322,7 +318,7 @@ object SequenceStepsTableContainer {
                     "warning"  -> (step.status === StepState.Running),
                     "negative" -> (step.status === StepState.Paused),
                     // TODO Show error case
-                    "negative" -> stepInError,
+                    "negative" -> step.hasError,
                     "active"   -> (step.status === StepState.Skipped),
                     "disabled" -> step.skip
                   ),
@@ -342,7 +338,7 @@ object SequenceStepsTableContainer {
                     ),
                     <.div(
                       SeqexecStyles.skipHandleContainer,
-                      if (stepInError) SeqexecStyles.handleContainerOff else SeqexecStyles.handleContainerOn,
+                      if (step.hasError) SeqexecStyles.handleContainerOff else SeqexecStyles.handleContainerOn,
                       if (step.skip) {
                         IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
                       } else {
