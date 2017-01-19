@@ -2,17 +2,20 @@ package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.model.SequencesOnDisplay
 import edu.gemini.seqexec.web.client.semanticui._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.model.ModelOps._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
+import scalacss.ScalaCssReact._
 
 /**
   * Menu with tabs
   */
 object TabularMenu {
-  case class TabItem(title: String, isActive: Boolean, dataItem: String)
+  case class TabItem(title: String, isActive: Boolean, dataItem: String, hasError: Boolean)
   case class Props(tabs: List[TabItem])
 
-  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument))
+  def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument, a.sequence().map(_.hasError).getOrElse(false)))
 
   val component = ReactComponentB[Props]("TabularMenu")
     .stateless
@@ -23,13 +26,17 @@ object TabularMenu {
           <.a(
             ^.cls := "item",
             ^.classSet(
-              "active" -> t.isActive
+              "active" -> t.isActive,
+              "error"  -> t.hasError
             ),
+            t.hasError ?= SeqexecStyles.errorTab,
             dataTab := t.dataItem,
+            t.hasError ?= IconAttention.copyIcon(color = Some("red")),
             t.title
           )
         )
       )
+
     ).componentDidMount(s =>
       Callback {
         // Enable menu on Semantic UI

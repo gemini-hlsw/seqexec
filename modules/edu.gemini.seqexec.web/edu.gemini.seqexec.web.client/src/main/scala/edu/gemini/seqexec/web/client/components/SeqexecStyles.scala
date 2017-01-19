@@ -115,7 +115,11 @@ object SeqexecStyles extends StyleSheet.Inline {
     noPadding
   )
 
-  val progressVCentered: StyleA = style("ui.progress.vcentered")(
+  val errorTab = style(
+    borderTop(3.px, red, solid).important
+  )
+
+  val progressVCentered = style("ui.progress.vcentered")(
     marginBottom(0.px)
   )
 
