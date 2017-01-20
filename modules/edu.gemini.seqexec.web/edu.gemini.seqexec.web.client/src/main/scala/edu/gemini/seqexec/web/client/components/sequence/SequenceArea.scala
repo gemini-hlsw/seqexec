@@ -201,9 +201,7 @@ object SequenceStepsTableContainer {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
         // TODO Remove the 2 conditions below when supported by the engine
-        case s if step.breakpoint && step.skip    => <.p("Skipped/Breakpoint")
-        case s if step.breakpoint                 => <.p("Breakpoint")
-        case s if step.skip                       => <.p("Skipped")
+        case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)
       }
 
