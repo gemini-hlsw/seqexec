@@ -184,10 +184,11 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderTop.none.important,
     borderBottom.none.important
   )
+
   val skipHandleContainer = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
-    top(-8.px),
+    top(-11.px),
     height(0.px),
     overflow.visible,
     &.hover(
