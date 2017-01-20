@@ -147,24 +147,14 @@ object SeqexecStyles extends StyleSheet.Inline {
     height(3.px),
     backgroundColor(c"#A5673F"), // Match semantic UI brown
     borderTop.none.important,
-    borderBottom.none,
-    &.hover(
-      unsafeChild("." + gutterIconHidden.className.value)(
-        visibility.visible
-      )
-    )
+    borderBottom.none
   )
 
   val breakpointTrOff = style(
     height(1.px),
     backgroundColor(lightgray),
     borderTop.none.important,
-    borderBottom.none,
-    &.hover(
-      unsafeChild("." + gutterIconHidden.className.value)(
-        visibility.visible
-      )
-    )
+    borderBottom.none
   )
 
   val breakpointHandleContainer = style(
@@ -172,12 +162,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     left(((gutterWidth - iconWidth)/2).px),
     top(-29.px),
     height(0.px),
-    overflow.visible,
-    &.hover(
-      unsafeChild("." + gutterIconHidden.className.value)(
-        visibility.visible
-      )
-    )
+    overflow.visible
   )
 
   val trNoBorder = style(
@@ -188,14 +173,9 @@ object SeqexecStyles extends StyleSheet.Inline {
   val skipHandleContainer = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
-    top(-11.px),
+    top(-12.px),
     height(0.px),
-    overflow.visible,
-    &.hover(
-      unsafeChild("." + gutterIconHidden.className.value)(
-        visibility.visible
-      )
-    )
+    overflow.visible
   )
 
   val gutterTd = style(

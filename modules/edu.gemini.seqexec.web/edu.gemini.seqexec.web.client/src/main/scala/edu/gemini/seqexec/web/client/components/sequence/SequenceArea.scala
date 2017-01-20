@@ -208,7 +208,8 @@ object SequenceStepsTableContainer {
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
 
     def mouseLeave(index: Int): Callback =
-      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
+      Callback.empty
+      //$.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
 
     def markAsSkipped(view: SequenceView, step: Step): Callback =
       Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
@@ -254,7 +255,7 @@ object SequenceStepsTableContainer {
                   SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
                   ^.onMouseOut  --> mouseLeave(i),
-                    if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   <.td(
                     SeqexecStyles.tdNoPadding,
                     ^.colSpan := 6
