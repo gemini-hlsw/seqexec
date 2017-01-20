@@ -46,9 +46,27 @@ object ModelOps {
       case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
       case st               => st
     })
+
+    def hasError: Boolean =
+      s.status match {
+        case SequenceState.Error(_) => true
+        case _                      => false
+      }
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {
     def file: Option[String] = None
+
+    def canSetBreakpoint: Boolean = s.status match {
+      case StepState.Pending | StepState.Skipped | StepState.Paused => true
+      case _ if hasError                                            => true
+      case _                                                        => false
+    }
+
+    def hasError: Boolean =
+      s.status match {
+        case StepState.Error(_) => true
+        case _                  => false
+      }
   }
 }
