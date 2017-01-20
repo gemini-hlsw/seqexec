@@ -227,7 +227,7 @@ object SequenceStepsTableContainer {
         <.thead(
           <.tr(
             <.th(
-              ^.cls := "collapsing",
+              ^.cls := "collapsing center aligned",
               IconSettings,
               ^.colSpan := 2
             ),
