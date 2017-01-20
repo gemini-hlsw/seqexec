@@ -288,9 +288,9 @@ object SequenceStepsTableContainer {
                       SeqexecStyles.breakpointHandleContainer,
                       step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
                       if (step.breakpoint) {
-                        Icon.IconSquare.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
                       } else {
-                        Icon.IconStopCircle.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
+                        Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
                       }
                     ),
                     <.div(
