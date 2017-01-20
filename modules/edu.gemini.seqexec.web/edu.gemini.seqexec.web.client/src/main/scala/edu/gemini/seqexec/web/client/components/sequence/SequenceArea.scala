@@ -208,8 +208,11 @@ object SequenceStepsTableContainer {
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
 
     def mouseLeave(index: Int): Callback =
-      Callback.empty
-      //$.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
+      //Callback.empty
+      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
+
+    def mouseLeave: Callback =
+      $.modState(_.copy(onHover = None))
 
     def markAsSkipped(view: SequenceView, step: Step): Callback =
       Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
@@ -221,6 +224,7 @@ object SequenceStepsTableContainer {
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
+        ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
             <.th(
@@ -254,7 +258,7 @@ object SequenceStepsTableContainer {
                 <.tr(
                   SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
-                  ^.onMouseOut  --> mouseLeave(i),
+                  //^.onMouseOut  --> mouseLeave(i),
                   if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   <.td(
                     SeqexecStyles.tdNoPadding,
@@ -264,7 +268,7 @@ object SequenceStepsTableContainer {
                 <.tr(
                   SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
-                  ^.onMouseOut  --> mouseLeave(i),
+                  //^.onMouseOut  --> mouseLeave(i),
                   // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                   ^.classSet(
                     "positive" -> (step.status === StepState.Completed),
