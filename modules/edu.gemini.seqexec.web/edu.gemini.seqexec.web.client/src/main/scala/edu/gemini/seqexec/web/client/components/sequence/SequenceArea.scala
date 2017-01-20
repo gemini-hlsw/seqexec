@@ -8,11 +8,7 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight, IconSettings, IconReply}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconMinusSquare, IconMinusSquareOutline}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconToggleOn, IconToggleOff}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
@@ -287,9 +283,9 @@ object SequenceStepsTableContainer {
                       SeqexecStyles.breakpointHandleContainer,
                       step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
                       if (step.breakpoint) {
-                        Icon.IconMinusSquareOutline.copyIcon(link = true, color = Some("brown"), extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconSquare.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
                       } else {
-                        Icon.IconMinusSquare.copyIcon(link = true, color = Some("brown"), extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = breakpointAt(p.s, step))
+                        Icon.IconStopCircle.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
                       }
                     ),
                     <.div(

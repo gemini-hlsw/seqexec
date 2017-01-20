@@ -8,6 +8,10 @@ import scalacss.Defaults._
 object SeqexecStyles extends StyleSheet.Inline {
   import dsl._
 
+  val gutterWidth = 25
+  val handleContainerWidth = 28
+  val iconWidth = 16.5
+
   val body = style(unsafeRoot("body")(
     backgroundColor(white)
   ))
@@ -141,7 +145,7 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val breakpointTrOn = style(
     height(3.px),
-    backgroundColor(brown),
+    backgroundColor(c"#A5673F"), // Match semantic UI brown
     borderTop.none.important,
     borderBottom.none,
     &.hover(
@@ -165,8 +169,8 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val breakpointHandleContainer = style(
     position.relative,
-    left(2.px),
-    top(-28.px),
+    left(((gutterWidth - iconWidth)/2).px),
+    top(-29.px),
     height(0.px),
     overflow.visible,
     &.hover(
@@ -182,7 +186,7 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
   val skipHandleContainer = style(
     position.relative,
-    left(0.px),
+    left(((gutterWidth - iconWidth)/2).px),
     top(-8.px),
     height(0.px),
     overflow.visible,
@@ -194,9 +198,9 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val gutterTd = style(
-    width(20.px),
-    maxWidth(20.px),
-    minWidth(20.px),
+    width(gutterWidth.px),
+    maxWidth(gutterWidth.px),
+    minWidth(gutterWidth.px),
     borderTop.none.important,
     borderBottom.none.important
   )
@@ -205,7 +209,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     //paddingLeft(16.px),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
-    (backgroundImage := "linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) 17px)").important,
+    (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
     (backgroundClip := "content-box, padding-box").important
   )
 }
