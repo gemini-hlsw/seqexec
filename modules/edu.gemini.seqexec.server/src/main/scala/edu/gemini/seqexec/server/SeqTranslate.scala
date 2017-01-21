@@ -45,6 +45,7 @@ object SeqTranslate {
       // TODO Find a proper way to inject the subsystems
       Step[Action](
         i,
+        None,
         config.toStepConfig,
         false,
         List(

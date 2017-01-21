@@ -60,6 +60,7 @@ class packageSpec extends FlatSpec {
       List(
         Step(
           1,
+          None,
           config,
           false,
           List(
@@ -69,6 +70,7 @@ class packageSpec extends FlatSpec {
         ),
         Step(
           2,
+          None,
           config,
           false,
           List(
