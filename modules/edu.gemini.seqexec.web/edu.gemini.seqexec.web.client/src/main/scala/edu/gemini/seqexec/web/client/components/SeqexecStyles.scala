@@ -138,14 +138,14 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val breakpointTrOn = style(
-    height(3.px),
+    height(4.px),
     backgroundColor(c"#A5673F"), // Match semantic UI brown
     borderTop.none.important,
     borderBottom.none
   )
 
   val breakpointTrOff = style(
-    height(1.px),
+    height(0.px),
     backgroundColor(lightgray),
     borderTop.none.important,
     borderBottom.none

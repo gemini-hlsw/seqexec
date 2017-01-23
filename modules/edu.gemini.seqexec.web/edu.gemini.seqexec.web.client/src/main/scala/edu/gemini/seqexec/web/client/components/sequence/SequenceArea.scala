@@ -258,26 +258,6 @@ object SequenceStepsTableContainer {
                 <.tr(
                   SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
-                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
-                  <.td(
-                    SeqexecStyles.tdNoPadding,
-                    ^.colSpan := 6
-                  )
-                ),
-                <.tr(
-                  SeqexecStyles.trNoBorder,
-                  ^.onMouseOver --> mouseEnter(i),
-                  // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
-                  ^.classSet(
-                    "positive" -> (step.status === StepState.Completed),
-                    "warning"  -> (step.status === StepState.Running),
-                    "negative" -> (step.status === StepState.Paused),
-                    // TODO Show error case
-                    //"negative" -> (step.status == StepState.Error),
-                    "active"   -> (step.status === StepState.Skipped),
-                    "disabled" -> step.skip
-                  ),
-                  step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                   <.td(
                     SeqexecStyles.gutterTd,
                     SeqexecStyles.tdNoPadding,
@@ -300,6 +280,26 @@ object SequenceStepsTableContainer {
                       }
                     )
                   ),
+                  <.td(
+                  if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                    SeqexecStyles.tdNoPadding,
+                    ^.colSpan := 5
+                  )
+                ),
+                <.tr(
+                  SeqexecStyles.trNoBorder,
+                  ^.onMouseOver --> mouseEnter(i),
+                  // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
+                  ^.classSet(
+                    "positive" -> (step.status === StepState.Completed),
+                    "warning"  -> (step.status === StepState.Running),
+                    "negative" -> (step.status === StepState.Paused),
+                    // TODO Show error case
+                    //"negative" -> (step.status == StepState.Error),
+                    "active"   -> (step.status === StepState.Skipped),
+                    "disabled" -> step.skip
+                  ),
+                  step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
