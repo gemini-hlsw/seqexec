@@ -258,7 +258,6 @@ object SequenceStepsTableContainer {
                 <.tr(
                   SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
-                  //^.onMouseOut  --> mouseLeave(i),
                   if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
                   <.td(
                     SeqexecStyles.tdNoPadding,
@@ -268,7 +267,6 @@ object SequenceStepsTableContainer {
                 <.tr(
                   SeqexecStyles.trNoBorder,
                   ^.onMouseOver --> mouseEnter(i),
-                  //^.onMouseOut  --> mouseLeave(i),
                   // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                   ^.classSet(
                     "positive" -> (step.status === StepState.Completed),

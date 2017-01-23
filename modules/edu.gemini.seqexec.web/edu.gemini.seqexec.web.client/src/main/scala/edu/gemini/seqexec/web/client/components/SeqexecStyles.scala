@@ -137,12 +137,6 @@ object SeqexecStyles extends StyleSheet.Inline {
     visibility.hidden
   )
 
-  val r = style(unsafeRoot("tr")(
-    unsafeChild(".SeqexecStyles-breakpointTrOff") {
-    &.hover(
-      backgroundColor(yellow)
-  )}))
-
   val breakpointTrOn = style(
     height(3.px),
     backgroundColor(c"#A5673F"), // Match semantic UI brown
@@ -184,6 +178,20 @@ object SeqexecStyles extends StyleSheet.Inline {
     minWidth(gutterWidth.px),
     borderTop.none.important,
     borderBottom.none.important
+  )
+
+  // This defines the hover for the gutter
+  //SeqexecStyles-trNoBorder:hover > td:first-child {
+  val gutterHover = style(
+    unsafeRoot("tr." + trNoBorder.htmlClass) (
+      &.hover(
+        unsafeChild("> td")(
+          &.firstChild(
+            backgroundColor(rgba(100, 100, 100, 0.1)).important
+          )
+        )
+      )
+    )
   )
 
   val stepsTable = style(
