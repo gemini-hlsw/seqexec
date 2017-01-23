@@ -91,15 +91,15 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.inline
   }
 
-  val noPadding = mixin(
+  val noPadding: StyleS = mixin(
     padding(0.px).important
   )
 
-  val noMargin = mixin(
+  val noMargin: StyleS = mixin(
     margin(0.px)
   )
 
-  val scrollPaneSegment = style("ui.scroll.pane.segment")(
+  val scrollPaneSegment: StyleA = style("ui.scroll.pane.segment")(
     noPadding,
     unsafeChild("> .ui.table")(
       border(0.px),
@@ -111,15 +111,15 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.none
   )
 
-  val tdNoPadding = style(
+  val tdNoPadding: StyleA = style(
     noPadding
   )
 
-  val errorTab = style(
+  val errorTab: StyleA = style(
     borderTop(3.px, red, solid).important
   )
 
-  val progressVCentered = style("ui.progress.vcentered")(
+  val progressVCentered: StyleA = style("ui.progress.vcentered")(
     marginBottom(0.px)
   )
 
@@ -200,14 +200,14 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderBottom.none.important
   )
 
-  val handleContainerOff = style(
+  val handleContainerOff: StyleA = style(
     display.none
   )
 
-  val handleContainerOn = style(
+  val handleContainerOn: StyleA = style(
   )
 
-  val skipHandleContainer = style(
+  val skipHandleContainer: StyleA = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
     top(-12.px),
@@ -224,10 +224,10 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderRight(1.px, solid, rgba(34,36,38,0.1)).important
   )
 
-  val trBreakpoint = style()
+  val trBreakpoint: StyleA = style()
   // This defines the hover for the gutter
   //SeqexecStyles-trNoBorder:hover > td:first-child {
-  val gutterHover = style(
+  val gutterHover: StyleA = style(
     unsafeRoot("tr." + trBreakpoint.htmlClass) (
       &.hover(
         unsafeChild("> td")(
