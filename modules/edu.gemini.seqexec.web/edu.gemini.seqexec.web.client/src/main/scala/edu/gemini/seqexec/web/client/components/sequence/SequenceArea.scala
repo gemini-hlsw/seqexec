@@ -12,6 +12,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
+import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNode, Ref}
 
@@ -22,6 +23,7 @@ import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
+import org.scalajs.dom.html.Div
 
 /**
   * Container for a table with the steps
@@ -333,7 +335,7 @@ object SequenceStepsTableContainer {
         )
       )
 
-    def render(p: Props, s: State) = {
+    def render(p: Props, s: State): ReactTagOf[Div] = {
       <.div(
         ^.cls := "ui raised secondary segment",
         p.stepConfigDisplayed.fold(defaultToolbar(p, s))(configToolbar(p)),
@@ -361,7 +363,7 @@ object SequenceStepsTableContainer {
   def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
-  val scrollRef = Ref[HTMLElement]("scrollRef")
+  private val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
     .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, None, autoScrolled = false))

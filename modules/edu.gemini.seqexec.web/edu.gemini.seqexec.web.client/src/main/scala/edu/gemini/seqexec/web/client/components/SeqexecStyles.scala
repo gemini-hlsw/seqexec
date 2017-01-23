@@ -37,26 +37,26 @@ object SeqexecStyles extends StyleSheet.Inline {
   val handleContainerWidth = 28
   val iconWidth = 16.5
 
-  val body = style(unsafeRoot("body")(
+  val body: StyleA = style(unsafeRoot("body")(
     backgroundColor(white)
   ))
 
-  val mainContainer = style(
+  val mainContainer: StyleA = style(
     addClassNames("main", "ui", "borderless", "menu", "container")
   )
 
-  val navBar = style("navbar")(
+  val navBar: StyleA = style("navbar")(
     unsafeRoot(".main.ui.borderless.menu.container.placeholder")(
       marginTop(0.px)
     )
   )
 
-  val topLogo = style("main.menu .item img.logo")(
+  val topLogo: StyleA = style("main.menu .item img.logo")(
     marginRight(1.5.em)
   )
 
   // Media query to adjust the width of containers on mobile to the max allowed width
-  val deviceContainer = style("ui.container")(
+  val deviceContainer: StyleA = style("ui.container")(
     media.only.screen.maxWidth(767.px)(
       width(100.%%).important,
       marginLeft(0.px).important,
@@ -64,34 +64,34 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
-  val scrollPane = style("ui.scroll.pane")(
+  val scrollPane: StyleA = style("ui.scroll.pane")(
     overflow.auto
   )
 
-  val queueListPane = style {
+  val queueListPane: StyleA = style {
     maxHeight(13.1.em)
   }
 
-  val searchResultListPane = style {
+  val searchResultListPane: StyleA = style {
     maxHeight(10.3.em)
   }
 
-  val stepsListPane = style {
+  val stepsListPane: StyleA = style {
     maxHeight(24.3.em)
   }
 
-  val stepsListBody = style() // Marker css
-  val stepRunning = style() // Marker css
+  val stepsListBody: StyleA = style() // Marker css
+  val stepRunning: StyleA = style() // Marker css
 
-  val observeConfig = style {
+  val observeConfig: StyleA = style {
     backgroundColor.lightcyan
   }
 
-  val inline = style {
+  val inline: StyleA = style {
     display.inline
   }
 
-  val scrollPaneSegment = style("ui.scroll.pane.segment")(
+  val scrollPaneSegment: StyleA = style("ui.scroll.pane.segment")(
     padding(0.px),
     marginTop(0.px),
     unsafeChild("> .ui.table")(
@@ -100,20 +100,20 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
-  val hidden = style(
+  val hidden: StyleA = style(
     display.none
   )
 
-  val tdNoPadding = style(
+  val tdNoPadding: StyleA = style(
     padding(0.px).important
   )
 
-  val progressVCentered = style("ui.progress.vcentered")(
+  val progressVCentered: StyleA = style("ui.progress.vcentered")(
     marginBottom(0.px)
   )
 
   // Common properties for a segment displayed when running
-  val segmentRunningMixin = mixin(
+  val segmentRunningMixin: StyleS = mixin(
     backgroundColor(rgba(0, 0, 0, 0.0)).important,
     color.inherit,
     padding(0.em),
@@ -122,74 +122,74 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   // CSS for a segment where a step is running
-  val segmentRunning = style("ui.segment.running")(
+  val segmentRunning: StyleA = style("ui.segment.running")(
     segmentRunningMixin,
     borderLeft.none.important,
     alignSelf.center
   )
 
   // CSS for a segments where a step is running
-  val segmentsRunning = style("ui.segments.running")(
+  val segmentsRunning: StyleA = style("ui.segments.running")(
     segmentRunningMixin,
     border.none,
     borderRadius(0.px)
   )
 
   // Media queries to hide/display items for mobile
-  val notInMobile = style(
+  val notInMobile: StyleA = style(
     media.only.screen.maxWidth(767.px)(
       display.none.important
     )
   )
-  val onlyMobile = style(
+  val onlyMobile: StyleA = style(
     media.only.screen.minWidth(767.px)(
       display.none.important
     )
   )
 
-  val errorText = style(
+  val errorText: StyleA = style(
     color.red
   )
 
-  val smallTextArea = style(
+  val smallTextArea: StyleA = style(
     fontSize.smaller
   )
 
-  val gutterIconVisible = style(
+  val gutterIconVisible: StyleA = style(
     visibility.visible
   )
-  val gutterIconHidden = style(
+  val gutterIconHidden: StyleA = style(
     visibility.hidden
   )
 
-  val breakpointTrOn = style(
+  val breakpointTrOn: StyleA = style(
     height(4.px),
     backgroundColor(c"#A5673F"), // Match semantic UI brown
     borderTop.none.important,
     borderBottom.none
   )
 
-  val breakpointTrOff = style(
+  val breakpointTrOff: StyleA = style(
     height(0.px),
     backgroundColor(lightgray),
     borderTop.none.important,
     borderBottom.none
   )
 
-  val breakpointHandleContainer = style(
+  val breakpointHandleContainer: StyleA = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
-    top(-29.px),
+    top(-27.px),
     height(0.px),
     overflow.visible
   )
 
-  val trNoBorder = style(
+  val trNoBorder: StyleA = style(
     borderTop.none.important,
     borderBottom.none.important
   )
 
-  val skipHandleContainer = style(
+  val skipHandleContainer: StyleA = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
     top(-12.px),
@@ -197,7 +197,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     overflow.visible
   )
 
-  val gutterTd = style(
+  val gutterTd: StyleA = style(
     width(gutterWidth.px),
     maxWidth(gutterWidth.px),
     minWidth(gutterWidth.px),
@@ -207,7 +207,7 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   // This defines the hover for the gutter
   //SeqexecStyles-trNoBorder:hover > td:first-child {
-  val gutterHover = style(
+  val gutterHover: StyleA = style(
     unsafeRoot("tr." + trNoBorder.htmlClass) (
       &.hover(
         unsafeChild("> td")(
@@ -219,7 +219,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     )
   )
 
-  val stepsTable = style(
+  val stepsTable: StyleA = style(
     //paddingLeft(16.px),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
