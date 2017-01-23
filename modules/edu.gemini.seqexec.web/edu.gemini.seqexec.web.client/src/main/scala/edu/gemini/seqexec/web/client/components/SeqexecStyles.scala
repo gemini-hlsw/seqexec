@@ -202,13 +202,15 @@ object SeqexecStyles extends StyleSheet.Inline {
     maxWidth(gutterWidth.px),
     minWidth(gutterWidth.px),
     borderTop.none.important,
-    borderBottom.none.important
+    borderBottom.none.important,
+    borderRight(1.px, solid, rgba(34,36,38,0.1)).important
   )
 
+  val trBreakpoint = style()
   // This defines the hover for the gutter
   //SeqexecStyles-trNoBorder:hover > td:first-child {
-  val gutterHover: StyleA = style(
-    unsafeRoot("tr." + trNoBorder.htmlClass) (
+  val gutterHover = style(
+    unsafeRoot("tr." + trBreakpoint.htmlClass) (
       &.hover(
         unsafeChild("> td")(
           &.firstChild(
