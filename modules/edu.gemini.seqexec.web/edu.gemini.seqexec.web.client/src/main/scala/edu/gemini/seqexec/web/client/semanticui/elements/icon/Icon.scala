@@ -42,7 +42,7 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
         onClick = onClick),
       children = if (children.nonEmpty) children else this.children)
 
-  def component = ReactComponentB[Props]("Icon")
+  private def component = ReactComponentB[Props]("Icon")
     .stateless
     .renderPC((_, p, c) =>
       <.i(

@@ -8,7 +8,7 @@ import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded, SequenceStart, StepExecuted, SequenceCompleted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
@@ -209,13 +209,13 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
   // Import explicitly the custom pickler
   implicit val runner = new RunAfterJS
 
-  val logger = Logger.getLogger(this.getClass.getSimpleName)
+  private val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
   logger.setUseParentHandlers(false)
   logger.addHandler(new ConsoleHandler(Level.FINE))
 
   // Makes a websocket connection and setups event listeners
-  def webSocket(nextDelay: Int) = Future[Action] {
+  def webSocket(nextDelay: Int): Future[Action] = Future[Action] {
     import org.scalajs.dom.document
 
     val host = document.location.host
@@ -311,17 +311,17 @@ object PotEq {
     override def eqv(a: Pot[A], b: Pot[A]): Boolean = a.state == b.state
   }
 
-  val seqexecQueueEq = potStateEq[List[SequenceView]]
-  val searchResultsEq = potStateEq[SearchResults]
-  val sequenceEq = potStateEq[SequenceView]
+  val seqexecQueueEq: FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
+  val searchResultsEq: FastEq[Pot[SearchResults]] = potStateEq[SearchResults]
+  val sequenceEq: FastEq[Pot[SequenceView]] = potStateEq[SequenceView]
 }
 
 /**
   * Utility class to let components more easily switch parts of the UI depending on the context
   */
 case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
-  def isLogged = u.isDefined
-  def isConnected = w.ws.isReady
+  def isLogged: Boolean = u.isDefined
+  def isConnected: Boolean = w.ws.isReady
 }
 
 /**
@@ -329,7 +329,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
   */
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = SequencesQueue[SequenceId]
-  val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
+  private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
 
   def appendToLogE(s: String) =
     Effect(Future(AppendToLog(s)))
@@ -363,8 +363,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
 
-  val statusAndSearchResults = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
-  val statusAndSequences = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
+  val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
+  val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
 
   /**
     * Makes a reference to a sequence on the queue.

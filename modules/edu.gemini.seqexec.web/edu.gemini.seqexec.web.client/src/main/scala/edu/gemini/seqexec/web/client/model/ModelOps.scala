@@ -8,7 +8,7 @@ import scalaz.Show
   * Contains useful operations for the seqexec model
   */
 object ModelOps {
-  implicit val sequenceStateShow = Show.shows[SequenceState] {
+  implicit val sequenceStateShow: Show[SequenceState] = Show.shows[SequenceState] {
     case SequenceState.Completed => "Complete"
     case SequenceState.Running   => "Running"
     case SequenceState.Idle      => "Idle"
@@ -16,7 +16,7 @@ object ModelOps {
     case SequenceState.Error(e)  => s"Error $e"
   }
 
-  implicit val steStateShow = Show.shows[StepState] {
+  implicit val steStateShow: Show[StepState] = Show.shows[StepState] {
     case StepState.Pending    => "Pending"
     case StepState.Completed  => "Done"
     case StepState.Skipped    => "Skipped"
