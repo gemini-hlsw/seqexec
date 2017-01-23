@@ -109,7 +109,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
             skip = false,
             configStatus = Map.empty,
             // TODO: Implement standard step at Engine level
-            observeStatus = ActionStatus.Pending
+            observeStatus = ActionStatus.Pending,
+            fileId = step.fileId
           )
 
         // Couldn't find this on Scalaz
