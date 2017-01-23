@@ -27,7 +27,7 @@ object SeqTranslate {
   // TODO: Take care of this side effect.
   private val dhsSimulator = DhsClientSim(LocalDate.now)
 
-  implicit def toAction[A](x: SeqAction[A]): Action = x.run map {
+  implicit def toAction(x: SeqAction[Result.Response]): Action = x.run map {
     case -\/(e) => Result.Error(e)
     case \/-(r) => Result.OK(r)
   }
@@ -49,9 +49,8 @@ object SeqTranslate {
         config.toStepConfig,
         false,
         List(
-          // TODO: implicit function doesn't work here, why?
-          sys.map(x => toAction(x.configure(config))),
-          List(a.observe(config)(systems.dhs))
+          sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
+          List(toAction(a.observe(config)(systems.dhs).map(x => Result.Observed(x.dataId))))
         )
       ).right
     }.getOrElse(UnrecognizedInstrument(instName.toString).left[Step[Action]])

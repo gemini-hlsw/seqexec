@@ -145,7 +145,7 @@ package object engine {
     *
     * When the index doesn't exit it does nothing.
     */
-  def complete[R](id: Sequence.Id, i: Int, r: R): Handle[Unit] = modifyS(id)(_.mark(i)(Result.OK(r)))
+  def complete(id: Sequence.Id, i: Int, r: Result.Response): Handle[Unit] = modifyS(id)(_.mark(i)(Result.OK(r)))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new

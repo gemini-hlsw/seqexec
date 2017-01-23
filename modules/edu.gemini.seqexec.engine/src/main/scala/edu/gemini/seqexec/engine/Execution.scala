@@ -77,6 +77,10 @@ object Execution {
 sealed trait Result
 
 object Result {
-  case class OK[R](r: R) extends Result
+  case class OK(response: Response) extends Result
   case class Error[E](e: E) extends Result
+
+  sealed trait Response
+  case class Configured(r: String) extends Response
+  case class Observed(fileId: String) extends Response
 }
