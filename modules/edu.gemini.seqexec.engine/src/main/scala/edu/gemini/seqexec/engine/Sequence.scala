@@ -225,17 +225,15 @@ object Sequence {
 
         val currentExecutionL: Zipper @> Execution = zipper >=> Sequence.Zipper.current
 
-        val currentFileIdL: Zipper @?> FileId =
-          zipper.partial >=> Sequence.Zipper.focus.partial >=> Step.Zipper.fileId
+        val currentFileIdL: Zipper @> Option[FileId] =
+          zipper >=> Sequence.Zipper.focus >=> Step.Zipper.fileId
 
-        // TODO: Get rid of these `self`es
-        r match {
-          case (Result.OK(Result.Observed(fileId))) =>
-            currentFileIdL.set(self, fileId)
-          case _ => self
-        }
+        val z: Zipper = r match {
+            case Result.OK(Result.Observed(fileId)) => currentFileIdL.set(self, fileId.some)
+            case _                                  => self
+          }
 
-        currentExecutionL.mod(_.mark(i)(r), self)
+        currentExecutionL.mod(_.mark(i)(r), z)
 
       }
 
