@@ -256,7 +256,7 @@ object SequenceStepsTableContainer {
         ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
-            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
+            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings.copyIcon(key = s"${p.s.metadata.instrument}.steps.settings")),
             TableHeader(TableHeader.Props(collapsing = true), "Step"),
             TableHeader(TableHeader.Props(width = Width.Eight), "State"),
             TableHeader(TableHeader.Props(width = Width.Eight), "File"),
@@ -377,7 +377,7 @@ object SequenceStepsTableContainer {
   // Reference to the specifc DOM marked by the name `scrollRef`
   private val scrollRef = Ref[HTMLElement]("scrollRef")
 
-  val component = ReactComponentB[Props]("HeadersSideBar")
+  val component = ReactComponentB[Props]("StepsTable")
     .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>

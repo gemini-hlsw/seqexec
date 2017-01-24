@@ -10,7 +10,9 @@ object TableHeader {
   case class Props(collapsing: Boolean = false,
     colSpan: Option[Int] = None,
     aligned: Aligned = Aligned.None,
-    width: Width = Width.None)
+    width: Width = Width.None,
+    key: String = ""
+  )
 
   val component = ReactComponentB[Props]("th")
     .stateless

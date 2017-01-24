@@ -24,6 +24,7 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
            inverted: Boolean = false,
            color: Option[String] = None,
            extraStyles: List[scalacss.internal.StyleA] = Nil,
+           key: String = "",
            onClick: Callback = Callback.empty): Icon =
     copy(
       p = Icon.Props(id = p.id,
@@ -39,6 +40,7 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
         inverted = inverted,
         color = color,
         extraStyles = extraStyles,
+        key = key,
         onClick = onClick),
       children = if (children.nonEmpty) children else this.children)
 
@@ -73,7 +75,7 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
         c
       )
     )
-    .build.apply(p, children)
+    .build.withKey(p.key).apply(p, children)
 }
 
 object Icon {
@@ -666,6 +668,7 @@ object Icon {
                    inverted: Boolean = false,
                    color: Option[String] = None,
                    extraStyles: List[scalacss.internal.StyleA] = Nil,
+                   key: String = "",
                    onClick: Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration
