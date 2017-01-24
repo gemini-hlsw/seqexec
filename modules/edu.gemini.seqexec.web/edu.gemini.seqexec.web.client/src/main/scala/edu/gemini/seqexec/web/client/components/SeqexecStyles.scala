@@ -127,7 +127,7 @@ object SeqexecStyles extends StyleSheet.Inline {
   val segmentRunningMixin: StyleS = mixin(
     backgroundColor(rgba(0, 0, 0, 0.0)).important,
     color.inherit,
-    padding(0.em),
+    padding(0.5.em, 0.5.em, 0.5.em, 0.em),
     noMargin,
     (boxShadow := ("none")).important
   )
@@ -210,7 +210,7 @@ object SeqexecStyles extends StyleSheet.Inline {
   val skipHandleContainer: StyleA = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
-    top(-12.px),
+    top(-11.px),
     height(0.px),
     overflow.visible
   )
@@ -240,7 +240,6 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val stepsTable: StyleA = style(
-    //paddingLeft(16.px),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,

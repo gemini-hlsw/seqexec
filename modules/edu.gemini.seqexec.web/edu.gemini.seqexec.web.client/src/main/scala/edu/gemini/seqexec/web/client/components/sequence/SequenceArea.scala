@@ -178,20 +178,26 @@ object SequenceStepsTableContainer {
     }
 
     def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): ReactNode =
+      <.div(
+        ^.cls := "ui two column grid",
         <.div(
-          ^.cls := "ui horizontal segments running",
+          ^.cls := "ui row",
           <.div(
-            ^.cls := "ui basic segment running",
-            <.p(step.status.shows)
+            ^.cls := "left column",
+            <.div(
+              ^.cls := "ui segment basic running",
+              step.status.shows
+            )
           ),
-          loggedIn ?= <.div(
-            ^.cls := "ui basic segment right aligned running",
+          <.div(
+            ^.cls := "right column",
             <.div(
               ^.cls := "ui icon buttons",
               observationControlButtons(sequenceView, step)
             )
           )
         )
+      )
 
     def stepInError(loggedIn: Boolean, msg: String): ReactNode =
         <.div(
