@@ -324,29 +324,6 @@ object SequenceStepsTableContainer {
                   ),
                   step.status == StepState.Running ?= SeqexecStyles.stepRunning,
                   <.td(
-                    SeqexecStyles.gutterTd,
-                    SeqexecStyles.tdNoPadding,
-                    ^.rowSpan := 2,
-                    <.div(
-                      SeqexecStyles.breakpointHandleContainer,
-                      step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
-                      if (step.breakpoint) {
-                        Icon.IconSquare.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
-                      } else {
-                        Icon.IconStopCircle.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
-                      }
-                    ),
-                    <.div(
-                      SeqexecStyles.skipHandleContainer,
-                      if (step.hasError) SeqexecStyles.handleContainerOff else SeqexecStyles.handleContainerOn,
-                      if (step.skip) {
-                        IconToggleOff.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
-                      } else {
-                        IconToggleOn.copyIcon(link = true, rotated = Icon.Rotated.CounterClockwise, extraStyles = List(if (s.onHover.contains(i)) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
-                      }
-                    )
-                  ),
-                  <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
                       case StepState.Completed       => IconCheckmark
