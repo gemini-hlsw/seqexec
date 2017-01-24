@@ -11,7 +11,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.message.{IconMessage, CloseableMessage}
+import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
+import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -261,27 +262,11 @@ object SequenceStepsTableContainer {
         ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
-            <.th(
-              ^.cls := "collapsing center aligned",
-              IconSettings,
-              ^.colSpan := 2
-            ),
-            <.th(
-              ^.cls := "collapsing",
-              "Step"
-            ),
-            <.th(
-              ^.cls := "eight wide",
-              "State"
-            ),
-            <.th(
-              ^.cls := "eight wide",
-              "File"
-            ),
-            <.th(
-              ^.cls := "collapsing",
-              "Config"
-            )
+            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
+            TableHeader(TableHeader.Props(collapsing = true), "Step"),
+            TableHeader(TableHeader.Props(width = Width.Eight), "State"),
+            TableHeader(TableHeader.Props(width = Width.Eight), "File"),
+            TableHeader(TableHeader.Props(collapsing = true), "Config")
           )
         ),
         <.tbody(
