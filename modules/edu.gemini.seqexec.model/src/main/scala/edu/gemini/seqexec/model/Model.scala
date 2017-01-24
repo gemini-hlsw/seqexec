@@ -114,38 +114,7 @@ object Model {
     status: SequenceState,
     steps: List[Step],
     willStopIn: Option[Int]
-  ) {
-    /**
-     * Returns the observation operations allowed
-     * TODO Convert to an Instrument-level typeclass
-     */
-    def allowedObservationOperations(stepStatus: StepState): List[ObservationOperations] =
-      metadata.instrument match {
-        // Note the F2 doesn't suppor these operations but we'll simulate them
-        // for demonstration purposes
-        //case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation, AbortObservation)
-        // Regular instrument that support pause/stop/abort
-        case "Flamingos2" if status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
-        case "Flamingos2" if stepStatus == StepState.Paused  => List(ResumeObservation, StopObservation, AbortObservation)
-        case _                                               => Nil
-      }
-
-    /**
-     * Returns the observation operations allowed
-     * TODO Convert to an Instrument-level typeclass
-     */
-    def allowedSequenceOperations: List[SequenceOperations] = Nil
-
-    def nextStepToRun: Option[Int] =
-      steps match {
-        case x if x.forall(_.status == StepState.Pending)   => Some(0) // No steps have been executed, start at 0
-        case x if x.forall(_.status == StepState.Completed) => None // All steps have been executed
-        case x if x.exists(_.status == StepState.Paused)    => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1).map(_ + 1)
-        case x                                              => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1)
-      }
-
-    def isPartiallyExecuted: Boolean = steps.exists(_.status == StepState.Completed)
-  }
+  )
 
   /**
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
@@ -168,17 +137,24 @@ object Model {
 
   // Operations possible at the sequence level
   sealed trait SequenceOperations
-  case object PauseSequence extends SequenceOperations
-  case object ContinueSequence extends SequenceOperations
-  case object StopSequence extends SequenceOperations
-  case object RunSequence extends SequenceOperations
+
+  object SequenceOperations {
+    case object PauseSequence extends SequenceOperations
+    case object ContinueSequence extends SequenceOperations
+    case object StopSequence extends SequenceOperations
+    case object RunSequence extends SequenceOperations
+  }
 
   // Operations possible at the observation level
   sealed trait ObservationOperations
-  case object PauseObservation extends ObservationOperations
-  case object StopObservation extends ObservationOperations
-  case object AbortObservation extends ObservationOperations
-  case object ResumeObservation extends ObservationOperations
+
+  object ObservationOperations {
+    case object PauseObservation extends ObservationOperations
+    case object StopObservation extends ObservationOperations
+    case object AbortObservation extends ObservationOperations
+    case object ResumeObservation extends ObservationOperations
+  }
+
   // Operations for Hamamatsu
   case object PauseImmediatelyObservation extends ObservationOperations
   case object StopImmediatelyObservation extends ObservationOperations

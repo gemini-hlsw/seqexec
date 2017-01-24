@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.ObservationOperations._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -57,6 +58,19 @@ object SequenceStepsTableContainer {
           <.h3(
             ^.cls := "ui green header",
             "Sequence completed"
+          ),
+        p.status.isLogged && p.s.hasError ?=
+          <.div(
+            Button(
+              Button.Props(
+                icon = Some(IconPlay),
+                labeled = true,
+                onClick = requestRun(p.s),
+                color = Some("blue"),
+                dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
+                disabled = !p.status.isConnected || s.runRequested),
+              s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
+            )
           ),
         p.status.isLogged && p.s.status === SequenceState.Idle ?=
           Button(
@@ -156,7 +170,7 @@ object SequenceStepsTableContainer {
       }
 
     def observationControlButtons(s: SequenceView, step: Step): List[ReactNode] = {
-      s.allowedObservationOperations(step.status).map {
+      s.allowedObservationOperations(step).map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
@@ -189,7 +203,7 @@ object SequenceStepsTableContainer {
               step.status.shows
             )
           ),
-          <.div(
+          loggedIn ?= <.div(
             ^.cls := "right column",
             <.div(
               ^.cls := "ui icon buttons",
@@ -199,23 +213,15 @@ object SequenceStepsTableContainer {
         )
       )
 
-    def stepInError(loggedIn: Boolean, msg: String): ReactNode =
+    def stepInError(loggedIn: Boolean, s: SequenceView, msg: String): ReactNode =
         <.div(
           <.p(s"Error: $msg"),
           loggedIn ?=
             IconMessage(
               IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
-              <.div(
-                ^.cls := "ui two column grid",
-                  <.div(
-                    ^.cls := "left floated column",
-                  <.p(s"Msg: $msg")
-                ),
-                  <.div(
-                    ^.cls := "column right aligned floated",
-                    Button(Button.Props(size = Size.Small), "Ack")
-                  )
-                )
+                s"Press ",
+                <.b(s.isPartiallyExecuted ? "Continue" | "Continue"),
+                " to re-try"
               )
         )
 
@@ -223,7 +229,7 @@ object SequenceStepsTableContainer {
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
-        case StepState.Error(msg)                  => stepInError(p.status.isLogged, msg)
+        case StepState.Error(msg)                  => stepInError(p.status.isLogged, p.s, msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)

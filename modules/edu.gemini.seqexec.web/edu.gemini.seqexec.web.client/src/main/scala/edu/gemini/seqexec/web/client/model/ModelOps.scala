@@ -1,6 +1,9 @@
 package edu.gemini.seqexec.web.client.model
 
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
+import edu.gemini.seqexec.model.Model.ObservationOperations
+import edu.gemini.seqexec.model.Model.ObservationOperations._
+import edu.gemini.seqexec.model.Model.SequenceOperations
 
 import scalaz.Show
 
@@ -42,6 +45,28 @@ object ModelOps {
       case st               => st
     })
 
+    /**
+     * Returns the observation operations allowed
+     * TODO Convert to an Instrument-level typeclass
+     */
+    def allowedObservationOperations(step: Step): List[ObservationOperations] =
+      s.metadata.instrument match {
+        // Note the F2 doesn't suppor these operations but we'll simulate them
+        // for demonstration purposes
+        //case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation, AbortObservation)
+        // Regular instrument that support pause/stop/abort
+        case "Flamingos2" if s.status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
+        case "Flamingos2" if step.hasError => List(ResumeObservation, AbortObservation)
+        case "Flamingos2" if step.status == StepState.Paused  => List(ResumeObservation, StopObservation, AbortObservation)
+        case _                                               => Nil
+      }
+
+    /**
+     * Returns the observation operations allowed
+     * TODO Convert to an Instrument-level typeclass
+     */
+    def allowedSequenceOperations: List[SequenceOperations] = Nil
+
     def flipBreakpaintAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
       case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
       case st               => st
@@ -52,6 +77,17 @@ object ModelOps {
         case SequenceState.Error(_) => true
         case _                      => false
       }
+
+    def nextStepToRun: Option[Int] =
+      s.steps match {
+        case x if x.forall(_.status == StepState.Pending)   => Some(0) // No steps have been executed, start at 0
+        case x if x.forall(_.status == StepState.Completed) => None // All steps have been executed
+        case x if x.exists(_.hasError)               => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ != -1).map(_ + 1)
+        case x if x.exists(_.status == StepState.Paused)    => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1).map(_ + 1)
+        case x                                              => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1)
+      }
+
+    def isPartiallyExecuted: Boolean = s.steps.exists(_.status == StepState.Completed)
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {
