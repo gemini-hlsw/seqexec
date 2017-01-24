@@ -123,14 +123,8 @@ object SequenceStepsTableContainer {
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
           <.tr(
-            <.th(
-              ^.cls := "collapsing",
-              "Name"
-            ),
-            <.th(
-              ^.cls := "six wide",
-              "Value"
-            )
+            TableHeader(TableHeader.Props(collapsing = true), "Name"),
+            TableHeader(TableHeader.Props(width = Width.Six), "Value")
           )
         ),
         <.tbody(
