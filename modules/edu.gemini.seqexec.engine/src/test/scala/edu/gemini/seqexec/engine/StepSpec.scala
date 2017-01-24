@@ -9,7 +9,6 @@ import Inside._
 
 import scalaz.concurrent.Task
 import scalaz.stream.async
-import edu.gemini.seqexec.engine.Result.{Error, OK}
 import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running}
 
@@ -31,7 +30,7 @@ class StepSpec extends FlatSpec {
     _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete TCS configuration"))
-  } yield OK(())
+  } yield Result.OK(Result.Configured("TCS"))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -41,7 +40,7 @@ class StepSpec extends FlatSpec {
     _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(150))
     _ <- Task(println("System: Complete Instrument configuration"))
-  } yield OK(())
+  } yield Result.OK(Result.Configured("Instrument"))
 
   /**
     * Emulates an observation in the real world.
@@ -51,11 +50,14 @@ class StepSpec extends FlatSpec {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete observation"))
-  } yield OK(())
+  } yield Result.OK(Result.Observed("DummyFileId"))
 
   def triggerPause(q: async.mutable.Queue[Event]): Action = for {
     _ <- q.enqueueOne(pause(seqId))
-  } yield OK(())
+    // There is not a distinct result for Pause because the Pause action is a
+    // trick for testing but we don't need to support it real life, he pause
+    // input event is enough.
+  } yield Result.OK(Result.Observed("DummyFileId"))
 
   // All tests check the output of running a step against the expected sequence of updates.
 
@@ -157,7 +159,7 @@ class StepSpec extends FlatSpec {
 
   }
 
-  val result = Result.OK(Unit)
+  val result = Result.OK(Result.Observed("dummyId"))
   val failure = Result.Error(Unit)
   val action: Action = Task(result)
   val config: StepConfig = Map()
