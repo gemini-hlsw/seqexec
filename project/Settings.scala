@@ -59,7 +59,7 @@ object Settings {
     // Pure JS libraries
     val reactJS        = "15.3.2"
     val jQuery         = "3.0.0"
-    val semanticUI     = "2.2.2"
+    val semanticUI     = "2.2.7"
     val jQueryTerminal = "0.11.2"
     val ocsVersion     = "2017001.1.1"
   }

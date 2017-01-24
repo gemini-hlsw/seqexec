@@ -8,11 +8,11 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCaretRight, IconInbox, IconPause, IconPlay, IconTrash}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconStop}
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconChevronLeft, IconChevronRight}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
+import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNode, Ref}
 
@@ -23,6 +23,7 @@ import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
+import org.scalajs.dom.html.Div
 
 /**
   * Container for a table with the steps
@@ -32,6 +33,7 @@ object SequenceStepsTableContainer {
                    pauseRequested : Boolean,
                    nextScrollPos  : Double,
                    nextStepToRun  : Int,
+                   onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
@@ -195,20 +197,42 @@ object SequenceStepsTableContainer {
     def stepDisplay(p: Props, step: Step): ReactNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
+        case StepState.Completed                  => <.p(step.status.shows)
+        // TODO Remove the 2 conditions below when supported by the engine
+        case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)
       }
 
     def selectRow(step: Step, index: Int): Callback =
       Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
 
+    def mouseEnter(index: Int): Callback =
+      $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
+
+    def mouseLeave(index: Int): Callback =
+      //Callback.empty
+      $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
+
+    def mouseLeave: Callback =
+      $.modState(_.copy(onHover = None))
+
+    def markAsSkipped(view: SequenceView, step: Step): Callback =
+      Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
+
+    def breakpointAt(view: SequenceView, step: Step): Callback =
+      Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(view, step)) }
+
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
+        SeqexecStyles.stepsTable,
+        ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
             <.th(
-              ^.cls := "collapsing",
-              iconEmpty
+              ^.cls := "collapsing center aligned",
+              IconSettings,
+              ^.colSpan := 2
             ),
             <.th(
               ^.cls := "collapsing",
@@ -232,49 +256,87 @@ object SequenceStepsTableContainer {
           SeqexecStyles.stepsListBody,
           p.s.steps.zipWithIndex.map {
             case (step, i) =>
-              <.tr(
-                // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
-                ^.classSet(
-                  "positive" -> (step.status === StepState.Completed),
-                  "warning"  -> (step.status === StepState.Running),
-                  "negative" -> (step.status === StepState.Paused),
-                  // TODO Show error case
-                  //"negative" -> (step.status == StepState.Error),
-                  "active"   -> (step.status === StepState.Skipped)
+              List(
+                <.tr(
+                  SeqexecStyles.trNoBorder,
+                  SeqexecStyles.trBreakpoint,
+                  ^.onMouseOver --> mouseEnter(i),
+                  <.td(
+                    SeqexecStyles.gutterTd,
+                    SeqexecStyles.tdNoPadding,
+                    ^.rowSpan := 2,
+                    <.div(
+                      SeqexecStyles.breakpointHandleContainer,
+                      step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
+                      if (step.breakpoint) {
+                        Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
+                      } else {
+                        Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
+                      }
+                    ),
+                    <.div(
+                      SeqexecStyles.skipHandleContainer,
+                      if (step.skip) {
+                        IconPlusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      } else {
+                        IconMinusCircle.copyIcon(link = true, color = Some("orange"), extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                      }
+                    )
+                  ),
+                  <.td(
+                    if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+                    SeqexecStyles.tdNoPadding,
+                    ^.colSpan := 5
+                  )
                 ),
-                step.status == StepState.Running ?= SeqexecStyles.stepRunning,
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  step.status match {
-                    case StepState.Completed       => IconCheckmark
-                    case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
-                    case StepState.Paused          => IconPause
-                    case StepState.Error(_)        => IconAttention
-                    case _ if i == s.nextStepToRun => IconChevronRight
-                    case _                         => iconEmpty
-                  }
-                ),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  i + 1),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  ^.cls := "middle aligned",
-                  stepDisplay(p, step)),
-                <.td(
-                  ^.onDoubleClick --> selectRow(step, i),
-                  ^.cls := "middle aligned",
-                  stepProgress(step)),
-                <.td(
-                  ^.cls := "collapsing right aligned",
-                  IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                <.tr(
+                  SeqexecStyles.trNoBorder,
+                  ^.onMouseOver --> mouseEnter(i),
+                  // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
+                  ^.classSet(
+                    "positive" -> (step.status === StepState.Completed),
+                    "warning"  -> (step.status === StepState.Running),
+                    "negative" -> (step.status === StepState.Paused),
+                    // TODO Show error case
+                    //"negative" -> (step.status == StepState.Error),
+                    "active"   -> (step.status === StepState.Skipped),
+                    "disabled" -> step.skip
+                  ),
+                  step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    step.status match {
+                      case StepState.Completed       => IconCheckmark
+                      case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
+                      case StepState.Paused          => IconPause
+                      case StepState.Error(_)        => IconAttention
+                      case _ if i == s.nextStepToRun => IconChevronRight
+                      case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+                      case _                         => iconEmpty
+                    }
+                  ),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    i + 1),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    ^.cls := "middle aligned",
+                    stepDisplay(p, step)),
+                  <.td(
+                    ^.onDoubleClick --> selectRow(step, i),
+                    ^.cls := "middle aligned",
+                    stepProgress(step)),
+                  <.td(
+                    ^.cls := "collapsing right aligned",
+                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                  )
                 )
               )
           }
         )
       )
 
-    def render(p: Props, s: State) = {
+    def render(p: Props, s: State): ReactTagOf[Div] = {
       <.div(
         ^.cls := "ui raised secondary segment",
         p.stepConfigDisplayed.fold(defaultToolbar(p, s))(configToolbar(p)),
@@ -302,10 +364,10 @@ object SequenceStepsTableContainer {
   def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
-  val scrollRef = Ref[HTMLElement]("scrollRef")
+  private val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("HeadersSideBar")
-    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, autoScrolled = false))
+    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state

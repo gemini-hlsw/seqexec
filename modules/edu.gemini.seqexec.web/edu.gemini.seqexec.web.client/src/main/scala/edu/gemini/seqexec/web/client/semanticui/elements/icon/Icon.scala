@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.icon
 import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement, ReactNode}
+import scalacss.ScalaCssReact._
 
 /**
   * Semantic UI Icon component
@@ -22,6 +23,7 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
            bordered: Boolean = false,
            inverted: Boolean = false,
            color: Option[String] = None,
+           extraStyles: List[scalacss.internal.StyleA] = Nil,
            onClick: Callback = Callback.empty): Icon =
     copy(
       p = Icon.Props(id = p.id,
@@ -36,14 +38,16 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
         bordered = bordered,
         inverted = inverted,
         color = color,
+        extraStyles = extraStyles,
         onClick = onClick),
       children = if (children.nonEmpty) children else this.children)
 
-  def component = ReactComponentB[Props]("Icon")
+  private def component = ReactComponentB[Props]("Icon")
     .stateless
     .renderPC((_, p, c) =>
       <.i(
         ^.cls := s"${p.id} icon",
+        p.extraStyles.map(styleaToTagMod),
         p.color.map(u => ^.cls := u),
         ^.classSet(
           "disabled"                 -> p.disabled,
@@ -426,25 +430,27 @@ object Icon {
   val IconThumbsUp          = Icon("thumbs up")
 
   // audio icons
-  val IconBackward         = Icon("backward")
-  val IconEject            = Icon("eject")
-  val IconFastBackward     = Icon("fast backward")
-  val IconFastForward      = Icon("fast forward")
-  val IconForward          = Icon("forward")
-  val IconMusic            = Icon("music")
-  val IconMute             = Icon("mute")
-  val IconPause            = Icon("pause")
-  val IconPlay             = Icon("play")
-  val IconRecord           = Icon("record")
-  val IconStepBackward     = Icon("step backward")
-  val IconStepForward      = Icon("step forward")
-  val IconStop             = Icon("stop")
-  val IconUnmute           = Icon("unmute")
-  val IconVideoPlay        = Icon("video play")
-  val IconVideoPlayOutline = Icon("video play outline")
-  val IconVolumeDown       = Icon("volume down")
-  val IconVolumeOff        = Icon("volume off")
-  val IconVolumeUp         = Icon("volume up")
+  val IconBackward          = Icon("backward")
+  val IconEject             = Icon("eject")
+  val IconFastBackward      = Icon("fast backward")
+  val IconFastForward       = Icon("fast forward")
+  val IconForward           = Icon("forward")
+  val IconMusic             = Icon("music")
+  val IconMute              = Icon("mute")
+  val IconPause             = Icon("pause")
+  val IconPlay              = Icon("play")
+  val IconRecord            = Icon("record")
+  val IconStepBackward      = Icon("step backward")
+  val IconStepForward       = Icon("step forward")
+  val IconStop              = Icon("stop")
+  val IconStopCircle        = Icon("stop circle")
+  val IconStopCircleOutline = Icon("stop circle outline")
+  val IconUnmute            = Icon("unmute")
+  val IconVideoPlay         = Icon("video play")
+  val IconVideoPlayOutline  = Icon("video play outline")
+  val IconVolumeDown        = Icon("volume down")
+  val IconVolumeOff         = Icon("volume off")
+  val IconVolumeUp          = Icon("volume up")
 
   // map icons
   val IconBuilding        = Icon("building")
@@ -659,6 +665,7 @@ object Icon {
                    bordered: Boolean = false,
                    inverted: Boolean = false,
                    color: Option[String] = None,
+                   extraStyles: List[scalacss.internal.StyleA] = Nil,
                    onClick: Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration

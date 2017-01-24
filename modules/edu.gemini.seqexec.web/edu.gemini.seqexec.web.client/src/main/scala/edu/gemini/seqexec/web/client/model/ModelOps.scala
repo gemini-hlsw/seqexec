@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.model
 
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState}
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
 
 import scalaz.Show
 
@@ -8,7 +8,7 @@ import scalaz.Show
   * Contains useful operations for the seqexec model
   */
 object ModelOps {
-  implicit val sequenceStateShow = Show.shows[SequenceState] {
+  implicit val sequenceStateShow: Show[SequenceState] = Show.shows[SequenceState] {
     case SequenceState.Completed => "Complete"
     case SequenceState.Running   => "Running"
     case SequenceState.Idle      => "Idle"
@@ -16,7 +16,7 @@ object ModelOps {
     case SequenceState.Error(e)  => s"Error $e"
   }
 
-  implicit val steStateShow = Show.shows[StepState] {
+  implicit val steStateShow: Show[StepState] = Show.shows[StepState] {
     case StepState.Pending    => "Pending"
     case StepState.Completed  => "Done"
     case StepState.Skipped    => "Skipped"
@@ -36,9 +36,43 @@ object ModelOps {
     }
 
     def allStepsDone: Boolean = s.steps.forall(_.status == StepState.Completed)
+
+    def flipStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
+      case st: StandardStep if st == step => st.copy(skip = !st.skip)
+      case st               => st
+    })
+
+    def flipBreakpaintAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
+      case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
+      case st               => st
+    })
+
+    def hasError: Boolean =
+      s.status match {
+        case SequenceState.Error(_) => true
+        case _                      => false
+      }
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {
     def file: Option[String] = None
+
+    def canSetBreakpoint: Boolean = s.status match {
+      case StepState.Pending | StepState.Skipped | StepState.Paused => true
+      case _ if hasError                                            => true
+      case _                                                        => false
+    }
+
+    def canSetSkipmark: Boolean = s.status match {
+      case StepState.Pending | StepState.Skipped | StepState.Paused => true
+      case _ if hasError                                            => true
+      case _                                                        => false
+    }
+
+    def hasError: Boolean =
+      s.status match {
+        case StepState.Error(_) => true
+        case _                  => false
+      }
   }
 }
