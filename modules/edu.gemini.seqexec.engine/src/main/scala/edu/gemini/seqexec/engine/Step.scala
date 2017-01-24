@@ -135,6 +135,12 @@ object Step {
     val current: Zipper @> Execution =
       Lens.lensu((s, f) => s.copy(focus = f), _.focus)
 
+    val fileId: Zipper @?> String = {
+      val l: Zipper @> Option[String] =
+        Lens.lensu((s, f) => s.copy(fileId = f), _.fileId)
+      l.partial >=> PLens.somePLens
+    }
+
   }
 
 }

@@ -109,7 +109,7 @@ object Sequence {
           )
       }
 
-    private val focus: Zipper @> Step.Zipper =
+    val focus: Zipper @> Step.Zipper =
       Lens.lensu((s, f) => s.copy(focus = f), _.focus)
 
     val current: Zipper @> Execution = focus >=> Step.Zipper.current
@@ -223,9 +223,19 @@ object Sequence {
         val zipper: Zipper @> Sequence.Zipper =
           Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
 
-        val current: Zipper @> Execution = zipper >=> Sequence.Zipper.current
+        val currentExecutionL: Zipper @> Execution = zipper >=> Sequence.Zipper.current
 
-        current.mod(_.mark(i)(r), self)
+        val currentFileIdL: Zipper @?> String =
+          zipper.partial >=> Sequence.Zipper.focus.partial >=> Step.Zipper.fileId
+
+        // TODO: Get rid of these `self`es
+        r match {
+          case (Result.OK(Result.Observed(fileId))) =>
+            currentFileIdL.set(self, fileId)
+          case _ => self
+        }
+
+        currentExecutionL.mod(_.mark(i)(r), self)
 
       }
 
