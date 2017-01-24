@@ -32,6 +32,8 @@ package object engine {
 
   type Results = List[Result]
 
+  type FileId = String
+
   type EngineState = Map[Sequence.Id, Sequence.State]
   val initState: EngineState = Map.empty[Sequence.Id, Sequence.State]
 

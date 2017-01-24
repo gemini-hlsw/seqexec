@@ -225,7 +225,7 @@ object Sequence {
 
         val currentExecutionL: Zipper @> Execution = zipper >=> Sequence.Zipper.current
 
-        val currentFileIdL: Zipper @?> String =
+        val currentFileIdL: Zipper @?> FileId =
           zipper.partial >=> Sequence.Zipper.focus.partial >=> Step.Zipper.fileId
 
         // TODO: Get rid of these `self`es

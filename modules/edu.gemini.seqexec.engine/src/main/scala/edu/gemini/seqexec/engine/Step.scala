@@ -10,7 +10,7 @@ import Scalaz._
   */
 case class Step[+A](
   id: Int,
-  fileId: Option[String],
+  fileId: Option[FileId],
   config: StepConfig,
   breakpoint: Boolean,
   executions: List[List[A]]
@@ -62,7 +62,7 @@ object Step {
     */
   case class Zipper(
     id: Int,
-    fileId: Option[String],
+    fileId: Option[FileId],
     config: StepConfig,
     breakpoint: Boolean,
     pending: List[Actions],
@@ -135,8 +135,8 @@ object Step {
     val current: Zipper @> Execution =
       Lens.lensu((s, f) => s.copy(focus = f), _.focus)
 
-    val fileId: Zipper @?> String = {
-      val l: Zipper @> Option[String] =
+    val fileId: Zipper @?> FileId = {
+      val l: Zipper @> Option[FileId] =
         Lens.lensu((s, f) => s.copy(fileId = f), _.fileId)
       l.partial >=> PLens.somePLens
     }

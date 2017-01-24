@@ -82,5 +82,5 @@ object Result {
 
   sealed trait Response
   case class Configured(r: String) extends Response
-  case class Observed(fileId: String) extends Response
+  case class Observed(fileId: FileId) extends Response
 }
