@@ -220,7 +220,7 @@ object SequenceStepsTableContainer {
             IconMessage(
               IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
                 s"Press ",
-                <.b(s.isPartiallyExecuted ? "Continue" | "Continue"),
+                <.b(s.isPartiallyExecuted ? "Continue" | "Run"),
                 " to re-try"
               )
         )
