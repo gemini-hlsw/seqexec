@@ -83,6 +83,17 @@ package object engine {
     getS(id).flatMap(
       _.map { seq =>
         seq.status match {
+          case SequenceState.Stopping =>
+            seq.next match {
+              case None =>
+                send(q)(finished(id))
+              // Final State
+              case Some(qs: Sequence.State.Final) =>
+                putS(id)(qs) *> send(q)(finished(id))
+              // Execution completed
+              case Some(qs) =>
+                putS(id)(qs) *> switch(q)(id)(SequenceState.Idle)
+            }
           case SequenceState.Running =>
             seq.next match {
               // Empty state
@@ -91,9 +102,9 @@ package object engine {
               // Final State
               case Some(qs: Sequence.State.Final) =>
                 putS(id)(qs) *> send(q)(finished(id))
-              // Execution completed
+              // Execution completed. Check breakpoint here
               case Some(qs) =>
-                putS(id)(qs) *> send(q)(executing(id))
+                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) unit else send(q)(executing(id)))
             }
           case _ => unit
         }
@@ -101,8 +112,7 @@ package object engine {
   )
 
   /**
-    * Checks the `Status` is `Running` and executes all actions in the `Current`
-    * `Execution` in parallel. When all are done it emits the `Executed` event.
+    * Executes all actions in the `Current` `Execution` in parallel. When all are done it emits the `Executed` event.
     * It also updates the `State` as needed.
     */
   private def execute(q: EventQueue)(id: Sequence.Id): Handle[Unit] = {
@@ -118,9 +128,12 @@ package object engine {
 
     getS(id).flatMap(
       _.map { seq =>
-        Nondeterminism[Task].gatherUnordered(
-          seq.current.actions.zipWithIndex.map(act)
-        ).liftM[HandleStateT] *> send(q)(executed(id))
+        seq match {
+          case Sequence.State.Final(_,_) => unit
+          case _          => Nondeterminism[Task].gatherUnordered (
+            seq.current.actions.zipWithIndex.map (act)
+            ).liftM[HandleStateT] *> send (q) (executed (id) )
+        }
       }.getOrElse(unit)
     )
   }
@@ -168,11 +181,14 @@ package object engine {
   private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start(id)     => log("Output: Started") *> rollback(q)(id) *> switch(q)(id)(SequenceState.Running) *> send(q)(Event.next(id))
-      case Pause(id)     => log("Output: Paused") *> switch(q)(id)(SequenceState.Idle)
+      case Start(id)               => log("Output: Started") *> rollback(q)(id) *>
+        switch(q)(id)(SequenceState.Running) *> send(q)(Event.executing(id))
+      case Pause(id)               => log("Output: Paused") *> switch(q)(id)(SequenceState.Stopping)
       case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
-      case Poll          => log("Output: Polling current state")
-      case Exit          => log("Bye") *> close(q)
+      case Breakpoint(id, step, v) => log("Output: breakpoint changed") *>
+        modifyS(id)(_.setBreakpoint(step, v))
+      case Poll                    => log("Output: Polling current state")
+      case Exit                    => log("Bye") *> close(q)
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {

@@ -32,19 +32,16 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics
   )
 
-  // TODO: Add seqId: SPObservationID as parameter
   def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
 
-  // TODO: Add seqId: SPObservationID as parameter
   def requestPause(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit ]=
     q.enqueueOne(Event.pause(id.stringValue())).map(_.right)
 
-  // TODO: Add seqId: SPObservationID as parameter
-  def setBreakpoint(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit]= ???
+  def setBreakpoint(q: engine.EventQueue, seqId: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit]= ???
 
   // TODO: Add seqId: SPObservationID as parameter
-  def setSkipMark(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] = ???
+  def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
 
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
@@ -74,6 +71,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Start(_)    => SequenceStart(svs)
       case engine.Pause(_)    => SequencePauseRequested(svs)
       case engine.Load(_, _)  => SequenceLoaded(svs)
+      case engine.Breakpoint(_, _, _) => StepBreakpointChanged(svs)
       case engine.Poll        => SequenceRefreshed(svs)
       case engine.Exit        => NewLogMessage("Exit requested by user")
     }

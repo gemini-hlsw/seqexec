@@ -21,7 +21,7 @@ class packageSpec extends FlatSpec {
     */
   val configureTcs: Action  = for {
     _ <- Task(println("System: Start TCS configuration"))
-    _ <- Task(Thread.sleep(2000))
+    _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete TCS configuration"))
   } yield OK(())
 
@@ -31,7 +31,7 @@ class packageSpec extends FlatSpec {
     */
   val configureInst: Action  = for {
     _ <- Task(println("System: Start Instrument configuration"))
-    _ <- Task(Thread.sleep(2000))
+    _ <- Task(Thread.sleep(200))
     _ <- Task(println("System: Complete Instrument configuration"))
   } yield OK(())
 
@@ -41,13 +41,13 @@ class packageSpec extends FlatSpec {
     */
   val observe: Action  = for {
     _ <- Task(println("System: Start observation"))
-    _ <- Task(Thread.sleep(2000))
+    _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete observation"))
   } yield OK(())
 
   val faulty: Action  = for {
     _ <- Task(println("System: Start observation"))
-    _ <- Task(Thread.sleep(1000))
+    _ <- Task(Thread.sleep(100))
     _ <- Task(println ("System: Complete observation"))
   } yield Error(())
 
@@ -61,6 +61,7 @@ class packageSpec extends FlatSpec {
         Step(
           1,
           config,
+          false,
           List(
             List(configureTcs, configureInst), // Execution
             List(observe) // Execution
@@ -69,6 +70,7 @@ class packageSpec extends FlatSpec {
         Step(
           2,
           config,
+          false,
           List(
             List(configureTcs, configureInst), // Execution
             List(observe) // Execution
@@ -88,7 +90,7 @@ class packageSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs = (
       q.enqueueOne(start(seqId)) *>
-        // 6 Actions + 4 Nexts + 4 Executing + 4 Executions + 1 start + 1 finished => take(20)
+        // 6 Actions + 4 Nexts + 4 Executing + 4 Executed + 1 start + 1 finished => take(20)
         processE(q).take(20).runLast.eval(qs1)).unsafePerformSync.get._2
     assert(qs(seqId).pending.isEmpty)
   }

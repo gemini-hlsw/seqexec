@@ -14,6 +14,7 @@ sealed trait UserEvent
 case class Start(id: Sequence.Id) extends UserEvent
 case class Pause(id: Sequence.Id) extends UserEvent
 case class Load(id: Sequence.Id, sequence: Sequence[Action]) extends UserEvent
+case class Breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
 
@@ -35,6 +36,8 @@ object Event {
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
   def load(id: Sequence.Id, sequence: Sequence[Action]): Event = EventUser(Load(id, sequence))
+  def breakpoint()(id: Sequence.Id, step: Step.Id, v: Boolean): Event =
+    EventUser(Breakpoint(id, step, v))
 
   def failed[E](id: Sequence.Id, i: Int, e: E): Event = EventSystem(Failed(id, i, e))
   def completed[R](id: Sequence.Id, i: Int, r: R): Event = EventSystem(Completed(id, i, r))
