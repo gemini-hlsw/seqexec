@@ -8,9 +8,11 @@ import Scalaz._
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[+A](id: Int, config: StepConfig, executions: List[List[A]])
+case class Step[+A](id: Step.Id, config: StepConfig, breakpoint: Boolean, executions: List[List[A]])
 
 object Step {
+
+  type Id = Int
 
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
@@ -35,7 +37,7 @@ object Step {
 
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
-      Step(fa.id, fa.config, fa.executions.map(_.map(f)))
+      Step(fa.id, fa.config, fa.breakpoint, fa.executions.map(_.map(f)))
   }
 
   // TODO: Proof Foldable laws
@@ -55,6 +57,7 @@ object Step {
   case class Zipper(
     id: Int,
     config: StepConfig,
+    breakpoint: Boolean,
     pending: List[Actions],
     focus: Execution,
     done: List[Results],
@@ -73,11 +76,11 @@ object Step {
         case Nil           => None
         case exep :: exeps =>
           (Execution.currentify(exep) |@| focus.uncurrentify) (
-            (curr, exed) => Zipper(id, config, exeps, curr, exed :: done, rolledback)
+            (curr, exed) => Zipper(id, config, breakpoint, exeps, curr, exed :: done, rolledback)
           )
       }
 
-    def rollback: Zipper = Zipper(id, config, rolledback._2, rolledback._1, Nil, rolledback)
+    def rollback: Zipper = Zipper(id, config, breakpoint, rolledback._2, rolledback._1, Nil, rolledback)
 
     /**
       * Obtain the resulting `Step` only if all `Execution`s have been completed.
@@ -85,7 +88,7 @@ object Step {
       *
       */
     val uncurrentify: Option[Step[Result]] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, config, x :: done))
+      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, config, breakpoint, x :: done))
       else None
 
     /**
@@ -96,6 +99,7 @@ object Step {
       Step(
         id,
         config,
+        breakpoint,
         // TODO: Functor composition?
         done.map(_.map(_.right)) ++
           List(focus.execution) ++
@@ -116,7 +120,7 @@ object Step {
         case Nil         => None
         case exe :: exes =>
           Execution.currentify(exe).map( x =>
-            Zipper(step.id, step.config, exes, x, Nil, (x, exes))
+            Zipper(step.id, step.config, step.breakpoint, exes, x, Nil, (x, exes))
           )
       }
 

@@ -14,6 +14,7 @@ object ModelOps {
   implicit val sequenceStateShow: Show[SequenceState] = Show.shows[SequenceState] {
     case SequenceState.Completed => "Complete"
     case SequenceState.Running   => "Running"
+    case SequenceState.Stopping  => "Stopping"
     case SequenceState.Idle      => "Idle"
     case SequenceState.Paused    => "Paused"
     case SequenceState.Error(_)  => s"Error at step "

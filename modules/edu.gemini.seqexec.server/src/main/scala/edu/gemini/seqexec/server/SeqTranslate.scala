@@ -46,6 +46,7 @@ object SeqTranslate {
       Step[Action](
         i,
         config.toStepConfig,
+        false,
         List(
           // TODO: implicit function doesn't work here, why?
           sys.map(x => toAction(x.configure(config))),

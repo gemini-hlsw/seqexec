@@ -1,17 +1,25 @@
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.engine.Event.start
+import edu.gemini.seqexec.model.Model.SequenceState.Idle
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig}
 
+import scala.Function.const
 import scalaz._
 import Scalaz._
 import org.scalatest.FlatSpec
+import org.scalatest.Inside.inside
+import org.scalatest.Matchers._
 
 import scalaz.concurrent.Task
+import scalaz.stream.async
 
 /**
   * Created by jluhrs on 9/29/16.
   */
 class SequenceSpec extends FlatSpec {
+
+  val seqId ="TEST-01"
 
   // All tests check the output of running a sequence against the expected sequence of updates.
 
@@ -46,27 +54,69 @@ class SequenceSpec extends FlatSpec {
 
   val metadata = SequenceMetadata("F2")
 
+  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] = Step(id, config, breakpoint,
+    List(
+      List(action, action), // Execution
+      List(action) // Execution
+    )
+  )
+
+  it should "stop on breakpoints" in {
+
+    val q = async.boundedQueue[Event](10)
+    val qs0: EngineState = Map((seqId, Sequence.State.init(
+      Sequence(
+        seqId,
+        SequenceMetadata("F2"),
+        List(simpleStep(1, false), simpleStep(2, true))
+      )
+    )))
+
+    val qs1 = (
+      q.enqueueOne(start(seqId)).flatMap( _ =>
+        // 1 start + 3 completed + 2 executing + 2 executed + 2 next => take(10)
+        // It must be a better way to stop the process
+        processE(q).take(10).runLast.eval(qs0))).unsafePerformSync.get._2
+
+     inside (qs1.get(seqId).get) {
+      case Sequence.State.Zipper(zipper, status) =>
+        status should be (Idle)
+        assert(zipper.done.length == 1 && zipper.pending.isEmpty)
+    }
+
+  }
+
+
   // TODO: Share these fixtures with StepSpec
   val result = Result.OK(Unit)
   val action: Action = Task(result)
   val config: StepConfig = Map()
-  val stepz0: Step.Zipper   = Step.Zipper(0, config, Nil, Execution.empty, Nil, (Execution.empty, Nil))
-  val stepza0: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution.empty, Nil, (Execution.empty, List(List(action))))
-  val stepza1: Step.Zipper  = Step.Zipper(1, config, List(List(action)), Execution(List(result.right)), Nil, (Execution(List(action.left)), List(List(action))))
-  val stepzr0: Step.Zipper  = Step.Zipper(1, config, Nil, Execution.empty, List(List(result)), (Execution(List(action.left)), Nil))
-  val stepzr1: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), Nil, (Execution(List(action.left, action.left)), Nil))
-  val stepzr2: Step.Zipper  = Step.Zipper(1, config, Nil, Execution(List(result.right, result.right)), List(List(result)), (Execution(List(action.left)), List(List(action, action))))
-  val stepzar0: Step.Zipper = Step.Zipper(1, config, Nil, Execution(List(result.right, action.left)), Nil, (Execution(List(action.left, action.left)), Nil))
-  val stepzar1: Step.Zipper = Step.Zipper(1, config, List(List(action)), Execution(List(result.right, result.right)), List(List(result)), (Execution(List(action.left)), List(List(action, action), List(action))))
+  def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
+    val rollback: (Execution, List[Actions]) =  (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {
+      case Nil => (Execution.empty, Nil)
+      case x::xs => (Execution(x.map(_.left)), xs)
+    }
 
-  val seqz0: Sequence.Zipper   = Sequence.Zipper("id", metadata, Nil, stepz0, Nil)
-  val seqza0: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepza0, Nil)
-  val seqza1: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepza1, Nil)
-  val seqzr0: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepzr0, Nil)
-  val seqzr1: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepzr1, Nil)
-  val seqzr2: Sequence.Zipper  = Sequence.Zipper("id", metadata, Nil, stepzr2, Nil)
-  val seqzar0: Sequence.Zipper = Sequence.Zipper("id", metadata, Nil, stepzar0, Nil)
-  val seqzar1: Sequence.Zipper = Sequence.Zipper("id", metadata, Nil, stepzar1, Nil)
+    Step.Zipper(1, config, false, pending, focus, done, rollback)
+  }
+  val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper  = simpleStep(List(List(action)), Execution(List(result.right)), Nil)
+  val stepzr0: Step.Zipper  = simpleStep(Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper  = simpleStep(Nil, Execution(List(result.right, result.right)), Nil)
+  val stepzr2: Step.Zipper  = simpleStep(Nil, Execution(List(result.right, result.right)), List(List(result)))
+  val stepzar0: Step.Zipper = simpleStep(Nil, Execution(List(result.right, action.left)), Nil)
+  val stepzar1: Step.Zipper = simpleStep(List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
+
+  def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, metadata, Nil, focus, Nil)
+  val seqz0: Sequence.Zipper   = simpleSequenceZipper(stepz0)
+  val seqza0: Sequence.Zipper  = simpleSequenceZipper(stepza0)
+  val seqza1: Sequence.Zipper  = simpleSequenceZipper(stepza1)
+  val seqzr0: Sequence.Zipper  = simpleSequenceZipper(stepzr0)
+  val seqzr1: Sequence.Zipper  = simpleSequenceZipper(stepzr1)
+  val seqzr2: Sequence.Zipper  = simpleSequenceZipper(stepzr2)
+  val seqzar0: Sequence.Zipper = simpleSequenceZipper(stepzar0)
+  val seqzar1: Sequence.Zipper = simpleSequenceZipper(stepzar1)
 
   "next" should "be None when there are no more pending executions" in {
     assert(seqz0.next.isEmpty)
@@ -80,3 +130,4 @@ class SequenceSpec extends FlatSpec {
   }
 
 }
+

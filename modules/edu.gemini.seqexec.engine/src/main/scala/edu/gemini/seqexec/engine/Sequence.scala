@@ -8,13 +8,13 @@ import Scalaz._
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-case class Sequence[+A](id: String, metadata: SequenceMetadata, steps: List[Step[A]])
+case class Sequence[+A](id: Sequence.Id, metadata: SequenceMetadata, steps: List[Step[A]])
 
 object Sequence {
 
   type Id = String
 
-  def empty[A](id: String): Sequence[A] = Sequence(id, SequenceMetadata(""), Nil)
+  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata(""), Nil)
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
@@ -37,7 +37,7 @@ object Sequence {
     *
     */
   case class Zipper(
-    id: String,
+    id: Id,
     metadata: SequenceMetadata,
     pending: List[Step[Action]],
     focus: Step.Zipper,
@@ -134,6 +134,10 @@ object Sequence {
 
     def rollback: State
 
+    def setBreakpoint(stepId: Step.Id, v: Boolean): State
+
+    def getCurrentBreakpoint: Boolean
+
     /**
       * Current Execution
       */
@@ -165,7 +169,6 @@ object Sequence {
         (qs, s) => (
           qs match {
             // TODO: Isn't there a better way to write this?
-            case Initial(st, _) => Initial(st, s)
             case Zipper(st, _)  => Zipper(st, s)
             case Final(st, _)   => Final(st, s)
           }
@@ -177,32 +180,9 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action]): State = Initial(q, SequenceState.Idle)
+    def init(q: Sequence[Action]): State = Sequence.Zipper.currentify(q).map(Zipper(_, SequenceState.Idle))
+      .getOrElse(Final(Sequence.empty(q.id), SequenceState.Idle))
 
-    /**
-      * Initial `State`. This doesn't have any `Sequence` under execution, there are
-      * only pending `Step`s.
-      *
-      */
-    case class Initial(seq: Sequence[Action], status: SequenceState) extends State {
-      self =>
-
-      override val next: Option[State] =
-        Sequence.Zipper.currentify(seq).map(Zipper(_, status))
-
-      override val pending: List[Step[Action]] = seq.steps
-
-      override def rollback = self
-
-      override val current: Execution = Execution.empty
-
-      override val done: List[Step[Result]] = Nil
-
-      override def mark(i: Int)(r: Result): State = self
-
-      override val toSequence: Sequence[Action \/ Result] = seq.map(_.left)
-
-    }
     /**
       * This is the `State` in Zipper mode, which means is under execution.
       *
@@ -230,6 +210,12 @@ object Sequence {
 
       override def rollback = self.copy(zipper = zipper.rollback)
 
+      override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self.copy(zipper =
+        zipper.copy(pending =
+          zipper.pending.map(s => if(s.id == stepId) s.copy(breakpoint = v) else s)))
+
+      override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint
+
       override val done: List[Step[Result]] = zipper.done
 
       override def mark(i: Int)(r: Result): State = {
@@ -248,7 +234,7 @@ object Sequence {
     }
 
     /**
-      * Final `State`. This doesn't have any `Sequence` under execution, there are
+      * Final `State`. This doesn't have any `Step` under execution, there are
       * only completed `Step`s.
       *
       */
@@ -261,6 +247,10 @@ object Sequence {
       override val pending: List[Step[Action]] = Nil
 
       override def rollback = self
+
+      override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self
+
+      override def getCurrentBreakpoint: Boolean = false
 
       override val done: List[Step[Result]] = seq.steps
 
