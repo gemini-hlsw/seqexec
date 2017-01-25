@@ -104,7 +104,8 @@ package object engine {
                 putS(id)(qs) *> send(q)(finished(id))
               // Execution completed. Check breakpoint here
               case Some(qs) =>
-                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) unit else send(q)(executing(id)))
+                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(q)(id)(SequenceState.Idle)
+                                 else send(q)(executing(id)))
             }
           case _ => unit
         }

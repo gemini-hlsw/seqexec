@@ -13,6 +13,8 @@ import edu.gemini.seqexec.engine.Result.{Error, OK}
 import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running}
 
+import scala.Function.const
+
 
 /**
   * Created by jluhrs on 9/29/16.
@@ -68,7 +70,7 @@ class StepSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: EngineState = Map((seqId, Sequence.State.init(
       Sequence(
-        "First",
+        seqId,
         SequenceMetadata("F2"),
         List(
           Step(
@@ -157,14 +159,22 @@ class StepSpec extends FlatSpec {
   val failure = Result.Error(Unit)
   val action: Action = Task(result)
   val config: StepConfig = Map()
-  val stepz0: Step.Zipper   = Step.Zipper(0, config, false, Nil, Execution.empty, Nil, (Execution.empty, Nil))
-  val stepza0: Step.Zipper  = Step.Zipper(1, config, false, List(List(action)), Execution.empty, Nil, (Execution.empty, List(List(action))))
-  val stepza1: Step.Zipper  = Step.Zipper(1, config, false, List(List(action)), Execution(List(result.right)), Nil, (Execution(List(action.left)), List(List(action))))
-  val stepzr0: Step.Zipper  = Step.Zipper(1, config, false, Nil, Execution.empty, List(List(result)), (Execution(List(action.left)), Nil))
-  val stepzr1: Step.Zipper  = Step.Zipper(1, config, false, Nil, Execution(List(result.right, result.right)), Nil, (Execution(List(action.left, action.left)), Nil))
-  val stepzr2: Step.Zipper  = Step.Zipper(1, config, false, Nil, Execution(List(result.right, result.right)), List(List(result)), (Execution(List(action.left)), List(List(action, action))))
-  val stepzar0: Step.Zipper = Step.Zipper(1, config, false, Nil, Execution(List(result.right, action.left)), Nil, (Execution(List(action.left, action.left)), Nil))
-  val stepzar1: Step.Zipper = Step.Zipper(1, config, false, List(List(action)), Execution(List(result.right, result.right)), List(List(result)), (Execution(List(action.left)), List(List(action, action), List(action))))
+  def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
+    val rollback: (Execution, List[Actions]) = (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {
+      case Nil => (Execution.empty, Nil)
+      case x::xs => (Execution(x.map(_.left)), xs)
+    }
+
+    Step.Zipper(1, config, false, pending, focus, done, rollback)
+  }
+  val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper  = simpleStep(List(List(action)), Execution(List(result.right)), Nil)
+  val stepzr0: Step.Zipper  = simpleStep(Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper  = simpleStep(Nil, Execution(List(result.right, result.right)), Nil)
+  val stepzr2: Step.Zipper  = simpleStep(Nil, Execution(List(result.right, result.right)), List(List(result)))
+  val stepzar0: Step.Zipper = simpleStep(Nil, Execution(List(result.right, action.left)), Nil)
+  val stepzar1: Step.Zipper = simpleStep(List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
 
   "uncurrentify" should "be None when not all executions are completed" in {
     assert(stepz0.uncurrentify.isEmpty)
