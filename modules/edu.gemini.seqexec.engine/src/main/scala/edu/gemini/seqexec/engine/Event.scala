@@ -36,7 +36,7 @@ object Event {
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
   def load(id: Sequence.Id, sequence: Sequence[Action]): Event = EventUser(Load(id, sequence))
-  def breakpoint()(id: Sequence.Id, step: Step.Id, v: Boolean): Event =
+  def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event =
     EventUser(Breakpoint(id, step, v))
 
   def failed[E](id: Sequence.Id, i: Int, e: E): Event = EventSystem(Failed(id, i, e))

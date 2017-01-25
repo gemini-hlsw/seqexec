@@ -38,7 +38,11 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def requestPause(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit ]=
     q.enqueueOne(Event.pause(id.stringValue())).map(_.right)
 
-  def setBreakpoint(q: engine.EventQueue, seqId: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit]= ???
+  def setBreakpoint(q: engine.EventQueue,
+                    seqId: SPObservationID,
+                    stepId: edu.gemini.seqexec.engine.Step.Id,
+                    v: Boolean): Task[SeqexecFailure \/ Unit]=
+    q.enqueueOne(Event.breakpoint(seqId.stringValue(), stepId, v)).map(_.right)
 
   // TODO: Add seqId: SPObservationID as parameter
   def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
@@ -68,12 +72,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private def toSeqexecEvent(ev: engine.Event)(svs: SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
-      case engine.Start(_)    => SequenceStart(svs)
-      case engine.Pause(_)    => SequencePauseRequested(svs)
-      case engine.Load(_, _)  => SequenceLoaded(svs)
+      case engine.Start(_)            => SequenceStart(svs)
+      case engine.Pause(_)            => SequencePauseRequested(svs)
+      case engine.Load(_, _)          => SequenceLoaded(svs)
       case engine.Breakpoint(_, _, _) => StepBreakpointChanged(svs)
-      case engine.Poll        => SequenceRefreshed(svs)
-      case engine.Exit        => NewLogMessage("Exit requested by user")
+      case engine.Poll                => SequenceRefreshed(svs)
+      case engine.Exit                => NewLogMessage("Exit requested by user")
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
@@ -100,7 +104,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
             step.config,
             engine.Step.status(step),
             // TODO: Implement breakpoints at Engine level
-            breakpoint = false,
+            breakpoint = step.breakpoint,
             // TODO: Implement skipping at Engine level
             skip = false,
             configStatus = Map.empty,

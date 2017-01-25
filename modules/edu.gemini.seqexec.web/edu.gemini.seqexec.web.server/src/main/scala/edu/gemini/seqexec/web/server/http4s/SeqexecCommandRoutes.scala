@@ -33,20 +33,29 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
 
     case POST -> Root / obsId / "start" =>
       for {
-        obsId <-
+        obs <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))
               .fold(e => Task.fail(e), Task.now)
-        _     <- se.start(inputQueue, obsId)
-        resp  <- Ok(s"Started sequence $obsId")
+        _     <- se.start(inputQueue, obs)
+        resp  <- Ok(s"Started sequence $obs")
       } yield resp
 
     case POST -> Root / obsId / "pause" =>
       for {
-        obsId <-
+        obs <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))
               .fold(e => Task.fail(e), Task.now)
-        _     <- se.requestPause(inputQueue, obsId)
-        resp  <- Ok(s"Pause sequence $obsId")
+        _     <- se.requestPause(inputQueue, obs)
+        resp  <- Ok(s"Pause sequence $obs")
+      } yield resp
+
+    case POST -> Root / obsId / stepId / "breakpoint" / bp =>
+      for {
+        obs    <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        step   <- \/.fromTryCatchNonFatal(stepId.toInt).fold(e => Task.fail(e), Task.now)
+        newVal <- \/.fromTryCatchNonFatal(bp.toBoolean).fold(e => Task.fail(e), Task.now)
+        _      <- se.setBreakpoint(inputQueue, obs, step, newVal)
+        resp   <- Ok(s"Set breakpoint in step $step of sequence $obsId")
       } yield resp
 
     case GET -> Root / "refresh" =>
