@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.message
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, ReactNode}
 
@@ -20,21 +21,31 @@ object IconMessage extends Message {
           "positive" -> (p.style == IconMessage.Style.Positive),
           "success"  -> (p.style == IconMessage.Style.Success),
           "negative" -> (p.style == IconMessage.Style.Negative),
-          "error"    -> (p.style == IconMessage.Style.Error)
+          "error"    -> (p.style == IconMessage.Style.Error),
+          "tiny"     -> (p.size == Size.Tiny),
+          "mini"     -> (p.size == Size.Mini),
+          "small"    -> (p.size == Size.Small),
+          "large"    -> (p.size == Size.Large),
+          "big"      -> (p.size == Size.Big),
+          "huge"     -> (p.size == Size.Huge),
+          "massive"  -> (p.size == Size.Massive)
         ),
         p.icon,
-        p.header.map(h =>
-          <.div(
-            ^.cls := "header",
-            h
-          )
-        ),
-        c
+        <.div(
+          ^.cls := "content",
+          p.header.map(h =>
+            <.div(
+              ^.cls := "header",
+              h
+            )
+          ),
+          c
+        )
       )
     )
     .build
 
-  case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined)
+  case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined, size: Size = Size.NotSized)
 
   def apply(p: Props, children: ReactNode*) = component(p, children: _*)
 }

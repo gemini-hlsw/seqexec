@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.ObservationOperations._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -10,7 +11,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.message.{IconMessage, CloseableMessage}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -57,6 +58,19 @@ object SequenceStepsTableContainer {
           <.h3(
             ^.cls := "ui green header",
             "Sequence completed"
+          ),
+        p.status.isLogged && p.s.hasError ?=
+          <.div(
+            Button(
+              Button.Props(
+                icon = Some(IconPlay),
+                labeled = true,
+                onClick = requestRun(p.s),
+                color = Some("blue"),
+                dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
+                disabled = !p.status.isConnected || s.runRequested),
+              s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
+            )
           ),
         p.status.isLogged && p.s.status === SequenceState.Idle ?=
           Button(
@@ -156,7 +170,7 @@ object SequenceStepsTableContainer {
       }
 
     def observationControlButtons(s: SequenceView, step: Step): List[ReactNode] = {
-      s.allowedObservationOperations(step.status).map {
+      s.allowedObservationOperations(step).map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
@@ -178,26 +192,44 @@ object SequenceStepsTableContainer {
     }
 
     def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): ReactNode =
+      <.div(
+        ^.cls := "ui two column grid",
         <.div(
-          ^.cls := "ui horizontal segments running",
+          ^.cls := "ui row",
           <.div(
-            ^.cls := "ui basic segment running",
-            <.p(step.status.shows)
+            ^.cls := "left column",
+            <.div(
+              ^.cls := "ui segment basic running",
+              step.status.shows
+            )
           ),
           loggedIn ?= <.div(
-            ^.cls := "ui basic segment right aligned running",
+            ^.cls := "right column",
             <.div(
               ^.cls := "ui icon buttons",
               observationControlButtons(sequenceView, step)
             )
           )
         )
+      )
 
+    def stepInError(loggedIn: Boolean, s: SequenceView, msg: String): ReactNode =
+        <.div(
+          <.p(s"Error: $msg"),
+          loggedIn ?=
+            IconMessage(
+              IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
+                s"Press ",
+                <.b(s.isPartiallyExecuted ? "Continue" | "Run"),
+                " to re-try"
+              )
+        )
 
     def stepDisplay(p: Props, step: Step): ReactNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
+        case StepState.Error(msg)                  => stepInError(p.status.isLogged, p.s, msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)
@@ -298,7 +330,7 @@ object SequenceStepsTableContainer {
                     "warning"  -> (step.status === StepState.Running),
                     "negative" -> (step.status === StepState.Paused),
                     // TODO Show error case
-                    //"negative" -> (step.status == StepState.Error),
+                    "negative" -> step.hasError,
                     "active"   -> (step.status === StepState.Skipped),
                     "disabled" -> step.skip
                   ),

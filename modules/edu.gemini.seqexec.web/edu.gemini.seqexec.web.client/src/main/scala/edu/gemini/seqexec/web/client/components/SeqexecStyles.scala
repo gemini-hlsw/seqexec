@@ -91,9 +91,16 @@ object SeqexecStyles extends StyleSheet.Inline {
     display.inline
   }
 
+  val noPadding: StyleS = mixin(
+    padding(0.px).important
+  )
+
+  val noMargin: StyleS = mixin(
+    margin(0.px)
+  )
+
   val scrollPaneSegment: StyleA = style("ui.scroll.pane.segment")(
-    padding(0.px),
-    marginTop(0.px),
+    noPadding,
     unsafeChild("> .ui.table")(
       border(0.px),
       borderSpacing(0.px)
@@ -105,7 +112,11 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val tdNoPadding: StyleA = style(
-    padding(0.px).important
+    noPadding
+  )
+
+  val errorTab: StyleA = style(
+    borderTop(3.px, red, solid).important
   )
 
   val progressVCentered: StyleA = style("ui.progress.vcentered")(
@@ -116,8 +127,8 @@ object SeqexecStyles extends StyleSheet.Inline {
   val segmentRunningMixin: StyleS = mixin(
     backgroundColor(rgba(0, 0, 0, 0.0)).important,
     color.inherit,
-    padding(0.em),
-    margin(0.px),
+    padding(0.5.em, 0.5.em, 0.5.em, 0.em),
+    noMargin,
     (boxShadow := ("none")).important
   )
 
@@ -189,10 +200,17 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderBottom.none.important
   )
 
+  val handleContainerOff: StyleA = style(
+    display.none
+  )
+
+  val handleContainerOn: StyleA = style(
+  )
+
   val skipHandleContainer: StyleA = style(
     position.relative,
     left(((gutterWidth - iconWidth)/2).px),
-    top(-12.px),
+    top(-11.px),
     height(0.px),
     overflow.visible
   )
@@ -206,10 +224,10 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderRight(1.px, solid, rgba(34,36,38,0.1)).important
   )
 
-  val trBreakpoint = style()
+  val trBreakpoint: StyleA = style()
   // This defines the hover for the gutter
   //SeqexecStyles-trNoBorder:hover > td:first-child {
-  val gutterHover = style(
+  val gutterHover: StyleA = style(
     unsafeRoot("tr." + trBreakpoint.htmlClass) (
       &.hover(
         unsafeChild("> td")(
@@ -222,7 +240,6 @@ object SeqexecStyles extends StyleSheet.Inline {
   )
 
   val stepsTable: StyleA = style(
-    //paddingLeft(16.px),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
