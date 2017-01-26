@@ -21,8 +21,5 @@ class SequenceDisplayHandlerSpec extends FlatSpec with Matchers with PropertyChe
       }
     }
   }
-  it should "set the current sequence when present" in {
-    pending
-  }
 
 }
