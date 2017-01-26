@@ -334,16 +334,16 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def appendToLogE(s: String) =
     Effect(Future(AppendToLog(s)))
 
-  val wsHandler              = new WebSocketHandler(zoomRW(_.ws)((m, v) => m.copy(ws = v)))
-  val searchHandler          = new LoadHandler(zoomRW(_.searchResults)((m, v) => m.copy(searchResults = v)))
-  val searchAreaHandler      = new SearchAreaHandler(zoomRW(_.searchAreaState)((m, v) => m.copy(searchAreaState = v)))
-  val devConsoleHandler      = new DevConsoleHandler(zoomRW(_.devConsoleState)((m, v) => m.copy(devConsoleState = v)))
-  val loginBoxHandler        = new LoginBoxHandler(zoomRW(_.loginBox)((m, v) => m.copy(loginBox = v)))
-  val userLoginHandler       = new UserLoginHandler(zoomRW(_.user)((m, v) => m.copy(user = v)))
+  val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
+  val searchHandler          = new LoadHandler(zoomTo(_.searchResults))
+  val searchAreaHandler      = new SearchAreaHandler(zoomTo(_.searchAreaState))
+  val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
+  val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
+  val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
   val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
-  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(_.sequencesOnDisplay)((m, v) => m.copy(sequencesOnDisplay = v)))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomRW(_.sequences)((m, v) => m.copy(sequences = v)))
-  val globalLogHandler       = new GlobalLogHandler(zoomRW(_.globalLog)((m, v) => m.copy(globalLog = v)))
+  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
+  val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
