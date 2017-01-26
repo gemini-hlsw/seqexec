@@ -164,7 +164,7 @@ object SequenceStepsTableContainer {
             )
           )
         case StepState.Completed =>
-          "File completed"
+          step.fileId.getOrElse(""): String
         case _ =>
           step.file.getOrElse(""): String
       }

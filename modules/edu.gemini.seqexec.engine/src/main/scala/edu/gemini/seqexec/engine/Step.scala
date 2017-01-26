@@ -8,7 +8,13 @@ import Scalaz._
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[+A](id: Step.Id, config: StepConfig, breakpoint: Boolean, executions: List[List[A]])
+case class Step[+A](
+  id: Int,
+  fileId: Option[FileId],
+  config: StepConfig,
+  breakpoint: Boolean,
+  executions: List[List[A]]
+)
 
 object Step {
 
@@ -37,7 +43,7 @@ object Step {
 
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
-      Step(fa.id, fa.config, fa.breakpoint, fa.executions.map(_.map(f)))
+      Step(fa.id, fa.fileId, fa.config, fa.breakpoint, fa.executions.map(_.map(f)))
   }
 
   // TODO: Proof Foldable laws
@@ -56,6 +62,7 @@ object Step {
     */
   case class Zipper(
     id: Int,
+    fileId: Option[FileId],
     config: StepConfig,
     breakpoint: Boolean,
     pending: List[Actions],
@@ -76,11 +83,11 @@ object Step {
         case Nil           => None
         case exep :: exeps =>
           (Execution.currentify(exep) |@| focus.uncurrentify) (
-            (curr, exed) => Zipper(id, config, breakpoint, exeps, curr, exed :: done, rolledback)
+            (curr, exed) => Zipper(id, fileId, config, breakpoint, exeps, curr, exed :: done, rolledback)
           )
       }
 
-    def rollback: Zipper = Zipper(id, config, breakpoint, rolledback._2, rolledback._1, Nil, rolledback)
+    def rollback: Zipper = Zipper(id, fileId, config, breakpoint, rolledback._2, rolledback._1, Nil, rolledback)
 
     /**
       * Obtain the resulting `Step` only if all `Execution`s have been completed.
@@ -88,7 +95,7 @@ object Step {
       *
       */
     val uncurrentify: Option[Step[Result]] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, config, breakpoint, x :: done))
+      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, fileId, config, breakpoint, x :: done))
       else None
 
     /**
@@ -98,6 +105,7 @@ object Step {
     val toStep: Step[Action \/ Result] =
       Step(
         id,
+        fileId,
         config,
         breakpoint,
         // TODO: Functor composition?
@@ -120,12 +128,15 @@ object Step {
         case Nil         => None
         case exe :: exes =>
           Execution.currentify(exe).map( x =>
-            Zipper(step.id, step.config, step.breakpoint, exes, x, Nil, (x, exes))
+            Zipper(step.id, step.fileId, step.config, step.breakpoint, exes, x, Nil, (x, exes))
           )
       }
 
     val current: Zipper @> Execution =
       Lens.lensu((s, f) => s.copy(focus = f), _.focus)
+
+    val fileId: Zipper @> Option[FileId] =
+      Lens.lensu((s, f) => s.copy(fileId = f), _.fileId)
 
   }
 

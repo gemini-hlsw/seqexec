@@ -79,6 +79,7 @@ object Model {
     val skip: Boolean
     val configStatus: Map[SystemName, ActionStatus]
     val observeStatus: ActionStatus
+    val fileId: Option[dhs.ObsId]
   }
 
   case class StandardStep(
@@ -87,7 +88,8 @@ object Model {
     override val breakpoint: Boolean,
     override val skip: Boolean,
     override val configStatus: Map[SystemName, ActionStatus],
-    override val observeStatus: ActionStatus
+    override val observeStatus: ActionStatus,
+    override val fileId: Option[dhs.ObsId]
   ) extends Step
   // Other kinds of Steps to be defined.
 

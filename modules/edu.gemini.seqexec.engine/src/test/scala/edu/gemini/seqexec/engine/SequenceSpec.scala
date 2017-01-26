@@ -54,7 +54,7 @@ class SequenceSpec extends FlatSpec {
 
   val metadata = SequenceMetadata("F2")
 
-  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] = Step(id, config, breakpoint,
+  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] = Step(id, None, config, breakpoint,
     List(
       List(action, action), // Execution
       List(action) // Execution
@@ -88,7 +88,7 @@ class SequenceSpec extends FlatSpec {
 
 
   // TODO: Share these fixtures with StepSpec
-  val result = Result.OK(Unit)
+  val result = Result.OK(Result.Observed("dummyId"))
   val action: Action = Task(result)
   val config: StepConfig = Map()
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
@@ -97,7 +97,7 @@ class SequenceSpec extends FlatSpec {
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, config, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, false, pending, focus, done, rollback)
   }
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)

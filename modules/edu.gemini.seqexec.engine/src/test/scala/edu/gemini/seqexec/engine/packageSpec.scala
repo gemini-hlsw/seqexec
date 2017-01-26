@@ -23,7 +23,7 @@ class packageSpec extends FlatSpec {
     _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete TCS configuration"))
-  } yield OK(())
+  } yield Result.OK(Result.Configured("TCS"))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -33,7 +33,7 @@ class packageSpec extends FlatSpec {
     _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println("System: Complete Instrument configuration"))
-  } yield OK(())
+  } yield Result.OK(Result.Configured("Instrument"))
 
   /**
     * Emulates an observation in the real world.
@@ -43,13 +43,13 @@ class packageSpec extends FlatSpec {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete observation"))
-  } yield OK(())
+} yield Result.OK(Result.Observed("DummyFileId"))
 
   val faulty: Action  = for {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(100))
     _ <- Task(println ("System: Complete observation"))
-  } yield Error(())
+  } yield Result.Error(Unit)
 
   val config: StepConfig = Map()
   val seqId ="TEST-01"
@@ -60,6 +60,7 @@ class packageSpec extends FlatSpec {
       List(
         Step(
           1,
+          None,
           config,
           false,
           List(
@@ -69,6 +70,7 @@ class packageSpec extends FlatSpec {
         ),
         Step(
           2,
+          None,
           config,
           false,
           List(

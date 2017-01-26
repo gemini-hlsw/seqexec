@@ -22,7 +22,7 @@ case object Exit extends UserEvent
   * Events generated internally by the Engine.
   */
 sealed trait SystemEvent
-case class Completed[R](id: Sequence.Id, i: Int, r: R) extends SystemEvent
+case class Completed(id: Sequence.Id, i: Int, r: Result.Response) extends SystemEvent
 case class Failed[E](id: Sequence.Id, i: Int, e: E) extends SystemEvent
 case class Executed(id: Sequence.Id) extends SystemEvent
 case class Executing(id: Sequence.Id) extends SystemEvent
@@ -40,7 +40,7 @@ object Event {
     EventUser(Breakpoint(id, step, v))
 
   def failed[E](id: Sequence.Id, i: Int, e: E): Event = EventSystem(Failed(id, i, e))
-  def completed[R](id: Sequence.Id, i: Int, r: R): Event = EventSystem(Completed(id, i, r))
+  def completed(id: Sequence.Id, i: Int, r: Result.Response): Event = EventSystem(Completed(id, i, r))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
   def next(id: Sequence.Id): Event = EventSystem(Next(id))

@@ -9,7 +9,6 @@ import Inside._
 
 import scalaz.concurrent.Task
 import scalaz.stream.async
-import edu.gemini.seqexec.engine.Result.{Error, OK}
 import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running}
 
@@ -31,7 +30,7 @@ class StepSpec extends FlatSpec {
     _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete TCS configuration"))
-  } yield OK(())
+  } yield Result.OK(Result.Configured("TCS"))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -41,7 +40,7 @@ class StepSpec extends FlatSpec {
     _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(150))
     _ <- Task(println("System: Complete Instrument configuration"))
-  } yield OK(())
+  } yield Result.OK(Result.Configured("Instrument"))
 
   /**
     * Emulates an observation in the real world.
@@ -51,11 +50,14 @@ class StepSpec extends FlatSpec {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete observation"))
-  } yield OK(())
+  } yield Result.OK(Result.Observed("DummyFileId"))
 
   def triggerPause(q: async.mutable.Queue[Event]): Action = for {
     _ <- q.enqueueOne(pause(seqId))
-  } yield OK(())
+    // There is not a distinct result for Pause because the Pause action is a
+    // trick for testing but we don't need to support it real life, he pause
+    // input event is enough.
+  } yield Result.OK(Result.Observed("DummyFileId"))
 
   // All tests check the output of running a step against the expected sequence of updates.
 
@@ -75,6 +77,7 @@ class StepSpec extends FlatSpec {
         List(
           Step(
             1,
+            None,
             config,
             false,
             List(
@@ -96,7 +99,7 @@ class StepSpec extends FlatSpec {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Idle)
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
 
         }
@@ -114,6 +117,7 @@ class StepSpec extends FlatSpec {
         List(),
         Step.Zipper(
           2,
+          None,
           config,
           false,
           List(),
@@ -134,7 +138,7 @@ class StepSpec extends FlatSpec {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Running)
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
     }
@@ -155,7 +159,7 @@ class StepSpec extends FlatSpec {
 
   }
 
-  val result = Result.OK(Unit)
+  val result = Result.OK(Result.Observed("dummyId"))
   val failure = Result.Error(Unit)
   val action: Action = Task(result)
   val config: StepConfig = Map()
@@ -165,8 +169,9 @@ class StepSpec extends FlatSpec {
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, config, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, false, pending, focus, done, rollback)
   }
+
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
   val stepza1: Step.Zipper  = simpleStep(List(List(action)), Execution(List(result.right)), Nil)
@@ -198,12 +203,12 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step[Action] = Step(1, config, false, List(Nil))
-  val step1: Step[Action] = Step(1, config, false, List(List(action)))
-  val step2: Step[Action] = Step(2, config, false, List(List(action, action), List(action)))
+  val step0: Step[Action] = Step(1, None, config, false, List(Nil))
+  val step1: Step[Action] = Step(1, None, config, false, List(List(action)))
+  val step2: Step[Action] = Step(2, None, config, false, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step(0, config, false, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step(0, None, config, false, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
@@ -218,6 +223,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          None,
           Map.empty,
           false,
           Nil,
@@ -234,6 +240,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          None,
           Map.empty,
           false,
           Nil,
@@ -250,6 +257,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          None,
           Map.empty,
           false,
           Nil,
@@ -266,6 +274,7 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           1,
+          None,
           Map.empty,
           false,
           Nil,
