@@ -154,7 +154,7 @@ package object engine {
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail[E](q: EventQueue)(id: Sequence.Id)(i: Int, e: E): Handle[Unit] =
+  def fail(q: EventQueue)(id: Sequence.Id)(i: Int, e: String): Handle[Unit] =
     modifyS(id)(_.mark(i)(Result.Error(e))) *>
       switch(q)(id)(SequenceState.Error("There was an error"))
 

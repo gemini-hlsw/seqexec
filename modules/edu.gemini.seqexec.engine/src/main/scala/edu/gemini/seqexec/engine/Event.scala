@@ -23,7 +23,7 @@ case object Exit extends UserEvent
   */
 sealed trait SystemEvent
 case class Completed(id: Sequence.Id, i: Int, r: Result.Response) extends SystemEvent
-case class Failed[E](id: Sequence.Id, i: Int, e: E) extends SystemEvent
+case class Failed(id: Sequence.Id, i: Int, e: String) extends SystemEvent
 case class Executed(id: Sequence.Id) extends SystemEvent
 case class Executing(id: Sequence.Id) extends SystemEvent
 case class Next(id: Sequence.Id) extends SystemEvent
@@ -39,7 +39,7 @@ object Event {
   def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event =
     EventUser(Breakpoint(id, step, v))
 
-  def failed[E](id: Sequence.Id, i: Int, e: E): Event = EventSystem(Failed(id, i, e))
+  def failed(id: Sequence.Id, i: Int, e: String): Event = EventSystem(Failed(id, i, e))
   def completed(id: Sequence.Id, i: Int, r: Result.Response): Event = EventSystem(Completed(id, i, r))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))

@@ -78,9 +78,11 @@ sealed trait Result
 
 object Result {
   case class OK(response: Response) extends Result
-  case class Error[E](e: E) extends Result
+  // TODO: Replace the message by a richer Error type like `SeqexecFailure`
+  case class Error(msg: String) extends Result
 
   sealed trait Response
   case class Configured(r: String) extends Response
   case class Observed(fileId: FileId) extends Response
+
 }

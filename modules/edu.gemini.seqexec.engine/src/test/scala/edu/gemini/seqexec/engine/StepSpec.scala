@@ -160,7 +160,7 @@ class StepSpec extends FlatSpec {
   }
 
   val result = Result.OK(Result.Observed("dummyId"))
-  val failure = Result.Error(Unit)
+  val failure = Result.Error("Dummy error")
   val action: Action = Task(result)
   val config: StepConfig = Map()
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
