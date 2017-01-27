@@ -100,6 +100,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
         def viewStep(step: StepAR): StandardStep =
           StandardStep(
+            step.id,
             step.config,
             engine.Step.status(step),
             // TODO: Implement breakpoints at Engine level

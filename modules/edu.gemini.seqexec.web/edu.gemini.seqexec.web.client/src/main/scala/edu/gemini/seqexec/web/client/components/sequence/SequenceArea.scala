@@ -237,7 +237,6 @@ object SequenceStepsTableContainer {
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
 
     def mouseLeave(index: Int): Callback =
-      //Callback.empty
       $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
 
     def mouseLeave: Callback =
