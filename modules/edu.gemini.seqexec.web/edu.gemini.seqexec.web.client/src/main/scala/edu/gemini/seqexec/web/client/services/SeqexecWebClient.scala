@@ -7,7 +7,7 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import boopickle.Default._
-import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue, SequenceView}
+import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue, SequenceView, Step}
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
@@ -42,6 +42,16 @@ object SeqexecWebClient extends ModelBooPicklers {
   def run(s: SequenceView): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/${s.id}/start",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
+    * Requests the backend to set a breakpoint
+    */
+  def breakpoint(s: SequenceView, step: Step): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/${s.id}/${step.id}/breakpoint/true",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
