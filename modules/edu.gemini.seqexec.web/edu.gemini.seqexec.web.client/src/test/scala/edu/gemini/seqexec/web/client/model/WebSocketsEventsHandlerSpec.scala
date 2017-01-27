@@ -11,8 +11,7 @@ import org.scalatest.prop.PropertyChecks
 import scalaz._
 import Scalaz._
 
-class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebCommon {
-  import edu.gemini.seqexec.model.SharedModelArbitraries._
+class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers {
 
   "WebSocketsEventsHandler" should "accept connection open events anonymously" in {
     val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
@@ -28,12 +27,11 @@ class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers with PropertyCh
     result.newModelOpt.flatMap(_.user) shouldBe Some(user)
   }
   it should "accept a loaded SequencesQueue" in {
-    forAll { (sequences: SequencesQueue[SequenceView]) =>
-      val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
-      val result = handler.handle(ServerMessage(SequenceLoaded(sequences)))
-      // No user set
-      result.newModelOpt.exists(_.sequences === sequences) shouldBe true
-    }
+    val sequences = SequencesQueue(List.empty[SequenceView])
+    val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
+    val result = handler.handle(ServerMessage(SequenceLoaded(sequences)))
+    // No user set
+    result.newModelOpt.exists(_.sequences === sequences) shouldBe true
   }
 
 }

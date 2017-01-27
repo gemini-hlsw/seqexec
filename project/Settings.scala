@@ -32,8 +32,8 @@ object Settings {
     val scalajsReact = "0.11.3"
     val scalaCSS     = "0.5.0"
     val uPickle      = "0.4.0"
-    val booPickle    = "1.2.5"
-    val diode        = "1.1.0"
+    val booPickle    = "1.2.6"
+    val diode        = "1.1.1"
     val javaTimeJS   = "0.2.0"
     val javaLogJS    = "0.1.0"
     val scalaJQuery  = "1.0"
@@ -86,7 +86,7 @@ object Settings {
 
     val Squants     = Def.setting("org.typelevel" %%% "squants"              % LibraryVersions.squants)
     val UPickle     = Def.setting("com.lihaoyi"   %%% "upickle"              % LibraryVersions.uPickle)
-    val BooPickle   = Def.setting("me.chrons"     %%% "boopickle"            % LibraryVersions.booPickle)
+    val BooPickle   = Def.setting("io.suzaku"     %%% "boopickle"            % LibraryVersions.booPickle)
     val JavaTimeJS  = Def.setting("org.scala-js"  %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
     val JavaLogJS   = Def.setting("org.scala-js"  %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
@@ -108,8 +108,8 @@ object Settings {
       "com.github.japgolly.scalacss"      %%% "ext-react"    % LibraryVersions.scalaCSS
     ))
     val Diode = Def.setting(Seq(
-      "me.chrons" %%% "diode"       % LibraryVersions.diode,
-      "me.chrons" %%% "diode-react" % LibraryVersions.diode
+      "io.suzaku" %%% "diode"       % LibraryVersions.diode,
+      "io.suzaku" %%% "diode-react" % LibraryVersions.diode
     ))
     val ScalaCSS   = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
     val ScalaJSDom = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)

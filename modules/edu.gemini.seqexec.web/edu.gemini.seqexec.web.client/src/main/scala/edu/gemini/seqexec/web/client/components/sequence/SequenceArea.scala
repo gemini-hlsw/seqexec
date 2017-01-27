@@ -11,7 +11,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.message.{IconMessage, CloseableMessage}
+import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
+import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -122,14 +123,8 @@ object SequenceStepsTableContainer {
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
           <.tr(
-            <.th(
-              ^.cls := "collapsing",
-              "Name"
-            ),
-            <.th(
-              ^.cls := "six wide",
-              "Value"
-            )
+            TableHeader(TableHeader.Props(collapsing = true), "Name"),
+            TableHeader(TableHeader.Props(width = Width.Six), "Value")
           )
         ),
         <.tbody(
@@ -261,27 +256,11 @@ object SequenceStepsTableContainer {
         ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
-            <.th(
-              ^.cls := "collapsing center aligned",
-              IconSettings,
-              ^.colSpan := 2
-            ),
-            <.th(
-              ^.cls := "collapsing",
-              "Step"
-            ),
-            <.th(
-              ^.cls := "eight wide",
-              "State"
-            ),
-            <.th(
-              ^.cls := "eight wide",
-              "File"
-            ),
-            <.th(
-              ^.cls := "collapsing",
-              "Config"
-            )
+            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings.copyIcon(key = s"${p.s.metadata.instrument}.steps.settings")),
+            TableHeader(TableHeader.Props(collapsing = true), "Step"),
+            TableHeader(TableHeader.Props(width = Width.Eight), "State"),
+            TableHeader(TableHeader.Props(width = Width.Eight), "File"),
+            TableHeader(TableHeader.Props(collapsing = true), "Config")
           )
         ),
         <.tbody(
@@ -398,7 +377,7 @@ object SequenceStepsTableContainer {
   // Reference to the specifc DOM marked by the name `scrollRef`
   private val scrollRef = Ref[HTMLElement]("scrollRef")
 
-  val component = ReactComponentB[Props]("HeadersSideBar")
+  val component = ReactComponentB[Props]("StepsTable")
     .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
