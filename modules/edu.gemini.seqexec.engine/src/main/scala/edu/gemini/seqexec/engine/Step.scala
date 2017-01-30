@@ -20,26 +20,6 @@ object Step {
 
   type Id = Int
 
-  /**
-    * Calculate the `Step` `Status` based on the underlying `Action`s.
-    *
-    */
-  def status(step: Step[Action \/ Result]): StepState = {
-
-    // At least an Action in this Step errored.
-    // TODO: These errors for empty cases should be enforced at the type level
-    if (step.executions.isEmpty
-          || step.executions.all(_.isEmpty)
-          || step.any(Execution.errored)
-    ) StepState.Error("An action errored")
-    // All actions in this Step are pending.
-    else if (step.all(_.isLeft)) StepState.Pending
-    // All actions in this Step were completed successfully.
-    else if (step.all(_.isRight)) StepState.Completed
-    // Not all actions are completed or pending.
-    else StepState.Running
-
-  }
 
   implicit val stepFunctor = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
@@ -56,6 +36,32 @@ object Step {
       fa.executions.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
   }
 
+  /**
+    * Calculate the `Step` `Status` based on the underlying `Action`s.
+    *
+    */
+  def status(step: Step[Action \/ Result]): StepState = {
+
+    // Find an error in the Step
+    step.findLeft(Execution.errored).flatMap(
+      // Get the message if there is one
+      _.fold(_ => None, _.errMsg)
+      // Return error or continue with the rest of the checks
+    ).map(StepState.Error).getOrElse {
+      // At least an Action in this Step errored.
+      // TODO: These errors for empty cases should be enforced at the type level
+      if (step.executions.isEmpty
+            || step.executions.all(_.isEmpty)
+      ) StepState.Error("This should never happen, please submit a bug report")
+      // All actions in this Step are pending.
+      else if (step.all(_.isLeft)) StepState.Pending
+      // All actions in this Step were completed successfully.
+      else if (step.all(_.isRight)) StepState.Completed
+      // Not all actions are completed or pending.
+      else StepState.Running
+    }
+
+  }
   /**
     * Step Zipper. This structure is optimized for the actual `Step` execution.
     *

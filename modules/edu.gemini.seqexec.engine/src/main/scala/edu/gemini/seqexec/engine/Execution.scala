@@ -74,12 +74,16 @@ object Execution {
 /**
   * The result of an `Action`.
   */
-sealed trait Result
+sealed trait Result {
+  val errMsg: Option[String] = None
+}
 
 object Result {
   case class OK(response: Response) extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
-  case class Error(msg: String) extends Result
+  case class Error(msg: String) extends Result {
+    override val errMsg: Option[String] = Some(msg)
+  }
 
   sealed trait Response
   case class Configured(r: String) extends Response
