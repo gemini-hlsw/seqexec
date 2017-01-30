@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig, StepState}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig, StepState}
 
 import scalaz.syntax.either._
 import org.scalatest._
@@ -10,7 +10,7 @@ import Inside._
 import scalaz.concurrent.Task
 import scalaz.stream.async
 import edu.gemini.seqexec.engine.Event.{pause, start}
-import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running}
+import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running, Error}
 
 import scala.Function.const
 
@@ -59,7 +59,14 @@ class StepSpec extends FlatSpec {
     // input event is enough.
   } yield Result.OK(Result.Observed("DummyFileId"))
 
-  // All tests check the output of running a step against the expected sequence of updates.
+  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): EngineState = {
+    def isFinished(status: SequenceState): Boolean =
+      status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+
+    q.enqueueOne(start(seqId)).flatMap( _ =>
+       processE(q).drop(1).takeThrough(a => !isFinished(a._2.get(seqId).get.status) ).runLast.eval(s0)).unsafePerformSync.get._2
+  }
+
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
   // The test will just run step and compare the output with the predefined sequence of updates.
@@ -89,11 +96,7 @@ class StepSpec extends FlatSpec {
       )
     )))
 
-    val qs1 = (
-      q.enqueueOne(start(seqId)).flatMap( _ =>
-        // 1 start + 3 completed + 1 executing + 1 executed + 1 next + 1 pauseRequest => take(8)
-        // It must be a better way to stop the process
-        processE(q).take(8).runLast.eval(qs0))).unsafePerformSync.get._2
+    val qs1 = runToCompletion(q, qs0)
 
      inside (qs1.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>

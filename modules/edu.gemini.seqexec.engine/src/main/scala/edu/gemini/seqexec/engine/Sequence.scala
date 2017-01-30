@@ -214,7 +214,7 @@ object Sequence {
         zipper.copy(pending =
           zipper.pending.map(s => if(s.id == stepId) s.copy(breakpoint = v) else s)))
 
-      override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint
+      override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
       override val done: List[Step[Result]] = zipper.done
 

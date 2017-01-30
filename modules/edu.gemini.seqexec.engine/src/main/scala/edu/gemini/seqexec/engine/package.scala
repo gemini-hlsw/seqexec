@@ -197,9 +197,8 @@ package object engine {
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
       case Completed(id, i, r) => log("Output: Action completed") *> complete(id, i, r)
       case Failed(id, i, e)    => log("Output: Action failed") *> fail(q)(id)(i, e)
-      case Executed(id)        => log("Output: Execution completed") *> send(q)(Event.next(id))
+      case Executed(id)        => log("Output: Execution completed") *> next(q)(id)
       case Executing(id)       => log("Output: Executing") *> execute(q)(id)
-      case Next(id)            => log("Output: Moving to next Execution if possible") *> next(q)(id)
       case Finished(id)        => log("Output: Finished") *> switch(q)(id)(SequenceState.Completed)
     }
 
