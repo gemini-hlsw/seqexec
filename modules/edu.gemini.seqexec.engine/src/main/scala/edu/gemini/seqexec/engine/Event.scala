@@ -26,7 +26,6 @@ case class Completed(id: Sequence.Id, i: Int, r: Result.Response) extends System
 case class Failed(id: Sequence.Id, i: Int, e: String) extends SystemEvent
 case class Executed(id: Sequence.Id) extends SystemEvent
 case class Executing(id: Sequence.Id) extends SystemEvent
-case class Next(id: Sequence.Id) extends SystemEvent
 case class Finished(id: Sequence.Id) extends SystemEvent
 
 object Event {
@@ -43,7 +42,6 @@ object Event {
   def completed(id: Sequence.Id, i: Int, r: Result.Response): Event = EventSystem(Completed(id, i, r))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
-  def next(id: Sequence.Id): Event = EventSystem(Next(id))
   def finished(id: Sequence.Id): Event = EventSystem(Finished(id))
 
 }
