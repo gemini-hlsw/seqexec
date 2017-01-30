@@ -52,6 +52,7 @@ trait ModelBooPicklers {
     .addConcreteType[StepBreakpointChanged]
     .addConcreteType[StepSkipMarkChanged]
     .addConcreteType[SequencePauseRequested]
+    .addConcreteType[SequenceUpdated]
     .addConcreteType[SequenceRefreshed]
     .addConcreteType[NewLogMessage]
 

@@ -85,7 +85,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Failed(_, _, _)    => NewLogMessage("Action failed")
       case engine.Executed(_)        => StepExecuted(svs)
       case engine.Executing(_)       => NewLogMessage("Executing")
-      case engine.Next(_)            => NewLogMessage("Moving to next Execution")
+      case engine.Next(_)            => SequenceUpdated(svs)
       case engine.Finished(_)        => SequenceCompleted(svs)
     }
   }
@@ -121,12 +121,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         // This will be easier once the exact status labels in the UI are fixed.
         seq.steps.map(viewStep) match {
           // Find first Pending Step when no Step is Running and mark it as Running
-          case steps if st === SequenceState.Running && steps.all(_.status =/= StepState.Running) =>
+          case steps if (st === SequenceState.Running || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
             val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
             xs ++ (y.copy(status = StepState.Running) :: ys)
-          case steps if st === SequenceState.Idle =>
-            val (xs, ys0@(y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
-            if (xs.isEmpty) ys0 else xs ++ (y.copy(status = StepState.Paused) :: ys)
+          case steps if st === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
+            val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
+            xs ++ (y.copy(status = StepState.Paused) :: ys)
           case x => x
         }
       }
