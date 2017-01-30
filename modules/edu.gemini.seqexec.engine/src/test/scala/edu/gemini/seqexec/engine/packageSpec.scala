@@ -49,7 +49,7 @@ class packageSpec extends FlatSpec {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(100))
     _ <- Task(println ("System: Complete observation"))
-  } yield Result.Error(Unit)
+  } yield Result.Error("There was an error in this action")
 
   val config: StepConfig = Map()
   val seqId ="TEST-01"

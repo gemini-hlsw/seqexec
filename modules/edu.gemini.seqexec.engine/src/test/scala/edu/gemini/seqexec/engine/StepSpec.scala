@@ -160,7 +160,7 @@ class StepSpec extends FlatSpec {
   }
 
   val result = Result.OK(Result.Observed("dummyId"))
-  val failure = Result.Error(Unit)
+  val failure = Result.Error("Dummy error")
   val action: Action = Task(result)
   val config: StepConfig = Map()
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
@@ -215,7 +215,10 @@ class StepSpec extends FlatSpec {
   }
 
   "status" should "be Error when empty" in {
-    assert(Step.status(stepz0.toStep) === StepState.Error("An action errored"))
+    assert(Step.status(stepz0.toStep) === StepState.Error(
+             "This should never happen, please submit a bug report"
+           )
+    )
   }
 
   "status" should "be Error when at least one Action failed" in {
@@ -231,7 +234,7 @@ class StepSpec extends FlatSpec {
           Nil,
           (Execution(List(action.left, action.left, action.left)), Nil)
         ).toStep
-      ) === StepState.Error("An action errored")
+      ) === StepState.Error("Dummy error")
     )
   }
 

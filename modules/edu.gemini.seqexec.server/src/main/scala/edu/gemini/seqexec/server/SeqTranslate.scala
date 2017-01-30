@@ -28,7 +28,7 @@ object SeqTranslate {
   private val dhsSimulator = DhsClientSim(LocalDate.now)
 
   implicit def toAction(x: SeqAction[Result.Response]): Action = x.run map {
-    case -\/(e) => Result.Error(e)
+    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
     case \/-(r) => Result.OK(r)
   }
 
