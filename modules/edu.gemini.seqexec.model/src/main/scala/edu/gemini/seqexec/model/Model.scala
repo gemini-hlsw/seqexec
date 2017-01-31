@@ -44,6 +44,7 @@ object Model {
   type StepConfig = Map[SystemName, Parameters]
   // TODO This should be a richer type
   type SequenceId = String
+  type StepId = Int
   type Instrument = String
 
   implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
@@ -76,6 +77,7 @@ object Model {
   }
 
   sealed trait Step {
+    val id: StepId
     val config: StepConfig
     val status: StepState
     val breakpoint: Boolean
@@ -86,6 +88,7 @@ object Model {
   }
 
   case class StandardStep(
+    override val id: StepId,
     override val config: StepConfig,
     override val status: StepState,
     override val breakpoint: Boolean,

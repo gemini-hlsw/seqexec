@@ -237,7 +237,6 @@ object SequenceStepsTableContainer {
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
 
     def mouseLeave(index: Int): Callback =
-      //Callback.empty
       $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
 
     def mouseLeave: Callback =
@@ -319,7 +318,6 @@ object SequenceStepsTableContainer {
                     step.status match {
                       case StepState.Completed       => IconCheckmark
                       case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
-                      case StepState.Paused          => IconPause
                       case StepState.Error(_)        => IconAttention
                       case _ if i == s.nextStepToRun => IconChevronRight
                       case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
