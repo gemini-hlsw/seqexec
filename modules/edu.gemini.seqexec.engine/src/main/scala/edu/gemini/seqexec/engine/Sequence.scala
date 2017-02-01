@@ -60,7 +60,7 @@ object Sequence {
             case Nil             => None
             case stepp :: stepps =>
               (Step.Zipper.currentify(stepp) |@| focus.uncurrentify) (
-                (curr, stepd) => Zipper(id, metadata, stepps, curr, stepd :: done)
+                (curr, stepd) => Zipper(id, metadata, stepps, curr, done :+ stepd)
               )
           }
         // Current step ongoing
@@ -75,7 +75,7 @@ object Sequence {
       *
       */
     val uncurrentify: Option[Sequence[Result]] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, metadata, x :: done))
+      if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, metadata, done :+ x))
       else None
 
     /**
