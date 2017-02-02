@@ -104,7 +104,7 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
   /**
     * Project for the seqexec test server at GS on Linux 64
     */
-  lazy val seqexec_server_gs_test_l64 = preventPublication(project.in(file("app/seqexec-server-gs-test-l64")))
+  lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
     .dependsOn(edu_gemini_seqexec_web_server)
     .aggregate(edu_gemini_seqexec_web_server)
     .enablePlugins(LinuxPlugin, RpmPlugin)
@@ -121,7 +121,7 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
   /**
     * Project for the seqexec test server at GN on Linux 64
     */
-  lazy val seqexec_server_gn_test_l64 = preventPublication(project.in(file("app/seqexec-server-gn-test-l64")))
+  lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
     .dependsOn(edu_gemini_seqexec_web_server)
     .aggregate(edu_gemini_seqexec_web_server)
     .enablePlugins(LinuxPlugin, RpmPlugin)
