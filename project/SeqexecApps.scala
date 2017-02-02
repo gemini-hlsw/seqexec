@@ -91,28 +91,48 @@ trait SeqexecApps extends AppsCommon with SeqexecWebModules {
       }
     )
 
+  lazy val seqexecTestServerSettings = Seq(
+    // Put the jre on the RPM
+    linuxPackageMappings in Rpm += {
+      val jresDir = (ocsJreDir in ThisBuild).value
+      // RPM are of interest only for linux 64 bit
+      val linux64Jre = jresDir.toPath.resolve("linux").resolve("JRE64_1.8")
+      packageDirectoryAndContentsMapping((linux64Jre.toFile, (rpmPrefix in Rpm).value.map(_ + "").getOrElse("")))
+    }
+  )
+
   /**
-    * Project for the seqexec server app for testing on Linux 64
+    * Project for the seqexec test server at GS on Linux 64
     */
-  lazy val seqexec_server_test_l64 = preventPublication(project.in(file("app/seqexec-server-test-l64")))
+  lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
     .dependsOn(edu_gemini_seqexec_web_server)
     .aggregate(edu_gemini_seqexec_web_server)
     .enablePlugins(LinuxPlugin, RpmPlugin)
     .enablePlugins(JavaServerAppPackaging)
     .settings(seqexecCommonSettings: _*)
     .settings(seqexecRPMSettings: _*)
+    .settings(seqexecTestServerSettings: _*)
     .settings(deployedAppMappings: _*)
     .settings(embeddedJreSettingsLinux64: _*)
     .settings(
-      description := "Seqexec server test deployment on linux 64",
+      description := "Seqexec GS test deployment"
+    ).dependsOn(seqexec_server)
 
-      // Put the jre on the RPM
-      linuxPackageMappings in Rpm += {
-        val jresDir = (ocsJreDir in ThisBuild).value
-        // RPM are of interest only for linux 64 bit
-        val linux64Jre = jresDir.toPath.resolve("linux").resolve("JRE64_1.8")
-        packageDirectoryAndContentsMapping((linux64Jre.toFile, (rpmPrefix in Rpm).value.map(_ + "").getOrElse("")))
-      }
+  /**
+    * Project for the seqexec test server at GN on Linux 64
+    */
+  lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
+    .dependsOn(edu_gemini_seqexec_web_server)
+    .aggregate(edu_gemini_seqexec_web_server)
+    .enablePlugins(LinuxPlugin, RpmPlugin)
+    .enablePlugins(JavaServerAppPackaging)
+    .settings(seqexecCommonSettings: _*)
+    .settings(seqexecRPMSettings: _*)
+    .settings(seqexecTestServerSettings: _*)
+    .settings(deployedAppMappings: _*)
+    .settings(embeddedJreSettingsLinux64: _*)
+    .settings(
+      description := "Seqexec GN test deployment"
     ).dependsOn(seqexec_server)
 
   /**
