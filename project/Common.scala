@@ -5,7 +5,7 @@ import sbt.{file, project}
 /**
   * Define tasks and settings used by module definitions
   */
-trait Common {
+object Common {
   lazy val commonSettings = Seq(
     // Common libraries
     libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, BooPickle.value) ++ TestLibs.value
@@ -18,12 +18,5 @@ trait Common {
       val name = f.getName.toLowerCase
       name.endsWith(".scala") || name.endsWith(".js")
     }
-
-  lazy val edu_gemini_web_server_common = project
-    .in(file("modules/edu.gemini.web.server.common"))
-    .settings(commonSettings: _*)
-    .settings(
-      libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s
-    )
 
 }
