@@ -19,6 +19,7 @@ import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
 import scalaz._
+import Scalaz._
 
 final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrument {
 
@@ -28,11 +29,15 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val sfName: String = Flamingos2.sfName
 
-  override def observe(config: Config): SeqObserve[DhsClient, ObserveResult] = Reader { client =>
+  val instContributorName = "flamingos2"
+  val dhsInstrumentName = "F2"
+
+  override def observe(config: Config): SeqObserve[(DhsClient, List[Header]), ObserveResult] = Reader { case (dhs, headers) =>
     for {
-      id <- client.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("flamingos2", "dhs-http")))
+      id <- dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(instContributorName, "dhs-http")))
+      _  <- headers.map(_.sendBefore(id, dhsInstrumentName)).sequenceU
       _  <- f2Controller.observe(id)
-      _  <- closeImage(id, client)
+      _  <- closeImage(id, dhs)
     } yield ObserveResult(id)
   }
 
@@ -40,7 +45,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
     fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
 
   private def closeImage(id: ObsId, client: DhsClient): SeqAction[Unit] =
-    client.setKeywords(id, KeywordBag(StringKeyword("instrument", "flamingos2"), StringKeyword("OBSERVER", "Javier Luhrs")), finalFlag = true)
+    client.setKeywords(id, KeywordBag(StringKeyword("instrument", dhsInstrumentName)), finalFlag = true)
 
 }
 

@@ -17,6 +17,7 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
   override def observe(obsid: ObsId): SeqAction[ObsId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
     Thread.sleep(5000)
+    Log.info("Flamingos-2 observation completed")
     TrySeq(obsid)
   } )
 
@@ -34,6 +35,7 @@ object Flamingos2ControllerSimBad extends Flamingos2Controller {
   override def observe(obsid: ObsId): SeqAction[ObsId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
     Thread.sleep(5000)
+    Log.info("Flamingos-2 observation completed")
     TrySeq(obsid)
   } )
 
