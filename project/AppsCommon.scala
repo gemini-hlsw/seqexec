@@ -7,7 +7,7 @@ import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 /**
   * Define tasks and settings used by application definitions
   */
-trait AppsCommon {
+object AppsCommon {
   lazy val ocsJreDir = settingKey[File]("Directory where distribution JREs are stored.")
   lazy val applicationConfName = settingKey[String]("Name of the application to lookup the configuration")
   lazy val applicationConfSite = settingKey[DeploymentSite]("Name of the site for the application configuration")
