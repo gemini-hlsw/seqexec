@@ -24,9 +24,6 @@ object SeqTranslate {
                     flamingos2: Flamingos2Controller
                     )
 
-  // TODO: Take care of this side effect.
-  private val dhsSimulator = DhsClientSim(LocalDate.now)
-
   implicit def toAction(x: SeqAction[Result.Response]): Action = x.run map {
     case -\/(e) => Result.Error(SeqexecFailure.explain(e))
     case \/-(r) => Result.OK(r)
@@ -34,15 +31,10 @@ object SeqTranslate {
 
   private def step(systems: Systems)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
 
-    val instName = extractInstrumentName(config)
-    val instrument = instName match {
-      case Flamingos2.name => Some(Flamingos2(systems.flamingos2))
-      case _               => None
-    }
+    def buildStep(inst: Instrument): Step[Action] = {
+      val sys = List(Tcs(systems.tcs), inst)
+      val headers = List(new StandardHeader(systems.dhs, DummyObsKeywordsReader, DummyTcsKeywordsReader))
 
-    instrument.map { a =>
-      val sys = List(Tcs(systems.tcs), a)
-      // TODO Find a proper way to inject the subsystems
       Step[Action](
         i,
         None,
@@ -50,10 +42,18 @@ object SeqTranslate {
         false,
         List(
           sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-          List(toAction(a.observe(config)(systems.dhs).map(x => Result.Observed(x.dataId))))
+          List(toAction(inst.observe(config)((systems.dhs, headers)).map(x => Result.Observed(x.dataId))))
         )
-      ).right
-    }.getOrElse(UnrecognizedInstrument(instName.toString).left[Step[Action]])
+      )
+    }
+
+    val instName = extractInstrumentName(config)
+
+    instName match {
+      case Flamingos2.name => buildStep(Flamingos2(systems.flamingos2)).right
+      case _               => UnrecognizedInstrument(instName.toString).left[Step[Action]]
+    }
+
   }
 
   private def extractInstrumentName(config: Config): String =
@@ -73,3 +73,4 @@ object SeqTranslate {
   }
 
 }
+

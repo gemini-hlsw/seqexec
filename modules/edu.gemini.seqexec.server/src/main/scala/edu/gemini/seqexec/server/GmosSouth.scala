@@ -30,16 +30,16 @@ object GmosSouth extends Instrument {
     TrySeq(ConfigResult(this))
   })
 
-  override def observe(config: Config): SeqObserve[DhsClient, ObserveResult] = Reader { client =>
+  override def observe(config: Config): SeqObserve[(DhsClient, List[Header]), ObserveResult] = Reader { case (dhs, _) =>
     for {
-      id <- client.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
+      id <- dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
       _ <- EitherT(Task {
              Log.log(Level.INFO, name + ": starting observation " + id)
              Thread.sleep(5000)
              Log.log(Level.INFO, name + ": observation completed")
              TrySeq(())
            })
-      _ <- client.setKeywords(id, DhsClient.KeywordBag(
+      _ <- dhs.setKeywords(id, DhsClient.KeywordBag(
              DhsClient.StringKeyword("instrument", "gmos"),
              DhsClient.Int32Keyword("INPORT", 3),
              DhsClient.DoubleKeyword("WAVELENG", 3.14159),

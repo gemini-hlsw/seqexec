@@ -14,6 +14,8 @@ import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod,
 import scala.io.Source
 import scalaz.concurrent.Task
 import scalaz.EitherT
+import scalaz._
+import Scalaz._
 
 /**
   * Defines the interface for dhs client, with methods, e.g. to request image creation
@@ -28,6 +30,7 @@ trait DhsClient {
     * Set the keywords for an image
     */
   def setKeywords(id: ObsId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
+
 }
 
 object DhsClient {
@@ -199,8 +202,8 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
       TrySeq(f"S${date.format(format)}${counter.incrementAndGet()}%04d")
     })
 
-  override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: JsonBoolean): SeqAction[Unit] =
-    EitherT(Task.now(TrySeq(())))
+  override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = SeqAction(())
+
 }
 
 object DhsClientSim {

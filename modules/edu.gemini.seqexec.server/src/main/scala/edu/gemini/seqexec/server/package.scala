@@ -22,7 +22,7 @@ package object server {
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
 
   object SeqAction {
-    def apply[A](a: => A): SeqAction[A]          = SeqAction(a)
+    def apply[A](a: => A): SeqAction[A]          = EitherT(Task.delay(TrySeq(a)))
     def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(Task.delay(TrySeq.fail(p)))
   }
 
