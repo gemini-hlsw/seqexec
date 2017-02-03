@@ -1,8 +1,9 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.model.dhs.ObsId
-
-import edu.gemini.seqexec.server.DhsClient._
+import edu.gemini.spModel.obscomp.InstConstants._
+import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
 /**
   * Created by jluhrs on 1/31/17.
@@ -63,6 +64,27 @@ trait ObsKeywordsReader {
   def getObsId: SeqAction[String]
   def getObservatory: SeqAction[String]
   def getTelescope: SeqAction[String]
+}
+
+case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
+  override def getObsType: SeqAction[String] = SeqAction(
+    config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).toString)
+
+  override def getObsClass: SeqAction[String] = SeqAction(
+    config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP)).toString)
+
+  override def getGemPrgId: SeqAction[String] = SeqAction(
+    config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP)).toString)
+
+  override def getObsId: SeqAction[String] = {
+    val v = config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).toString.split("-").toList.lastOption.getOrElse("")
+
+    SeqAction(v)
+  }
+
+  override def getObservatory: SeqAction[String] = SeqAction(telescope)
+
+  override def getTelescope: SeqAction[String] = SeqAction(telescope)
 }
 
 object DummyObsKeywordsReader extends ObsKeywordsReader {

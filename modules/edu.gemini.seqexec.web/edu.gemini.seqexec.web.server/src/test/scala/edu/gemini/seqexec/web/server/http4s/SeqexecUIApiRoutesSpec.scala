@@ -12,7 +12,6 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server.SeqexecEngine.Settings
-
 import org.http4s._
 import org.http4s.headers.`Set-Cookie`
 import org.http4s.util.CaseInsensitiveStringSyntax
@@ -20,6 +19,7 @@ import org.http4s.websocket.WebsocketBits
 import scodec.bits.ByteVector
 import squants.time._
 import boopickle.Default._
+import edu.gemini.model.p1.immutable.Site
 
 import scalaz.stream.Process.emit
 import scalaz.stream.Process
@@ -27,12 +27,11 @@ import scalaz.stream.async
 import scalaz.OptionT
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.{Queue, Topic}
-
 import org.scalatest.{FlatSpec, Matchers}
 
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with CaseInsensitiveStringSyntax {
   val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
-  val engine = SeqexecEngine(Settings("", LocalDate.now(), "", dhsSim = true, tcsSim = true, instSim = true, gcalSim = true, instForceError = false))
+  val engine = SeqexecEngine(Settings(Site.GS, "", LocalDate.now(), "", dhsSim = true, tcsSim = true, instSim = true, gcalSim = true, instForceError = false))
   val authService = AuthenticationService(config)
   val inq: Queue[Event] = async.boundedQueue[Event](10)
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()

@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
 import edu.gemini.seqexec.model.Model.SequenceMetadata
+import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
@@ -16,13 +17,9 @@ import scalaz._
 /**
   * Created by jluhrs on 9/14/16.
   */
-object SeqTranslate {
+class SeqTranslate(site: Site) {
 
-  case class Systems(
-                    dhs: DhsClient,
-                    tcs: TcsController,
-                    flamingos2: Flamingos2Controller
-                    )
+  import SeqTranslate._
 
   implicit def toAction(x: SeqAction[Result.Response]): Action = x.run map {
     case -\/(e) => Result.Error(SeqexecFailure.explain(e))
@@ -33,7 +30,8 @@ object SeqTranslate {
 
     def buildStep(inst: Instrument): Step[Action] = {
       val sys = List(Tcs(systems.tcs), inst)
-      val headers = List(new StandardHeader(systems.dhs, DummyObsKeywordsReader, DummyTcsKeywordsReader))
+      val headers = List(new StandardHeader(systems.dhs,
+        ObsKeywordReaderImpl(config, site.name.replace(' ', '-')), DummyTcsKeywordsReader))
 
       Step[Action](
         i,
@@ -74,3 +72,12 @@ object SeqTranslate {
 
 }
 
+object SeqTranslate {
+  def apply(site: Site) = new SeqTranslate(site)
+
+  case class Systems(
+                      dhs: DhsClient,
+                      tcs: TcsController,
+                      flamingos2: Flamingos2Controller
+                      )
+}

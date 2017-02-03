@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Event
 
@@ -22,6 +23,8 @@ import edu.gemini.spModel.core.Peer
 class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null))
+
+  val translator = SeqTranslate(settings.site)
 
   val systems = SeqTranslate.Systems(
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
@@ -64,7 +67,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
-      } yield odbSeq.flatMap(s => SeqTranslate.sequence(systems)(seqId.stringValue(), s))
+      } yield odbSeq.flatMap(s => translator.sequence(systems)(seqId.stringValue(), s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(seqId.stringValue(), x)).map(_.right))
     u.run
@@ -138,7 +141,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 // Configuration stuff
 object SeqexecEngine {
 
-  case class Settings(odbHost: String,
+  case class Settings(site: Site,
+                      odbHost: String,
                       date: LocalDate,
                       dhsURI: String,
                       dhsSim: Boolean,
@@ -150,6 +154,10 @@ object SeqexecEngine {
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
+      val site = cfg.require[String]("seqexec-engine.site") match {
+        case "GS" => Site.GS
+        case "GN" => Site.GN
+      }
       val odbHost = cfg.require[String]("seqexec-engine.odb")
       val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
       val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
@@ -179,7 +187,7 @@ object SeqexecEngine {
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings(odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, instForceError) )
+        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, instForceError) )
 
     }
   }
