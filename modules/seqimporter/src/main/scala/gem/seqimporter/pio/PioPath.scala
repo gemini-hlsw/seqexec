@@ -201,6 +201,12 @@ object PioPath {
     def decode[A](implicit ev: PioDecoder[A]): PioError \/ Option[A] =
       node.flatMapF(ev.decode).run
 
+    def decodeOrZero[A : PioDecoder : Monoid]: PioError \/ A =
+      decode[A].map { _.orZero }
+
+    def decodeOrElse[A](a: => A)(implicit ev: PioDecoder[A]): PioError \/ A =
+      decode[A].map { _.getOrElse(a) }
+
     def \! (matchString: String): Optional = {
       val pathʹ = path \! matchString
       val nodeʹ = node.flatMapF { n =>

@@ -16,7 +16,7 @@ import scalaz.concurrent.Task
   */
 object Importer extends DoobieClient {
 
-  private def writeObservation(o: Observation[Step[InstrumentConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeObservation(o: Observation[Step[InstrumentConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
       sql"DELETE FROM observation WHERE observation_id = ${o.id}".update.run.void
@@ -50,7 +50,7 @@ object Importer extends DoobieClient {
       } yield ()
   }
 
-  private def writeProgram(p: Program[Observation[Step[InstrumentConfig]]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeProgram(p: Program[Observation[Step[InstrumentConfig]]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
 

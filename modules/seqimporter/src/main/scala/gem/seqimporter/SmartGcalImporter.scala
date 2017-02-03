@@ -17,6 +17,10 @@ import Scalaz._
 import scalaz.effect._
 
 
+/** Importer for SmartGcal CSV files.  Note, these files use display values in
+  * some cases instead of the seqexec values since they were meant to be edited
+  * by science staff.
+  */
 object SmartGcalImporter extends SafeApp with DoobieClient {
 
   implicit class ParseOps(s: String) {

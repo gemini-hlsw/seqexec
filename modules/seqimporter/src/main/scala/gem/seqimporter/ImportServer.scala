@@ -8,7 +8,6 @@ import gem.{Dataset, Observation, Program, Step}
 import gem.config.InstrumentConfig
 import gem.seqimporter.pio.{PioDecoder, PioError}
 import gem.seqimporter.pio.PioError._
-import gem.seqimporter.pio.PioPath._
 import org.http4s.{EntityEncoder, HttpService, Response, Status}
 import org.http4s.Status.{BadRequest, InternalServerError, Ok}
 import org.http4s.client.blaze.PooledHttp1Client
@@ -50,7 +49,7 @@ final class ImportServer(ocsHost: String) {
     def decodeAndStore(xml: Node): Task[ServerResponse] =
       (for {
         a  <- PioDecoder[A].decode(xml).leftMap(_.toResponse(id))
-        ds <- datasetDecoder.decode(xml).leftMap(_.toResponse(id))
+        ds <- DatasetsDecoder.decode(xml).leftMap(_.toResponse(id))
       } yield f(a, ds).as(ServerResponse(Ok, s"Imported $id"))).sequenceU.map(_.merge)
 
     client.expect[Elem](uri(id))
@@ -111,15 +110,6 @@ object ImportServer extends ServerApp {
       ServerResponse(InternalServerError, s"Error parsing $id: $msg")
     }
   }
-
-  // Decodes all the datasets in either a program or observation node.  We have
-  // to explicitly specify that we want the "dataset" elements within a
-  // "datasets" paramset because they are duplicated in the event data.
-  private val datasetDecoder: PioDecoder[List[Dataset]] =
-    PioDecoder { n =>
-      (n \\* "obsExecLog" \\* "&datasets" \\* "&dataset").decode[Dataset]
-    }
-
 
   override def server(args: List[String]): Task[Server] = {
     val hostName = args match {
