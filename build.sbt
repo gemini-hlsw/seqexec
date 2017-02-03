@@ -2,8 +2,8 @@ resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 lazy val argonautVersion          = "6.2-M3"
-lazy val kpVersion                = "0.8.0"
 lazy val doobieVersion            = "0.4.2-SNAPSHOT"
+lazy val kpVersion                = "0.9.3"
 lazy val scalazVersion            = "7.2.4"
 lazy val shapelessVersion         = "2.3.1"
 lazy val argonautShapelessVersion = "1.2.0-M1"
@@ -19,6 +19,7 @@ lazy val testLibs = Seq(
 )
 
 lazy val commonSettings = Seq(
+  scalaOrganization := "org.typelevel",
   scalaVersion := "2.11.11",
   scalacOptions ++= Seq(
     "-deprecation",
@@ -33,7 +34,8 @@ lazy val commonSettings = Seq(
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     "-Xfuture",
-    "-Ywarn-unused-import"
+    "-Ywarn-unused-import",
+    "-Ypartial-unification"
   ),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
   libraryDependencies ++= ("org.scala-lang" %  "scala-reflect" % scalaVersion.value +: testLibs),
@@ -53,7 +55,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, json, ocs2, service, telnetd)
+  .aggregate(core, db, importer, json, ocs2, service, telnetd, ctl)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -139,4 +141,18 @@ lazy val telnetd = project
   .settings(
     libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0",
     dockerExposedPorts  := List(6666)
+  )
+
+lazy val ctl = project
+  .in(file("modules/ctl"))
+  .settings(commonSettings)
+  .settings (
+    libraryDependencies ++= Seq(
+      "org.scalaz"  %% "scalaz-core"   % scalazVersion,
+      "org.scalaz"  %% "scalaz-effect" % scalazVersion
+    ),
+    scalacOptions --= Seq(
+      "-Xfatal-warnings",
+      "-Ywarn-unused-import"
+    )
   )
