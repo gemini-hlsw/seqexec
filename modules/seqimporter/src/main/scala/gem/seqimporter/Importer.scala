@@ -7,8 +7,6 @@ import gem.dao._
 
 import gem.{Dataset, Location, Log, Observation, Program, Step, User}
 
-import java.util.logging.{Level, Logger}
-
 import scalaz.Scalaz._
 import scalaz.concurrent.Task
 
@@ -16,20 +14,7 @@ import scalaz.concurrent.Task
   * writes it into the database, replacing anything that might have been there
   * already.
   */
-object Importer {
-
-  private val lxa = DriverManagerTransactor[Task](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
-  )
-
-  private val configureLogging: Task[Unit] =
-    Task.delay(List(
-      "edu.gemini.spModel.type.SpTypeUtil"
-    ).map(Logger.getLogger).foreach(_.setLevel(Level.OFF)))
-
+object Importer extends DoobieClient {
 
   private def writeObservation(o: Observation[Step[InstrumentConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
 
@@ -79,11 +64,11 @@ object Importer {
       } yield ()
   }
 
-  private def doImport(write: (User[_], Log[ConnectionIO]) => ConnectionIO[Unit]): Task[Unit] =
+  def doImport(write: (User[_], Log[ConnectionIO]) => ConnectionIO[Unit]): Task[Unit] =
     for {
       u <- UserDao.selectRoot.transact(lxa)
       l <- Log.newLog[ConnectionIO]("importer", lxa).transact(lxa)
-      _ <- configureLogging
+      _ <- Task.delay(configureLogging)
       _ <- write(u, l).transact(lxa)
       _ <- l.shutdown(5 * 1000).transact(lxa) // if we're not done soon something is wrong
     } yield ()

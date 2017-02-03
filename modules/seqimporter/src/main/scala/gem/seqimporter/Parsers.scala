@@ -110,45 +110,72 @@ object Parsers {
     )
   }
 
+  private def fstParser[A](table: List[(String, String, A)]): PioParse[A] =
+    enum(table.map { case (a, _, b) => (a, b) }:_*)
+
+  private def sndParser[A](table: List[(String, String, A)]): PioParse[A] =
+    enum(table.map { case (_, a, b) => (a, b) }:_*)
+
   object Flamingos2 {
 
     import F2Disperser._
-    val disperser: PioParse[F2Disperser] = enum(
-      "NONE"    -> NoDisperser,
-      "R1200HK" -> R1200HK,
-      "R1200JH" -> R1200JH,
-      "R3000"   -> R3000
+
+    val disperserTable = List(
+      ("NONE",    "None",                       NoDisperser),
+      ("R1200HK", "R=1200 (H + K) grism",       R1200HK    ),
+      ("R1200JH", "R=1200 (J + H) grism",       R1200JH    ),
+      ("R3000",   "R=3000 (J or H or K) grism", R3000      )
     )
+
+    val disperser: PioParse[F2Disperser] =
+      fstParser(disperserTable)
+
+    val disperserDisplayValue: PioParse[F2Disperser] =
+      sndParser(disperserTable)
 
     import F2Filter._
-    val filter: PioParse[F2Filter] = enum(
-      "OPEN"    -> Open,
-      "DARK"    -> Dark,
-      "F1056"   -> F1056,
-      "F1063"   -> F1063,
-      "H"       -> H,
-      "HK"      -> HK,
-      "J"       -> J,
-      "J_LOW"   -> JLow,
-      "JH"      -> JH,
-      "K_LONG"  -> KLong,
-      "K_SHORT" -> KShort,
-      "Y"       -> Y
+
+    val filterTable = List(
+      ("OPEN",    "Open",               Open  ),
+      ("DARK",    "Dark",               Dark  ),
+      ("F1056",   "F1056 (1.056 um)",   F1056 ),
+      ("F1063",   "F1063 (1.063 um)",   F1063 ),
+      ("H",       "H (1.65 um)",        H     ),
+      ("HK",      "HK (spectroscopic)", HK    ),
+      ("J",       "J (1.25 um)",        J     ),
+      ("J_LOW",   "J-low (1.15 um)",    JLow  ),
+      ("JH",      "JH (spectroscopic)", JH    ),
+      ("K_LONG",  "K-long (2.20 um)",   KLong ),
+      ("K_SHORT", "K-short (2.15 um)",  KShort),
+      ("Y",       "Y (1.02 um)",        Y     )
     )
 
+    val filter: PioParse[F2Filter] =
+      fstParser(filterTable)
+
+    val filterDisplayValue: PioParse[F2Filter] =
+      sndParser(filterTable)
+
     import F2FpUnit._
-    val fpu: PioParse[F2FpUnit] = enum(
-      "PINHOLE"        -> Pinhole,
-      "SUBPIX_PINHOLE" -> SubPixPinhole,
-      "FPU_NONE"       -> None,
-      "CUSTOM_MASK"    -> Custom,
-      "LONGSLIT_1"     -> LongSlit1,
-      "LONGSLIT_2"     -> LongSlit2,
-      "LONGSLIT_3"     -> LongSlit3,
-      "LONGSLIT_4"     -> LongSlit4,
-      "LONGSLIT_6"     -> LongSlit6,
-      "LONGSLIT_8"     -> LongSlit8
+
+    val fpuTable = List(
+      ("PINHOLE",        "2-pix pinhole grid",  Pinhole      ),
+      ("SUBPIX_PINHOLE", "subpix pinhole grid", SubPixPinhole),
+      ("FPU_NONE",       "Imaging (none)",      None         ),
+      ("CUSTOM_MASK",    "Custom Mask",         Custom       ),
+      ("LONGSLIT_1",     "1-pix longslit",      LongSlit1    ),
+      ("LONGSLIT_2",     "2-pix longslit",      LongSlit2    ),
+      ("LONGSLIT_3",     "3-pix longslit",      LongSlit3    ),
+      ("LONGSLIT_4",     "4-pix longslit",      LongSlit4    ),
+      ("LONGSLIT_6",     "6-pix longslit",      LongSlit6    ),
+      ("LONGSLIT_8",     "8-pix longslit",      LongSlit8    )
     )
+
+    val fpu: PioParse[F2FpUnit] =
+      fstParser(fpuTable)
+
+    val fpuDisplayValue: PioParse[F2FpUnit] =
+      sndParser(fpuTable)
 
     import F2LyotWheel._
     val lyotWheel: PioParse[F2LyotWheel] = enum(
