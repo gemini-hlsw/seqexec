@@ -48,7 +48,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, importer, json, seqimporter, service, telnetd)
+  .aggregate(core, db, importer, json, ocs2, service, telnetd)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -108,8 +108,8 @@ lazy val json = project
     )
   )
 
-lazy val seqimporter = project
-  .in(file("modules/seqimporter"))
+lazy val ocs2 = project
+  .in(file("modules/ocs2"))
   .dependsOn(core, db)
   .settings(commonSettings)
   .settings(
