@@ -1,4 +1,4 @@
-package gem.seqimporter
+package gem.ocs2
 
 import Decoders._
 
@@ -6,8 +6,8 @@ import edu.gemini.spModel.core.SPProgramID
 
 import gem.{Dataset, Observation, Program, Step}
 import gem.config.InstrumentConfig
-import gem.seqimporter.pio.{PioDecoder, PioError}
-import gem.seqimporter.pio.PioError._
+import gem.ocs2.pio.{PioDecoder, PioError}
+import gem.ocs2.pio.PioError._
 import org.http4s.{EntityEncoder, HttpService, Response, Status}
 import org.http4s.Status.{BadRequest, InternalServerError, Ok}
 import org.http4s.client.blaze.PooledHttp1Client

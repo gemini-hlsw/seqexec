@@ -1,11 +1,11 @@
-package gem.seqimporter
+package gem.ocs2
 
 import doobie.imports._
 import gem.{Dataset, Log, Observation, Program, Step, User}
 import gem.config.InstrumentConfig
 import gem.dao.UserDao
-import gem.seqimporter.Decoders._
-import gem.seqimporter.pio.PioError
+import gem.ocs2.Decoders._
+import gem.ocs2.pio.PioError
 
 import java.io.File
 

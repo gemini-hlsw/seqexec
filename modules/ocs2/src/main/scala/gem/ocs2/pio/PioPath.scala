@@ -1,6 +1,6 @@
-package gem.seqimporter.pio
+package gem.ocs2.pio
 
-import gem.seqimporter.pio.PioError._
+import gem.ocs2.pio.PioError._
 
 import scala.xml.{Node, NodeSeq}
 import scalaz.Scalaz._

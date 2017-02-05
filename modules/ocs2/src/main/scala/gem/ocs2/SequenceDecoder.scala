@@ -1,12 +1,12 @@
-package gem.seqimporter
+package gem.ocs2
 
 import edu.gemini.spModel.core.{OffsetP, OffsetQ}
 import gem._
 import gem.config._
 import gem.enum._
 
-import gem.seqimporter.pio.{PioDecoder, PioError, PioParse}
-import gem.seqimporter.pio.PioError._
+import gem.ocs2.pio.{PioDecoder, PioError, PioParse}
+import gem.ocs2.pio.PioError._
 
 import java.time.Duration
 

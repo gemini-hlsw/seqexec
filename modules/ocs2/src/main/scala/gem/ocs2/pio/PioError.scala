@@ -1,4 +1,4 @@
-package gem.seqimporter.pio
+package gem.ocs2.pio
 
 sealed trait PioError extends Product with Serializable
 

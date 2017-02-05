@@ -1,4 +1,4 @@
-package gem.seqimporter
+package gem.ocs2
 
 import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ}
 
@@ -13,8 +13,8 @@ import Scalaz._
   */
 object Parsers {
 
-  import gem.seqimporter.pio.PioParse
-  import gem.seqimporter.pio.PioParse._
+  import gem.ocs2.pio.PioParse
+  import gem.ocs2.pio.PioParse._
 
   val yesNo: PioParse[Boolean] = enum(
     "No"  -> false,

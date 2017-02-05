@@ -1,12 +1,12 @@
-package gem.seqimporter
+package gem.ocs2
 
 import edu.gemini.spModel.core.ProgramId
 import gem.{Dataset, Observation, Program, Step}
 import gem.config.InstrumentConfig
 import gem.enum.Instrument
-import gem.seqimporter.pio.PioPath._
-import gem.seqimporter.pio.PioDecoder
-import gem.seqimporter.pio.PioDecoder.fromParse
+import gem.ocs2.pio.PioPath._
+import gem.ocs2.pio.PioDecoder
+import gem.ocs2.pio.PioDecoder.fromParse
 
 import java.time.Instant
 

@@ -1,4 +1,4 @@
-package gem.seqimporter
+package gem.ocs2
 
 import doobie.contrib.postgresql.syntax._
 import doobie.imports._

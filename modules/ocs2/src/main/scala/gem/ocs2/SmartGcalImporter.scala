@@ -1,10 +1,10 @@
-package gem.seqimporter
+package gem.ocs2
 
 import gem.Log
 import gem.config.{F2SmartGcalKey, GcalConfig, SmartGcalKey}
 import gem.dao.{SmartGcalDao, UserDao}
 import gem.enum.{GcalBaselineType, GcalLampType}
-import gem.seqimporter.pio.PioParse
+import gem.ocs2.pio.PioParse
 
 import java.io.File
 import java.time.Duration
