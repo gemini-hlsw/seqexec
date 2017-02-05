@@ -10,9 +10,7 @@ import gem.{Dataset, Location, Log, Observation, Program, Step, User}
 import scalaz.Scalaz._
 import scalaz.concurrent.Task
 
-/** Fetches a sequence from the ODB, translates it into the sequence model and
-  * writes it into the database, replacing anything that might have been there
-  * already.
+/** Support for writing programs and observations to the database.
   */
 object Importer extends DoobieClient {
 
@@ -58,8 +56,8 @@ object Importer extends DoobieClient {
 
     (u: User[_], l: Log[ConnectionIO]) =>
       for {
-        _ <- l.log(u, s"remove program ${p.id}"         )(rmProgram           )
-        _ <- l.log(u, s"insert new version of ${p.id}"  )(ProgramDao.insert(p))
+        _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
+        _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
         _ <- p.observations.traverseU(o => writeObservation(o, dsMap(o.id))(u, l))
       } yield ()
   }

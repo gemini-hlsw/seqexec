@@ -10,7 +10,9 @@ import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.effect.IO
 
+/** Shared support for import applications using Doobie. */
 trait DoobieClient {
+
   val xa = DriverManagerTransactor[IO](
     "org.postgresql.Driver",
     "jdbc:postgresql:gem",
@@ -35,5 +37,4 @@ trait DoobieClient {
       n <- fa.onUniqueViolation(HC.rollback(s).as(0))
       _ <- HC.releaseSavepoint(s)
     } yield n
-
 }
