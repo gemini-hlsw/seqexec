@@ -8,13 +8,17 @@ import Scalaz._
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-case class Sequence[+A](id: Sequence.Id, metadata: SequenceMetadata, steps: List[Step[A]])
+case class Sequence[+A](
+  id: Sequence.Id,
+  metadata: SequenceMetadata,
+  steps: List[Step[A]]
+)
 
 object Sequence {
 
   type Id = String
 
-  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata(""), Nil)
+  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", "", ""), Nil)
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =

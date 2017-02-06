@@ -46,6 +46,8 @@ object Model {
   type SequenceId = String
   type StepId = Int
   type Instrument = String
+  type Operator = String
+  type Observer = String
 
   implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
 
@@ -113,7 +115,11 @@ object Model {
     * Metadata about the sequence required on the exit point
     */
   // TODO Une a proper instrument class
-  case class SequenceMetadata(instrument: Instrument)
+  case class SequenceMetadata(
+    instrument: Instrument,
+    operator: Operator,
+    observer: Observer
+  )
 
   case class SequenceView (
     id: SequenceId,
