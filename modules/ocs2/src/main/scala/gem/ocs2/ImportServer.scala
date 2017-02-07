@@ -103,9 +103,7 @@ object ImportServer extends ServerApp {
     def toResponse(id: String): ServerResponse = {
       val msg = e match {
         case MissingKey(name)            => s"missing '$name'"
-        case NullValue(name)             => s"null value '$name'"
         case ParseError(value, dataType) => s"could not parse '$value' as '$dataType'"
-        case GeneralError(s)             => s"general error $s"
       }
       ServerResponse(InternalServerError, s"Error parsing $id: $msg")
     }
