@@ -16,16 +16,16 @@ import Scalaz._
   */
 object Decoders {
   implicit val DatasetLabelDecoder: PioDecoder[Dataset.Label] =
-    fromParse("Dataset.Label") { Parsers.datasetLabel }
+    fromParse { Parsers.datasetLabel }
 
   implicit val ObservationIdDecoder: PioDecoder[Observation.Id] =
-    fromParse("Observation.Id") { Parsers.obsId }
+    fromParse { Parsers.obsId }
 
   implicit val ProgramIdDecoder: PioDecoder[Program.Id] =
-    fromParse("ProgramId") { Parsers.progId }
+    fromParse { Parsers.progId }
 
   implicit val InstrumentDecoder: PioDecoder[Instrument] =
-    fromParse("Instrument") { Parsers.instrument }
+    fromParse { Parsers.instrument }
 
   implicit val DatasetDecoder: PioDecoder[Dataset] =
     PioDecoder { n =>
