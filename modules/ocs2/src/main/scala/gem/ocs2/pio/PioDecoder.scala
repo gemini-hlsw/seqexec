@@ -4,7 +4,7 @@ import PioError._
 
 import java.time.Instant
 
-import scala.reflect.ClassTag
+import shapeless.Typeable
 import scala.xml.Node
 import scalaz.Scalaz._
 import scalaz._
@@ -24,16 +24,16 @@ object PioDecoder {
         f(n)
     }
 
-  def enum[A: ClassTag](m: (String, A)*): PioDecoder[A] =
+  def enum[A: Typeable](m: (String, A)*): PioDecoder[A] =
     fromParseFunction[A] { m.toMap.lift }
 
-  def fromParse[A: ClassTag](parse: PioParse[A]): PioDecoder[A] =
+  def fromParse[A: Typeable](parse: PioParse[A]): PioDecoder[A] =
     fromParseFunction(parse.run)
 
-  def fromParseFunction[A: ClassTag](parse: String => Option[A]): PioDecoder[A] =
+  def fromParseFunction[A](parse: String => Option[A])(implicit ev: Typeable[A]): PioDecoder[A] =
     new PioDecoder[A] {
       def decode(n: Node): PioError \/ A =
-        parse(n.text) \/> ParseError(n.text, implicitly[ClassTag[A]].runtimeClass.getName)
+        parse(n.text) \/> ParseError(n.text, ev.describe)
     }
 
   implicit val FunctorPioDecoder = new Functor[PioDecoder] {
