@@ -34,7 +34,6 @@ trait DoobieClient {
   def ignoreUniqueViolation(fa: ConnectionIO[Int]): ConnectionIO[Int] =
     for {
       s <- HC.setSavepoint
-      n <- fa.onUniqueViolation(HC.rollback(s).as(0))
-      _ <- HC.releaseSavepoint(s)
+      n <- fa.onUniqueViolation(HC.rollback(s).as(0)) ensuring HC.releaseSavepoint(s)
     } yield n
 }
