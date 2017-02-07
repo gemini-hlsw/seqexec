@@ -105,6 +105,9 @@ object DhsClient {
 class DhsClientHttp(val baseURI: String) extends DhsClient {
   import DhsClientHttp._
 
+  // Connection timeout, im milliseconds
+  val timeout = 10000
+
   implicit def errorDecode: DecodeJson[Error] = DecodeJson[Error]( c => for {
       t   <- (c --\ "type").as[ErrorType]
       msg <- (c --\ "message").as[String]
@@ -139,6 +142,8 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
 
   private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( Task.delay {
       val client = new HttpClient()
+
+      client.setConnectionTimeout(timeout)
 
       method.addRequestHeader("Content-Type", "application/json")
       method.setRequestBody(body.nospaces)

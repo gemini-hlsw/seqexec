@@ -123,7 +123,7 @@ package object engine {
     // Send the expected event when the `Action` is executed
     def act(t: (Action, Int)): Task[Unit] = t match {
       case (action, i) =>
-        action.flatMap {
+        action.attempt.map(_.valueOr(e => Result.Error(e.getMessage))).flatMap {
           case Result.OK(r)    => q.enqueueOne(completed(id, i, r))
           case Result.Error(e) => q.enqueueOne(failed(id, i, e))
         }
