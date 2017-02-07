@@ -39,7 +39,7 @@ object Decoders {
   // Decodes all the datasets in either a program or observation node.  We have
   // to explicitly specify that we want the "dataset" elements within a
   // "datasets" paramset because they are duplicated in the event data.
-  val DatasetsDecoder: PioDecoder[List[Dataset]] =
+  implicit val DatasetsDecoder: PioDecoder[List[Dataset]] =
     PioDecoder { n =>
       (n \\* "obsExecLog" \\* "&datasets" \\* "&dataset").decode[Dataset]
     }

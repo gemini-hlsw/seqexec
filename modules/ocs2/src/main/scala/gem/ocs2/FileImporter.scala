@@ -5,7 +5,7 @@ import gem.{Dataset, Log, Observation, Program, Step, User}
 import gem.config.InstrumentConfig
 import gem.dao.UserDao
 import gem.ocs2.Decoders._
-import gem.ocs2.pio.PioError
+import gem.ocs2.pio.PioDecoder
 
 import java.io.File
 
@@ -49,15 +49,9 @@ object FileImporter extends SafeApp with DoobieClient {
   def insert(u: User[_], p: Program[Observation[Step[InstrumentConfig]]], ds: List[Dataset], log: Log[ConnectionIO]): ConnectionIO[Unit] =
     Importer.writeProgram(p, ds)(u, log)
 
-  def decode(elem: Elem): PioError \/ (Prog, List[Dataset]) =
-    for {
-      p  <- ProgramDecoder.decode(elem)
-      ds <- DatasetsDecoder.decode(elem)
-    } yield (p, ds)
-
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =
     read(f).flatMap { elem =>
-      decode(elem) match {
+      PioDecoder[(Prog, List[Dataset])].decode(elem) match {
         case -\/(err)     => sys.error(s"Problem parsing ${f.getName}: " + err)
         case \/-((p, ds)) => log.log(u, s"insert ${p.id}")(insert(u, p, ds, log)).transact(xa)
       }

@@ -47,10 +47,9 @@ final class ImportServer(ocsHost: String) {
 
   private def fetchDecodeAndStore[A](id: String, f: (A, List[Dataset]) => Task[Unit])(implicit ev: PioDecoder[A]): ServerResponse = {
     def decodeAndStore(xml: Node): Task[ServerResponse] =
-      (for {
-        a  <- PioDecoder[A].decode(xml).leftMap(_.toResponse(id))
-        ds <- DatasetsDecoder.decode(xml).leftMap(_.toResponse(id))
-      } yield f(a, ds).as(ServerResponse(Ok, s"Imported $id"))).sequenceU.map(_.merge)
+      PioDecoder[(A, List[Dataset])].decode(xml).leftMap(_.toResponse(id)).traverseU { case (a, ds) =>
+        f(a, ds).as(ServerResponse(Ok, s"Imported $id"))
+      }.map(_.merge)
 
     client.expect[Elem](uri(id))
           .flatMap(decodeAndStore)
