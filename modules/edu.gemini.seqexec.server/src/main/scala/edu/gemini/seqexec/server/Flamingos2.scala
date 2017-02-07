@@ -37,6 +37,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
       id <- dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(instContributorName, "dhs-http")))
       _  <- headers.map(_.sendBefore(id, dhsInstrumentName)).sequenceU
       _  <- f2Controller.observe(id)
+      _  <- headers.map(_.sendAfter(id, dhsInstrumentName)).sequenceU
       _  <- closeImage(id, dhs)
     } yield ObserveResult(id)
   }
