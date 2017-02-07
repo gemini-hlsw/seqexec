@@ -1,5 +1,8 @@
 package edu.gemini.seqexec.server
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import edu.gemini.seqexec.model.dhs.ObsId
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
@@ -9,53 +12,6 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
   * Created by jluhrs on 1/31/17.
   */
 
-trait TcsKeywordsReader {
-  def getHourAngle: SeqAction[String]
-  def getLocalTime: SeqAction[String]
-  def getTrackingFrame: SeqAction[String]
-  def getTrackingEpoch(): SeqAction[Double]
-  def getTrackingEquinox: SeqAction[Double]
-  def getTrackingDec: SeqAction[Double]
-  def getTrackingRA: SeqAction[Double]
-  def getFrame: SeqAction[String]
-  def getEpoch: SeqAction[Double]
-  def getProperMotionDec: SeqAction[Double]
-  def getProperMotionRA: SeqAction[Double]
-  def getWavelength: SeqAction[Double]
-  def getParallax: SeqAction[Double]
-  def getRadialVelocity: SeqAction[Double]
-  def getEquinox: SeqAction[Double]
-  def getRA: SeqAction[Double]
-  def getDec: SeqAction[Double]
-  def getElevation: SeqAction[Double]
-  def getAzimuth: SeqAction[Double]
-  def getCRPositionAngle: SeqAction[Double]
-  def getUT: SeqAction[String]
-}
-
-object DummyTcsKeywordsReader extends TcsKeywordsReader {
-  override def getHourAngle: SeqAction[String] = SeqAction("00:00:00")
-  override def getLocalTime: SeqAction[String] = SeqAction("00:00:00")
-  override def getTrackingFrame: SeqAction[String] = SeqAction("FK5")
-  override def getTrackingEpoch(): SeqAction[Double] = SeqAction(0.0)
-  override def getTrackingEquinox: SeqAction[Double] = SeqAction(2000.0)
-  override def getTrackingDec: SeqAction[Double] = SeqAction(0.0)
-  override def getTrackingRA: SeqAction[Double] = SeqAction(0.0)
-  override def getFrame: SeqAction[String] = SeqAction("FK5")
-  override def getEpoch: SeqAction[Double] = SeqAction(0.0)
-  override def getProperMotionDec: SeqAction[Double] = SeqAction(0.0)
-  override def getProperMotionRA: SeqAction[Double] = SeqAction(0.0)
-  override def getWavelength: SeqAction[Double] = SeqAction(0.0)
-  override def getParallax: SeqAction[Double] = SeqAction(0.0)
-  override def getRadialVelocity: SeqAction[Double] = SeqAction(0.0)
-  override def getEquinox: SeqAction[Double] = SeqAction(2000.0)
-  override def getRA: SeqAction[Double] = SeqAction(0.0)
-  override def getDec: SeqAction[Double] = SeqAction(0.0)
-  override def getElevation: SeqAction[Double] = SeqAction(0.0)
-  override def getAzimuth: SeqAction[Double] = SeqAction(0.0)
-  override def getCRPositionAngle: SeqAction[Double] = SeqAction(0.0)
-  override def getUT: SeqAction[String] = SeqAction("00:00:00")
-}
 
 trait ObsKeywordsReader {
   def getObsType: SeqAction[String]
@@ -99,14 +55,86 @@ object DummyObsKeywordsReader extends ObsKeywordsReader {
 
 class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: TcsKeywordsReader) extends Header {
   import Header._
-  override def sendBefore(id: ObsId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs, List(
-    buildString(obsReader.getObsType, "OBSTYPE"),
-    buildString(obsReader.getObsClass, "OBSCLASS"),
-    buildString(obsReader.getGemPrgId, "GEMPRGID"),
-    buildString(obsReader.getObsId, "obsid"),
-    buildString(obsReader.getObservatory, "OBSERVAT"),
-    buildString(obsReader.getTelescope, "telescope")
-  ))
+  override def sendBefore(id: ObsId, inst: String): SeqAction[Unit] = {
 
-  override def sendAfter(id: ObsId, inst: String): SeqAction[Unit] = SeqAction(())
+    val p: SeqAction[Double] = for {
+      xoff <- tcsReader.getXOffset
+      yoff <- tcsReader.getYOffset
+      iaa <- tcsReader.getInstrumentAA
+    } yield -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
+
+    val q: SeqAction[Double] = for {
+      xoff <- tcsReader.getXOffset
+      yoff <- tcsReader.getYOffset
+      iaa <- tcsReader.getInstrumentAA
+    } yield -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
+
+    val raoff: SeqAction[Double] = for {
+      poff <- p
+      qoff <- q
+      ipa  <- tcsReader.getInstrumentPA
+    } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
+
+    val decoff: SeqAction[Double] = for {
+      poff <- p
+      qoff <- q
+      ipa  <- tcsReader.getInstrumentPA
+    } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
+
+    sendKeywords(id, inst, hs, List(
+      buildString(obsReader.getObsType, "OBSTYPE"),
+      buildString(obsReader.getObsClass, "OBSCLASS"),
+      buildString(obsReader.getGemPrgId, "GEMPRGID"),
+      buildString(obsReader.getObsId, "obsid"),
+      buildString(obsReader.getObservatory, "OBSERVAT"),
+      buildString(obsReader.getTelescope, "telescope"),
+      buildString(tcsReader.getHourAngle, "HA"),
+      buildString(tcsReader.getLocalTime, "LT"),
+      buildString(tcsReader.getTrackingFrame, "TRKFRAME"),
+      buildDouble(tcsReader.getTrackingDec, "DECTRACK"),
+      buildDouble(tcsReader.getTrackingRA, "RATRACK"),
+      buildDouble(tcsReader.getTrackingEpoch, "TRKEPOCH"),
+      buildString(tcsReader.getSourceATarget.getFrame, "FRAME"),
+      buildDouble(tcsReader.getSourceATarget.getProperMotionDec, "PMDEC"),
+      buildDouble(tcsReader.getSourceATarget.getProperMotionRA, "PMRA"),
+      buildDouble(tcsReader.getSourceATarget.getWavelength, "WAVELENG"),
+      buildDouble(tcsReader.getSourceATarget.getParallax, "PARALLAX"),
+      buildDouble(tcsReader.getSourceATarget.getRadialVelocity, "RADVEL"),
+      buildDouble(tcsReader.getSourceATarget.getEpoch, "EPOCH"),
+      buildDouble(tcsReader.getSourceATarget.getEquinox, "EQUINOX"),
+      buildDouble(tcsReader.getSourceATarget.getRA, "RA"),
+      buildDouble(tcsReader.getSourceATarget.getDec, "DEC"),
+      buildDouble(tcsReader.getTrackingEquinox, "TRKEQUIN"),
+      buildDouble(tcsReader.getElevation, "ELEVATIO"),
+      buildDouble(tcsReader.getAzimuth, "AZIMUTH"),
+      buildDouble(tcsReader.getCRPositionAngle, "CRPA"),
+      buildString(tcsReader.getUT, "UT"),
+      buildString(tcsReader.getDate, "DATE"),
+      buildString(tcsReader.getM2Baffle, "M2BAFFLE"),
+      buildString(tcsReader.getM2CentralBaffle, "M2CENBAF"),
+      buildString(tcsReader.getST, "ST"),
+      buildDouble(tcsReader.getSFRotation, "SFRT2"),
+      buildDouble(tcsReader.getSFTilt, "SFTILT"),
+      buildDouble(tcsReader.getSFLinear, "SFLINEAR"),
+      buildDouble(tcsReader.getInstrumentPA, "PA"),
+      buildDouble(tcsReader.getInstrumentAA, "IAA"),
+      buildDouble(tcsReader.getXOffset, "XOFFSET"),
+      buildDouble(tcsReader.getYOffset, "YOFFSET"),
+      buildDouble(p, "POFFSET"),
+      buildDouble(q, "QOFFSET"),
+      buildDouble(raoff, "RAOFFSET"),
+      buildDouble(decoff, "DECOFFSE"),
+      buildString(tcsReader.getAOFoldName, "AOFOLD")
+
+    ))
+  }
+
+
+
+  override def sendAfter(id: ObsId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
+    List(
+      buildDouble(tcsReader.getAirMass, "AIRMASS"),
+      buildDouble(tcsReader.getStartAirMass, "AMSTART"),
+      buildDouble(tcsReader.getEndAirMass, "AMEND")
+    ))
 }

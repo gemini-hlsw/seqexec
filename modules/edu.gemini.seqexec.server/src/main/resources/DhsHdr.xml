@@ -699,7 +699,7 @@
         </attribute>
         <attribute name="g4aparal">
             <channel>sad:g4Parallax</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description>G4 Parallax</description>
         </attribute>
         <attribute name="g2aobjec">
@@ -724,17 +724,17 @@
         </attribute>
         <attribute name="azimuth">
             <channel>currentAz</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description>Current Azimuth</description>
         </attribute>
         <attribute name="p2aequin">
             <channel>sad:pwfs2Equinox</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description>P2 Equinox</description>
         </attribute>
         <attribute name="instrPA">
             <channel>sad:instrPA</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description>Instrument position angle</description>
         </attribute>
         <attribute name="p2aframe">
@@ -749,17 +749,17 @@
         </attribute>
         <attribute name="g4apmra">
             <channel>sad:g4PMRA</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description>G4 Proper motion RA</description>
         </attribute>
         <attribute name="g3aparal">
             <channel>sad:g3Parallax</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description>G3 Parallax</description>
         </attribute>
         <attribute name="radvel">
             <channel>sad:sourceARV</channel>
-            <type>m2baffle</type>
+            <type>DOUBLE</type>
             <description></description>
         </attribute>
         <attribute name="sourceAEpoch">
