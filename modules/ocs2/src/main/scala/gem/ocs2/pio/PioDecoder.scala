@@ -24,9 +24,12 @@ object PioDecoder {
     }
 
   def enum[A](dataType: String)(m: (String, A)*): PioDecoder[A] =
-    fromParse[A](dataType) { m.toMap.lift }
+    fromParseFunction[A](dataType) { m.toMap.lift }
 
   def fromParse[A](dataType: String)(parse: PioParse[A]): PioDecoder[A] =
+    fromParseFunction(dataType)(parse.run)
+
+  def fromParseFunction[A](dataType: String)(parse: String => Option[A]): PioDecoder[A] =
     new PioDecoder[A] {
       def decode(n: Node): PioError \/ A =
         parse(n.text) \/> ParseError(n.text, dataType)

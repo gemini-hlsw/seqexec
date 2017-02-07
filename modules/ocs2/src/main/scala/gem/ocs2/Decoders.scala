@@ -1,6 +1,5 @@
 package gem.ocs2
 
-import edu.gemini.spModel.core.ProgramId
 import gem.{Dataset, Observation, Program, Step}
 import gem.config.InstrumentConfig
 import gem.enum.Instrument
@@ -17,13 +16,13 @@ import Scalaz._
   */
 object Decoders {
   implicit val DatasetLabelDecoder: PioDecoder[Dataset.Label] =
-    fromParse("Dataset.Label") { Dataset.Label.fromString }
+    fromParse("Dataset.Label") { Parsers.datasetLabel }
 
   implicit val ObservationIdDecoder: PioDecoder[Observation.Id] =
     fromParse("Observation.Id") { Parsers.obsId }
 
   implicit val ProgramIdDecoder: PioDecoder[Program.Id] =
-    fromParse("ProgramId") { s => Option(ProgramId.parse(s)) }
+    fromParse("ProgramId") { Parsers.progId }
 
   implicit val InstrumentDecoder: PioDecoder[Instrument] =
     fromParse("Instrument") { Parsers.instrument }

@@ -1,8 +1,8 @@
 package gem.ocs2
 
-import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ}
+import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ, ProgramId}
 
-import gem.Observation
+import gem.{Dataset, Observation, Program}
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
 
@@ -46,8 +46,14 @@ object Parsers {
     "Visitor Instrument" -> gem.enum.Instrument.Visitor
   )
 
+  val progId: PioParse[Program.Id] =
+    PioParse(s => Option(ProgramId.parse(s)))
+
   val obsId: PioParse[Observation.Id] =
-    Observation.Id.fromString
+    PioParse(Observation.Id.fromString)
+
+  val datasetLabel: PioParse[Dataset.Label] =
+    PioParse(Dataset.Label.fromString)
 
   val offsetP: PioParse[OffsetP] =
     arcsec.map(OffsetP.apply)
@@ -74,7 +80,7 @@ object Parsers {
         "Xe Arc"              -> XeArc
       ).lift
 
-      lamps => {
+      PioParse(lamps => {
         val (continuum, arc) = ((List.empty[GcalContinuum], List.empty[GcalArc])/:lamps.split(',')) {
           case ((cs,as), s) =>
             val cs2 = lampToContinuum(s).fold(cs) { _ :: cs }
@@ -82,7 +88,7 @@ object Parsers {
             (cs2, as2)
         }
         GcalLamp.fromConfig(continuum.headOption, arc.strengthR(true): _*)
-      }
+      })
     }
 
     val filter: PioParse[GcalFilter] = enum(
