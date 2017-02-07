@@ -10,7 +10,7 @@ import scalaz._
 
 /** Typeclass for decoders of PIO-ish XML exported from an OCS2 database.
   */
-trait PioDecoder[A] { outer =>
+trait PioDecoder[A] {
   def decode(n: Node): PioError \/ A
 }
 
@@ -34,6 +34,11 @@ object PioDecoder {
       def decode(n: Node): PioError \/ A =
         parse(n.text) \/> ParseError(n.text, dataType)
     }
+
+  implicit val FunctorPioDecoder = new Functor[PioDecoder] {
+    def map[A, B](da: PioDecoder[A])(f: A => B): PioDecoder[B] =
+      PioDecoder(n => da.decode(n).map(f))
+  }
 
   implicit val StringDecoder: PioDecoder[String]   = fromParse("String" )(PioParse.string )
   implicit val IntDecoder: PioDecoder[Int]         = fromParse("Int"    )(PioParse.int    )
