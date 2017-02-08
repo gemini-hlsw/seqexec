@@ -7,6 +7,7 @@ lazy val shapelessVersion         = "2.3.1"
 lazy val argonautShapelessVersion = "1.2.0-M1"
 lazy val scalaTestVersion         = "3.0.0"
 lazy val scalaCheckVersion        = "1.13.1"
+lazy val http4sVersion            = "0.15.2a"
 
 lazy val testLibs = Seq(
   "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
@@ -47,7 +48,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, importer, json, service, telnetd)
+  .aggregate(core, db, importer, json, ocs2, service, telnetd)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -104,6 +105,21 @@ lazy val json = project
       "io.argonaut"                %% "argonaut"               % argonautVersion,
       "io.argonaut"                %% "argonaut-scalaz"        % argonautVersion,
       "com.github.alexarchambault" %% "argonaut-shapeless_6.2" % argonautShapelessVersion
+    )
+  )
+
+lazy val ocs2 = project
+  .in(file("modules/ocs2"))
+  .dependsOn(core, db)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-xml"                % "1.0.3",
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
+      "org.http4s"             %% "http4s-dsl"               % http4sVersion,
+      "org.http4s"             %% "http4s-scala-xml"         % http4sVersion,
+      "org.http4s"             %% "http4s-blaze-client"      % http4sVersion,
+      "org.http4s"             %% "http4s-blaze-server"      % http4sVersion
     )
   )
 

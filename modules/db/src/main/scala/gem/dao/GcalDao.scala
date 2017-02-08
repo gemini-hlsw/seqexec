@@ -10,12 +10,12 @@ import java.time.Duration
 
 object GcalDao {
 
-  def insert(gcal: GcalConfig): ConnectionIO[Int] = {
+  def insert(gcal: GcalConfig, step: Option[Int]): ConnectionIO[Int] = {
     val arcs: GcalArc => Boolean = gcal.arcs.member
 
     for {
-      _ <- sql"""INSERT INTO gcal (continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
-                      VALUES (${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${gcal.coadds})
+      _ <- sql"""INSERT INTO gcal (step_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
+                      VALUES ($step, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${gcal.coadds})
               """.update.run
       id <- sql"select lastval()".query[Int].unique
     } yield id
