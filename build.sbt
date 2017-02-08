@@ -37,6 +37,10 @@ lazy val commonSettings = Seq(
     "-Ywarn-unused-import",
     "-Ypartial-unification"
   ),
+  scalacOptions in (Compile, console) ~= (_.filterNot(Set(
+    "-Xfatal-warnings",
+    "-Ywarn-unused-import"
+  ))),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
   libraryDependencies ++= ("org.scala-lang" %  "scala-reflect" % scalaVersion.value +: testLibs),
   name := "gem-" + name.value
@@ -150,9 +154,5 @@ lazy val ctl = project
     libraryDependencies ++= Seq(
       "org.scalaz"  %% "scalaz-core"   % scalazVersion,
       "org.scalaz"  %% "scalaz-effect" % scalazVersion
-    ),
-    scalacOptions --= Seq(
-      "-Xfatal-warnings",
-      "-Ywarn-unused-import"
     )
   )
