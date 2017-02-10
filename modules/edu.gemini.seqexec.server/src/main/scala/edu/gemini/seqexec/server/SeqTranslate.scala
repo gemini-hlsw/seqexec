@@ -1,12 +1,10 @@
 package edu.gemini.seqexec.server
 
-import java.time.LocalDate
-
+import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
 import edu.gemini.seqexec.model.Model.SequenceMetadata
-import edu.gemini.model.p1.immutable.Site
-import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.seqexec.server.ConfigUtilOps._
+import edu.gemini.seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -26,12 +24,14 @@ class SeqTranslate(site: Site) {
     case \/-(r) => Result.OK(r)
   }
 
-  private def step(systems: Systems)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
+  private def step(systems: Systems, settings: Settings)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
 
     def buildStep(inst: Instrument): Step[Action] = {
       val sys = List(Tcs(systems.tcs), inst)
       val headers = List(new StandardHeader(systems.dhs,
-        ObsKeywordReaderImpl(config, site.name.replace(' ', '-')), DummyTcsKeywordsReader))
+        ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
+        if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
+      ))
 
       Step[Action](
         i,
@@ -58,11 +58,11 @@ class SeqTranslate(site: Site) {
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
-  def sequence(systems: Systems)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
+  def sequence(systems: Systems, settings: Settings)(obsId: String, sequenceConfig: ConfigSequence): SeqexecFailure \/ Sequence[Action] = {
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.traverseU {
-      case (c, i) => step(systems)(i, c)
+      case (c, i) => step(systems, settings)(i, c)
     }
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
@@ -79,5 +79,10 @@ object SeqTranslate {
                       dhs: DhsClient,
                       tcs: TcsController,
                       flamingos2: Flamingos2Controller
-                      )
+                    )
+
+  case class Settings(
+                       tcsKeywords: Boolean
+                     )
+
 }

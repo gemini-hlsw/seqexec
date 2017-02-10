@@ -8,6 +8,9 @@ import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
+import scalaz._
+import Scalaz._
+
 /**
   * Created by jluhrs on 1/31/17.
   */
@@ -81,6 +84,7 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       ipa  <- tcsReader.getInstrumentPA
     } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
 
+
     sendKeywords(id, inst, hs, List(
       buildString(obsReader.getObsType, "OBSTYPE"),
       buildString(obsReader.getObsClass, "OBSCLASS"),
@@ -125,7 +129,6 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       buildDouble(raoff, "RAOFFSET"),
       buildDouble(decoff, "DECOFFSE"),
       buildString(tcsReader.getAOFoldName, "AOFOLD")
-
     ))
   }
 

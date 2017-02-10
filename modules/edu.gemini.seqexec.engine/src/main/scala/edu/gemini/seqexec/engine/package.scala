@@ -1,5 +1,7 @@
 package edu.gemini.seqexec
 
+import java.io.{PrintWriter, StringWriter}
+
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.model.Model.SequenceState
 
@@ -120,10 +122,17 @@ package object engine {
     */
   private def execute(q: EventQueue)(id: Sequence.Id): Handle[Unit] = {
 
+    def stackToString(e: Throwable): String = {
+      val sw = new StringWriter
+      e.printStackTrace(new PrintWriter(sw))
+      sw.toString
+    }
+
     // Send the expected event when the `Action` is executed
     def act(t: (Action, Int)): Task[Unit] = t match {
       case (action, i) =>
-        action.attempt.map(_.valueOr(e => Result.Error(e.getMessage))).flatMap {
+        action.attempt.map(_.valueOr(e =>
+          Result.Error(if (e.getMessage == null || e.getMessage.isEmpty) stackToString(e) else e.getMessage))).flatMap {
           case Result.OK(r)    => q.enqueueOne(completed(id, i, r))
           case Result.Error(e) => q.enqueueOne(failed(id, i, e))
         }
