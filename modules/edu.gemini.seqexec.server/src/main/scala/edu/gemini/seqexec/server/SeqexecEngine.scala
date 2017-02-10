@@ -35,6 +35,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics
   )
 
+  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords)
+
   def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
 
@@ -67,7 +69,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
-      } yield odbSeq.flatMap(s => translator.sequence(systems)(seqId.stringValue(), s))
+      } yield odbSeq.flatMap(s => translator.sequence(systems, translatorSettings)(seqId.stringValue(), s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(seqId.stringValue(), x)).map(_.right))
     u.run
@@ -149,6 +151,7 @@ object SeqexecEngine {
                       tcsSim: Boolean,
                       instSim: Boolean,
                       gcalSim: Boolean,
+                      tcsKeywords: Boolean,
                       instForceError: Boolean)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
@@ -164,6 +167,7 @@ object SeqexecEngine {
       val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+      val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
       val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
 
     // TODO: Review initialization of EPICS systems
@@ -178,7 +182,7 @@ object SeqexecEngine {
         }
       )
 
-      val tcsInit = if(tcsSim) Task(()) else initEpicsSystem(TcsEpics)
+      val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task(())
       // More instruments to be added to the list here
       val instInit = if(instSim) Task(())
         else Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
@@ -187,7 +191,7 @@ object SeqexecEngine {
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, instForceError) )
+        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, tcsKeywords, instForceError) )
 
     }
   }

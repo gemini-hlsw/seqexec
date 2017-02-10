@@ -8,7 +8,7 @@ import java.util.logging.Logger
 import edu.gemini.seqexec.server.EpicsCommand._
 import edu.gemini.seqexec.server.tcs.{BinaryYesNo, BinaryOnOff}
 
-import collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import squants.Time
 
@@ -341,6 +341,80 @@ final class TcsEpics(epicsService: CaService) {
     })))
 
 
+  def hourAngle: Option[String] = Option(tcsState.getStringAttribute("ha").value)
+
+  def localTime: Option[String] = Option(tcsState.getStringAttribute("lt").value)
+
+  def trackingFrame: Option[String] = Option(tcsState.getStringAttribute("trkframe").value)
+
+  def trackingEpoch: Option[Double] = Option(tcsState.getDoubleAttribute("trkepoch").value).map(_.doubleValue)
+
+  def equinox: Option[Double] = Option(tcsState.getDoubleAttribute("sourceAEquinox").value).map(_.doubleValue)
+
+  def trackingEquinox: Option[String] = Option(tcsState.getStringAttribute("sourceATrackEq").value)
+
+  def trackingDec: Option[Double] = Option(tcsState.getDoubleAttribute("dectrack").value).map(_.doubleValue)
+
+  def trackingRA: Option[Double] = Option(tcsState.getDoubleAttribute("ratrack").value).map(_.doubleValue)
+
+  def elevation: Option[Double] = Option(tcsState.getDoubleAttribute("elevatio").value).map(_.doubleValue)
+
+  def azimuth: Option[Double] = Option(tcsState.getDoubleAttribute("azimuth").value).map(_.doubleValue)
+
+  def crPositionAngle: Option[Double] = Option(tcsState.getDoubleAttribute("crpa").value).map(_.doubleValue)
+
+  def ut: Option[String] = Option(tcsState.getStringAttribute("ut").value)
+
+  def date: Option[String] = Option(tcsState.getStringAttribute("date").value)
+
+  def m2Baffle: Option[String] = Option(tcsState.getStringAttribute("m2baffle").value)
+
+  def m2CentralBaffle: Option[String] = Option(tcsState.getStringAttribute("m2baffle").value)
+
+  def st: Option[String] = Option(tcsState.getStringAttribute("st").value)
+
+  def sfRotation: Option[Double] = Option(tcsState.getDoubleAttribute("sfrt2").value).map(_.doubleValue)
+
+  def sfTilt: Option[Double] = Option(tcsState.getDoubleAttribute("sftilt").value).map(_.doubleValue)
+
+  def sfLinear: Option[Double] = Option(tcsState.getDoubleAttribute("sflinear").value).map(_.doubleValue)
+
+  def instrPA: Option[Double] = Option(tcsState.getDoubleAttribute("instrPA").value).map(_.doubleValue)
+
+  def targetA: Option[List[Double]] = Option(tcsState.getDoubleAttribute("targetA").values).map(_.asScala.toList.map(_.doubleValue))
+
+  def aoFoldPosition: Option[String] = Option(tcsState.getStringAttribute("aoName").value)
+
+  def airmass: Option[Double] = Option(tcsState.getDoubleAttribute("airmass").value).map(_.doubleValue)
+
+  def airmassStart: Option[Double] = Option(tcsState.getDoubleAttribute("amstart").value).map(_.doubleValue)
+
+  def airmassEnd: Option[Double] = Option(tcsState.getDoubleAttribute("amend").value).map(_.doubleValue)
+
+  def sourceATarget: Target = new Target {
+    override def epoch = Option(tcsState.getStringAttribute("sourceAEpoch").value)
+
+    override def equinox = Option(tcsState.getStringAttribute("sourceAEquinox").value)
+
+    override def radialVelocity = Option(tcsState.getDoubleAttribute("radvel").value).map(_.doubleValue)
+
+    override def frame = Option(tcsState.getStringAttribute("frame").value)
+
+    override def centralWavelenght = sourceAWavelength
+
+    override def ra = Option(tcsState.getDoubleAttribute("ra").value).map(_.doubleValue)
+
+    override def objectName = Option(tcsState.getStringAttribute("sourceAObjectName").value)
+
+    override def dec = Option(tcsState.getDoubleAttribute("dec").value).map(_.doubleValue)
+
+    override def parallax = Option(tcsState.getDoubleAttribute("parallax").value).map(_.doubleValue)
+
+    override def properMotionRA = Option(tcsState.getDoubleAttribute("pmra").value).map(_.doubleValue)
+
+    override def properMotionDec = Option(tcsState.getDoubleAttribute("pmdec").value).map(_.doubleValue)
+  }
+
 
 }
 
@@ -446,6 +520,20 @@ object TcsEpics extends EpicsSystem {
     def nodcchopa: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodcchopa").value)
     def nodcchopb: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodcchopb").value)
     def nodcchopc: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodcchopc").value)
+  }
+
+  sealed trait Target {
+    def objectName: Option[String]
+    def ra: Option[Double]
+    def dec: Option[Double]
+    def frame: Option[String]
+    def equinox: Option[String]
+    def epoch: Option[String]
+    def properMotionRA: Option[Double]
+    def properMotionDec: Option[Double]
+    def centralWavelenght: Option[Double]
+    def parallax: Option[Double]
+    def radialVelocity: Option[Double]
   }
 
 }

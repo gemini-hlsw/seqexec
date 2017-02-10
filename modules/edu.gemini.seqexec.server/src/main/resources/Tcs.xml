@@ -1075,11 +1075,12 @@
         -->
     </Status>
     <Status name="tcsstate">
-        <top>ao</top>
+        <top>tcs</top>
         <attribute name="aowfsOn">
             <channel>wfcs:loopRunning</channel>
             <type>DOUBLE</type>
             <description>AO loop on</description>
+            <top>ao</top>
         </attribute>
         <attribute name="decson">
             <channel>chopControl.VALB</channel>
@@ -1091,7 +1092,6 @@
             <channel>guiderConfig.VALC</channel>
             <type>STRING</type>
             <description>Name of GeMS WFS for G3</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="port1Label">
             <channel>port:port1</channel>
@@ -1104,422 +1104,352 @@
             <channel>ngsPr1FollowStat.VAL</channel>
             <type>STRING</type>
             <description>Canopus 1 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="ngs2Follow">
             <channel>ngsPr2FollowStat.VAL</channel>
             <type>STRING</type>
             <description>Canopus 2 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="ngs3Follow">
             <channel>ngsPr3FollowStat.VAL</channel>
             <type>STRING</type>
             <description>Canopus 3 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw1Follow">
             <channel>odgw1FollowStat.VAL</channel>
             <type>STRING</type>
             <description>ODGW 1 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw2Follow">
             <channel>odgw2FollowStat.VAL</channel>
             <type>STRING</type>
             <description>ODGW 2 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw3Follow">
             <channel>odgw3FollowStat.VAL</channel>
             <type>STRING</type>
             <description>ODGW 3 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw4Follow">
             <channel>odgw4FollowStat.VAL</channel>
             <type>STRING</type>
             <description>ODGW 4 in follow mode</description>
-            <top>tcs</top>
         </attribute>
         -->
         <attribute name="p1nodachopa">
             <channel>configPwfs1.VALA</channel>
             <type>STRING</type>
             <description>P1 nodachopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p1nodachopb">
             <channel>configPwfs1.VALB</channel>
             <type>STRING</type>
-            <description>P1 nodachopb  </description>
-            <top>tcs</top>
+            <description>P1 nodachopb</description>
         </attribute>
         <attribute name="p1nodachopc">
             <channel>configPwfs1.VALC</channel>
             <type>STRING</type>
-            <description>P1 nodachopc  </description>
-            <top>tcs</top>
+            <description>P1 nodachopc</description>
         </attribute>
         <attribute name="p1nodbchopa">
             <channel>configPwfs1.VALD</channel>
             <type>STRING</type>
-            <description>P1 nodbchopa  </description>
-            <top>tcs</top>
+            <description>P1 nodbchopa</description>
         </attribute>
         <attribute name="p1nodbchopb">
             <channel>configPwfs1.VALE</channel>
             <type>STRING</type>
-            <description>P1 nodbchopb  </description>
-            <top>tcs</top>
+            <description>P1 nodbchopb</description>
         </attribute>
         <attribute name="p1nodbchopc">
             <channel>configPwfs1.VALF</channel>
             <type>STRING</type>
-            <description>P1 nodbchopc </description>
-            <top>tcs</top>
+            <description>P1 nodbchopc</description>
         </attribute>
         <attribute name="p1nodcchopa">
             <channel>configPwfs1.VALG</channel>
             <type>STRING</type>
             <description>P1 nodcchopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p1nodcchopb">
             <channel>configPwfs1.VALH</channel>
             <type>STRING</type>
             <description>P1 nodcchopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p1nodcchopc">
             <channel>configPwfs1.VALI</channel>
             <type>STRING</type>
             <description>P1 nodcchopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodachopa">
             <channel>configPwfs2.VALA</channel>
             <type>STRING</type>
             <description>P2 nodachopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodachopb">
             <channel>configPwfs2.VALB</channel>
             <type>STRING</type>
             <description>P2 nodachopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodachopc">
             <channel>configPwfs2.VALC</channel>
             <type>STRING</type>
             <description>P2 nodachopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodbchopa">
             <channel>configPwfs2.VALD</channel>
             <type>STRING</type>
             <description>P2 nodbchopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodbchopb">
             <channel>configPwfs2.VALE</channel>
             <type>STRING</type>
             <description>P2 nodbchopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodbchopc">
             <channel>configPwfs2.VALF</channel>
             <type>STRING</type>
             <description>P2 nodbchopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodcchopa">
             <channel>configPwfs2.VALG</channel>
             <type>STRING</type>
             <description>P2 nodcchopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodcchopb">
             <channel>configPwfs2.VALH</channel>
             <type>STRING</type>
             <description>P2 nodcchopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2nodcchopc">
             <channel>configPwfs2.VALI</channel>
             <type>STRING</type>
             <description>P2 nodcchopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodachopa">
             <channel>configOiwfs.VALA</channel>
             <type>STRING</type>
             <description>OI nodachopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodachopb">
             <channel>configOiwfs.VALB</channel>
             <type>STRING</type>
             <description>OI nodachopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodachopc">
             <channel>configOiwfs.VALC</channel>
             <type>STRING</type>
             <description>OI nodachopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodbchopa">
             <channel>configOiwfs.VALD</channel>
             <type>STRING</type>
             <description>OI nodbchopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodbchopb">
             <channel>configOiwfs.VALE</channel>
             <type>STRING</type>
             <description>OI nodbchopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodbchopc">
             <channel>configOiwfs.VALF</channel>
             <type>STRING</type>
             <description>OI nodbchopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodcchopa">
             <channel>configOiwfs.VALG</channel>
             <type>STRING</type>
             <description>OI nodcchopa</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodcchopb">
             <channel>configOiwfs.VALH</channel>
             <type>STRING</type>
             <description>OI nodcchopb</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oinodcchopc">
             <channel>configOiwfs.VALI</channel>
             <type>STRING</type>
             <description>OI nodcchopc</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodachopa">
             <channel>configG1.VALA</channel>
             <type>STRING</type>
             <description>G1 Nod A Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodachopb">
             <channel>configG1.VALB</channel>
             <type>STRING</type>
             <description>G1 Nod A Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodachopc">
             <channel>configG1.VALC</channel>
             <type>STRING</type>
             <description>G1 Nod A Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodbchopa">
             <channel>configG1.VALD</channel>
             <type>STRING</type>
             <description>G1 Nod B Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodbchopb">
             <channel>configG1.VALE</channel>
             <type>STRING</type>
             <description>G1 Nod B Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodbchopc">
             <channel>configG1.VALF</channel>
             <type>STRING</type>
             <description>G1 Nod B Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodcchopa">
             <channel>configG1.VALG</channel>
             <type>STRING</type>
             <description>G1 Nod C Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodcchopb">
             <channel>configG1.VALH</channel>
             <type>STRING</type>
             <description>G1 Nod C Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1nodcchopc">
             <channel>configG1.VALI</channel>
             <type>STRING</type>
             <description>G1 Nod C Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodachopa">
             <channel>configG2.VALA</channel>
             <type>STRING</type>
             <description>G2 Nod A Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodachopb">
             <channel>configG2.VALB</channel>
             <type>STRING</type>
             <description>G2 Nod A Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodachopc">
             <channel>configG2.VALC</channel>
             <type>STRING</type>
             <description>G2 Nod A Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodbchopa">
             <channel>configG2.VALD</channel>
             <type>STRING</type>
             <description>G2 Nod B Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodbchopb">
             <channel>configG2.VALE</channel>
             <type>STRING</type>
             <description>G2 Nod B Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodbchopc">
             <channel>configG2.VALF</channel>
             <type>STRING</type>
             <description>G2 Nod B Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodcchopa">
             <channel>configG2.VALG</channel>
             <type>STRING</type>
             <description>G2 Nod C Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodcchopb">
             <channel>configG2.VALH</channel>
             <type>STRING</type>
             <description>G2 Nod C Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2nodcchopc">
             <channel>configG2.VALI</channel>
             <type>STRING</type>
             <description>G2 Nod C Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodachopa">
             <channel>configG3.VALA</channel>
             <type>STRING</type>
             <description>G3 Nod A Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodachopb">
             <channel>configG3.VALB</channel>
             <type>STRING</type>
             <description>G3 Nod A Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodachopc">
             <channel>configG3.VALC</channel>
             <type>STRING</type>
             <description>G3 Nod A Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodbchopa">
             <channel>configG3.VALD</channel>
             <type>STRING</type>
             <description>G3 Nod B Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodbchopb">
             <channel>configG3.VALE</channel>
             <type>STRING</type>
             <description>G3 Nod B Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodbchopc">
             <channel>configG3.VALF</channel>
             <type>STRING</type>
             <description>G3 Nod B Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodcchopa">
             <channel>configG3.VALG</channel>
             <type>STRING</type>
             <description>G3 Nod C Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodcchopb">
             <channel>configG3.VALH</channel>
             <type>STRING</type>
             <description>G3 Nod C Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3nodcchopc">
             <channel>configG3.VALI</channel>
             <type>STRING</type>
             <description>G3 Nod C Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodachopa">
             <channel>configG4.VALA</channel>
             <type>STRING</type>
             <description>G4 Nod A Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodachopb">
             <channel>configG4.VALB</channel>
             <type>STRING</type>
             <description>G4 Nod A Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodachopc">
             <channel>configG4.VALC</channel>
             <type>STRING</type>
             <description>G4 Nod A Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodbchopa">
             <channel>configG4.VALD</channel>
             <type>STRING</type>
             <description>G4 Nod B Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodbchopb">
             <channel>configG4.VALE</channel>
             <type>STRING</type>
             <description>G4 Nod B Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodbchopc">
             <channel>configG4.VALF</channel>
             <type>STRING</type>
             <description>G4 Nod B Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodcchopa">
             <channel>configG4.VALG</channel>
             <type>STRING</type>
             <description>G4 Nod C Chop A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodcchopb">
             <channel>configG4.VALH</channel>
             <type>STRING</type>
             <description>G4 Nod C Chop B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g4nodcchopc">
             <channel>configG4.VALI</channel>
             <type>STRING</type>
             <description>G4 Nod C Chop C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="chopon">
             <channel>chopControl.VALA</channel>
@@ -1531,13 +1461,11 @@
             <channel>m2GuideControl.A</channel>
             <type>STRING</type>
             <description>M2 Guide control input</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="agInPosition">
             <channel>agInPosCalc</channel>
             <type>DOUBLE</type>
             <description>A&amp;G in position</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="aoName">
             <channel>aoName</channel>
@@ -1555,13 +1483,11 @@
             <channel>aoPrepareCm.VALA</channel>
             <type>STRING</type>
             <description>Prepared control matrix Y</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="aogsy">
             <channel>drives:driveAOS.VALB</channel>
             <type>DOUBLE</type>
             <description>Guide star Y</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oiParked">
             <channel>oi:probeParked</channel>
@@ -1573,33 +1499,28 @@
             <channel>drives:p2GuideConfig</channel>
             <type>STRING</type>
             <description>M2 P2 guide config</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="chopState">
             <channel>sad:chopState</channel>
             <type>STRING</type>
             <description>Chop State</description>
-            <top>tcs</top>
         </attribute>
         <!--
         <attribute name="ngs1Parked">
             <channel>drives:ngsPr1Parked.VAL</channel>
             <type>STRING</type>
             <description>Canopus 1 probe parked</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         <attribute name="ngs2Parked">
             <channel>drives:ngsPr1Parked.VAL</channel>
             <type>STRING</type>
             <description>Canopus 2 probe parked</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         <attribute name="ngs3Parked">
             <channel>drives:ngsPr3Parked.VAL</channel>
             <type>STRING</type>
             <description>Canopus 3 probe parked</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         -->
         <attribute name="port5Label">
             <channel>port:port5</channel>
@@ -1611,12 +1532,12 @@
             <channel>sad:chopFreq</channel>
             <type>DOUBLE</type>
             <description>Chop Frequency</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="aoSettled">
             <channel>wfcs:settled</channel>
             <type>DOUBLE</type>
             <description>AO loop settled</description>
+            <top>ao</top>
         </attribute>
         <attribute name="oiFollowS">
             <channel>oi:followS</channel>
@@ -1628,61 +1549,50 @@
             <channel>guiderConfig.VALD</channel>
             <type>STRING</type>
             <description>Name of GeMS WFS for G4</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="agHwName">
             <channel>drives:agHwName</channel>
             <type>STRING</type>
             <description>AcqCam pickoff</description>
-            <top>tcs</top>
         </attribute>
         <!--
         <attribute name="pwfs2On">
             <channel>drives:p2Integrating</channel>
             <type>STRING</type>
             <description>P2 integrating</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         -->
         <attribute name="odgw4Parked">
             <channel>drives:odgw4Parked.VAL</channel>
             <type>STRING</type>
             <description>ODGW 4 parked</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw3Parked">
             <channel>drives:odgw3Parked.VAL</channel>
             <type>STRING</type>
             <description>ODGW 3 parked</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g2MapName">
             <channel>guiderConfig.VALB</channel>
             <type>STRING</type>
             <description>Name of GeMS WFS for G2</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="xoffsetPoA1">
             <channel>offsetPoA1.VALA</channel>
             <type>DOUBLE</type>
             <description>X offset</description>
-            <top>tcs</top>
-        </attribute>
-        <attribute name="sourceAObjectName">
-            <channel>sad:sourceAObjectName</channel>
-            <type>STRING</type>
-            <description>Object name</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="conmatx">
             <channel>conMatY</channel>
             <type>DOUBLE</type>
             <description>Control matrix star X</description>
+            <top>ao</top>
         </attribute>
         <attribute name="conmaty">
             <channel>conMatX</channel>
             <type>DOUBLE</type>
             <description>Control matrix star Y</description>
+            <top>ao</top>
         </attribute>
         <attribute name="p1FollowS">
             <channel>p1:followS</channel>
@@ -1694,50 +1604,44 @@
             <channel>drives:nodState</channel>
             <type>STRING</type>
             <description>Nod State</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw1Parked">
             <channel>drives:odgw1Parked.VAL</channel>
             <type>STRING</type>
             <description>ODGW 1 parked</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="inPosition">
             <channel>sad:inPosition</channel>
             <type>STRING</type>
             <description>TCS in position</description>
-            <top>tcs</top>
         </attribute>
         <!--
         <attribute name="cmprepBusy">
             <channel>prepareCm.BUSY</channel>
             <type>STRING</type>
-            <description>PrepareCm busy</description>
+            <description>PrepareCm busy</description> 
+            <top>ao</top>
         </attribute>
         -->
         <attribute name="instrAA">
             <channel>sad:instrAA</channel>
             <type>DOUBLE</type>
             <description>Instrument alignment angle</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g1Wavelength">
             <channel>sad:g1Wavelength</channel>
             <type>DOUBLE</type>
             <description>G1 Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="chopDutyCycle">
             <channel>sad:chopDutyCycle</channel>
             <type>DOUBLE</type>
             <description>Chop Duty Cycle</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="g3Wavelength">
             <channel>sad:g3Wavelength</channel>
             <type>DOUBLE</type>
             <description>G3 Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="oiguideoutput">
             <channel>dc:outGuide</channel>
@@ -1750,20 +1654,17 @@
             <channel>drives:oiIntegrating</channel>
             <type>STRING</type>
             <description>OI integrating</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         -->
         <attribute name="cmprepx">
             <channel>aoPrepareCm.VALB</channel>
             <type>STRING</type>
             <description>Prepared control matrix X</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="m2aoGuide">
             <channel>drives:aoGuideConfig</channel>
             <type>STRING</type>
             <description>M2 AO guide config</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p1Parked">
             <channel>p1:probeParked</channel>
@@ -1781,31 +1682,29 @@
             <channel>drives:driveAOS.VALC</channel>
             <type>DOUBLE</type>
             <description>Guide star X</description>
-            <top>tcs</top>
         </attribute>
         <!--
         <attribute name="m1Guide">
             <channel>im:m1GuideOn</channel>
             <type>STRING</type>
             <description>M1 guide</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         -->
         <attribute name="m2p1Guide">
             <channel>drives:p1GuideConfig</channel>
             <type>STRING</type>
             <description>M2 P1 guide config</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="lgsp1On">
             <channel>lgsttSource.VALA</channel>
             <type>INTEGER</type>
             <description>LgsP1 mode</description>
+            <top>ao</top>
         </attribute>
         <attribute name="agHwParked">
             <channel>hwParked</channel>
             <type>STRING</type>
-            <description>AcqCam parked      </description>
+            <description>AcqCam parked</description>
             <top>ag</top>
         </attribute>
         <attribute name="p2Parked">
@@ -1818,19 +1717,16 @@
             <channel>comaCorrect</channel>
             <type>STRING</type>
             <description>Apply Coma Corrections</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="odgw2Parked">
             <channel>drives:odgw2Parked.VAL</channel>
             <type>STRING</type>
             <description>ODGW 2 parked</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="rotTrackFrame">
             <channel>sad:rotTrackFrame</channel>
             <type>STRING</type>
             <description>Cass Rotator tracking frame</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="p2FollowS">
             <channel>p2:followS</channel>
@@ -1842,44 +1738,39 @@
             <channel>sad:g2Wavelength</channel>
             <type>DOUBLE</type>
             <description>G2 Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="m1GuideSource">
             <channel>m1GuideConfig.VALB</channel>
             <type>STRING</type>
             <description>M1 guide source</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="lgsoiOn">
             <channel>lgsttSource.VALB</channel>
             <type>INTEGER</type>
             <description>LgsOI mode</description>
+            <top>ao</top>
         </attribute>
         <!--
         <attribute name="pwfs1On">
             <channel>drives:p1Integrating</channel>
             <type>STRING</type>
             <description>P1 integrating</description>
-            <top>tcs</top>
-        </attribute>
+                    </attribute>
         -->
         <attribute name="sourceAWavelength">
             <channel>sad:sourceAWavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>Source A Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="sourceBWavelength">
             <channel>sad:sourceBWavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>Source B Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="sourceCWavelength">
             <channel>sad:sourceCWavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>Source C Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="port2Label">
             <channel>port:port2</channel>
@@ -1891,19 +1782,16 @@
             <channel>guiderConfig.VALA</channel>
             <type>STRING</type>
             <description>Name of GeMS WFS for G1</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="chopAngle">
             <channel>sad:chopPA</channel>
             <type>DOUBLE</type>
             <description>Chop PA</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="chopThrow">
             <channel>sad:chopThrow</channel>
             <type>DOUBLE</type>
             <description>Chop Throw</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="sfParked">
             <channel>sfParked</channel>
@@ -1915,68 +1803,59 @@
             <channel>sad:g4Wavelength</channel>
             <type>DOUBLE</type>
             <description>G4 Wavelength</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="aoFollowS">
             <channel>followS</channel>
             <type>STRING</type>
             <description>AO follow mode</description>
+            <top>ao</top>
         </attribute>
         <!--
         <attribute name="m2GuideState">
             <channel>om:m2GuideState</channel>
             <type>STRING</type>
             <description>M2 guiding state</description>
-            <top>tcs</top>
         </attribute>
         -->
         <attribute name="xoffsetPoA1">
             <channel>offsetPoA1.VALA</channel>
             <type>DOUBLE</type>
             <description>X offset source A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="yoffsetPoA1">
             <channel>offsetPoA1.VALB</channel>
             <type>DOUBLE</type>
             <description>Y offset source A</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="xoffsetPoB1">
             <channel>offsetPoB1.VALA</channel>
             <type>DOUBLE</type>
             <description>X offset source B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="yoffsetPoB1">
             <channel>offsetPoB1.VALB</channel>
             <type>DOUBLE</type>
             <description>Y offset source B</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="xoffsetPoC1">
             <channel>offsetPoC1.VALA</channel>
             <type>DOUBLE</type>
             <description>X offset source C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="yoffsetPoC1">
             <channel>offsetPoC1.VALB</channel>
             <type>DOUBLE</type>
             <description>Y offset source C</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="m2oiGuide">
             <channel>drives:oiGuideConfig</channel>
             <type>STRING</type>
             <description>M2 OI guide config</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="absorbTipTilt">
             <channel>absorbTipTiltFlag</channel>
             <type>INTEGER</type>
             <description>Absorb Tip/Tilt</description>
-            <top>tcs</top>
         </attribute>
         <attribute name="port4Label">
             <channel>port:port4</channel>
@@ -1988,7 +1867,183 @@
             <channel>sad:chopBeam.VAL</channel>
             <type>STRING</type>
             <description>M2 beam</description>
-            <top>tcs</top>
+        </attribute>
+        <!-- FITS header values -->
+        <attribute name="ha">
+            <channel>sad:currentHAString</channel>
+            <type>STRING</type>
+            <description>Hour Angle</description>
+        </attribute>
+        <attribute name="lt">
+            <channel>sad:localTime</channel>
+            <type>STRING</type>
+            <description>Local time</description>
+        </attribute>
+        <attribute name="azimuth">
+            <channel>currentAz</channel>
+            <type>DOUBLE</type>
+            <description>Current Azimuth</description>
+        </attribute>
+        <attribute name="elevatio">
+            <channel>currentEl</channel>
+            <type>DOUBLE</type>
+            <description>Current Elevation</description>
+        </attribute>
+        <attribute name="crpa">
+            <channel>currentRma</channel>
+            <type>DOUBLE</type>
+            <description>Current Cass Rotator Position Angle</description>
+        </attribute>
+        <attribute name="ut">
+            <channel>UTC</channel>
+            <type>STRING</type>
+            <description>UT at observation start</description>
+        </attribute>
+        <attribute name="date">
+            <channel>sad:date</channel>
+            <type>STRING</type>
+            <description>Date FITS file was generated</description>
+        </attribute>
+        <attribute name="m2baffle">
+            <channel>DeployBafflePos</channel>
+            <type>STRING</type>
+            <description>Deployable Baffle</description>
+            <top>m2</top>
+        </attribute>
+        <attribute name="m2cenbaff">
+            <channel>CentralBafflePos</channel>
+            <type>STRING</type>
+            <description>Central Baffle</description>
+            <top>m2</top>
+        </attribute>
+        <attribute name="st">
+            <channel>LST</channel>
+            <type>STRING</type>
+            <description>Siderial time at the start of the exposure</description>
+        </attribute>
+        <attribute name="sfrt2">
+            <channel>sfRot</channel>
+            <type>DOUBLE</type>
+            <description>Science fold rotation</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="sftilt">
+            <channel>sfTilt</channel>
+            <type>DOUBLE</type>
+            <description>Science fold tilt</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="sflinear">
+            <channel>sfLin</channel>
+            <type>DOUBLE</type>
+            <description>Science fold linear pos</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="instrPA">
+            <channel>sad:instrPA</channel>
+            <type>DOUBLE</type>
+            <description>Instrument position angle</description>
+        </attribute>
+        <attribute name="targetA">
+            <channel>sad:targetA</channel>
+            <type>DOUBLE</type>
+            <description>Target A tracking data</description>
+        </attribute>
+        <attribute name="aoName">
+            <channel>aoName</channel>
+            <type>STRING</type>
+            <description>AO fold position</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="airmass">
+            <channel>sad:airMass</channel>
+            <type>DOUBLE</type>
+            <description>Average airmass</description>
+        </attribute>
+        <attribute name="amstart">
+            <channel>sad:amStart</channel>
+            <type>DOUBLE</type>
+            <description>Airmass at start</description>
+        </attribute>
+        <attribute name="amend">
+            <channel>sad:amEnd</channel>
+            <type>DOUBLE</type>
+            <description>Airmass at end</description>
+        </attribute>
+        <attribute name="sourceAObjectName">
+            <channel>sad:sourceAObjectName</channel>
+            <type>STRING</type>
+            <description>Object name</description>
+        </attribute>
+        <attribute name="trkframe">
+            <channel>sad:sourceADiffFrame</channel>
+            <type>STRING</type>
+            <description>Tracking frame</description>
+        </attribute>
+        <attribute name="trkepoch">
+            <channel>sad:sourceADiffEpoch</channel>
+            <type>DOUBLE</type>
+            <description>Diff Tracking Epoch</description>
+        </attribute>
+        <attribute name="dectrack">
+            <channel>sad:sourceADiffDec</channel>
+            <type>DOUBLE</type>
+            <description>Diff Tracking Dec</description>
+        </attribute>
+        <attribute name="sourceAEquinox">
+            <channel>sad:sourceAEquinox</channel>
+            <type>STRING</type>
+            <description>Equinox for Target coordinates</description>
+        </attribute>
+        <attribute name="sourceATrackEq">
+            <channel>sad:sourceATrackEq</channel>
+            <type>STRING</type>
+            <description>Tracking equinox</description>
+        </attribute>
+        <attribute name="ratrack">
+            <channel>sad:sourceADiffRA</channel>
+            <type>DOUBLE</type>
+            <description>Diff Tracking RA</description>
+        </attribute>
+        <attribute name="dec">
+            <channel>sad:sourceADec</channel>
+            <type>DOUBLE</type>
+            <description>DEC</description>
+        </attribute>
+        <attribute name="ra">
+            <channel>sad:sourceARA</channel>
+            <type>DOUBLE</type>
+            <description>RA</description>
+        </attribute>
+        <attribute name="frame">
+            <channel>sad:sourceAInputFrame</channel>
+            <type>STRING</type>
+            <description>Frame</description>
+        </attribute>
+        <attribute name="pmra">
+            <channel>sad:sourceAPMRA</channel>
+            <type>DOUBLE</type>
+            <description>Proper motion RA</description>
+        </attribute>
+        <attribute name="pmdec">
+            <channel>sad:sourceAPMDec</channel>
+            <type>DOUBLE</type>
+            <description>Proper motion Dec</description>
+        </attribute>
+        <attribute name="radvel">
+            <channel>sad:sourceARV</channel>
+            <type>DOUBLE</type>
+            <description></description>
+        </attribute>
+        <attribute name="sourceAEpoch">
+            <channel>sad:sourceAEpoch</channel>
+            <type>STRING</type>
+            <description>Epoch for Target coordinates</description>
+        </attribute>
+        <attribute name="parallax">
+            <channel>sad:sourceAParallax</channel>
+            <type>DOUBLE</type>
+            <description></description>
         </attribute>
     </Status>
 </Records>
