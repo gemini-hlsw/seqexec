@@ -26,12 +26,12 @@ class SeqTranslate(site: Site) {
 
   private def step(systems: Systems, settings: Settings)(i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
 
-    def buildStep(inst: Instrument): Step[Action] = {
+    def buildStep(inst: Instrument, instHeaders: List[Header]): Step[Action] = {
       val sys = List(Tcs(systems.tcs), inst)
       val headers = List(new StandardHeader(systems.dhs,
         ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
         if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
-      ))
+      )) ++ instHeaders
 
       Step[Action](
         i,
@@ -48,7 +48,12 @@ class SeqTranslate(site: Site) {
     val instName = extractInstrumentName(config)
 
     instName match {
-      case Flamingos2.name => buildStep(Flamingos2(systems.flamingos2)).right
+      case Flamingos2.name => buildStep(Flamingos2(systems.flamingos2), List(
+        Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+          if(settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
+          if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
+        ))
+      ).right
       case _               => UnrecognizedInstrument(instName.toString).left[Step[Action]]
     }
 
@@ -82,7 +87,8 @@ object SeqTranslate {
                     )
 
   case class Settings(
-                       tcsKeywords: Boolean
+                       tcsKeywords: Boolean,
+                       f2Keywords: Boolean
                      )
 
 }
