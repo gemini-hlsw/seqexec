@@ -5,6 +5,7 @@ import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
+import edu.gemini.seqexec.web.client.OcsBuildInfo
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -33,6 +34,10 @@ object NavBar {
               ^.src :="images/launcher.png"
             ),
             "Seqexec"
+          ),
+          <.div(
+            ^.cls := "header item",
+            OcsBuildInfo.version
           ),
           TagMod.devOnly(
             <.div(
