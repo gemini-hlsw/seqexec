@@ -75,6 +75,7 @@ object Tcs {
   // Shouldn't these be defined somewhere ?
   val GUIDE_WITH_PWFS1_PROP = "guideWithPWFS1"
   val GUIDE_WITH_PWFS2_PROP = "guideWithPWFS2"
+  val GUIDE_WITH_AOWFS_PROP = "guideWithAOWFS"
   val P_OFFSET_PROP = "p"
   val Q_OFFSET_PROP = "q"
 

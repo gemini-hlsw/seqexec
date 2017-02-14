@@ -3,6 +3,8 @@
     <Top name="tcs">tcs</Top>
     <Top name="m2">m2</Top>
     <Top name="ag">ag</Top>
+    <Top name="pwfs1">pwfs1</Top>
+    <Top name="pwfs2">pwfs2</Top>
     <Top name="oiwfs">oiwfs</Top>
     <Top name="ao">ao</Top>
     <!--
@@ -2044,6 +2046,420 @@
             <channel>sad:sourceAParallax</channel>
             <type>DOUBLE</type>
             <description></description>
+        </attribute>
+        <attribute name="p1aepoch">
+            <channel>sad:pwfs1Epoch</channel>
+            <type>STRING</type>
+            <description>P1 Epoch</description>
+        </attribute>
+        <attribute name="p1aequin">
+            <channel>sad:pwfs1Equinox</channel>
+            <type>STRING</type>
+            <description>P1 Equinox</description>
+        </attribute>
+        <attribute name="p1arv">
+            <channel>sad:pwfs1RV</channel>
+            <type>DOUBLE</type>
+            <description>P1 Radial Velocity</description>
+        </attribute>
+        <attribute name="p1adec">
+            <channel>sad:pwfs1Dec</channel>
+            <type>DOUBLE</type>
+            <description>P1 DEC</description>
+        </attribute>
+        <attribute name="p1ara">
+            <channel>sad:pwfs1RA</channel>
+            <type>DOUBLE</type>
+            <description>P1 RA</description>
+        </attribute>
+        <attribute name="p1awavel">
+            <channel>sad:pwfs1Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>P1 Wavelength</description>
+        </attribute>
+        <attribute name="p1aobjec">
+            <channel>sad:pwfs1ObjectName</channel>
+            <type>STRING</type>
+            <description>P1 Object Name</description>
+        </attribute>
+        <attribute name="p1aparal">
+            <channel>sad:pwfs1Parallax</channel>
+            <type>DOUBLE</type>
+            <description>P1 Parallax</description>
+        </attribute>
+        <attribute name="p1aframe">
+            <channel>sad:pwfs1InputFrame</channel>
+            <type>STRING</type>
+            <description>P1 Frame</description>
+        </attribute>
+        <attribute name="p1apmdec">
+            <channel>sad:pwfs1PMDec</channel>
+            <type>DOUBLE</type>
+            <description>P1 Proper motion Dec</description>
+        </attribute>
+        <attribute name="p1apmra">
+            <channel>sad:pwfs1PMRA</channel>
+            <type>DOUBLE</type>
+            <description>P1 Proper motion RA</description>
+        </attribute>
+        <attribute name="p2aobjec">
+            <channel>sad:pwfs2ObjectName</channel>
+            <type>STRING</type>
+            <description>P2 Object Name</description>
+        </attribute>
+        <attribute name="p2ara">
+            <channel>sad:pwfs2RA</channel>
+            <type>DOUBLE</type>
+            <description>P2 RA</description>
+        </attribute>
+        <attribute name="p2arv">
+            <channel>sad:pwfs2RV</channel>
+            <type>DOUBLE</type>
+            <description>P2 Radial Velocity</description>
+        </attribute>
+        <attribute name="p2adec">
+            <channel>sad:pwfs2Dec</channel>
+            <type>DOUBLE</type>
+            <description>P2 DEC</description>
+        </attribute>
+        <attribute name="p2aparal">
+            <channel>sad:pwfs2Parallax</channel>
+            <type>DOUBLE</type>
+            <description>P2 Parallax</description>
+        </attribute>
+        <attribute name="p2awavel">
+            <channel>sad:pwfs2Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>P2 Wavelength</description>
+        </attribute>
+        <attribute name="p2aequin">
+            <channel>sad:pwfs2Equinox</channel>
+            <type>STRING</type>
+            <description>P2 Equinox</description>
+        </attribute>
+        <attribute name="p2aframe">
+            <channel>sad:pwfs2InputFrame</channel>
+            <type>STRING</type>
+            <description>P2 Frame</description>
+        </attribute>
+        <attribute name="p2aepoch">
+            <channel>sad:pwfs2Epoch</channel>
+            <type>STRING</type>
+            <description>P2 Epoch</description>
+        </attribute>
+        <attribute name="p2apmdec">
+            <channel>sad:pwfs2PMDec</channel>
+            <type>DOUBLE</type>
+            <description>P2 Proper motion Dec</description>
+        </attribute>
+        <attribute name="p2apmra">
+            <channel>sad:pwfs2PMRA</channel>
+            <type>DOUBLE</type>
+            <description>P2 Proper motion RA</description>
+        </attribute>
+        <attribute name="oiapmdec">
+            <channel>sad:oiwfsPMDec</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS Proper motion Dec</description>
+        </attribute>
+        <attribute name="oiaparal">
+            <channel>sad:oiwfsParallax</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS Parallax</description>
+        </attribute>
+        <attribute name="oiaobjec">
+            <channel>sad:oiwfsObjectName</channel>
+            <type>STRING</type>
+            <description>OIWFS Object Name</description>
+        </attribute>
+        <attribute name="oiapmra">
+            <channel>sad:oiwfsPMRA</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS Proper motion RA</description>
+        </attribute>
+        <attribute name="oiawavel">
+            <channel>sad:oiwfsWavelength</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS Wavelength</description>
+        </attribute>
+        <attribute name="oiadec">
+            <channel>sad:oiwfsDec</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS DEC</description>
+        </attribute>
+        <attribute name="oiaepoch">
+            <channel>sad:oiwfsEpoch</channel>
+            <type>STRING</type>
+            <description>OIWFS Epoch</description>
+        </attribute>
+        <attribute name="oiara">
+            <channel>sad:oiwfsRA</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS RA</description>
+        </attribute>
+        <attribute name="oiaframe">
+            <channel>sad:oiwfsInputFrame</channel>
+            <type>STRING</type>
+            <description>OIWFS Frame</description>
+        </attribute>
+        <attribute name="oiarv">
+            <channel>sad:oiwfsRV</channel>
+            <type>DOUBLE</type>
+            <description>OIWFS Radial Velocity</description>
+        </attribute>
+        <attribute name="oiaequin">
+            <channel>sad:oiwfsEquinox</channel>
+            <type>STRING</type>
+            <description>OIWFS Equinox</description>
+        </attribute>
+        <attribute name="g1apmra">
+            <channel>sad:g1PMRA</channel>
+            <type>DOUBLE</type>
+            <description>G1 Proper motion RA</description>
+        </attribute>
+        <attribute name="g1arv">
+            <channel>sad:g1RV</channel>
+            <type>DOUBLE</type>
+            <description>G1 Radial Velocity</description>
+        </attribute>
+        <attribute name="g1aparal">
+            <channel>sad:g1Parallax</channel>
+            <type>DOUBLE</type>
+            <description>G1 Parallax</description>
+        </attribute>
+        <attribute name="g1adec">
+            <channel>sad:g1Dec</channel>
+            <type>DOUBLE</type>
+            <description>G1 DEC</description>
+        </attribute>
+        <attribute name="g1apmdec">
+            <channel>sad:g1PMDec</channel>
+            <type>DOUBLE</type>
+            <description>G1 Proper motion Dec</description>
+        </attribute>
+        <attribute name="g1aepoch">
+            <channel>sad:g1Epoch</channel>
+            <type>STRING</type>
+            <description>G1 Epoch</description>
+        </attribute>
+        <attribute name="g1aobjec">
+            <channel>sad:g1ObjectName</channel>
+            <type>STRING</type>
+            <description>G1 Object Name</description>
+        </attribute>
+        <attribute name="g1awavel">
+            <channel>sad:g1Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G1 Wavelength</description>
+        </attribute>
+        <attribute name="g1aequin">
+            <channel>sad:g1Equinox</channel>
+            <type>STRING</type>
+            <description>G1 Equinox</description>
+        </attribute>
+        <attribute name="g1ara">
+            <channel>sad:g1RA</channel>
+            <type>DOUBLE</type>
+            <description>G1 RA</description>
+        </attribute>
+        <attribute name="g1aframe">
+            <channel>sad:g2InputFrame</channel>
+            <type>STRING</type>
+            <description>G1 Frame</description>
+        </attribute>
+        <attribute name="g2apmra">
+            <channel>sad:g2PMRA</channel>
+            <type>DOUBLE</type>
+            <description>G2 Proper motion RA</description>
+        </attribute>
+        <attribute name="g2arv">
+            <channel>sad:g2RV</channel>
+            <type>DOUBLE</type>
+            <description>G2 Radial Velocity</description>
+        </attribute>
+        <attribute name="g2aparal">
+            <channel>sad:g2Parallax</channel>
+            <type>DOUBLE</type>
+            <description>G2 Parallax</description>
+        </attribute>
+        <attribute name="g2adec">
+            <channel>sad:g2Dec</channel>
+            <type>DOUBLE</type>
+            <description>G2 DEC</description>
+        </attribute>
+        <attribute name="g2apmdec">
+            <channel>sad:g2PMDec</channel>
+            <type>DOUBLE</type>
+            <description>G2 Proper motion Dec</description>
+        </attribute>
+        <attribute name="g2aepoch">
+            <channel>sad:g2Epoch</channel>
+            <type>STRING</type>
+            <description>G2 Epoch</description>
+        </attribute>
+        <attribute name="g2aobjec">
+            <channel>sad:g2ObjectName</channel>
+            <type>STRING</type>
+            <description>G2 Object Name</description>
+        </attribute>
+        <attribute name="g2awavel">
+            <channel>sad:g2Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G2 Wavelength</description>
+        </attribute>
+        <attribute name="g2aequin">
+            <channel>sad:g2Equinox</channel>
+            <type>STRING</type>
+            <description>G2 Equinox</description>
+        </attribute>
+        <attribute name="g2ara">
+            <channel>sad:g2RA</channel>
+            <type>DOUBLE</type>
+            <description>G2 RA</description>
+        </attribute>
+        <attribute name="g2aframe">
+            <channel>sad:g2InputFrame</channel>
+            <type>STRING</type>
+            <description>G2 Frame</description>
+        </attribute>
+        <attribute name="g3apmra">
+            <channel>sad:g3PMRA</channel>
+            <type>DOUBLE</type>
+            <description>G3 Proper motion RA</description>
+        </attribute>
+        <attribute name="g3arv">
+            <channel>sad:g3RV</channel>
+            <type>DOUBLE</type>
+            <description>G3 Radial Velocity</description>
+        </attribute>
+        <attribute name="g3aparal">
+            <channel>sad:g3Parallax</channel>
+            <type>DOUBLE</type>
+            <description>G3 Parallax</description>
+        </attribute>
+        <attribute name="g3adec">
+            <channel>sad:g3Dec</channel>
+            <type>DOUBLE</type>
+            <description>G3 DEC</description>
+        </attribute>
+        <attribute name="g3apmdec">
+            <channel>sad:g3PMDec</channel>
+            <type>DOUBLE</type>
+            <description>G3 Proper motion Dec</description>
+        </attribute>
+        <attribute name="g3aepoch">
+            <channel>sad:g3Epoch</channel>
+            <type>STRING</type>
+            <description>G3 Epoch</description>
+        </attribute>
+        <attribute name="g3aobjec">
+            <channel>sad:g3ObjectName</channel>
+            <type>STRING</type>
+            <description>G3 Object Name</description>
+        </attribute>
+        <attribute name="g3awavel">
+            <channel>sad:g3Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G3 Wavelength</description>
+        </attribute>
+        <attribute name="g3aequin">
+            <channel>sad:g3Equinox</channel>
+            <type>STRING</type>
+            <description>G3 Equinox</description>
+        </attribute>
+        <attribute name="g3ara">
+            <channel>sad:g3RA</channel>
+            <type>DOUBLE</type>
+            <description>G3 RA</description>
+        </attribute>
+        <attribute name="g3aframe">
+            <channel>sad:g3InputFrame</channel>
+            <type>STRING</type>
+            <description>G3 Frame</description>
+        </attribute>
+        <attribute name="g4apmra">
+            <channel>sad:g4PMRA</channel>
+            <type>DOUBLE</type>
+            <description>G4 Proper motion RA</description>
+        </attribute>
+        <attribute name="g4arv">
+            <channel>sad:g4RV</channel>
+            <type>DOUBLE</type>
+            <description>G4 Radial Velocity</description>
+        </attribute>
+        <attribute name="g4aparal">
+            <channel>sad:g4Parallax</channel>
+            <type>DOUBLE</type>
+            <description>G4 Parallax</description>
+        </attribute>
+        <attribute name="g4adec">
+            <channel>sad:g4Dec</channel>
+            <type>DOUBLE</type>
+            <description>G4 DEC</description>
+        </attribute>
+        <attribute name="g4apmdec">
+            <channel>sad:g4PMDec</channel>
+            <type>DOUBLE</type>
+            <description>G4 Proper motion Dec</description>
+        </attribute>
+        <attribute name="g4aepoch">
+            <channel>sad:g4Epoch</channel>
+            <type>STRING</type>
+            <description>G4 Epoch</description>
+        </attribute>
+        <attribute name="g4aobjec">
+            <channel>sad:g4ObjectName</channel>
+            <type>STRING</type>
+            <description>G4 Object Name</description>
+        </attribute>
+        <attribute name="g4awavel">
+            <channel>sad:g4Wavelength</channel>
+            <type>DOUBLE</type>
+            <description>G4 Wavelength</description>
+        </attribute>
+        <attribute name="g4aequin">
+            <channel>sad:g4Equinox</channel>
+            <type>STRING</type>
+            <description>G4 Equinox</description>
+        </attribute>
+        <attribute name="g4ara">
+            <channel>sad:g4RA</channel>
+            <type>DOUBLE</type>
+            <description>G4 RA</description>
+        </attribute>
+        <attribute name="g4aframe">
+            <channel>sad:g4InputFrame</channel>
+            <type>STRING</type>
+            <description>G4 Frame</description>
+        </attribute>
+        <attribute name="m2ZUserOffset">
+            <channel>sad:m2ZUserOffset</channel>
+            <type>DOUBLE</type>
+            <description>M2 z user offset</description>
+        </attribute>
+    </Status>
+    <Status name="pwfs1state">
+        <top>pwfs1</top>
+        <attribute name="intTime">
+            <channel>dc:intTime.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Integration time</description>
+        </attribute>
+    </Status>
+    <Status name="pwfs2state">
+        <top>pwfs2</top>
+        <attribute name="intTime">
+            <channel>dc:intTime.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Integration time</description>
+        </attribute>
+    </Status>
+    <Status name="oiwfsstate">
+        <top>oiwfs</top>
+        <attribute name="intTime">
+            <channel>dc:intTime.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Integration time</description>
         </attribute>
     </Status>
 </Records>
