@@ -35,7 +35,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics
   )
 
-  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords)
+  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords)
 
   def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
@@ -152,6 +152,7 @@ object SeqexecEngine {
                       instSim: Boolean,
                       gcalSim: Boolean,
                       tcsKeywords: Boolean,
+                      f2Keywords: Boolean,
                       instForceError: Boolean)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
@@ -168,6 +169,7 @@ object SeqexecEngine {
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
       val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
+      val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
       val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
 
     // TODO: Review initialization of EPICS systems
@@ -184,14 +186,15 @@ object SeqexecEngine {
 
       val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task(())
       // More instruments to be added to the list here
-      val instInit = if(instSim) Task(())
-        else Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
+      val instInit = if(f2Keywords || !instSim)
+        Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
+      else Task(())
 
       tcsInit *>
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, tcsKeywords, instForceError) )
+        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, tcsKeywords, f2Keywords, instForceError) )
 
     }
   }

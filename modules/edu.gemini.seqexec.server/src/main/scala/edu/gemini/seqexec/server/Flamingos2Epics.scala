@@ -94,6 +94,11 @@ final class Flamingos2Epics(epicsService: CaService) {
 
   def windowCover: Option[String] = Option(f2State.getStringAttribute("windowCover").value)
 
+  // For FITS keywords
+  def health: Option[String] = Option(f2State.getStringAttribute("INHEALTH").value)
+
+  def state: Option[String] = Option(f2State.getStringAttribute("INSTATE").value)
+
 }
 
 object Flamingos2Epics extends EpicsSystem {
