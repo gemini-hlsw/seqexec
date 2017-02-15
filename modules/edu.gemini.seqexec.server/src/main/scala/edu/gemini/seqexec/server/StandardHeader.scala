@@ -1,15 +1,17 @@
 package edu.gemini.seqexec.server
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.server.ConfigUtilOps._
+import edu.gemini.seqexec.server.DhsClient.KeywordBag
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
 import scalaz._
 import Scalaz._
+import scalaz.concurrent.Task
 
 /**
   * Created by jluhrs on 1/31/17.
@@ -23,6 +25,10 @@ trait ObsKeywordsReader {
   def getObsId: SeqAction[String]
   def getObservatory: SeqAction[String]
   def getTelescope: SeqAction[String]
+  def getPwfs1Guide: SeqAction[StandardGuideOptions.Value]
+  def getPwfs2Guide: SeqAction[StandardGuideOptions.Value]
+  def getOiwfsGuide: SeqAction[StandardGuideOptions.Value]
+  def getAowfsGuide: SeqAction[StandardGuideOptions.Value]
 }
 
 case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
@@ -44,17 +50,23 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   override def getObservatory: SeqAction[String] = SeqAction(telescope)
 
   override def getTelescope: SeqAction[String] = SeqAction(telescope)
-}
 
-object DummyObsKeywordsReader extends ObsKeywordsReader {
-  override def getObsType: SeqAction[String] = SeqAction("Science")
-  override def getObsClass: SeqAction[String] = SeqAction("observe")
-  override def getGemPrgId: SeqAction[String] = SeqAction("GS-ENG20170201")
-  override def getObsId: SeqAction[String] = SeqAction("GS-ENG20170201-1")
-  override def getObservatory: SeqAction[String] = SeqAction("Gemini-South")
-  override def getTelescope: SeqAction[String] = SeqAction("Gemini-South")
-}
+  override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
+    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value].leftMap(SeqexecFailure.Unexpected)
+  ))
 
+  override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
+      config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value].leftMap(SeqexecFailure.Unexpected)
+    ))
+
+  override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
+      config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value].leftMap(SeqexecFailure.Unexpected)
+    ))
+
+  override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
+      config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value].orElse(StandardGuideOptions.Value.park.right)
+    ))
+}
 
 class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: TcsKeywordsReader) extends Header {
   import Header._
@@ -83,6 +95,39 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       qoff <- q
       ipa  <- tcsReader.getInstrumentPA
     } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
+
+    def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
+                      extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
+      if (g == StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
+        buildDouble(target.getRA, baseName + "ARA"),
+        buildDouble(target.getDec, baseName + "ADEC"),
+        buildDouble(target.getRadialVelocity, baseName + "ARV"),
+        buildDouble(target.getWavelength, baseName + "AWAVEL"),
+        buildDouble(target.getEpoch, baseName + "AEPOCH"),
+        buildDouble(target.getEquinox, baseName + "AEQUIN"),
+        buildString(target.getFrame, baseName + "AFRAME"),
+        buildString(target.getObjectName, baseName + "AOBJEC"),
+        buildDouble(target.getProperMotionDec, baseName + "APMDEC"),
+        buildDouble(target.getProperMotionRA, baseName + "APMRA"),
+        buildDouble(target.getParallax, baseName + "APARAL")
+      ) ++ extras)
+      else SeqAction(List())
+    }
+
+    def standardGuiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String,
+                               target: TargetKeywordsReader, extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] =
+      guiderKeywords(guideWith, baseName, target, List(buildDouble(tcsReader.getM2UserFocusOffset, baseName + "FOCUS")) ++ extras)
+
+    val pwfs1Keywords = standardGuiderKeywords(obsReader.getPwfs1Guide, "P1", tcsReader.getPwfs1Target,
+          List(buildDouble(tcsReader.getPwfs1Freq, "P1FREQ")))
+
+    val pwfs2Keywords = standardGuiderKeywords(obsReader.getPwfs2Guide, "P2", tcsReader.getPwfs2Target,
+          List(buildDouble(tcsReader.getPwfs2Freq, "P2FREQ")))
+
+    val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, List())
+
+    val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
+      List(buildDouble(tcsReader.getOiwfsFreq, "OIFREQ")))
 
 
     sendKeywords(id, inst, hs, List(
@@ -128,8 +173,16 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       buildDouble(q, "QOFFSET"),
       buildDouble(raoff, "RAOFFSET"),
       buildDouble(decoff, "DECOFFSE"),
-      buildString(tcsReader.getAOFoldName, "AOFOLD")
-    ))
+      buildString(tcsReader.getAOFoldName, "AOFOLD"),
+      buildString(obsReader.getPwfs1Guide.map(_.toString), "PWFS1_ST"),
+      buildString(obsReader.getPwfs2Guide.map(_.toString), "PWFS2_ST"),
+      buildString(obsReader.getOiwfsGuide.map(_.toString), "OIWFS_ST"),
+      buildString(obsReader.getAowfsGuide.map(_.toString), "AOWFS_ST")
+    )) *>
+    pwfs1Keywords *>
+    pwfs2Keywords *>
+    oiwfsKeywords *>
+    aowfsKeywords
   }
 
 

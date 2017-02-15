@@ -415,6 +415,47 @@ final class TcsEpics(epicsService: CaService) {
     override def properMotionDec = Option(tcsState.getDoubleAttribute("pmdec").value).map(_.doubleValue)
   }
 
+  private def target(base: String): Target = new Target {
+      override def epoch = Option(tcsState.getStringAttribute(base + "aepoch").value)
+      override def equinox = Option(tcsState.getStringAttribute(base + "aequin").value)
+      override def radialVelocity = Option(tcsState.getDoubleAttribute(base + "arv").value).map(_.doubleValue)
+      override def frame  = Option(tcsState.getStringAttribute(base + "aframe").value)
+      override def centralWavelenght = Option(tcsState.getDoubleAttribute(base + "awavel").value).map(_.doubleValue)
+      override def ra = Option(tcsState.getDoubleAttribute(base + "ara").value).map(_.doubleValue)
+      override def objectName = Option(tcsState.getStringAttribute(base + "aobjec").value)
+      override def dec = Option(tcsState.getDoubleAttribute(base + "adec").value).map(_.doubleValue)
+      override def parallax = Option(tcsState.getDoubleAttribute(base + "aparal").value).map(_.doubleValue)
+      override def properMotionRA = Option(tcsState.getDoubleAttribute(base + "apmra").value).map(_.doubleValue)
+      override def properMotionDec = Option(tcsState.getDoubleAttribute(base + "apmdec").value).map(_.doubleValue)
+    }
+
+  def pwfs1Target: Target = target("p1")
+
+  def pwfs2Target: Target = target("p2")
+
+  def oiwfsTarget: Target = target("oi")
+
+  def gwfs1Target: Target = target("g1")
+
+  def gwfs2Target: Target = target("g2")
+
+  def gwfs3Target: Target = target("g3")
+
+  def gwfs4Target: Target = target("g4")
+
+  def m2UserFocusOffset = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
+
+  val pwfs1Status = epicsService.getStatusAcceptor("pwfs1state")
+
+  def pwfs1IntegrationTime = Option(pwfs1Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
+
+  val pwfs2Status = epicsService.getStatusAcceptor("pwfs2state")
+
+  def pwfs2IntegrationTime = Option(pwfs2Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
+
+  val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
+
+  def oiwfsIntegrationTime = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
 }
 

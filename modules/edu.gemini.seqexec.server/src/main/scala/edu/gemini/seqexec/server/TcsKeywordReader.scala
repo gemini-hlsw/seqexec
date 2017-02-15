@@ -51,10 +51,21 @@ trait TcsKeywordsReader {
   def getInstrumentAA: SeqAction[Double]
   def getAOFoldName: SeqAction[String]
   def getSourceATarget: TargetKeywordsReader
+  def getPwfs1Target: TargetKeywordsReader
+  def getPwfs2Target: TargetKeywordsReader
+  def getOiwfsTarget: TargetKeywordsReader
+  def getAowfsTarget: TargetKeywordsReader
+  def getGwfs1Target: TargetKeywordsReader
+  def getGwfs2Target: TargetKeywordsReader
+  def getGwfs3Target: TargetKeywordsReader
+  def getGwfs4Target: TargetKeywordsReader
   def getAirMass: SeqAction[Double]
   def getStartAirMass: SeqAction[Double]
   def getEndAirMass: SeqAction[Double]
-
+  def getM2UserFocusOffset: SeqAction[Double]
+  def getPwfs1Freq: SeqAction[Double]
+  def getPwfs2Freq: SeqAction[Double]
+  def getOiwfsFreq: SeqAction[Double]
 }
 
 object DummyTargetKeywordsReader extends TargetKeywordsReader {
@@ -103,6 +114,30 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
   override def getTrackingRAOffset: SeqAction[Double] = SeqAction(0.0)
 
   override def getTrackingDecOffset: SeqAction[Double] = SeqAction(0.0)
+
+  override def getPwfs1Target: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getPwfs2Target: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getOiwfsTarget: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getAowfsTarget: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getGwfs1Target: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getGwfs2Target: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getGwfs3Target: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getGwfs4Target: TargetKeywordsReader = DummyTargetKeywordsReader
+
+  override def getM2UserFocusOffset: SeqAction[Double] = SeqAction(0.0)
+
+  override def getPwfs1Freq: SeqAction[Double] = SeqAction(-9999.0)
+
+  override def getPwfs2Freq: SeqAction[Double] = SeqAction(-9999.0)
+
+  override def getOiwfsFreq: SeqAction[Double] = SeqAction(-9999.0)
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader {
@@ -182,4 +217,30 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getAirMass: SeqAction[Double] =  TcsEpics.instance.airmass
   override def getStartAirMass: SeqAction[Double] = TcsEpics.instance.airmassStart
   override def getEndAirMass: SeqAction[Double] = TcsEpics.instance.airmassEnd
+
+  override def getPwfs1Target: TargetKeywordsReader = target(TcsEpics.instance.pwfs1Target)
+
+  override def getPwfs2Target: TargetKeywordsReader = target(TcsEpics.instance.pwfs2Target)
+
+  override def getOiwfsTarget: TargetKeywordsReader = target(TcsEpics.instance.oiwfsTarget)
+
+  override def getAowfsTarget: TargetKeywordsReader = target(TcsEpics.instance.pwfs2Target)
+
+  override def getGwfs1Target: TargetKeywordsReader = target(TcsEpics.instance.gwfs1Target)
+
+  override def getGwfs2Target: TargetKeywordsReader = target(TcsEpics.instance.gwfs2Target)
+
+  override def getGwfs3Target: TargetKeywordsReader = target(TcsEpics.instance.gwfs3Target)
+
+  override def getGwfs4Target: TargetKeywordsReader = target(TcsEpics.instance.gwfs4Target)
+
+  override def getM2UserFocusOffset: SeqAction[Double] = TcsEpics.instance.m2UserFocusOffset
+
+  private def calcFrequency(t: Double): Double = if (t > 0.0) 1.0 / t else -9999.0
+
+  override def getPwfs1Freq: SeqAction[Double] = TcsEpics.instance.pwfs1IntegrationTime.map(calcFrequency)
+
+  override def getPwfs2Freq: SeqAction[Double] = TcsEpics.instance.pwfs2IntegrationTime.map(calcFrequency)
+
+  override def getOiwfsFreq: SeqAction[Double] = TcsEpics.instance.oiwfsIntegrationTime.map(calcFrequency)
 }
