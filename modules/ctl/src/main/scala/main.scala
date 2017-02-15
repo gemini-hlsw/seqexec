@@ -2,11 +2,11 @@ import scalaz._, Scalaz._
 import scalaz.effect._
 import scala.util.matching.Regex
 
-import io._
 import ctl._
 import git._
 import docker._
 import interp._
+import opts._
 
 object main extends SafeApp with Helpers {
 
@@ -32,11 +32,12 @@ object main extends SafeApp with Helpers {
       commitOr(rev, log(Info, "Finding most recent deploy tag.") *> mostRecentCommitAtTag(DeployTagRegex))
     )
 
-  def verifyDeployCommit(rev: Option[String]): CtlIO[DeployCommit] =
+  def verifyDeployCommit(rev: String): CtlIO[DeployCommit] =
     gosub(Info, "Verifying deploy commit.",
       for {
-        c <- commitOr(rev, log(Info, "Using HEAD revision.") *> commitForRevision("HEAD"))
-        u <- uncommittedChanges.map(_ && rev.isEmpty)
+        c <- log(Info, s"Using $rev.") *> commitForRevision(rev)
+        _ <- log(Info, s"Commit is ${c.hash}")
+        u <- uncommittedChanges.map(_ && rev == "HEAD")
         _ <- u.whenM(log(Warn, "There are uncommitted changes. This is a SNAPSHOT deployment."))
       } yield DeployCommit(c, u)
     )
@@ -76,29 +77,35 @@ object main extends SafeApp with Helpers {
       verifyContainer(s"edu.gemini.commit=${commit.hash}")
     )
 
+  def getBaseContainer(base: Option[String], cDeploy: DeployCommit): CtlIO[Container] =
+    for {
+      cBase    <- verifyBaseCommit(base)
+      _        <- verifyLineage(cBase, cDeploy)
+      kBase    <- verifyBaseGemContainer(cBase)
+    } yield kBase
 
-
-
-  def deploy(base: Option[String], deploy: Option[String]) =
+  def deploy(base: Option[String], deploy: String, standalone: Boolean) =
     for {
       network  <- verifyNetwork
-      cBase    <- verifyBaseCommit(base)
       cDeploy  <- verifyDeployCommit(deploy)
-      _        <- verifyLineage(cBase, cDeploy)
       iDeploy  <- verifyDeployImage(cDeploy)
-      kBase    <- verifyBaseGemContainer(cBase)
+      kBase    <- if (standalone) None.point[CtlIO] else getBaseContainer(base, cDeploy).map(Some(_))
     } yield ()
 
-  // gemctl deploy <base> <revision>
-  override def runl(args: List[String]): IO[Unit] =
-    for {
-      _ <- IO.putStrLn("")
-      i <- IO.newIORef(0)
-      _ <- deploy(args.lift(0), args.lift(1)).foldMap(interpreter(i)).run
-      _ <- IO.putStrLn("")
-    } yield ()
+  val command: Config => CtlIO[Unit] = {
+    case Config(d, b, s) => deploy(b, d, s)
+  }
 
-
+  override def runl(args: List[String]): IO[Unit] = {
+    opts.parse(args) { config =>
+      for {
+        _ <- IO.putStrLn("")
+        i <- IO.newIORef(0)
+        _ <- command(config).foldMap(interpreter(i)).run
+        _ <- IO.putStrLn("")
+      } yield ()
+    }
+  }
 
         // find or create gem-net
         // determine deploy commit

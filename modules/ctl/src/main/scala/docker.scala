@@ -1,6 +1,3 @@
-import scalaz._, Scalaz._
-import scalaz.effect._
-
 import ctl._
 import io._
 

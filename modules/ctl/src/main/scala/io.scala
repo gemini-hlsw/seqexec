@@ -1,4 +1,4 @@
-import scalaz._, Scalaz._
+import scalaz._
 import scalaz.effect._
 
 object io {

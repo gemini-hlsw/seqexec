@@ -1,5 +1,4 @@
 import scalaz._, Scalaz._
-import scalaz.effect._
 import scala.util.matching.Regex
 
 import ctl._
@@ -35,6 +34,7 @@ object git {
       case Output(0, deltas) => deltas.nonEmpty
     }
 
+  // is c1 an ancestor of c2?
   def isAncestor(c1: Commit, c2: Commit): CtlIO[Boolean] =
     shell("git", "merge-base", "--is-ancestor", c1.hash, c2.hash).require {
       case Output(0, Nil) => true

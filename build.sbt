@@ -151,8 +151,10 @@ lazy val ctl = project
   .in(file("modules/ctl"))
   .settings(commonSettings)
   .settings (
+    resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven",
     libraryDependencies ++= Seq(
       "org.scalaz"  %% "scalaz-core"   % scalazVersion,
-      "org.scalaz"  %% "scalaz-effect" % scalazVersion
+      "org.scalaz"  %% "scalaz-effect" % scalazVersion,
+      "net.bmjames" %% "scala-optparse-applicative" % "0.5"
     )
   )

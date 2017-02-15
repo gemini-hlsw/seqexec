@@ -1,6 +1,4 @@
 import scalaz._, Scalaz._
-import scalaz.effect._
-
 import io._
 
 object ctl {
@@ -19,8 +17,8 @@ object ctl {
 
   type CtlIO[A] = Free[CtlOp, A]
 
-  def shell(c: String):             CtlIO[Output] = Free.liftF(Shell(c.left))
-  def shell(c: String, cs: String*): CtlIO[Output] = Free.liftF(Shell((c :: cs.toList).right))
+  def shell(c: String):               CtlIO[Output] = Free.liftF(Shell(c.left))
+  def shell(c: String, cs: String*):  CtlIO[Output] = Free.liftF(Shell((c :: cs.toList).right))
   def log(level: Level, msg: String): CtlIO[Unit]   = Free.liftF(Log(level, msg))
   def exit[A](exitCode: Int):         CtlIO[A]      = Free.liftF(Exit[A](exitCode))
 
