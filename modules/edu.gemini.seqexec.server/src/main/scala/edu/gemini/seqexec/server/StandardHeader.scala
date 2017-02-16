@@ -1,11 +1,16 @@
 package edu.gemini.seqexec.server
 
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, ZoneId}
+
 import edu.gemini.seqexec.model.dhs.ObsId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.KeywordBag
-import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.dataflow.GsaAspect.Visibility
+import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
 import edu.gemini.spModel.guide.StandardGuideOptions
+import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
@@ -29,6 +34,8 @@ trait ObsKeywordsReader {
   def getPwfs2Guide: SeqAction[StandardGuideOptions.Value]
   def getOiwfsGuide: SeqAction[StandardGuideOptions.Value]
   def getAowfsGuide: SeqAction[StandardGuideOptions.Value]
+  def getHeaderPrivacy: SeqAction[Boolean]
+  def getProprietaryMonths: SeqAction[String]
 }
 
 case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
@@ -52,20 +59,45 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   override def getTelescope: SeqAction[String] = SeqAction(telescope)
 
   override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value].leftMap(SeqexecFailure.Unexpected)
+    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
   ))
 
   override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-      config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value].leftMap(SeqexecFailure.Unexpected)
-    ))
+    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
+          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+  ))
 
   override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-      config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value].leftMap(SeqexecFailure.Unexpected)
-    ))
+    config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
+          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+  ))
 
   override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-      config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value].orElse(StandardGuideOptions.Value.park.right)
-    ))
+    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
+      .recoverWith[ConfigUtilOps.ExtractFailure, StandardGuideOptions.Value] {
+        case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.right
+        case e@ConfigUtilOps.ConversionError(_,_) => e.left
+      }.leftMap(e =>SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+  ))
+
+  private val headerPrivacy: Boolean = config.extract(HEADER_VISIBILITY_KEY).as[Visibility].getOrElse(Visibility.PUBLIC) match {
+    case Visibility.PRIVATE => true
+    case _                  => false
+  }
+
+  override def getHeaderPrivacy: SeqAction[Boolean] = SeqAction(headerPrivacy)
+
+  override def getProprietaryMonths: SeqAction[String] =
+    if(headerPrivacy) {
+      EitherT(Task.delay(
+        config.extract(PROPRIETARY_MONTHS_KEY).as[Integer].recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
+          case ConfigUtilOps.KeyNotFound(_) => (new Integer(0)).right
+          case e@ConfigUtilOps.ConversionError(_, _) => e.left
+        }.leftMap(e =>SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+          .map(v => (LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))))
+    }
+    else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 }
 
 class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: TcsKeywordsReader) extends Header {
@@ -137,6 +169,8 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       buildString(obsReader.getObsId, "obsid"),
       buildString(obsReader.getObservatory, "OBSERVAT"),
       buildString(obsReader.getTelescope, "telescope"),
+      buildBoolean(obsReader.getHeaderPrivacy, "PROP_MD"),
+      buildString(obsReader.getProprietaryMonths, "RELEASE"),
       buildString(tcsReader.getHourAngle, "HA"),
       buildString(tcsReader.getLocalTime, "LT"),
       buildString(tcsReader.getTrackingFrame, "TRKFRAME"),

@@ -16,7 +16,14 @@ import Scalaz._
  */
 object ConfigUtilOps {
 
-  type ExtractFailure = String // for now
+  sealed trait ExtractFailure
+  case class KeyNotFound(key: ItemKey) extends ExtractFailure
+  case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
+
+  def explain(e: ExtractFailure): String = e match {
+    case KeyNotFound(k) => s"Missing config value for key ${k.getPath}"
+    case ConversionError(k, msg) => s"Error reading key ${k.getPath}: $msg"
+  }
 
   // key syntax: parent / child
   implicit class ItemKeyOps(val k: ItemKey) extends AnyVal {
@@ -27,8 +34,8 @@ object ConfigUtilOps {
   final class Extracted private [server] (c: Config, key: ItemKey) {
     def as[A](implicit clazz: ClassTag[A]): ExtractFailure \/ A =
       for {
-        v <- Option(c.getItemValue(key)) \/> s"Missing config value for key ${key.getPath}"
-        b <- \/.fromTryCatchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(_.getMessage)
+        v <- Option(c.getItemValue(key)) \/> KeyNotFound(key)
+        b <- \/.fromTryCatchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(e => ConversionError(key,e.getMessage))
       } yield b
   }
 
