@@ -52,10 +52,10 @@ object Flamingos2Header {
 
   class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
     override def getPreimage: SeqAction[YesNoType] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
-      .as[YesNoType].leftMap(SeqexecFailure.Unexpected)))
+      .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
     override def getReadMode: SeqAction[ReadMode] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / READMODE_PROP)
-      .as[ReadMode].leftMap(SeqexecFailure.Unexpected)))
+      .as[ReadMode].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
   }
 
   trait InstKeywordsReader {

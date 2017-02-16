@@ -51,14 +51,18 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
     it should "fail to extract keys with the wrong type" in {
       forAll { (c: Config, k: ItemKey) =>
         c.putItem(k, "value")
-        c.extract(k).as[Int].toEither.left.value should startWith("Cannot cast")
+        c.extract(k).as[Int].toEither.left.value should matchPattern {
+          case ConversionError(k,_) =>
+        }
       }
     }
     it should "fail to extract unknown keys" in {
       forAll { (c: Config, k: ItemKey) =>
         // Make sure the key is removed
         c.remove(k)
-        c.extract(k).as[String].toEither.left.value should startWith("Missing config value for key")
+        c.extract(k).as[String].toEither.left.value should matchPattern {
+          case KeyNotFound(k) =>
+        }
       }
     }
     it should "convert to StepConfig" in {

@@ -80,7 +80,7 @@ object Flamingos2 {
     case Decker.MOS       => BiasMode.MOS
   }
 
-  def fpuConfig(config: Config): \/[String, FocalPlaneUnit] = {
+  def fpuConfig(config: Config): \/[ConfigUtilOps.ExtractFailure, FocalPlaneUnit] = {
     val a = INSTRUMENT_KEY / FPU_PROP
     val b = INSTRUMENT_KEY / FPU_MASK_PROP
 
@@ -108,7 +108,7 @@ object Flamingos2 {
       t <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP).as[LyotWheel]
       u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
 
-    } yield CCConfig(p, q, r, s, t, u) ).leftMap(SeqexecFailure.Unexpected)
+    } yield CCConfig(p, q, r, s, t, u) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] = ( for {
     p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Duration(x, SECONDS))
@@ -121,7 +121,7 @@ object Flamingos2 {
     // Readout mode defaults to SCIENCE if not present.
     r <- \/-(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE))
     s <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
-  } yield DCConfig(p, q, r, s) ).leftMap(SeqexecFailure.Unexpected)
+  } yield DCConfig(p, q, r, s) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: Config): SeqAction[Flamingos2Config] = EitherT( Task ( for {
       p <- ccConfigFromSequenceConfig(config)
