@@ -41,4 +41,14 @@ object git {
       case Output(1, Nil) => false
     }
 
+  def fileContentsAtCommit(c: Commit, path: String): CtlIO[List[String]] =
+    shell("git", "show", s"${c.hash}:$path").require {
+      case Output(0, ss) => ss
+    }
+
+  def fileContents(path: String): CtlIO[List[String]] =
+    shell("cat", path).require {
+      case Output(0, ss) => ss
+    }
+
 }

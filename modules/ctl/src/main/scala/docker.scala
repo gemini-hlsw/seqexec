@@ -24,9 +24,15 @@ object docker {
       case Output(0, List(h)) => Some(Image(h))
     }
 
+  // find *running* containers
   def findContainersWithLabel(label: String): CtlIO[List[Container]] =
-    shell("docker", "ps", "-q", "-a", "--filter", s"label=$label").require {
+    shell("docker", "ps", "-q", "--filter", s"label=$label").require {
       case Output(0, hs) => hs.map(Container)
+    }
+
+  def allContainerNames: CtlIO[List[String]] =
+    shell("docker", "ps", "-a", "--format", "{{.Names}}").require {
+      case Output(o, ss) => ss
     }
 
 }

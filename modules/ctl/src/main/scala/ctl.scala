@@ -40,5 +40,4 @@ object ctl {
       ctl.require(fa.map(ev))(f)
   }
 
-
 }

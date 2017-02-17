@@ -13,6 +13,8 @@ lazy val http4sVersion            = "0.15.2a"
 
 enablePlugins(GitVersioning)
 
+git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
+
 lazy val testLibs = Seq(
   "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
   "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test"
@@ -156,5 +158,6 @@ lazy val ctl = project
       "org.scalaz"  %% "scalaz-core"   % scalazVersion,
       "org.scalaz"  %% "scalaz-effect" % scalazVersion,
       "net.bmjames" %% "scala-optparse-applicative" % "0.5"
-    )
+    ),
+    addCommandAlias("ctl", "runMain main")
   )
