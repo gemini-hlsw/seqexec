@@ -21,9 +21,7 @@ class packageSpec extends FlatSpec {
     *
     */
   val configureTcs: Action  = for {
-    _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(200))
-    _ <- Task(println ("System: Complete TCS configuration"))
   } yield Result.OK(Result.Configured("TCS"))
 
   /**
@@ -31,9 +29,7 @@ class packageSpec extends FlatSpec {
     *
     */
   val configureInst: Action  = for {
-    _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(200))
-    _ <- Task(println("System: Complete Instrument configuration"))
   } yield Result.OK(Result.Configured("Instrument"))
 
   /**
@@ -41,15 +37,11 @@ class packageSpec extends FlatSpec {
     *
     */
   val observe: Action  = for {
-    _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(200))
-    _ <- Task(println ("System: Complete observation"))
 } yield Result.OK(Result.Observed("DummyFileId"))
 
   val faulty: Action  = for {
-    _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(100))
-    _ <- Task(println ("System: Complete observation"))
   } yield Result.Error("There was an error in this action")
 
   val config: StepConfig = Map()

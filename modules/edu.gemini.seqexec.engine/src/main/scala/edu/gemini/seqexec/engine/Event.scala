@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.engine
 
+import Result.{RetVal, PartialVal, OK, Partial}
+
 /**
   * Anything that can go through the Event Queue.
   */
@@ -22,8 +24,9 @@ case object Exit extends UserEvent
   * Events generated internally by the Engine.
   */
 sealed trait SystemEvent
-case class Completed(id: Sequence.Id, i: Int, r: Result.Response) extends SystemEvent
-case class Failed(id: Sequence.Id, i: Int, e: String) extends SystemEvent
+case class Completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]) extends SystemEvent
+case class PartialResult[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]) extends SystemEvent
+case class Failed(id: Sequence.Id, i: Int, e: Result.Error) extends SystemEvent
 case class Executed(id: Sequence.Id) extends SystemEvent
 case class Executing(id: Sequence.Id) extends SystemEvent
 case class Finished(id: Sequence.Id) extends SystemEvent
@@ -38,8 +41,9 @@ object Event {
   def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event =
     EventUser(Breakpoint(id, step, v))
 
-  def failed(id: Sequence.Id, i: Int, e: String): Event = EventSystem(Failed(id, i, e))
-  def completed(id: Sequence.Id, i: Int, r: Result.Response): Event = EventSystem(Completed(id, i, r))
+  def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
+  def completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]): Event = EventSystem(Completed(id, i, r))
+  def partial[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]): Event = EventSystem(PartialResult(id, i, r))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
   def finished(id: Sequence.Id): Event = EventSystem(Finished(id))

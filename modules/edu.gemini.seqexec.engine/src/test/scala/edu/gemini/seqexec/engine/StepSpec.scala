@@ -10,9 +10,10 @@ import Inside._
 import scalaz.concurrent.Task
 import scalaz.stream.async
 import edu.gemini.seqexec.engine.Event.{pause, start}
-import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Running, Error}
+import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle, Running}
 
 import scala.Function.const
+import scalaz.\/-
 
 
 /**
@@ -67,6 +68,13 @@ class StepSpec extends FlatSpec {
        processE(q).drop(1).takeThrough(a => !isFinished(a._2.get(seqId).get.status) ).runLast.eval(s0)).unsafePerformSync.get._2
   }
 
+  def runToCompletionL(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): List[EngineState] = {
+    def isFinished(status: SequenceState): Boolean =
+      status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+
+    q.enqueueOne(start(seqId)).flatMap( _ =>
+       processE(q).drop(1).takeThrough(a => !isFinished(a._2.get(seqId).get.status) ).runLog.eval(s0)).unsafePerformSync.map(_._2).toList
+  }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
   // The test will just run step and compare the output with the predefined sequence of updates.
@@ -159,6 +167,47 @@ class StepSpec extends FlatSpec {
 
   // For this test, one of the actions in the step must produce an error as result.
   ignore should "stop execution and propagate error when an Action ends in error." in {
+
+  }
+
+  "engine" should "record a partial result and continue execution." in {
+
+    // For result types
+    case class RetValDouble(v: Double) extends Result.RetVal
+    case class PartialValDouble(v: Double) extends Result.PartialVal
+
+    val q = async.boundedQueue[Event](10)
+    val qs0: EngineState = Map((seqId, Sequence.State.init(
+      Sequence(
+        seqId,
+        SequenceMetadata("F2"),
+        List(
+          Step(
+            1,
+            None,
+            config,
+            false,
+            List( List(Task(Result.Partial(PartialValDouble(0.5), Task(Result.OK(RetValDouble(1.0))))))
+            )
+          )
+        )
+      )
+    )))
+
+    val qss = runToCompletionL(q, qs0)
+
+    inside (qss.tail.head.get(seqId).get) {
+      case Sequence.State.Zipper(zipper, status) =>
+        status shouldBe SequenceState.Running
+        inside (zipper.focus.focus.execution.head) {
+          case \/-(Result.Partial(v, _)) => v shouldEqual PartialValDouble(0.5)
+        }
+    }
+    inside (qss.last.get(seqId).get) {
+      case Sequence.State.Final(seq, status) =>
+        status shouldBe SequenceState.Completed
+        seq.steps.head.executions.head.head shouldEqual Result.OK(RetValDouble(1.0))
+    }
 
   }
 

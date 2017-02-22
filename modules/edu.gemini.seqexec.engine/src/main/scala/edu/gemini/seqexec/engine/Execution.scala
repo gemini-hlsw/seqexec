@@ -10,6 +10,8 @@ import Scalaz._
   */
 case class Execution(execution: List[Action \/ Result]) {
 
+  import Execution._
+
   val isEmpty: Boolean = execution.isEmpty
 
   val actions: Actions = {
@@ -29,7 +31,7 @@ case class Execution(execution: List[Action \/ Result]) {
   def status: Status =
     if (execution.forall(_.isLeft)) Status.Waiting
     // Empty execution is handled here
-    else if (execution.all(_.isRight)) Status.Completed
+    else if (execution.all(finished)) Status.Completed
     else Status.Running
 
   /**
@@ -64,28 +66,43 @@ object Execution {
     ar match {
       case (-\/(_)) => false
       case (\/-(r)) => r match {
-        case Result.OK(_)    => false
         case Result.Error(_) => true
+        case _               => false
       }
     }
 
+  def finished(ar: Action \/ Result): Boolean =
+    ar match {
+      case (-\/(_)) => false
+      case (\/-(r)) => r match {
+        case Result.Partial(_,_) => false
+        case _                   => true
+      }
+    }
 }
 
 /**
   * The result of an `Action`.
   */
+
 sealed trait Result {
   val errMsg: Option[String] = None
 }
 
 object Result {
-  case class OK(response: Response) extends Result
+
+  // Base traits for results. They make harder to pass the wrong value.
+  trait RetVal
+  trait PartialVal
+
+  case class OK[R<:RetVal](response: R) extends Result
+  case class Partial[R<:PartialVal](response: R, continuation: Action) extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
   case class Error(msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)
   }
 
-  sealed trait Response
+  sealed trait Response extends RetVal
   case class Configured(r: String) extends Response
   case class Observed(fileId: FileId) extends Response
 
