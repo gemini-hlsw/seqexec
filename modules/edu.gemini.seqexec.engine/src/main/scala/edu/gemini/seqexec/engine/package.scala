@@ -3,6 +3,7 @@ package edu.gemini.seqexec
 import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
+import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
 import edu.gemini.seqexec.model.Model.SequenceState
 
 import scalaz._
@@ -133,8 +134,9 @@ package object engine {
       case (action, i) =>
         action.attempt.map(_.valueOr(e =>
           Result.Error(if (e.getMessage == null || e.getMessage.isEmpty) stackToString(e) else e.getMessage))).flatMap {
-          case Result.OK(r)    => q.enqueueOne(completed(id, i, r))
-          case Result.Error(e) => q.enqueueOne(failed(id, i, e))
+          case r@Result.OK(_)         => q.enqueueOne(completed(id, i, r))
+          case r@Result.Partial(_, c) => q.enqueueOne(partial(id, i, r)) *> act((c, i))
+          case e@Result.Error(_)      => q.enqueueOne(failed(id, i, e))
         }
     }
 
@@ -154,17 +156,19 @@ package object engine {
     * Given the index of the completed `Action` in the current `Execution`, it
     * marks the `Action` as completed and returns the new updated `State`.
     *
-    * When the index doesn't exit it does nothing.
+    * When the index doesn't exist it does nothing.
     */
-  def complete(id: Sequence.Id, i: Int, r: Result.Response): Handle[Unit] = modifyS(id)(_.mark(i)(Result.OK(r)))
+  def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): Handle[Unit] = modifyS(id)(_.mark(i)(r))
+
+  def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): Handle[Unit] = modifyS(id)(_.mark(i)(p))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail(q: EventQueue)(id: Sequence.Id)(i: Int, e: String): Handle[Unit] =
-    modifyS(id)(_.mark(i)(Result.Error(e))) *>
+  def fail(q: EventQueue)(id: Sequence.Id)(i: Int, e: Result.Error): Handle[Unit] =
+    modifyS(id)(_.mark(i)(e)) *>
       switch(q)(id)(SequenceState.Error("There was an error"))
 
   /**
@@ -205,6 +209,7 @@ package object engine {
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
       case Completed(id, i, r) => log("Output: Action completed") *> complete(id, i, r)
+      case PartialResult(id, i, r)   => log("Output: Partial result") *> partialResult(id,i, r)
       case Failed(id, i, e)    => log("Output: Action failed") *> fail(q)(id)(i, e)
       case Executed(id)        => log("Output: Execution completed") *> next(q)(id)
       case Executing(id)       => log("Output: Executing") *> execute(q)(id)
