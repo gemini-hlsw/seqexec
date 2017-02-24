@@ -84,6 +84,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Pause(_)            => SequencePauseRequested(svs)
       case engine.Load(_, _)          => SequenceLoaded(svs)
       case engine.Breakpoint(_, _, _) => StepBreakpointChanged(svs)
+      case engine.SetOperator(_, _)   => OperatorUpdated(svs)
+      case engine.SetObserver(_, _)   => ObserverUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
     }

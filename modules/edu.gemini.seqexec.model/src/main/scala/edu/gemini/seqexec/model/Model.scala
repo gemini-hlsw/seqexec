@@ -22,6 +22,10 @@ object Model {
 
     case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    case class OperatorUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate

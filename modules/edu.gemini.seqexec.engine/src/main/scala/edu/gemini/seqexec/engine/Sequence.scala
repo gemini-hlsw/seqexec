@@ -142,6 +142,10 @@ object Sequence {
 
     def getCurrentBreakpoint: Boolean
 
+    def setObserver(name: String): State
+
+    def setOperator(name: String): State
+
     /**
       * Current Execution
       */
@@ -220,6 +224,10 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
+      override def setOperator(name: String): State = ???
+
+      override def setObserver(name: String): State = ???
+
       override val done: List[Step[Result]] = zipper.done
 
       override def mark(i: Int)(r: Result): State = {
@@ -263,6 +271,10 @@ object Sequence {
       override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self
 
       override def getCurrentBreakpoint: Boolean = false
+
+      override def setOperator(name: String): State = ???
+
+      override def setObserver(name: String): State = ???
 
       override val done: List[Step[Result]] = seq.steps
 
