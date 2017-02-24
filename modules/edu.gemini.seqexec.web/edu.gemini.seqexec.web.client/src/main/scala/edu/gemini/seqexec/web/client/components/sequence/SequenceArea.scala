@@ -27,6 +27,91 @@ import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 import org.scalajs.dom.html.Div
 
+object SequenceDefaultToolbar {
+  case class Props(s: SequenceView, status: ClientStatus, runRequested: Boolean, nextStepToRun: Int, pauseRequested: Boolean)
+
+  val component = ReactComponentB[Props]("StepsTable")
+    .stateless
+    .render_P( p =>
+      <.div(
+        ^.cls := "row",
+        p.status.isLogged && p.s.status === SequenceState.Completed ?=
+          <.h3(
+            ^.cls := "ui green header",
+            "Sequence completed"
+          ),
+        <.div(
+          ^.cls := "ui two column grid",
+          <.div(
+            ^.cls := "ui row",
+            <.div(
+              ^.cls := "left column",
+              p.status.isLogged && p.s.hasError ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPlay),
+                    labeled = true,
+                    //onClick = requestRun(p.s),
+                    color = Some("blue"),
+                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                    disabled = !p.status.isConnected || p.runRequested),
+                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+                ),
+              p.status.isLogged && p.s.status === SequenceState.Idle ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPlay),
+                    labeled = true,
+                    // onClick = requestRun(p.s),
+                    color = Some("blue"),
+                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                    disabled = !p.status.isConnected || p.runRequested),
+                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+                ),
+              p.status.isLogged && p.s.status === SequenceState.Running ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPause),
+                    labeled = true,
+                    // onClick = requestPause(p.s),
+                    color = Some("teal"),
+                    dataTooltip = Some("Pause the sequence after the current step completes"),
+                    disabled = !p.status.isConnected || p.pauseRequested),
+                  "Pause"
+                ),
+              p.status.isLogged && p.s.status === SequenceState.Paused ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPlay),
+                    labeled = true,
+                    // onClick = requestPause(p.s),
+                    color = Some("teal"),
+                    disabled = !p.status.isConnected),
+                  "Continue from step 1"
+                )
+              ),
+              <.div(
+                ^.cls := "right column",
+                <.div(
+                  ^.cls := "ui form",
+                  <.div(
+                    ^.cls := "required field",
+                    <.label("Observer"),
+                    <.input(
+                      ^.`type` :="text",
+                      ^.autoComplete :="off"
+                    )
+                  )
+                )
+              )
+            )
+          )
+      )
+    ).build
+
+  def apply(p: Props) = component(p)
+}
+
 /**
   * Container for a table with the steps
   */
@@ -51,61 +136,6 @@ object SequenceStepsTableContainer {
       $.modState(_.copy(runRequested = false, pauseRequested = true)) >> Callback {
         SeqexecCircuit.dispatch(RequestPause(s))
       }
-
-    def defaultToolbar(p: Props, s: State): ReactNode =
-      <.div(
-        ^.cls := "row",
-        p.status.isLogged && p.s.status === SequenceState.Completed ?=
-          <.h3(
-            ^.cls := "ui green header",
-            "Sequence completed"
-          ),
-        p.status.isLogged && p.s.hasError ?=
-          <.div(
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = requestRun(p.s),
-                color = Some("blue"),
-                dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
-                disabled = !p.status.isConnected || s.runRequested),
-              s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
-            )
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Idle ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPlay),
-              labeled = true,
-              onClick = requestRun(p.s),
-              color = Some("blue"),
-              dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
-              disabled = !p.status.isConnected || s.runRequested),
-            s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Running ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPause),
-              labeled = true,
-              onClick = requestPause(p.s),
-              color = Some("teal"),
-              dataTooltip = Some("Pause the sequence after the current step completes"),
-              disabled = !p.status.isConnected || s.pauseRequested),
-            "Pause"
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Paused ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPlay),
-              labeled = true,
-              onClick = requestPause(p.s),
-              color = Some("teal"),
-              disabled = !p.status.isConnected),
-            "Continue from step 1"
-          )
-      )
 
     def configToolbar(p: Props)(i: Int): ReactNode =
       <.div(
@@ -348,7 +378,7 @@ object SequenceStepsTableContainer {
     def render(p: Props, s: State): ReactTagOf[Div] = {
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(defaultToolbar(p, s))(configToolbar(p)),
+        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.runRequested, s.nextStepToRun, s.pauseRequested)): ReactNode)(configToolbar(p)),
         Divider(),
         <.div(
           ^.cls := "ui row scroll pane",
