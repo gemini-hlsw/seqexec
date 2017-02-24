@@ -16,7 +16,7 @@ object interp {
       val pre = s"[${level.toString.toLowerCase}]"
       for {
         i <- indent.read.map { case 0 => "* " ; case n => " " * ((n + 1) * 2) }
-        _ <- IO.putStrLn(f"$color$pre%-7s ${Console.RESET}$i$msg")
+        _ <- IO.putStrLn(f"$color$pre%-7s ${Console.BLUE}$i$msg${Console.RESET}")
       } yield ()
     }
   }

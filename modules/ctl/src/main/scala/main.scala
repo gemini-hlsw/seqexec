@@ -197,14 +197,16 @@ object main extends SafeApp with Helpers {
   }
 
   override def runl(args: List[String]): IO[Unit] =
-    opts.parse(args) { config =>
-      for {
-        _ <- IO.putStrLn("")
-        i <- IO.newIORef(0)
-        _ <- command(config).foldMap(interpreter(config.userAndHost, i)).run
-        _ <- IO.putStrLn("")
-      } yield ()
-    }
+    for {
+      _ <- IO.putStrLn("")
+      c <- opts.parse("gemctl", args)
+      _ <- c.traverse { c =>
+        IO.newIORef(0)
+          .map(interpreter(c.userAndHost, _))
+          .flatMap(command(c).foldMap(_).run)
+      }
+      _ <- IO.putStrLn("")
+    } yield ()
 
   // find or create gem-net
   // determine deploy commit
