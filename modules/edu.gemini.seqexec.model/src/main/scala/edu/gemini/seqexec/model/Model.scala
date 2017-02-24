@@ -117,8 +117,8 @@ object Model {
   // TODO Une a proper instrument class
   case class SequenceMetadata(
     instrument: Instrument,
-    operator: Operator,
-    observer: Observer
+    operator: Option[Operator],
+    observer: Option[Observer]
   )
 
   case class SequenceView (
