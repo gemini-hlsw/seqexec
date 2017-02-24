@@ -21,10 +21,13 @@ object interp {
     }
   }
 
-  def interpreter(indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
+  type Remote = String
+
+  def interpreter(remote: Remote, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
     case Log(level, msg) => doLog(level, msg, indent)
-    case Shell(cmd)      => EitherT.right(IO.shell(cmd))
-    case Exit(exitCode)  => EitherT.left(exitCode.point[IO])
+    case Shell(false, cmd) => EitherT.right(IO.shell(cmd))
+    case Shell(true,  cmd) => EitherT.right(IO.shell(cmd.bimap(s => s"ssh ${remote} $s", "ssh" :: remote :: _)))
+    case Exit(exitCode)    => EitherT.left(exitCode.point[IO])
     case Gosub(level, msg, fa) =>
       for {
         _ <- doLog(level, msg, indent)

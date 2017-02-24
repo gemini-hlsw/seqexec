@@ -192,10 +192,8 @@ object main extends SafeApp with Helpers {
 
 
 
-
-
   val command: Config => CtlIO[Unit] = {
-    case Config(d, b, s) => deploy(b, d, s)
+    case Config(u, d, b, s) => log(Info, s"Target host is $u.") *> deploy(b, d, s)
   }
 
   override def runl(args: List[String]): IO[Unit] =
@@ -203,24 +201,24 @@ object main extends SafeApp with Helpers {
       for {
         _ <- IO.putStrLn("")
         i <- IO.newIORef(0)
-        _ <- command(config).foldMap(interpreter(i)).run
+        _ <- command(config).foldMap(interpreter(config.userAndHost, i)).run
         _ <- IO.putStrLn("")
       } yield ()
     }
 
-        // find or create gem-net
-        // determine deploy commit
-        // if upgrade
-        //  get base revision (provided, or most recent deploy tag)
-        //  find base instance
-        //  stop base-gem
-        // deploy new-db, new-gem
-        // start new-db
-        // if upgrade
-        //   copy base-db -> new-db
-        //   stop base-sb
-        // start new-gem
-        // await health check
+  // find or create gem-net
+  // determine deploy commit
+  // if upgrade
+  //  get base revision (provided, or most recent deploy tag)
+  //  find base instance
+  //  stop base-gem
+  // deploy new-db, new-gem
+  // start new-db
+  // if upgrade
+  //   copy base-db -> new-db
+  //   stop base-sb
+  // start new-gem
+  // await health check
 
 }
 
