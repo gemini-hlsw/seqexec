@@ -27,10 +27,32 @@ import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 import org.scalajs.dom.html.Div
 
+object StepConfigToolbar {
+  case class Props(s: SequenceView, step: Int)
+
+  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
+
+  val component = ReactComponentB[Props]("StepConfigToolbar")
+    .stateless
+    .render_P( p =>
+      <.div(
+        ^.cls := "row",
+        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+        <.h5(
+          ^.cls := "ui header",
+          SeqexecStyles.inline,
+          s" Configuration for step ${p.step + 1}"
+        )
+      )
+    ).build
+
+  def apply(p: Props) = component(p)
+}
+
 object SequenceDefaultToolbar {
   case class Props(s: SequenceView, status: ClientStatus, runRequested: Boolean, nextStepToRun: Int, pauseRequested: Boolean)
 
-  val component = ReactComponentB[Props]("StepsTable")
+  val component = ReactComponentB[Props]("SequencesStepsToolbar")
     .stateless
     .render_P( p =>
       <.div(
@@ -136,17 +158,6 @@ object SequenceStepsTableContainer {
       $.modState(_.copy(runRequested = false, pauseRequested = true)) >> Callback {
         SeqexecCircuit.dispatch(RequestPause(s))
       }
-
-    def configToolbar(p: Props)(i: Int): ReactNode =
-      <.div(
-        ^.cls := "row",
-        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
-        <.h5(
-          ^.cls := "ui header",
-          SeqexecStyles.inline,
-          s" Configuration for step ${i + 1}"
-        )
-      )
 
     def configTable(step: Step): TagMod =
       <.table(
@@ -378,7 +389,7 @@ object SequenceStepsTableContainer {
     def render(p: Props, s: State): ReactTagOf[Div] = {
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.runRequested, s.nextStepToRun, s.pauseRequested)): ReactNode)(configToolbar(p)),
+        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.runRequested, s.nextStepToRun, s.pauseRequested)): ReactNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): ReactNode),
         Divider(),
         <.div(
           ^.cls := "ui row scroll pane",
@@ -399,8 +410,6 @@ object SequenceStepsTableContainer {
   def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s))}
 
   def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
-
-  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
   private val scrollRef = Ref[HTMLElement]("scrollRef")
