@@ -13,6 +13,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -127,11 +129,8 @@ object SequenceDefaultToolbar {
                   ^.cls := "ui form",
                   <.div(
                     ^.cls := "required field",
-                    <.label("Observer"),
-                    <.input(
-                      ^.`type` :="text",
-                      ^.autoComplete :="off"
-                    )
+                    Label(Label.Props("Observer", "")),
+                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", placeholder = "Observer...", onChange = s => Callback.log(s)))
                   )
                 )
               )
