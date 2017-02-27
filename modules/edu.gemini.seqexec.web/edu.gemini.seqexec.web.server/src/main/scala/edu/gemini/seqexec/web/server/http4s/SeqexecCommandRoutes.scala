@@ -56,6 +56,25 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         newVal <- \/.fromTryCatchNonFatal(bp.toBoolean).fold(e => Task.fail(e), Task.now)
         _      <- se.setBreakpoint(inputQueue, obs, step, newVal)
         resp   <- Ok(s"Set breakpoint in step $step of sequence $obsId")
+
+      } yield resp
+
+    case POST -> Root / obsId / "operator" / name =>
+      for {
+        obs   <-
+          \/.fromTryCatchNonFatal(new SPObservationID(obsId))
+            .fold(e => Task.fail(e), Task.now)
+        _     <- se.setOperator(inputQueue, obs, name)
+        resp  <- Ok(s"Set operator name to $name for sequence $obs")
+      } yield resp
+
+    case POST -> Root / obsId / "observer" / name =>
+      for {
+        obs   <-
+          \/.fromTryCatchNonFatal(new SPObservationID(obsId))
+            .fold(e => Task.fail(e), Task.now)
+        _     <- se.setObserver(inputQueue, obs, name)
+        resp  <- Ok(s"Set observer name to $name for sequence $obs")
       } yield resp
 
     case GET -> Root / "refresh" =>

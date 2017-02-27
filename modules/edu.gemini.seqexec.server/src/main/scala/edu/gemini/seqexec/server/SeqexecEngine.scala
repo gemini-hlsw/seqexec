@@ -52,6 +52,16 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                     v: Boolean): Task[SeqexecFailure \/ Unit]=
     q.enqueueOne(Event.breakpoint(seqId.stringValue(), stepId, v)).map(_.right)
 
+  def setOperator(q: engine.EventQueue,
+                  seqId: SPObservationID,
+                  name: String): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setOperator(seqId.stringValue(), name)).map(_.right)
+
+  def setObserver(q: engine.EventQueue,
+                  seqId: SPObservationID,
+                  name: String): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setOperator(seqId.stringValue(), name)).map(_.right)
+
   // TODO: Add seqId: SPObservationID as parameter
   def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
 
