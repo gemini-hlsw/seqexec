@@ -54,7 +54,7 @@ object StepConfigToolbar {
 
 object SequenceDefaultToolbar {
   case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
-  case class State(runRequested: Boolean, pauseRequested: Boolean)
+  case class State(runRequested: Boolean, pauseRequested: Boolean, observer: Option[String])
   val ST = ReactS.Fix[State]
 
   def requestRun(s: SequenceView) =
@@ -63,8 +63,11 @@ object SequenceDefaultToolbar {
   def requestPause(s: SequenceView) =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
 
+  def updateObserver(s: SequenceView)(name: String) =
+    ST.retM(Callback {SeqexecCircuit.dispatch(UpdateObserver(s, name))}) >> ST.mod(_.copy(observer = Some(name))).liftCB
+
   val component = ReactComponentB[Props]("SequencesStepsToolbar")
-    .initialState(State(runRequested = false, pauseRequested = false))
+    .initialState(State(runRequested = false, pauseRequested = false, observer = None))
     .renderPS( ($, p, s) =>
       <.div(
         ^.cls := "row",
@@ -130,7 +133,7 @@ object SequenceDefaultToolbar {
                   <.div(
                     ^.cls := "required field",
                     Label(Label.Props("Observer", "")),
-                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", placeholder = "Observer...", onChange = s => Callback.log(s)))
+                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", s.observer.getOrElse(""), placeholder = "Observer...", onBlur = name => $.runState(updateObserver(p.s)(name))))
                   )
                 )
               )

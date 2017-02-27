@@ -23,6 +23,8 @@ import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz.{-\/, \/, \/-}
+import scalaz.syntax.equal._
+import scalaz.std.string._
 
 /**
   * Handles actions related to search
@@ -77,6 +79,13 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
 
     case RunPauseFailed(s) =>
       noChange
+
+    case UpdateObserver(sequence, name) =>
+      updated(value.copy(queue = value.queue.collect {
+        case s if s.metadata.instrument === sequence.metadata.instrument =>
+          sequence.copy(metadata = s.metadata.copy(observer = Some(name)))
+        case s                  => s
+      }))
 
     case FlipSkipStep(sequence, step) =>
       updated(value.copy(queue = value.queue.collect {

@@ -61,6 +61,7 @@ case class ServerMessage(e: SeqexecEvent) extends Action
 // Temporal actions for UI prototyping
 case class FlipSkipStep(view: SequenceView, step: Step) extends Action
 case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
+case class UpdateObserver(view: SequenceView, name: String) extends Action
 
 // End Actions
 
