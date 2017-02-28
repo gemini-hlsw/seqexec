@@ -45,11 +45,11 @@ class packageSpec extends FlatSpec {
   } yield Result.Error("There was an error in this action")
 
   val config: StepConfig = Map()
-  val seqId ="TEST-01"
+  val seqId = "TEST-01"
   val qs1: EngineState = Map((seqId, Sequence.State.init(
     Sequence(
       "First",
-      SequenceMetadata("F2"),
+      SequenceMetadata("F2", None, None),
       List(
         Step(
           1,
