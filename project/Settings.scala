@@ -62,6 +62,9 @@ object Settings {
     val semanticUI     = "2.2.7"
     val jQueryTerminal = "0.11.2"
     val ocsVersion     = "2017001.1.1"
+
+    //Apache XMLRPC
+    val apacheXMLRPC   = "3.0"
   }
 
   /**
@@ -116,11 +119,16 @@ object Settings {
     val JQuery     = Def.setting("org.querki"                   %%% "jquery-facade" % LibraryVersions.scalaJQuery)
 
     // OCS Libraries, these should become modules in the future
-    val SpModelCore = "edu.gemini.ocs"     %% "edu-gemini-spmodel-core" % LibraryVersions.ocsVersion
-    val SeqexecOdb  = "edu.gemini.ocs"     %% "edu-gemini-seqexec-odb"  % LibraryVersions.ocsVersion
-    val POT         = "edu.gemini.ocs"     %% "edu-gemini-pot"          % LibraryVersions.ocsVersion
-    val EpicsACM    = "edu.gemini.ocs"     %% "edu-gemini-epics-acm"    % LibraryVersions.ocsVersion
-    val TRPC        = "edu.gemini.ocs"     %% "edu-gemini-util-trpc"    % LibraryVersions.ocsVersion
+    val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion
+    val SeqexecOdb  = "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion
+    val POT         = "edu.gemini.ocs"    %% "edu-gemini-pot"                 % LibraryVersions.ocsVersion
+    val EpicsACM    = "edu.gemini.ocs"    %% "edu-gemini-epics-acm"           % LibraryVersions.ocsVersion
+    val TRPC        = "edu.gemini.ocs"    %% "edu-gemini-util-trpc"           % LibraryVersions.ocsVersion
+    val WDBAClient  = Seq(
+                      "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
+                      "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC
+    )
+
   }
 
 }

@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, ZoneId}
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.KeywordBag
 import edu.gemini.spModel.config2.{Config, ItemKey}
@@ -102,7 +102,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
 class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: TcsKeywordsReader) extends Header {
   import Header._
-  override def sendBefore(id: ObsId, inst: String): SeqAction[Unit] = {
+  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
 
     val p: SeqAction[Double] = for {
       xoff <- tcsReader.getXOffset
@@ -221,7 +221,7 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
 
 
 
-  override def sendAfter(id: ObsId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
+  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
     List(
       buildDouble(tcsReader.getAirMass, "AIRMASS"),
       buildDouble(tcsReader.getStartAirMass, "AMSTART"),

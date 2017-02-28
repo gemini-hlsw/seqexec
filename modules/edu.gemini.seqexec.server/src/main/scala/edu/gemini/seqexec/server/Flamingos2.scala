@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.Flamingos2Controller._
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -10,10 +10,9 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadoutMode
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
-import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 
 import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
@@ -29,24 +28,15 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val sfName: String = Flamingos2.sfName
 
-  val instContributorName = "flamingos2"
+  override val contributorName = "flamingos2"
   val dhsInstrumentName = "F2"
 
-  override def observe(config: Config): SeqObserve[(DhsClient, List[Header]), ObserveResult] = Reader { case (dhs, headers) =>
-    for {
-      id <- dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(instContributorName, "dhs-http")))
-      _  <- headers.map(_.sendBefore(id, dhsInstrumentName)).sequenceU
-      _  <- f2Controller.observe(id)
-      _  <- headers.map(_.sendAfter(id, dhsInstrumentName)).sequenceU
-      _  <- closeImage(id, dhs)
-    } yield ObserveResult(id)
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader {
+    fileId => f2Controller.observe(fileId).map(_ => ObserveResult(fileId))
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =
     fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
-
-  private def closeImage(id: ObsId, client: DhsClient): SeqAction[Unit] =
-    client.setKeywords(id, KeywordBag(StringKeyword("instrument", dhsInstrumentName)), finalFlag = true)
 
 }
 

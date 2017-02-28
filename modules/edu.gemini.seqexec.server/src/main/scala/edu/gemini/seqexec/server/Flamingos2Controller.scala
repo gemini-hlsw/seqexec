@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 
 import scala.concurrent.duration.Duration
 
@@ -15,7 +15,7 @@ trait Flamingos2Controller {
 
   def applyConfig(config: Flamingos2Config): SeqAction[Unit]
 
-  def observe(obsid: ObsId): SeqAction[ObsId]
+  def observe(obsid: ImageFileId): SeqAction[ImageFileId]
 }
 
 object Flamingos2Controller {
