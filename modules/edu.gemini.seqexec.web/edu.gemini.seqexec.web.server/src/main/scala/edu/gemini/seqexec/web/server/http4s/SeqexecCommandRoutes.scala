@@ -59,14 +59,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
 
       } yield resp
 
-    case POST -> Root / obsId / "operator" / name =>
-      for {
-        obs   <-
-          \/.fromTryCatchNonFatal(new SPObservationID(obsId))
-            .fold(e => Task.fail(e), Task.now)
-        _     <- se.setOperator(inputQueue, obs, name)
-        resp  <- Ok(s"Set operator name to $name for sequence $obs")
-      } yield resp
+    case POST -> Root / "operator" / name =>
+      se.setOperator(inputQueue, name) *> Ok(s"Set operator name to $name")
 
     case POST -> Root / obsId / "observer" / name =>
       for {

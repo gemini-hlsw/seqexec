@@ -66,8 +66,8 @@ package object engine {
     modifyS(id)(_.rollback)
 
 
-  def setOperator(id: Sequence.Id)(name: String): Handle[Unit] =
-    modifyS(id)(_.setOperator(name))
+  def setOperator(name: String): Handle[Unit] =
+    modify(_.mapValues(_.setOperator(name)))
 
   def setObserver(id: Sequence.Id)(name: String): Handle[Unit] =
     modifyS(id)(_.setObserver(name))
@@ -210,7 +210,7 @@ package object engine {
       case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
       case Breakpoint(id, step, v) => log("Output: breakpoint changed") *>
         modifyS(id)(_.setBreakpoint(step, v))
-      case SetOperator(id, name)   => log("Output: Setting Operator name") *> setOperator(id)(name)
+      case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
       case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)

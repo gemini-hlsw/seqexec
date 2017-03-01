@@ -17,7 +17,7 @@ case class Start(id: Sequence.Id) extends UserEvent
 case class Pause(id: Sequence.Id) extends UserEvent
 case class Load(id: Sequence.Id, sequence: Sequence[Action]) extends UserEvent
 case class Breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean) extends UserEvent
-case class SetOperator(id: Sequence.Id, name: String) extends UserEvent
+case class SetOperator(name: String) extends UserEvent
 case class SetObserver(id: Sequence.Id, name: String) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
@@ -39,8 +39,8 @@ object Event {
   def pause(id: Sequence.Id): Event = EventUser(Pause(id))
   def load(id: Sequence.Id, sequence: Sequence[Action]): Event = EventUser(Load(id, sequence))
   def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, step, v))
-  def setOperator(id: Sequence.Id, name: String): Event = EventUser(SetOperator(id, name))
-  def setObersver(id: Sequence.Id, name: String): Event = EventUser(SetObserver(id, name))
+  def setOperator(name: String): Event = EventUser(SetOperator(name))
+  def setObserver(id: Sequence.Id, name: String): Event = EventUser(SetObserver(id, name))
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
 
