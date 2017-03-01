@@ -188,7 +188,7 @@ lazy val edu_gemini_seqexec_server = project
           POT,
           EpicsACM,
           Knobs
-      ) ++ TestLibs.value
+      ) ++ WDBAClient ++ TestLibs.value
   )
 
 // This should eventually replaced by seqexec_server

@@ -1,14 +1,14 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient._
 
 /**
   * Created by jluhrs on 1/31/17.
   */
 trait Header {
-  def sendBefore(id: ObsId, inst: String): SeqAction[Unit]
-  def sendAfter(id: ObsId, inst: String): SeqAction[Unit]
+  def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit]
+  def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit]
 }
 
 object Header {
@@ -27,7 +27,7 @@ object Header {
     ks.foldRight(z) { case (a,b) => b.flatMap(a) }
   }
 
-  def sendKeywords(id: ObsId, inst: String, hs: DhsClient, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
+  def sendKeywords(id: ImageFileId, inst: String, hs: DhsClient, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
     bag <- bundleKeywords(inst, b)
     _   <- hs.setKeywords(id, bag, false)
   } yield ()

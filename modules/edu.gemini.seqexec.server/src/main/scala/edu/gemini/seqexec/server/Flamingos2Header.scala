@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
 import edu.gemini.spModel.config2.Config
@@ -19,7 +19,7 @@ import scalaz.concurrent.Task
 
 class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, f2Reader: Flamingos2Header.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header._
-  override def sendBefore(id: ObsId, inst: String): SeqAction[Unit] =  {
+  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
 
     sendKeywords(id, inst, hs, List(
       buildString(f2ObsReader.getReadMode.map{
@@ -38,7 +38,7 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
     ))
   }
 
-  override def sendAfter(id: ObsId, inst: String): SeqAction[Unit] = SeqAction(())
+  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = SeqAction(())
 }
 
 object Flamingos2Header {

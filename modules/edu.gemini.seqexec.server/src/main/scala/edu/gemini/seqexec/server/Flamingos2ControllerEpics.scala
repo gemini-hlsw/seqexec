@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.Flamingos2Controller._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -133,7 +133,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- EitherT(Task(Log.info("Completed Flamingos2 configuration").right))
   } yield ()
 
-  override def observe(obsid: ObsId): SeqAction[ObsId] = for {
+  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = for {
     _ <- EitherT(Task(Log.info("Start Flamingos2 observation").right))
     _ <- Flamingos2Epics.instance.observeCmd.setLabel(obsid)
     _ <- Flamingos2Epics.instance.observeCmd.post

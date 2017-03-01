@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import argonaut._
 import Argonaut._
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient.{ImageParameters, KeywordBag}
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
@@ -24,12 +24,12 @@ trait DhsClient {
   /**
     * Requests the DHS to create an image returning the obs id if applicable
     */
-  def createImage(p: DhsClient.ImageParameters): SeqAction[ObsId]
+  def createImage(p: DhsClient.ImageParameters): SeqAction[ImageFileId]
 
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ObsId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
+  def setKeywords(id: ImageFileId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
 
 }
 
@@ -114,13 +114,13 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
     } yield Error(t, msg)
   )
 
-  implicit def obsIdDecode: DecodeJson[TrySeq[ObsId]] = DecodeJson[TrySeq[ObsId]]( c => {
+  implicit def obsIdDecode: DecodeJson[TrySeq[ImageFileId]] = DecodeJson[TrySeq[ImageFileId]](c => {
     val r = c --\ "response"
     val s = (r --\ "status").as[String]
     s flatMap {
       case "success" => (r --\ "result").as[String].map(TrySeq(_))
       case "error"   => (r --\ "errors").as[List[Error]].map(
-        l => TrySeq.fail[ObsId](SeqexecFailure.Unexpected(l.mkString(", "))))
+        l => TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", "))))
     }
   } )
 
@@ -157,17 +157,17 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
       r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
     } )
 
-  private def createImage(reqBody: Json): SeqAction[ObsId] =
-    sendRequest[ObsId](new PostMethod(baseURI), Json.jSingleObject("createImage", reqBody), "Unable to get label")
+  private def createImage(reqBody: Json): SeqAction[ImageFileId] =
+    sendRequest[ImageFileId](new PostMethod(baseURI), Json.jSingleObject("createImage", reqBody), "Unable to get label")
 
-  def createImage: SeqAction[ObsId] = createImage(Json.jEmptyObject)
+  def createImage: SeqAction[ImageFileId] = createImage(Json.jEmptyObject)
 
-  override def createImage(p: ImageParameters): SeqAction[ObsId] = createImage(p.asJson)
+  override def createImage(p: ImageParameters): SeqAction[ImageFileId] = createImage(p.asJson)
 
-  def setParameters(id: ObsId, p: ImageParameters): SeqAction[Unit] =
+  def setParameters(id: ImageFileId, p: ImageParameters): SeqAction[Unit] =
     sendRequest[Unit](new PutMethod(baseURI + "/" + id), Json.jSingleObject("setParameters", p.asJson), "Unable to set parameters for image " + id)
 
-  override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: Boolean = false): SeqAction[Unit] =
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean = false): SeqAction[Unit] =
     sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
       Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
       "Unable to write keywords for image " + id)
@@ -202,12 +202,12 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
 
   val format = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-  override def createImage(p: ImageParameters): SeqAction[ObsId] =
+  override def createImage(p: ImageParameters): SeqAction[ImageFileId] =
     EitherT(Task.delay{
       TrySeq(f"S${date.format(format)}${counter.incrementAndGet()}%04d")
     })
 
-  override def setKeywords(id: ObsId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = SeqAction(())
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = SeqAction(())
 
 }
 

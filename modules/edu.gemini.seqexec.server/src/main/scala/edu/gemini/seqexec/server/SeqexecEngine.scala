@@ -5,7 +5,7 @@ import java.time.LocalDate
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.model.p1.immutable.Site
-import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.{engine, server}
 import edu.gemini.seqexec.engine.Event
 
 import scalaz._
@@ -22,11 +22,14 @@ import edu.gemini.spModel.core.Peer
   */
 class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
-  val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null))
+  val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
+    if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
+    else ODBProxy.DummyOdbCommands)
 
   val translator = SeqTranslate(settings.site)
 
   val systems = SeqTranslate.Systems(
+    odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
     if (settings.instSim) {
@@ -69,7 +72,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
-      } yield odbSeq.flatMap(s => translator.sequence(systems, translatorSettings)(seqId.stringValue(), s))
+      } yield odbSeq.flatMap(s => translator.sequence(systems, translatorSettings)(seqId, s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(seqId.stringValue(), x)).map(_.right))
     u.run
@@ -152,9 +155,12 @@ object SeqexecEngine {
                       tcsSim: Boolean,
                       instSim: Boolean,
                       gcalSim: Boolean,
+                      odbNotifications: Boolean,
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
                       instForceError: Boolean)
+  val defaultSettings = Settings(Site.GS, "localhost", LocalDate.of(2017, 1,1), "http://localhost/", true,
+    true, true, true, false, false, false, false)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
@@ -169,6 +175,7 @@ object SeqexecEngine {
       val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
       val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
       val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+      val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
       val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
       val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
       val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
@@ -195,7 +202,7 @@ object SeqexecEngine {
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, tcsKeywords, f2Keywords, instForceError) )
+        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, odbNotifications, tcsKeywords, f2Keywords, instForceError) )
 
     }
   }

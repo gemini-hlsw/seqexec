@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.model.dhs.ObsId
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.Flamingos2Controller.Flamingos2Config
 import edu.gemini.seqexec.server.SeqexecFailure.Execution
 
@@ -14,7 +14,7 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
 
   override def getConfig: SeqAction[Flamingos2Config] = ???
 
-  override def observe(obsid: ObsId): SeqAction[ObsId] = EitherT( Task {
+  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
     Thread.sleep(5000)
     Log.info("Flamingos-2 observation completed")
@@ -32,7 +32,7 @@ object Flamingos2ControllerSimBad extends Flamingos2Controller {
 
   override def getConfig: SeqAction[Flamingos2Config] = ???
 
-  override def observe(obsid: ObsId): SeqAction[ObsId] = EitherT( Task {
+  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
     Thread.sleep(5000)
     Log.info("Flamingos-2 observation completed")

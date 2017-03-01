@@ -2,6 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.{Level, Logger}
 
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
@@ -30,22 +31,17 @@ object GmosSouth extends Instrument {
     TrySeq(ConfigResult(this))
   })
 
-  override def observe(config: Config): SeqObserve[(DhsClient, List[Header]), ObserveResult] = Reader { case (dhs, _) =>
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader { id =>
     for {
-      id <- dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List("gmos", "dhs-http")))
       _ <- EitherT(Task {
-             Log.log(Level.INFO, name + ": starting observation " + id)
-             Thread.sleep(5000)
-             Log.log(Level.INFO, name + ": observation completed")
-             TrySeq(())
-           })
-      _ <- dhs.setKeywords(id, DhsClient.KeywordBag(
-             DhsClient.StringKeyword("instrument", "gmos"),
-             DhsClient.Int32Keyword("INPORT", 3),
-             DhsClient.DoubleKeyword("WAVELENG", 3.14159),
-             DhsClient.BooleanKeyword("PROP_MD", value = true)
-           ))
+        Log.log(Level.INFO, name + ": starting observation " + id)
+        Thread.sleep(5000)
+        Log.log(Level.INFO, name + ": observation completed")
+        TrySeq(())
+      })
     } yield ObserveResult(id)
   }
 
+  override val contributorName: String = "gmos"
+  override val dhsInstrumentName: String = "GMOS-S"
 }
