@@ -66,7 +66,7 @@ object ODBProxy {
 
     override def datasetComplete(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
       Task.delay(
-        xmlrpcClient.datasetComplete(sessionName, obsId.getProgramID.stringValue, dataId, fileId.toString)
+        xmlrpcClient.datasetComplete(sessionName, obsId.stringValue, dataId, fileId.toString)
       ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
     )
 

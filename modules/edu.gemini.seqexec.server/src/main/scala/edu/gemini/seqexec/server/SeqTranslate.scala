@@ -28,7 +28,7 @@ class SeqTranslate(site: Site) {
     case \/-(r) => Result.OK(r)
   }
 
-  private def step(systems: Systems, settings: Settings)(obsId: SPObservationID, i: Int, config: Config): SeqexecFailure \/ Step[Action] = {
+  private def step(systems: Systems, settings: Settings)(obsId: SPObservationID, i: Int, config: Config, last: Boolean): SeqexecFailure \/ Step[Action] = {
 
     def buildStep(inst: Instrument, instHeaders: List[Header]): Step[Action] = {
 
@@ -63,7 +63,7 @@ class SeqTranslate(site: Site) {
           _ <- inst.observe(config)(id)
           _ <- headers.map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
           _ <- closeImage(id, systems.dhs)
-          - <- sendDataEnd(id)
+          _ <- sendDataEnd(id)
         } yield ObserveResult(id)
       }
 
@@ -72,10 +72,16 @@ class SeqTranslate(site: Site) {
         None,
         config.toStepConfig,
         false,
+        (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
+        else List())
+        ++
         List(
           sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
           List(toAction(observe(config).map(x => Result.Observed(x.dataId))))
         )
+        ++
+        (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
+        else List())
       )
     }
 
@@ -101,7 +107,7 @@ class SeqTranslate(site: Site) {
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.traverseU {
-      case (c, i) => step(systems, settings)(obsId, i, c)
+      case (c, i) => step(systems, settings)(obsId, i, c, i == (configs.length-1))
     }
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")

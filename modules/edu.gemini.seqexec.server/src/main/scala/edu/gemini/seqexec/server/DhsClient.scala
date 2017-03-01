@@ -204,7 +204,7 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
 
   override def createImage(p: ImageParameters): SeqAction[ImageFileId] =
     EitherT(Task.delay{
-      TrySeq(f"S${date.format(format)}${counter.incrementAndGet()}%04d")
+      TrySeq(f"S${date.format(format)}S${counter.incrementAndGet()}%04d")
     })
 
   override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = SeqAction(())
