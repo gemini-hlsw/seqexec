@@ -12,6 +12,7 @@ import opts._
 object main extends SafeApp with Helpers {
 
   val PrivateNetwork = "gem-net"
+  val GemOrg         = "geminihlsw"
   val GemImage       = "gem-telnetd"
   val GemProject     = "telnetd"
   val DeployTagRegex = "^deploy-\\d+$".r
@@ -44,29 +45,35 @@ object main extends SafeApp with Helpers {
     )
 
   def getDeployImage(dc: DeployCommit): CtlIO[Image] =
-    gosub(Info, "Verifying Gem deploy image.",
-      log(Info, s"Image is $GemImage:${dc.imageVersion}.") *>
-      findImage(GemImage, dc.imageVersion).flatMap {
-        case Some(i) => log(Info, s"Found image ${i.hash}.").as(i)
-        case None    =>
-          log(Error, s"No such image. Do you need to `sbt $GemProject/docker:publishLocal`?") *>
-          exit(-1)
-      }
-    )
+    gosub(Info, "Verifying Gem deploy image.", requireImage(s"$GemOrg/$GemImage:${dc.imageVersion}"))
 
   def fileContentsAtDeployCommit(cDeploy: DeployCommit, path: String): CtlIO[List[String]] =
     if (cDeploy.uncommitted) fileContents(path)
     else fileContentsAtCommit(cDeploy.commit, path)
 
-  def getPostgresImage(cDeploy: DeployCommit): CtlIO[Image] =
-    fileContentsAtDeployCommit(cDeploy, "pg-image.txt").flatMap { ss =>
-      ss.map(_.trim).filterNot(s => s.startsWith("#") || s.trim.isEmpty) match {
-        case List(name) => log(Info, s"Postgres image for this deployment is $name") as Image(name)
-        case _          =>
-          log(Error, s"Cannot determine Postgres image for deploy commit $cDeploy") *>
-          exit(-1)
-      }
+  def requireImage(nameAndVersion: String): CtlIO[Image] = {
+    log(Info, s"Looking for $nameAndVersion") *>
+    findImage(nameAndVersion).flatMap {
+      case None    =>
+        log(Warn, s"Cannot find image locally. Pulling (could take a few minutes).") *> pullImage(nameAndVersion).flatMap {
+          case None    => log(Error, s"Image was not found.") *> exit(-1)
+          case Some(i) => log(Info, s"Image is ${i.hash}") as i
+        }
+      case Some(i) => log(Info, s"Image is ${i.hash}") as i
     }
+  }
+
+  def getPostgresImage(cDeploy: DeployCommit): CtlIO[Image] =
+    gosub(Info, "Verifying Postgres deploy image.",
+      fileContentsAtDeployCommit(cDeploy, "pg-image.txt").flatMap { ss =>
+        ss.map(_.trim).filterNot(s => s.startsWith("#") || s.trim.isEmpty) match {
+          case List(name) => requireImage(name)
+          case _          =>
+            log(Error, s"Cannot determine Postgres image for deploy commit $cDeploy") *>
+            exit(-1)
+        }
+      }
+    )
 
   def getLineage(base: Commit, dc: DeployCommit): CtlIO[Unit] =
     gosub(Info, "Verifying lineage.",
@@ -110,12 +117,12 @@ object main extends SafeApp with Helpers {
   def createDatabaseContainer(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
     gosub(Info, s"Creating Postgres container from image ${iPg.hash}",
       for {
-        c <- shell("docker", "run",
+        c <- docker.docker("run",
                   "--detach",
                  s"--net=$PrivateNetwork",
                   "--name", s"db-$nDeploy",
                   "--label", s"edu.gemini.commit=${cDeploy.imageVersion}",
-                  "--health-cmd", "psql -U postgres -d gem -c 'select 1'",
+                  "--health-cmd", "\"psql -U postgres -d gem -c 'select 1'\"",
                   "--health-interval", "10s",
                   "--health-retries", "2",
                   "--health-timeout", "2s",
@@ -134,14 +141,14 @@ object main extends SafeApp with Helpers {
                case _               => ""
              } .map(_.parseInt.toOption.getOrElse(0)) .foldLeft(0)(_ max _) + 1
            }
-      _ <- log(Info, s"Deploy number is $n.")
+      _ <- log(Info, s"Deploy number for this host will be $n.")
     } yield n
 
   def createDatabase(nDeploy: Int, kPg: Container): CtlIO[Unit] =
     for {
-      b <- shell("docker", "exec", kPg.hash,
+      b <- docker.docker("exec", kPg.hash,
              "psql", s"--host=db-$nDeploy",
-                      "--command=create database gem",
+                      "--command='create database gem'",
                       "--username=postgres"
            ).require {
              case Output(0, List("CREATE DATABASE")) => true
@@ -182,10 +189,10 @@ object main extends SafeApp with Helpers {
   def deploy(base: Option[String], deploy: String, standalone: Boolean) =
     for {
       nDeploy  <- getDeployNumber
-      network  <- getNetwork
       cDeploy  <- getDeployCommit(deploy)
       iPg      <- getPostgresImage(cDeploy)
       iDeploy  <- getDeployImage(cDeploy)
+      network  <- getNetwork
       _        <- if (standalone) deployStandalone(   nDeploy, cDeploy, iDeploy, iPg)
                   else            deployUpgrade(base, nDeploy, cDeploy, iDeploy)
     } yield ()

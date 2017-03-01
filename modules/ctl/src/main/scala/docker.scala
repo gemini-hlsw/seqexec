@@ -1,6 +1,8 @@
 import ctl._
 import io._
 
+import scalaz._, Scalaz._
+
 object docker {
 
   case class Network(hash: String)
@@ -21,8 +23,17 @@ object docker {
       case Output(0, List(h)) => Network(h)
     }
 
-  def findImage(name: String, version: String): CtlIO[Option[Image]] =
-    docker("images", "-q", s"$name:$version").require {
+  def pullImage(nameAndVersion: String): CtlIO[Option[Image]] =
+    docker("pull", nameAndVersion).require {
+      case Output(0, s :: ss) if (s :: ss).last.contains("not found") => None
+      case Output(0, _) => Some(nameAndVersion)
+    } .flatMap {
+      case None                 => none[Image].point[CtlIO]
+      case Some(nameAndVersion) => findImage(nameAndVersion)
+    }
+
+  def findImage(nameAndVersion: String): CtlIO[Option[Image]] =
+    docker("images", "-q", nameAndVersion).require {
       case Output(0, Nil)     => None
       case Output(0, List(h)) => Some(Image(h))
     }

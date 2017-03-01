@@ -142,11 +142,13 @@ lazy val telnetd = project
   .in(file("modules/telnetd"))
   .dependsOn(service, sql)
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
   .settings(commonSettings)
   .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
     libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0",
-    dockerExposedPorts  := List(6666)
+    dockerExposedPorts  := List(6666),
+    dockerRepository    := Some("geminihlsw")
   )
 
 lazy val ctl = project
