@@ -57,6 +57,26 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
+    * Requests the backend to set the operator name of a sequence
+    */
+  def setOperator(s: SequenceView, name: String): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/operator/${name}",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
+    * Requests the backend to set the observer name of a sequence
+    */
+  def setObserver(s: SequenceView, name: String): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/${s.id}/observer/${name}",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Requests the backend to send a copy of the current state
     */
   def refresh(): Future[RegularCommand] = {

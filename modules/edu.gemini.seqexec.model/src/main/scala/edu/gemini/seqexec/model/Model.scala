@@ -22,6 +22,10 @@ object Model {
 
     case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    case class OperatorUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
@@ -46,6 +50,8 @@ object Model {
   type SequenceId = String
   type StepId = Int
   type Instrument = String
+  type Operator = String
+  type Observer = String
 
   implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
 
@@ -113,7 +119,11 @@ object Model {
     * Metadata about the sequence required on the exit point
     */
   // TODO Une a proper instrument class
-  case class SequenceMetadata(instrument: Instrument)
+  case class SequenceMetadata(
+    instrument: Instrument,
+    operator: Option[Operator],
+    observer: Option[Observer]
+  )
 
   case class SequenceView (
     id: SequenceId,

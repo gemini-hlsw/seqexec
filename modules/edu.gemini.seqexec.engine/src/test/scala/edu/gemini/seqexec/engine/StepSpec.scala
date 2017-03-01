@@ -88,7 +88,7 @@ class StepSpec extends FlatSpec {
     val qs0: EngineState = Map((seqId, Sequence.State.init(
       Sequence(
         seqId,
-        SequenceMetadata("F2"),
+        SequenceMetadata("F2", None, None),
         List(
           Step(
             1,
@@ -124,7 +124,7 @@ class StepSpec extends FlatSpec {
     val qs0: EngineState = Map((seqId, Sequence.State.Zipper(
       Sequence.Zipper(
         "First",
-        SequenceMetadata("F2"),
+        SequenceMetadata("F2", None, None),
         List(),
         Step.Zipper(
           2,
@@ -180,7 +180,7 @@ class StepSpec extends FlatSpec {
     val qs0: EngineState = Map((seqId, Sequence.State.init(
       Sequence(
         seqId,
-        SequenceMetadata("F2"),
+        SequenceMetadata("F2", None, None),
         List(
           Step(
             1,

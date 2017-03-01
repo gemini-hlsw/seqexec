@@ -8,13 +8,17 @@ import Scalaz._
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-case class Sequence[+A](id: Sequence.Id, metadata: SequenceMetadata, steps: List[Step[A]])
+case class Sequence[+A](
+  id: Sequence.Id,
+  metadata: SequenceMetadata,
+  steps: List[Step[A]]
+)
 
 object Sequence {
 
   type Id = String
 
-  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata(""), Nil)
+  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None, None), Nil)
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
@@ -138,6 +142,10 @@ object Sequence {
 
     def getCurrentBreakpoint: Boolean
 
+    def setObserver(name: String): State
+
+    def setOperator(name: String): State
+
     /**
       * Current Execution
       */
@@ -216,17 +224,30 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
+      override def setOperator(name: String): State = operatorL.set(self, Some(name))
+
+      override def setObserver(name: String): State = observerL.set(self, Some(name))
+
       override val done: List[Step[Result]] = zipper.done
+
+      private val zipperL: Zipper @> Sequence.Zipper =
+        Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
+
+      private val metadataL: Zipper @> SequenceMetadata =
+        zipperL >=> Lens.lensu((x, y) => x.copy(metadata = y), _.metadata)
+
+      private val operatorL: Zipper @> Option[String] =
+        metadataL >=> Lens.lensu((x, y) => x.copy(operator = y), _.operator)
+
+      private val observerL: Zipper @> Option[String] =
+        metadataL >=> Lens.lensu((x, y) => x.copy(observer = y), _.observer)
 
       override def mark(i: Int)(r: Result): State = {
 
-        val zipper: Zipper @> Sequence.Zipper =
-          Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
-
-        val currentExecutionL: Zipper @> Execution = zipper >=> Sequence.Zipper.current
+        val currentExecutionL: Zipper @> Execution = zipperL >=> Sequence.Zipper.current
 
         val currentFileIdL: Zipper @> Option[FileId] =
-          zipper >=> Sequence.Zipper.focus >=> Step.Zipper.fileId
+          zipperL >=> Sequence.Zipper.focus >=> Step.Zipper.fileId
 
         val z: Zipper = r match {
             case Result.OK(Result.Observed(fileId)) => currentFileIdL.set(self, fileId.some)
@@ -260,11 +281,27 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = false
 
+      override def setOperator(name: String): State = operatorL.set(self, Some(name))
+
+      override def setObserver(name: String): State = observerL.set(self, Some(name))
+
       override val done: List[Step[Result]] = seq.steps
 
       override def mark(i: Int)(r: Result): State = self
 
       override val toSequence: Sequence[Action \/ Result] = seq.map(_.right)
+
+      private val sequenceL: Final @> Sequence[Result] =
+        Lens.lensu((x, y) => x.copy(seq = y), _.seq)
+
+      private val metadataL: Final @> SequenceMetadata =
+        sequenceL >=> Lens.lensu((x, y) => x.copy(metadata = y), _.metadata)
+
+      private val operatorL: Final @> Option[String] =
+        metadataL >=> Lens.lensu((x, y) => x.copy(operator = y), _.operator)
+
+      private val observerL: Final @> Option[String] =
+        metadataL >=> Lens.lensu((x, y) => x.copy(observer = y), _.observer)
 
     }
 

@@ -104,7 +104,7 @@ class SeqTranslate(site: Site) {
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
 
-    steps.map(Sequence[Action](obsId.stringValue(), SequenceMetadata(instName), _))
+    steps.map(Sequence[Action](obsId.stringValue(), SequenceMetadata(instName, None, None), _))
   }
 
 }
