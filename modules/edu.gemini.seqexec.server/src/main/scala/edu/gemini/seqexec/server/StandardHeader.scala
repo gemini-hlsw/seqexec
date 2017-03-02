@@ -98,10 +98,24 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
           .map(v => (LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))))
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
+
 }
 
-class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: TcsKeywordsReader) extends Header {
+// TODO: Replace Unit by something that can read the state for real
+case class StateKeywordsReader(state: Unit) {
+  // TODO: "observer" should be the default when not set in state
+  def getObserverName: SeqAction[String] = SeqAction("observer")
+  def getOperatorName: SeqAction[String] = SeqAction("ssa")
+}
+
+class StandardHeader(
+  hs: DhsClient,
+  obsReader: ObsKeywordsReader,
+  tcsReader: TcsKeywordsReader,
+  stateReader: StateKeywordsReader) extends Header {
+
   import Header._
+
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
 
     val p: SeqAction[Double] = for {
@@ -211,7 +225,9 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       buildString(obsReader.getPwfs1Guide.map(_.toString), "PWFS1_ST"),
       buildString(obsReader.getPwfs2Guide.map(_.toString), "PWFS2_ST"),
       buildString(obsReader.getOiwfsGuide.map(_.toString), "OIWFS_ST"),
-      buildString(obsReader.getAowfsGuide.map(_.toString), "AOWFS_ST")
+      buildString(obsReader.getAowfsGuide.map(_.toString), "AOWFS_ST"),
+      buildString(stateReader.getObserverName, "OBSERVER"),
+      buildString(stateReader.getObserverName, "SSA")
     )) *>
     pwfs1Keywords *>
     pwfs2Keywords *>
