@@ -159,11 +159,10 @@ object SequenceDefaultToolbar {
   */
 object StepsTableContainer {
   case class State(nextScrollPos  : Double,
-                   nextStepToRun  : Int,
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
+  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Int, onStepToRun: Int => Callback)
 
   class Backend($: BackendScope[Props, State]) {
 
@@ -280,7 +279,7 @@ object StepsTableContainer {
       }
 
     def selectRow(step: Step, index: Int): Callback =
-      Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
+      Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})
 
     def mouseEnter(index: Int): Callback =
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
@@ -368,7 +367,7 @@ object StepsTableContainer {
                       case StepState.Completed       => IconCheckmark
                       case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
                       case StepState.Error(_)        => IconAttention
-                      case _ if i == s.nextStepToRun => IconChevronRight
+                      case _ if i == p.nextStepToRun => IconChevronRight
                       case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
                       case _                         => iconEmpty
                     }
@@ -418,12 +417,12 @@ object StepsTableContainer {
   private val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("StepsTable")
-    .initialState(State(0, nextStepToRun = 0, None, autoScrolled = false))
+    .initialState(State(0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
       // Override the manually selected step to run if the state changes
-      val nextStepToRunCB =
-        Callback.when(f.nextProps.s.status != f.currentProps.s.status)(f.$.modState(_.copy(nextStepToRun = f.nextProps.s.nextStepToRun.getOrElse(0))))
+      val nextStepToRunCB = Callback.empty
+        //Callback.when(f.nextProps.s.status != f.currentProps.s.status)(f.$.modState(_.copy(nextStepToRun = f.nextProps.s.nextStepToRun.getOrElse(0))))
 
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
@@ -482,8 +481,6 @@ object StepsTableContainer {
       }
       // Run both callbacks, to update the runRequested state and the scroll position
       scrollStateCB *> nextStepToRunCB
-    }.componentWillMount { f =>
-      f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed
@@ -497,23 +494,31 @@ object StepsTableContainer {
       }
     }.build
 
-  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
+  def apply(p: Props) = component(p)
 }
 
 
 object SequenceStepsTableContainer {
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
+  case class State(nextStepToRun: Int)
+
+  val ST = ReactS.Fix[State]
+
+  def updateStepToRun(step: Int) =
+    ST.set(State(step)).liftCB
 
   val component = ReactComponentB[Props]("SequenceStepsTableContainer")
-    .stateless
-    .render_P(p =>
+    .initialState(State(0))
+    .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, 1)): ReactNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): ReactNode),
+        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)): ReactNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): ReactNode),
         Divider(),
-        StepsTableContainer(p.s, p.status, p.stepConfigDisplayed)
+        StepsTableContainer(StepsTableContainer.Props(p.s, p.status, p.stepConfigDisplayed, s.nextStepToRun, x => $.runState(updateStepToRun(x))))
       )
-    ).build
+    }.componentWillMount { f =>
+      f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
+    }.build
 
   def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
 }
