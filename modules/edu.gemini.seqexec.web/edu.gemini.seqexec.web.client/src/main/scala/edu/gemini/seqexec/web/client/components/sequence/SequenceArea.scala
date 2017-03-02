@@ -127,13 +127,17 @@ object SequenceDefaultToolbar {
                 )
               ),
               <.div(
-                ^.cls := "right ten wide column",
+                ^.cls := "right column",
+                ^.classSet(
+                  "ten wide" -> p.status.isLogged,
+                  "sixteen wide" -> !p.status.isLogged
+                ),
                 <.div(
                   ^.cls := "ui form",
                   <.div(
                     ^.cls := "required field",
                     Label(Label.Props("Observer", "")),
-                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", s.observer.getOrElse(""), placeholder = "Observer...", onBlur = name => $.runState(updateObserver(p.s)(name))))
+                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", s.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.status.isLogged, onBlur = name => $.runState(updateObserver(p.s)(name))))
                   )
                 )
               )

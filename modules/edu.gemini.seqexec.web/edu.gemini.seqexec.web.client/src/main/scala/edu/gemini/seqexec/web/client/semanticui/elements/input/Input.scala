@@ -15,6 +15,7 @@ object Input {
                    value: String,
                    inputType: InputType = TextInput,
                    placeholder: String = "",
+                   disabled: Boolean = false,
                    onBlur: ChangeCallback = s => Callback.empty) // callback for parents of this component
 
   sealed trait InputType
@@ -46,6 +47,7 @@ object Input {
         ^.name := p.name,
         ^.id := p.id,
         ^.value := s,
+        ^.disabled := p.disabled,
         ^.onChange ==> $._runState(onTextChange),
         ^.onBlur   --> $.runState(onBlur(p.onBlur))
       )
