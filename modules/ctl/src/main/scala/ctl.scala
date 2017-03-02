@@ -7,6 +7,7 @@ object ctl {
   case object Info  extends Level
   case object Warn  extends Level
   case object Error extends Level
+  case object Shell extends Level
 
   sealed trait CtlOp[A]
   case class Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]

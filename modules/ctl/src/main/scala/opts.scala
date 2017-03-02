@@ -9,7 +9,8 @@ object opts {
     userAndHost: String,
     deployRev:   String,
     baseRev:     Option[String],
-    standalone:  Boolean
+    standalone:  Boolean,
+    verbose:     Boolean
   )
 
   val host: Parser[String] =
@@ -36,8 +37,14 @@ object opts {
       help("Deploy standalone; do not attempt an upgrade. Cannot be specified with --base")
     )
 
+  val verbose: Parser[Boolean] =
+    switch(
+      short('v'), long("verbose"),
+      help("Show details about what we're doing under the hood.")
+    )
+
   val config: Parser[Config] =
-    (host |@| deploy |@| base |@| standalone)(Config.apply)
+    (host |@| deploy |@| base |@| standalone |@| verbose)(Config.apply)
 
   val configCommand: Parser[Config] =
     subparser(command("deploy", info(config <* helper,

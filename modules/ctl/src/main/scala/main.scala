@@ -200,7 +200,7 @@ object main extends SafeApp with Helpers {
 
 
   val command: Config => CtlIO[Unit] = {
-    case Config(u, d, b, s) => log(Info, s"Target host is $u.") *> deploy(b, d, s)
+    case Config(u, d, b, s, v) => log(Info, s"Target host is $u.") *> deploy(b, d, s)
   }
 
   override def runl(args: List[String]): IO[Unit] =
@@ -209,7 +209,7 @@ object main extends SafeApp with Helpers {
       c <- opts.parse("gemctl", args)
       _ <- c.traverse { c =>
         IO.newIORef(0)
-          .map(interpreter(c.userAndHost, _))
+          .map(interpreter(c.userAndHost, c.verbose, _))
           .flatMap(command(c).foldMap(_).run)
       }
       _ <- IO.putStrLn("")

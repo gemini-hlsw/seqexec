@@ -11,22 +11,34 @@ object interp {
       case Error => Console.RED
       case Warn  => Console.YELLOW
       case Info  => Console.GREEN
+      case Shell => "\u001B[0;37m" // gray
     }
     EitherT.right {
-      val pre = s"[${level.toString.toLowerCase}]"
+      val pre = s"[${level.toString.take(4).toLowerCase}]"
+      val messageColor = color // if (level == Shell) color else Console.BLUE
       for {
-        i <- indent.read.map { case 0 => "* " ; case n => " " * ((n + 1) * 2) }
-        _ <- IO.putStrLn(f"$color$pre%-7s ${Console.BLUE}$i$msg${Console.RESET}")
+        i <- indent.read.map("  " * _)
+        _ <- IO.putStrLn(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")
       } yield ()
     }
   }
 
+  private def doShell(cmd: String \/ List[String], verbose: Boolean, indent: IORef[Int]): EitherT[IO, Int, Output] =
+    for {
+      o <- EitherT.right(IO.shell(cmd))
+      _ <- verbose.whenM {
+        doLog(Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", indent) *>
+        o.lines.traverseU(doLog(Shell, _, indent)) *>
+        doLog(Shell, s"exit(${o.exitCode})", indent)
+      }
+    } yield o
+
   type Remote = String
 
-  def interpreter(remote: Remote, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
+  def interpreter(remote: Remote, verbose: Boolean, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
     case Log(level, msg) => doLog(level, msg, indent)
-    case Shell(false, cmd) => EitherT.right(IO.shell(cmd))
-    case Shell(true,  cmd) => EitherT.right(IO.shell(cmd.bimap(s => s"ssh ${remote} $s", "ssh" :: remote :: _)))
+    case Shell(false, cmd) => doShell(cmd, verbose, indent)
+    case Shell(true,  cmd) => doShell(cmd.bimap(s => s"ssh ${remote} $s", "ssh" :: remote :: _), verbose, indent)
     case Exit(exitCode)    => EitherT.left(exitCode.point[IO])
     case Gosub(level, msg, fa) =>
       for {
