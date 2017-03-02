@@ -28,6 +28,7 @@ trait ObsKeywordsReader {
   def getObsClass: SeqAction[String]
   def getGemPrgId: SeqAction[String]
   def getObsId: SeqAction[String]
+  def getDataLabel: SeqAction[String]
   def getObservatory: SeqAction[String]
   def getTelescope: SeqAction[String]
   def getPwfs1Guide: SeqAction[StandardGuideOptions.Value]
@@ -48,11 +49,13 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   override def getGemPrgId: SeqAction[String] = SeqAction(
     config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP)).toString)
 
-  override def getObsId: SeqAction[String] = {
-    val v = config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).toString.split("-").toList.lastOption.getOrElse("")
+  override def getObsId: SeqAction[String] = SeqAction(
+    config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).toString
+  )
 
-    SeqAction(v)
-  }
+  override def getDataLabel: SeqAction[String] = SeqAction(
+    config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).toString
+  )
 
   override def getObservatory: SeqAction[String] = SeqAction(telescope)
 
@@ -167,6 +170,7 @@ class StandardHeader(hs: DhsClient, obsReader: ObsKeywordsReader, tcsReader: Tcs
       buildString(obsReader.getObsClass, "OBSCLASS"),
       buildString(obsReader.getGemPrgId, "GEMPRGID"),
       buildString(obsReader.getObsId, "obsid"),
+      buildString(obsReader.getDataLabel, "DATALAB"),
       buildString(obsReader.getObservatory, "OBSERVAT"),
       buildString(obsReader.getTelescope, "telescope"),
       buildBoolean(obsReader.getHeaderPrivacy, "PROP_MD"),
