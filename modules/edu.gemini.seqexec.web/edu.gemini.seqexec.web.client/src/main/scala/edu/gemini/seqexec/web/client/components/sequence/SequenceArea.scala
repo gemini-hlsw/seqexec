@@ -66,7 +66,7 @@ object SequenceDefaultToolbar {
   def updateObserver(s: SequenceView)(name: String) =
     ST.retM(Callback {SeqexecCircuit.dispatch(UpdateObserver(s, name))})
 
-  val component = ReactComponentB[Props]("SequencesStepsToolbar")
+  val component = ReactComponentB[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false))
     .renderPS( ($, p, s) =>
       <.div(
