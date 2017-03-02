@@ -81,11 +81,13 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
       noChange
 
     case UpdateObserver(sequence, name) =>
-      updated(value.copy(queue = value.queue.collect {
+      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequence, name).map(_ => NoAction))
+      val updatedSequences = value.copy(queue = value.queue.collect {
         case s if s.metadata.instrument === sequence.metadata.instrument =>
           sequence.copy(metadata = s.metadata.copy(observer = Some(name)))
         case s                  => s
-      }))
+      })
+      updated(updatedSequences, updateObserverE)
 
     case FlipSkipStep(sequence, step) =>
       updated(value.copy(queue = value.queue.collect {
