@@ -36,7 +36,6 @@ object interp {
   type Remote = String
 
   def interpreter(remote: Remote, verbose: Boolean, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
-    case Log(level, msg) => doLog(level, msg, indent)
     case Shell(false, cmd) => doShell(cmd, verbose, indent)
     case Shell(true,  cmd) => doShell(cmd.bimap(s => s"ssh ${remote} $s", "ssh" :: remote :: _), verbose, indent)
     case Exit(exitCode)    => EitherT.left(exitCode.point[IO])

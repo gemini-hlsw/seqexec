@@ -11,20 +11,20 @@ object ctl {
 
   sealed trait CtlOp[A]
   case class Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]
-  case class Log(level: Level, msg: String) extends CtlOp[Unit]
   case class Exit[A](exitCode: Int) extends CtlOp[A]
   case class Gosub[A](level: Level, msg: String, fa: CtlIO[A]) extends CtlOp[A]
 
   type CtlIO[A] = Free[CtlOp, A]
 
+  // base constructors
   def shell(c: String):               CtlIO[Output] = Free.liftF(Shell(false, c.left))
   def shell(c: String, cs: String*):  CtlIO[Output] = Free.liftF(Shell(false, (c :: cs.toList).right))
   def remote(c: String):               CtlIO[Output] = Free.liftF(Shell(true, c.left))
   def remote(c: String, cs: String*):  CtlIO[Output] = Free.liftF(Shell(true, (c :: cs.toList).right))
-  def log(level: Level, msg: String): CtlIO[Unit]   = Free.liftF(Log(level, msg))
   def exit[A](exitCode: Int):         CtlIO[A]      = Free.liftF(Exit[A](exitCode))
-
   def gosub[A](level: Level, msg: String, fa: CtlIO[A]): CtlIO[A]   = Free.liftF(Gosub(level, msg, fa))
+
+  def log(level: Level, msg: String): CtlIO[Unit]   = gosub(level, msg, ().point[CtlIO])
 
   def require[A](shell: CtlIO[Output])(f: PartialFunction[Output, A]): CtlIO[A] =
     shell.flatMap { o =>
