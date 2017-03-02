@@ -23,6 +23,8 @@ import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz.{-\/, \/, \/-}
+import scalaz.syntax.equal._
+import scalaz.std.string._
 
 /**
   * Handles actions related to search
@@ -77,6 +79,15 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
 
     case RunPauseFailed(s) =>
       noChange
+
+    case UpdateObserver(sequence, name) =>
+      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequence, name).map(_ => NoAction))
+      val updatedSequences = value.copy(queue = value.queue.collect {
+        case s if s.metadata.instrument === sequence.metadata.instrument =>
+          sequence.copy(metadata = s.metadata.copy(observer = Some(name)))
+        case s                  => s
+      })
+      updated(updatedSequences, updateObserverE)
 
     case FlipSkipStep(sequence, step) =>
       updated(value.copy(queue = value.queue.collect {
@@ -296,7 +307,12 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
       updated(value.copy(_1 = sv), audioEffect)
 
     case ServerMessage(s: SeqexecModelUpdate) =>
-      updated(value.copy(_1 = s.view))
+      // Replace the observer if not set and logged in
+      val sequencesWithObserver = s.view.queue.collect {
+        case q if q.metadata.observer.isEmpty => q.copy(metadata = q.metadata.copy(observer = value._3.map(_.displayName)))
+        case q                                => q
+      }
+      updated(value.copy(_1 = SequencesQueue(sequencesWithObserver)))
 
     case ServerMessage(s) =>
       // Ignore unknown events
