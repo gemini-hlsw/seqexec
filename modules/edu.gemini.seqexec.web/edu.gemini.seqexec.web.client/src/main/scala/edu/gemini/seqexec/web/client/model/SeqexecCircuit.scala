@@ -305,7 +305,12 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
       updated(value.copy(_1 = sv), audioEffect)
 
     case ServerMessage(s: SeqexecModelUpdate) =>
-      updated(value.copy(_1 = s.view))
+      // Replace the observer if not set and logged in
+      val sequencesWithObserver = s.view.queue.collect {
+        case q if q.metadata.observer.isEmpty => q.copy(metadata = q.metadata.copy(observer = value._3.map(_.displayName)))
+        case q                                => q
+      }
+      updated(value.copy(_1 = SequencesQueue(sequencesWithObserver)))
 
     case ServerMessage(s) =>
       // Ignore unknown events
