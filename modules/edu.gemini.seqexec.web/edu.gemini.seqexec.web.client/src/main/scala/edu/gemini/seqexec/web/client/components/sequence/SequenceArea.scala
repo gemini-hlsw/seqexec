@@ -157,7 +157,7 @@ object SequenceDefaultToolbar {
 /**
   * Container for a table with the steps
   */
-object SequenceStepsTableContainer {
+object StepsTableContainer {
   case class State(nextScrollPos  : Double,
                    nextStepToRun  : Int,
                    onHover        : Option[Int],
@@ -396,21 +396,16 @@ object SequenceStepsTableContainer {
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
       <.div(
-        ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)): ReactNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): ReactNode),
-        Divider(),
-        <.div(
-          ^.cls := "ui row scroll pane",
-          SeqexecStyles.stepsListPane,
-          ^.ref := scrollRef,
-          p.stepConfigDisplayed.map { i =>
-            // TODO consider the failure case
-            val step = p.s.steps(i)
-            configTable(step)
-          }.getOrElse {
-            stepsTable(p, s)
-          }
-        )
+        ^.cls := "ui row scroll pane",
+        SeqexecStyles.stepsListPane,
+        ^.ref := scrollRef,
+        p.stepConfigDisplayed.map { i =>
+          // TODO consider the failure case
+          val step = p.s.steps(i)
+          configTable(step)
+        }.getOrElse {
+          stepsTable(p, s)
+        }
       )
     }
   }
@@ -501,6 +496,24 @@ object SequenceStepsTableContainer {
         )
       }
     }.build
+
+  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
+}
+
+
+object SequenceStepsTableContainer {
+  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
+
+  val component = ReactComponentB[Props]("SequenceStepsTableContainer")
+    .stateless
+    .render_P(p =>
+      <.div(
+        ^.cls := "ui raised secondary segment",
+        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, 1)): ReactNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): ReactNode),
+        Divider(),
+        StepsTableContainer(p.s, p.status, p.stepConfigDisplayed)
+      )
+    ).build
 
   def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
 }
