@@ -13,10 +13,13 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNode, Ref}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNode, Ref, ReactEventI}
+import japgolly.scalajs.react.ScalazReact._
 
 import scala.annotation.tailrec
 import scalacss.ScalaCssReact._
@@ -27,32 +30,45 @@ import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 import org.scalajs.dom.html.Div
 
-/**
-  * Container for a table with the steps
-  */
-object SequenceStepsTableContainer {
-  case class State(runRequested   : Boolean,
-                   pauseRequested : Boolean,
-                   nextScrollPos  : Double,
-                   nextStepToRun  : Int,
-                   onHover        : Option[Int],
-                   autoScrolled   : Boolean)
+object StepConfigToolbar {
+  case class Props(s: SequenceView, step: Int)
 
-  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
+  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
-  class Backend($: BackendScope[Props, State]) {
+  val component = ReactComponentB[Props]("StepConfigToolbar")
+    .stateless
+    .render_P( p =>
+      <.div(
+        ^.cls := "row",
+        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+        <.h5(
+          ^.cls := "ui header",
+          SeqexecStyles.inline,
+          s" Configuration for step ${p.step + 1}"
+        )
+      )
+    ).build
 
-    def requestRun(s: SequenceView): Callback =
-      $.modState(_.copy(runRequested = true, pauseRequested = false)) >> Callback {
-        SeqexecCircuit.dispatch(RequestRun(s))
-      }
+  def apply(p: Props) = component(p)
+}
 
-    def requestPause(s: SequenceView): Callback =
-      $.modState(_.copy(runRequested = false, pauseRequested = true)) >> Callback {
-        SeqexecCircuit.dispatch(RequestPause(s))
-      }
+object SequenceDefaultToolbar {
+  case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
+  case class State(runRequested: Boolean, pauseRequested: Boolean)
+  val ST = ReactS.Fix[State]
 
-    def defaultToolbar(p: Props, s: State): ReactNode =
+  def requestRun(s: SequenceView) =
+    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false)).liftCB
+
+  def requestPause(s: SequenceView) =
+    ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
+
+  def updateObserver(s: SequenceView)(name: String) =
+    ST.retM(Callback {SeqexecCircuit.dispatch(UpdateObserver(s, name))})
+
+  val component = ReactComponentB[Props]("SequencesDefaultToolbar")
+    .initialState(State(runRequested = false, pauseRequested = false))
+    .renderPS( ($, p, s) =>
       <.div(
         ^.cls := "row",
         p.status.isLogged && p.s.status === SequenceState.Completed ?=
@@ -60,63 +76,95 @@ object SequenceStepsTableContainer {
             ^.cls := "ui green header",
             "Sequence completed"
           ),
-        p.status.isLogged && p.s.hasError ?=
+        <.div(
+          ^.cls := "ui two column grid",
           <.div(
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = requestRun(p.s),
-                color = Some("blue"),
-                dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
-                disabled = !p.status.isConnected || s.runRequested),
-              s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
+            ^.cls := "ui row",
+            <.div(
+              ^.cls := "left bottom aligned six wide column",
+              p.status.isLogged && p.s.hasError ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPlay),
+                    labeled = true,
+                    onClick = $.runState(requestRun(p.s)),
+                    color = Some("blue"),
+                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                    disabled = !p.status.isConnected || s.runRequested),
+                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+                ),
+              p.status.isLogged && p.s.status === SequenceState.Idle ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPlay),
+                    labeled = true,
+                    onClick = $.runState(requestRun(p.s)),
+                    color = Some("blue"),
+                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                    disabled = !p.status.isConnected || s.runRequested),
+                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+                ),
+              p.status.isLogged && p.s.status === SequenceState.Running ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPause),
+                    labeled = true,
+                    onClick = $.runState(requestPause(p.s)),
+                    color = Some("teal"),
+                    dataTooltip = Some("Pause the sequence after the current step completes"),
+                    disabled = !p.status.isConnected || s.pauseRequested),
+                  "Pause"
+                ),
+              p.status.isLogged && p.s.status === SequenceState.Paused ?=
+                Button(
+                  Button.Props(
+                    icon = Some(IconPlay),
+                    labeled = true,
+                    onClick = $.runState(requestPause(p.s)),
+                    color = Some("teal"),
+                    disabled = !p.status.isConnected),
+                  "Continue from step 1"
+                )
+              ),
+              <.div(
+                ^.cls := "right column",
+                ^.classSet(
+                  "ten wide" -> p.status.isLogged,
+                  "sixteen wide" -> !p.status.isLogged
+                ),
+                <.div(
+                  ^.cls := "ui form",
+                  <.div(
+                    ^.cls := "required field",
+                    Label(Label.Props("Observer", "")),
+                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.status.isLogged, onBlur = name => $.runState(updateObserver(p.s)(name))))
+                  )
+                )
+              )
             )
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Idle ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPlay),
-              labeled = true,
-              onClick = requestRun(p.s),
-              color = Some("blue"),
-              dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${s.nextStepToRun + 1}"),
-              disabled = !p.status.isConnected || s.runRequested),
-            s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${s.nextStepToRun + 1}"
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Running ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPause),
-              labeled = true,
-              onClick = requestPause(p.s),
-              color = Some("teal"),
-              dataTooltip = Some("Pause the sequence after the current step completes"),
-              disabled = !p.status.isConnected || s.pauseRequested),
-            "Pause"
-          ),
-        p.status.isLogged && p.s.status === SequenceState.Paused ?=
-          Button(
-            Button.Props(
-              icon = Some(IconPlay),
-              labeled = true,
-              onClick = requestPause(p.s),
-              color = Some("teal"),
-              disabled = !p.status.isConnected),
-            "Continue from step 1"
           )
       )
+    ).componentWillReceiveProps { f =>
+      // Update state of run requested depending on the run state
+      val runStateCB =
+        Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
+      runStateCB
+    }.build
 
-    def configToolbar(p: Props)(i: Int): ReactNode =
-      <.div(
-        ^.cls := "row",
-        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
-        <.h5(
-          ^.cls := "ui header",
-          SeqexecStyles.inline,
-          s" Configuration for step ${i + 1}"
-        )
-      )
+  def apply(p: Props) = component(p)
+}
+
+/**
+  * Container for a table with the steps
+  */
+object StepsTableContainer {
+  case class State(nextScrollPos  : Double,
+                   onHover        : Option[Int],
+                   autoScrolled   : Boolean)
+
+  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Int, onStepToRun: Int => Callback)
+
+  class Backend($: BackendScope[Props, State]) {
 
     def configTable(step: Step): TagMod =
       <.table(
@@ -231,7 +279,7 @@ object SequenceStepsTableContainer {
       }
 
     def selectRow(step: Step, index: Int): Callback =
-      Callback.when(step.status.canRunFrom)($.modState(_.copy(nextStepToRun = index)))
+      Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})
 
     def mouseEnter(index: Int): Callback =
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
@@ -319,7 +367,7 @@ object SequenceStepsTableContainer {
                       case StepState.Completed       => IconCheckmark
                       case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
                       case StepState.Error(_)        => IconAttention
-                      case _ if i == s.nextStepToRun => IconChevronRight
+                      case _ if i == p.nextStepToRun => IconChevronRight
                       case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
                       case _                         => iconEmpty
                     }
@@ -347,21 +395,16 @@ object SequenceStepsTableContainer {
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
       <.div(
-        ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(defaultToolbar(p, s))(configToolbar(p)),
-        Divider(),
-        <.div(
-          ^.cls := "ui row scroll pane",
-          SeqexecStyles.stepsListPane,
-          ^.ref := scrollRef,
-          p.stepConfigDisplayed.map { i =>
-            // TODO consider the failure case
-            val step = p.s.steps(i)
-            configTable(step)
-          }.getOrElse {
-            stepsTable(p, s)
-          }
-        )
+        ^.cls := "ui row scroll pane",
+        SeqexecStyles.stepsListPane,
+        ^.ref := scrollRef,
+        p.stepConfigDisplayed.map { i =>
+          // TODO consider the failure case
+          val step = p.s.steps(i)
+          configTable(step)
+        }.getOrElse {
+          stepsTable(p, s)
+        }
       )
     }
   }
@@ -370,22 +413,16 @@ object SequenceStepsTableContainer {
 
   def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
-  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
-
   // Reference to the specifc DOM marked by the name `scrollRef`
   private val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ReactComponentB[Props]("StepsTable")
-    .initialState(State(runRequested = false, pauseRequested = false, 0, nextStepToRun = 0, None, autoScrolled = false))
+    .initialState(State(0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
-      // Update state of run requested depending on the run state
-      val runStateCB =
-        Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
-
       // Override the manually selected step to run if the state changes
-      val nextStepToRunCB =
-        Callback.when(f.nextProps.s.status != f.currentProps.s.status)(f.$.modState(_.copy(nextStepToRun = f.nextProps.s.nextStepToRun.getOrElse(0))))
+      val nextStepToRunCB = Callback.empty
+        //Callback.when(f.nextProps.s.status != f.currentProps.s.status)(f.$.modState(_.copy(nextStepToRun = f.nextProps.s.nextStepToRun.getOrElse(0))))
 
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
@@ -443,9 +480,7 @@ object SequenceStepsTableContainer {
         }
       }
       // Run both callbacks, to update the runRequested state and the scroll position
-      runStateCB *> scrollStateCB *> nextStepToRunCB
-    }.componentWillMount { f =>
-      f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
+      scrollStateCB *> nextStepToRunCB
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed
@@ -457,6 +492,32 @@ object SequenceStepsTableContainer {
           }
         )
       }
+    }.build
+
+  def apply(p: Props) = component(p)
+}
+
+
+object SequenceStepsTableContainer {
+  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
+  case class State(nextStepToRun: Int)
+
+  val ST = ReactS.Fix[State]
+
+  def updateStepToRun(step: Int) =
+    ST.set(State(step)).liftCB
+
+  val component = ReactComponentB[Props]("SequenceStepsTableContainer")
+    .initialState(State(0))
+    .renderPS { ($, p, s) =>
+      <.div(
+        ^.cls := "ui raised secondary segment",
+        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)): ReactNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): ReactNode),
+        Divider(),
+        StepsTableContainer(StepsTableContainer.Props(p.s, p.status, p.stepConfigDisplayed, s.nextStepToRun, x => $.runState(updateStepToRun(x))))
+      )
+    }.componentWillMount { f =>
+      f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.build
 
   def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))

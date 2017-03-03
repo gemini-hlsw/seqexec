@@ -55,6 +55,8 @@ trait ModelBooPicklers {
     .addConcreteType[SequenceUpdated]
     .addConcreteType[SequenceRefreshed]
     .addConcreteType[NewLogMessage]
+    .addConcreteType[ObserverUpdated]
+    .addConcreteType[OperatorUpdated]
 
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets

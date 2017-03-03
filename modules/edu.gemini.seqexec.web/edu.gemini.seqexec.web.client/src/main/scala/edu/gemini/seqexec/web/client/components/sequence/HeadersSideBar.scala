@@ -18,14 +18,6 @@ object HeadersSideBar {
           ^.cls := "ui form",
           <.div(
             ^.cls := "required field",
-            <.label("Observer"),
-            <.input(
-              ^.`type` :="text",
-              ^.autoComplete :="off"
-            )
-          ),
-          <.div(
-            ^.cls := "required field",
             <.label("Operator"),
             <.input(
               ^.`type` :="text",
