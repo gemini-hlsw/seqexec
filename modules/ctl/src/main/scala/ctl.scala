@@ -1,7 +1,12 @@
 import scalaz._, Scalaz._
 import io._
+import opts.Config
 
 object ctl {
+
+  case class UserAndHost(user: Option[String], host: String) {
+    def userAndHost: String = user.foldRight(host)(_ + "@" + _)
+  }
 
   sealed trait Level
   case object Info  extends Level
@@ -13,16 +18,22 @@ object ctl {
   case class Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]
   case class Exit[A](exitCode: Int) extends CtlOp[A]
   case class Gosub[A](level: Level, msg: String, fa: CtlIO[A]) extends CtlOp[A]
+  case object GetConfig extends CtlOp[Config] // for now
 
   type CtlIO[A] = Free[CtlOp, A]
 
   // base constructors
   def shell(c: String):               CtlIO[Output] = Free.liftF(Shell(false, c.left))
   def shell(c: String, cs: String*):  CtlIO[Output] = Free.liftF(Shell(false, (c :: cs.toList).right))
-  def remote(c: String):               CtlIO[Output] = Free.liftF(Shell(true, c.left))
-  def remote(c: String, cs: String*):  CtlIO[Output] = Free.liftF(Shell(true, (c :: cs.toList).right))
+  def remote(c: String):              CtlIO[Output] = Free.liftF(Shell(true, c.left))
+  def remote(c: String, cs: String*): CtlIO[Output] = Free.liftF(Shell(true, (c :: cs.toList).right))
   def exit[A](exitCode: Int):         CtlIO[A]      = Free.liftF(Exit[A](exitCode))
-  def gosub[A](level: Level, msg: String, fa: CtlIO[A]): CtlIO[A]   = Free.liftF(Gosub(level, msg, fa))
+  val config:                         CtlIO[Config] = Free.liftF(GetConfig)
+
+  val userAndHost: CtlIO[UserAndHost] = config.map(_.userAndHost)
+
+  def gosub[A](level: Level, msg: String, fa: CtlIO[A]): CtlIO[A] =
+    Free.liftF(Gosub(level, msg, fa))
 
   def log(level: Level, msg: String): CtlIO[Unit]   = gosub(level, msg, ().point[CtlIO])
 

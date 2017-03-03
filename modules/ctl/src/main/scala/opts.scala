@@ -3,10 +3,12 @@ import net.bmjames.opts.types.{ Success, Failure }
 
 import scalaz.Scalaz._, scalaz.effect._
 
+import ctl.UserAndHost
+
 object opts {
 
   case class Config(
-    userAndHost: String,
+    userAndHost: UserAndHost,
     deployRev:   String,
     baseRev:     Option[String],
     standalone:  Boolean,
@@ -15,9 +17,18 @@ object opts {
 
   val host: Parser[String] =
     strOption(
-      short('H'), long("host"), metavar("[USER@]HOST"), value("localhost"),
-      help("Docker user and host, localhost if unspecified. Passwordless SSH access required.")
+      short('H'), long("host"), metavar("HOST"), value("localhost"),
+      help("Docker host, or localhost if unspecified.")
     )
+
+  val user: Parser[Option[String]] =
+    strOption(
+      short('u'), long("user"), metavar("USER"), value(null),
+      help("Docker user, or current user if unspecified. Passwordless SSH access required.")
+    ).map(Option(_))
+
+  val userAndHost: Parser[UserAndHost] =
+    (user |@| host)(UserAndHost)
 
   val deploy: Parser[String] =
     strOption(
@@ -44,7 +55,7 @@ object opts {
     )
 
   val config: Parser[Config] =
-    (host |@| deploy |@| base |@| standalone |@| verbose)(Config.apply)
+    (userAndHost |@| deploy |@| base |@| standalone |@| verbose)(Config.apply)
 
   val configCommand: Parser[Config] =
     subparser(command("deploy", info(config <* helper,

@@ -7,7 +7,7 @@ import ctl._
 import git._
 import docker._
 import interp._
-import opts._
+import opts.Config
 
 object main extends SafeApp with Helpers {
 
@@ -16,6 +16,7 @@ object main extends SafeApp with Helpers {
   val GemImage       = "gem-telnetd"
   val GemProject     = "telnetd"
   val DeployTagRegex = "^deploy-\\d+$".r
+  val Port           = 1234
 
   case class DeployCommit(commit: Commit, uncommitted: Boolean) {
     def imageVersion = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash
@@ -107,12 +108,14 @@ object main extends SafeApp with Helpers {
     } yield kBase
 
   def ensureNoRunningDeployments: CtlIO[Unit] =
-    findContainersWithLabel("edu.gemini.commit").flatMap {
-      case Nil  => log(Info, "There are no running deployments.")
-      case cs   =>
-        log(Error, s"There is already at least one running deployment: ${cs.distinct.map(_.hash).mkString(", ")}") *>
-        exit(-1)
-    }
+    gosub(Info, "Ensuring that there is no running deployment.",
+      findContainersWithLabel("edu.gemini.commit").flatMap {
+        case Nil  => log(Info, "There are no running deployments.")
+        case cs   =>
+          log(Error, s"There is already at least one running deployment: ${cs.distinct.map(_.hash).mkString(", ")}") *>
+          exit(-1)
+      }
+    )
 
   def createDatabaseContainer(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
     gosub(Info, s"Creating Postgres container from image ${iPg.hash}",
@@ -157,27 +160,73 @@ object main extends SafeApp with Helpers {
       _ <- if (b) log(Info, "Created database.")
            else {
              log(Info, s"Waiting for Postgres to start up.") *>
-             shell("sleep 1") *>
+             shell("sleep 2") *>
              createDatabase(nDeploy, kPg)
            }
     } yield ()
 
-  // DEPLOY COMMAND
+  def awaitHealthy(k: Container): CtlIO[Unit] =
+    containerHealth(k) >>= {
+      case "starting" => log(Info,  s"Waiting for health check.") *> shell("sleep 2") *> awaitHealthy(k)
+      case "healthy"  => log(Info,  s"Container is healthy.")
+      case s          => log(Error, s"Health check failed: $s") *> exit(-1)
+    }
 
-  def deployDatabase(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
+  def deployDatabase(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
     gosub(Info, "Deploying database.",
       for {
         kDb <- createDatabaseContainer(nDeploy, cDeploy, iPg)
         _   <- createDatabase(nDeploy, kDb)
+        _   <- awaitHealthy(kDb)
       } yield kDb
     )
 
+  def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
+    gosub(Info, s"Creating Gem container from image ${iDeploy.hash}",
+      for {
+        k  <- docker.docker("run",
+                "--detach",
+                "--tty",
+                "--interactive",
+               s"--net=$PrivateNetwork",
+                "--name",    s"gem-$nDeploy",
+                "--label",   s"edu.gemini.commit=${cDeploy.imageVersion}",
+                "--publish", s"$Port:6666",
+                "--env",     s"GEM_DB_URL=jdbc:postgresql://db-$nDeploy/gem",
+                iDeploy.hash
+              ).require { case Output(0, List(s)) => Container(s) }
+        _  <- log(Info, s"Container is gem-${nDeploy} ${k.hash}.")
+      } yield k
+    )
+
+  def awaitNet(host: String, port: Int, retries: Int = 9): CtlIO[Unit] =
+    retries match {
+      case 0 => log(Error, "Remote port is unavailable. Hm.") *> exit(-1)
+      case n => shell("nc", "-z", host, port.toString).require {
+        case Output(0, _) => true
+        case Output(1, _) => false
+      } flatMap {
+        case true  => log(Info, s"Service is available at $host:$port.")
+        case false =>
+          log(Info, s"Awaiting port availability (remaining retries: $n)") *>
+          shell("sleep 2") *> awaitNet(host, port, n - 1)
+      }
+    }
+
+  def deployGem(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
+    gosub(Info, "Deploying Gem.",
+      for {
+        kGem <- createGemContainer(nDeploy, cDeploy, iDeploy)
+        h    <- userAndHost.map(_.host)
+        _    <- awaitNet(h, Port)
+      } yield kGem
+    )
 
   def deployStandalone(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
     for {
       _   <- ensureNoRunningDeployments
-      kDb <- deployDatabase(nDeploy, cDeploy, iDeploy, iPg)
-      _   <- log(Warn, "TODO: standalone deployment")
+      kDb <- deployDatabase(nDeploy, cDeploy, iPg)
+      _   <- deployGem(nDeploy, cDeploy, iDeploy)
     } yield ()
 
   def deployUpgrade(base: Option[String], nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
@@ -197,10 +246,8 @@ object main extends SafeApp with Helpers {
                   else            deployUpgrade(base, nDeploy, cDeploy, iDeploy)
     } yield ()
 
-
-
   val command: Config => CtlIO[Unit] = {
-    case Config(u, d, b, s, v) => log(Info, s"Target host is $u.") *> deploy(b, d, s)
+    case Config(u, d, b, s, v) => log(Info, s"Target host is ${u.userAndHost}") *> deploy(b, d, s)
   }
 
   override def runl(args: List[String]): IO[Unit] =
@@ -209,25 +256,11 @@ object main extends SafeApp with Helpers {
       c <- opts.parse("gemctl", args)
       _ <- c.traverse { c =>
         IO.newIORef(0)
-          .map(interpreter(c.userAndHost, c.verbose, _))
+          .map(interpreter(c, _))
           .flatMap(command(c).foldMap(_).run)
       }
       _ <- IO.putStrLn("")
     } yield ()
-
-  // find or create gem-net
-  // determine deploy commit
-  // if upgrade
-  //  get base revision (provided, or most recent deploy tag)
-  //  find base instance
-  //  stop base-gem
-  // deploy new-db, new-gem
-  // start new-db
-  // if upgrade
-  //   copy base-db -> new-db
-  //   stop base-sb
-  // start new-gem
-  // await health check
 
 }
 

@@ -12,6 +12,11 @@ object docker {
   def docker(args: String*): CtlIO[Output] =
     remote("/usr/local/bin/docker", args : _*)
 
+  def containerHealth(k: Container): CtlIO[String] = // for now
+    docker("inspect", "-f", "'{{ .State.Health.Status }}'", k.hash).require {
+      case Output(0, s :: Nil) => s
+    }
+
   def findNetwork(name: String): CtlIO[Option[Network]] =
     docker("network", "ls", "-q", "--filter", s"name=$name").require {
       case Output(0, Nil)     => None
