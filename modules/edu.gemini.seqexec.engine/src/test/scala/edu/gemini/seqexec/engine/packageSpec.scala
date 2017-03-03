@@ -55,6 +55,7 @@ class packageSpec extends FlatSpec {
           1,
           None,
           config,
+          Set.empty,
           false,
           List(
             List(configureTcs, configureInst), // Execution
@@ -65,6 +66,7 @@ class packageSpec extends FlatSpec {
           2,
           None,
           config,
+          Set.empty,
           false,
           List(
             List(configureTcs, configureInst), // Execution

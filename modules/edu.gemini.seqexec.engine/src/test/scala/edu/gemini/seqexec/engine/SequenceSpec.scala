@@ -55,12 +55,18 @@ class SequenceSpec extends FlatSpec {
 
   val metadata = SequenceMetadata("F2", None, None)
 
-  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] = Step(id, None, config, breakpoint,
-    List(
-      List(action, action), // Execution
-      List(action) // Execution
+  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] =
+    Step(
+      id,
+      None,
+      config,
+      Set.empty,
+      breakpoint,
+      List(
+        List(action, action), // Execution
+        List(action) // Execution
+      )
     )
-  )
 
   def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): EngineState = {
     def isFinished(status: SequenceState): Boolean =
@@ -131,7 +137,7 @@ class SequenceSpec extends FlatSpec {
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, None, config, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, false, pending, focus, done, rollback)
   }
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
