@@ -105,5 +105,6 @@ object Result {
   sealed trait Response extends RetVal
   case class Configured(r: String) extends Response
   case class Observed(fileId: FileId) extends Response
+  object Ignored extends Response
 
 }

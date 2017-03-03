@@ -10,7 +10,7 @@ import scalaz.\/-
 class DhsClientSimSpec extends FlatSpec with Matchers {
   "DhsClientSim" should "produce data labels for today" in {
       DhsClientSim(LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).run.unsafePerformSync should matchPattern {
-        case \/-("S201604150001") =>
+        case \/-("S20160415S0001") =>
       }
     }
   it should "accept keywords" in {
