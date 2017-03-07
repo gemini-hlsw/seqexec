@@ -30,7 +30,7 @@ object HeadersSideBar {
           <.div(
             ^.cls := "required field",
             Label(Label.Props("Operator", "operator")),
-            Input(Input.Props("operator", "operator", p.operator.getOrElse(""), placeholder = "Operator...", onBlur = updateOperator))
+            Input(Input.Props("operator", "operator", p.operator.getOrElse(""), placeholder = "Operator...", disabled = !p.status().isLogged, onBlur = updateOperator))
           ),
           DropdownMenu(DropdownMenu.Props("Image Quality", "Select", List("IQ20", "IQ70", "IQ85", "Any"))),
           DropdownMenu(DropdownMenu.Props("Cloud Cover", "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"))),
