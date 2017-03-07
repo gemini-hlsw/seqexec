@@ -74,19 +74,19 @@ case object SectionClosed extends SectionVisibilityState
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 // Model for the tabbed area of sequences
-case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+case class SequencesOnDisplay(operator: Option[String], instrumentSequences: Zipper[SequenceTab]) {
   // Display a given step on the focused sequence
   def showStep(i: Int):SequencesOnDisplay =
-    copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
+    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
 
   // Don't show steps for the sequence
   def unshowStep:SequencesOnDisplay =
-    copy(instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
+    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
   def focusOnSequence(s: RefTo[Option[SequenceView]]):SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
     val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
-    copy(q | instrumentSequences)
+    copy(instrumentSequences = q | instrumentSequences)
   }
 }
 
@@ -104,7 +104,7 @@ object InstrumentNames {
 object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
-  val empty = SequencesOnDisplay(InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
+  val empty = SequencesOnDisplay(None, InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)

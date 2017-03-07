@@ -227,7 +227,7 @@ object SequenceHeadersAndTable {
         ^.cls := "row",
         <.div(
           ^.cls := "four wide column computer tablet only",
-          HeadersSideBar(None, p.proxy.zoom(_._1))
+          HeadersSideBar(p.proxy.zoom(_._2.operator), p.proxy.zoom(_._1))
         ),
         SequenceTabsBody(p.proxy)
       )

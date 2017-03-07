@@ -14,10 +14,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(operator: Option[String], status: ModelProxy[ClientStatus])
-
-  def updateOperator(name: String): Callback =
-    Callback(SeqexecCircuit.dispatch(UpdateOperator(name)))
+  case class Props(operator: ModelProxy[Option[String]], status: ModelProxy[ClientStatus])
 
   val component = ReactComponentB[Props]("HeadersSideBar")
     .stateless
@@ -30,7 +27,11 @@ object HeadersSideBar {
           <.div(
             ^.cls := "required field",
             Label(Label.Props("Operator", "operator")),
-            Input(Input.Props("operator", "operator", p.operator.getOrElse(""), placeholder = "Operator...", disabled = !p.status().isLogged, onBlur = updateOperator))
+            Input(Input.Props("operator", "operator",
+              p.operator().getOrElse(""),
+              placeholder = "Operator...",
+              disabled = !p.status().isLogged,
+              onBlur = name => p.operator.dispatchCB(UpdateOperator(name))))
           ),
           DropdownMenu(DropdownMenu.Props("Image Quality", "Select", List("IQ20", "IQ70", "IQ85", "Any"))),
           DropdownMenu(DropdownMenu.Props("Cloud Cover", "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"))),
@@ -41,5 +42,5 @@ object HeadersSideBar {
     )
     .build
 
-  def apply(operator: Option[String], status: ModelProxy[ClientStatus]) = component(Props(None, status))
+  def apply(operator: ModelProxy[Option[String]], status: ModelProxy[ClientStatus]) = component(Props(operator, status))
 }
