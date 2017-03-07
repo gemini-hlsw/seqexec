@@ -7,9 +7,77 @@ import ctl._
 import git._
 import docker._
 import interp._
-import opts.Config
+import opts.{ Command, DeployOpts, PsOpts, StopOpts }
 
-object main extends SafeApp with Helpers {
+object main extends SafeApp with DeployImpl with PsImpl with StopImpl {
+
+  def command(c: Command): CtlIO[Unit] =
+    log(Info, s"Target host is ${c.userAndHost.userAndHost}").as(c).flatMap {
+      case DeployOpts(u, d, b, s, v) => deploy(b, d, s)
+      case PsOpts(_, _)              => ps
+      case StopOpts(_, _)            => stop
+    }
+
+  override def runl(args: List[String]): IO[Unit] =
+    for {
+      _ <- IO.putStrLn("")
+      c <- opts.parse("gemctl", args)
+      _ <- c.traverse { c =>
+          IO.newIORef(0)
+            .map(interpreter(c, _))
+            .flatMap(command(c).foldMap(_).run)
+      }
+      _ <- IO.putStrLn("")
+    } yield ()
+
+}
+
+
+trait PsImpl {
+
+  val ps: CtlIO[Unit] =
+    for {
+      ks <- findContainersWithLabel("edu.gemini.commit")
+      _  <- ks.traverseU(psOne)
+    } yield ()
+
+  def psOne(k: Container): CtlIO[Unit] =
+    docker.docker(
+      "inspect",
+      "--format", "'{{ index .Config.Labels \"edu.gemini.commit\"}},{{.Name}},{{.State.Status}}'",
+      k.hash
+    ) require {
+      case Output(0, s :: Nil) => s.split(",").toList
+    } flatMap {
+      case List(c, n, s) => log(Info, s"${k.hash}  $c  $s  $n")
+      case ss            => log(Error, s"Bogus response: ${ss.mkString(",")}") *> exit(-1)
+    }
+
+}
+
+trait StopImpl {
+
+  val stop: CtlIO[Unit] =
+    gosub(Info, "Shutting down Gem deployment.",
+      for {
+        ks <- findContainersWithLabel("edu.gemini.commit")
+        _  <- ks.traverseU(stopOne)
+      } yield ()
+    )
+
+  def stopOne(k: Container): CtlIO[Unit] =
+    log(Info, s"Stopping $k") *>
+    docker.docker(
+      "stop",
+      k.hash
+    ) require {
+      case Output(0, s :: Nil) => ()
+    }
+
+}
+
+
+trait DeployImpl {
 
   val PrivateNetwork = "gem-net"
   val GemOrg         = "geminihlsw"
@@ -21,6 +89,19 @@ object main extends SafeApp with Helpers {
   case class DeployCommit(commit: Commit, uncommitted: Boolean) {
     def imageVersion = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash
   }
+
+  /** Get the commit for the given revision, or compute one with `fa`. */
+  def commitOr(rev: Option[String], fa: CtlIO[Commit]): CtlIO[Commit] =
+    rev.fold(gosub(Info,  "No revision specified.", fa))(s =>
+             log(Info, s"Requested revision is $s.") *> commitForRevision(s)
+    ) >>! (c => log(Info, s"Commit is ${c.hash}."))
+
+  /** Return the most recent deploy commit, or fail. */
+  def mostRecentCommitAtTag(re: Regex): CtlIO[Commit] =
+    mostRecentTag(re).flatMap {
+      case None    => log(Error, s"No tags matching pattern $re were found.") *> exit[Commit](-1)
+      case Some(t) => log(Info,  s"Found ${t.tag}.")                    *> commitForRevision(t.tag)
+    }
 
   def getNetwork: CtlIO[Network] =
     gosub(Info, s"Verifying $PrivateNetwork network.",
@@ -110,10 +191,13 @@ object main extends SafeApp with Helpers {
   def ensureNoRunningDeployments: CtlIO[Unit] =
     gosub(Info, "Ensuring that there is no running deployment.",
       findContainersWithLabel("edu.gemini.commit").flatMap {
-        case Nil  => log(Info, "There are no running deployments.")
-        case cs   =>
-          log(Error, s"There is already at least one running deployment: ${cs.distinct.map(_.hash).mkString(", ")}") *>
-          exit(-1)
+        case Nil => log(Info, "There are no running deployments.")
+        case cs  =>
+          for {
+            c <- config
+            _ <- log(Error, s"There is already a running deployment on ${c.userAndHost.userAndHost}")
+            _ <- exit[Unit](-1)
+          } yield ()
       }
     )
 
@@ -245,39 +329,5 @@ object main extends SafeApp with Helpers {
       _        <- if (standalone) deployStandalone(   nDeploy, cDeploy, iDeploy, iPg)
                   else            deployUpgrade(base, nDeploy, cDeploy, iDeploy)
     } yield ()
-
-  val command: Config => CtlIO[Unit] = {
-    case Config(u, d, b, s, v) => log(Info, s"Target host is ${u.userAndHost}") *> deploy(b, d, s)
-  }
-
-  override def runl(args: List[String]): IO[Unit] =
-    for {
-      _ <- IO.putStrLn("")
-      c <- opts.parse("gemctl", args)
-      _ <- c.traverse { c =>
-        IO.newIORef(0)
-          .map(interpreter(c, _))
-          .flatMap(command(c).foldMap(_).run)
-      }
-      _ <- IO.putStrLn("")
-    } yield ()
-
-}
-
-
-trait Helpers {
-
-  /** Get the commit for the given revision, or compute one with `fa`. */
-  def commitOr(rev: Option[String], fa: CtlIO[Commit]): CtlIO[Commit] =
-    rev.fold(gosub(Info,  "No revision specified.", fa))(s =>
-             log(Info, s"Requested revision is $s.") *> commitForRevision(s)
-    ) >>! (c => log(Info, s"Commit is ${c.hash}."))
-
-  /** Return the most recent deploy commit, or fail. */
-  def mostRecentCommitAtTag(re: Regex): CtlIO[Commit] =
-    mostRecentTag(re).flatMap {
-      case None    => log(Error, s"No tags matching pattern $re were found.") *> exit[Commit](-1)
-      case Some(t) => log(Info,  s"Found ${t.tag}.")                    *> commitForRevision(t.tag)
-    }
 
 }

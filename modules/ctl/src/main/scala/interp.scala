@@ -3,7 +3,7 @@ import scalaz.effect._
 
 import io._
 import ctl._
-import opts.Config
+import opts.Command
 
 object interp {
 
@@ -34,12 +34,12 @@ object interp {
       _ <- verbose.whenM(doLog(Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", indent))
       o <- EitherT.right(IO.shell(cmd, handler))
       _ <- verbose.whenM(doLog(Shell, s"exit(${o.exitCode})", indent))
-      - <- verbose.unlessM(EitherT.right[IO, Int, Unit](IO.putStr("\u001B[0E")))
+      - <- verbose.unlessM(EitherT.right[IO, Int, Unit](IO.putStr("\u001B[1G\u001B[K")))
     } yield o
 
   }
 
-  def interpreter(c: Config, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
+  def interpreter(c: Command, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
     case Shell(false, cmd) => doShell(cmd, c.verbose, indent)
     case Shell(true,  cmd) => doShell(cmd.bimap(s => s"ssh ${c.userAndHost.userAndHost} $s", "ssh" :: c.userAndHost.userAndHost :: _), c.verbose, indent)
     case Exit(exitCode)    => EitherT.left(exitCode.point[IO])

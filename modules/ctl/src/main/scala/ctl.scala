@@ -1,6 +1,6 @@
 import scalaz._, Scalaz._
 import io._
-import opts.Config
+import opts.Command
 
 object ctl {
 
@@ -18,7 +18,7 @@ object ctl {
   case class Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]
   case class Exit[A](exitCode: Int) extends CtlOp[A]
   case class Gosub[A](level: Level, msg: String, fa: CtlIO[A]) extends CtlOp[A]
-  case object GetConfig extends CtlOp[Config] // for now
+  case object GetConfig extends CtlOp[Command] // for now
 
   type CtlIO[A] = Free[CtlOp, A]
 
@@ -28,7 +28,7 @@ object ctl {
   def remote(c: String):              CtlIO[Output] = Free.liftF(Shell(true, c.left))
   def remote(c: String, cs: String*): CtlIO[Output] = Free.liftF(Shell(true, (c :: cs.toList).right))
   def exit[A](exitCode: Int):         CtlIO[A]      = Free.liftF(Exit[A](exitCode))
-  val config:                         CtlIO[Config] = Free.liftF(GetConfig)
+  val config:                         CtlIO[Command] = Free.liftF(GetConfig)
 
   val userAndHost: CtlIO[UserAndHost] = config.map(_.userAndHost)
 

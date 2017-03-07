@@ -1,19 +1,28 @@
 import net.bmjames.opts._
 import net.bmjames.opts.types.{ Success, Failure }
+import net.bmjames.opts.builder.internal.{ Mod, CommandFields }
 
-import scalaz.Scalaz._, scalaz.effect._
+import scalaz._, Scalaz._, scalaz.effect._
 
 import ctl.UserAndHost
 
 object opts {
 
-  case class Config(
+  sealed trait Command {
+    def userAndHost: UserAndHost
+    def verbose:     Boolean
+  }
+
+  case class DeployOpts(
     userAndHost: UserAndHost,
     deployRev:   String,
     baseRev:     Option[String],
     standalone:  Boolean,
     verbose:     Boolean
-  )
+  ) extends Command
+
+  case class PsOpts(userAndHost: UserAndHost, verbose: Boolean)   extends Command
+  case class StopOpts(userAndHost: UserAndHost, verbose: Boolean) extends Command
 
   val host: Parser[String] =
     strOption(
@@ -54,18 +63,34 @@ object opts {
       help("Show details about what we're doing under the hood.")
     )
 
-  val config: Parser[Config] =
-    (userAndHost |@| deploy |@| base |@| standalone |@| verbose)(Config.apply)
+  val config: Parser[DeployOpts] =
+    (userAndHost |@| deploy |@| base |@| standalone |@| verbose)(DeployOpts.apply)
 
-  val configCommand: Parser[Config] =
-    subparser(command("deploy", info(config <* helper,
-      progDesc("Deploy an application. This is a very long description indeed. Will it wrap? We must test it out I guess."))
-    ))
+  // Commands
 
-  val mainParser: ParserInfo[Config] =
-    info(configCommand <* helper, progDesc("Deploy and control gem."))
+  val configCommand: Mod[CommandFields, Command] =
+    command("deploy", info(config.widen[Command] <* helper,
+      progDesc("Deploy an application."))
+    )
 
-  def parse[A](progName: String, args: List[String]): IO[Option[Config]] =
+  val psCommand: Mod[CommandFields, Command] =
+    command("ps", info((userAndHost |@| verbose)(PsOpts).widen[Command] <* helper,
+      progDesc("Get the status of a gem deployment."))
+    )
+
+  val stopCommand: Mod[CommandFields, Command] =
+    command("stop", info((userAndHost |@| verbose)(StopOpts).widen[Command] <* helper,
+      progDesc("Stop a gem deployment."))
+    )
+
+  // Main
+
+  val mainParser: ParserInfo[Command] =
+    info(
+      subparser(configCommand, psCommand, stopCommand) <*>
+      helper, progDesc("Deploy and control gem."))
+
+  def parse[A](progName: String, args: List[String]): IO[Option[Command]] =
     execParserPure(prefs(idm[PrefsMod]), mainParser, args) match {
       case Success(c) => IO(Some(c))
       case Failure(f) =>
