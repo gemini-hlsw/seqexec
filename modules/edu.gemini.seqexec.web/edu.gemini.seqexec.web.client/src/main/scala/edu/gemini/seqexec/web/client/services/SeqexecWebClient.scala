@@ -59,7 +59,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set the operator name of a sequence
     */
-  def setOperator(s: SequenceView, name: String): Future[RegularCommand] = {
+  def setOperator(name: String): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/operator/${name}",
       responseType = "arraybuffer"

@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
+import diode.react.ModelProxy
+
 import edu.gemini.seqexec.web.client.components.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
@@ -12,7 +14,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(operator: Option[String])
+  case class Props(operator: Option[String], status: ModelProxy[ClientStatus])
 
   def updateOperator(name: String): Callback =
     Callback(SeqexecCircuit.dispatch(UpdateOperator(name)))
@@ -39,5 +41,5 @@ object HeadersSideBar {
     )
     .build
 
-  def apply() = component(Props(None))
+  def apply(operator: Option[String], status: ModelProxy[ClientStatus]) = component(Props(None, status))
 }
