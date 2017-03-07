@@ -62,6 +62,7 @@ case class ServerMessage(e: SeqexecEvent) extends Action
 case class FlipSkipStep(view: SequenceView, step: Step) extends Action
 case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
 case class UpdateObserver(view: SequenceView, name: String) extends Action
+case class UpdateOperator(name: String) extends Action
 
 // End Actions
 

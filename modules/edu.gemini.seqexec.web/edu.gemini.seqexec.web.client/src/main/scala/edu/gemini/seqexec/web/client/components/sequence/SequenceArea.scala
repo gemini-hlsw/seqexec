@@ -55,8 +55,8 @@ object SequenceDefaultToolbar {
   def requestPause(s: SequenceView) =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
 
-  def updateObserver(s: SequenceView)(name: String) =
-    ST.retM(Callback {SeqexecCircuit.dispatch(UpdateObserver(s, name))})
+  def updateObserver(s: SequenceView, name: String) =
+    Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
 
   val component = ReactComponentB[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false))
@@ -129,7 +129,7 @@ object SequenceDefaultToolbar {
                   <.div(
                     ^.cls := "required field",
                     Label(Label.Props("Observer", "")),
-                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.status.isLogged, onBlur = name => $.runState(updateObserver(p.s)(name))))
+                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.status.isLogged, onBlur = name => updateObserver(p.s, name)))
                   )
                 )
               )
