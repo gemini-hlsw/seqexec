@@ -59,12 +59,28 @@ package object engine {
     * `Running` `Status`.
     */
   def switch(q: EventQueue)(id: Sequence.Id)(st: SequenceState): Handle[Unit] =
-    // TODO: Make Status an Equal instance
-    modifyS(id)(Sequence.State.status.set(_, st))
+    resources.flatMap(
+      ores => modifyS(id)(
+        seq =>
+        if (st === SequenceState.Running)
+          // No resources being used by other running sequences
+          if (seq.toSequence.resources.intersect(ores).isEmpty)
+            Sequence.State.status.set(seq, st)
+          // Some resources are being used, sequence unchanged
+          else seq
+        else Sequence.State.status.set(seq, st)
+      )
+    )
+
+  val resources: Handle[Set[Resource]] =
+    gets(_.values
+          .toList
+          .filter(_.status === SequenceState.Running)
+          .foldMap(_.toSequence.resources)
+    )
 
   def rollback(q: EventQueue)(id: Sequence.Id): Handle[Unit] =
     modifyS(id)(_.rollback)
-
 
   def setOperator(name: String): Handle[Unit] =
     modify(_.mapValues(_.setOperator(name)))
