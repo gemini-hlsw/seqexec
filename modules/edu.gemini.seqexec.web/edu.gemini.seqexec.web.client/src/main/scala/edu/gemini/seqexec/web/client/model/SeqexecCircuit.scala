@@ -199,6 +199,11 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
         noChange
       }
 
+    case UpdateOperator(name) =>
+      val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
+      val updatedSequences = value.copy(operator = Some(name))
+      updated(updatedSequences, updateOperatorE)
+
   }
 }
 

@@ -37,7 +37,7 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
         if s.exists(_.sequence().isDefined)
       } yield {
         val sequences = NonEmptyList(s.head, s.tail: _*)
-        SequencesOnDisplay(sequences.toZipper)
+        SequencesOnDisplay(None, sequences.toZipper)
       }
     }
 }
