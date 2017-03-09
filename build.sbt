@@ -330,7 +330,7 @@ lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexe
 /**
   * Project for the seqexec server app for production on Linux 64
   */
-lazy val seqexec_server_l64 = preventPublication(project.in(file("app/seqexec-server-l64")))
+lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-server-gs")))
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(LinuxPlugin, RpmPlugin)
@@ -341,7 +341,7 @@ lazy val seqexec_server_l64 = preventPublication(project.in(file("app/seqexec-se
   .settings(embeddedJreSettingsLinux64: _*)
   .settings(configurationFromSVN: _*)
   .settings(
-    description := "Seqexec Gemini South server production on linux 64",
+    description := "Seqexec Gemini South server production",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GS,
 
