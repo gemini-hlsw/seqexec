@@ -55,7 +55,7 @@ class packageSpec extends FlatSpec {
           1,
           None,
           config,
-          Set.empty,
+          Set(Resource.Mount, Resource.F2),
           false,
           List(
             List(configureTcs, configureInst), // Execution
@@ -66,7 +66,7 @@ class packageSpec extends FlatSpec {
           2,
           None,
           config,
-          Set.empty,
+          Set(Resource.Mount, Resource.OI, Resource.F2),
           false,
           List(
             List(configureTcs, configureInst), // Execution
@@ -76,6 +76,33 @@ class packageSpec extends FlatSpec {
       )
     )
   )))
+
+  val seqG =
+    Sequence.State.init(
+      Sequence(
+        "First",
+        SequenceMetadata("GMOS", None, None),
+        List(
+          Step(
+            1,
+            None,
+            config,
+            Set(Resource.GMOS),
+            false,
+            List(
+              List(configureTcs, configureInst), // Execution
+              List(observe) // Execution
+            )
+          )
+        )
+      )
+    )
+
+  val seqId1 = seqId
+  val seqId2 = "TEST-02"
+  val seqId3 = "TEST-03"
+  val qs2 = qs1 + (seqId2 -> qs1(seqId1))
+  val qs3 = qs2 + (seqId3 -> seqG)
 
   def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): EngineState = {
     def isFinished(status: SequenceState): Boolean =
@@ -133,6 +160,28 @@ class packageSpec extends FlatSpec {
         ).sequence_,
        processE(q).run.eval(qs1)
       ).unsafePerformSync
+    )
+  }
+
+  it should "not run 2nd sequence because it's using the same resource" in {
+    val q = async.boundedQueue[Event](10)
+
+    assert(
+      Nondeterminism[Task].both(
+        q.enqueueOne(start(seqId1)) *> q.enqueueOne(start(seqId2)),
+        processE(q).take(6).runLast.eval(qs2)
+      ).unsafePerformSync._2.get._2(seqId2).status === SequenceState.Idle
+    )
+  }
+
+  it should "run 2nd sequence when there are no shared resources" in {
+    val q = async.boundedQueue[Event](10)
+
+    assert(
+      Nondeterminism[Task].both(
+        q.enqueueOne(start(seqId1)) *> q.enqueueOne(start(seqId3)),
+        processE(q).take(6).runLast.eval(qs3)
+      ).unsafePerformSync._2.get._2(seqId3).status === SequenceState.Running
     )
   }
 }
