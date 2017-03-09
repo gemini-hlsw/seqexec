@@ -2437,6 +2437,11 @@
             <type>DOUBLE</type>
             <description>M2 z user offset</description>
         </attribute>
+        <attribute name="cguidmod">
+            <channel>carouselMode.A</channel>
+            <type>STRING</type>
+            <description>Carousel Mode</description>
+        </attribute>
     </Status>
     <Status name="pwfs1state">
         <top>pwfs1</top>

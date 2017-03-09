@@ -391,6 +391,8 @@ final class TcsEpics(epicsService: CaService) {
 
   def airmassEnd: Option[Double] = Option(tcsState.getDoubleAttribute("amend").value).map(_.doubleValue)
 
+  def carouselMode: Option[String] = Option(tcsState.getStringAttribute("cguidmod").value)
+
   def sourceATarget: Target = new Target {
     override def epoch = Option(tcsState.getStringAttribute("sourceAEpoch").value)
 

@@ -3,6 +3,9 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import edu.gemini.spModel.core.Wavelength
+import squants.space.{Angstroms, Meters, Microns, Nanometers}
+
 import scalaz._
 import Scalaz._
 import scala.util.Try
@@ -15,7 +18,7 @@ trait TargetKeywordsReader {
   def getDec: SeqAction[Double]
   def getRadialVelocity: SeqAction[Double]
   def getParallax: SeqAction[Double]
-  def getWavelength: SeqAction[Double]
+  def getWavelength: SeqAction[Wavelength]
   def getEpoch: SeqAction[Double]
   def getEquinox: SeqAction[Double]
   def getFrame: SeqAction[String]
@@ -62,6 +65,7 @@ trait TcsKeywordsReader {
   def getAirMass: SeqAction[Double]
   def getStartAirMass: SeqAction[Double]
   def getEndAirMass: SeqAction[Double]
+  def getCarouselMode: SeqAction[String]
   def getM2UserFocusOffset: SeqAction[Double]
   def getPwfs1Freq: SeqAction[Double]
   def getPwfs2Freq: SeqAction[Double]
@@ -73,7 +77,7 @@ object DummyTargetKeywordsReader extends TargetKeywordsReader {
   override def getDec: SeqAction[Double] = SeqAction(0.0)
   override def getRadialVelocity: SeqAction[Double] = SeqAction(0.0)
   override def getParallax: SeqAction[Double] = SeqAction(0.0)
-  override def getWavelength: SeqAction[Double] = SeqAction(0.0)
+  override def getWavelength: SeqAction[Wavelength] = SeqAction(Wavelength(Meters(0.0)))
   override def getEpoch: SeqAction[Double] = SeqAction(2000.0)
   override def getEquinox: SeqAction[Double] = SeqAction(2000.0)
   override def getFrame: SeqAction[String] = SeqAction("FK5")
@@ -138,6 +142,8 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
   override def getPwfs2Freq: SeqAction[Double] = SeqAction(-9999.0)
 
   override def getOiwfsFreq: SeqAction[Double] = SeqAction(-9999.0)
+
+  override def getCarouselMode: SeqAction[String] = SeqAction("Basic")
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader {
@@ -204,7 +210,7 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
     override def getDec: SeqAction[Double] = t.dec
     override def getRadialVelocity: SeqAction[Double] = t.radialVelocity
     override def getParallax: SeqAction[Double] = t.parallax
-    override def getWavelength: SeqAction[Double] = t.centralWavelenght
+    override def getWavelength: SeqAction[Wavelength] = SeqAction(t.centralWavelenght.map(v => Wavelength(Angstroms[Double](v))).getOrElse(Wavelength(Angstroms(-9999.0))))
     override def getEpoch: SeqAction[Double] = translateEpoch(t.epoch)
     override def getEquinox: SeqAction[Double] = translateEpoch(t.equinox)
     override def getFrame: SeqAction[String] = t.frame
@@ -243,4 +249,6 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getPwfs2Freq: SeqAction[Double] = TcsEpics.instance.pwfs2IntegrationTime.map(calcFrequency)
 
   override def getOiwfsFreq: SeqAction[Double] = TcsEpics.instance.oiwfsIntegrationTime.map(calcFrequency)
+
+  override def getCarouselMode: SeqAction[String] = TcsEpics.instance.carouselMode
 }
