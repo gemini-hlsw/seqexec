@@ -17,11 +17,11 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import squants.space.Angstroms
 
 /**
   * Created by jluhrs on 1/31/17.
   */
-
 
 trait ObsKeywordsReader {
   def getObsType: SeqAction[String]
@@ -37,6 +37,10 @@ trait ObsKeywordsReader {
   def getAowfsGuide: SeqAction[StandardGuideOptions.Value]
   def getHeaderPrivacy: SeqAction[Boolean]
   def getProprietaryMonths: SeqAction[String]
+  def getObsObject: SeqAction[String]
+  def getGeminiQA: SeqAction[String]
+  def getPIReq: SeqAction[String]
+  def getSciBand: SeqAction[Int]
 }
 
 case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
@@ -102,6 +106,19 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 
+  override def getObsObject: SeqAction[String] = EitherT(Task.now(
+    config.extract(OBSERVE_KEY / OBJECT_PROP).as[String].leftMap(e =>
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+  ))
+
+  override def getGeminiQA: SeqAction[String] = SeqAction("UNKNOWN")
+
+  override def getPIReq: SeqAction[String] = SeqAction("UNKNOWN")
+
+  override def getSciBand: SeqAction[Int] = EitherT(Task.now(
+    config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt).leftMap(e =>
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+  ))
 }
 
 // TODO: Replace Unit by something that can read the state for real
@@ -128,13 +145,13 @@ class StandardHeader(
     val p: SeqAction[Double] = for {
       xoff <- tcsReader.getXOffset
       yoff <- tcsReader.getYOffset
-      iaa <- tcsReader.getInstrumentAA
+      iaa  <- tcsReader.getInstrumentAA
     } yield -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
 
     val q: SeqAction[Double] = for {
       xoff <- tcsReader.getXOffset
       yoff <- tcsReader.getYOffset
-      iaa <- tcsReader.getInstrumentAA
+      iaa  <- tcsReader.getInstrumentAA
     } yield -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
 
     val raoff: SeqAction[Double] = for {
@@ -155,7 +172,7 @@ class StandardHeader(
         buildDouble(target.getRA, baseName + "ARA"),
         buildDouble(target.getDec, baseName + "ADEC"),
         buildDouble(target.getRadialVelocity, baseName + "ARV"),
-        buildDouble(target.getWavelength, baseName + "AWAVEL"),
+        buildDouble(target.getWavelength.map(_.length.toAngstroms), baseName + "AWAVEL"),
         buildDouble(target.getEpoch, baseName + "AEPOCH"),
         buildDouble(target.getEquinox, baseName + "AEQUIN"),
         buildString(target.getFrame, baseName + "AFRAME"),
@@ -182,6 +199,12 @@ class StandardHeader(
     val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
       List(buildDouble(tcsReader.getOiwfsFreq, "OIFREQ")))
 
+    val obsObject: SeqAction[String] = for {
+      obsType   <- obsReader.getObsType
+      obsObject <- obsReader.getObsObject
+      tcsObject <- tcsReader.getSourceATarget.getObjectName
+    } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
+            else obsObject
 
     sendKeywords(id, inst, hs, List(
       buildString(obsReader.getObsType, "OBSTYPE"),
@@ -193,6 +216,9 @@ class StandardHeader(
       buildString(obsReader.getTelescope, "telescope"),
       buildBoolean(obsReader.getHeaderPrivacy, "PROP_MD"),
       buildString(obsReader.getProprietaryMonths, "RELEASE"),
+      buildString(obsObject, "OBJECT"),
+      buildString(obsReader.getGeminiQA, "RAWGEMQA"),
+      buildString(obsReader.getPIReq, "RAWPIREQ"),
       buildString(tcsReader.getHourAngle, "HA"),
       buildString(tcsReader.getLocalTime, "LT"),
       buildString(tcsReader.getTrackingFrame, "TRKFRAME"),
@@ -202,7 +228,7 @@ class StandardHeader(
       buildString(tcsReader.getSourceATarget.getFrame, "FRAME"),
       buildDouble(tcsReader.getSourceATarget.getProperMotionDec, "PMDEC"),
       buildDouble(tcsReader.getSourceATarget.getProperMotionRA, "PMRA"),
-      buildDouble(tcsReader.getSourceATarget.getWavelength, "WAVELENG"),
+      buildDouble(tcsReader.getSourceATarget.getWavelength.map(_.length.toAngstroms), "WAVELENG"),
       buildDouble(tcsReader.getSourceATarget.getParallax, "PARALLAX"),
       buildDouble(tcsReader.getSourceATarget.getRadialVelocity, "RADVEL"),
       buildDouble(tcsReader.getSourceATarget.getEpoch, "EPOCH"),
@@ -229,24 +255,27 @@ class StandardHeader(
       buildDouble(q, "QOFFSET"),
       buildDouble(raoff, "RAOFFSET"),
       buildDouble(decoff, "DECOFFSE"),
+      buildDouble(tcsReader.getTrackingRAOffset, "RATRGOFF"),
+      buildDouble(tcsReader.getTrackingDecOffset, "DECTRGOF"),
       buildString(tcsReader.getAOFoldName, "AOFOLD"),
+      buildString(tcsReader.getCarouselMode, "CGUIDMOD"),
       buildString(obsReader.getPwfs1Guide.map(_.toString), "PWFS1_ST"),
       buildString(obsReader.getPwfs2Guide.map(_.toString), "PWFS2_ST"),
       buildString(obsReader.getOiwfsGuide.map(_.toString), "OIWFS_ST"),
       buildString(obsReader.getAowfsGuide.map(_.toString), "AOWFS_ST"),
       buildString(stateReader.getObserverName, "OBSERVER"),
-      buildString(stateReader.getObserverName, "SSA"),
+      buildString(stateReader.getOperatorName, "SSA"),
       buildString(stateReader.getRawImageQuality, "RAWIQ"),
       buildString(stateReader.getRawCloudCover, "RAWCC"),
       buildString(stateReader.getRawWaterVapor, "RAWWV"),
-      buildString(stateReader.getRawBackgroundLight, "RAWBG")
+      buildString(stateReader.getRawBackgroundLight, "RAWBG"),
+      buildInt32(obsReader.getSciBand, "SCIBAND")
     )) *>
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
     aowfsKeywords
   }
-
 
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,

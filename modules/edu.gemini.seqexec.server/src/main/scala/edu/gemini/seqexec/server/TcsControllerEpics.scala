@@ -2,15 +2,15 @@ package edu.gemini.seqexec.server
 
 import java.util
 import java.util.logging.Logger
-import edu.gemini.seqexec.server.tcs.{BinaryYesNo, BinaryOnOff}
+
+import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import squants.time.Seconds
 
 import collection.JavaConversions._
-
 import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.epics.acm.{CaAttributeListener, CaService, XMLBuilder}
 import edu.gemini.spModel.core.Wavelength
-import squants.space.{Degrees, Microns, Millimeters}
+import squants.space.{Angstroms, Degrees, Microns, Millimeters}
 
 import scalaz._
 import Scalaz._
@@ -93,9 +93,9 @@ object TcsControllerEpics extends TcsController {
       OffsetA(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetA)), OffsetY(Millimeters[Double](yOffsetA)))),
       OffsetB(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetB)), OffsetY(Millimeters[Double](yOffsetB)))),
       OffsetC(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetC)), OffsetY(Millimeters[Double](yOffsetC)))),
-      WavelengthA(Wavelength(Microns[Double](wavelengthA))),
-      WavelengthB(Wavelength(Microns[Double](wavelengthB))),
-      WavelengthC(Wavelength(Microns[Double](wavelengthC))),
+      WavelengthA(Wavelength(Angstroms[Double](wavelengthA))),
+      WavelengthB(Wavelength(Angstroms[Double](wavelengthB))),
+      WavelengthC(Wavelength(Angstroms[Double](wavelengthC))),
       m2Beam
     ))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read telescope configuration from TCS.")))
