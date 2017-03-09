@@ -12,7 +12,12 @@ case class Sequence[+A](
   id: Sequence.Id,
   metadata: SequenceMetadata,
   steps: List[Step[A]]
-)
+) {
+
+  // The Monoid mappend of a Set is a Set union
+  val resources: Set[Resource] = steps.foldMap(_.resources)
+
+}
 
 object Sequence {
 

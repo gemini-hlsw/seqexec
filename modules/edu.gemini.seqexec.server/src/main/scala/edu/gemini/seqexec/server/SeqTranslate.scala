@@ -71,6 +71,8 @@ class SeqTranslate(site: Site) {
         i,
         None,
         config.toStepConfig,
+        // TODO: Lookup which resources are needed depending on the type of Step.
+        Set.empty,
         false,
         (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
         else List())

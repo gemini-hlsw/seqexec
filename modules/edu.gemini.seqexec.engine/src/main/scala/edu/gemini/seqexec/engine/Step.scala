@@ -12,6 +12,7 @@ case class Step[+A](
   id: Int,
   fileId: Option[FileId],
   config: StepConfig,
+  resources: Set[Resource],
   breakpoint: Boolean,
   executions: List[List[A]]
 )
@@ -20,10 +21,9 @@ object Step {
 
   type Id = Int
 
-
   implicit val stepFunctor = new Functor[Step] {
-    def map[A, B](fa: Step[A])(f: A => B): Step[B] =
-      Step(fa.id, fa.fileId, fa.config, fa.breakpoint, fa.executions.map(_.map(f)))
+    def map[A, B](step: Step[A])(f: A => B): Step[B] =
+      step.copy(executions = step.executions.map(_.map(f)))
   }
 
   // TODO: Proof Foldable laws
@@ -70,12 +70,13 @@ object Step {
     id: Int,
     fileId: Option[FileId],
     config: StepConfig,
+    resources: Set[Resource],
     breakpoint: Boolean,
     pending: List[Actions],
     focus: Execution,
     done: List[Results],
     rolledback: (Execution, List[Actions])
-  ) {
+  ) { self =>
 
     /**
       * Adds the `Current` `Execution` to the list of completed `Execution`s and
@@ -89,11 +90,12 @@ object Step {
         case Nil           => None
         case exep :: exeps =>
           (Execution.currentify(exep) |@| focus.uncurrentify) (
-            (curr, exed) => Zipper(id, fileId, config, breakpoint, exeps, curr, exed :: done, rolledback)
+            (curr, exed) => self.copy(pending = exeps, focus = curr, done = exed :: done)
           )
       }
 
-    def rollback: Zipper = Zipper(id, fileId, config, breakpoint, rolledback._2, rolledback._1, Nil, rolledback)
+    def rollback: Zipper =
+      self.copy(pending = rolledback._2, focus = rolledback._1, done = Nil)
 
     /**
       * Obtain the resulting `Step` only if all `Execution`s have been completed.
@@ -101,7 +103,9 @@ object Step {
       *
       */
     val uncurrentify: Option[Step[Result]] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Step(id, fileId, config, breakpoint, x :: done))
+      if (pending.isEmpty) focus.uncurrentify.map(
+        x => Step(id, fileId, config, resources, breakpoint, x :: done)
+      )
       else None
 
     /**
@@ -113,6 +117,7 @@ object Step {
         id,
         fileId,
         config,
+        resources,
         breakpoint,
         // TODO: Functor composition?
         done.map(_.map(_.right)) ++
@@ -133,8 +138,18 @@ object Step {
       step.executions match {
         case Nil         => None
         case exe :: exes =>
-          Execution.currentify(exe).map( x =>
-            Zipper(step.id, step.fileId, step.config, step.breakpoint, exes, x, Nil, (x, exes))
+          Execution.currentify(exe).map(x =>
+            Zipper(
+              step.id,
+              step.fileId,
+              step.config,
+              step.resources,
+              step.breakpoint,
+              exes,
+              x,
+              Nil,
+              (x, exes)
+            )
           )
       }
 
