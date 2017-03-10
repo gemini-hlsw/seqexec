@@ -44,7 +44,7 @@ object docker {
     }
 
   // find *running* containers
-  def findContainersWithLabel(label: String): CtlIO[List[Container]] =
+  def findRunningContainersWithLabel(label: String): CtlIO[List[Container]] =
     docker("ps", "-q", "--filter", s"label=$label").require {
       case Output(0, hs) => hs.map(Container)
     }
@@ -52,6 +52,11 @@ object docker {
   def allContainerNames: CtlIO[List[String]] =
     docker("ps", "-a", "--format", "{{.Names}}").require {
       case Output(o, ss) => ss
+    }
+
+  def getLabelValue(label: String, k: Container): CtlIO[String] =
+    docker("inspect", "--format", s"""'{{ index .Config.Labels "$label"}}'""", k.hash).require {
+      case Output(0, s :: Nil) if s.nonEmpty => s
     }
 
 }

@@ -16,13 +16,13 @@ object opts {
   case class DeployOpts(
     userAndHost: UserAndHost,
     deployRev:   String,
-    baseRev:     Option[String],
     standalone:  Boolean,
     verbose:     Boolean
   ) extends Command
 
-  case class PsOpts(userAndHost: UserAndHost, verbose: Boolean)   extends Command
+  case class PsOpts(userAndHost: UserAndHost, verbose: Boolean) extends Command
   case class StopOpts(userAndHost: UserAndHost, verbose: Boolean) extends Command
+  case class LogOpts(userAndHost: UserAndHost, verbose: Boolean, count: Int) extends Command
 
   val host: Parser[String] =
     strOption(
@@ -45,12 +45,6 @@ object opts {
       help("Revision to deploy, HEAD if unspecified.")
     )
 
-  val base: Parser[Option[String]] =
-    strOption(
-      short('b'), long("base"), metavar("REVISION"), value(null),
-      help("Base revision to upgrade from. Must be an ancestor of the base revision. Defaults to the most recent version tagged 'deploy-xxx'. Cannot be specified with --standalone.")
-    ).map(Option(_))
-
   val standalone: Parser[Boolean] =
     switch(
       short('s'), long("standalone"),
@@ -64,7 +58,15 @@ object opts {
     )
 
   val config: Parser[DeployOpts] =
-    (userAndHost |@| deploy |@| base |@| standalone |@| verbose)(DeployOpts.apply)
+    (userAndHost |@| deploy |@| standalone |@| verbose)(DeployOpts.apply)
+
+  val lines: Parser[Int] = {
+    val DefaultLines = 50
+    intOption(
+      short('n'), metavar("LINES"), value(DefaultLines),
+      help(s"Number of lines to show from tail of log (default $DefaultLines)")
+    )
+  }
 
   // Commands
 
@@ -83,11 +85,16 @@ object opts {
       progDesc("Stop a gem deployment."))
     )
 
+  val logCommand: Mod[CommandFields, Command] =
+    command("log", info((userAndHost |@| verbose |@| lines)(LogOpts).widen[Command] <* helper,
+      progDesc("Show the Gem server log."))
+    )
+
   // Main
 
   val mainParser: ParserInfo[Command] =
     info(
-      subparser(configCommand, psCommand, stopCommand) <*>
+      subparser(configCommand, psCommand, stopCommand, logCommand) <*>
       helper, progDesc("Deploy and control gem."))
 
   def parse[A](progName: String, args: List[String]): IO[Option[Command]] =

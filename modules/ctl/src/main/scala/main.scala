@@ -1,21 +1,27 @@
 import scalaz._, Scalaz._
 import scalaz.effect._
-import scala.util.matching.Regex
+// import scala.util.matching.Regex
 
 import io._
 import ctl._
 import git._
 import docker._
 import interp._
-import opts.{ Command, DeployOpts, PsOpts, StopOpts }
+import opts.{ Command, DeployOpts, PsOpts, StopOpts, LogOpts }
 
-object main extends SafeApp with DeployImpl with PsImpl with StopImpl {
+object main extends SafeApp
+  with DeployImpl
+  with PsImpl
+  with StopImpl
+  with LogImpl
+{
 
   def command(c: Command): CtlIO[Unit] =
     log(Info, s"Target host is ${c.userAndHost.userAndHost}").as(c).flatMap {
-      case DeployOpts(u, d, b, s, v) => deploy(b, d, s)
-      case PsOpts(_, _)              => ps
-      case StopOpts(_, _)            => stop
+      case DeployOpts(u, d, s, v) => deploy(d, s)
+      case PsOpts(_, _)           => ps
+      case StopOpts(_, _)         => stop
+      case LogOpts(_, _, n)       => showLog(n)
     }
 
   override def runl(args: List[String]): IO[Unit] =
@@ -32,12 +38,48 @@ object main extends SafeApp with DeployImpl with PsImpl with StopImpl {
 
 }
 
+trait BaseInfo {
+
+  def getUniqueRunningContainerWithLabel(label: String): CtlIO[Container] =
+    findRunningContainersWithLabel(label) flatMap {
+      case c :: Nil => c.point[CtlIO]
+      case Nil      => log(Error, "No running container found.")       *> exit(-1)
+      case _        => log(Error, "Multiple running container found.") *> exit(-1)
+    }
+
+  def getRunningGemContainer: CtlIO[Container] =
+    gosub(Info, "Finding current running Gem container.",
+      getUniqueRunningContainerWithLabel("edu.gemini.gem")
+    )
+
+  def getRunningPostgresContainer: CtlIO[Container] =
+    gosub(Info, "Finding current running Postgres container.",
+      getUniqueRunningContainerWithLabel("edu.gemini.db")
+    )
+
+  def getDeployCommitForContainer(k: Container): CtlIO[DeployCommit] =
+    gosub(Info, s"Getting commit for container ${k.hash}.",
+      for {
+        s <- getLabelValue("edu.gemini.commit", k)
+        _ <- log(Info, s"Commit is $s")
+      } yield {
+        val Suffix = "-UNCOMMITTED"
+        if (s.endsWith(Suffix)) DeployCommit(Commit(s.dropRight(Suffix.length)), true)
+        else                    DeployCommit(Commit(s),                          false)
+      }
+    )
+
+  case class DeployCommit(commit: Commit, uncommitted: Boolean) {
+    def imageVersion = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash
+  }
+
+}
 
 trait PsImpl {
 
   val ps: CtlIO[Unit] =
     for {
-      ks <- findContainersWithLabel("edu.gemini.commit")
+      ks <- findRunningContainersWithLabel("edu.gemini.commit")
       _  <- ks.traverseU(psOne)
     } yield ()
 
@@ -55,12 +97,24 @@ trait PsImpl {
 
 }
 
+trait LogImpl extends BaseInfo {
+
+  def showLog(lines: Int): CtlIO[Unit] =
+    getRunningGemContainer.flatMap { c =>
+      docker.docker("logs", "--tail", lines.toString, c.hash).require {
+        case Output(0, ss) => ss
+      } flatMap { ss =>
+        ss.traverse_(log(Shell, _))
+      }
+    }
+}
+
 trait StopImpl {
 
   val stop: CtlIO[Unit] =
     gosub(Info, "Shutting down Gem deployment.",
       for {
-        ks <- findContainersWithLabel("edu.gemini.commit")
+        ks <- findRunningContainersWithLabel("edu.gemini.commit")
         _  <- ks.traverseU(stopOne)
       } yield ()
     )
@@ -77,7 +131,7 @@ trait StopImpl {
 }
 
 
-trait DeployImpl {
+trait DeployImpl extends BaseInfo {
 
   val PrivateNetwork = "gem-net"
   val GemOrg         = "geminihlsw"
@@ -86,22 +140,18 @@ trait DeployImpl {
   val DeployTagRegex = "^deploy-\\d+$".r
   val Port           = 1234
 
-  case class DeployCommit(commit: Commit, uncommitted: Boolean) {
-    def imageVersion = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash
-  }
+  // /** Get the commit for the given revision, or compute one with `fa`. */
+  // def commitOr(rev: Option[String], fa: CtlIO[Commit]): CtlIO[Commit] =
+  //   rev.fold(gosub(Info,  "No revision specified.", fa))(s =>
+  //            log(Info, s"Requested revision is $s.") *> commitForRevision(s)
+  //   ) >>! (c => log(Info, s"Commit is ${c.hash}."))
 
-  /** Get the commit for the given revision, or compute one with `fa`. */
-  def commitOr(rev: Option[String], fa: CtlIO[Commit]): CtlIO[Commit] =
-    rev.fold(gosub(Info,  "No revision specified.", fa))(s =>
-             log(Info, s"Requested revision is $s.") *> commitForRevision(s)
-    ) >>! (c => log(Info, s"Commit is ${c.hash}."))
-
-  /** Return the most recent deploy commit, or fail. */
-  def mostRecentCommitAtTag(re: Regex): CtlIO[Commit] =
-    mostRecentTag(re).flatMap {
-      case None    => log(Error, s"No tags matching pattern $re were found.") *> exit[Commit](-1)
-      case Some(t) => log(Info,  s"Found ${t.tag}.")                    *> commitForRevision(t.tag)
-    }
+  // /** Return the most recent deploy commit, or fail. */
+  // def mostRecentCommitAtTag(re: Regex): CtlIO[Commit] =
+  //   mostRecentTag(re).flatMap {
+  //     case None    => log(Error, s"No tags matching pattern $re were found.") *> exit[Commit](-1)
+  //     case Some(t) => log(Info,  s"Found ${t.tag}.")                    *> commitForRevision(t.tag)
+  //   }
 
   def getNetwork: CtlIO[Network] =
     gosub(Info, s"Verifying $PrivateNetwork network.",
@@ -111,10 +161,10 @@ trait DeployImpl {
       }
     )
 
-  def getBaseCommit(rev: Option[String]): CtlIO[Commit] =
-    gosub(Info, "Verifying base commit.",
-      commitOr(rev, log(Info, "Finding most recent deploy tag.") *> mostRecentCommitAtTag(DeployTagRegex))
-    )
+  // def getBaseCommit(rev: Option[String]): CtlIO[Commit] =
+  //   gosub(Info, "Verifying base commit.",
+  //     commitOr(rev, log(Info, "Finding most recent deploy tag.") *> mostRecentCommitAtTag(DeployTagRegex))
+  //   )
 
   def getDeployCommit(rev: String): CtlIO[DeployCommit] =
     gosub(Info, "Verifying deploy commit.",
@@ -157,40 +207,41 @@ trait DeployImpl {
       }
     )
 
-  def getLineage(base: Commit, dc: DeployCommit): CtlIO[Unit] =
+  def verifyLineage(base: DeployCommit, dc: DeployCommit): CtlIO[Unit] =
     gosub(Info, "Verifying lineage.",
-      (dc.uncommitted match {
-        case true  => log(Info, "This is a UNCOMMITTED deployment, so it's ok if base and deploy are the same.")
-        case false => (base === dc.commit).whenM(log(Info, "Base and deploy are the same. Nothing to do!") *> exit(0))
-      }) *>
-      isAncestor(base, dc.commit).flatMap {
-        case true  => log(Info , s"Base commit is an ancestor of deploy commit (as it should be).")
-        case false => log(Error, s"Base commit is not an ancestor of deploy commit.") *> exit[Unit](-1)
+      (base, dc) match {
+        case (DeployCommit(b, true),  DeployCommit(d, true))  if b === d => log(Info, "Base and deploy commits are matching and UNCOMMITTED. All is well.")
+        case (DeployCommit(b, false), DeployCommit(d, false)) if b === d => log(Info, "Base and deploy commits are identical. Nothing to do.") *> exit(0)
+        case (DeployCommit(b, _),     DeployCommit(d, _)) =>
+          isAncestor(b, d).flatMap {
+            case true  => log(Info , s"Base commit is an ancestor of deploy commit (as it should be).")
+            case false => log(Error, s"Base commit is not an ancestor of deploy commit.") *> exit[Unit](-1)
+          }
       }
     )
 
-  def getContainer(label: String): CtlIO[Container] =
-    findContainersWithLabel(label).flatMap {
-      case List(c) => log(Info,  s"Found container ${c.hash}").as(c)
-      case Nil     => log(Error, s"No container with label like $label was found.")    *> exit(-1)
-      case cs      => log(Error, s"Found multiple containers with label like $label.") *> exit(-1)
-    }
+  // def getContainer(label: String): CtlIO[Container] =
+  //   findContainersWithLabel(label).flatMap {
+  //     case List(c) => log(Info,  s"Found container ${c.hash}").as(c)
+  //     case Nil     => log(Error, s"No container with label like $label was found.")    *> exit(-1)
+  //     case cs      => log(Error, s"Found multiple containers with label like $label.") *> exit(-1)
+  //   }
 
-  def getBaseGemContainer(commit: Commit): CtlIO[Container] =
-    gosub(Info, "Verifying base container.",
-      getContainer(s"edu.gemini.commit=${commit.hash}")
-    )
-
-  def getBaseContainer(base: Option[String], cDeploy: DeployCommit): CtlIO[Container] =
-    for {
-      cBase    <- getBaseCommit(base)
-      _        <- getLineage(cBase, cDeploy)
-      kBase    <- getBaseGemContainer(cBase)
-    } yield kBase
+  // def getBaseGemContainer(commit: Commit): CtlIO[Container] =
+  //   gosub(Info, "Verifying base container.",
+  //     getContainer(s"edu.gemini.commit=${commit.hash}")
+  //   )
+  //
+  // def getBaseContainer(base: Option[String], cDeploy: DeployCommit): CtlIO[Container] =
+  //   for {
+  //     cBase    <- getBaseCommit(base)
+  //     _        <- getLineage(cBase, cDeploy)
+  //     kBase    <- getBaseGemContainer(cBase)
+  //   } yield kBase
 
   def ensureNoRunningDeployments: CtlIO[Unit] =
     gosub(Info, "Ensuring that there is no running deployment.",
-      findContainersWithLabel("edu.gemini.commit").flatMap {
+      findRunningContainersWithLabel("edu.gemini.commit").flatMap {
         case Nil => log(Info, "There are no running deployments.")
         case cs  =>
           for {
@@ -209,6 +260,7 @@ trait DeployImpl {
                  s"--net=$PrivateNetwork",
                   "--name", s"db-$nDeploy",
                   "--label", s"edu.gemini.commit=${cDeploy.imageVersion}",
+                  "--label",  "edu.gemini.db=true",
                   "--health-cmd", "\"psql -U postgres -d gem -c 'select 1'\"",
                   "--health-interval", "10s",
                   "--health-retries", "2",
@@ -275,6 +327,7 @@ trait DeployImpl {
                s"--net=$PrivateNetwork",
                 "--name",    s"gem-$nDeploy",
                 "--label",   s"edu.gemini.commit=${cDeploy.imageVersion}",
+                "--label",    "edu.gemini.gem=true",
                 "--publish", s"$Port:6666",
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://db-$nDeploy/gem",
                 iDeploy.hash
@@ -313,21 +366,27 @@ trait DeployImpl {
       _   <- deployGem(nDeploy, cDeploy, iDeploy)
     } yield ()
 
-  def deployUpgrade(base: Option[String], nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
+  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
     for {
-      kBase <- getBaseContainer(base, cDeploy)
+      kGem  <- getRunningGemContainer
+      cBase <- getDeployCommitForContainer(kGem)
+      _     <- verifyLineage(cBase, cDeploy)
+      kPg   <- getRunningPostgresContainer
+      cPg   <- getDeployCommitForContainer(kPg)
+      _     <- if (cPg.commit === cBase.commit) log(Info,  "Gem and Postgres containers are at the same commit.")
+               else                             log(Error, "Gem and Postgres containers are at different commits. What?") *> exit(-1)
       _     <- log(Warn, "TODO: upgrade deployment")
     } yield ()
 
-  def deploy(base: Option[String], deploy: String, standalone: Boolean) =
+  def deploy(deploy: String, standalone: Boolean) =
     for {
       nDeploy  <- getDeployNumber
       cDeploy  <- getDeployCommit(deploy)
       iPg      <- getPostgresImage(cDeploy)
       iDeploy  <- getDeployImage(cDeploy)
       network  <- getNetwork
-      _        <- if (standalone) deployStandalone(   nDeploy, cDeploy, iDeploy, iPg)
-                  else            deployUpgrade(base, nDeploy, cDeploy, iDeploy)
+      _        <- if (standalone) deployStandalone(nDeploy, cDeploy, iDeploy, iPg)
+                  else            deployUpgrade(   nDeploy, cDeploy, iDeploy)
     } yield ()
 
 }
