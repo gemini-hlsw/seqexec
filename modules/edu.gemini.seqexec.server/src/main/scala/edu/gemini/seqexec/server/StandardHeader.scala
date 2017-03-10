@@ -42,7 +42,7 @@ trait ObsKeywordsReader {
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
-  def getRequestedAirMassAngle: Map[String, SeqAction[Double]]
+  def getRequestedAirMassAngle: Map[String, SeqAction[String]]
   def getTimingWindows: List[(Int, TimingWindowKeywords)]
   def getRequestedConditions: Map[String, SeqAction[String]]
 }
@@ -88,20 +88,18 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  override def getRequestedAirMassAngle: Map[String, SeqAction[Double]] =
-    List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).map { key =>
-      val action = EitherT(Task.now(
-        config.extract(new ItemKey(OCS_KEY, key)).as[Double].leftMap(explainExtractError)
-      ))
-      key -> action
+  override def getRequestedAirMassAngle: Map[String, SeqAction[String]] =
+    List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).flatMap { key =>
+      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].toOption
+      value.map(v => key -> SeqAction(v))
     }(breakOut)
 
   override def getRequestedConditions: Map[String, SeqAction[String]]  =
-    List(SB, CC, IQ, WV).map { key =>
-      val value = config.extract(new ItemKey(OCS_KEY, key)).as[Double].map { d =>
-        (d === 100.0) ? "Any" | s"$d-percentile"
-      }.leftMap(explainExtractError)
-      key -> EitherT(Task.now(value))
+    List(SB, CC, IQ, WV).flatMap { key =>
+      val value: Option[String] = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].map { d =>
+        (d === "100") ? "Any" | s"$d-percentile"
+      }.toOption
+      value.map(v => key -> SeqAction(v))
     }(breakOut)
 
   override def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
@@ -290,7 +288,7 @@ class StandardHeader(
     val requestedAirMassAngle: SeqAction[Unit] = {
       import ObsKeywordsReader._
       val requested = List("REQMAXAM" -> MAX_AIRMASS, "REQMAXHA" -> MAX_HOUR_ANGLE, "REQMINAM" -> MIN_AIRMASS, "REQMINHA" -> MIN_HOUR_ANGLE).flatMap {
-        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
+        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildString(_, keyword))
       }
       sendKeywords(id, inst, hs, requested)
     }
