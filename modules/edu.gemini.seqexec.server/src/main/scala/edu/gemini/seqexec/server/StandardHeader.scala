@@ -281,10 +281,12 @@ class StandardHeader(
     }
 
     val timinigWindows: SeqAction[Unit] = {
-      val windows = obsReader.getTimingWindows.flatMap {
+      val timingWindows = obsReader.getTimingWindows
+      val windows = timingWindows.flatMap {
         case (i, tw) => List(buildString(tw.start, f"REQTWS${i + 1}%02d"), buildDouble(tw.duration, f"REQTWD${i + 1}02d"), buildInt32(tw.repeat, f"REQTWN${i + 1}02d"), buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
       }
-      sendKeywords(id, inst, hs, windows)
+      val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
+      sendKeywords(id, inst, hs, windowsCount :: windows)
     }
 
     sendKeywords(id, inst, hs, List(
