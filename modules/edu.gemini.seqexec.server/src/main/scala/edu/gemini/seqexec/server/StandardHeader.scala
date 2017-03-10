@@ -43,6 +43,7 @@ trait ObsKeywordsReader {
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
   def getRequestedConditions: Map[String, SeqAction[Double]]
+  def getTimingWindows: List[(Int, TimingWindowKeywords)]
 }
 
 object ObsKeywordsReader {
@@ -89,7 +90,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     }(breakOut)
   }
 
-  def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
+  override def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
     def calcDuration(duration: String): NumberFormatException \/ SeqAction[Double] =
       duration.parseDouble.map { d => SeqAction((d < 0) ? d | d / 1000)}.disjunction
 
@@ -279,6 +280,13 @@ class StandardHeader(
       sendKeywords(id, inst, hs, requested)
     }
 
+    val timinigWindows: SeqAction[Unit] = {
+      val windows = obsReader.getTimingWindows.flatMap {
+        case (i, tw) => List(buildString(tw.start, f"REQTWS${i + 1}%02d"), buildDouble(tw.duration, f"REQTWD${i + 1}02d"), buildInt32(tw.repeat, f"REQTWN${i + 1}02d"), buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
+      }
+      sendKeywords(id, inst, hs, windows)
+    }
+
     sendKeywords(id, inst, hs, List(
       buildString(obsReader.getObsType, "OBSTYPE"),
       buildString(obsReader.getObsClass, "OBSCLASS"),
@@ -345,6 +353,7 @@ class StandardHeader(
       buildInt32(obsReader.getSciBand, "SCIBAND")
     )) *>
     requestedConditions *>
+    timinigWindows *>
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
