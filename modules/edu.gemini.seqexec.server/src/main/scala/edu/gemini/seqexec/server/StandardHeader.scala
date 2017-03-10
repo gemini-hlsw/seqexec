@@ -113,7 +113,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
       period.parseDouble.map(p => SeqAction(p/1000)).disjunction
 
     def calcStart(start: String): NumberFormatException \/ SeqAction[String] =
-      start.parseInt.map { s =>
+      start.parseLong.map { s =>
         val timeStr = LocalDateTime.ofInstant(Instant.ofEpochMilli(s), ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         SeqAction(timeStr)
       }.disjunction
@@ -125,7 +125,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
       // Keys on the ocs use the prefix and the value and they are always Strings
       val keys = prefixes.map(p => f"$p$w")
       keys.map { k =>
-        Option(config.getItemValue(new ItemKey(OCS_KEY, k))).map(_.toString)
+        Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.toString)
       }.sequence.collect {
         case start :: duration :: repeat :: period :: Nil =>
           (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
