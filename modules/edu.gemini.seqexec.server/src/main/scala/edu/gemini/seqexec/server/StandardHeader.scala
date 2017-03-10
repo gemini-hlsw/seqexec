@@ -58,6 +58,9 @@ object ObsKeywordsReader {
   val TIMING_WINDOW_PERIOD: String   = "TimingWindowPeriod";
 }
 
+// A Timing window always have 4 keywords
+case class TimingWindowKeywords(start: SeqAction[String], duration: SeqAction[Double], repeat: SeqAction[Int], period: SeqAction[Double])
+
 case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
   import ObsKeywordsReader._
 
@@ -84,6 +87,33 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
       ))
       key -> action
     }(breakOut)
+  }
+
+  def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
+    def calcDuration(duration: String): NumberFormatException \/ SeqAction[Double] =
+      duration.parseDouble.map { d => SeqAction((d < 0) ? d | d / 1000)}.disjunction
+
+    def calcRepeat(repeat: String): NumberFormatException \/ SeqAction[Int] =
+      repeat.parseInt.map(SeqAction(_)).disjunction
+
+    def calcPeriod(period: String): NumberFormatException \/ SeqAction[Double] =
+      period.parseDouble.map(p => SeqAction(p/1000)).disjunction
+
+    val prefixes = List(TIMING_WINDOW_START, TIMING_WINDOW_DURATION, TIMING_WINDOW_REPEAT, TIMING_WINDOW_PERIOD)
+    val windows = for {
+      w <- (0 until 99).toList
+    } yield {
+      // Keys on the ocs use the prefix and the value and they are always Strings
+      val keys = prefixes.map(p => f"$p$w")
+      keys.map { k =>
+        Option(config.getItemValue(new ItemKey(OCS_KEY, k))).map(_.toString)
+      }.sequence.collect {
+        case start :: duration :: repeat :: period :: Nil =>
+          ((start.right[NumberFormatException] |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
+            w -> TimingWindowKeywords(SeqAction(s), d, r, p) }).toOption
+      }.join
+    }
+    windows.flatten
   }
 
   override def getDataLabel: SeqAction[String] = SeqAction(
@@ -235,7 +265,7 @@ class StandardHeader(
     } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
             else obsObject
 
-    val requestedConditions: SeqAction[Unit]= {
+    val requestedConditions: SeqAction[Unit] = {
       import ObsKeywordsReader._
       val requested = List("REQMAXAM" -> MAX_AIRMASS, "REQMAXHA" -> MAX_HOUR_ANGLE, "REQMINAM" -> MIN_AIRMASS, "REQMINHA" -> MIN_HOUR_ANGLE).flatMap {
         case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildDouble(_, keyword))
