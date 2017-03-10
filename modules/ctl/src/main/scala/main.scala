@@ -121,12 +121,7 @@ trait StopImpl {
 
   def stopOne(k: Container): CtlIO[Unit] =
     log(Info, s"Stopping $k") *>
-    docker.docker(
-      "stop",
-      k.hash
-    ) require {
-      case Output(0, s :: Nil) => ()
-    }
+    stopContainer(k)
 
 }
 
@@ -360,23 +355,42 @@ trait DeployImpl extends BaseInfo {
     )
 
   def deployStandalone(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
-    for {
-      _   <- ensureNoRunningDeployments
-      kDb <- deployDatabase(nDeploy, cDeploy, iPg)
-      _   <- deployGem(nDeploy, cDeploy, iDeploy)
-    } yield ()
+    gosub(Info, "Performing STANDALONE deployment",
+      for {
+        _   <- ensureNoRunningDeployments
+        kDb <- deployDatabase(nDeploy, cDeploy, iPg)
+        _   <- deployGem(nDeploy, cDeploy, iDeploy)
+      } yield ()
+    )
 
-  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
-    for {
-      kGem  <- getRunningGemContainer
-      cBase <- getDeployCommitForContainer(kGem)
-      _     <- verifyLineage(cBase, cDeploy)
-      kPg   <- getRunningPostgresContainer
-      cPg   <- getDeployCommitForContainer(kPg)
-      _     <- if (cPg.commit === cBase.commit) log(Info,  "Gem and Postgres containers are at the same commit.")
-               else                             log(Error, "Gem and Postgres containers are at different commits. What?") *> exit(-1)
-      _     <- log(Warn, "TODO: upgrade deployment")
-    } yield ()
+  def copyData(fromName: String, toContainer: Container): CtlIO[Unit] =
+    gosub(Info, s"Copying data from $fromName",
+      docker.docker(
+        "exec", toContainer.hash,
+        "sh", "-c", s"'pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem'"
+      ) require {
+        case Output(0, _) => ()
+      }
+    )
+
+  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
+    gosub(Info, "Performing UPGRADE deployment",
+      for {
+        kGem  <- getRunningGemContainer
+        cBase <- getDeployCommitForContainer(kGem)
+        _     <- verifyLineage(cBase, cDeploy)
+        kPg   <- getRunningPostgresContainer
+        cPg   <- getDeployCommitForContainer(kPg)
+        _     <- if (cPg.commit === cBase.commit) log(Info,  "Gem and Postgres containers are at the same commit.")
+                 else                             log(Error, "Gem and Postgres containers are at different commits. What?") *> exit(-1)
+        _     <- gosub(Info, "Stopping old Gem container.", stopContainer(kGem))
+        kPg2  <- deployDatabase(nDeploy, cDeploy, iPg)
+        nPg   <- getContainerName(kPg)
+        _     <- copyData(nPg, kPg2)
+        _     <- gosub(Info, "Stopping old database container.", stopContainer(kPg))
+        _     <- deployGem(nDeploy, cDeploy, iDeploy)
+      } yield ()
+    )
 
   def deploy(deploy: String, standalone: Boolean) =
     for {
@@ -386,7 +400,7 @@ trait DeployImpl extends BaseInfo {
       iDeploy  <- getDeployImage(cDeploy)
       network  <- getNetwork
       _        <- if (standalone) deployStandalone(nDeploy, cDeploy, iDeploy, iPg)
-                  else            deployUpgrade(   nDeploy, cDeploy, iDeploy)
+                  else            deployUpgrade(   nDeploy, cDeploy, iDeploy, iPg)
     } yield ()
 
 }

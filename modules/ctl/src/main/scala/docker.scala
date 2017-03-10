@@ -59,4 +59,14 @@ object docker {
       case Output(0, s :: Nil) if s.nonEmpty => s
     }
 
+  def stopContainer(k: Container): CtlIO[Unit] =
+    docker("stop", k.hash) require {
+      case Output(0, s :: Nil) if s === k.hash => ()
+    }
+
+  def getContainerName(k: Container): CtlIO[String] =
+    docker("inspect", "--format", "'{{ .Name }}'", k.hash) require {
+      case Output(0, s :: Nil) if (s.startsWith("/")) => s.drop(1)
+    }
+
 }
