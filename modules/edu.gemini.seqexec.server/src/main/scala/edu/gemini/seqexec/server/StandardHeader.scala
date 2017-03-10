@@ -11,6 +11,7 @@ import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants._
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
@@ -42,21 +43,28 @@ trait ObsKeywordsReader {
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
-  def getRequestedConditions: Map[String, SeqAction[Double]]
+  def getRequestedAirMassAngle: Map[String, SeqAction[Double]]
   def getTimingWindows: List[(Int, TimingWindowKeywords)]
+  def getRequestedConditions: Map[String, SeqAction[String]]
 }
 
 object ObsKeywordsReader {
   // Constants taken from SPSiteQualityCB
   // TODO Make them public in SPSiteQualityCB
-  val MIN_HOUR_ANGLE: String         = "MinHourAngle";
-  val MAX_HOUR_ANGLE: String         = "MaxHourAngle";
-  val MIN_AIRMASS: String            = "MinAirmass";
-  val MAX_AIRMASS: String            = "MaxAirmass";
-  val TIMING_WINDOW_START: String    = "TimingWindowStart";
-  val TIMING_WINDOW_DURATION: String = "TimingWindowDuration";
-  val TIMING_WINDOW_REPEAT: String   = "TimingWindowRepeat";
-  val TIMING_WINDOW_PERIOD: String   = "TimingWindowPeriod";
+  val MIN_HOUR_ANGLE: String         = "MinHourAngle"
+  val MAX_HOUR_ANGLE: String         = "MaxHourAngle"
+  val MIN_AIRMASS: String            = "MinAirmass"
+  val MAX_AIRMASS: String            = "MaxAirmass"
+
+  val TIMING_WINDOW_START: String    = "TimingWindowStart"
+  val TIMING_WINDOW_DURATION: String = "TimingWindowDuration"
+  val TIMING_WINDOW_REPEAT: String   = "TimingWindowRepeat"
+  val TIMING_WINDOW_PERIOD: String   = "TimingWindowPeriod"
+
+  val SB: String = SKY_BACKGROUND_PROP.getName
+  val CC: String = CLOUD_COVER_PROP.getName
+  val IQ: String = IMAGE_QUALITY_PROP.getName
+  val WV: String = WATER_VAPOR_PROP.getName
 }
 
 // A Timing window always have 4 keywords
@@ -81,14 +89,21 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  override def getRequestedConditions: Map[String, SeqAction[Double]] = {
+  override def getRequestedAirMassAngle: Map[String, SeqAction[Double]] =
     List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).map { key =>
       val action = EitherT(Task.now(
         config.extract(new ItemKey(OCS_KEY, key)).as[Double].leftMap(explainExtractError)
       ))
       key -> action
     }(breakOut)
-  }
+
+  override def getRequestedConditions: Map[String, SeqAction[String]]  =
+    List(SB, CC, IQ, WV).map { key =>
+      val value = config.extract(new ItemKey(OCS_KEY, key)).as[Double].map { d =>
+        (d === 100.0) ? "Any" | s"$d-percentile"
+      }.leftMap(explainExtractError)
+      key -> EitherT(Task.now(value))
+    }(breakOut)
 
   override def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
     def calcDuration(duration: String): NumberFormatException \/ SeqAction[Double] =
@@ -272,10 +287,18 @@ class StandardHeader(
     } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
             else obsObject
 
-    val requestedConditions: SeqAction[Unit] = {
+    val requestedAirMassAngle: SeqAction[Unit] = {
       import ObsKeywordsReader._
       val requested = List("REQMAXAM" -> MAX_AIRMASS, "REQMAXHA" -> MAX_HOUR_ANGLE, "REQMINAM" -> MIN_AIRMASS, "REQMINHA" -> MIN_HOUR_ANGLE).flatMap {
-        case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildDouble(_, keyword))
+        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
+      }
+      sendKeywords(id, inst, hs, requested)
+    }
+
+    val requestedConditions: SeqAction[Unit] = {
+      import ObsKeywordsReader._
+      val requested = List("REQBG" -> SB, "REQCC" -> CC, "REQIQ" -> IQ, "REQWV" -> WV).flatMap {
+        case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
       }
       sendKeywords(id, inst, hs, requested)
     }
@@ -355,6 +378,7 @@ class StandardHeader(
       buildInt32(obsReader.getSciBand, "SCIBAND")
     )) *>
     requestedConditions *>
+    requestedAirMassAngle *>
     timinigWindows *>
     pwfs1Keywords *>
     pwfs2Keywords *>
