@@ -19,7 +19,6 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scala.collection.breakOut
-import squants.space.Angstroms
 
 /**
   * Created by jluhrs on 1/31/17.
@@ -131,8 +130,9 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
         Option(config.getItemValue(new ItemKey(OCS_KEY, k))).map(_.toString)
       }.sequence.collect {
         case start :: duration :: repeat :: period :: Nil =>
-          ((calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
-            w -> TimingWindowKeywords(s, d, r, p) }).toOption
+          (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
+            w -> TimingWindowKeywords(s, d, r, p)
+          }.toOption
       }.join
     }
     windows.flatten
@@ -180,10 +180,10 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     if(headerPrivacy) {
       EitherT(Task.delay(
         config.extract(PROPRIETARY_MONTHS_KEY).as[Integer].recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
-          case ConfigUtilOps.KeyNotFound(_) => (new Integer(0)).right
+          case ConfigUtilOps.KeyNotFound(_) => new Integer(0).right
           case e@ConfigUtilOps.ConversionError(_, _) => e.left
         }.leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-          .map(v => (LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))))
+          .map(v => LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE))))
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 
