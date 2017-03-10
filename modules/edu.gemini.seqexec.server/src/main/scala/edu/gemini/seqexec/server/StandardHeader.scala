@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.server
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, ZoneId}
+import java.time.{LocalDate, ZoneId, LocalDateTime, Instant}
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -99,6 +99,12 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     def calcPeriod(period: String): NumberFormatException \/ SeqAction[Double] =
       period.parseDouble.map(p => SeqAction(p/1000)).disjunction
 
+    def calcStart(start: String): NumberFormatException \/ SeqAction[String] =
+      start.parseInt.map { s =>
+        val timeStr = LocalDateTime.ofInstant(Instant.ofEpochMilli(s), ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        SeqAction(timeStr)
+      }.disjunction
+
     val prefixes = List(TIMING_WINDOW_START, TIMING_WINDOW_DURATION, TIMING_WINDOW_REPEAT, TIMING_WINDOW_PERIOD)
     val windows = for {
       w <- (0 until 99).toList
@@ -109,8 +115,8 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
         Option(config.getItemValue(new ItemKey(OCS_KEY, k))).map(_.toString)
       }.sequence.collect {
         case start :: duration :: repeat :: period :: Nil =>
-          ((start.right[NumberFormatException] |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
-            w -> TimingWindowKeywords(SeqAction(s), d, r, p) }).toOption
+          ((calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
+            w -> TimingWindowKeywords(s, d, r, p) }).toOption
       }.join
     }
     windows.flatten
