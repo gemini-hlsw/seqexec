@@ -17,6 +17,7 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scala.collection.breakOut
 import squants.space.Angstroms
 
 /**
@@ -41,9 +42,25 @@ trait ObsKeywordsReader {
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
+  def getRequestedConditions: Map[String, SeqAction[Double]]
+}
+
+object ObsKeywordsReader {
+  // Constants taken from SPSiteQualityCB
+  // TODO Make them public in SPSiteQualityCB
+  val MIN_HOUR_ANGLE: String         = "MinHourAngle";
+  val MAX_HOUR_ANGLE: String         = "MaxHourAngle";
+  val MIN_AIRMASS: String            = "MinAirmass";
+  val MAX_AIRMASS: String            = "MaxAirmass";
+  val TIMING_WINDOW_START: String    = "TimingWindowStart";
+  val TIMING_WINDOW_DURATION: String = "TimingWindowDuration";
+  val TIMING_WINDOW_REPEAT: String   = "TimingWindowRepeat";
+  val TIMING_WINDOW_PERIOD: String   = "TimingWindowPeriod";
 }
 
 case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
+  import ObsKeywordsReader._
+
   override def getObsType: SeqAction[String] = SeqAction(
     config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).toString)
 
@@ -56,6 +73,18 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   override def getObsId: SeqAction[String] = SeqAction(
     config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).toString
   )
+
+  def explainExtractError(e: ExtractFailure): SeqexecFailure =
+    SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
+
+  override def getRequestedConditions: Map[String, SeqAction[Double]] = {
+    List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).map { key =>
+      val action = EitherT(Task.now(
+        config.extract(new ItemKey(OCS_KEY, key)).as[Double].leftMap(explainExtractError)
+      ))
+      key -> action
+    }(breakOut)
+  }
 
   override def getDataLabel: SeqAction[String] = SeqAction(
     config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).toString
@@ -72,12 +101,12 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
   override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
     config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
   ))
 
   override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
     config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
   ))
 
   override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
@@ -189,10 +218,10 @@ class StandardHeader(
       guiderKeywords(guideWith, baseName, target, List(buildDouble(tcsReader.getM2UserFocusOffset, baseName + "FOCUS")) ++ extras)
 
     val pwfs1Keywords = standardGuiderKeywords(obsReader.getPwfs1Guide, "P1", tcsReader.getPwfs1Target,
-          List(buildDouble(tcsReader.getPwfs1Freq, "P1FREQ")))
+      List(buildDouble(tcsReader.getPwfs1Freq, "P1FREQ")))
 
     val pwfs2Keywords = standardGuiderKeywords(obsReader.getPwfs2Guide, "P2", tcsReader.getPwfs2Target,
-          List(buildDouble(tcsReader.getPwfs2Freq, "P2FREQ")))
+      List(buildDouble(tcsReader.getPwfs2Freq, "P2FREQ")))
 
     val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, List())
 
@@ -205,6 +234,14 @@ class StandardHeader(
       tcsObject <- tcsReader.getSourceATarget.getObjectName
     } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
             else obsObject
+
+    val requestedConditions: SeqAction[Unit]= {
+      import ObsKeywordsReader._
+      val requested = List("REQMAXAM" -> MAX_AIRMASS, "REQMAXHA" -> MAX_HOUR_ANGLE, "REQMINAM" -> MIN_AIRMASS, "REQMINHA" -> MIN_HOUR_ANGLE).flatMap {
+        case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildDouble(_, keyword))
+      }
+      sendKeywords(id, inst, hs, requested)
+    }
 
     sendKeywords(id, inst, hs, List(
       buildString(obsReader.getObsType, "OBSTYPE"),
@@ -271,6 +308,7 @@ class StandardHeader(
       buildString(stateReader.getRawBackgroundLight, "RAWBG"),
       buildInt32(obsReader.getSciBand, "SCIBAND")
     )) *>
+    requestedConditions *>
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
