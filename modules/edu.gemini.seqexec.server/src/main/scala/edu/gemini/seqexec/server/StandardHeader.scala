@@ -128,9 +128,8 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
         Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.toString)
       }.sequence.collect {
         case start :: duration :: repeat :: period :: Nil =>
-          (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period)) { (s, d, r, p) =>
-            w -> TimingWindowKeywords(s, d, r, p)
-          }.toOption
+          (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period))(TimingWindowKeywords.apply)
+          .map(w -> _).toOption
       }.join
     }
     windows.flatten
@@ -287,7 +286,12 @@ class StandardHeader(
 
     val requestedAirMassAngle: SeqAction[Unit] = {
       import ObsKeywordsReader._
-      val requested = List("REQMAXAM" -> MAX_AIRMASS, "REQMAXHA" -> MAX_HOUR_ANGLE, "REQMINAM" -> MIN_AIRMASS, "REQMINHA" -> MIN_HOUR_ANGLE).flatMap {
+      val keys = List(
+        "REQMAXAM" -> MAX_AIRMASS,
+        "REQMAXHA" -> MAX_HOUR_ANGLE,
+        "REQMINAM" -> MIN_AIRMASS,
+        "REQMINHA" -> MIN_HOUR_ANGLE)
+      val requested = keys.flatMap {
         case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildString(_, keyword))
       }
       sendKeywords(id, inst, hs, requested)
@@ -295,7 +299,12 @@ class StandardHeader(
 
     val requestedConditions: SeqAction[Unit] = {
       import ObsKeywordsReader._
-      val requested = List("REQBG" -> SB, "REQCC" -> CC, "REQIQ" -> IQ, "REQWV" -> WV).flatMap {
+      val keys = List(
+        "REQBG" -> SB,
+        "REQCC" -> CC,
+        "REQIQ" -> IQ,
+        "REQWV" -> WV)
+      val requested = keys.flatMap {
         case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
       }
       sendKeywords(id, inst, hs, requested)
@@ -304,7 +313,12 @@ class StandardHeader(
     val timinigWindows: SeqAction[Unit] = {
       val timingWindows = obsReader.getTimingWindows
       val windows = timingWindows.flatMap {
-        case (i, tw) => List(buildString(tw.start, f"REQTWS${i + 1}%02d"), buildDouble(tw.duration, f"REQTWD${i + 1}02d"), buildInt32(tw.repeat, f"REQTWN${i + 1}02d"), buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
+        case (i, tw) =>
+          List(
+            buildString(tw.start,    f"REQTWS${i + 1}%02d"),
+            buildDouble(tw.duration, f"REQTWD${i + 1}02d"),
+            buildInt32(tw.repeat,    f"REQTWN${i + 1}02d"),
+            buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
       }
       val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
       sendKeywords(id, inst, hs, windowsCount :: windows)
