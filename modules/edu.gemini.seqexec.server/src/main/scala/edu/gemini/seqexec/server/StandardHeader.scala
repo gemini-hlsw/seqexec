@@ -143,28 +143,24 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
   override def getTelescope: SeqAction[String] = SeqAction(telescope)
 
-  override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value]
+      .leftMap(explainExtractError))
 
-  override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value]
+      .leftMap(explainExtractError))
 
-  override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value]
+      .leftMap(explainExtractError))
 
-  override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
+  override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
       .recoverWith[ConfigUtilOps.ExtractFailure, StandardGuideOptions.Value] {
         case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.right
         case e@ConfigUtilOps.ConversionError(_,_) => e.left
-      }.leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+      }.leftMap(explainExtractError))
 
   private val headerPrivacy: Boolean = config.extract(HEADER_VISIBILITY_KEY).as[Visibility].getOrElse(Visibility.PUBLIC) match {
     case Visibility.PRIVATE => true
@@ -175,28 +171,26 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
   override def getProprietaryMonths: SeqAction[String] =
     if(headerPrivacy) {
-      EitherT(Task.delay(
+      SeqAction.either(
         config.extract(PROPRIETARY_MONTHS_KEY).as[Integer].recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
           case ConfigUtilOps.KeyNotFound(_) => new Integer(0).right
           case e@ConfigUtilOps.ConversionError(_, _) => e.left
-        }.leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-          .map(v => LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE))))
+        }.leftMap(explainExtractError)
+          .map(v => LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 
-  override def getObsObject: SeqAction[String] = EitherT(Task.now(
-    config.extract(OBSERVE_KEY / OBJECT_PROP).as[String].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getObsObject: SeqAction[String] =
+    SeqAction.either(config.extract(OBSERVE_KEY / OBJECT_PROP).as[String]
+      .leftMap(explainExtractError))
 
   override def getGeminiQA: SeqAction[String] = SeqAction("UNKNOWN")
 
   override def getPIReq: SeqAction[String] = SeqAction("UNKNOWN")
 
-  override def getSciBand: SeqAction[Int] = EitherT(Task.now(
-    config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt).leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getSciBand: SeqAction[Int] =
+    SeqAction.either(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt)
+      .leftMap(explainExtractError))
 }
 
 // TODO: Replace Unit by something that can read the state for real
