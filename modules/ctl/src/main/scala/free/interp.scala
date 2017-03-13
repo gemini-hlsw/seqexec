@@ -1,11 +1,32 @@
+package gem.ctl
+package free
+
 import scalaz._, Scalaz._
 import scalaz.effect._
 
-import io._
-import ctl._
-import opts.Command
+import gem.ctl.low.io._
+import gem.ctl.free.ctl._
 
-object interp {
+object interpreter {
+
+  trait Config {
+    def userAndHost: UserAndHost
+    def verbose:     Boolean
+  }
+
+  def interpreter(c: Config, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
+    case Shell(false, cmd) => doShell(cmd, c.verbose, indent)
+    case Shell(true,  cmd) => doShell(cmd.bimap(s => s"ssh ${c.userAndHost.userAndHost} $s", "ssh" :: c.userAndHost.userAndHost :: _), c.verbose, indent)
+    case Exit(exitCode)    => EitherT.left(exitCode.point[IO])
+    case GetConfig         => c.point[EitherT[IO, Int, ?]]
+    case Gosub(level, msg, fa) =>
+      for {
+        _ <- doLog(level, msg, indent)
+        _ <- EitherT.right(indent.mod(_ + 1))
+        a <- fa.foldMap(this)
+        _ <- EitherT.right(indent.mod(_ - 1))
+      } yield a
+  }
 
   private def doLog(level: Level, msg: String, indent: IORef[Int]): EitherT[IO, Int, Unit] = {
     val color = level match {
@@ -37,20 +58,6 @@ object interp {
       - <- verbose.unlessM(EitherT.right[IO, Int, Unit](IO.putStr("\u001B[1G\u001B[K")))
     } yield o
 
-  }
-
-  def interpreter(c: Command, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
-    case Shell(false, cmd) => doShell(cmd, c.verbose, indent)
-    case Shell(true,  cmd) => doShell(cmd.bimap(s => s"ssh ${c.userAndHost.userAndHost} $s", "ssh" :: c.userAndHost.userAndHost :: _), c.verbose, indent)
-    case Exit(exitCode)    => EitherT.left(exitCode.point[IO])
-    case GetConfig         => c.point[EitherT[IO, Int, ?]]
-    case Gosub(level, msg, fa) =>
-      for {
-        _ <- doLog(level, msg, indent)
-        _ <- EitherT.right(indent.mod(_ + 1))
-        a <- fa.foldMap(this)
-        _ <- EitherT.right(indent.mod(_ - 1))
-      } yield a
   }
 
 }

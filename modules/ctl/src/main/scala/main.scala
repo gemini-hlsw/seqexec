@@ -1,13 +1,14 @@
+package gem.ctl
+
 import scalaz._, Scalaz._
 import scalaz.effect._
-// import scala.util.matching.Regex
 
-import io._
-import ctl._
-import git._
-import docker._
-import interp._
-import opts.{ Command, DeployOpts, PsOpts, StopOpts, LogOpts }
+import gem.ctl.free.ctl._
+import gem.ctl.free.interpreter._
+
+import gem.ctl.low.io._
+import gem.ctl.low.git._
+import gem.ctl.low.docker._
 
 object main extends SafeApp
   with DeployImpl
@@ -16,18 +17,20 @@ object main extends SafeApp
   with LogImpl
 {
 
+  /** Map a `Command` to a correspondig program in `CtlIO`. */
   def command(c: Command): CtlIO[Unit] =
     log(Info, s"Target host is ${c.userAndHost.userAndHost}").as(c).flatMap {
-      case DeployOpts(u, d, s, v) => deploy(d, s)
-      case PsOpts(_, _)           => ps
-      case StopOpts(_, _)         => stop
-      case LogOpts(_, _, n)       => showLog(n)
+      case Command.Deploy(u, d, s, v) => deploy(d, s)
+      case Command.Ps(_, _)           => ps
+      case Command.Stop(_, _)         => stop
+      case Command.Log(_, _, n)       => showLog(n)
     }
 
+  /** Entry point. Parse the commandline args and do what's asked, if possible. */
   override def runl(args: List[String]): IO[Unit] =
     for {
       _ <- IO.putStrLn("")
-      c <- opts.parse("gemctl", args)
+      c <- Command.parse("gemctl", args)
       _ <- c.traverse { c =>
           IO.newIORef(0)
             .map(interpreter(c, _))
@@ -84,7 +87,7 @@ trait PsImpl {
     } yield ()
 
   def psOne(k: Container): CtlIO[Unit] =
-    docker.docker(
+    docker(
       "inspect",
       "--format", "'{{ index .Config.Labels \"edu.gemini.commit\"}},{{.Name}},{{.State.Status}}'",
       k.hash
@@ -101,7 +104,7 @@ trait LogImpl extends BaseInfo {
 
   def showLog(lines: Int): CtlIO[Unit] =
     getRunningGemContainer.flatMap { c =>
-      docker.docker("logs", "--tail", lines.toString, c.hash).require {
+      docker("logs", "--tail", lines.toString, c.hash).require {
         case Output(0, ss) => ss
       } flatMap { ss =>
         ss.traverse_(log(Shell, _))
@@ -250,7 +253,7 @@ trait DeployImpl extends BaseInfo {
   def createDatabaseContainer(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
     gosub(Info, s"Creating Postgres container from image ${iPg.hash}",
       for {
-        c <- docker.docker("run",
+        c <- docker("run",
                   "--detach",
                  s"--net=$PrivateNetwork",
                   "--name", s"db-$nDeploy",
@@ -280,7 +283,7 @@ trait DeployImpl extends BaseInfo {
 
   def createDatabase(nDeploy: Int, kPg: Container): CtlIO[Unit] =
     for {
-      b <- docker.docker("exec", kPg.hash,
+      b <- docker("exec", kPg.hash,
              "psql", s"--host=db-$nDeploy",
                       "--command='create database gem'",
                       "--username=postgres"
@@ -315,7 +318,7 @@ trait DeployImpl extends BaseInfo {
   def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
     gosub(Info, s"Creating Gem container from image ${iDeploy.hash}",
       for {
-        k  <- docker.docker("run",
+        k  <- docker("run",
                 "--detach",
                 "--tty",
                 "--interactive",
@@ -365,7 +368,7 @@ trait DeployImpl extends BaseInfo {
 
   def copyData(fromName: String, toContainer: Container): CtlIO[Unit] =
     gosub(Info, s"Copying data from $fromName",
-      docker.docker(
+      docker(
         "exec", toContainer.hash,
         "sh", "-c", s"'pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem'"
       ) require {

@@ -1,4 +1,7 @@
-import ctl._
+package gem.ctl
+package low
+
+import gem.ctl.free.ctl._
 import io._
 
 import scalaz._, Scalaz._

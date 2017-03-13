@@ -1,7 +1,10 @@
+package gem.ctl
+package low
+
 import scalaz._, Scalaz._
 import scala.util.matching.Regex
 
-import ctl._
+import gem.ctl.free.ctl._
 import io._
 
 object git {
