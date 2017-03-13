@@ -64,14 +64,14 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
     */
   def buildToken(u: UserDetails): String =
     // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
-    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(sessionTimeout.toSeconds.toLong), config.secretKey, JwtAlgorithm.HmacSHA256)
+    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(sessionTimeout.toSeconds.toLong), config.secretKey, JwtAlgorithm.HS512)
 
   /**
     * Decodes a token out of JSON Web Token
     */
   def decodeToken(t: String): AuthResult =
     (for {
-      claim <- Jwt.decode(t, config.secretKey, Seq(JwtAlgorithm.HmacSHA256)).toDisjunction
+      claim <- Jwt.decode(t, config.secretKey, Seq(JwtAlgorithm.HS512)).toDisjunction
       token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))
     } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
 
