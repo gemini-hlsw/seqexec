@@ -43,7 +43,7 @@ trait ObsKeywordsReader {
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
-  def getRequestedAirMassAngle: Map[String, SeqAction[String]]
+  def getRequestedAirMassAngle: Map[String, SeqAction[Double]]
   def getTimingWindows: List[(Int, TimingWindowKeywords)]
   def getRequestedConditions: Map[String, SeqAction[String]]
 }
@@ -89,9 +89,9 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  override def getRequestedAirMassAngle: Map[String, SeqAction[String]] =
+  override def getRequestedAirMassAngle: Map[String, SeqAction[Double]] =
     List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).flatMap { key =>
-      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].toOption
+      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[Double].toOption
       value.map(v => key -> SeqAction(v))
     }(breakOut)
 
@@ -294,20 +294,20 @@ class StandardHeader(
       List(buildDouble(tcsReader.getOiwfsFreq, "OIFREQ")))
 
     val gwsKeywords = gwsReader.getHealth.flatMap{
-      case Some("GOOD") => sendKeywords(id, inst, hs, List(
+      case Some(0) => sendKeywords(id, inst, hs, List(
         buildDouble(gwsReader.getHumidity, "HUMIDITY"),
         {
-          val x = gwsReader.getTemperature.map(_.map(_.toCelsiusDegrees))
+          val x = gwsReader.getTemperature.map(_.map(_.toCelsiusScale))
           buildDouble(x, "TAMBIENT")
         },
         {
-          val x = gwsReader.getTemperature.map(_.map(_.toFahrenheitDegrees))
+          val x = gwsReader.getTemperature.map(_.map(_.toFahrenheitScale))
           buildDouble(x, "TAMBIEN2")
         },
         {
           val x = gwsReader.getAirPressure.map(_.map(_.to(new PressureUnit {
               override def symbol = "mmHg"
-              override def conversionFactor = 0.00750061561303
+              override def conversionFactor = 133.32239
             })))
           buildDouble(x, "PRESSURE")
         },
@@ -316,12 +316,12 @@ class StandardHeader(
           buildDouble(x, "PRESSUR2")
         },
         {
-          val x = gwsReader.getDewPoint.map(_.map(_.toCelsiusDegrees))
+          val x = gwsReader.getDewPoint.map(_.map(_.toCelsiusScale))
           buildDouble(x, "DEWPOINT")
         },
         {
-          val x = gwsReader.getDewPoint.map(_.map(_.toFahrenheitDegrees))
-          buildDouble(x, "DEWPOINT2")
+          val x = gwsReader.getDewPoint.map(_.map(_.toFahrenheitScale))
+          buildDouble(x, "DEWPOIN2")
         },
         {
           val x = gwsReader.getWindVelocity.map(_.map(_.toMetersPerSecond))
@@ -336,7 +336,7 @@ class StandardHeader(
           buildDouble(x, "WINDDIRE")
         }
       ))
-      case _            => SeqAction(())
+      case _       => SeqAction(())
     }
 
     val obsObject: SeqAction[Option[String]] = for {
@@ -354,7 +354,7 @@ class StandardHeader(
         "REQMINAM" -> MIN_AIRMASS,
         "REQMINHA" -> MIN_HOUR_ANGLE)
       val requested = keys.flatMap {
-        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildString(_, keyword))
+        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
       }
       sendKeywords(id, inst, hs, requested)
     }
@@ -378,9 +378,9 @@ class StandardHeader(
         case (i, tw) =>
           List(
             buildString(tw.start,    f"REQTWS${i + 1}%02d"),
-            buildDouble(tw.duration, f"REQTWD${i + 1}02d"),
-            buildInt32(tw.repeat,    f"REQTWN${i + 1}02d"),
-            buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
+            buildDouble(tw.duration, f"REQTWD${i + 1}%02d"),
+            buildInt32(tw.repeat,    f"REQTWN${i + 1}%02d"),
+            buildDouble(tw.period,   f"REQTWP${i + 1}%02d"))
       }
       val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
       sendKeywords(id, inst, hs, windowsCount :: windows)
@@ -410,7 +410,7 @@ class StandardHeader(
       buildDouble(tcsReader.getSourceATarget.getProperMotionRA, "PMRA"),
       {
         val x = tcsReader.getSourceATarget.getWavelength.map(_.map(_.length.toAngstroms))
-        buildDouble(x, "WAVEL")
+        buildDouble(x, "WAVELENG")
       },
       buildDouble(tcsReader.getSourceATarget.getParallax, "PARALLAX"),
       buildDouble(tcsReader.getSourceATarget.getRadialVelocity, "RADVEL"),

@@ -22,7 +22,7 @@ final class GwsEpics private (epicsService: CaService) {
   def windVelocity: Option[Velocity] = Option(state.getDoubleAttribute("windspee").value).map(v => MetersPerSecond(v.doubleValue))
   def airPressure: Option[Pressure] = Option(state.getDoubleAttribute("pressure").value).map(v => Bars(v.doubleValue*Milli))
   def ambientT: Option[Temperature] = Option(state.getDoubleAttribute("tambient").value).map(v => Celsius(v.doubleValue))
-  def health: Option[String] = Option(state.getStringAttribute("health").value)
+  def health: Option[Int] = Option(state.getIntegerAttribute("health").value)
   def dewPoint: Option[Temperature] = Option(state.getDoubleAttribute("dewpoint").value).map(v => Celsius(v.doubleValue))
   def windDirection: Option[Angle] = Option(state.getDoubleAttribute("winddire").value).map(v => Degrees(v.doubleValue))
 

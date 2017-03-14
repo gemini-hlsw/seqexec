@@ -9,7 +9,7 @@ import squants.thermal.Celsius
   * Created by jluhrs on 3/13/17.
   */
 trait GwsKeywordReader {
-  def getHealth: SeqAction[Option[String]]
+  def getHealth: SeqAction[Option[Int]]
   def getTemperature: SeqAction[Option[Temperature]]
   def getDewPoint: SeqAction[Option[Temperature]]
   def getAirPressure: SeqAction[Option[Pressure]]
@@ -33,7 +33,7 @@ object DummyGwsKeywordsReader extends GwsKeywordReader {
 
   override def getHumidity: SeqAction[Option[Double]] = 20.0
 
-  override def getHealth: SeqAction[Option[String]] = "GOOD"
+  override def getHealth: SeqAction[Option[Int]] = 0
 }
 
 object GwsKeywordsReaderImpl extends GwsKeywordReader {
@@ -51,5 +51,5 @@ object GwsKeywordsReaderImpl extends GwsKeywordReader {
 
   override def getHumidity: SeqAction[Option[Double]] = GwsEpics.instance.humidity
 
-  override def getHealth: SeqAction[Option[String]] = GwsEpics.instance.health
+  override def getHealth: SeqAction[Option[Int]] = GwsEpics.instance.health
 }
