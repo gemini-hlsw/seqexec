@@ -20,18 +20,18 @@ object deploy {
   def getNetwork: CtlIO[Network] =
     gosub(Info, s"Verifying $PrivateNetwork network.",
       findNetwork(PrivateNetwork).flatMap {
-        case Some(n) => ctlLog(Info, s"Using existing network ${n.hash}.").as(n)
-        case None    => createNetwork(PrivateNetwork) >>! { n => ctlLog(Info, s"Created network ${n.hash}.") }
+        case Some(n) => info(s"Using existing network ${n.hash}.").as(n)
+        case None    => createNetwork(PrivateNetwork) >>! { n => info(s"Created network ${n.hash}.") }
       }
     )
 
   def getDeployCommit(rev: String): CtlIO[DeployCommit] =
     gosub(Info, "Verifying deploy commit.",
       for {
-        c <- ctlLog(Info, s"Using $rev.") *> commitForRevision(rev)
-        _ <- ctlLog(Info, s"Commit is ${c.hash}")
+        c <- info(s"Using $rev.") *> commitForRevision(rev)
+        _ <- info(s"Commit is ${c.hash}")
         u <- uncommittedChanges.map(_ && rev == "HEAD")
-        _ <- u.whenM(ctlLog(Warn, "There are uncommitted changes. This is a UNCOMMITTED deployment."))
+        _ <- u.whenM(warn("There are uncommitted changes. This is a UNCOMMITTED deployment."))
       } yield DeployCommit(c, u)
     )
 
@@ -43,14 +43,14 @@ object deploy {
     else fileContentsAtCommit(cDeploy.commit, path)
 
   def requireImage(nameAndVersion: String): CtlIO[Image] = {
-    ctlLog(Info, s"Looking for $nameAndVersion") *>
+    info(s"Looking for $nameAndVersion") *>
     findImage(nameAndVersion).flatMap {
       case None    =>
-        ctlLog(Warn, s"Cannot find image locally. Pulling (could take a few minutes).") *> pullImage(nameAndVersion).flatMap {
+        warn(s"Cannot find image locally. Pulling (could take a few minutes).") *> pullImage(nameAndVersion).flatMap {
           case None    => ctlLog(Error, s"Image was not found.") *> exit(-1)
-          case Some(i) => ctlLog(Info, s"Image is ${i.hash}") as i
+          case Some(i) => info(s"Image is ${i.hash}") as i
         }
-      case Some(i) => ctlLog(Info, s"Image is ${i.hash}") as i
+      case Some(i) => info(s"Image is ${i.hash}") as i
     }
   }
 
@@ -69,8 +69,8 @@ object deploy {
   def verifyLineage(base: DeployCommit, dc: DeployCommit): CtlIO[Unit] =
     gosub(Info, "Verifying lineage.",
       (base, dc) match {
-        case (DeployCommit(b, true),  DeployCommit(d, true))  if b === d => ctlLog(Info, "Base and deploy commits are matching and UNCOMMITTED. All is well.")
-        case (DeployCommit(b, false), DeployCommit(d, false)) if b === d => ctlLog(Info, "Base and deploy commits are identical. Nothing to do.") *> exit(0)
+        case (DeployCommit(b, true),  DeployCommit(d, true))  if b === d => info("Base and deploy commits are matching and UNCOMMITTED. All is well.")
+        case (DeployCommit(b, false), DeployCommit(d, false)) if b === d => info("Base and deploy commits are identical. Nothing to do.") *> exit(0)
         case (DeployCommit(b, _),     DeployCommit(d, _)) =>
           isAncestor(b, d).flatMap {
             case true  => ctlLog(Info , s"Base commit is an ancestor of deploy commit (as it should be).")
@@ -82,7 +82,7 @@ object deploy {
   def ensureNoRunningDeployments: CtlIO[Unit] =
     gosub(Info, "Ensuring that there is no running deployment.",
       findRunningContainersWithLabel("edu.gemini.commit").flatMap {
-        case Nil => ctlLog(Info, "There are no running deployments.")
+        case Nil => info("There are no running deployments.")
         case cs  =>
           for {
             c <- config
@@ -107,7 +107,7 @@ object deploy {
                   "--health-timeout", "2s",
                   iPg.hash
              ).require { case Output(0, List(s)) => Container(s) }
-        _ <- ctlLog(Info, s"Container is db-${nDeploy} ${c.hash}.")
+        _ <- info(s"Container is db-${nDeploy} ${c.hash}.")
       } yield c
     )
 
@@ -120,7 +120,7 @@ object deploy {
                case _               => ""
              } .map(_.parseInt.toOption.getOrElse(0)) .foldLeft(0)(_ max _) + 1
            }
-      _ <- ctlLog(Info, s"Deploy number for this host will be $n.")
+      _ <- info(s"Deploy number for this host will be $n.")
     } yield n
 
   def createDatabase(nDeploy: Int, kPg: Container): CtlIO[Unit] =
@@ -133,9 +133,9 @@ object deploy {
              case Output(0, List("CREATE DATABASE")) => true
              case Output(2, _)                       => false
            }
-      _ <- if (b) ctlLog(Info, "Created database.")
+      _ <- if (b) info("Created database.")
            else {
-             ctlLog(Info, s"Waiting for Postgres to start up.") *>
+             info(s"Waiting for Postgres to start up.") *>
              shell("sleep 2") *>
              createDatabase(nDeploy, kPg)
            }
@@ -143,8 +143,8 @@ object deploy {
 
   def awaitHealthy(k: Container): CtlIO[Unit] =
     containerHealth(k) >>= {
-      case "starting" => ctlLog(Info,  s"Waiting for health check.") *> shell("sleep 2") *> awaitHealthy(k)
-      case "healthy"  => ctlLog(Info,  s"Container is healthy.")
+      case "starting" => info( s"Waiting for health check.") *> shell("sleep 2") *> awaitHealthy(k)
+      case "healthy"  => info( s"Container is healthy.")
       case s          => ctlLog(Error, s"Health check failed: $s") *> exit(-1)
     }
 
@@ -172,7 +172,7 @@ object deploy {
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://db-$nDeploy/gem",
                 iDeploy.hash
               ).require { case Output(0, List(s)) => Container(s) }
-        _  <- ctlLog(Info, s"Container is gem-${nDeploy} ${k.hash}.")
+        _  <- info(s"Container is gem-${nDeploy} ${k.hash}.")
       } yield k
     )
 
@@ -183,9 +183,9 @@ object deploy {
         case Output(0, _) => true
         case Output(1, _) => false
       } flatMap {
-        case true  => ctlLog(Info, s"Service is available at $host:$port.")
+        case true  => info(s"Service is available at $host:$port.")
         case false =>
-          ctlLog(Info, s"Awaiting port availability (remaining retries: $n)") *>
+          info(s"Awaiting port availability (remaining retries: $n)") *>
           shell("sleep 2") *> awaitNet(host, port, n - 1)
       }
     }
@@ -226,7 +226,7 @@ object deploy {
         _     <- verifyLineage(cBase, cDeploy)
         kPg   <- getRunningPostgresContainer
         cPg   <- getDeployCommitForContainer(kPg)
-        _     <- if (cPg.commit === cBase.commit) ctlLog(Info,  "Gem and Postgres containers are at the same commit.")
+        _     <- if (cPg.commit === cBase.commit) info( "Gem and Postgres containers are at the same commit.")
                  else                             ctlLog(Error, "Gem and Postgres containers are at different commits. What?") *> exit(-1)
         _     <- gosub(Info, "Stopping old Gem container.", stopContainer(kGem))
         kPg2  <- deployDatabase(nDeploy, cDeploy, iPg)

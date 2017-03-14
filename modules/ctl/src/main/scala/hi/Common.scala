@@ -11,8 +11,8 @@ object common {
   def getUniqueRunningContainerWithLabel(label: String): CtlIO[Container] =
     findRunningContainersWithLabel(label) flatMap {
       case c :: Nil => c.point[CtlIO]
-      case Nil      => log(Error, "No running container found.")       *> exit(-1)
-      case _        => log(Error, "Multiple running container found.") *> exit(-1)
+      case Nil      => error("No running container found.")       *> exit(-1)
+      case _        => error("Multiple running container found.") *> exit(-1)
     }
 
   def getRunningGemContainer: CtlIO[Container] =
@@ -29,7 +29,7 @@ object common {
     gosub(Info, s"Getting commit for container ${k.hash}.",
       for {
         s <- getLabelValue("edu.gemini.commit", k)
-        _ <- log(Info, s"Commit is $s")
+        _ <- info(s"Commit is $s")
       } yield {
         val Suffix = "-UNCOMMITTED"
         if (s.endsWith(Suffix)) DeployCommit(Commit(s.dropRight(Suffix.length)), true)

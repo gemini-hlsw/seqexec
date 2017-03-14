@@ -41,6 +41,10 @@ object ctl {
 
   def log(level: Level, msg: String): CtlIO[Unit]   = gosub(level, msg, ().point[CtlIO])
 
+  def info(msg: String):  CtlIO[Unit] = log(Info, msg)
+  def warn(msg: String):  CtlIO[Unit] = log(Warn, msg)
+  def error(msg: String): CtlIO[Unit] = log(Error, msg)
+
   def require[A](shell: CtlIO[Output])(f: PartialFunction[Output, A]): CtlIO[A] =
     shell.flatMap { o =>
       f.lift(o) match {

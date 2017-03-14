@@ -1,6 +1,6 @@
 package gem.ctl.hi
 
-import gem.ctl.free.ctl.{ log => ctlLog, _ }
+import gem.ctl.free.ctl._
 import gem.ctl.low.docker._
 
 import scalaz._, Scalaz._
@@ -16,7 +16,7 @@ object stop {
     )
 
   def stopOne(k: Container): CtlIO[Unit] =
-    ctlLog(Info, s"Stopping $k") *>
+    info(s"Stopping $k") *>
     stopContainer(k)
 
 }

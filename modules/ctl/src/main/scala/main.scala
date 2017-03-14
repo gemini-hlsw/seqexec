@@ -3,7 +3,7 @@ package gem.ctl
 import scalaz._, Scalaz._
 import scalaz.effect._
 
-import gem.ctl.free.ctl.{ CtlIO, log, Info }
+import gem.ctl.free.ctl._
 import gem.ctl.free.interpreter.{ interpreter }
 
 import gem.ctl.hi.ps.ps
@@ -15,7 +15,7 @@ object main extends SafeApp {
 
   /** Map a `Command` to a correspondig program in `CtlIO`. */
   def command(c: Command): CtlIO[Unit] =
-    log(Info, s"Target host is ${c.userAndHost.userAndHost}").as(c).flatMap {
+    info(s"Target host is ${c.userAndHost.userAndHost}").as(c).flatMap {
       case Command.Deploy(u, d, s, v) => deploy(d, s)
       case Command.Ps(_, _)           => ps
       case Command.Stop(_, _)         => stop
