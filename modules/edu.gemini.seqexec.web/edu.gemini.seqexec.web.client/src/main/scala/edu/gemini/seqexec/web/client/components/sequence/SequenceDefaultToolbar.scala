@@ -4,12 +4,13 @@ import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
+import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 
+import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB}
 import japgolly.scalajs.react.ScalazReact._
 
 import scalaz.syntax.equal._
@@ -18,20 +19,32 @@ import scalaz.syntax.std.boolean._
 object SequenceObserverField {
   case class Props(s: SequenceView, isLogged: Boolean)
 
+  case class State(currentText: Option[String])
+
   def updateObserver(s: SequenceView, name: String) =
     Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
 
-  private val component = ReactComponentB[Props]("SequenceObserverField")
-    .renderPS( ($, p, s) =>
+  class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
+    def updateState(value: String): Callback =
+      $.modState(_.copy(currentText = Some(value)))
+
+    def render(p: Props, s: State) = {
+      val observerEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
       <.div(
         ^.cls := "ui form",
         <.div(
           ^.cls := "required field",
           Label(Label.Props("Observer", "")),
-          Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.isLogged, onBlur = name => updateObserver(p.s, name)))
+          InputEV(InputEV.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", observerEV, placeholder = "Observer...", disabled = !p.isLogged, onBlur = name => updateObserver(p.s, name)))
         )
       )
-    )
+    }
+  }
+  private val component = ReactComponentB[Props]("SequenceObserverField")
+    .initialState(State(None))
+    .renderBackend[Backend]
+    .configure(TimerSupport.install)
+    .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
     .build
 
   def apply(p: Props) = component(p)
