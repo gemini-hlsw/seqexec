@@ -29,7 +29,7 @@ object git {
       case Output(128, _)     => None
     } .flatMap {
       case Some(c) => c.point[CtlIO]
-      case None    => log(Error, s"No such revsion: $rev") *> exit[Commit](128)
+      case None    => error(s"No such revsion: $rev") *> exit[Commit](128)
     }
 
   val uncommittedChanges: CtlIO[Boolean] =

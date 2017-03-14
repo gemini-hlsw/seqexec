@@ -36,21 +36,23 @@ object ctl {
 
   val userAndHost: CtlIO[UserAndHost] = config.map(_.userAndHost)
 
-  def gosub[A](level: Level, msg: String, fa: CtlIO[A]): CtlIO[A] =
-    Free.liftF(Gosub(level, msg, fa))
+  def gosub[A](msg: String, fa: CtlIO[A]): CtlIO[A] =
+    Free.liftF(Gosub(Info, msg, fa))
 
-  def log(level: Level, msg: String): CtlIO[Unit]   = gosub(level, msg, ().point[CtlIO])
+  private def log(level: Level, msg: String): CtlIO[Unit] =
+    Free.liftF(Gosub(level, msg, ().point[CtlIO]))
 
-  def info(msg: String):  CtlIO[Unit] = log(Info, msg)
-  def warn(msg: String):  CtlIO[Unit] = log(Warn, msg)
+  def info (msg: String): CtlIO[Unit] = log(Info,  msg)
+  def warn (msg: String): CtlIO[Unit] = log(Warn,  msg)
   def error(msg: String): CtlIO[Unit] = log(Error, msg)
+  def text (msg: String): CtlIO[Unit] = log(Shell, msg)
 
   def require[A](shell: CtlIO[Output])(f: PartialFunction[Output, A]): CtlIO[A] =
     shell.flatMap { o =>
       f.lift(o) match {
         case None    =>
-          o.lines.traverse(log(Error, _))      *>
-          log(Error, s"exited (${o.exitCode})") *>
+          o.lines.traverse(error(_))      *>
+          error(s"exited (${o.exitCode})") *>
           exit[A](o.exitCode)
         case Some(a) => a.point[CtlIO]
       }

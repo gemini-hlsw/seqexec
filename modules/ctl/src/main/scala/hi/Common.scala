@@ -16,17 +16,17 @@ object common {
     }
 
   def getRunningGemContainer: CtlIO[Container] =
-    gosub(Info, "Finding current running Gem container.",
+    gosub("Finding current running Gem container.",
       getUniqueRunningContainerWithLabel("edu.gemini.gem")
     )
 
   def getRunningPostgresContainer: CtlIO[Container] =
-    gosub(Info, "Finding current running Postgres container.",
+    gosub("Finding current running Postgres container.",
       getUniqueRunningContainerWithLabel("edu.gemini.db")
     )
 
   def getDeployCommitForContainer(k: Container): CtlIO[DeployCommit] =
-    gosub(Info, s"Getting commit for container ${k.hash}.",
+    gosub(s"Getting commit for container ${k.hash}.",
       for {
         s <- getLabelValue("edu.gemini.commit", k)
         _ <- info(s"Commit is $s")

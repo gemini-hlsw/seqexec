@@ -1,6 +1,6 @@
 package gem.ctl.hi
 
-import gem.ctl.free.ctl.{ log => ctlLog, CtlIO, Shell }
+import gem.ctl.free.ctl.{ CtlIO, text }
 import gem.ctl.low.io.Output
 import gem.ctl.low.docker.docker
 import gem.ctl.hi.common.getRunningGemContainer
@@ -14,7 +14,7 @@ object log {
       docker("logs", "--tail", lines.toString, c.hash).require {
         case Output(0, ss) => ss
       } flatMap { ss =>
-        ss.traverse_(ctlLog(Shell, _))
+        ss.traverse_(text)
       }
     }
 }
