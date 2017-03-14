@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.server
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, ZoneId}
+import java.time.{LocalDate, ZoneId, LocalDateTime, Instant}
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -11,13 +11,14 @@ import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants._
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-import squants.space.Angstroms
+import scala.collection.breakOut
 
 /**
   * Created by jluhrs on 1/31/17.
@@ -41,9 +42,36 @@ trait ObsKeywordsReader {
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
+  def getRequestedAirMassAngle: Map[String, SeqAction[String]]
+  def getTimingWindows: List[(Int, TimingWindowKeywords)]
+  def getRequestedConditions: Map[String, SeqAction[String]]
 }
 
+object ObsKeywordsReader {
+  // Constants taken from SPSiteQualityCB
+  // TODO Make them public in SPSiteQualityCB
+  val MIN_HOUR_ANGLE: String         = "MinHourAngle"
+  val MAX_HOUR_ANGLE: String         = "MaxHourAngle"
+  val MIN_AIRMASS: String            = "MinAirmass"
+  val MAX_AIRMASS: String            = "MaxAirmass"
+
+  val TIMING_WINDOW_START: String    = "TimingWindowStart"
+  val TIMING_WINDOW_DURATION: String = "TimingWindowDuration"
+  val TIMING_WINDOW_REPEAT: String   = "TimingWindowRepeat"
+  val TIMING_WINDOW_PERIOD: String   = "TimingWindowPeriod"
+
+  val SB: String = SKY_BACKGROUND_PROP.getName
+  val CC: String = CLOUD_COVER_PROP.getName
+  val IQ: String = IMAGE_QUALITY_PROP.getName
+  val WV: String = WATER_VAPOR_PROP.getName
+}
+
+// A Timing window always have 4 keywords
+case class TimingWindowKeywords(start: SeqAction[String], duration: SeqAction[Double], repeat: SeqAction[Int], period: SeqAction[Double])
+
 case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
+  import ObsKeywordsReader._
+
   override def getObsType: SeqAction[String] = SeqAction(
     config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).toString)
 
@@ -57,6 +85,56 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).toString
   )
 
+  def explainExtractError(e: ExtractFailure): SeqexecFailure =
+    SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
+
+  override def getRequestedAirMassAngle: Map[String, SeqAction[String]] =
+    List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).flatMap { key =>
+      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].toOption
+      value.map(v => key -> SeqAction(v))
+    }(breakOut)
+
+  override def getRequestedConditions: Map[String, SeqAction[String]]  =
+    List(SB, CC, IQ, WV).flatMap { key =>
+      val value: Option[String] = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].map { d =>
+        (d === "100") ? "Any" | s"$d-percentile"
+      }.toOption
+      value.map(v => key -> SeqAction(v))
+    }(breakOut)
+
+  override def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
+    def calcDuration(duration: String): NumberFormatException \/ SeqAction[Double] =
+      duration.parseDouble.map { d => SeqAction((d < 0) ? d | d / 1000)}.disjunction
+
+    def calcRepeat(repeat: String): NumberFormatException \/ SeqAction[Int] =
+      repeat.parseInt.map(SeqAction(_)).disjunction
+
+    def calcPeriod(period: String): NumberFormatException \/ SeqAction[Double] =
+      period.parseDouble.map(p => SeqAction(p/1000)).disjunction
+
+    def calcStart(start: String): NumberFormatException \/ SeqAction[String] =
+      start.parseLong.map { s =>
+        val timeStr = LocalDateTime.ofInstant(Instant.ofEpochMilli(s), ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        SeqAction(timeStr)
+      }.disjunction
+
+    val prefixes = List(TIMING_WINDOW_START, TIMING_WINDOW_DURATION, TIMING_WINDOW_REPEAT, TIMING_WINDOW_PERIOD)
+    val windows = for {
+      w <- (0 until 99).toList
+    } yield {
+      // Keys on the ocs use the prefix and the value and they are always Strings
+      val keys = prefixes.map(p => f"$p$w")
+      keys.map { k =>
+        Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.toString)
+      }.sequence.collect {
+        case start :: duration :: repeat :: period :: Nil =>
+          (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period))(TimingWindowKeywords.apply)
+          .map(w -> _).toOption
+      }.join
+    }
+    windows.flatten
+  }
+
   override def getDataLabel: SeqAction[String] = SeqAction(
     config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).toString
   )
@@ -65,28 +143,24 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
   override def getTelescope: SeqAction[String] = SeqAction(telescope)
 
-  override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value]
+      .leftMap(explainExtractError))
 
-  override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value]
+      .leftMap(explainExtractError))
 
-  override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value].leftMap(e =>
-          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value]
+      .leftMap(explainExtractError))
 
-  override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] = EitherT(Task.now(
-    config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
+  override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] =
+    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
       .recoverWith[ConfigUtilOps.ExtractFailure, StandardGuideOptions.Value] {
         case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.right
         case e@ConfigUtilOps.ConversionError(_,_) => e.left
-      }.leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+      }.leftMap(explainExtractError))
 
   private val headerPrivacy: Boolean = config.extract(HEADER_VISIBILITY_KEY).as[Visibility].getOrElse(Visibility.PUBLIC) match {
     case Visibility.PRIVATE => true
@@ -97,28 +171,26 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
   override def getProprietaryMonths: SeqAction[String] =
     if(headerPrivacy) {
-      EitherT(Task.delay(
+      SeqAction.either(
         config.extract(PROPRIETARY_MONTHS_KEY).as[Integer].recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
-          case ConfigUtilOps.KeyNotFound(_) => (new Integer(0)).right
+          case ConfigUtilOps.KeyNotFound(_) => new Integer(0).right
           case e@ConfigUtilOps.ConversionError(_, _) => e.left
-        }.leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-          .map(v => (LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))))
+        }.leftMap(explainExtractError)
+          .map(v => LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 
-  override def getObsObject: SeqAction[String] = EitherT(Task.now(
-    config.extract(OBSERVE_KEY / OBJECT_PROP).as[String].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getObsObject: SeqAction[String] =
+    SeqAction.either(config.extract(OBSERVE_KEY / OBJECT_PROP).as[String]
+      .leftMap(explainExtractError))
 
   override def getGeminiQA: SeqAction[String] = SeqAction("UNKNOWN")
 
   override def getPIReq: SeqAction[String] = SeqAction("UNKNOWN")
 
-  override def getSciBand: SeqAction[Int] = EitherT(Task.now(
-    config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt).leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-  ))
+  override def getSciBand: SeqAction[Int] =
+    SeqAction.either(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt)
+      .leftMap(explainExtractError))
 }
 
 // TODO: Replace Unit by something that can read the state for real
@@ -189,10 +261,10 @@ class StandardHeader(
       guiderKeywords(guideWith, baseName, target, List(buildDouble(tcsReader.getM2UserFocusOffset, baseName + "FOCUS")) ++ extras)
 
     val pwfs1Keywords = standardGuiderKeywords(obsReader.getPwfs1Guide, "P1", tcsReader.getPwfs1Target,
-          List(buildDouble(tcsReader.getPwfs1Freq, "P1FREQ")))
+      List(buildDouble(tcsReader.getPwfs1Freq, "P1FREQ")))
 
     val pwfs2Keywords = standardGuiderKeywords(obsReader.getPwfs2Guide, "P2", tcsReader.getPwfs2Target,
-          List(buildDouble(tcsReader.getPwfs2Freq, "P2FREQ")))
+      List(buildDouble(tcsReader.getPwfs2Freq, "P2FREQ")))
 
     val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, List())
 
@@ -205,6 +277,46 @@ class StandardHeader(
       tcsObject <- tcsReader.getSourceATarget.getObjectName
     } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
             else obsObject
+
+    val requestedAirMassAngle: SeqAction[Unit] = {
+      import ObsKeywordsReader._
+      val keys = List(
+        "REQMAXAM" -> MAX_AIRMASS,
+        "REQMAXHA" -> MAX_HOUR_ANGLE,
+        "REQMINAM" -> MIN_AIRMASS,
+        "REQMINHA" -> MIN_HOUR_ANGLE)
+      val requested = keys.flatMap {
+        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildString(_, keyword))
+      }
+      sendKeywords(id, inst, hs, requested)
+    }
+
+    val requestedConditions: SeqAction[Unit] = {
+      import ObsKeywordsReader._
+      val keys = List(
+        "REQBG" -> SB,
+        "REQCC" -> CC,
+        "REQIQ" -> IQ,
+        "REQWV" -> WV)
+      val requested = keys.flatMap {
+        case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
+      }
+      sendKeywords(id, inst, hs, requested)
+    }
+
+    val timinigWindows: SeqAction[Unit] = {
+      val timingWindows = obsReader.getTimingWindows
+      val windows = timingWindows.flatMap {
+        case (i, tw) =>
+          List(
+            buildString(tw.start,    f"REQTWS${i + 1}%02d"),
+            buildDouble(tw.duration, f"REQTWD${i + 1}02d"),
+            buildInt32(tw.repeat,    f"REQTWN${i + 1}02d"),
+            buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
+      }
+      val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
+      sendKeywords(id, inst, hs, windowsCount :: windows)
+    }
 
     sendKeywords(id, inst, hs, List(
       buildString(obsReader.getObsType, "OBSTYPE"),
@@ -271,6 +383,9 @@ class StandardHeader(
       buildString(stateReader.getRawBackgroundLight, "RAWBG"),
       buildInt32(obsReader.getSciBand, "SCIBAND")
     )) *>
+    requestedConditions *>
+    requestedAirMassAngle *>
+    timinigWindows *>
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
