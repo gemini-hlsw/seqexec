@@ -232,19 +232,20 @@ object SeqexecEngine {
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings( site,
-                          odbHost,
-                          now,
-                          dhsServer,
-                          dhsSim,
-                          tcsSim,
-                          instSim,
-                          gcalSim,
-                          odbNotifications,
-                          tcsKeywords,
-                          f2Keywords,
-                          gwsKeywords,
-                          instForceError) )
+        } yield Settings(site,
+                         odbHost,
+                         now,
+                         dhsServer,
+                         dhsSim,
+                         tcsSim,
+                         instSim,
+                         gcalSim,
+                         odbNotifications,
+                         tcsKeywords,
+                         f2Keywords,
+                         gwsKeywords,
+                         instForceError)
+        )
 
     }
   }

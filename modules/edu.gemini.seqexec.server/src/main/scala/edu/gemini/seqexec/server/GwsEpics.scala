@@ -2,12 +2,13 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import squants.{Temperature, Velocity}
-import edu.gemini.epics.acm.{CaService, XMLBuilder}
-import squants.motion.{Bars, MetersPerSecond, Pressure}
 import squants.MetricSystem.Milli
+import squants.motion.{Bars, MetersPerSecond, Pressure}
 import squants.space.{Angle, Degrees}
 import squants.thermal.Celsius
+import squants.{Temperature, Velocity}
+
+import edu.gemini.epics.acm.{CaService, XMLBuilder}
 
 /**
   * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather Server.
