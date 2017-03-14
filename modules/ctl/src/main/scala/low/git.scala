@@ -7,6 +7,7 @@ import scala.util.matching.Regex
 import gem.ctl.free.ctl._
 import io._
 
+/** Low-level constructors for `CtlIO` operations related to git. */
 object git {
 
   case class Commit(hash: String)

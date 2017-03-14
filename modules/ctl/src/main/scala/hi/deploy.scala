@@ -8,6 +8,7 @@ import gem.ctl.hi.common._
 
 import scalaz._, Scalaz._
 
+/** Constructors for `CtlIO` operations related to the `deploy` command. */
 object deploy {
 
   val PrivateNetwork = "gem-net"

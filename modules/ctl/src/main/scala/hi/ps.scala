@@ -6,6 +6,7 @@ import gem.ctl.low.docker._
 
 import scalaz._, Scalaz._
 
+/** Constructors for `CtlIO` operations related to the `ps` command. */
 object ps {
 
   val ps: CtlIO[Unit] =

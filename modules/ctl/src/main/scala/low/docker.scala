@@ -6,6 +6,7 @@ import io._
 
 import scalaz._, Scalaz._
 
+/** Low-level constructors for `CtlIO` operations related to docker. */
 object docker {
 
   case class Network(hash: String)

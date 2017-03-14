@@ -7,6 +7,7 @@ import gem.ctl.hi.common.getRunningGemContainer
 
 import scalaz._, Scalaz._
 
+/** Constructors for `CtlIO` operations related to the `log` command. */
 object log {
 
   def showLog(lines: Int): CtlIO[Unit] =

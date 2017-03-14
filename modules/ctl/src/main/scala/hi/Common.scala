@@ -6,6 +6,7 @@ import gem.ctl.low.docker._
 
 import scalaz._, Scalaz._
 
+/** Constructors for some common `CtlIO` operations that are shared by other commands. */
 object common {
 
   def getUniqueRunningContainerWithLabel(label: String): CtlIO[Container] =
