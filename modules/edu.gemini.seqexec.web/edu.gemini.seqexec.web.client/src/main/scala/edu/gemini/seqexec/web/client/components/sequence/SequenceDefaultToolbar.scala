@@ -15,6 +15,28 @@ import japgolly.scalajs.react.ScalazReact._
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 
+object SequenceObserverField {
+  case class Props(s: SequenceView, isLogged: Boolean)
+
+  def updateObserver(s: SequenceView, name: String) =
+    Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
+
+  private val component = ReactComponentB[Props]("SequenceObserverField")
+    .renderPS( ($, p, s) =>
+      <.div(
+        ^.cls := "ui form",
+        <.div(
+          ^.cls := "required field",
+          Label(Label.Props("Observer", "")),
+          Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.isLogged, onBlur = name => updateObserver(p.s, name)))
+        )
+      )
+    )
+    .build
+
+  def apply(p: Props) = component(p)
+}
+
 object SequenceDefaultToolbar {
   case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
   case class State(runRequested: Boolean, pauseRequested: Boolean)
@@ -25,9 +47,6 @@ object SequenceDefaultToolbar {
 
   def requestPause(s: SequenceView) =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
-
-  def updateObserver(s: SequenceView, name: String) =
-    Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
 
   val component = ReactComponentB[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false))
@@ -95,14 +114,7 @@ object SequenceDefaultToolbar {
                   "ten wide" -> p.status.isLogged,
                   "sixteen wide" -> !p.status.isLogged
                 ),
-                <.div(
-                  ^.cls := "ui form",
-                  <.div(
-                    ^.cls := "required field",
-                    Label(Label.Props("Observer", "")),
-                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.status.isLogged, onBlur = name => updateObserver(p.s, name)))
-                  )
-                )
+                SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
               )
             )
           )
