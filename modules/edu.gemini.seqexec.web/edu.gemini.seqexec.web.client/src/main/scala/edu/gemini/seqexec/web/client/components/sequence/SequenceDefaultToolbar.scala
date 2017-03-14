@@ -29,7 +29,7 @@ object SequenceObserverField {
       Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
 
     def updateState(value: String): Callback =
-      $.modState(_.copy(currentText = Some(value)))
+      $.state >>= {s => Callback.when(s.currentText != Some(s))($.modState(_.copy(currentText = Some(value)))) }
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
@@ -43,7 +43,7 @@ object SequenceObserverField {
         <.div(
           ^.cls := "required field",
           Label(Label.Props("Observer", "")),
-          InputEV(InputEV.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", observerEV, placeholder = "Observer...", disabled = !p.isLogged, onBlur = name => updateObserver(p.s, name)))
+          InputEV(InputEV.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", observerEV, placeholder = "Observer...", disabled = !p.isLogged, onBlur = _ => submitIfChanged))
         )
       )
     }
@@ -144,9 +144,7 @@ object SequenceDefaultToolbar {
       )
     ).componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
-      val runStateCB =
-        Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
-      runStateCB
+      Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
     }.build
 
   def apply(p: Props) = component(p)
