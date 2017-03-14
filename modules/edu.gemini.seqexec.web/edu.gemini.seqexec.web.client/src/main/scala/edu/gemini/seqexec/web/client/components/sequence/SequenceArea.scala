@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
-
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.model._
@@ -11,23 +10,18 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
-import edu.gemini.seqexec.web.client.semanticui.elements.input.Input
-
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactNode}
+import japgolly.scalajs.react.{Callback, CallbackTo, ReactComponentB, ReactComponentU, ReactNode, ScalazReact, TopNode}
 import japgolly.scalajs.react.ScalazReact._
 
 import scalacss.ScalaCssReact._
-import scalaz.syntax.equal._
-import scalaz.syntax.std.boolean._
 
 object StepConfigToolbar {
   case class Props(s: SequenceView, step: Int)
 
   def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
-  val component = ReactComponentB[Props]("StepConfigToolbar")
+  private val component = ReactComponentB[Props]("StepConfigToolbar")
     .stateless
     .render_P( p =>
       <.div(
@@ -41,121 +35,19 @@ object StepConfigToolbar {
       )
     ).build
 
-  def apply(p: Props) = component(p)
-}
-
-object SequenceDefaultToolbar {
-  case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
-  case class State(runRequested: Boolean, pauseRequested: Boolean)
-  val ST = ReactS.Fix[State]
-
-  def requestRun(s: SequenceView) =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false)).liftCB
-
-  def requestPause(s: SequenceView) =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
-
-  def updateObserver(s: SequenceView, name: String) =
-    Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
-
-  val component = ReactComponentB[Props]("SequencesDefaultToolbar")
-    .initialState(State(runRequested = false, pauseRequested = false))
-    .renderPS( ($, p, s) =>
-      <.div(
-        ^.cls := "row",
-        p.status.isLogged && p.s.status === SequenceState.Completed ?=
-          <.h3(
-            ^.cls := "ui green header",
-            "Sequence completed"
-          ),
-        <.div(
-          ^.cls := "ui two column grid",
-          <.div(
-            ^.cls := "ui row",
-            <.div(
-              ^.cls := "left bottom aligned six wide column",
-              p.status.isLogged && p.s.hasError ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPlay),
-                    labeled = true,
-                    onClick = $.runState(requestRun(p.s)),
-                    color = Some("blue"),
-                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
-                    disabled = !p.status.isConnected || s.runRequested),
-                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-                ),
-              p.status.isLogged && p.s.status === SequenceState.Idle ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPlay),
-                    labeled = true,
-                    onClick = $.runState(requestRun(p.s)),
-                    color = Some("blue"),
-                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
-                    disabled = !p.status.isConnected || s.runRequested),
-                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-                ),
-              p.status.isLogged && p.s.status === SequenceState.Running ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPause),
-                    labeled = true,
-                    onClick = $.runState(requestPause(p.s)),
-                    color = Some("teal"),
-                    dataTooltip = Some("Pause the sequence after the current step completes"),
-                    disabled = !p.status.isConnected || s.pauseRequested),
-                  "Pause"
-                ),
-              p.status.isLogged && p.s.status === SequenceState.Paused ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPlay),
-                    labeled = true,
-                    onClick = $.runState(requestPause(p.s)),
-                    color = Some("teal"),
-                    disabled = !p.status.isConnected),
-                  "Continue from step 1"
-                )
-              ),
-              <.div(
-                ^.cls := "right column",
-                ^.classSet(
-                  "ten wide" -> p.status.isLogged,
-                  "sixteen wide" -> !p.status.isLogged
-                ),
-                <.div(
-                  ^.cls := "ui form",
-                  <.div(
-                    ^.cls := "required field",
-                    Label(Label.Props("Observer", "")),
-                    Input(Input.Props(p.s.metadata.instrument + ".observer", p.s.metadata.instrument + ".observer", p.s.metadata.observer.getOrElse(""), placeholder = "Observer...", disabled = !p.status.isLogged, onBlur = name => updateObserver(p.s, name)))
-                  )
-                )
-              )
-            )
-          )
-      )
-    ).componentWillReceiveProps { f =>
-      // Update state of run requested depending on the run state
-      val runStateCB =
-        Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
-      runStateCB
-    }.build
-
-  def apply(p: Props) = component(p)
+  def apply(p: Props): ReactComponentU[Props, Unit, Unit, TopNode] = component(p)
 }
 
 object SequenceStepsTableContainer {
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
   case class State(nextStepToRun: Int)
 
-  val ST = ReactS.Fix[State]
+  private val ST = ReactS.Fix[State]
 
-  def updateStepToRun(step: Int) =
+  def updateStepToRun(step: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.set(State(step)).liftCB
 
-  val component = ReactComponentB[Props]("SequenceStepsTableContainer")
+  private val component = ReactComponentB[Props]("SequenceStepsTableContainer")
     .initialState(State(0))
     .renderPS { ($, p, s) =>
       <.div(
@@ -168,7 +60,7 @@ object SequenceStepsTableContainer {
       f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.build
 
-  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
+  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]): ReactComponentU[Props, State, Unit, TopNode] = component(Props(s, status, stepConfigDisplayed))
 }
 
 /**
@@ -178,7 +70,7 @@ object SequenceTabContent {
 
   case class Props(isActive: Boolean, status: ClientStatus, st: SequenceTab)
 
-  val component = ReactComponentB[Props]("SequenceTabContent")
+  private val component = ReactComponentB[Props]("SequenceTabContent")
     .stateless
     .render_P(p =>
       <.div(
@@ -194,7 +86,7 @@ object SequenceTabContent {
     )
     .build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): ReactComponentU[Props, Unit, Unit, TopNode] = component(p)
 }
 
 /**
@@ -204,7 +96,7 @@ object SequenceTabsBody {
   case class Props(s: ClientStatus, d: SequencesOnDisplay)
   def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
 
-  val component = ReactComponentB[Props]("SequenceTabsBody")
+  private val component = ReactComponentB[Props]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(
@@ -220,7 +112,7 @@ object SequenceTabsBody {
 
 object SequenceHeadersAndTable {
   case class Props(proxy: ModelProxy[(ClientStatus, SequencesOnDisplay)])
-  val component = ReactComponentB[Props]("SequenceHeadersAndTable")
+  private val component = ReactComponentB[Props]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
@@ -233,7 +125,7 @@ object SequenceHeadersAndTable {
       )
     ) .build
 
-  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
 }
 /**
   * Contains all the tabs for the sequences available in parallel
@@ -243,7 +135,7 @@ object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
 
-  val component = ReactComponentB[Unit]("SequenceTabs")
+  private val component = ReactComponentB[Unit]("SequenceTabs")
     .stateless
     .render_P( p =>
       <.div(
@@ -263,12 +155,12 @@ object SequenceTabs {
     )
     .build
 
-  def apply() = component()
+  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
 }
 
 object SequenceArea {
 
-  val component = ReactComponentB[Unit]("QueueTableSection")
+  private val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
     .render( _ =>
       <.div(
@@ -278,5 +170,5 @@ object SequenceArea {
       )
     ).build
 
-  def apply() = component()
+  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
 }
