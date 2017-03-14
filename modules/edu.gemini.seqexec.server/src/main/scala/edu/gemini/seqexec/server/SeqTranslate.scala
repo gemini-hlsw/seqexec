@@ -36,6 +36,7 @@ class SeqTranslate(site: Site) {
       val headers = List(new StandardHeader(systems.dhs,
         ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
         if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
+        if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader,
         // TODO: Replace Unit by something that can read the State
         StateKeywordsReader(Unit)
       )) ++ instHeaders
@@ -130,8 +131,9 @@ object SeqTranslate {
                     )
 
   case class Settings(
-                       tcsKeywords: Boolean,
-                       f2Keywords: Boolean
+                      tcsKeywords: Boolean,
+                      f2Keywords: Boolean,
+                      gwsKeywords: Boolean
                      )
 
 }

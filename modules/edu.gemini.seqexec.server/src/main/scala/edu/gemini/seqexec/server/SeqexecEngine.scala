@@ -38,7 +38,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics
   )
 
-  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords)
+  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords, gwsKeywords = settings.gwsKeywords)
 
   def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
@@ -184,9 +184,10 @@ object SeqexecEngine {
                       odbNotifications: Boolean,
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
+                      gwsKeywords: Boolean,
                       instForceError: Boolean)
   val defaultSettings = Settings(Site.GS, "localhost", LocalDate.of(2017, 1,1), "http://localhost/", true,
-    true, true, true, false, false, false, false)
+    true, true, true, false, false, false, false, false)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
@@ -204,6 +205,7 @@ object SeqexecEngine {
       val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
       val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
       val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
+      val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
       val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
 
     // TODO: Review initialization of EPICS systems
@@ -223,12 +225,26 @@ object SeqexecEngine {
       val instInit = if(f2Keywords || !instSim)
         Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
       else Task(())
+      val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task(())
 
       tcsInit *>
+        gwsInit *>
         instInit *>
         (for {
           now <- Task(LocalDate.now)
-        } yield Settings(site, odbHost, now, dhsServer, dhsSim, tcsSim, instSim, gcalSim, odbNotifications, tcsKeywords, f2Keywords, instForceError) )
+        } yield Settings( site,
+                          odbHost,
+                          now,
+                          dhsServer,
+                          dhsSim,
+                          tcsSim,
+                          instSim,
+                          gcalSim,
+                          odbNotifications,
+                          tcsKeywords,
+                          f2Keywords,
+                          gwsKeywords,
+                          instForceError) )
 
     }
   }
