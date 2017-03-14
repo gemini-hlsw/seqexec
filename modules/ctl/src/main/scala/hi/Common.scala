@@ -16,17 +16,17 @@ object common {
     }
 
   def getRunningGemContainer: CtlIO[Container] =
-    gosub("Finding current running Gem container.",
+    gosub("Finding current running Gem container.") {
       getUniqueRunningContainerWithLabel("edu.gemini.gem")
-    )
+    }
 
   def getRunningPostgresContainer: CtlIO[Container] =
-    gosub("Finding current running Postgres container.",
+    gosub("Finding current running Postgres container.") {
       getUniqueRunningContainerWithLabel("edu.gemini.db")
-    )
+    }
 
   def getDeployCommitForContainer(k: Container): CtlIO[DeployCommit] =
-    gosub(s"Getting commit for container ${k.hash}.",
+    gosub(s"Getting commit for container ${k.hash}.") {
       for {
         s <- getLabelValue("edu.gemini.commit", k)
         _ <- info(s"Commit is $s")
@@ -35,7 +35,7 @@ object common {
         if (s.endsWith(Suffix)) DeployCommit(Commit(s.dropRight(Suffix.length)), true)
         else                    DeployCommit(Commit(s),                          false)
       }
-    )
+    }
 
   case class DeployCommit(commit: Commit, uncommitted: Boolean) {
     def imageVersion = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash

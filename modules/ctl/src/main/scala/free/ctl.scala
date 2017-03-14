@@ -36,7 +36,7 @@ object ctl {
 
   val userAndHost: CtlIO[UserAndHost] = config.map(_.userAndHost)
 
-  def gosub[A](msg: String, fa: CtlIO[A]): CtlIO[A] =
+  def gosub[A](msg: String)(fa: CtlIO[A]): CtlIO[A] =
     Free.liftF(Gosub(Info, msg, fa))
 
   private def log(level: Level, msg: String): CtlIO[Unit] =

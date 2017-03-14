@@ -18,25 +18,27 @@ object deploy {
   val Port           = 1234
 
   def getNetwork: CtlIO[Network] =
-    gosub(s"Verifying $PrivateNetwork network.",
+    gosub(s"Verifying $PrivateNetwork network.") {
       findNetwork(PrivateNetwork).flatMap {
         case Some(n) => info(s"Using existing network ${n.hash}.").as(n)
         case None    => createNetwork(PrivateNetwork) >>! { n => info(s"Created network ${n.hash}.") }
       }
-    )
+    }
 
   def getDeployCommit(rev: String): CtlIO[DeployCommit] =
-    gosub("Verifying deploy commit.",
+    gosub("Verifying deploy commit.") {
       for {
         c <- info(s"Using $rev.") *> commitForRevision(rev)
         _ <- info(s"Commit is ${c.hash}")
         u <- uncommittedChanges.map(_ && rev == "HEAD")
         _ <- u.whenM(warn("There are uncommitted changes. This is a UNCOMMITTED deployment."))
       } yield DeployCommit(c, u)
-    )
+    }
 
   def getDeployImage(dc: DeployCommit): CtlIO[Image] =
-    gosub("Verifying Gem deploy image.", requireImage(s"$GemOrg/$GemImage:${dc.imageVersion}"))
+    gosub("Verifying Gem deploy image.") {
+      requireImage(s"$GemOrg/$GemImage:${dc.imageVersion}")
+    }
 
   def fileContentsAtDeployCommit(cDeploy: DeployCommit, path: String): CtlIO[List[String]] =
     if (cDeploy.uncommitted) fileContents(path)
@@ -55,7 +57,7 @@ object deploy {
   }
 
   def getPostgresImage(cDeploy: DeployCommit): CtlIO[Image] =
-    gosub("Verifying Postgres deploy image.",
+    gosub("Verifying Postgres deploy image.") {
       fileContentsAtDeployCommit(cDeploy, "pg-image.txt").flatMap { ss =>
         ss.map(_.trim).filterNot(s => s.startsWith("#") || s.trim.isEmpty) match {
           case List(name) => requireImage(name)
@@ -64,10 +66,10 @@ object deploy {
             exit(-1)
         }
       }
-    )
+    }
 
   def verifyLineage(base: DeployCommit, dc: DeployCommit): CtlIO[Unit] =
-    gosub("Verifying lineage.",
+    gosub("Verifying lineage.") {
       (base, dc) match {
         case (DeployCommit(b, true),  DeployCommit(d, true))  if b === d => info("Base and deploy commits are matching and UNCOMMITTED. All is well.")
         case (DeployCommit(b, false), DeployCommit(d, false)) if b === d => info("Base and deploy commits are identical. Nothing to do.") *> exit(0)
@@ -77,10 +79,10 @@ object deploy {
             case false => error(s"Base commit is not an ancestor of deploy commit.") *> exit[Unit](-1)
           }
       }
-    )
+    }
 
   def ensureNoRunningDeployments: CtlIO[Unit] =
-    gosub("Ensuring that there is no running deployment.",
+    gosub("Ensuring that there is no running deployment.") {
       findRunningContainersWithLabel("edu.gemini.commit").flatMap {
         case Nil => info("There are no running deployments.")
         case cs  =>
@@ -90,10 +92,10 @@ object deploy {
             _ <- exit[Unit](-1)
           } yield ()
       }
-    )
+    }
 
   def createDatabaseContainer(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
-    gosub(s"Creating Postgres container from image ${iPg.hash}",
+    gosub(s"Creating Postgres container from image ${iPg.hash}") {
       for {
         c <- docker("run",
                   "--detach",
@@ -109,7 +111,7 @@ object deploy {
              ).require { case Output(0, List(s)) => Container(s) }
         _ <- info(s"Container is db-${nDeploy} ${c.hash}.")
       } yield c
-    )
+    }
 
   def getDeployNumber: CtlIO[Int] =
     for {
@@ -149,16 +151,16 @@ object deploy {
     }
 
   def deployDatabase(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
-    gosub("Deploying database.",
+    gosub("Deploying database.") {
       for {
         kDb <- createDatabaseContainer(nDeploy, cDeploy, iPg)
         _   <- createDatabase(nDeploy, kDb)
         _   <- awaitHealthy(kDb)
       } yield kDb
-    )
+    }
 
   def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
-    gosub(s"Creating Gem container from image ${iDeploy.hash}",
+    gosub(s"Creating Gem container from image ${iDeploy.hash}") {
       for {
         k  <- docker("run",
                 "--detach",
@@ -174,7 +176,7 @@ object deploy {
               ).require { case Output(0, List(s)) => Container(s) }
         _  <- info(s"Container is gem-${nDeploy} ${k.hash}.")
       } yield k
-    )
+    }
 
   def awaitNet(host: String, port: Int, retries: Int = 9): CtlIO[Unit] =
     retries match {
@@ -191,35 +193,35 @@ object deploy {
     }
 
   def deployGem(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
-    gosub("Deploying Gem.",
+    gosub("Deploying Gem.") {
       for {
         kGem <- createGemContainer(nDeploy, cDeploy, iDeploy)
         h    <- userAndHost.map(_.host)
         _    <- awaitNet(h, Port)
       } yield kGem
-    )
+    }
 
   def deployStandalone(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
-    gosub("Performing STANDALONE deployment",
+    gosub("Performing STANDALONE deployment") {
       for {
         _   <- ensureNoRunningDeployments
         kDb <- deployDatabase(nDeploy, cDeploy, iPg)
         _   <- deployGem(nDeploy, cDeploy, iDeploy)
       } yield ()
-    )
+    }
 
   def copyData(fromName: String, toContainer: Container): CtlIO[Unit] =
-    gosub(s"Copying data from $fromName",
+    gosub(s"Copying data from $fromName") {
       docker(
         "exec", toContainer.hash,
         "sh", "-c", s"'pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem'"
       ) require {
         case Output(0, _) => ()
       }
-    )
+    }
 
   def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
-    gosub("Performing UPGRADE deployment",
+    gosub("Performing UPGRADE deployment") {
       for {
         kGem  <- getRunningGemContainer
         cBase <- getDeployCommitForContainer(kGem)
@@ -228,14 +230,14 @@ object deploy {
         cPg   <- getDeployCommitForContainer(kPg)
         _     <- if (cPg.commit === cBase.commit) info( "Gem and Postgres containers are at the same commit.")
                  else                             error("Gem and Postgres containers are at different commits. What?") *> exit(-1)
-        _     <- gosub("Stopping old Gem container.", stopContainer(kGem))
+        _     <- gosub("Stopping old Gem container.")(stopContainer(kGem))
         kPg2  <- deployDatabase(nDeploy, cDeploy, iPg)
         nPg   <- getContainerName(kPg)
         _     <- copyData(nPg, kPg2)
-        _     <- gosub("Stopping old database container.", stopContainer(kPg))
+        _     <- gosub("Stopping old database container.")(stopContainer(kPg))
         _     <- deployGem(nDeploy, cDeploy, iDeploy)
       } yield ()
-    )
+    }
 
   def deploy(deploy: String, standalone: Boolean) =
     for {

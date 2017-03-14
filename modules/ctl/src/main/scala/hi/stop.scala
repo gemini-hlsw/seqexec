@@ -8,12 +8,12 @@ import scalaz._, Scalaz._
 object stop {
 
   val stop: CtlIO[Unit] =
-    gosub("Shutting down Gem deployment.",
+    gosub("Shutting down Gem deployment.") {
       for {
         ks <- findRunningContainersWithLabel("edu.gemini.commit")
         _  <- ks.traverseU(stopOne)
       } yield ()
-    )
+    }
 
   def stopOne(k: Container): CtlIO[Unit] =
     info(s"Stopping $k") *>
