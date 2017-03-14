@@ -16,17 +16,25 @@ import japgolly.scalajs.react.ScalazReact._
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 
+import scala.concurrent.duration._
+
 object SequenceObserverField {
   case class Props(s: SequenceView, isLogged: Boolean)
 
   case class State(currentText: Option[String])
 
-  def updateObserver(s: SequenceView, name: String) =
-    Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
+    def updateObserver(s: SequenceView, name: String) =
+      Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
+
     def updateState(value: String): Callback =
       $.modState(_.copy(currentText = Some(value)))
+
+    def submitIfChanged: Callback =
+      ($.state zip $.props) >>= {
+        case (s, p) => Callback.when(s.currentText != p.s.metadata.observer)(updateObserver(p.s, s.currentText.getOrElse("")))
+      }
 
     def render(p: Props, s: State) = {
       val observerEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
@@ -45,6 +53,8 @@ object SequenceObserverField {
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
+    // Every 2 seconds check if the field has changed and submit
+    .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))
     .build
 
   def apply(p: Props) = component(p)
