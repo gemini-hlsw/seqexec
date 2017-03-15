@@ -226,9 +226,11 @@ object SeqexecEngine {
         Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
       else Task(())
       val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task(())
+      val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task(())
 
       tcsInit *>
         gwsInit *>
+        gcalInit *>
         instInit *>
         (for {
           now <- Task(LocalDate.now)

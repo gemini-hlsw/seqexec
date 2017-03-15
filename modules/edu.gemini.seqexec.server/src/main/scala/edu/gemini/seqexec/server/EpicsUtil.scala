@@ -42,6 +42,10 @@ object EpicsCommand {
     case \/-(e) => e
   })
 
+  def setParameter[A,T](p: Option[CaParameter[T]], v: A, f: A => T): SeqAction[Unit] =
+    safe(EitherT(Task.delay {
+      p.map(_.set(f(v)).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
+    } ) )
   def setParameter[T](p: Option[CaParameter[T]], v: T): SeqAction[Unit] =
     safe(EitherT(Task.delay {
       p.map(_.set(v).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
