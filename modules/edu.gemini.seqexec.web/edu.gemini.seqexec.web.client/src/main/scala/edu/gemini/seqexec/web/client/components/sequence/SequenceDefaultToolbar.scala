@@ -37,11 +37,10 @@ object SequenceObserverField {
 
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
-      $.props >>= {p => Callback.when(p.isLogged)(setInterval(submitIfChanged, 2.second)) }
+      setInterval(submitIfChanged, 2.second)
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
       val observerEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
-      println("Render " + observerEV.value)
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -58,10 +57,13 @@ object SequenceObserverField {
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
-    .componentDidMount(c => c.backend.setupTimer)
+    .componentDidMount(c => Callback.when(c.props.isLogged)(c.backend.setupTimer))
     .componentWillReceiveProps { f =>
       // Update the observer field
-      Callback.when((f.nextProps.s.metadata.observer =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty)(f.$.modState(_.copy(currentText = f.nextProps.s.metadata.observer)))
+      val updateOperatorCB = Callback.when((f.nextProps.s.metadata.observer =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty)(f.$.modState(_.copy(currentText = f.nextProps.s.metadata.observer)))
+      // Add the timer if we login
+      val setupTimerCB = Callback.log(f.nextProps.isLogged && !f.currentProps.isLogged) >> Callback.when(f.nextProps.isLogged && !f.currentProps.isLogged)(f.$.backend.setupTimer)
+      updateOperatorCB >> setupTimerCB
     }
     .build
 
