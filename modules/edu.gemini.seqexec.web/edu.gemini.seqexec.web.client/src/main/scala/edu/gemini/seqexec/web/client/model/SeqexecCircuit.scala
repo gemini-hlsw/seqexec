@@ -22,9 +22,8 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
-import scalaz.{-\/, \/, \/-}
-import scalaz.syntax.equal._
-import scalaz.std.string._
+import scalaz._
+import Scalaz._
 
 /**
   * Handles actions related to search
@@ -313,12 +312,15 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
-      val sequencesWithObserver = s.view.queue.collect {
-        case q if q.metadata.observer.isEmpty => q.copy(metadata = q.metadata.copy(observer = value._3.map(_.displayName)))
-        case q                                => q
+      val observer = value._3.map(_.displayName)
+      val (sequencesWithObserver, effects) = s.view.queue.foldLeft((List.empty[SequenceView], List(Some(Effect(Future(NoAction: Action)): Effect)))) { case ((seq, eff), q) =>
+        if (q.metadata.observer.isEmpty && observer.nonEmpty) {
+          (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq, Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) :: eff)
+        } else {
+          (q :: seq, eff)
+        }
       }
-      updated(value.copy(_1 = SequencesQueue(sequencesWithObserver)))
-      // updated(value.copy(_1 = s.view))
+      updated(value.copy(_1 = SequencesQueue(sequencesWithObserver)), effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(s) =>
       // Ignore unknown events
