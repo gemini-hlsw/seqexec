@@ -35,6 +35,9 @@ object SequenceObserverField {
         case (s, p) => Callback.when(s.currentText != p.s.metadata.observer)(updateObserver(p.s, s.currentText.getOrElse("")))
       }
 
+    def setupTimer: Callback =
+      $.props >>= {p => Callback.when(p.isLogged)(setInterval(submitIfChanged, 2.second)) }
+
     def render(p: Props, s: State) = {
       val observerEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
       <.div(
@@ -47,13 +50,14 @@ object SequenceObserverField {
       )
     }
   }
+
   private val component = ReactComponentB[Props]("SequenceObserverField")
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
     // Every 2 seconds check if the field has changed and submit
-    .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))
+    .componentDidMount(c => c.backend.setupTimer)
     .componentWillReceiveProps { f =>
       // Update the observer field
       println("UPD " + f.nextProps.s.metadata.observer + "->" + f.$.state.currentText)
