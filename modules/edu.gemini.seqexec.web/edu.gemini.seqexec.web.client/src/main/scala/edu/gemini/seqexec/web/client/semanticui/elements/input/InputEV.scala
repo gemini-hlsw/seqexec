@@ -42,7 +42,7 @@ object InputEV {
   def onBlur(c: ChangeCallback): ReactST[CallbackTo, State, Unit] =
     ST.get.liftCB.flatMap(v => ST.retM(c(v.value)))
 
-  private val component = ReactComponentB[Props]("InputEV")
+  private def component = ReactComponentB[Props]("InputEV")
     .initialState(State(""))
     .renderPS { ($, p, s) =>
       <.input(

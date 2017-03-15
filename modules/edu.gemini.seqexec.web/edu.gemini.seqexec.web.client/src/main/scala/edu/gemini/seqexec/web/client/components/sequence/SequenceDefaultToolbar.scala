@@ -28,7 +28,7 @@ object SequenceObserverField {
       $.props >>= {p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))) }
 
     def updateState(value: String): Callback =
-      $.state >>= {s => Callback.when(s.currentText != Some(s))($.modState(_.copy(currentText = Some(value)))) }
+      $.state >>= {s => Callback.when(!s.currentText.contains(s))($.modState(_.copy(currentText = Some(value)))) }
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
@@ -40,6 +40,7 @@ object SequenceObserverField {
 
     def render(p: Props, s: State) = {
       val observerEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
+      println("Render " + observerEV.value)
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -60,8 +61,6 @@ object SequenceObserverField {
     .componentDidMount(c => c.backend.setupTimer)
     .componentWillReceiveProps { f =>
       // Update the observer field
-      println("UPD " + f.nextProps.s.metadata.observer + "->" + f.$.state.currentText)
-      println("UPD " + ((f.nextProps.s.metadata.observer.map(_.toString) =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty))
       Callback.when((f.nextProps.s.metadata.observer =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty)(f.$.modState(_.copy(currentText = f.nextProps.s.metadata.observer)))
     }
     .build
