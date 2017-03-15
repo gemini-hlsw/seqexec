@@ -9,8 +9,9 @@ import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactComponentU, TopNode}
+import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactComponentB, ReactComponentU, ScalazReact, TopNode}
 import japgolly.scalajs.react.ScalazReact._
+import org.scalajs.dom.html.Div
 
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
@@ -22,13 +23,12 @@ object SequenceObserverField {
 
   case class State(currentText: Option[String])
 
-
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
-    def updateObserver(s: SequenceView, name: String) =
+    def updateObserver(s: SequenceView, name: String): CallbackTo[Unit] =
       $.props >>= {p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))) }
 
     def updateState(value: String): Callback =
-      $.state >>= {s => Callback.when(!s.currentText.contains(s))($.modState(_.copy(currentText = Some(value)))) }
+      $.state >>= {s => Callback.when(!s.currentText.contains(value))($.modState(_.copy(currentText = Some(value)))) }
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
@@ -36,9 +36,10 @@ object SequenceObserverField {
       }
 
     def setupTimer: Callback =
+      // Every 2 seconds check if the field has changed and submit
       $.props >>= {p => Callback.when(p.isLogged)(setInterval(submitIfChanged, 2.second)) }
 
-    def render(p: Props, s: State) = {
+    def render(p: Props, s: State): ReactTagOf[Div] = {
       val observerEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
       println("Render " + observerEV.value)
       <.div(
@@ -57,7 +58,6 @@ object SequenceObserverField {
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
-    // Every 2 seconds check if the field has changed and submit
     .componentDidMount(c => c.backend.setupTimer)
     .componentWillReceiveProps { f =>
       // Update the observer field
@@ -73,10 +73,10 @@ object SequenceDefaultToolbar {
   case class State(runRequested: Boolean, pauseRequested: Boolean)
   private  val ST = ReactS.Fix[State]
 
-  def requestRun(s: SequenceView) =
+  def requestRun(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false)).liftCB
 
-  def requestPause(s: SequenceView) =
+  def requestPause(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
 
   private val component = ReactComponentB[Props]("SequencesDefaultToolbar")
@@ -155,5 +155,5 @@ object SequenceDefaultToolbar {
       Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
     }.build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): ReactComponentU[Props, State, Unit, TopNode] = component(p)
 }
