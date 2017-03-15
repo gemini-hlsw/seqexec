@@ -10,7 +10,11 @@ import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.html.Div
 
+import scalaz.syntax.equal._
+import scalaz.std.string._
+import scalaz.std.option._
 import scala.concurrent.duration._
+import scalaz.Equal
 
 /**
   * Display to show headers per sequence
@@ -20,13 +24,17 @@ object HeadersSideBar {
 
   case class State(currentText: Option[String])
 
+  object State {
+    implicit val equals: Equal[State] = Equal.equalA[State]
+  }
+
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
     def updateState(value: String): Callback =
       $.modState(_.copy(currentText = Some(value)))
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(s.currentText != p.operator())(Callback.empty) // We aro not submiting until the backend properly update this property
+        case (s, p) => Callback.when(s.currentText =/= p.operator())(Callback.empty) // We are not submitting until the backend properly update this property
       }
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
@@ -61,7 +69,7 @@ object HeadersSideBar {
     .configure(TimerSupport.install)
     .shouldComponentUpdate { f =>
       // If the state changes, don't update the UI
-      f.$.state == f.nextState
+      f.$.state === f.nextState
     }
     // Every 2 seconds check if the field has changed and submit
     .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))

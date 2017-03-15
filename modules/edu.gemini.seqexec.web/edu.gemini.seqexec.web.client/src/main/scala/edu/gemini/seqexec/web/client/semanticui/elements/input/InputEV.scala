@@ -60,10 +60,10 @@ object InputEV {
       )
     }.componentWillMount { $ =>
       // Update state of the input if the property has changed
-      Callback.when(($.props.value.value /== $.state.value) && !$.state.changed)($.setState(State($.props.value.value)))
+      Callback.when(($.props.value.value =/= $.state.value) && !$.state.changed)($.setState(State($.props.value.value)))
     }.componentWillReceiveProps { f =>
       // Update state of the input if the property has changed
-      Callback.when((f.nextProps.value.value /== f.$.state.value) && !f.$.state.changed)(f.$.setState(State(f.nextProps.value.value)))
+      Callback.when((f.nextProps.value.value =/= f.$.state.value) && !f.$.state.changed)(f.$.setState(State(f.nextProps.value.value)))
     }.build
 
   def apply(p: Props): ReactComponentU[Props, State, Unit, TopNode] = component(p)

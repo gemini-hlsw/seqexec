@@ -56,7 +56,7 @@ object Input {
       )
     }.componentWillMount { $ =>
       // Update state of the input if the property has changed
-      Callback.when(($.props.value /== $.state.value) && !$.state.changed)($.setState(State($.props.value)))
+      Callback.when(($.props.value =/= $.state.value) && !$.state.changed)($.setState(State($.props.value)))
     }.build
 
   def apply(p: Props): ReactComponentU[Props, State, Unit, TopNode] = component(p)
