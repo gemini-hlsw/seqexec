@@ -19,6 +19,7 @@ import scalaz.concurrent.Task
 
 class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, f2Reader: Flamingos2Header.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header._
+  import Header.Defaults._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
 
     sendKeywords(id, inst, hs, List(

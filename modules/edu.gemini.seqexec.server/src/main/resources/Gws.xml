@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="gws">ws</Top>
+    <Status name="gws::state">
+        <top>gws</top>
+        <attribute name="humidity">
+            <channel>wsHumid</channel>
+            <type>DOUBLE</type>
+            <description>The relative humidity (percent)</description>
+        </attribute>
+        <attribute name="windspee">
+            <channel>wsWindSpeed</channel>
+            <type>DOUBLE</type>
+            <description>The wind speed (m/s).</description>
+        </attribute>
+        <attribute name="pressure">
+            <channel>wsPress</channel>
+            <type>DOUBLE</type>
+            <description>The atmospheric pressure (mbars).</description>
+        </attribute>
+        <attribute name="tambient">
+            <channel>wsTemp</channel>
+            <type>DOUBLE</type>
+            <description>The ambient temp (C).</description>
+        </attribute>
+        <attribute name="health">
+            <channel>wsHealth</channel>
+            <type>INTEGER</type>
+            <description>Server Health</description>
+        </attribute>
+        <attribute name="dewpoint">
+            <channel>wsDew</channel>
+            <type>DOUBLE</type>
+            <description>The dew point (C).</description>
+        </attribute>
+        <attribute name="winddire">
+            <channel>wsWindDir</channel>
+            <type>DOUBLE</type>
+            <description>The wind direction (degrees).</description>
+        </attribute>
+    </Status>
+</Records>

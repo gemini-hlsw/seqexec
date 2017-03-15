@@ -14,6 +14,7 @@ import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
+import squants.motion.{Pressure, PressureUnit}
 
 import scalaz._
 import Scalaz._
@@ -42,7 +43,7 @@ trait ObsKeywordsReader {
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
   def getSciBand: SeqAction[Int]
-  def getRequestedAirMassAngle: Map[String, SeqAction[String]]
+  def getRequestedAirMassAngle: Map[String, SeqAction[Double]]
   def getTimingWindows: List[(Int, TimingWindowKeywords)]
   def getRequestedConditions: Map[String, SeqAction[String]]
 }
@@ -88,9 +89,9 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  override def getRequestedAirMassAngle: Map[String, SeqAction[String]] =
+  override def getRequestedAirMassAngle: Map[String, SeqAction[Double]] =
     List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).flatMap { key =>
-      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].toOption
+      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[Double].toOption
       value.map(v => key -> SeqAction(v))
     }(breakOut)
 
@@ -208,43 +209,64 @@ class StandardHeader(
   hs: DhsClient,
   obsReader: ObsKeywordsReader,
   tcsReader: TcsKeywordsReader,
+  gwsReader: GwsKeywordReader,
   stateReader: StateKeywordsReader) extends Header {
 
   import Header._
+  import Header.Defaults._
+  import KeywordsReader._
 
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
 
-    val p: SeqAction[Double] = for {
-      xoff <- tcsReader.getXOffset
-      yoff <- tcsReader.getYOffset
-      iaa  <- tcsReader.getInstrumentAA
+    val p: SeqAction[Option[Double]] = for {
+      xoffOpt <- tcsReader.getXOffset
+      yoffOpt <- tcsReader.getYOffset
+      iaaOpt <- tcsReader.getInstrumentAA
+    } yield for {
+      xoff <- xoffOpt
+      yoff <- yoffOpt
+      iaa <- iaaOpt
     } yield -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
 
-    val q: SeqAction[Double] = for {
-      xoff <- tcsReader.getXOffset
-      yoff <- tcsReader.getYOffset
-      iaa  <- tcsReader.getInstrumentAA
+    val q: SeqAction[Option[Double]] = for {
+      xoffOpt <- tcsReader.getXOffset
+      yoffOpt <- tcsReader.getYOffset
+      iaaOpt <- tcsReader.getInstrumentAA
+    } yield for {
+      xoff <- xoffOpt
+      yoff <- yoffOpt
+      iaa <- iaaOpt
     } yield -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
 
-    val raoff: SeqAction[Double] = for {
-      poff <- p
-      qoff <- q
-      ipa  <- tcsReader.getInstrumentPA
+    val raoff: SeqAction[Option[Double]] = for {
+      poffOpt <- p
+      qoffOpt <- q
+      ipaOpt <- tcsReader.getInstrumentPA
+    } yield for {
+      poff <- poffOpt
+      qoff <- qoffOpt
+      ipa <- ipaOpt
     } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
 
-    val decoff: SeqAction[Double] = for {
-      poff <- p
-      qoff <- q
-      ipa  <- tcsReader.getInstrumentPA
+    val decoff: SeqAction[Option[Double]] = for {
+      poffOpt <- p
+      qoffOpt <- q
+      ipaOpt <- tcsReader.getInstrumentPA
+    } yield for {
+      poff <- poffOpt
+      qoff <- qoffOpt
+      ipa <- ipaOpt
     } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
 
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
-                      extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
+                       extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
       if (g == StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
         buildDouble(target.getRA, baseName + "ARA"),
         buildDouble(target.getDec, baseName + "ADEC"),
-        buildDouble(target.getRadialVelocity, baseName + "ARV"),
-        buildDouble(target.getWavelength.map(_.length.toAngstroms), baseName + "AWAVEL"),
+        buildDouble(target.getRadialVelocity, baseName + "ARV"), {
+          val x = target.getWavelength.map(_.map(_.length.toAngstroms))
+          buildDouble(x, baseName + "AWAVEL")
+        },
         buildDouble(target.getEpoch, baseName + "AEPOCH"),
         buildDouble(target.getEquinox, baseName + "AEQUIN"),
         buildString(target.getFrame, baseName + "AFRAME"),
@@ -271,12 +293,58 @@ class StandardHeader(
     val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
       List(buildDouble(tcsReader.getOiwfsFreq, "OIFREQ")))
 
-    val obsObject: SeqAction[String] = for {
+    val gwsKeywords = gwsReader.getHealth.flatMap{
+      case Some(0) => sendKeywords(id, inst, hs, List(
+        buildDouble(gwsReader.getHumidity, "HUMIDITY"),
+        {
+          val x = gwsReader.getTemperature.map(_.map(_.toCelsiusScale))
+          buildDouble(x, "TAMBIENT")
+        },
+        {
+          val x = gwsReader.getTemperature.map(_.map(_.toFahrenheitScale))
+          buildDouble(x, "TAMBIEN2")
+        },
+        {
+          val x = gwsReader.getAirPressure.map(_.map(_.to(new PressureUnit {
+              override def symbol = "mmHg"
+              override def conversionFactor = 133.32239
+            })))
+          buildDouble(x, "PRESSURE")
+        },
+        {
+          val x = gwsReader.getAirPressure.map(_.map(_.toPascals))
+          buildDouble(x, "PRESSUR2")
+        },
+        {
+          val x = gwsReader.getDewPoint.map(_.map(_.toCelsiusScale))
+          buildDouble(x, "DEWPOINT")
+        },
+        {
+          val x = gwsReader.getDewPoint.map(_.map(_.toFahrenheitScale))
+          buildDouble(x, "DEWPOIN2")
+        },
+        {
+          val x = gwsReader.getWindVelocity.map(_.map(_.toMetersPerSecond))
+          buildDouble(x, "WINDSPEE")
+        },
+        {
+          val x = gwsReader.getWindVelocity.map(_.map(_.toInternationalMilesPerHour))
+          buildDouble(x, "WINDSPE2")
+        },
+        {
+          val x = gwsReader.getWindDirection.map(_.map(_.toDegrees))
+          buildDouble(x, "WINDDIRE")
+        }
+      ))
+      case _       => SeqAction(())
+    }
+
+    val obsObject: SeqAction[Option[String]] = for {
       obsType   <- obsReader.getObsType
       obsObject <- obsReader.getObsObject
       tcsObject <- tcsReader.getSourceATarget.getObjectName
     } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
-            else obsObject
+            else Some(obsObject)
 
     val requestedAirMassAngle: SeqAction[Unit] = {
       import ObsKeywordsReader._
@@ -286,7 +354,7 @@ class StandardHeader(
         "REQMINAM" -> MIN_AIRMASS,
         "REQMINHA" -> MIN_HOUR_ANGLE)
       val requested = keys.flatMap {
-        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildString(_, keyword))
+        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
       }
       sendKeywords(id, inst, hs, requested)
     }
@@ -310,9 +378,9 @@ class StandardHeader(
         case (i, tw) =>
           List(
             buildString(tw.start,    f"REQTWS${i + 1}%02d"),
-            buildDouble(tw.duration, f"REQTWD${i + 1}02d"),
-            buildInt32(tw.repeat,    f"REQTWN${i + 1}02d"),
-            buildDouble(tw.duration, f"REQTWD${i + 1}02d"))
+            buildDouble(tw.duration, f"REQTWD${i + 1}%02d"),
+            buildInt32(tw.repeat,    f"REQTWN${i + 1}%02d"),
+            buildDouble(tw.period,   f"REQTWP${i + 1}%02d"))
       }
       val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
       sendKeywords(id, inst, hs, windowsCount :: windows)
@@ -340,7 +408,10 @@ class StandardHeader(
       buildString(tcsReader.getSourceATarget.getFrame, "FRAME"),
       buildDouble(tcsReader.getSourceATarget.getProperMotionDec, "PMDEC"),
       buildDouble(tcsReader.getSourceATarget.getProperMotionRA, "PMRA"),
-      buildDouble(tcsReader.getSourceATarget.getWavelength.map(_.length.toAngstroms), "WAVELENG"),
+      {
+        val x = tcsReader.getSourceATarget.getWavelength.map(_.map(_.length.toAngstroms))
+        buildDouble(x, "WAVELENG")
+      },
       buildDouble(tcsReader.getSourceATarget.getParallax, "PARALLAX"),
       buildDouble(tcsReader.getSourceATarget.getRadialVelocity, "RADVEL"),
       buildDouble(tcsReader.getSourceATarget.getEpoch, "EPOCH"),
@@ -389,7 +460,8 @@ class StandardHeader(
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
-    aowfsKeywords
+    aowfsKeywords *>
+    gwsKeywords
   }
 
 
