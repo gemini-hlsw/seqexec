@@ -7,15 +7,14 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-
 import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactComponentU, TopNode}
 import japgolly.scalajs.react.ScalazReact._
 
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
-
+import scalaz.std.AllInstances._
 import scala.concurrent.duration._
 
 object SequenceObserverField {
@@ -26,7 +25,7 @@ object SequenceObserverField {
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
     def updateObserver(s: SequenceView, name: String) =
-      Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))
+      $.props >>= {p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))) }
 
     def updateState(value: String): Callback =
       $.state >>= {s => Callback.when(s.currentText != Some(s))($.modState(_.copy(currentText = Some(value)))) }
@@ -55,9 +54,15 @@ object SequenceObserverField {
     .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
     // Every 2 seconds check if the field has changed and submit
     .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))
+    .componentWillReceiveProps { f =>
+      // Update the observer field
+      println("UPD " + f.nextProps.s.metadata.observer + "->" + f.$.state.currentText)
+      println("UPD " + ((f.nextProps.s.metadata.observer.map(_.toString) =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty))
+      Callback.when((f.nextProps.s.metadata.observer =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty)(f.$.modState(_.copy(currentText = f.nextProps.s.metadata.observer)))
+    }
     .build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): ReactComponentU[Props, State, Backend, TopNode] = component(p)
 }
 
 object SequenceDefaultToolbar {
@@ -71,7 +76,7 @@ object SequenceDefaultToolbar {
   def requestPause(s: SequenceView) =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
 
-  val component = ReactComponentB[Props]("SequencesDefaultToolbar")
+  private val component = ReactComponentB[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false))
     .renderPS( ($, p, s) =>
       <.div(

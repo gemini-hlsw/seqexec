@@ -318,6 +318,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
         case q                                => q
       }
       updated(value.copy(_1 = SequencesQueue(sequencesWithObserver)))
+      // updated(value.copy(_1 = s.view))
 
     case ServerMessage(s) =>
       // Ignore unknown events
