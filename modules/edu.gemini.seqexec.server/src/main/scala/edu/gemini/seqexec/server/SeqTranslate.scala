@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
+import edu.gemini.seqexec.engine.{Action, Result, Resource, Sequence, Step}
 import edu.gemini.seqexec.model.Model.SequenceMetadata
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -73,7 +73,7 @@ class SeqTranslate(site: Site) {
         None,
         config.toStepConfig,
         // TODO: Lookup which resources are needed depending on the type of Step.
-        Set.empty,
+        instrumentResources(inst),
         false,
         (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
         else List())
@@ -100,6 +100,11 @@ class SeqTranslate(site: Site) {
       case _               => UnrecognizedInstrument(instName.toString).left[Step[Action]]
     }
 
+  }
+
+  def instrumentResources(inst: Instrument): Set[Resource] = inst match {
+    case Flamingos2(_) => Set(Resource.Mount, Resource.ScienceFold, Resource.F2)
+    case _             => Set.empty
   }
 
   private def extractInstrumentName(config: Config): String =
