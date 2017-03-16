@@ -37,9 +37,6 @@ package object engine {
 
   type FileId = String
 
-  type EngineState = Map[Sequence.Id, Sequence.State]
-  val initState: EngineState = Map.empty[Sequence.Id, Sequence.State]
-
   // Handle proper
 
   /**
@@ -50,7 +47,7 @@ package object engine {
     */
   type Handle[A] = HandleStateT[Task, A]
   // Helper alias to facilitate lifting.
-  type HandleStateT[M[_], A] = StateT[M, EngineState, A]
+  type HandleStateT[M[_], A] = StateT[M, Engine.State, A]
 
   /**
     * Changes the `Status` and returns the new `Queue.State`.
@@ -73,7 +70,8 @@ package object engine {
     )
 
   val resources: Handle[Set[Resource]] =
-    gets(_.values
+    gets(_.sequences
+          .values
           .toList
           .filter(_.status === SequenceState.Running)
           .foldMap(_.toSequence.resources)
@@ -83,7 +81,7 @@ package object engine {
     modifyS(id)(_.rollback)
 
   def setOperator(name: String): Handle[Unit] =
-    modify(_.mapValues(_.setOperator(name)))
+    modify(x => Engine.State(x.sequences.mapValues(_.setOperator(name))))
 
   def setObserver(id: Sequence.Id)(name: String): Handle[Unit] =
     modifyS(id)(_.setObserver(name))
@@ -92,14 +90,18 @@ package object engine {
     * Loads a sequence
     */
   def load(id: Sequence.Id, seq: Sequence[Action]): Handle[Unit] =
-    StateT[Task, EngineState, Unit] { s =>
-      Task {
-        s.get(id).map(t => t.status match {
-          case SequenceState.Running => (s, ())
-          case _                     => (s.updated(id, Sequence.State.init(seq)), ())
-        }).getOrElse((s.updated(id, Sequence.State.init(seq)), ()))
-      }
-    }
+    modify(
+      s => Engine.State(
+        s.sequences.get(id).map(
+          t => t.status match {
+            case SequenceState.Running => s.sequences
+            case _                     => s.sequences.updated(id, Sequence.State.init(seq))
+          }
+        ).getOrElse(
+          s.sequences.updated(id, Sequence.State.init(seq))
+        )
+      )
+    )
 
   /**
     * Adds the current `Execution` to the completed `Queue`, makes the next
@@ -197,7 +199,7 @@ package object engine {
   /**
     * Ask for the current Handle `Status`.
     */
-  def status(id: Sequence.Id): Handle[Option[SequenceState]] = gets(_.get(id).map(_.status))
+  def status(id: Sequence.Id): Handle[Option[SequenceState]] = gets(_.sequences.get(id).map(_.status))
 
   /**
     * Log something and return the `State`.
@@ -217,7 +219,7 @@ package object engine {
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(q: EventQueue)(ev: Event): Handle[EngineState] = {
+  private def run(q: EventQueue)(ev: Event): Handle[Engine.State] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
       case Start(id)               => log("Output: Started") *> rollback(q)(id) *>
@@ -262,13 +264,13 @@ package object engine {
     go(fs, s)
   }
 
-  def runE(q: EventQueue)(ev: Event): Handle[(Event, EngineState)] =
+  def runE(q: EventQueue)(ev: Event): Handle[(Event, Engine.State)] =
     run(q)(ev).map((ev, _))
 
-  def processE(q: EventQueue): Process[Handle, (Event, EngineState)] =
+  def processE(q: EventQueue): Process[Handle, (Event, Engine.State)] =
     receive(q).evalMap(runE(q))
 
-  def process(q: EventQueue)(qs: EngineState): Process[Task, (Event, EngineState)] =
+  def process(q: EventQueue)(qs: Engine.State): Process[Task, (Event, Engine.State)] =
     mapEvalState(q.dequeue, qs, runE(q))
 
   // Functions for type bureaucracy
@@ -282,26 +284,33 @@ package object engine {
 
   private val unit: Handle[Unit] = pure(Unit)
 
-  val get: Handle[EngineState] =
-    MonadState[Handle, EngineState].get
+  val get: Handle[Engine.State] =
+    MonadState[Handle, Engine.State].get
 
-  private def gets[A](f: (EngineState) => A): Handle[A] =
-    MonadState[Handle, EngineState].gets(f)
+  private def gets[A](f: (Engine.State) => A): Handle[A] =
+    MonadState[Handle, Engine.State].gets(f)
 
-  private def modify(f: (EngineState) => EngineState): Handle[Unit] =
-    MonadState[Handle, EngineState].modify(f)
+  private def modify(f: (Engine.State) => Engine.State): Handle[Unit] =
+    MonadState[Handle, Engine.State].modify(f)
 
-  private def put(qs: EngineState): Handle[Unit] =
-    MonadState[Handle, EngineState].put(qs)
+  private def put(qs: Engine.State): Handle[Unit] =
+    MonadState[Handle, Engine.State].put(qs)
 
-  private def getS(id: Sequence.Id): Handle[Option[Sequence.State]] = get.map(_.get(id))
+  private def getS(id: Sequence.Id): Handle[Option[Sequence.State]] = get.map(_.sequences.get(id))
 
-  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): Handle[Option[A]] = gets(x => x.get(id).map(f))
+  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): Handle[Option[A]] =
+    gets(_.sequences.get(id).map(f))
 
   private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): Handle[Unit] =
-    modify(st => st.get(id).map(s => st.updated(id, f(s))).getOrElse(st))
+    modify(
+      st => Engine.State(
+        st.sequences.get(id).map(
+          s => st.sequences.updated(id, f(s))).getOrElse(st.sequences)
+      )
+    )
 
-  private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] = modify(_.updated(id, s))
+  private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] =
+    modify(x => Engine.State(x.sequences.updated(id, s)))
 
   // For introspection
   def printSequenceState(id: Sequence.Id): Handle[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])

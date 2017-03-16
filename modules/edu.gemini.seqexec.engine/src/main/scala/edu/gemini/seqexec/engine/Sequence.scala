@@ -30,10 +30,8 @@ object Sequence {
       Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
   }
 
-  // TODO: Proof Foldable laws
   implicit val stepFoldable = new Foldable[Sequence] {
     def foldMap[A, B](fa: Sequence[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
-      // TODO: Foldable composition?
       fa.steps.foldMap(_.foldMap(f))
 
     def foldRight[A, B](fa: Sequence[A], z: => B)(f: (A, => B) => B): B =
