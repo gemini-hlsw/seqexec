@@ -220,13 +220,13 @@ object SeqexecEngine {
         }
       )
 
-      val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task(())
+      val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
       // More instruments to be added to the list here
       val instInit = if(f2Keywords || !instSim)
         Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
-      else Task(())
-      val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task(())
-      val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task(())
+      else Task.now(())
+      val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
+      val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
 
       tcsInit *>
         gwsInit *>
