@@ -9,7 +9,10 @@ import japgolly.scalajs.react.vdom.prefix_<^._
   * Produces a dropdown menu, similar to a combobox
   */
 object DropdownMenu {
-  case class Props(label: String, defaultSelect: String, items: List[String])
+  case class Props(label: String,
+                   defaultSelect: String,
+                   items: List[String],
+                   disabled: Boolean)
 
   def component = ReactComponentB[Props]("DropDownMenu")
     .stateless
@@ -19,6 +22,9 @@ object DropdownMenu {
         <.label(p.label),
         <.div(
           ^.cls := "ui fluid selection dropdown",
+          ^.classSet(
+            "disabled" -> p.disabled
+          ),
           <.div(
             ^.cls := "default text",
             p.defaultSelect
