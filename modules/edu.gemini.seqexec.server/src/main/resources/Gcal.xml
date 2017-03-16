@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="gc">gc</Top>
+    <Apply name="gcal::Apply">
+        <top>gc</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>Primary GCAL Apply Record</description>
+        <command name="gcal::shutter">
+            <record>apply</record>
+            <description>Shutter control</description>
+            <parameter name="position">
+                <channel>shutter.A</channel>
+                <type>STRING</type>
+                <description>Shutter position (OPEN/CLOSE)</description>
+            </parameter>
+        </command>
+        <command name="gcal::filtSel">
+            <description>Filter selection</description>
+            <parameter name="name">
+                <channel>filtSel.A</channel>
+                <type>STRING</type>
+                <description>Filter name</description>
+            </parameter>
+        </command>
+        <command name="gcal::lampSel">
+            <description>Lamp control</description>
+            <parameter name="stateCuAr">
+                <channel>lampSel.L</channel>
+                <type>STRING</type>
+                <description>CuAr lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="nameIR">
+                <channel>lampSel.A</channel>
+                <type>STRING</type>
+                <description>IR Lamp name</description>
+            </parameter>
+            <parameter name="stateQH">
+                <channel>lampSel.D</channel>
+                <type>STRING</type>
+                <description>QH lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="stateXe">
+                <channel>lampSel.H</channel>
+                <type>STRING</type>
+                <description>Xe lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="nameAr">
+                <channel>lampSel.E</channel>
+                <type>STRING</type>
+                <description>Ar Lamp name</description>
+            </parameter>
+            <parameter name="nameQH">
+                <channel>lampSel.C</channel>
+                <type>STRING</type>
+                <description>QH Lamp name</description>
+            </parameter>
+            <parameter name="nameXe">
+                <channel>lampSel.G</channel>
+                <type>STRING</type>
+                <description>Xe Lamp name</description>
+            </parameter>
+            <parameter name="stateThAr">
+                <channel>lampSel.J</channel>
+                <type>STRING</type>
+                <description>ThAr lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="nameCuAr">
+                <channel>lampSel.K</channel>
+                <type>STRING</type>
+                <description>CuAr Lamp name</description>
+            </parameter>
+            <parameter name="stateIR">
+                <channel>lampSel.B</channel>
+                <type>STRING</type>
+                <description>IR lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="stateAr">
+                <channel>lampSel.F</channel>
+                <type>STRING</type>
+                <description>Ar lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="nameThAr">
+                <channel>lampSel.I</channel>
+                <type>STRING</type>
+                <description>ThAr Lamp name</description>
+            </parameter>
+        </command>
+        <command name="gcal::diffuseSel">
+            <description>Diffuser selection</description>
+            <parameter name="name">
+                <channel>diffuseSel.A</channel>
+                <type>STRING</type>
+                <description>Diffuser name</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Status name="gcal::status">
+        <top>gc</top>
+        <!--
+        <attribute name="ArLampState">
+            <channel>Ar_LampState</channel>
+            <type>STRING</type>
+            <description>Argon lamp state</description>
+        </attribute>
+        <attribute name="QHLampState">
+            <channel>QH_LampState</channel>
+            <type>STRING</type>
+            <description>Quartz Halogen lamp state</description>
+        </attribute>
+        <attribute name="CuArLampState">
+            <channel>CuAr_LampState</channel>
+            <type>STRING</type>
+            <description>CuAr lamp state</description>
+        </attribute>
+        <attribute name="XeLampState">
+            <channel>Xe_LampState</channel>
+            <type>STRING</type>
+            <description>Xenon lamp state</description>
+        </attribute>
+        <attribute name="ThArLampState">
+            <channel>ThAr_LampState</channel>
+            <type>STRING</type>
+            <description>ThAr lamp state</description>
+        </attribute>
+        <attribute name="IRLampState">
+            <channel>IR_LampState</channel>
+            <type>STRING</type>
+            <description>IR lamp state</description>
+        </attribute>
+        -->
+        <attribute name="shutter">
+            <channel>sad:shutterName</channel>
+            <type>STRING</type>
+            <description>Shutter position</description>
+        </attribute>
+        <attribute name="filter">
+            <channel>sad:filtName</channel>
+            <type>STRING</type>
+            <description>Filter name</description>
+        </attribute>
+        <attribute name="diffuser">
+            <channel>sad:diffuseName</channel>
+            <type>STRING</type>
+            <description>Diffuser name</description>
+        </attribute>
+    </Status>
+    <Status name="gcal::Apply">
+        <top>gc</top>
+        <description>Apply message</description>
+        <attribute name="mess">
+            <channel>applyC.OMSS</channel>
+            <type>STRING</type>
+            <description>Command completion message</description>
+        </attribute>
+    </Status>
+</Records>
