@@ -6,9 +6,8 @@ import net.bmjames.opts.builder.internal.{ Mod, CommandFields }
 
 import scalaz._, Scalaz._, scalaz.effect._
 
-import gem.ctl.free.ctl.UserAndHost
+import gem.ctl.free.ctl.{ Server, Host }
 import gem.ctl.free.interpreter.Config
-
 
 /** A command to be interpreted by gemctl. */
 sealed trait Command extends Config
@@ -17,15 +16,15 @@ sealed trait Command extends Config
 object Command {
 
   case class Deploy(
-    userAndHost: UserAndHost,
+    server: Server,
     deployRev:   String,
     standalone:  Boolean,
     verbose:     Boolean
   ) extends Command
 
-  case class Ps(userAndHost: UserAndHost, verbose: Boolean) extends Command
-  case class Stop(userAndHost: UserAndHost, verbose: Boolean) extends Command
-  case class Log(userAndHost: UserAndHost, verbose: Boolean, count: Int) extends Command
+  case class Ps  (server: Server, verbose: Boolean) extends Command
+  case class Stop(server: Server, verbose: Boolean) extends Command
+  case class Log (server: Server, verbose: Boolean, count: Int) extends Command
 
   /**
    * Construct a program to parse commandline `args` into a `Command`, or show help information if
@@ -51,20 +50,34 @@ object Command {
 
   // Parser implementation below
 
-  private lazy val host: Parser[String] =
-    strOption(
-      short('H'), long("host"), metavar("HOST"), value("localhost"),
-      help("Docker host, or localhost if unspecified.")
+  private lazy val machine: Parser[Boolean] =
+    switch(
+      short('m'), long("machine"),
+      help("Use docker machine. Use with -H to specify a machine other than 'default'.")
     )
 
-  private lazy val user: Parser[Option[String]] =
-    strOption(
-      short('u'), long("user"), metavar("USER"), value(null),
-      help("Docker user, or current user if unspecified. Passwordless SSH access required.")
-    ).map(Option(_))
+  private lazy val host: Parser[Option[String]] =
+    optional(
+      strOption(
+        short('H'), long("host"), metavar("HOST"),
+        help("Use the specified docker host (machine when given with -m).")
+      )
+    )
 
-  private lazy val userAndHost: Parser[UserAndHost] =
-    (user |@| host)(UserAndHost)
+  private lazy val server: Parser[Server] =
+    (machine |@| host |@| user) {
+      case (true,  oh,      ou) => Server.Remote(Host.Machine(oh.getOrElse("default")), ou)
+      case (false, Some(h), ou) => Server.Remote(Host.Network(h), ou)
+      case (false, None,    _ ) => Server.Local
+    }
+
+  private lazy val user: Parser[Option[String]] =
+    optional(
+      strOption(
+        short('u'), long("user"), metavar("USER"),
+        help("Server user. Default value is 'docker' with -m, otherwise current user, ignored if neither -H nor -m is specified.")
+      )
+    )
 
   private lazy val deploy: Parser[String] =
     strOption(
@@ -85,7 +98,7 @@ object Command {
     )
 
   private lazy val config: Parser[Deploy] =
-    (userAndHost |@| deploy |@| standalone |@| verbose)(Deploy.apply)
+    (server |@| deploy |@| standalone |@| verbose)(Deploy.apply)
 
   private lazy val lines: Parser[Int] = {
     val DefaultLines = 50
@@ -101,17 +114,17 @@ object Command {
     )
 
   private lazy val psCommand: Mod[CommandFields, Command] =
-    command("ps", info((userAndHost |@| verbose)(Ps).widen[Command] <* helper,
+    command("ps", info((server |@| verbose)(Ps).widen[Command] <* helper,
       progDesc("Get the status of a gem deployment."))
     )
 
   private lazy val stopCommand: Mod[CommandFields, Command] =
-    command("stop", info((userAndHost |@| verbose)(Stop).widen[Command] <* helper,
+    command("stop", info((server |@| verbose)(Stop).widen[Command] <* helper,
       progDesc("Stop a gem deployment."))
     )
 
   private lazy val logCommand: Mod[CommandFields, Command] =
-    command("log", info((userAndHost |@| verbose |@| lines)(Log).widen[Command] <* helper,
+    command("log", info((server |@| verbose |@| lines)(Log).widen[Command] <* helper,
       progDesc("Show the Gem server log."))
     )
 

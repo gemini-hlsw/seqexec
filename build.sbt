@@ -161,5 +161,5 @@ lazy val ctl = project
       "org.scalaz"  %% "scalaz-effect" % scalazVersion,
       "net.bmjames" %% "scala-optparse-applicative" % "0.5"
     ),
-    addCommandAlias("gemctl", "ctl/runMain main")
+    addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
   )

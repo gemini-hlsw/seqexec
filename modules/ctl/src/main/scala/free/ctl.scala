@@ -9,10 +9,26 @@ import scalaz._, Scalaz._
 /** Module of constructors for the control language. */
 object ctl {
 
-  /** Data type for host and optional user. */
-  case class UserAndHost(user: Option[String], host: String) {
-    def userAndHost: String = user.foldRight(host)(_ + "@" + _)
+  sealed trait Host {
+    def name: String
   }
+  object Host {
+    case class Machine(name: String) extends Host
+    case class Network(name: String) extends Host
+  }
+
+  sealed trait Server {
+    def userAndHost: String =
+      this match {
+        case Server.Local        => "localhost"
+        case Server.Remote(h, u) => u.foldRight(h.name)(_ + "@" + _)
+      }
+  }
+  object Server {
+    case object Local extends Server
+    case class  Remote(host: Host, user: Option[String]) extends Server
+  }
+
 
   /** ADT for output log levels. */
   sealed trait Level
@@ -55,6 +71,16 @@ object ctl {
 
   // Constructors
 
+  def serverHostName: CtlIO[String] =
+    server.flatMap {
+      case Server.Local => "localhost".point[CtlIO]
+      case Server.Remote(Host.Network(name), _) => name.point[CtlIO]
+      case Server.Remote(Host.Machine(name), _) =>
+        shell("docker-machine", "ip", name).require {
+          case Output(0, s :: Nil) => s
+        }
+    }
+
   def shell(c: String): CtlIO[Output] =
     Free.liftF(CtlOp.Shell(false, c.left))
 
@@ -73,8 +99,8 @@ object ctl {
   val config: CtlIO[Config] =
     Free.liftF(CtlOp.GetConfig)
 
-  val userAndHost: CtlIO[UserAndHost] =
-    config.map(_.userAndHost)
+  val server: CtlIO[Server] =
+    config.map(_.server)
 
   def gosub[A](msg: String)(fa: CtlIO[A]): CtlIO[A] =
     Free.liftF(CtlOp.Gosub(Level.Info, msg, fa))

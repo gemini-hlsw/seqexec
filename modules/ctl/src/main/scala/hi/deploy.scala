@@ -89,7 +89,7 @@ object deploy {
         case cs  =>
           for {
             c <- config
-            _ <- error(s"There is already a running deployment on ${c.userAndHost.userAndHost}")
+            _ <- error(s"There is already a running deployment on ${c.server}")
             _ <- exit[Unit](-1)
           } yield ()
       }
@@ -197,7 +197,7 @@ object deploy {
     gosub("Deploying Gem.") {
       for {
         kGem <- createGemContainer(nDeploy, cDeploy, iDeploy)
-        h    <- userAndHost.map(_.host)
+        h    <- serverHostName
         _    <- awaitNet(h, Port)
       } yield kGem
     }

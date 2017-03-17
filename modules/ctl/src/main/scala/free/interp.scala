@@ -12,8 +12,8 @@ object interpreter {
 
   /** Configuration for the interpreter. */
   trait Config {
-    def userAndHost: UserAndHost
-    def verbose:     Boolean
+    def verbose: Boolean
+    def server:  Server
   }
 
   /**
@@ -22,7 +22,21 @@ object interpreter {
    */
   def interpreter(c: Config, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
     case CtlOp.Shell(false, cmd) => doShell(cmd, c.verbose, indent)
-    case CtlOp.Shell(true,  cmd) => doShell(cmd.bimap(s => s"ssh ${c.userAndHost.userAndHost} $s", "ssh" :: c.userAndHost.userAndHost :: _), c.verbose, indent)
+    case CtlOp.Shell(true,  cmd) =>
+      c.server match {
+
+        case Server.Local =>
+          doShell(cmd, c.verbose, indent)
+
+        case Server.Remote(Host.Machine(h), u) =>
+          machineHost(h, c.verbose, indent).flatMap { h =>
+            doRemoteShell(s"${u.getOrElse("docker")}@$h", cmd, c, indent)
+          }
+
+        case Server.Remote(Host.Network(h), u) =>
+          doRemoteShell(u.foldRight(h)((u, h) => s"$u@$h"), cmd, c, indent)
+
+      }
     case CtlOp.Exit(exitCode)    => EitherT.left(exitCode.point[IO])
     case CtlOp.GetConfig         => c.point[EitherT[IO, Int, ?]]
     case CtlOp.Gosub(level, msg, fa) =>
@@ -54,6 +68,19 @@ object interpreter {
       } yield ()
     }
   }
+
+  /** Machine name to IP-address. */
+  private def machineHost(machine: String, verbose: Boolean, indent: IORef[Int]): EitherT[IO, Int, String] =
+    doShell(List("docker-machine", "ip", machine).right, verbose, indent).flatMap {
+      case Output(0, s :: Nil) => EitherT.right(s.point[IO])
+      case _ =>
+        doLog(Level.Error, "couldn't get ip-address for machine ", indent) *>
+        EitherT.left(-1.point[IO])
+    }
+
+
+  private def doRemoteShell(uh: String, cmd: String \/ List[String], c: Config, indent: IORef[Int]): EitherT[IO, Int, Output] =
+    doShell(cmd.bimap(s => s"ssh $uh $s", "ssh" :: uh :: _), c.verbose, indent)
 
   /**
    * Construct a program to perform a shell operation, optionally logging the output (if verbose),
