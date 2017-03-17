@@ -60,20 +60,27 @@ class StepSpec extends FlatSpec {
     // input event is enough.
   } yield Result.OK(Result.Observed("DummyFileId"))
 
-  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): EngineState = {
+  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
     def isFinished(status: SequenceState): Boolean =
       status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
-    q.enqueueOne(start(seqId)).flatMap( _ =>
-       processE(q).drop(1).takeThrough(a => !isFinished(a._2.get(seqId).get.status) ).runLast.eval(s0)).unsafePerformSync.get._2
+    q.enqueueOne(start(seqId)).flatMap(
+      _ => processE(q).drop(1).takeThrough(
+        a => !isFinished(a._2.sequences.get(seqId).get.status)
+      ).runLast.eval(s0)
+    ).unsafePerformSync.get._2
   }
 
-  def runToCompletionL(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): List[EngineState] = {
+  def runToCompletionL(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): List[Engine.State] = {
     def isFinished(status: SequenceState): Boolean =
       status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
-    q.enqueueOne(start(seqId)).flatMap( _ =>
-       processE(q).drop(1).takeThrough(a => !isFinished(a._2.get(seqId).get.status) ).runLog.eval(s0)).unsafePerformSync.map(_._2).toList
+    q.enqueueOne(start(seqId)).flatMap(
+      _ => processE(q).drop(1).takeThrough(
+        a => !isFinished(a._2.sequences.get(seqId).get.status)
+      ).runLog.eval(s0)
+    ).unsafePerformSync.map(_._2).toList
+
   }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
@@ -85,29 +92,36 @@ class StepSpec extends FlatSpec {
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
     val q = async.boundedQueue[Event](10)
-    val qs0: EngineState = Map((seqId, Sequence.State.init(
-      Sequence(
-        seqId,
-        SequenceMetadata("F2", None, None),
-        List(
-          Step(
-            1,
-            None,
-            config,
-            Set.empty,
-            false,
-            List(
-              List(configureTcs, configureInst, triggerPause(q)), // Execution
-              List(observe) // Execution
-            )
+    val qs0: Engine.State =
+      Engine.State(
+        Map(
+          (seqId,
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata("F2", None, None),
+               List(
+                 Step(
+                   1,
+                   None,
+                   config,
+                   Set.empty,
+                   false,
+                   List(
+                     List(configureTcs, configureInst, triggerPause(q)), // Execution
+                     List(observe) // Execution
+                   )
+                 )
+               )
+             )
+           )
           )
         )
       )
-    )))
 
     val qs1 = runToCompletion(q, qs0)
 
-     inside (qs1.get(seqId).get) {
+     inside (qs1.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Idle)
         inside (zipper.focus.toStep) {
@@ -122,26 +136,32 @@ class StepSpec extends FlatSpec {
   it should "resume execution from the non-running state in response to a resume command, rolling back a partially run step." in {
     val q = async.boundedQueue[Event](10)
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
-    val qs0: EngineState = Map((seqId, Sequence.State.Zipper(
-      Sequence.Zipper(
-        "First",
-        SequenceMetadata("F2", None, None),
-        List(),
-        Step.Zipper(
-          2,
-          None,
-          config,
-          Set.empty,
-          false,
-          List(),
-          Execution(List(observe.left)),
-          List(List(result, result)),
-          (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
-        List()
-      ),
-      Idle
-    )
-    ))
+    val qs0: Engine.State =
+      Engine.State(
+        Map(
+          (seqId,
+           Sequence.State.Zipper(
+             Sequence.Zipper(
+               "First",
+               SequenceMetadata("F2", None, None),
+               Nil,
+               Step.Zipper(
+                 2,
+                 None,
+                 config,
+                 Set.empty,
+                 false,
+                 Nil,
+                 Execution(List(observe.left)),
+                 List(List(result, result)),
+                 (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
+               Nil
+             ),
+             Idle
+           )
+          )
+        )
+      )
 
     val qs1 = (
       q.enqueueOne(start(seqId)).flatMap(_ =>
@@ -149,12 +169,12 @@ class StepSpec extends FlatSpec {
       )
     ).unsafePerformSync.get._2
 
-    inside (qs1.get(seqId).get) {
+    inside (qs1.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Running)
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, ex1::ex2::Nil) =>
-            assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
+            assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
     }
 
@@ -181,38 +201,50 @@ class StepSpec extends FlatSpec {
     case class PartialValDouble(v: Double) extends Result.PartialVal
 
     val q = async.boundedQueue[Event](10)
-    val qs0: EngineState = Map(
-      (seqId,
-       Sequence.State.init(
-        Sequence(
-          seqId,
-          SequenceMetadata("F2", None, None),
-          List(
-            Step(
-              1,
-              None,
-              config,
-              Set.empty,
-              false,
-              List(List(Task(Result.Partial(PartialValDouble(0.5), Task(Result.OK(RetValDouble(1.0))))))
-              )
-            )
+    val qs0: Engine.State =
+      Engine.State(
+        Map(
+          (seqId,
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata("F2", None, None),
+               List(
+                 Step(
+                   1,
+                   None,
+                   config,
+                   Set.empty,
+                   false,
+                   List(
+                     List(
+                       Task(
+                         Result.Partial(
+                           PartialValDouble(0.5),
+                           Task(Result.OK(RetValDouble(1.0))
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               )
+             )
+           )
           )
         )
-       )
       )
-    )
 
     val qss = runToCompletionL(q, qs0)
 
-    inside (qss.tail.head.get(seqId).get) {
+    inside (qss.tail.head.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
         status shouldBe SequenceState.Running
         inside (zipper.focus.focus.execution.head) {
           case \/-(Result.Partial(v, _)) => v shouldEqual PartialValDouble(0.5)
         }
     }
-    inside (qss.last.get(seqId).get) {
+    inside (qss.last.sequences.get(seqId).get) {
       case Sequence.State.Final(seq, status) =>
         status shouldBe SequenceState.Completed
         seq.steps.head.executions.head.head shouldEqual Result.OK(RetValDouble(1.0))
