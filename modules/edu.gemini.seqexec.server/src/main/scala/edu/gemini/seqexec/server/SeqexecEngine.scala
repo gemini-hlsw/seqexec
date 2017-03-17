@@ -6,7 +6,7 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.{engine, server}
-import edu.gemini.seqexec.engine.{EngineState, Event, EventSystem, Executed, Failed, Result, Sequence}
+import edu.gemini.seqexec.engine.{Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
 
 import scalaz._
 import Scalaz._
@@ -66,18 +66,18 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
-    engine.process(q)(engine.initState).flatMap(x => Process.eval(notifyODB(x))).map {
+    engine.process(q)(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
-            qState.values.map(
+            qState.sequences.values.map(
               s => viewSequence(s.toSequence, s.status)
             ).toList
           )
         )
     }
 
-  private def notifyODB(i: (Event, EngineState)): Task[(Event, EngineState)] = {
+  private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
     def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID((ids))).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e))))
 
     (i match {
@@ -85,10 +85,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
           obsId <- safeGetObsId(id)
           _     <- systems.odb.obsAbort(obsId, e.msg)
         } yield ()
-      case (EventSystem(Executed(id)), st) if st.get(id).map(x => x.status==SequenceState.Idle).getOrElse(false) => for {
-          obsId <- safeGetObsId(id)
-          _     <- systems.odb.obsPause(obsId, "Sequence paused by user")
-        } yield ()
+       case (EventSystem(Executed(id)), st) if st.sequences.get(id).map(
+         _.status === SequenceState.Idle
+       ).getOrElse(false) => for {
+         obsId <- safeGetObsId(id)
+         _     <- systems.odb.obsPause(obsId, "Sequence paused by user")
+       } yield ()
       case _ => SeqAction(())
     }).run.map(_ => i)
   }
@@ -125,7 +127,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
     // TODO: Better name and move it to `engine`
-    type QueueAR = engine.Queue[engine.Action \/ engine.Result]
     type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
     type StepAR = engine.Step[engine.Action \/ engine.Result]
 

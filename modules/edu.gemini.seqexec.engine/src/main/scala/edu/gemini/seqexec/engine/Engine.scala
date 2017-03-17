@@ -24,4 +24,10 @@ object Engine {
 
   case class State(sequences: Map[Sequence.Id, Sequence.State])
 
+  object State {
+
+    def empty: State = State(Map.empty)
+
+  }
+
 }
