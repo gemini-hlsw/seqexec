@@ -16,35 +16,43 @@ object interpreter {
     def server:  Server
   }
 
+  case class InterpreterState(indentation: Int, machineHostCache: Map[Host.Machine, String]) {
+    def indent  = copy(indentation = indentation + 1)
+    def outdent = copy(indentation = indentation - 1)
+  }
+  object InterpreterState {
+    val initial = InterpreterState(0, Map.empty)
+  }
+
   /**
-   * Construct an interpreter of `CtlIO` given a `Config` and an `IORef` for the initial indentation
-   * of log messages.
+   * Construct an interpreter of `CtlIO` given a `Config` and an `IORef` for the initial state. We
+   * carry our state in an `IORef` because it needs to be visible from multiple threads.
    */
-  def interpreter(c: Config, indent: IORef[Int]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
-    case CtlOp.Shell(false, cmd) => doShell(cmd, c.verbose, indent)
+  def interpreter(c: Config, state: IORef[InterpreterState]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
+    case CtlOp.Shell(false, cmd) => doShell(cmd, c.verbose, state)
     case CtlOp.Shell(true,  cmd) =>
       c.server match {
 
         case Server.Local =>
-          doShell(cmd, c.verbose, indent)
+          doShell(cmd, c.verbose, state)
 
-        case Server.Remote(Host.Machine(h), u) =>
-          machineHost(h, c.verbose, indent).flatMap { h =>
-            doRemoteShell(s"${u.getOrElse("docker")}@$h", cmd, c, indent)
+        case Server.Remote(m @ Host.Machine(h), u) =>
+          machineHost(m, c.verbose, state).flatMap { h =>
+            doRemoteShell(s"${u.getOrElse("docker")}@$h", cmd, c, state)
           }
 
         case Server.Remote(Host.Network(h), u) =>
-          doRemoteShell(u.foldRight(h)((u, h) => s"$u@$h"), cmd, c, indent)
+          doRemoteShell(u.foldRight(h)((u, h) => s"$u@$h"), cmd, c, state)
 
       }
     case CtlOp.Exit(exitCode)    => EitherT.left(exitCode.point[IO])
     case CtlOp.GetConfig         => c.point[EitherT[IO, Int, ?]]
     case CtlOp.Gosub(level, msg, fa) =>
       for {
-        _ <- doLog(level, msg, indent)
-        _ <- EitherT.right(indent.mod(_ + 1))
+        _ <- doLog(level, msg, state)
+        _ <- EitherT.right(state.mod(_.indent))
         a <- fa.foldMap(this)
-        _ <- EitherT.right(indent.mod(_ - 1))
+        _ <- EitherT.right(state.mod(_.outdent))
       } yield a
   }
 
@@ -52,7 +60,7 @@ object interpreter {
    * Construct a program to log a message to the console at the given log level and indentation.
    * This is where all the colorizing happens.
    */
-  private def doLog(level: Level, msg: String, indent: IORef[Int]): EitherT[IO, Int, Unit] = {
+  private def doLog(level: Level, msg: String, state: IORef[InterpreterState]): EitherT[IO, Int, Unit] = {
     val color = level match {
       case Level.Error => Console.RED
       case Level.Warn  => Console.YELLOW
@@ -63,39 +71,46 @@ object interpreter {
       val pre = s"[${level.toString.take(4).toLowerCase}]"
       val messageColor = color // if (level == Shell) color else Console.BLUE
       for {
-        i <- indent.read.map("  " * _)
+        i <- state.read.map(_.indentation).map("  " * _)
         _ <- IO.putStrLn(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")
       } yield ()
     }
   }
 
   /** Machine name to IP-address. */
-  private def machineHost(machine: String, verbose: Boolean, indent: IORef[Int]): EitherT[IO, Int, String] =
-    doShell(List("docker-machine", "ip", machine).right, verbose, indent).flatMap {
-      case Output(0, s :: Nil) => EitherT.right(s.point[IO])
-      case _ =>
-        doLog(Level.Error, "couldn't get ip-address for machine ", indent) *>
-        EitherT.left(-1.point[IO])
+  private def machineHost(machine: Host.Machine, verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, String] =
+    EitherT.right(state.read.map(_.machineHostCache.get(machine))).flatMap {
+      case Some(s) => s.point[EitherT[IO, Int, ?]]
+      case None =>
+        doShell(List("docker-machine", "ip", machine.name).right, verbose, state).flatMap {
+          case Output(0, s :: Nil) =>
+            doLog(Level.Info, s"Address of docker machine '${machine.name}' is $s." , state) *>
+            EitherT.right {
+              state.mod(is => is.copy(machineHostCache = is.machineHostCache + (machine -> s))).as(s)
+            }
+          case _ =>
+            doLog(Level.Error, "couldn't get ip-address for machine ", state) *>
+            EitherT.left(-1.point[IO])
+        }
     }
 
-
-  private def doRemoteShell(uh: String, cmd: String \/ List[String], c: Config, indent: IORef[Int]): EitherT[IO, Int, Output] =
-    doShell(cmd.bimap(s => s"ssh $uh $s", "ssh" :: uh :: _), c.verbose, indent)
+  private def doRemoteShell(uh: String, cmd: String \/ List[String], c: Config, state: IORef[InterpreterState]): EitherT[IO, Int, Output] =
+    doShell(cmd.bimap(s => s"ssh $uh $s", "ssh" :: uh :: _), c.verbose, state)
 
   /**
    * Construct a program to perform a shell operation, optionally logging the output (if verbose),
    * and gathering the result as an `Output`.
    */
-  private def doShell(cmd: String \/ List[String], verbose: Boolean, indent: IORef[Int]): EitherT[IO, Int, Output] = {
+  private def doShell(cmd: String \/ List[String], verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, Output] = {
 
     def handler(s: String): IO[Unit] =
-      if (verbose) doLog(Level.Shell, s, indent).run.map(_.toOption.get) // shh
+      if (verbose) doLog(Level.Shell, s, state).run.map(_.toOption.get) // shh
       else IO.putStr(".")
 
     for {
-      _ <- verbose.whenM(doLog(Level.Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", indent))
+      _ <- verbose.whenM(doLog(Level.Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", state))
       o <- EitherT.right(exec(cmd, handler))
-      _ <- verbose.whenM(doLog(Level.Shell, s"exit(${o.exitCode})", indent))
+      _ <- verbose.whenM(doLog(Level.Shell, s"exit(${o.exitCode})", state))
       - <- verbose.unlessM(EitherT.right[IO, Int, Unit](IO.putStr("\u001B[1G\u001B[K")))
     } yield o
 

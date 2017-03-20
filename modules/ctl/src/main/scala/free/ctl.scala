@@ -20,8 +20,9 @@ object ctl {
   sealed trait Server {
     def userAndHost: String =
       this match {
-        case Server.Local        => "localhost"
-        case Server.Remote(h, u) => u.foldRight(h.name)(_ + "@" + _)
+        case Server.Local                       => "localhost"
+        case Server.Remote(Host.Machine(h), u)  => u.foldRight(h)(_ + "@" + _) + " (docker machine)"
+        case Server.Remote(Host.Network(h), u)  => u.foldRight(h)(_ + "@" + _)
       }
   }
   object Server {

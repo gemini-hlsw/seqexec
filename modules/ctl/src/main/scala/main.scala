@@ -4,7 +4,7 @@ import scalaz._, Scalaz._
 import scalaz.effect._
 
 import gem.ctl.free.ctl._
-import gem.ctl.free.interpreter.{ interpreter }
+import gem.ctl.free.interpreter.{ interpreter, InterpreterState }
 
 import gem.ctl.hi.ps.ps
 import gem.ctl.hi.log.showLog
@@ -29,7 +29,7 @@ object main extends SafeApp {
       _  <- IO.putStrLn("")
       c  <- Command.parse("gemctl", args)
       _  <- c.traverse { c =>
-              IO.newIORef(0)
+              IO.newIORef(InterpreterState.initial)
                 .map(interpreter(c, _))
                 .flatMap(command(c).foldMap(_).run)
             }
