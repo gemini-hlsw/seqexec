@@ -5,6 +5,8 @@ import edu.gemini.seqexec.model.Model.SequenceState
 import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepConfig}
 
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.Conditions
+
 import scala.Function.const
 import scalaz._
 import Scalaz._
@@ -83,15 +85,16 @@ class SequenceSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
+        Conditions.WORST,
         Map(
           (seqId,
-          Sequence.State.init(
-            Sequence(
-              seqId,
-              SequenceMetadata("F2", None, None),
-              List(simpleStep(1, false), simpleStep(2, true))
-            )
-          )
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata("F2", None, None),
+               List(simpleStep(1, false), simpleStep(2, true))
+             )
+           )
           )
         )
       )
@@ -111,6 +114,7 @@ class SequenceSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
+        Conditions.WORST,
         Map(
           (seqId,
            Sequence.State.init(
