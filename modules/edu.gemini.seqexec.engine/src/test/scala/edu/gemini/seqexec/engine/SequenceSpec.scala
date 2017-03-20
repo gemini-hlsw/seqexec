@@ -68,28 +68,37 @@ class SequenceSpec extends FlatSpec {
       )
     )
 
-  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: EngineState): EngineState = {
+  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
     def isFinished(status: SequenceState): Boolean =
       status == Idle || status == SequenceState.Completed || status === Error
 
-    q.enqueueOne(start(seqId)).flatMap( _ =>
-       processE(q).drop(1).takeThrough(a => !isFinished(a._2.get(seqId).get.status) ).runLast.eval(s0)).unsafePerformSync.get._2
+    q.enqueueOne(start(seqId)).flatMap(_ =>
+      processE(q).drop(1).takeThrough(
+        a => !isFinished(a._2.sequences.get(seqId).get.status)
+      ).runLast.eval(s0)).unsafePerformSync.get._2
   }
 
   it should "stop on breakpoints" in {
 
     val q = async.boundedQueue[Event](10)
-    val qs0: EngineState = Map((seqId, Sequence.State.init(
-      Sequence(
-        seqId,
-        SequenceMetadata("F2", None, None),
-        List(simpleStep(1, false), simpleStep(2, true))
+    val qs0: Engine.State =
+      Engine.State(
+        Map(
+          (seqId,
+          Sequence.State.init(
+            Sequence(
+              seqId,
+              SequenceMetadata("F2", None, None),
+              List(simpleStep(1, false), simpleStep(2, true))
+            )
+          )
+          )
+        )
       )
-    )))
 
     val qs1 = runToCompletion(q, qs0)
 
-    inside (qs1.get(seqId).get) {
+    inside (qs1.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Idle)
         assert(zipper.done.length == 1 && zipper.pending.isEmpty)
@@ -100,25 +109,32 @@ class SequenceSpec extends FlatSpec {
   it should "resume execution to completion after a breakpoint" in {
 
     val q = async.boundedQueue[Event](10)
-    val qs0: EngineState = Map((seqId, Sequence.State.init(
-      Sequence(
-        seqId,
-        SequenceMetadata("F2", None, None),
-        List(simpleStep(1, false), simpleStep(2, true), simpleStep(3, false))
+    val qs0: Engine.State =
+      Engine.State(
+        Map(
+          (seqId,
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata("F2", None, None),
+               List(simpleStep(1, false), simpleStep(2, true), simpleStep(3, false))
+             )
+           )
+          )
+        )
       )
-    )))
 
     val qs1 = runToCompletion(q, qs0)
 
     // Check that there is something left to run
-    inside (qs1.get(seqId).get) {
+    inside (qs1.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
         assert(zipper.pending.length > 0)
     }
 
     val qs2 = runToCompletion(q, qs1)
 
-    inside (qs2.get(seqId).get) {
+    inside (qs2.sequences.get(seqId).get) {
       case f@Sequence.State.Final(_, status) =>
         status should be (SequenceState.Completed)
         assert(f.done.length == 3)
