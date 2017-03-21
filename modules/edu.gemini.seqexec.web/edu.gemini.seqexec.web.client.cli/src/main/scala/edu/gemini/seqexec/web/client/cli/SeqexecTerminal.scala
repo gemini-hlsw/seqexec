@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.web.client.cli
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.Any._
 import org.scalajs.dom
@@ -20,7 +19,6 @@ import edu.gemini.seqexec.model.Model.StepConfig
 
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 
-@JSExport("SeqexecTerminal")
 object SeqexecTerminal extends js.JSApp {
 
   val apiUrl = "/api/seqexec"
