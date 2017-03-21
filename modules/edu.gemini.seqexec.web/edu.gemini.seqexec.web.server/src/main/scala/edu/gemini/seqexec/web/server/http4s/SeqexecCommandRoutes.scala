@@ -20,7 +20,7 @@ import scalaz.concurrent.Task
   */
 class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
 
-  val tokenAuthService = JwtAuthentication(auth)
+  val tokenAuthService = JwtAuthentication(auth, auth.config.devMode)
 
   val commands = Commands(se.odbProxy)
 
