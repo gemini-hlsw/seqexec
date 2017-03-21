@@ -40,6 +40,7 @@ trait TokenAuthenticator[A] extends HttpMiddleware {
   val store: TokenAuth
   val extractor: TokenExtractor
   val attributeKey: AttributeKey[Option[A]]
+  val optionalAllowed: Boolean = true
 
   /**
    * Check if req contains valid credentials. it delegates to TokenExtractor
@@ -53,10 +54,12 @@ trait TokenAuthenticator[A] extends HttpMiddleware {
 
   def apply(service: HttpService): HttpService = Service.lift { req =>
     getUser(req) flatMap {
-      case u @ Some(_) =>
+      case u @ Some(_)             =>
         service(req.withAttribute(attributeKey, u))
-      case None        =>
-        service(req) // The request is allowed for an anonymous usel
+      case None if optionalAllowed =>
+        service(req) // The request is allowed for an anonymous use
+      case None                    =>
+        Task.now(Response(Status.Unauthorized)) // Reject unauthorized access
     }
   }
 }

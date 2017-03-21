@@ -12,7 +12,7 @@ object JwtAuthentication {
   val authenticatedUser = AttributeKey[Option[UserDetails]]("edu.gemini.seqexec.authenticatedUser")
 }
 
-case class JwtAuthentication(auth: AuthenticationService) extends TokenAuthenticator[UserDetails] with TokenInCookies {
+case class JwtAuthentication(auth: AuthenticationService, override val optionalAllowed: Boolean) extends TokenAuthenticator[UserDetails] with TokenInCookies {
   override val cookieName = auth.config.cookieName
   override val attributeKey = JwtAuthentication.authenticatedUser
   override val store = (t: String) => auth.decodeToken(t) match {

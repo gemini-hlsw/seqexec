@@ -46,7 +46,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
     awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { _ => Ping() }
   }
 
-  val tokenAuthService = JwtAuthentication(auth)
+  val tokenAuthService = JwtAuthentication(auth, true)
 
   val publicService: HttpService = GZip { HttpService {
 
