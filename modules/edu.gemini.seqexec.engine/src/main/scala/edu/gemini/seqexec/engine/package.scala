@@ -5,6 +5,7 @@ import java.io.{PrintWriter, StringWriter}
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
 import edu.gemini.seqexec.model.Model.SequenceState
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.Conditions
 
 import scalaz._
 import Scalaz._
@@ -85,6 +86,10 @@ package object engine {
 
   def setObserver(id: Sequence.Id)(name: String): Handle[Unit] =
     modifyS(id)(_.setObserver(name))
+
+  def setConditions(conditions: Conditions): Handle[Unit] =
+    modify(st => Engine.State(st.conditions, st.sequences))
+
 
   /**
     * Loads a sequence
@@ -231,6 +236,7 @@ package object engine {
         modifyS(id)(_.setBreakpoint(step, v))
       case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
       case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
+      case SetConditions(conds)    => log("Output: Setting conditions") *> setConditions(conds)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
     }
