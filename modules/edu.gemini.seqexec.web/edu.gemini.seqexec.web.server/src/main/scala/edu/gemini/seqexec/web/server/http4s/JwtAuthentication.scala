@@ -14,19 +14,21 @@ import scalaz.concurrent.Task
 trait CookiesService {
   def name: String
   def ssl: Boolean
+  def ttl: Long
 
-  def buildCookie(token: String, expiration: Long): Cookie = {
+  def buildCookie(token: String): Cookie = {
     // if successful set a cookie
-    val exp = Instant.now().plusSeconds(expiration)
+    val exp = Instant.now().plusSeconds(ttl)
     Cookie(name, token, path = "/".some, expires = exp.some, secure = ssl, httpOnly = true)
   }
 
 }
 
 object CookiesService {
-  def apply(cookieName: String, useSSL: Boolean): CookiesService = new CookiesService {
+  def apply(cookieName: String, useSSL: Boolean, timeToLive: Long): CookiesService = new CookiesService {
     override val name = cookieName
     override val ssl = useSSL
+    override val ttl = timeToLive
   }
 }
 
@@ -41,11 +43,14 @@ case class JwtAuthentication(auth: AuthenticationService, override val optionalA
     case \/-(u) => Task.now(Some(u))
     case -\/(_) => Task.now(None)
   }
-  val cookieService = CookiesService(cookieName, auth.config.useSSL)
+
+  val cookieService = CookiesService(cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
+
   def loginCookie(user: UserDetails): Cookie = {
     val cookieVal = auth.buildToken(user)
-    cookieService.buildCookie(cookieVal, auth.sessionTimeout.toSeconds.toLong)
+    cookieService.buildCookie(cookieVal)
   }
+
   override def apply(service: HttpService): HttpService = super.apply(service).andThenK { (resp: Response) =>
     // If the user has the attribute replace the cookie
     Task.delay {
