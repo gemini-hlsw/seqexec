@@ -55,7 +55,7 @@ trait TokenAuthenticator[A] extends HttpMiddleware {
   def apply(service: HttpService): HttpService = Service.lift { req =>
     getUser(req) flatMap {
       case u @ Some(_)             =>
-        service(req.withAttribute(attributeKey, u))
+        service(req.withAttribute(attributeKey, u)).map(r => r.withAttribute(attributeKey, u))
       case None if optionalAllowed =>
         service(req) // The request is allowed for an anonymous use
       case None                    =>
