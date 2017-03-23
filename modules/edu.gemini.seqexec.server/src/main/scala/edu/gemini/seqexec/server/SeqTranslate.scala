@@ -31,8 +31,8 @@ class SeqTranslate(site: Site) {
   private def step(systems: Systems, settings: Settings)(obsId: SPObservationID, i: Int, config: Config, last: Boolean): SeqexecFailure \/ Step[Action] = {
 
     def buildStep(inst: Instrument, instHeaders: List[Header]): Step[Action] = {
-
-      val sys = List(Tcs(systems.tcs), inst)
+      // TODO: The contents of `sys` should depend on the kind of step.
+      val sys = List(Tcs(systems.tcs), Gcal(systems.gcal, site == Site.GS), inst)
       val headers = List(new StandardHeader(systems.dhs,
         ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
         if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
@@ -132,6 +132,7 @@ object SeqTranslate {
                       odb: ODBProxy,
                       dhs: DhsClient,
                       tcs: TcsController,
+                      gcal: GcalController,
                       flamingos2: Flamingos2Controller
                     )
 

@@ -11,7 +11,7 @@ import Scalaz._
 /**
   * Created by jluhrs on 3/16/17.
   */
-class GcalControllerEpics extends GcalController {
+object GcalControllerEpics extends GcalController {
   private val Log = Logger.getLogger(getClass.getName)
 
   import EpicsCodex._

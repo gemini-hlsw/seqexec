@@ -32,6 +32,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
+    if (settings.gcalSim) GcalControllerSim else GcalControllerEpics,
     if (settings.instSim) {
       if (settings.instForceError) Flamingos2ControllerSimBad
       else Flamingos2ControllerSim
