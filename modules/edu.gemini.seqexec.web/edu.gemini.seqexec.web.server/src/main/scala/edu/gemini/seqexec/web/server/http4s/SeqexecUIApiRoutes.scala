@@ -55,7 +55,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         auth.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // if successful set a cookie
-            Ok(user).addCookie(tokenAuthService.loginCookie(user))
+            tokenAuthService.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }

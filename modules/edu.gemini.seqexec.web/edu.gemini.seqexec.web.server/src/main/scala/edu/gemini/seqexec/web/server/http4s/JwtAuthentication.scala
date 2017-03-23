@@ -16,7 +16,7 @@ trait CookiesService {
   def ssl: Boolean
   def ttl: Long
 
-  def buildCookie(token: String): Cookie = {
+  def buildCookie(token: String): Task[Cookie] = Task.delay {
     // if successful set a cookie
     val exp = Instant.now().plusSeconds(ttl)
     Cookie(name, token, path = "/".some, expires = exp.some, secure = ssl, httpOnly = true)
@@ -46,17 +46,13 @@ case class JwtAuthentication(auth: AuthenticationService, override val optionalA
 
   val cookieService = CookiesService(cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
 
-  def loginCookie(user: UserDetails): Cookie = {
-    val cookieVal = auth.buildToken(user)
-    cookieService.buildCookie(cookieVal)
-  }
+  def loginCookie(user: UserDetails): Task[Cookie] =
+    auth.buildToken(user) >>= cookieService.buildCookie
 
   override def apply(service: HttpService): HttpService = super.apply(service).andThenK { (resp: Response) =>
     // If the user has the attribute replace the cookie
-    Task.delay {
-      resp.attributes.get(JwtAuthentication.authenticatedUser).flatten.fold(resp){ user =>
-        resp.addCookie(loginCookie(user))
-      }
+    resp.attributes.get(JwtAuthentication.authenticatedUser).flatten.fold(Task.delay(resp)){ user =>
+      loginCookie(user) >>= { cookie => Task.delay(resp.addCookie(cookie)) }
     }
   }
 }
