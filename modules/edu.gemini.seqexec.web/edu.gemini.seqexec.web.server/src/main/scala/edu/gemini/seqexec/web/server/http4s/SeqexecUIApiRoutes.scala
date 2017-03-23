@@ -4,7 +4,7 @@ import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.Model.{SeqexecEvent, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{Conditions, SeqexecEvent, SequenceId, SequencesQueue}
 import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
@@ -106,7 +106,9 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
                       .fold(Task.fail, Task.now)
                 u     <- se.load(inputQueue, obsId)
-                resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ => Ok(SequencesQueue[SequenceId](List(oid))))
+                resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
+                  // TODO: Get previously set conditions? How?
+                  Ok(SequencesQueue[SequenceId](Conditions.default, List(oid))))
               } yield resp
             }.handleWith {
               case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")

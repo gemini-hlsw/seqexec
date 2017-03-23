@@ -139,7 +139,7 @@ object Model {
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
     * Or a list of fully hydrated SequenceViews
     */
-  case class SequencesQueue[T](queue: List[T])
+  case class SequencesQueue[T](conditions: Conditions, queue: List[T])
 
   // Ported from OCS' SPSiteQuality.java
 
@@ -174,6 +174,8 @@ object Model {
       SkyBackground.Percent20,
       WaterVapor.Percent20
     )
+
+    val default = worst // Taken from ODB
 
     implicit val equalConditions: Equal[Conditions] = Equal.equalA[Conditions]
 

@@ -28,8 +28,7 @@ object Engine {
 
   object State {
 
-    // WORST sets the value ANY for every condition
-    def empty: State = State(Conditions.worst, Map.empty)
+    def empty: State = State(Conditions.default, Map.empty)
 
   }
 

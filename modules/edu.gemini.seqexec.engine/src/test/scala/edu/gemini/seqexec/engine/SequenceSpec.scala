@@ -82,7 +82,7 @@ class SequenceSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
-        Conditions.worst,
+        Conditions.default,
         Map(
           (seqId,
            Sequence.State.init(
@@ -111,7 +111,7 @@ class SequenceSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
-        Conditions.worst,
+        Conditions.default,
         Map(
           (seqId,
            Sequence.State.init(

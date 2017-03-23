@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.model
 
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceLoaded}
-import edu.gemini.seqexec.model.Model.{SequenceView, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{Conditions, SequenceView, SequencesQueue}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.zoomRW
 import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
@@ -27,7 +27,7 @@ class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers {
     result.newModelOpt.flatMap(_.user) shouldBe Some(user)
   }
   it should "accept a loaded SequencesQueue" in {
-    val sequences = SequencesQueue(List.empty[SequenceView])
+    val sequences = SequencesQueue(Conditions.default, List.empty[SequenceView])
     val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
     val result = handler.handle(ServerMessage(SequenceLoaded(sequences)))
     // No user set
