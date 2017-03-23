@@ -122,7 +122,7 @@ object GcalControllerEpics extends GcalController {
 
   private def getThArLamp: Option[ThArLampState] = GcalEpics.instance.lampThAr().map(decode[BinaryOnOff, LampState]).map(ThArLampState)
 
-  private def getXeLamp: Option[XeLampState] = GcalEpics.instance.lampAr().map(decode[BinaryOnOff, LampState]).map(XeLampState)
+  private def getXeLamp: Option[XeLampState] = GcalEpics.instance.lampXe().map(decode[BinaryOnOff, LampState]).map(XeLampState)
 
   private def getIrLamp: Option[IrLampState] = GcalEpics.instance.lampIr().map(decode[BinaryOnOff, LampState]).map(IrLampState)
 
