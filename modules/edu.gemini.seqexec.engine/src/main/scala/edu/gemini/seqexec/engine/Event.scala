@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.Conditions
+import edu.gemini.seqexec.model.Model.Conditions
 
 import Result.{RetVal, PartialVal, OK, Partial}
 

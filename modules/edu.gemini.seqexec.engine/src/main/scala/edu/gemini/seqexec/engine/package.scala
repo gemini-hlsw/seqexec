@@ -4,8 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.SequenceState
-import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.Conditions
+import edu.gemini.seqexec.model.Model.{SequenceState, Conditions}
 
 import scalaz._
 import Scalaz._

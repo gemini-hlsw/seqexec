@@ -195,7 +195,7 @@ lazy val edu_gemini_seqexec_server = project
 lazy val edu_gemini_seqexec_engine = project
   .in(file("modules/edu.gemini.seqexec.engine"))
   .dependsOn(edu_gemini_seqexec_model_JVM)
-  .settings(libraryDependencies ++= Seq(ScalaZStream, SeqexecOdb) ++ TestLibs.value)
+  .settings(libraryDependencies ++= Seq(ScalaZStream) ++ TestLibs.value)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level

@@ -7,7 +7,6 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.{engine, server}
 import edu.gemini.seqexec.engine.{Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
-import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.Conditions
 
 import scalaz._
 import Scalaz._

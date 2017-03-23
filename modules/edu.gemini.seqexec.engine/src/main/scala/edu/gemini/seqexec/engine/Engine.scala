@@ -3,7 +3,7 @@ package edu.gemini.seqexec.engine
 import scalaz._
 import Scalaz._
 
-import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.Conditions
+import edu.gemini.seqexec.model.Model.Conditions
 
 /**
   * A Map of `Sequence`s.
@@ -29,7 +29,7 @@ object Engine {
   object State {
 
     // WORST sets the value ANY for every condition
-    def empty: State = State(Conditions.WORST, Map.empty)
+    def empty: State = State(Conditions.worst, Map.empty)
 
   }
 
