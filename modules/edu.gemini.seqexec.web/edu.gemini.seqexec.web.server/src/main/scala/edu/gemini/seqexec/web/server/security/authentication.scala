@@ -3,8 +3,8 @@ package edu.gemini.seqexec.web.server.security
 import com.unboundid.ldap.sdk.LDAPURL
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
-import upickle.default._
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
+import argonaut._, Argonaut._
 import squants.Time
 import squants.time.Seconds
 
@@ -55,6 +55,9 @@ case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: Strin
 case class AuthenticationService(config: AuthenticationConfig) extends AuthService {
   import AuthenticationService._
 
+  implicit def UserDetailsCodecJson: CodecJson[UserDetails] =
+    casecodec2(UserDetails.apply, UserDetails.unapply)("username", "displayName")
+
   val authServices =
     if (config.devMode) List(TestAuthenticationService, config.ldap.ldapService)
     else List(config.ldap.ldapService)
@@ -64,16 +67,16 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
     */
   def buildToken(u: UserDetails): String =
     // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
-    Jwt.encode(JwtClaim(write(u)).issuedNow.expiresIn(sessionTimeout.toSeconds.toLong), config.secretKey, JwtAlgorithm.HS512)
+    Jwt.encode(JwtClaim(u.asJson.nospaces).issuedNow.expiresIn(30), config.secretKey, JwtAlgorithm.HS512)
 
   /**
     * Decodes a token out of JSON Web Token
     */
   def decodeToken(t: String): AuthResult =
-    (for {
-      claim <- Jwt.decode(t, config.secretKey, Seq(JwtAlgorithm.HS512)).toDisjunction
-      token <- \/.fromTryCatchNonFatal(read[JwtUserClaim](claim))
-    } yield token.toUserDetails).leftMap(m => DecodingFailure(m.getMessage))
+    for {
+      claim       <- Jwt.decodeRaw(t, config.secretKey, Seq(JwtAlgorithm.HS512)).toDisjunction.leftMap(t => DecodingFailure(t.getMessage))
+      userDetails <- \/.fromEither(claim.decodeEither[UserDetails].leftMap(DecodingFailure.apply))
+    } yield userDetails
 
   val sessionTimeout: Time = config.sessionLifeHrs in Seconds
 

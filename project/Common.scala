@@ -8,7 +8,7 @@ import sbt.{file, project}
 object Common {
   lazy val commonSettings = Seq(
     // Common libraries
-    libraryDependencies ++= Seq(ScalaZCore.value, UPickle.value, BooPickle.value) ++ TestLibs.value
+    libraryDependencies ++= Seq(ScalaZCore.value, BooPickle.value) ++ TestLibs.value
   )
 
   // This function allows triggered compilation to run only when scala files changes
