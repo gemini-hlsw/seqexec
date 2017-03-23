@@ -68,7 +68,7 @@ case class AuthenticationService(config: AuthenticationConfig) extends AuthServi
     */
   def buildToken(u: UserDetails): Task[String] = Task.delay {
     // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
-    Jwt.encode(JwtClaim(u.asJson.nospaces).issuedNow.expiresIn(30), config.secretKey, JwtAlgorithm.HS512)
+    Jwt.encode(JwtClaim(u.asJson.nospaces).issuedNow.expiresIn(config.sessionLifeHrs.toSeconds.toLong), config.secretKey, JwtAlgorithm.HS512)
   }
 
   /**
