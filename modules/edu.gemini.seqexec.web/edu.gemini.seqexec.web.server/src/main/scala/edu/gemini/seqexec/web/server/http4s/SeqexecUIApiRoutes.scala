@@ -60,6 +60,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
             Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
+
+      case req @ POST -> Root / "seqexec" / "logout"              =>
+        // Clean the auth cookie
+        val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
+          secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
+        Ok("").removeCookie(cookie)
+
     }}
 
   // Don't gzip log responses
@@ -90,15 +97,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                 scalaz.stream.Process.empty
               )
             )
-
-          case req @ POST -> Root / "seqexec" / "logout"              =>
-            val user = userInRequest(req)
-            user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              // Clean the auth cookie
-              val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
-                secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
-              Ok("").removeCookie(cookie)
-            }
 
           case req @ GET -> Root / "seqexec" / "sequence" / oid =>
             val user = userInRequest(req)

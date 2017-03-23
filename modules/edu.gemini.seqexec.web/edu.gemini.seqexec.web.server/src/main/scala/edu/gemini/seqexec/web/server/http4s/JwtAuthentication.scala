@@ -54,9 +54,9 @@ case class JwtAuthentication(auth: AuthenticationService, override val optionalA
   override def apply(service: HttpService): HttpService = super.apply(service).andThenK { (resp: Response) =>
     // If the user has the attribute replace the cookie
     Task.delay {
-      resp.attributes.get(JwtAuthentication.authenticatedUser).flatten.fold(resp)(user => {
+      resp.attributes.get(JwtAuthentication.authenticatedUser).flatten.fold(resp){ user =>
         resp.addCookie(loginCookie(user))
-      })
+      }
     }
   }
 }
