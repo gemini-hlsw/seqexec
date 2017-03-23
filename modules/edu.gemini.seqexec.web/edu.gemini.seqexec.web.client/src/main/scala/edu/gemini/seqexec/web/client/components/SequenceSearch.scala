@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCircleNo
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import org.scalajs.dom.ext.KeyCode
+import org.scalajs.dom.html.Div
 
 import scalacss.ScalaCssReact._
 
@@ -20,7 +21,7 @@ import scalacss.ScalaCssReact._
 object LoadSequenceResultsHeader {
   def closeArea = Callback { SeqexecCircuit.dispatch(CloseSearchArea) }
 
-  val component = ReactComponentB[ModelProxy[Pot[SequencesQueue[SequenceId]]]]("SequenceSearchResultHeader")
+  private val component = ReactComponentB[ModelProxy[Pot[SequencesQueue[SequenceId]]]]("SequenceSearchResultHeader")
     .render_P(p =>
       <.div(
         ^.cls := "ui top attached segment header",
@@ -34,7 +35,7 @@ object LoadSequenceResultsHeader {
     )
     .build
 
-  def apply(searchResults: ModelProxy[Pot[SequencesQueue[SequenceId]]]) = component(searchResults)
+  def apply(searchResults: ModelProxy[Pot[SequencesQueue[SequenceId]]]): ReactComponentU[ModelProxy[Pot[SequencesQueue[SequenceId]]], Unit, Unit, TopNode] = component(searchResults)
 }
 
 /**
@@ -43,8 +44,8 @@ object LoadSequenceResultsHeader {
   */
 object SequenceSearchResultsBody {
   case class Props(model: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) {
-    def searchResults = model()._2
-    def status = model()._1
+    def searchResults: Pot[SequencesQueue[SequenceId]] = model()._2
+    def status: ClientStatus = model()._1
   }
 
   def addToQueue[A](p: ModelProxy[A], u: SequenceId): Callback = Callback.empty
@@ -53,7 +54,7 @@ object SequenceSearchResultsBody {
 
   def onAdding[A](p: ModelProxy[A], u: SequenceId):Callback = addToQueue(p, u) >> removeFromResults(p, u)
 
-  val component = ReactComponentB[Props]("SequenceSearchResultBody")
+  private val component = ReactComponentB[Props]("SequenceSearchResultBody")
     .stateless
     .render_P(p =>
       <.tbody(
@@ -76,17 +77,16 @@ object SequenceSearchResultsBody {
     )
     .build
 
-  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
 }
 
 /**
   * Shows a table with search results
   */
 object SequenceLoad {
-  val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults)
-  val searchResultsConnect = SeqexecCircuit.connect(_.searchResults)
+  private val searchResultsConnect = SeqexecCircuit.connect(_.searchResults)
 
-  val component = ReactComponentB[Unit]("SequenceSearchResult")
+  private val component = ReactComponentB[Unit]("SequenceSearchResult")
     .stateless
     .render_P(p =>
       <.div(
@@ -101,7 +101,7 @@ object SequenceLoad {
     )
     .build
 
-  def apply() = component()
+  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
 }
 
 /**
@@ -109,8 +109,8 @@ object SequenceLoad {
   */
 object SequenceSearch {
   case class Props(model: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) {
-    def searchResults = model()._2
-    def status = model()._1
+    def searchResults: Pot[SequencesQueue[SequenceId]] = model()._2
+    def status: ClientStatus = model()._1
   }
 
   case class State(searchText: String)
@@ -134,7 +134,7 @@ object SequenceSearch {
       // Possibly a react.js fault, but the code below does the trick
       CallbackTo.pure(e.target.value) >>= {e => $.modState(_.copy(searchText = e))}
 
-    def render(p: Props, s: State) =
+    def render(p: Props, s: State): ReactTagOf[Div] =
       <.div(
         ^.cls := "ui right aligned category item",
         <.div(
@@ -157,5 +157,5 @@ object SequenceSearch {
     .renderBackend[Backend]
     .build.withKey("key.sequence.search")
 
-  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]): ReactComponentU[Props, State, Backend, TopNode] = component(Props(p))
 }

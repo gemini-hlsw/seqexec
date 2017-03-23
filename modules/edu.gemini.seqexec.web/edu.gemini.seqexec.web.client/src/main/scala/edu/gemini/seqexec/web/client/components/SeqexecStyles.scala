@@ -129,7 +129,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     color.inherit,
     padding(0.5.em, 0.5.em, 0.5.em, 0.em),
     noMargin,
-    (boxShadow := ("none")).important
+    (boxShadow := "none").important
   )
 
   // CSS for a segment where a step is running

@@ -13,7 +13,6 @@ import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
-import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom._
 import org.scalajs.dom.ext.AjaxException
 import boopickle.Default._
@@ -41,7 +40,7 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
       // Don't close the search area on an empty response
       updated(action.potResult)
 
-    case action @ LoadSequence(_, Failed(a: AjaxException)) =>
+    case action @ LoadSequence(_, Failed(_: AjaxException)) =>
       // Don't close the search area on errors
       updated(action.potResult)
 
@@ -65,18 +64,17 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
       effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))
 
     // We could react to these events but we rather wait for the command from the event queue
-    case RunStarted(s) =>
+    case RunStarted(_) =>
       noChange
 
-    case RunStartFailed(s) =>
+    case RunStartFailed(_) =>
       noChange
 
-    case RunPaused(s) =>
+    case RunPaused(_) =>
       // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
-      val logE = SeqexecCircuit.appendToLogE(s"Sequence ${s.id} aborted")
       noChange
 
-    case RunPauseFailed(s) =>
+    case RunPauseFailed(_) =>
       noChange
 
     case UpdateObserver(sequence, name) =>
@@ -325,7 +323,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(e)))
 
-    case ConnectionClosed(d) =>
+    case ConnectionClosed(_) =>
       val next = math.min(60000, math.max(250, value.nextAttempt * 2))
       logger.fine("Retry connecting in "+ next)
       val effect = Effect(Future(WSConnect(next)))
@@ -367,7 +365,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
       updated(value.copy(_1 = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
-    case ServerMessage(s) =>
+    case ServerMessage(_) =>
       // Ignore unknown events
       noChange
   }
