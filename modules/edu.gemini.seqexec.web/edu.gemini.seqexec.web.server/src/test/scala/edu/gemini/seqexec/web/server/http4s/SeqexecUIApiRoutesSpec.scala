@@ -78,9 +78,6 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       // see https://github.com/http4s/http4s/issues/234
       service.apply(Request(uri = uri("/seqexec/logout"))).unsafePerformSync.status should equal(Status.NotFound)
     }
-    it should "reject unauthorized requests" in {
-      service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout"))).unsafePerformSync.status should equal(Status.Unauthorized)
-    }
     it should "remove the cookie on logout" in {
       // First make a valid cookie
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))

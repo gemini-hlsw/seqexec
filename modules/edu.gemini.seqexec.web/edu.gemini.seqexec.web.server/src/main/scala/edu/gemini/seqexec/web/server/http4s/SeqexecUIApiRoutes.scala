@@ -1,6 +1,5 @@
 package edu.gemini.seqexec.web.server.http4s
 
-import java.time.Instant
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
@@ -46,7 +45,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
     awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { _ => Ping() }
   }
 
-  val tokenAuthService = JwtAuthentication(auth, true)
+  val tokenAuthService = JwtAuthentication(auth, optionalAllowed = true)
 
   val publicService: HttpService = GZip { HttpService {
 
@@ -56,15 +55,18 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         auth.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // if successful set a cookie
-            val cookieVal = auth.buildToken(user)
-            val expiration = Instant.now().plusSeconds(auth.sessionTimeout.toSeconds.toLong)
-            val cookie = Cookie(auth.config.cookieName, cookieVal,
-              path = "/".some, expires = expiration.some, secure = auth.config.useSSL, httpOnly = true)
-            Ok(user).addCookie(cookie)
+            tokenAuthService.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
+
+      case req @ POST -> Root / "seqexec" / "logout"              =>
+        // Clean the auth cookie
+        val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
+          secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
+        Ok("").removeCookie(cookie)
+
     }}
 
   // Don't gzip log responses
@@ -95,15 +97,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                 scalaz.stream.Process.empty
               )
             )
-
-          case req @ POST -> Root / "seqexec" / "logout"              =>
-            val user = userInRequest(req)
-            user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              // Clean the auth cookie
-              val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
-                secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
-              Ok("").removeCookie(cookie)
-            }
 
           case req @ GET -> Root / "seqexec" / "sequence" / oid =>
             val user = userInRequest(req)
