@@ -15,7 +15,7 @@ class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
   "JWT Tokens" should "encode/decode" in {
     forAll { (u: String, p: String) =>
       val userDetails = UserDetails(u, p)
-      val token = authService.buildToken(userDetails)
+      val token = authService.buildToken(userDetails).unsafePerformSync
       \/-(userDetails) shouldEqual authService.decodeToken(token)
     }
   }
