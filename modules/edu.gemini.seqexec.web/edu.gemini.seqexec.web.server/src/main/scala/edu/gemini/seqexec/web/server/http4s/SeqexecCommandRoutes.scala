@@ -4,6 +4,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.model.Model.Conditions
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
@@ -70,6 +71,11 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         _     <- se.setObserver(inputQueue, obs, name)
         resp  <- Ok(s"Set observer name to $name for sequence $obs")
       } yield resp
+
+    case req @ POST -> Root / "conditions" =>
+      req.decode[Conditions] (conditions =>
+        se.setConditions(inputQueue, conditions) *> Ok(s"Set conditions to $conditions")
+      )
 
     case GET -> Root / "refresh" =>
       se.requestRefresh(inputQueue) *> NoContent()
