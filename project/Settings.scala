@@ -31,7 +31,6 @@ object Settings {
     val scalaDom     = "0.9.1"
     val scalajsReact = "0.11.3"
     val scalaCSS     = "0.5.0"
-    val uPickle      = "0.4.0"
     val booPickle    = "1.2.6"
     val diode        = "1.1.1"
     val javaTimeJS   = "0.2.0"
@@ -89,7 +88,6 @@ object Settings {
     val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
 
     val Squants     = Def.setting("org.typelevel" %%% "squants"              % LibraryVersions.squants)
-    val UPickle     = Def.setting("com.lihaoyi"   %%% "upickle"              % LibraryVersions.uPickle)
     val BooPickle   = Def.setting("io.suzaku"     %%% "boopickle"            % LibraryVersions.booPickle)
     val JavaTimeJS  = Def.setting("org.scala-js"  %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
     val JavaLogJS   = Def.setting("org.scala-js"  %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
