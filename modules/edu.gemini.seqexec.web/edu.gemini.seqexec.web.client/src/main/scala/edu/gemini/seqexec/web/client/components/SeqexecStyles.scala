@@ -70,6 +70,7 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val queueListPane: StyleA = style {
     maxHeight(13.1.em)
+    marginTop(0.px).important
   }
 
   val searchResultListPane: StyleA = style {
