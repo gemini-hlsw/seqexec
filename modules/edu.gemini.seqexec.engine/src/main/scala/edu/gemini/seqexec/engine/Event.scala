@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.model.Model.Conditions
+
 import Result.{RetVal, PartialVal, OK, Partial}
 
 /**
@@ -19,6 +21,7 @@ case class Load(id: Sequence.Id, sequence: Sequence[Action]) extends UserEvent
 case class Breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean) extends UserEvent
 case class SetOperator(name: String) extends UserEvent
 case class SetObserver(id: Sequence.Id, name: String) extends UserEvent
+case class SetConditions(conditions: Conditions) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
 
@@ -41,6 +44,7 @@ object Event {
   def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, step, v))
   def setOperator(name: String): Event = EventUser(SetOperator(name))
   def setObserver(id: Sequence.Id, name: String): Event = EventUser(SetObserver(id, name))
+  def setConditions(conditions: Conditions): Event = EventUser(SetConditions(conditions))
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
 

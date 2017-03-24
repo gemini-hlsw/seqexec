@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.services
 import java.util.logging.LogRecord
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
+import edu.gemini.seqexec.model.Model.Conditions
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
@@ -73,6 +74,17 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax.post(
       url = s"$baseUrl/commands/${s.id}/observer/${name}",
       responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
+    * Requests the backend to set the Conditions globally
+    */
+  def setConditions(conditions: Conditions): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/conditions",
+      responseType = "arraybuffer",
+      data = Pickle.intoBytes(conditions)
     ).map(unpickle[RegularCommand])
   }
 

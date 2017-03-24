@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig, StepState}
+import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig, StepState}
 
 import scalaz.syntax.either._
 import org.scalatest._
@@ -94,6 +94,7 @@ class StepSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
+        Conditions.worst,
         Map(
           (seqId,
            Sequence.State.init(
@@ -138,6 +139,7 @@ class StepSpec extends FlatSpec {
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
     val qs0: Engine.State =
       Engine.State(
+        Conditions.worst,
         Map(
           (seqId,
            Sequence.State.Zipper(
@@ -203,6 +205,7 @@ class StepSpec extends FlatSpec {
     val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
+        Conditions.worst,
         Map(
           (seqId,
            Sequence.State.init(

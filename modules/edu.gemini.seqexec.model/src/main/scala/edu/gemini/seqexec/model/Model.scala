@@ -26,6 +26,8 @@ object Model {
 
     case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    case class ConditionsUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
@@ -53,7 +55,7 @@ object Model {
   type Operator = String
   type Observer = String
 
-  implicit val equal: Equal[SequenceId] = Equal.equalA[SequenceId]
+  implicit val equalSequenceId: Equal[SequenceId] = Equal.equalA[SequenceId]
 
   sealed trait StepState {
     def canRunFrom: Boolean = false
@@ -139,6 +141,120 @@ object Model {
     */
   case class SequencesQueue[T](queue: List[T])
 
+  // Ported from OCS' SPSiteQuality.java
+
+  final case class Conditions(
+    cc: CloudCover,
+    iq: ImageQuality,
+    sb: SkyBackground,
+    wv: WaterVapor
+  )
+
+  object Conditions {
+
+    val worst = Conditions(
+      CloudCover.Any,
+      ImageQuality.Any,
+      SkyBackground.Any,
+      WaterVapor.Any
+    )
+
+    val nominal = Conditions(
+      CloudCover.Percent50,
+      ImageQuality.Percent70,
+      SkyBackground.Percent50,
+      WaterVapor.Any
+    )
+
+    val best = Conditions(
+      // In the ODB model it's 20% but that value it's marked as obsolete
+      // so I took the non-obsolete lowest value.
+      CloudCover.Percent50,
+      ImageQuality.Percent20,
+      SkyBackground.Percent20,
+      WaterVapor.Percent20
+    )
+
+    implicit val equalConditions: Equal[Conditions] = Equal.equalA[Conditions]
+
+    implicit val showConditions: Show[Conditions] = Show.shows[Conditions] {
+      case Conditions(cc, iq, sb, wv) => List(cc, iq, sb, wv).mkString(", ")
+    }
+
+  }
+
+  sealed trait CloudCover
+  object CloudCover {
+    case object Percent50 extends CloudCover { val toInt: Int = 50  }
+    case object Percent70 extends CloudCover { val toInt: Int = 70  }
+    case object Percent80 extends CloudCover { val toInt: Int = 80  }
+    case object Any       extends CloudCover { val toInt: Int = 100 } // ODB is 100
+
+    implicit val equalCloudCover: Equal[CloudCover] = Equal.equalA[CloudCover]
+
+    implicit val showCloudCover: Show[CloudCover] = Show.shows[CloudCover] {
+      case Percent50 => "50%/Clear"
+      case Percent70 => "70%/Cirrus"
+      case Percent80 => "80%/Cloudy"
+      case Any       => "Any"
+    }
+
+  }
+
+  sealed trait ImageQuality
+  object ImageQuality {
+    case object Percent20 extends ImageQuality { val toInt: Int = 20  }
+    case object Percent70 extends ImageQuality { val toInt: Int = 70  }
+    case object Percent85 extends ImageQuality { val toInt: Int = 85  }
+    case object Any       extends ImageQuality { val toInt: Int = 100 } // ODB is 100
+
+    implicit val equalImageQuality: Equal[ImageQuality] = Equal.equalA[ImageQuality]
+
+    implicit val showImageQuality: Show[ImageQuality] = Show.shows[ImageQuality] {
+      case Percent20 => "20%/Best"
+      case Percent70 => "70%/Good"
+      case Percent85 => "85%/Poor"
+      case Any       => "Any"
+    }
+
+  }
+
+  sealed trait SkyBackground
+  object SkyBackground {
+    case object Percent20 extends SkyBackground { val toInt: Int = 20  }
+    case object Percent50 extends SkyBackground { val toInt: Int = 50  }
+    case object Percent80 extends SkyBackground { val toInt: Int = 80  }
+    case object Any       extends SkyBackground { val toInt: Int = 100 } // ODB is 100
+
+    implicit val equal: Equal[SkyBackground] = Equal.equalA[SkyBackground]
+
+    implicit val showSkyBackground: Show[SkyBackground] = Show.shows[SkyBackground] {
+      case Percent20 => "20%/Darkest"
+      case Percent50 => "50%/Dark"
+      case Percent80 => "80%/Grey"
+      case Any       => "Any/Bright"
+    }
+
+  }
+
+  sealed trait WaterVapor
+  object WaterVapor {
+    case object Percent20 extends WaterVapor { val toInt: Int = 20  }
+    case object Percent50 extends WaterVapor { val toInt: Int = 50  }
+    case object Percent80 extends WaterVapor { val toInt: Int = 80  }
+    case object Any       extends WaterVapor { val toInt: Int = 100 } // ODB is 100
+
+    implicit val equal: Equal[WaterVapor] = Equal.equalA[WaterVapor]
+
+    implicit val showWaterVapor: Show[WaterVapor] = Show.shows[WaterVapor] {
+      case Percent20 => "20%/Low"
+      case Percent50 => "50%/Median"
+      case Percent80 => "85%/High"
+      case Any       => "Any"
+    }
+
+  }
+
   // Log message types
   type Time = java.time.Instant
 
@@ -177,4 +293,5 @@ object Model {
   case object StopImmediatelyObservation extends ObservationOperations
   case object PauseGracefullyObservation extends ObservationOperations
   case object StopGracefullyObservation extends ObservationOperations
+
 }

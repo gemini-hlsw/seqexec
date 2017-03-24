@@ -2,9 +2,10 @@ package edu.gemini.seqexec.engine
 
 import Result._
 import Event._
-import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Error}
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import org.scalatest.FlatSpec
+
+import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Error}
+import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
 import scalaz.syntax.apply._
 import scalaz.syntax.foldable._
@@ -48,6 +49,7 @@ class packageSpec extends FlatSpec {
   val seqId = "TEST-01"
   val qs1: Engine.State =
     Engine.State(
+      Conditions.worst,
       Map(
         (seqId,
          Sequence.State.init(
@@ -108,8 +110,8 @@ class packageSpec extends FlatSpec {
   val seqId1 = seqId
   val seqId2 = "TEST-02"
   val seqId3 = "TEST-03"
-  val qs2 = Engine.State(qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
-  val qs3 = Engine.State(qs2.sequences + (seqId3 -> seqG))
+  val qs2 = Engine.State(Conditions.worst, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
+  val qs3 = Engine.State(Conditions.worst, qs2.sequences + (seqId3 -> seqG))
 
   def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
     def isFinished(status: SequenceState): Boolean =

@@ -4,7 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.SequenceState
+import edu.gemini.seqexec.model.Model.{SequenceState, Conditions}
 
 import scalaz._
 import Scalaz._
@@ -81,24 +81,29 @@ package object engine {
     modifyS(id)(_.rollback)
 
   def setOperator(name: String): Handle[Unit] =
-    modify(x => Engine.State(x.sequences.mapValues(_.setOperator(name))))
+    modify(st => Engine.State(st.conditions, st.sequences.mapValues(_.setOperator(name))))
 
   def setObserver(id: Sequence.Id)(name: String): Handle[Unit] =
     modifyS(id)(_.setObserver(name))
+
+  def setConditions(conditions: Conditions): Handle[Unit] =
+    modify(st => Engine.State(st.conditions, st.sequences))
+
 
   /**
     * Loads a sequence
     */
   def load(id: Sequence.Id, seq: Sequence[Action]): Handle[Unit] =
     modify(
-      s => Engine.State(
-        s.sequences.get(id).map(
+      st => Engine.State(
+        st.conditions,
+        st.sequences.get(id).map(
           t => t.status match {
-            case SequenceState.Running => s.sequences
-            case _                     => s.sequences.updated(id, Sequence.State.init(seq))
+            case SequenceState.Running => st.sequences
+            case _                     => st.sequences.updated(id, Sequence.State.init(seq))
           }
         ).getOrElse(
-          s.sequences.updated(id, Sequence.State.init(seq))
+          st.sequences.updated(id, Sequence.State.init(seq))
         )
       )
     )
@@ -230,6 +235,7 @@ package object engine {
         modifyS(id)(_.setBreakpoint(step, v))
       case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
       case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
+      case SetConditions(conds)    => log("Output: Setting conditions") *> setConditions(conds)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
     }
@@ -304,13 +310,14 @@ package object engine {
   private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): Handle[Unit] =
     modify(
       st => Engine.State(
+        st.conditions,
         st.sequences.get(id).map(
           s => st.sequences.updated(id, f(s))).getOrElse(st.sequences)
       )
     )
 
   private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] =
-    modify(x => Engine.State(x.sequences.updated(id, s)))
+    modify(st => Engine.State(st.conditions, st.sequences.updated(id, s)))
 
   // For introspection
   def printSequenceState(id: Sequence.Id): Handle[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])

@@ -61,6 +61,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                   name: String): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setObserver(seqId.stringValue(), name)).map(_.right)
 
+  def setConditions(q: engine.EventQueue, conditions: Conditions): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setConditions(conditions)).map(_.right)
+
   // TODO: Add seqId: SPObservationID as parameter
   def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
 
@@ -113,6 +116,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Breakpoint(_, _, _) => StepBreakpointChanged(svs)
       case engine.SetOperator(_)      => OperatorUpdated(svs)
       case engine.SetObserver(_, _)   => ObserverUpdated(svs)
+      case engine.SetConditions(_)    => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
     }

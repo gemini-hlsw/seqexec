@@ -58,6 +58,32 @@ trait ModelBooPicklers {
     .addConcreteType[ObserverUpdated]
     .addConcreteType[OperatorUpdated]
 
+  implicit val conditionsPickler = generatePickler[Model.Conditions]
+
+  implicit val cloudCoverPickler = compositePickler[CloudCover]
+    .addConcreteType[CloudCover.Percent50.type]
+    .addConcreteType[CloudCover.Percent70.type]
+    .addConcreteType[CloudCover.Percent80.type]
+    .addConcreteType[CloudCover.Any.type]
+
+  implicit val imageQualityPickler = compositePickler[ImageQuality]
+    .addConcreteType[ImageQuality.Percent20.type]
+    .addConcreteType[ImageQuality.Percent70.type]
+    .addConcreteType[ImageQuality.Percent85.type]
+    .addConcreteType[ImageQuality.Any.type]
+
+  implicit val skyBackgroundPickler = compositePickler[SkyBackground]
+    .addConcreteType[SkyBackground.Percent20.type]
+    .addConcreteType[SkyBackground.Percent50.type]
+    .addConcreteType[SkyBackground.Percent80.type]
+    .addConcreteType[SkyBackground.Any.type]
+
+  implicit val waterVaporPickler = compositePickler[WaterVapor]
+    .addConcreteType[WaterVapor.Percent20.type]
+    .addConcreteType[WaterVapor.Percent50.type]
+    .addConcreteType[WaterVapor.Percent80.type]
+    .addConcreteType[WaterVapor.Any.type]
+
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets
     * This method trims the binary array to be sent on the WS channel
