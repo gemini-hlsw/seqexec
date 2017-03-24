@@ -11,7 +11,7 @@ import org.scalatest.prop.PropertyChecks
 // Keep the arbitraries in a separate trait to improve caching
 object SharedModelArbitraries {
   import org.scalacheck.Shapeless._
-  val maxListSize = 5
+  val maxListSize = 4
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
   def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
