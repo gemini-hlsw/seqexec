@@ -58,7 +58,7 @@ trait ModelBooPicklers {
     .addConcreteType[ObserverUpdated]
     .addConcreteType[OperatorUpdated]
 
-  implicit val conditionsPickler = compositePickler[Model.Conditions]
+  implicit val conditionsPickler = generatePickler[Model.Conditions]
 
   implicit val cloudCoverPickler = compositePickler[CloudCover]
     .addConcreteType[CloudCover.Percent50.type]

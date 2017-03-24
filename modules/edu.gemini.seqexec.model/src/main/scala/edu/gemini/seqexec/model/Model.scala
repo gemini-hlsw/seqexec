@@ -178,8 +178,7 @@ object Model {
     implicit val equalConditions: Equal[Conditions] = Equal.equalA[Conditions]
 
     implicit val showConditions: Show[Conditions] = Show.shows[Conditions] {
-      case Conditions(cc, iq, sb, wv) =>
-        List(cc.shows, iq.shows, sb.shows, wv.shows).intercalate(", ")
+      case Conditions(cc, iq, sb, wv) => List(cc, iq, sb, wv).mkString(", ")
     }
 
   }
