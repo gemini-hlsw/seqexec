@@ -114,14 +114,14 @@ object StepsTableContainer {
         <.div(
           ^.cls := "ui row",
           <.div(
-            ^.cls := "left column",
+            ^.cls := "left column five wide left floated",
             <.div(
               ^.cls := "ui segment basic running",
               step.status.shows
             )
           ),
           loggedIn ?= <.div(
-            ^.cls := "right column",
+            ^.cls := "right column ten wide right floated",
             <.div(
               ^.cls := "ui icon buttons",
               observationControlButtons(sequenceView, step)
