@@ -147,7 +147,7 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
 
 object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
-  val noSequencesLoaded = SequencesQueue[SequenceView](Nil)
+  val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, Nil)
 
   val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
     SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)

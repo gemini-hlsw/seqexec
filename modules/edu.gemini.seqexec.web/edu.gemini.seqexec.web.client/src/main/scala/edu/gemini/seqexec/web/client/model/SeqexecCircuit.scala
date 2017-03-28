@@ -313,14 +313,21 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
       val observer = value._3.map(_.displayName)
-      val (sequencesWithObserver, effects) = s.view.queue.foldLeft((List.empty[SequenceView], List(Some(Effect(Future(NoAction: Action)): Effect)))) { case ((seq, eff), q) =>
-        if (q.metadata.observer.isEmpty && observer.nonEmpty) {
-          (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq, Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) :: eff)
+      val (sequencesWithObserver, effects) =
+        s.view.queue.foldLeft(
+          (List.empty[SequenceView],
+           List(Some(Effect(Future(NoAction: Action)): Effect))
+          )
+        ) { case ((seq, eff), q) =>
+            if (q.metadata.observer.isEmpty && observer.nonEmpty) {
+              (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
+               Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) :: eff)
         } else {
           (q :: seq, eff)
         }
       }
-      updated(value.copy(_1 = SequencesQueue(sequencesWithObserver)), effects.flatten.reduce(_ + _): Effect)
+      updated(value.copy(_1 = SequencesQueue(value._1.conditions, sequencesWithObserver)),
+              effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(s) =>
       // Ignore unknown events
