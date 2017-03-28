@@ -106,9 +106,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                     \/.fromTryCatchNonFatal(new SPObservationID(oid))
                       .fold(Task.fail, Task.now)
                 u     <- se.load(inputQueue, obsId)
-                resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
-                  // TODO: Get previously set conditions? How?
-                  Ok(SequencesQueue[SequenceId](Conditions.default, List(oid))))
+                resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ => Ok(oid))
               } yield resp
             }.handleWith {
               case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")
