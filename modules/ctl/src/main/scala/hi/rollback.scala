@@ -1,8 +1,6 @@
 package gem.ctl.hi
 
 import gem.ctl.free.ctl._
-// import gem.ctl.low.io._
-// import gem.ctl.low.git._
 import gem.ctl.low.docker._
 import gem.ctl.hi.common._
 import gem.ctl.hi.deploy._
