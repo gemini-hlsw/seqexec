@@ -103,6 +103,12 @@ object ctl {
   val server: CtlIO[Server] =
     config.map(_.server)
 
+  val isRemote: CtlIO[Boolean] =
+    server.map {
+      case Server.Remote(_, _) => true
+      case Server.Local        => false
+    }
+
   def gosub[A](msg: String)(fa: CtlIO[A]): CtlIO[A] =
     Free.liftF(CtlOp.Gosub(Level.Info, msg, fa))
 

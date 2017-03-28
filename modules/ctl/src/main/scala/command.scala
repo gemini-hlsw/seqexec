@@ -22,9 +22,10 @@ object Command {
     verbose:     Boolean
   ) extends Command
 
-  case class Ps  (server: Server, verbose: Boolean) extends Command
-  case class Stop(server: Server, verbose: Boolean) extends Command
-  case class Log (server: Server, verbose: Boolean, count: Int) extends Command
+  case class Ps  (    server: Server, verbose: Boolean) extends Command
+  case class Stop(    server: Server, verbose: Boolean) extends Command
+  case class Log (    server: Server, verbose: Boolean, count: Int) extends Command
+  case class Rollback(server: Server, verbose: Boolean) extends Command
 
   /**
    * Construct a program to parse commandline `args` into a `Command`, or show help information if
@@ -128,9 +129,14 @@ object Command {
       progDesc("Show the Gem server log."))
     )
 
+  private lazy val rollbackCommand: Mod[CommandFields, Command] =
+    command("rollback", info((server |@| verbose)(Rollback).widen[Command] <* helper,
+      progDesc("Roll the current gem deployment back to the previous one, if possible."))
+    )
+
   private lazy val mainParser: ParserInfo[Command] =
     info(
-      subparser(configCommand, psCommand, stopCommand, logCommand) <*>
+      subparser(configCommand, psCommand, stopCommand, logCommand, rollbackCommand) <*>
       helper, progDesc("Deploy and control gem."))
 
 }

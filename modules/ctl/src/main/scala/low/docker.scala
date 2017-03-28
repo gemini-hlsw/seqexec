@@ -17,8 +17,12 @@ object docker {
     remote("/usr/local/bin/docker", args : _*)
 
   def containerHealth(k: Container): CtlIO[String] = // for now
-    docker("inspect", "-f", "'{{ .State.Health.Status }}'", k.hash).require {
-      case Output(0, s :: Nil) => s
+    isRemote.flatMap { r =>
+      docker("inspect", "-f",
+        if (r) "'{{ .State.Health.Status }}'"
+        else    "{{ .State.Health.Status }}", k.hash).require {
+        case Output(0, s :: Nil) => s
+      }
     }
 
   def findNetwork(name: String): CtlIO[Option[Network]] =
@@ -59,8 +63,12 @@ object docker {
     }
 
   def getLabelValue(label: String, k: Container): CtlIO[String] =
-    docker("inspect", "--format", s"""'{{ index .Config.Labels "$label"}}'""", k.hash).require {
-      case Output(0, s :: Nil) if s.nonEmpty => s
+    isRemote.flatMap { r =>
+      docker("inspect", "--format",
+        if (r) s"""'{{ index .Config.Labels "$label"}}'"""
+        else    s"""{{ index .Config.Labels "$label"}}""", k.hash).require {
+          case Output(0, s :: Nil) if s.nonEmpty => s
+        }
     }
 
   def stopContainer(k: Container): CtlIO[Unit] =
@@ -68,9 +76,18 @@ object docker {
       case Output(0, s :: Nil) if s === k.hash => ()
     }
 
+  def startContainer(k: Container): CtlIO[Unit] =
+    docker("start", k.hash) require {
+      case Output(0, s :: Nil) if s === k.hash => ()
+    }
+
   def getContainerName(k: Container): CtlIO[String] =
-    docker("inspect", "--format", "'{{ .Name }}'", k.hash) require {
-      case Output(0, s :: Nil) if (s.startsWith("/")) => s.drop(1)
+    isRemote.flatMap { r =>
+      docker("inspect", "--format",
+        if (r) "'{{ .Name }}'"
+        else    "{{ .Name }}", k.hash) require {
+        case Output(0, s :: Nil) if (s.startsWith("/")) => s.drop(1)
+      }
     }
 
 }

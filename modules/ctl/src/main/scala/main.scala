@@ -10,6 +10,7 @@ import gem.ctl.hi.ps.ps
 import gem.ctl.hi.log.showLog
 import gem.ctl.hi.stop.stop
 import gem.ctl.hi.deploy.deploy
+import gem.ctl.hi.rollback.rollback
 
 object main extends SafeApp {
 
@@ -20,7 +21,7 @@ object main extends SafeApp {
       case Command.Ps(_, _)           => ps
       case Command.Stop(_, _)         => stop
       case Command.Log(_, _, n)       => showLog(n)
-      // case Command.Blah(_, _)         => info("*** NOT IMPLEMENTED")
+      case Command.Rollback(_, _)     => rollback
     }
 
   /** Entry point. Parse the commandline args and do what's asked, if possible. */

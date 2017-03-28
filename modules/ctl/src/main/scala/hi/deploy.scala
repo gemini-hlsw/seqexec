@@ -95,16 +95,19 @@ object deploy {
       }
     }
 
-  def createDatabaseContainer(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
+  def createDatabaseContainer(nDeploy: Int, cDeploy: DeployCommit, iPg: Image, kPrev: Option[Container]): CtlIO[Container] =
     gosub(s"Creating Postgres container from image ${iPg.hash}") {
       for {
+        r <- isRemote // irritating … see below
         c <- docker("run",
                   "--detach",
                  s"--net=$PrivateNetwork",
                   "--name", s"db-$nDeploy",
                   "--label", s"edu.gemini.commit=${cDeploy.imageVersion}",
                   "--label",  "edu.gemini.db=true",
-                  "--health-cmd", "\"psql -U postgres -d gem -c 'select 1'\"",
+                  "--label", s"edu.gemini.prev=${kPrev.fold("")(_.hash)}",
+                  "--health-cmd", if (r) "\"psql -U postgres -d gem -c 'select 1'\""
+                                  else     "psql -U postgres -d gem -c 'select 1'",
                   "--health-interval", "10s",
                   "--health-retries", "2",
                   "--health-timeout", "2s",
@@ -128,9 +131,11 @@ object deploy {
 
   def createDatabase(nDeploy: Int, kPg: Container): CtlIO[Unit] =
     for {
+      r <- isRemote // irritating … see below
       b <- docker("exec", kPg.hash,
              "psql", s"--host=db-$nDeploy",
-                      "--command='create database gem'",
+                     if (r) "--command='create database gem'"
+                     else   "--command=create database gem",
                       "--username=postgres"
            ).require {
              case Output(0, List("CREATE DATABASE")) => true
@@ -151,16 +156,16 @@ object deploy {
       case s          => error(s"Health check failed: $s") *> exit(-1)
     }
 
-  def deployDatabase(nDeploy: Int, cDeploy: DeployCommit, iPg: Image): CtlIO[Container] =
+  def deployDatabase(nDeploy: Int, cDeploy: DeployCommit, iPg: Image, kPrev: Option[Container]): CtlIO[Container] =
     gosub("Deploying database.") {
       for {
-        kDb <- createDatabaseContainer(nDeploy, cDeploy, iPg)
+        kDb <- createDatabaseContainer(nDeploy, cDeploy, iPg, kPrev)
         _   <- createDatabase(nDeploy, kDb)
         _   <- awaitHealthy(kDb)
       } yield kDb
     }
 
-  def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
+  def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, kPrev: Option[Container]) =
     gosub(s"Creating Gem container from image ${iDeploy.hash}") {
       for {
         k  <- docker("run",
@@ -171,6 +176,7 @@ object deploy {
                 "--name",    s"gem-$nDeploy",
                 "--label",   s"edu.gemini.commit=${cDeploy.imageVersion}",
                 "--label",    "edu.gemini.gem=true",
+                "--label",   s"edu.gemini.prev=${kPrev.fold("")(_.hash)}",
                 "--publish", s"$Port:6666",
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://db-$nDeploy/gem",
                 iDeploy.hash
@@ -193,32 +199,35 @@ object deploy {
       }
     }
 
-  def deployGem(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image) =
+  def deployGem(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, kPrev: Option[Container]) =
     gosub("Deploying Gem.") {
       for {
-        kGem <- createGemContainer(nDeploy, cDeploy, iDeploy)
+        kGem <- createGemContainer(nDeploy, cDeploy, iDeploy, kPrev)
         h    <- serverHostName
         _    <- awaitNet(h, Port)
       } yield kGem
+    }
+
+  def copyData(fromName: String, toContainer: Container): CtlIO[Unit] =
+    gosub(s"Copying data from $fromName") {
+      isRemote.flatMap { r =>
+        docker(
+          "exec", toContainer.hash,
+          "sh", "-c", if (r) s"'pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem'"
+                      else    s"pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem"
+        ) require {
+          case Output(0, _) => ()
+        }
+      }
     }
 
   def deployStandalone(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
     gosub("Performing STANDALONE deployment") {
       for {
         _   <- ensureNoRunningDeployments
-        kDb <- deployDatabase(nDeploy, cDeploy, iPg)
-        _   <- deployGem(nDeploy, cDeploy, iDeploy)
+        kDb <- deployDatabase(nDeploy, cDeploy, iPg, None)
+        _   <- deployGem(nDeploy, cDeploy, iDeploy, None)
       } yield ()
-    }
-
-  def copyData(fromName: String, toContainer: Container): CtlIO[Unit] =
-    gosub(s"Copying data from $fromName") {
-      docker(
-        "exec", toContainer.hash,
-        "sh", "-c", s"'pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem'"
-      ) require {
-        case Output(0, _) => ()
-      }
     }
 
   def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
@@ -232,11 +241,11 @@ object deploy {
         _     <- if (cPg.commit === cBase.commit) info( "Gem and Postgres containers are at the same commit.")
                  else                             error("Gem and Postgres containers are at different commits. What?") *> exit(-1)
         _     <- gosub("Stopping old Gem container.")(stopContainer(kGem))
-        kPg2  <- deployDatabase(nDeploy, cDeploy, iPg)
+        kPg2  <- deployDatabase(nDeploy, cDeploy, iPg, Some(kPg))
         nPg   <- getContainerName(kPg)
         _     <- copyData(nPg, kPg2)
         _     <- gosub("Stopping old database container.")(stopContainer(kPg))
-        _     <- deployGem(nDeploy, cDeploy, iDeploy)
+        _     <- deployGem(nDeploy, cDeploy, iDeploy, Some(kGem))
       } yield ()
     }
 
