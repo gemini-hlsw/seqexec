@@ -28,7 +28,7 @@ shellPrompt in ThisBuild := { state =>
   if (stale) {
     println(s"Computed version ($expected) doesn't match the filesystem anymore.")
     println(s"Please `reload` to get back in sync.")
-    RED + "relo\nad> " + RESET
+    RED + "reload> " + RESET
   } else "> "
 }
 
