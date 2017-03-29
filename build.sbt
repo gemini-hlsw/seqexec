@@ -26,11 +26,9 @@ shellPrompt in ThisBuild := { state =>
   val actual   = version.value
   val stale    = expected != actual
   if (stale) {
-    println("Git version on filesystem has changed, which makes the version incorrect.")
-    println("expected: " + expected)
-    println("actual:   " + actual)
-    if (expected == actual) "sbt> "
-    else RED + "reload please> " + RESET
+    s"""|${RED}Computed version ($expected) doesn't match the filesystem anymore.
+        |Please `reload` to get back in sync."
+        |> $RESET""".stripMargin
   } else "> "
 }
 
