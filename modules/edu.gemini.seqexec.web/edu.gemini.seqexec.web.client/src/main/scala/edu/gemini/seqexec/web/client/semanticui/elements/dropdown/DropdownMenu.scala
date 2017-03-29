@@ -1,4 +1,4 @@
-package edu.gemini.seqexec.web.client.components
+package edu.gemini.seqexec.web.client.semanticui.dropdown
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
