@@ -15,21 +15,27 @@ enablePlugins(GitVersioning)
 
 git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
 
-// Change our prompt to let us know that the project's notion of the version is out of date with
-// the reality of the filesystem, since we're using git for versioning.
+// Before printing the prompt check git to make sure all is well.
 shellPrompt in ThisBuild := { state =>
   import scala.sys.process._
   import scala.Console.{ RED, RESET }
-  val revision = "git rev-parse HEAD".!!.trim
-  val dirty    = "git status -s".!!.trim.length > 0
-  val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
-  val actual   = version.value
-  val stale    = expected != actual
-  if (stale) {
-    print(RED)
-    println(s"Computed version doesn't match the filesystem anymore.")
-    println(s"Please `reload` to get back in sync.")
-    print(RESET)
+  try {
+    val revision = "git rev-parse HEAD".!!.trim
+    val dirty    = "git status -s".!!.trim.length > 0
+    val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
+    val actual   = version.value
+    val stale    = expected != actual
+    if (stale) {
+      print(RED)
+      println(s"Computed version doesn't match the filesystem anymore.")
+      println(s"Please `reload` to get back in sync.")
+      print(RESET)
+    }
+  } catch {
+    case e: Exception =>
+      print(RED)
+      println(s"Couldn't run `git` to check on versioning. Something is amiss.")
+      print(RESET)
   }
   "> "
 }
