@@ -15,6 +15,23 @@ enablePlugins(GitVersioning)
 
 git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
 
+// Change our prompt to let us know that the project's notion of the version is out of date with
+// the reality of the filesystem, since we're using git for versioning.
+shellPrompt in ThisBuild := { state =>
+  import scala.sys.process._
+  import scala.Console.{ RED, RESET }
+  val revision = "git rev-parse HEAD".!!.trim
+  val dirty    = "git status -s".!!.trim.length > 0
+  val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
+  val actual   = version.value
+
+  println("expected: " + expected)
+  println("actual:   " + actual)
+
+  if (expected == actual) "sbt> "
+  else RED + "reload please> " + RESET
+}
+
 lazy val testLibs = Seq(
   "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
   "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test"
