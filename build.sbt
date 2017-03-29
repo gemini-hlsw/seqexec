@@ -26,10 +26,12 @@ shellPrompt in ThisBuild := { state =>
   val actual   = version.value
   val stale    = expected != actual
   if (stale) {
+    print(RED)
     println(s"Computed version doesn't match the filesystem anymore.")
     println(s"Please `reload` to get back in sync.")
-    RED + "reload please> " + RESET
-  } else "> "
+    print(RESET)
+  }
+  "> "
 }
 
 lazy val testLibs = Seq(
