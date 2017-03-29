@@ -14,7 +14,6 @@ lazy val http4sVersion            = "0.15.2a"
 enablePlugins(GitVersioning)
 
 git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
-isSnapshot in ThisBuild := git.gitUncommittedChanges.value
 
 lazy val testLibs = Seq(
   "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
