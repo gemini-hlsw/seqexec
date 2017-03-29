@@ -26,9 +26,10 @@ shellPrompt in ThisBuild := { state =>
   val actual   = version.value
   val stale    = expected != actual
   if (stale) {
-    s"""|${RED}Computed version ($expected) doesn't match the filesystem anymore.
+    RED +
+    s"""|Computed version ($expected) doesn't match the filesystem anymore.
         |Please `reload` to get back in sync."
-        |> $RESET""".stripMargin
+        |> """.stripMargin + RESET
   } else "> "
 }
 
