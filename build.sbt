@@ -24,12 +24,14 @@ shellPrompt in ThisBuild := { state =>
   val dirty    = "git status -s".!!.trim.length > 0
   val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
   val actual   = version.value
-
-  println("expected: " + expected)
-  println("actual:   " + actual)
-
-  if (expected == actual) "sbt> "
-  else RED + "reload please> " + RESET
+  val stale    = expected != actual
+  if (stale) {
+    println("Git version on filesystem has changed, which makes the version incorrect.")
+    println("expected: " + expected)
+    println("actual:   " + actual)
+    if (expected == actual) "sbt> "
+    else RED + "reload please> " + RESET
+  } else "> "
 }
 
 lazy val testLibs = Seq(
