@@ -87,7 +87,7 @@ package object engine {
     modifyS(id)(_.setObserver(name))
 
   def setConditions(conditions: Conditions): Handle[Unit] =
-    modify(st => Engine.State(st.conditions, st.sequences))
+    modify(st => Engine.State(conditions, st.sequences))
 
 
   /**
