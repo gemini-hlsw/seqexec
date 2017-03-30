@@ -4,7 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.{SequenceState, Conditions}
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, SkyBackground, CloudCover, SequenceState}
 
 import scalaz._
 import Scalaz._
@@ -87,7 +87,19 @@ package object engine {
     modifyS(id)(_.setObserver(name))
 
   def setConditions(conditions: Conditions): Handle[Unit] =
-    modify(st => Engine.State(st.conditions, st.sequences))
+    modify(st => Engine.State(conditions, st.sequences))
+
+  def setImageQuality(iq: ImageQuality): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(iq = iq), st.sequences))
+
+  def setWaterVapor(wv: WaterVapor): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(wv = wv), st.sequences))
+
+  def setSkyBackground(sb: SkyBackground): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(sb = sb), st.sequences))
+
+  def setCloudCover(cc: CloudCover): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(cc = cc), st.sequences))
 
 
   /**
@@ -236,6 +248,10 @@ package object engine {
       case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
       case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
       case SetConditions(conds)    => log("Output: Setting conditions") *> setConditions(conds)
+      case SetImageQuality(iq)     => log("Output: Setting image quality") *> setImageQuality(iq)
+      case SetWaterVapor(wv)       => log("Output: Setting water vapor") *> setWaterVapor(wv)
+      case SetSkyBackground(sb)    => log("Output: Setting sky background") *> setSkyBackground(sb)
+      case SetCloudCover(cc)       => log("Output: Setting cloud cover") *> setCloudCover(cc)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
     }

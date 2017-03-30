@@ -64,6 +64,18 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setConditions(q: engine.EventQueue, conditions: Conditions): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setConditions(conditions)).map(_.right)
 
+  def setImageQuality(q: engine.EventQueue, iq: ImageQuality): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setImageQuality(iq)).map(_.right)
+
+  def setWaterVapor(q: engine.EventQueue, wv: WaterVapor): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setWaterVapor(wv)).map(_.right)
+
+  def setSkyBackground(q: engine.EventQueue, sb: SkyBackground): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setSkyBackground(sb)).map(_.right)
+
+  def setCloudCover(q: engine.EventQueue, cc: CloudCover): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setCloudCover(cc)).map(_.right)
+
   // TODO: Add seqId: SPObservationID as parameter
   def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
 
@@ -83,7 +95,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
-    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID((ids))).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e))))
+    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e))))
 
     (i match {
       case (EventSystem(Failed(id, _, e)), _) => for {
@@ -118,6 +130,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetOperator(_)      => OperatorUpdated(svs)
       case engine.SetObserver(_, _)   => ObserverUpdated(svs)
       case engine.SetConditions(_)    => ConditionsUpdated(svs)
+      case engine.SetImageQuality(_)  => ConditionsUpdated(svs)
+      case engine.SetWaterVapor(_)    => ConditionsUpdated(svs)
+      case engine.SetSkyBackground(_) => ConditionsUpdated(svs)
+      case engine.SetCloudCover(_)    => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
     }
@@ -219,7 +235,7 @@ object SeqexecEngine {
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
           case None => throw new Exception("Unable to start EPICS service.")
           case Some(s) => {
-            (sys.init(s)).leftMap {
+            sys.init(s).leftMap {
                 case SeqexecFailure.SeqexecException(ex) => throw ex
                 case c: SeqexecFailure => throw new Exception(SeqexecFailure.explain(c))
             }

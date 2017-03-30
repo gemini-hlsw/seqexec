@@ -4,7 +4,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.Model.Conditions
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, SkyBackground, CloudCover}
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
@@ -26,10 +26,10 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
   val commands = Commands(se.odbProxy)
 
   val service = tokenAuthService { GZip { HttpService {
-    case req @ GET  -> Root  / "host" =>
+    case GET  -> Root  / "host" =>
       Ok(toCommandResult("host", commands.host()))
 
-    case req @ GET  -> Root  / obsId / "count" =>
+    case GET  -> Root  / obsId / "count" =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
     case POST -> Root / obsId / "start" =>
@@ -72,9 +72,30 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         resp  <- Ok(s"Set observer name to $name for sequence $obs")
       } yield resp
 
+
     case req @ POST -> Root / "conditions" =>
       req.decode[Conditions] (conditions =>
         se.setConditions(inputQueue, conditions) *> Ok(s"Set conditions to $conditions")
+      )
+
+    case req @ POST -> Root / "iq" =>
+      req.decode[ImageQuality] (iq =>
+        se.setImageQuality(inputQueue, iq) *> Ok(s"Set image quality to $iq")
+      )
+
+    case req @ POST -> Root / "wv" =>
+      req.decode[WaterVapor] (wv =>
+        se.setWaterVapor(inputQueue, wv) *> Ok(s"Set water vapor to $wv")
+      )
+
+    case req @ POST -> Root / "sb" =>
+      req.decode[SkyBackground] (sb =>
+        se.setSkyBackground(inputQueue, sb) *> Ok(s"Set sky background to $sb")
+      )
+
+    case req @ POST -> Root / "cc" =>
+      req.decode[CloudCover] (cc =>
+        se.setCloudCover(inputQueue, cc) *> Ok(s"Set cloud cover to $cc")
       )
 
     case GET -> Root / "refresh" =>

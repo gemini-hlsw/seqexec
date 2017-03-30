@@ -73,7 +73,7 @@ class SequenceSpec extends FlatSpec {
 
     q.enqueueOne(start(seqId)).flatMap(_ =>
       processE(q).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences.get(seqId).get.status)
+        a => !isFinished(a._2.sequences(seqId).status)
       ).runLast.eval(s0)).unsafePerformSync.get._2
   }
 
@@ -89,7 +89,7 @@ class SequenceSpec extends FlatSpec {
              Sequence(
                seqId,
                SequenceMetadata("F2", None, None),
-               List(simpleStep(1, false), simpleStep(2, true))
+               List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
              )
            )
           )
@@ -98,7 +98,7 @@ class SequenceSpec extends FlatSpec {
 
     val qs1 = runToCompletion(q, qs0)
 
-    inside (qs1.sequences.get(seqId).get) {
+    inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Idle)
         assert(zipper.done.length == 1 && zipper.pending.isEmpty)
@@ -118,7 +118,7 @@ class SequenceSpec extends FlatSpec {
              Sequence(
                seqId,
                SequenceMetadata("F2", None, None),
-               List(simpleStep(1, false), simpleStep(2, true), simpleStep(3, false))
+               List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
              )
            )
           )
@@ -128,14 +128,14 @@ class SequenceSpec extends FlatSpec {
     val qs1 = runToCompletion(q, qs0)
 
     // Check that there is something left to run
-    inside (qs1.sequences.get(seqId).get) {
-      case Sequence.State.Zipper(zipper, status) =>
-        assert(zipper.pending.length > 0)
+    inside (qs1.sequences(seqId)) {
+      case Sequence.State.Zipper(zipper, _) =>
+        assert(zipper.pending.nonEmpty)
     }
 
     val qs2 = runToCompletion(q, qs1)
 
-    inside (qs2.sequences.get(seqId).get) {
+    inside (qs2.sequences(seqId)) {
       case f@Sequence.State.Final(_, status) =>
         status should be (SequenceState.Completed)
         assert(f.done.length == 3)
@@ -149,12 +149,12 @@ class SequenceSpec extends FlatSpec {
   val action: Action = Task(result)
   val config: StepConfig = Map()
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
-    val rollback: (Execution, List[Actions]) =  (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {
+    val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, breakpoint = false, pending, focus, done, rollback)
   }
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)

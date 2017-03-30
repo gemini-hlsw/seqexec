@@ -66,7 +66,7 @@ class StepSpec extends FlatSpec {
 
     q.enqueueOne(start(seqId)).flatMap(
       _ => processE(q).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences.get(seqId).get.status)
+        a => !isFinished(a._2.sequences(seqId).status)
       ).runLast.eval(s0)
     ).unsafePerformSync.get._2
   }

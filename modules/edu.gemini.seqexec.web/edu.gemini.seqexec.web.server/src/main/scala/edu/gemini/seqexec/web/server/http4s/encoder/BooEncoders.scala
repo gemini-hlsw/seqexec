@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server.http4s.encoder
 
 import edu.gemini.seqexec.model._
-import edu.gemini.seqexec.model.Model.{Conditions, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceId, SequencesQueue, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.common._
 import boopickle.Default._
 
@@ -20,4 +20,8 @@ trait BooEncoders {
   implicit val commandsEncoder       = booEncoderOf[CliCommand]
   implicit val sequenceIdEncoder     = booEncoderOf[SequencesQueue[SequenceId]]
   implicit val conditionsEncoder     = booOf[Conditions]
+  implicit val iqEncoder             = booOf[ImageQuality]
+  implicit val wvEncoder             = booOf[WaterVapor]
+  implicit val sbEncoder             = booOf[SkyBackground]
+  implicit val ccEncoder             = booOf[CloudCover]
 }
