@@ -93,6 +93,11 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         se.setSkyBackground(inputQueue, sb) *> Ok(s"Set sky background to $sb")
       )
 
+    case req @ POST -> Root / "cc" =>
+      req.decode[CloudCover] (cc =>
+        se.setCloudCover(inputQueue, cc) *> Ok(s"Set cloud cover to $cc")
+      )
+
     case GET -> Root / "refresh" =>
       se.requestRefresh(inputQueue) *> NoContent()
 

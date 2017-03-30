@@ -98,6 +98,9 @@ package object engine {
   def setSkyBackground(sb: SkyBackground): Handle[Unit] =
     modify(st => Engine.State(st.conditions.copy(sb = sb), st.sequences))
 
+  def setCloudCover(cc: CloudCover): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(cc = cc), st.sequences))
+
 
   /**
     * Loads a sequence
@@ -248,6 +251,7 @@ package object engine {
       case SetImageQuality(iq)     => log("Output: Setting image quality") *> setImageQuality(iq)
       case SetWaterVapor(wv)       => log("Output: Setting water vapor") *> setWaterVapor(wv)
       case SetSkyBackground(sb)    => log("Output: Setting sky background") *> setSkyBackground(sb)
+      case SetCloudCover(cc)       => log("Output: Setting cloud cover") *> setCloudCover(cc)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
     }

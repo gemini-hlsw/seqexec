@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import Result.{OK, Partial, PartialVal, RetVal}
 
 /**
@@ -24,6 +24,7 @@ case class SetConditions(conditions: Conditions) extends UserEvent
 case class SetImageQuality(iq: ImageQuality) extends UserEvent
 case class SetWaterVapor(wv: WaterVapor) extends UserEvent
 case class SetSkyBackground(wv: SkyBackground) extends UserEvent
+case class SetCloudCover(cc: CloudCover) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
 
@@ -48,8 +49,9 @@ object Event {
   def setObserver(id: Sequence.Id, name: String): Event = EventUser(SetObserver(id, name))
   def setConditions(conditions: Conditions): Event = EventUser(SetConditions(conditions))
   def setImageQuality(iq: ImageQuality): Event = EventUser(SetImageQuality(iq))
-  def setWaterVapor(iq: WaterVapor): Event = EventUser(SetWaterVapor(iq))
-  def setSkyBackground(iq: SkyBackground): Event = EventUser(SetSkyBackground(iq))
+  def setWaterVapor(wv: WaterVapor): Event = EventUser(SetWaterVapor(wv))
+  def setSkyBackground(sb: SkyBackground): Event = EventUser(SetSkyBackground(sb))
+  def setCloudCover(cc: CloudCover): Event = EventUser(SetCloudCover(cc))
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
 
