@@ -23,6 +23,7 @@ case class SetObserver(id: Sequence.Id, name: String) extends UserEvent
 case class SetConditions(conditions: Conditions) extends UserEvent
 case class SetImageQuality(iq: ImageQuality) extends UserEvent
 case class SetWaterVapor(wv: WaterVapor) extends UserEvent
+case class SetSkyBackground(wv: SkyBackground) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
 
@@ -48,6 +49,7 @@ object Event {
   def setConditions(conditions: Conditions): Event = EventUser(SetConditions(conditions))
   def setImageQuality(iq: ImageQuality): Event = EventUser(SetImageQuality(iq))
   def setWaterVapor(iq: WaterVapor): Event = EventUser(SetWaterVapor(iq))
+  def setSkyBackground(iq: SkyBackground): Event = EventUser(SetSkyBackground(iq))
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
 

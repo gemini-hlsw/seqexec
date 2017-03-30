@@ -129,6 +129,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetConditions(_)    => ConditionsUpdated(svs)
       case engine.SetImageQuality(_)  => ConditionsUpdated(svs)
       case engine.SetWaterVapor(_)    => ConditionsUpdated(svs)
+      case engine.SetSkyBackground(_) => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
     }

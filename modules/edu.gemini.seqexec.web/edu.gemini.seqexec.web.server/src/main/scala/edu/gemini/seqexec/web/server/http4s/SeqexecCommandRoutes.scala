@@ -88,6 +88,11 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         se.setWaterVapor(inputQueue, wv) *> Ok(s"Set water vapor to $wv")
       )
 
+    case req @ POST -> Root / "sb" =>
+      req.decode[SkyBackground] (sb =>
+        se.setSkyBackground(inputQueue, sb) *> Ok(s"Set sky background to $sb")
+      )
+
     case GET -> Root / "refresh" =>
       se.requestRefresh(inputQueue) *> NoContent()
 
