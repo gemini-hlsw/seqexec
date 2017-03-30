@@ -17,11 +17,11 @@ object main extends SafeApp {
   /** Map a `Command` to a corresponding program in `CtlIO`. */
   def command(c: Command): CtlIO[Unit] =
     info(s"Target host is ${c.server.userAndHost}").as(c).flatMap {
-      case Command.Deploy(u, d, s, v) => deploy(d, s)
-      case Command.Ps(_, _)           => ps
-      case Command.Stop(_, _)         => stop
-      case Command.Log(_, _, n)       => showLog(n)
-      case Command.Rollback(_, _)     => rollback
+      case Command.Deploy(u, d, s, v, f) => deploy(d, s, f)
+      case Command.Ps(_, _)              => ps
+      case Command.Stop(_, _)            => stop
+      case Command.Log(_, _, n)          => showLog(n)
+      case Command.Rollback(_, _)        => rollback
     }
 
   /** Entry point. Parse the commandline args and do what's asked, if possible. */

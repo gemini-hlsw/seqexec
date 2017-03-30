@@ -69,11 +69,15 @@ object deploy {
       }
     }
 
-  def verifyLineage(base: DeployCommit, dc: DeployCommit): CtlIO[Unit] =
+  def verifyLineage(base: DeployCommit, dc: DeployCommit, force: Boolean): CtlIO[Unit] =
     gosub("Verifying lineage.") {
       (base, dc) match {
         case (DeployCommit(b, true),  DeployCommit(d, true))  if b === d => info("Base and deploy commits are matching and UNCOMMITTED. All is well.")
-        case (DeployCommit(b, false), DeployCommit(d, false)) if b === d => info("Base and deploy commits are identical. Nothing to do.") *> exit(0)
+        case (DeployCommit(b, false), DeployCommit(d, false)) if b === d =>
+          info("Base and deploy commits are identical.") *> {
+            if (force) info("--force was specified, so upgrading anyway.")
+            else       info("Nothing to do. Use --force to do upgrade anyway.") *> exit(0)
+          }
         case (DeployCommit(b, _),     DeployCommit(d, _)) =>
           isAncestor(b, d).flatMap {
             case true  => info( s"Base commit is an ancestor of deploy commit (as it should be).")
@@ -230,12 +234,12 @@ object deploy {
       } yield ()
     }
 
-  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
+  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image, force: Boolean) =
     gosub("Performing UPGRADE deployment") {
       for {
         kGem  <- getRunningGemContainer
         cBase <- getDeployCommitForContainer(kGem)
-        _     <- verifyLineage(cBase, cDeploy)
+        _     <- verifyLineage(cBase, cDeploy, force)
         kPg   <- getRunningPostgresContainer
         cPg   <- getDeployCommitForContainer(kPg)
         _     <- if (cPg.commit === cBase.commit) info( "Gem and Postgres containers are at the same commit.")
@@ -249,7 +253,7 @@ object deploy {
       } yield ()
     }
 
-  def deploy(deploy: String, standalone: Boolean) =
+  def deploy(deploy: String, standalone: Boolean, force: Boolean) =
     for {
       nDeploy  <- getDeployNumber
       cDeploy  <- getDeployCommit(deploy)
@@ -257,7 +261,7 @@ object deploy {
       iDeploy  <- getDeployImage(cDeploy)
       network  <- getNetwork
       _        <- if (standalone) deployStandalone(nDeploy, cDeploy, iDeploy, iPg)
-                  else            deployUpgrade(   nDeploy, cDeploy, iDeploy, iPg)
+                  else            deployUpgrade(   nDeploy, cDeploy, iDeploy, iPg, force)
     } yield ()
 
 }

@@ -19,7 +19,8 @@ object Command {
     server: Server,
     deployRev:   String,
     standalone:  Boolean,
-    verbose:     Boolean
+    verbose:     Boolean,
+    force:       Boolean
   ) extends Command
 
   case class Ps  (    server: Server, verbose: Boolean) extends Command
@@ -80,7 +81,7 @@ object Command {
       )
     )
 
-  private lazy val deploy: Parser[String] =
+  private lazy val deployRevision: Parser[String] =
     strOption(
       short('d'), long("deploy"), metavar("REVISION"), value("HEAD"),
       help("Revision to deploy, HEAD if unspecified.")
@@ -92,14 +93,20 @@ object Command {
       help("Deploy standalone; do not attempt an upgrade. Cannot be specified with --base")
     )
 
+  private lazy val force: Parser[Boolean] =
+    switch(
+      short('f'), long("force"),
+      help("Force an upgrade, even if base and deploy revisions are identical.")
+    )
+
   private lazy val verbose: Parser[Boolean] =
     switch(
       short('v'), long("verbose"),
       help("Show details about what we're doing under the hood.")
     )
 
-  private lazy val config: Parser[Deploy] =
-    (server |@| deploy |@| standalone |@| verbose)(Deploy.apply)
+  private lazy val deploy: Parser[Deploy] =
+    (server |@| deployRevision |@| standalone |@| verbose |@| force)(Deploy.apply)
 
   private lazy val lines: Parser[Int] = {
     val DefaultLines = 50
@@ -110,7 +117,7 @@ object Command {
   }
 
   private lazy val configCommand: Mod[CommandFields, Command] =
-    command("deploy", info(config.widen[Command] <* helper,
+    command("deploy", info(deploy.widen[Command] <* helper,
       progDesc("Deploy an application."))
     )
 
