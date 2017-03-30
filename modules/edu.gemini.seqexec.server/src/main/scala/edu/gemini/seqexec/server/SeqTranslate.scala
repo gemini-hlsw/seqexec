@@ -123,7 +123,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs), Gcal(systems.gcal, site == Site.GS)))
       case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Gcal(systems.gcal, site == Site.GS)))
-      case _ => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
+      case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
     }
   }
 
@@ -147,7 +147,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case CelestialObject(inst) => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
     case FlatOrArc(inst)       => calcInstHeader(config, inst).map(_ :: commonHeaders(config)) //TODO: Add GCAL keywords here
     case DarkOrBias(inst)      => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
-    case st@_                  => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
+    case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
   }
 
 }
@@ -193,7 +193,7 @@ object SeqTranslate {
   private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
     config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].leftMap(explainExtractError).flatMap{
       case Flamingos2.name => TrySeq(Resource.F2)
-      case ins@_           => TrySeq.fail(UnrecognizedInstrument(ins))
+      case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
     }
   }
 
