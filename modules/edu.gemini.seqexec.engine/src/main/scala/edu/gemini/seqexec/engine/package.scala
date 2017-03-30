@@ -4,7 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.{SequenceState, Conditions}
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, SequenceState}
 
 import scalaz._
 import Scalaz._
@@ -88,6 +88,9 @@ package object engine {
 
   def setConditions(conditions: Conditions): Handle[Unit] =
     modify(st => Engine.State(conditions, st.sequences))
+
+  def setImageQuality(iq: ImageQuality): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(iq = iq), st.sequences))
 
 
   /**
@@ -236,6 +239,7 @@ package object engine {
       case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
       case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
       case SetConditions(conds)    => log("Output: Setting conditions") *> setConditions(conds)
+      case SetImageQuality(iq)     => log("Output: Setting image quality") *> setImageQuality(iq)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
     }

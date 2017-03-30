@@ -28,6 +28,8 @@ object Model {
 
     case class ConditionsUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    case class ImageQualityUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
