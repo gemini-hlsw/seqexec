@@ -18,7 +18,7 @@ For day to day usage it's convenient to deploy locally, which means the Docker c
 
 #### Setting Up to Deploy to a Local VM
 
-The more general situation is that you want to poke a remote machine, and it can sometimes be helpful to set up a "remote" machine running on a local VM, just to guarantee an additional level of isolation. **You can skip this step if you want to.**
+The more general situation is that you want to poke a remote machine, and it can sometimes be helpful to set up a "remote" machine running on a local VM, just to guarantee an additional level of isolation. **You can skip this step if you want to. Come back and do it later if you want to, we won't be relying on this.**
 
 Ok, so `docker-machine` is a utility makes it a little easier to provision VMs that are going to be running Docker. All it's doing is remote-controlling VirtualBox and it's all installed as part of Docker so we'll use it. We could just as easily create a VM manually with the `boot2docker` ISO and it would work fine.
 
@@ -86,60 +86,53 @@ You can do `docker-machine stop` to shut down the VM and `docker-machiner start`
 
 Ok so `gemctl` is an alias in the build that lets you run deployment stuff from the sbt prompt. If you just type `gemctl` at the sbt prompt you'll get a help message. `gemctl -h` will list available commands, and `gemctl <command> -h` will show details on any specific command. If the help messages aren't helpful, please improve them.
 
-#### Quick Start
+#### Packaging the Application
 
-Deployments can be upgrades (the default) or standalone. Since we have no deployment to upgrade yet we'll do the latter. At the sbt prompt do:
-
-```
-> gemctl deploy -s
-```
-
-Lots of things will happen and some things will be downloaded from the internet, and eventually it will end in ... failure. Because we haven't created an application image to deplot. To do this do:
+In order to deply the app we must first create a **docker image** of our application. We do this via sbt-native-packager as follows:
 
 ```
 > telnetd/docker:publishLocal
 ```
 
-And then try `gemctl deploy -s` again. It should work!
+Image names have the form `<repo>/<artifact>:<version>`. Ours will be `geminihlsw/gem-telnetd:<version>` where the version is the git commit hash, or the hash followed by `-UNCOMMITTED` if there are uncommitted changes. This give us very fine-grained versioning and a reliable partial ordering to know that an upgrade is legal. Note that if the filesystem version isn't the same as the version computed by sbt you'll need to reload the project. The prompt will include a message to this effect.
+
+The image will be stored in docker's internal storage area, which shares "slices" with other images built from the same base to save space.
+
+For remote deployments we must publish and push the image to a repository where it can be seen by other machines. For now we're using docker-hub but it probably makes sense to set up an internal repository. To do this you need to create a docker-hub account and be added to the `geminihlsw` organization (talk to Rob), and then you can do `telnetd/docker:publish` to push the image up to the cloud. Note that you need to do this in order to perform remote deployments, even if they're to a VM on your own machine.
+
+#### Initial Deployment
+
+Deployments can be upgrades (the default) or standalone. Since we have no deployment to upgrade yet we'll do a standalone deployment. At the sbt prompt do:
 
 ```
 > gemctl deploy -s
-[info] Running gem.ctl.main deploy -s
-
-[info]  Target host is localhost
-[info]  Deploy number for this host will be 1.
-[info]  Verifying deploy commit.
-[info]    Using HEAD.
-[info]    Commit is cb5d0a4095775b3f71665735c4a110a0b9b49805
-[warn]    There are uncommitted changes. This is a UNCOMMITTED deployment.
-[info]  Verifying Postgres deploy image.
-[info]    Looking for postgres:9.6.0
-[info]    Image is bff88803c2df
-[info]  Verifying Gem deploy image.
-[info]    Looking for geminihlsw/gem-telnetd:cb5d0a4095775b3f71665735c4a110a0b9b49805-UNCOMMITTED
-[info]    Image is b20fc231f585
-[info]  Verifying gem-net network.
-[info]    Using existing network 3c89948d2a81.
-[info]  Performing STANDALONE deployment
-[info]    Ensuring that there is no running deployment.
-[info]      There are no running deployments.
-[info]    Deploying database.
-[info]      Creating Postgres container from image bff88803c2df
-[info]        Container is db-1 9a98dbbf272fa125cab9294c904152105774dc3f3497e17b20ec473d973ee057.
-[info]      Waiting for Postgres to start up.
-[info]      Waiting for Postgres to start up.
-[info]      Created database.
-[info]      Waiting for health check.
-[info]      Waiting for health check.
-[info]      Waiting for health check.
-[info]      Container is healthy.
-[info]    Deploying Gem.
-[info]      Creating Gem container from image b20fc231f585
-[info]        Container is gem-1 7a8982ff3611e5319083b51d5f2ab157302d51624967064a713e2dc9a38d0a7f.
-[info]      Service is available at localhost:1234.
 ```
 
-Log in as root with no password, then change the password.
+By default the deployment will use the current git HEAD as the version, and will deploy locally. Lots of things will happen and some things will be downloaded from the internet, and eventually you should end up with a running application. The log is pretty informative and shows the various things that are being done. If you run with `-v` you will see all the commands that are being issued.
+
+
+```
+> gemctl deploy
+[info] Updating {file:/Users/rnorris/Scala/gem/}ctl...
+[info] Resolving jline#jline;2.12.1 ...
+[info] Done updating.
+[info] Running gem.ctl.main deploy
+
+[info]  Target host is localhost
+[info]  Deploy number for this host will be 3.
+[info]  Verifying deploy commit.
+[info]    Using HEAD.
+...
+[info]    Deploying Gem.
+[info]      Creating Gem container from image 31f970aef7c7
+[info]        Container is gem-3 8a6a3e54ef47ba3e79ce1b473939d74cd83c1c786d137a2be30d54cb226d872f.
+[info]      Service is available at localhost:1234.
+
+[success] Total time: 18 s, completed Mar 30, 2017 4:09:32 PM
+>
+```
+
+Log in as root with no password, then change the password just to commit a change to the database.
 
 ```
 gem (docker-2 *)$ telnet localhost 1234
@@ -159,4 +152,46 @@ Goodbye.
 Connection closed by foreign host.
 ```
 
+#### Look at Logs
+
+You can use `gemctl log` to view the tail of the server log.
+
+```
+> gemctl log
+[info] Running gem.ctl.main log
+
+[info]  Target host is localhost
+[info]  Finding current running Gem container.
+[shel]  Connecting with URL jdbc:postgresql://db-4/gem, user postgres, pass «hidden»
+[shel]  Mar 30, 2017 11:09:54 PM org.flywaydb.core.internal.util.VersionPrinter printVersion
+[shel]  INFO: Flyway 4.0.3 by Boxfuse
+[shel]  Mar 30, 2017 11:09:55 PM org.flywaydb.core.internal.dbsupport.DbSupportFactory createDbSupport
+...
+[shel]  Mar 30, 2017 11:09:57 PM net.wimpi.telnetd.net.PortListener run
+[shel]  INFO: Listening to Port 6,666 with a connectivity queue size of 5.
+
+[success] Total time: 1 s, completed Mar 30, 2017 4:43:23 PM
+>
+```
+
+#### Upgrade Deployments
+
 Now let's upgrade to a new deployment.
+
+```
+> gemctl deploy -f`
+```
+
+The `-f` allows an upgrade to have the same version as the running version, which normally wouldn't make any sense but can be helpful for development. Note that this is always allowed for `-UNCOMMITTED` versions since it knows you're just working locally.
+
+Note that it copies the old database over before shutting things down, so if you telnet in again you will see that the root password has the value you set last time.
+
+#### Rolling Back
+
+There is minimal support for rolling back to a previous version, in case a critical failure is discovered soon after deployment. You can simply say
+
+```
+> gemctl rollback
+```
+
+to go back to the previous version. Each deployment has back-pointers, but not forward pointers. If you want to roll forward you will need to do `gemctl stop` and then go to the shell and use `docker ps -a` to find the newer containers you wish to start back up (then `docker start <container>` for each). We can automate this (and should).
