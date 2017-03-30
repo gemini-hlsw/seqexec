@@ -49,7 +49,7 @@ object SemanticUI {
   object JsDropdownOptions extends JsDropdownOptionBuilder(noOpts)
 
   class JsDropdownOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsDropdownOptions, JsDropdownOptionBuilder](new JsDropdownOptionBuilder(_)) {
-    def onChange[A](t: js.Function0[A]) = jsOpt("onChange", t)
+    def onChange[A, B, C](t: js.Function2[A, B, C]) = jsOpt("onChange", t)
   }
 
   @js.native

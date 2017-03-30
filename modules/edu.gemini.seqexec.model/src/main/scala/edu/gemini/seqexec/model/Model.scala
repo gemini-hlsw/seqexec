@@ -210,6 +210,8 @@ object Model {
     case object Percent85 extends ImageQuality { val toInt: Int = 85  }
     case object Any       extends ImageQuality { val toInt: Int = 100 } // ODB is 100
 
+    val all: List[ImageQuality] = List(Percent20, Percent70, Percent85, Any)
+
     implicit val equalImageQuality: Equal[ImageQuality] = Equal.equalA[ImageQuality]
 
     implicit val showImageQuality: Show[ImageQuality] = Show.shows[ImageQuality] {

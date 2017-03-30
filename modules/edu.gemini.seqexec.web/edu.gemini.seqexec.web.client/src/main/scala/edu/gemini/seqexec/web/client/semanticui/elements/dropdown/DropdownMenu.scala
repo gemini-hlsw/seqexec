@@ -7,12 +7,15 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 
 import scalaz.Show
 import scalaz.syntax.show._
+import scalaz.syntax.equal._
+import scalaz.std.string._
 /**
   * Produces a dropdown menu, similar to a combobox
   */
 object DropdownMenu {
   case class Props[A](label: String,
-                   defaultSelect: A,
+                   defaultSelect: Option[A],
+                   defaultSelectText: String,
                    items: List[A],
                    disabled: Boolean,
                    onChange: A => Callback = (a: A) => Callback.empty)
@@ -30,7 +33,7 @@ object DropdownMenu {
           ),
           <.div(
             ^.cls := "default text",
-            p.defaultSelect.shows
+            p.defaultSelect.fold(p.defaultSelectText)(_.shows)
           ),
           IconDropdown,
           <.input(
@@ -52,8 +55,11 @@ object DropdownMenu {
 
         $(ReactDOM.findDOMNode(s)).find(".ui.dropdown").dropdown(
           JsDropdownOptions
-            .onChange { () =>
-              println("dropdows")
+            .onChange { (value: String, text: String) =>
+              // The text comes wrapped on react tags
+              val cleanText = $(text).text()
+              // We need to run the callback explicitly as we are outside the event loop
+              s.props.items.find(_.shows === cleanText).map(s.props.onChange).foreach(_.runNow)
             }
         )
       }
