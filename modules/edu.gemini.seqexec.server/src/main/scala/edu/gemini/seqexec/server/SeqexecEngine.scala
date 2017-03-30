@@ -121,7 +121,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetOperator(_)      => OperatorUpdated(svs)
       case engine.SetObserver(_, _)   => ObserverUpdated(svs)
       case engine.SetConditions(_)    => ConditionsUpdated(svs)
-      case engine.SetImageQuality(_)  => ImageQualityUpdated(svs)
+      case engine.SetImageQuality(_)  => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
     }
