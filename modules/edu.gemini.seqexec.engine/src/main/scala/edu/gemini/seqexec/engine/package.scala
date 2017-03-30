@@ -4,7 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, SequenceState}
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, SkyBackground, CloudCover, SequenceState}
 
 import scalaz._
 import Scalaz._
@@ -91,6 +91,9 @@ package object engine {
 
   def setImageQuality(iq: ImageQuality): Handle[Unit] =
     modify(st => Engine.State(st.conditions.copy(iq = iq), st.sequences))
+
+  def setWaterVapor(wv: WaterVapor): Handle[Unit] =
+    modify(st => Engine.State(st.conditions.copy(wv = wv), st.sequences))
 
 
   /**
@@ -240,6 +243,7 @@ package object engine {
       case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
       case SetConditions(conds)    => log("Output: Setting conditions") *> setConditions(conds)
       case SetImageQuality(iq)     => log("Output: Setting image quality") *> setImageQuality(iq)
+      case SetWaterVapor(wv)       => log("Output: Setting water vapor") *> setWaterVapor(wv)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
     }

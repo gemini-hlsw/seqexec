@@ -67,6 +67,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setImageQuality(q: engine.EventQueue, iq: ImageQuality): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setImageQuality(iq)).map(_.right)
 
+  def setWaterVapor(q: engine.EventQueue, iq: WaterVapor): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setWaterVapor(iq)).map(_.right)
+
+  def setSkyBackground(q: engine.EventQueue, iq: SkyBackground): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setSkyBackground(iq)).map(_.right)
+
   // TODO: Add seqId: SPObservationID as parameter
   def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
 
@@ -122,6 +128,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetObserver(_, _)   => ObserverUpdated(svs)
       case engine.SetConditions(_)    => ConditionsUpdated(svs)
       case engine.SetImageQuality(_)  => ConditionsUpdated(svs)
+      case engine.SetWaterVapor(_)    => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
     }

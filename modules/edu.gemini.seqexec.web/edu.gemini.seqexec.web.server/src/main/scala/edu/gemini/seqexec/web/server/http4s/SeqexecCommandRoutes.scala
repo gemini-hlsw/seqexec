@@ -4,7 +4,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality}
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, SkyBackground, CloudCover}
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
@@ -77,9 +77,15 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
       req.decode[Conditions] (conditions =>
         se.setConditions(inputQueue, conditions) *> Ok(s"Set conditions to $conditions")
       )
+
     case req @ POST -> Root / "iq" =>
       req.decode[ImageQuality] (iq =>
         se.setImageQuality(inputQueue, iq) *> Ok(s"Set image quality to $iq")
+      )
+
+    case req @ POST -> Root / "wv" =>
+      req.decode[WaterVapor] (wv =>
+        se.setWaterVapor(inputQueue, wv) *> Ok(s"Set water vapor to $wv")
       )
 
     case GET -> Root / "refresh" =>
