@@ -83,7 +83,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
-    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID((ids))).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e))))
+    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e))))
 
     (i match {
       case (EventSystem(Failed(id, _, e)), _) => for {
@@ -219,7 +219,7 @@ object SeqexecEngine {
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
           case None => throw new Exception("Unable to start EPICS service.")
           case Some(s) => {
-            (sys.init(s)).leftMap {
+            sys.init(s).leftMap {
                 case SeqexecFailure.SeqexecException(ex) => throw ex
                 case c: SeqexecFailure => throw new Exception(SeqexecFailure.explain(c))
             }

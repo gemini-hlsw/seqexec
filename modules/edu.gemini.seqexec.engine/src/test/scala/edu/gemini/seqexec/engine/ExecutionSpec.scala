@@ -5,7 +5,7 @@ import Scalaz._
 import org.scalatest._
 import scalaz.concurrent.Task
 
-class ExecuctionSpec extends FlatSpec with Matchers {
+class ExecutionSpec extends FlatSpec with Matchers {
 
   val ok: Result = Result.OK(Result.Observed("dummyId"))
   val action: Action = Task(ok)

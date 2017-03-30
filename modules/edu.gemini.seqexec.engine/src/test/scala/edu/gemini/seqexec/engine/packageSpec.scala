@@ -62,7 +62,7 @@ class packageSpec extends FlatSpec {
                  None,
                  config,
                  Set(Resource.Mount, Resource.F2),
-                 false,
+                 breakpoint = false,
                  List(
                    List(configureTcs, configureInst), // Execution
                    List(observe) // Execution
@@ -73,7 +73,7 @@ class packageSpec extends FlatSpec {
                  None,
                  config,
                  Set(Resource.Mount, Resource.OI, Resource.F2),
-                 false,
+                 breakpoint = false,
                  List(
                    List(configureTcs, configureInst), // Execution
                    List(observe) // Execution
@@ -97,7 +97,7 @@ class packageSpec extends FlatSpec {
             None,
             config,
             Set(Resource.GMOS),
-            false,
+            breakpoint = false,
             List(
               List(configureTcs, configureInst), // Execution
               List(observe) // Execution
@@ -119,12 +119,11 @@ class packageSpec extends FlatSpec {
 
     q.enqueueOne(start(seqId)).flatMap(
       _ => processE(q).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences.get(seqId).get.status)
+        a => !isFinished(a._2.sequences(seqId).status)
       ).runLast.eval(s0)
     ).unsafePerformSync.get._2
 
   }
-
 
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
