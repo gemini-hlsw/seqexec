@@ -8,11 +8,20 @@ sealed trait Resource
 
 object Resource {
 
-  case object GMOS extends Resource
-  case object F2 extends Resource
   case object P1 extends Resource
   case object OI extends Resource
   case object Mount extends Resource
   case object ScienceFold extends Resource
+  case object Gcal extends Resource
+  case object Gems extends Resource
+  case object Altair extends Resource
+  trait Instrument extends Resource
+  case object GMOS extends Instrument
+  case object F2 extends Instrument
+  case object GSAOI extends Instrument
+  case object GPI extends Instrument
+  case object NIRI extends Instrument
+  case object NIFS extends Instrument
+  case object GNIRS extends Instrument
 
 }

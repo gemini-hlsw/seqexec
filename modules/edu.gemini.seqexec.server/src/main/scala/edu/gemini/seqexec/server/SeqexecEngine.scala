@@ -26,8 +26,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  val translator = SeqTranslate(settings.site)
-
   val systems = SeqTranslate.Systems(
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
@@ -40,6 +38,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   )
 
   val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords, gwsKeywords = settings.gwsKeywords)
+
+  val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
   def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
@@ -103,7 +103,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t = EitherT( for {
         odbSeq <- Task(odbProxy.read(seqId))
-      } yield odbSeq.flatMap(s => translator.sequence(systems, translatorSettings)(seqId, s))
+      } yield odbSeq.flatMap(s => translator.sequence(translatorSettings)(seqId, s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(seqId.stringValue(), x)).map(_.right))
     u.run
