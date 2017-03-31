@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.ImageQuality
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
@@ -22,7 +22,7 @@ import scalaz.Equal
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(operator: ModelProxy[Option[String]], status: ModelProxy[ClientStatus])
+  case class Props(operator: ModelProxy[Option[String]], conditions: ModelProxy[Conditions], status: ModelProxy[ClientStatus])
 
   case class State(currentText: Option[String])
 
@@ -81,6 +81,6 @@ object HeadersSideBar {
     .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))
     .build
 
-  def apply(operator: ModelProxy[Option[String]], status: ModelProxy[ClientStatus]): ReactComponentU[Props, State, Backend, TopNode] =
-    component(Props(operator, status))
+  def apply(operator: ModelProxy[Option[String]], conditions: ModelProxy[Conditions], status: ModelProxy[ClientStatus]): ReactComponentU[Props, State, Backend, TopNode] =
+    component(Props(operator, conditions, status))
 }
