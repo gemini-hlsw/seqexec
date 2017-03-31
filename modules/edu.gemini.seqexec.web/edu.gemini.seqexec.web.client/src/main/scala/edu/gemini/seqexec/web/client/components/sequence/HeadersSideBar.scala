@@ -6,6 +6,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactComponentU, TopNode}
 import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -38,6 +39,9 @@ object HeadersSideBar {
         case (s, p) => Callback.when(s.currentText =/= p.operator())(Callback.empty) // We are not submitting until the backend properly update this property
       }
 
+    def iqChanged(iq: ImageQuality): Callback =
+      Callback.log(" IQ " + iq + " " + iq.toString) >> $.props >>= {_.operator.dispatchCB(UpdateImageQuality(iq))}
+
     def render(p: Props, s: State): ReactTagOf[Div] = {
       val operatorEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
       <.div(
@@ -56,7 +60,7 @@ object HeadersSideBar {
             ))
           ),
 
-          DropdownMenu(DropdownMenu.Props("Image Quality", None, "Select", ImageQuality.all, disabled = !p.status().isLogged, (a: ImageQuality) => Callback.log(a.toString))),
+          DropdownMenu(DropdownMenu.Props("Image Quality", None, "Select", ImageQuality.all, disabled = !p.status().isLogged, iqChanged)),
           DropdownMenu(DropdownMenu.Props("Cloud Cover", None, "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"), disabled = !p.status().isLogged)),
           DropdownMenu(DropdownMenu.Props("Water Vapor", None, "Select", List("WV20", "WV50", "WV80", "Any"), disabled = !p.status().isLogged)),
           DropdownMenu(DropdownMenu.Props("Sky Background", None, "Select", List("SB20", "SB50", "SB80", "Any"), disabled = !p.status().isLogged))

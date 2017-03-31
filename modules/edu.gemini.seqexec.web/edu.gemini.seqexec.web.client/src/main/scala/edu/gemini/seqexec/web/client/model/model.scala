@@ -63,6 +63,7 @@ case class FlipSkipStep(view: SequenceView, step: Step) extends Action
 case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
 case class UpdateObserver(view: SequenceView, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
+case class UpdateImageQuality(iq: ImageQuality) extends Action
 
 // End Actions
 
@@ -74,7 +75,7 @@ case object SectionClosed extends SectionVisibilityState
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 // Model for the tabbed area of sequences
-case class SequencesOnDisplay(operator: Option[String], instrumentSequences: Zipper[SequenceTab]) {
+case class SequencesOnDisplay(conditions: Conditions, operator: Option[String], instrumentSequences: Zipper[SequenceTab]) {
   // Display a given step on the focused sequence
   def showStep(i: Int):SequencesOnDisplay =
     copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
@@ -104,7 +105,7 @@ object InstrumentNames {
 object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
-  val empty = SequencesOnDisplay(None, InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
+  val empty = SequencesOnDisplay(Conditions.default, None, InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)

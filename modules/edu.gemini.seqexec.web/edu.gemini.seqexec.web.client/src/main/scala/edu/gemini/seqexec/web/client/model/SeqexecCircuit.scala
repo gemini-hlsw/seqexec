@@ -203,6 +203,11 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       val updatedSequences = value.copy(operator = Some(name))
       updated(updatedSequences, updateOperatorE)
 
+    case UpdateImageQuality(iq) =>
+      val updateE = Effect(SeqexecWebClient.setImageQuality(iq).map(_ => NoAction))
+      val updatedSequences = value.copy(conditions = value.conditions.copy(iq = iq))
+      updated(updatedSequences, updateE)
+
   }
 }
 

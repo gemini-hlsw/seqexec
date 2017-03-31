@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.services
 import java.util.logging.LogRecord
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
-import edu.gemini.seqexec.model.Model.Conditions
+import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
@@ -87,6 +87,17 @@ object SeqexecWebClient extends ModelBooPicklers {
       url = s"$baseUrl/commands/conditions",
       responseType = "arraybuffer",
       data = Pickle.intoBytes(conditions)
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
+    * Requests the backend to set the ImageQuality globally
+    */
+  def setImageQuality(iq: ImageQuality): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/iq",
+      responseType = "arraybuffer",
+      data = Pickle.intoBytes(iq)
     ).map(unpickle[RegularCommand])
   }
 
