@@ -15,8 +15,10 @@ import org.scalajs.dom.html.Div
 import scalaz.syntax.equal._
 import scalaz.std.string._
 import scalaz.std.option._
-import scala.concurrent.duration._
+import scalaz.syntax.std.option._
 import scalaz.Equal
+
+import scala.concurrent.duration._
 
 /**
   * Display to show headers per sequence
@@ -60,7 +62,7 @@ object HeadersSideBar {
             ))
           ),
 
-          DropdownMenu(DropdownMenu.Props("Image Quality", None, "Select", ImageQuality.all, disabled = !p.status().isLogged, iqChanged)),
+          DropdownMenu(DropdownMenu.Props("Image Quality", p.conditions().iq.some, "Select", ImageQuality.all, disabled = !p.status().isLogged, iqChanged)),
           DropdownMenu(DropdownMenu.Props("Cloud Cover", None, "Select", List("CC20", "CC50", "CC70", "CC80", "CC90", "Any"), disabled = !p.status().isLogged)),
           DropdownMenu(DropdownMenu.Props("Water Vapor", None, "Select", List("WV20", "WV50", "WV80", "Any"), disabled = !p.status().isLogged)),
           DropdownMenu(DropdownMenu.Props("Sky Background", None, "Select", List("SB20", "SB50", "SB80", "Any"), disabled = !p.status().isLogged))
