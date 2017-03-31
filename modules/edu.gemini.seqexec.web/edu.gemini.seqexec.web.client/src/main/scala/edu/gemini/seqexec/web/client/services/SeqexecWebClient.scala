@@ -97,7 +97,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax.post(
       url = s"$baseUrl/commands/iq",
       responseType = "arraybuffer",
-      data = Pickle.intoBytes(iq)
+      data = Pickle.intoBytes[ImageQuality](iq)
     ).map(unpickle[RegularCommand])
   }
 
