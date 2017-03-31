@@ -57,6 +57,7 @@ trait ModelBooPicklers {
     .addConcreteType[NewLogMessage]
     .addConcreteType[ObserverUpdated]
     .addConcreteType[OperatorUpdated]
+    .addConcreteType[ConditionsUpdated]
 
   implicit val conditionsPickler = generatePickler[Model.Conditions]
 
