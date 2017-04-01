@@ -75,7 +75,7 @@ case object SectionClosed extends SectionVisibilityState
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 // Model for the tabbed area of sequences
-case class SequencesOnDisplay(conditions: Conditions, operator: Option[String], instrumentSequences: Zipper[SequenceTab]) {
+case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   // Display a given step on the focused sequence
   def showStep(i: Int):SequencesOnDisplay =
     copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
@@ -105,7 +105,7 @@ object InstrumentNames {
 object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
-  val empty = SequencesOnDisplay(Conditions.default, None, InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
+  val empty = SequencesOnDisplay(InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)
@@ -137,6 +137,7 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
   */
 case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
+                               conditions: Conditions,
                                sequences: SeqexecAppRootModel.LoadedSequences,
                                searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
@@ -150,6 +151,6 @@ object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, Nil)
 
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, Conditions.default, noSequencesLoaded,
     SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

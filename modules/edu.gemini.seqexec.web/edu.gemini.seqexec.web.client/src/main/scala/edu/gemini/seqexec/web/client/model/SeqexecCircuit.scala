@@ -8,6 +8,7 @@ import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
+import edu.gemini.seqexec.model.Model.Conditions
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -199,13 +200,24 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       }
 
     case UpdateOperator(name) =>
-      val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
-      val updatedSequences = value.copy(operator = Some(name))
-      updated(updatedSequences, updateOperatorE)
+      // val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
+      // val updatedSequences = value.copy(operator = Some(name))
+      // updated(updatedSequences, updateOperatorE)
+      noChange
 
+  }
+}
+
+/**
+ * Handles updates to conditions
+ */
+class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateImageQuality(iq) =>
       val updateE = Effect(SeqexecWebClient.setImageQuality(iq).map(_ => NoAction))
-      val updatedSequences = value.copy(conditions = value.conditions.copy(iq = iq))
+      val updatedSequences = value.copy(iq = iq)
       updated(updatedSequences, updateE)
 
   }
@@ -381,6 +393,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
   val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
+  val conditionsHandler      = new ConditionsHandler(zoomTo(_.conditions))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -402,6 +415,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
+  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.conditions))
 
   /**
     * Makes a reference to a sequence on the queue.
@@ -420,6 +434,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     wsLogHandler,
     sequenceDisplayHandler,
     globalLogHandler,
+    conditionsHandler,
     sequenceExecHandler)
 
   /**

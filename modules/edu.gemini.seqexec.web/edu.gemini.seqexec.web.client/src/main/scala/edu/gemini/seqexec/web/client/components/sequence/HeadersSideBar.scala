@@ -24,7 +24,7 @@ import scala.concurrent.duration._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(operator: ModelProxy[Option[String]], conditions: ModelProxy[Conditions], status: ModelProxy[ClientStatus])
+  case class Props(conditions: ModelProxy[Conditions], status: ModelProxy[ClientStatus])
 
   case class State(currentText: Option[String])
 
@@ -38,11 +38,11 @@ object HeadersSideBar {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(s.currentText =/= p.operator())(Callback.empty) // We are not submitting until the backend properly update this property
+        case (s, p) => Callback.empty // Callback.when(s.currentText =/= p.operator())(Callback.empty) // We are not submitting until the backend properly update this property
       }
 
     def iqChanged(iq: ImageQuality): Callback =
-      Callback.log(" IQ " + iq + " " + iq.toString) >> $.props >>= {_.operator.dispatchCB(UpdateImageQuality(iq))}
+      Callback.log(" IQ " + iq + " " + iq.toString) >> $.props >>= {_.conditions.dispatchCB(UpdateImageQuality(iq))}
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
       val operatorEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
@@ -83,6 +83,6 @@ object HeadersSideBar {
     .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))
     .build
 
-  def apply(operator: ModelProxy[Option[String]], conditions: ModelProxy[Conditions], status: ModelProxy[ClientStatus]): ReactComponentU[Props, State, Backend, TopNode] =
-    component(Props(operator, conditions, status))
+  def apply(model: ModelProxy[(ClientStatus, Conditions)]): ReactComponentU[Props, State, Backend, TopNode] =
+    component(Props(model.zoom(_._2), model.zoom(_._1)))
 }
