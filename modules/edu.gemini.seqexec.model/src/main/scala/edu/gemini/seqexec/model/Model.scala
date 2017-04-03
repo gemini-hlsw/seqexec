@@ -192,6 +192,8 @@ object Model {
     case object Percent80 extends CloudCover { val toInt: Int = 80  }
     case object Any       extends CloudCover { val toInt: Int = 100 } // ODB is 100
 
+    val all: List[CloudCover] = List(Percent50, Percent70, Percent80, Any)
+
     implicit val equalCloudCover: Equal[CloudCover] = Equal.equalA[CloudCover]
 
     implicit val showCloudCover: Show[CloudCover] = Show.shows[CloudCover] {

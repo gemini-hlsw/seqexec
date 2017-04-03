@@ -220,6 +220,11 @@ class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandle
       val updatedSequences = value.copy(iq = iq)
       updated(updatedSequences, updateE)
 
+    case UpdateCloudCover(cc) =>
+      val updateE = Effect(SeqexecWebClient.setCloudCover(cc).map(_ => NoAction))
+      val updatedSequences = value.copy(cc = cc)
+      updated(updatedSequences, updateE)
+
   }
 }
 

@@ -60,10 +60,10 @@ trait ModelBooPicklers {
     .addConcreteType[ConditionsUpdated]
 
   implicit val cloudCoverPickler = compositePickler[CloudCover]
+    .addConcreteType[CloudCover.Any.type]
     .addConcreteType[CloudCover.Percent50.type]
     .addConcreteType[CloudCover.Percent70.type]
     .addConcreteType[CloudCover.Percent80.type]
-    .addConcreteType[CloudCover.Any.type]
 
   implicit val imageQualityPickler = compositePickler[ImageQuality]
     .addConcreteType[ImageQuality.Any.type]
@@ -72,10 +72,10 @@ trait ModelBooPicklers {
     .addConcreteType[ImageQuality.Percent85.type]
 
   implicit val skyBackgroundPickler = compositePickler[SkyBackground]
+    .addConcreteType[SkyBackground.Any.type]
     .addConcreteType[SkyBackground.Percent20.type]
     .addConcreteType[SkyBackground.Percent50.type]
     .addConcreteType[SkyBackground.Percent80.type]
-    .addConcreteType[SkyBackground.Any.type]
 
   implicit val waterVaporPickler = compositePickler[WaterVapor]
     .addConcreteType[WaterVapor.Percent20.type]

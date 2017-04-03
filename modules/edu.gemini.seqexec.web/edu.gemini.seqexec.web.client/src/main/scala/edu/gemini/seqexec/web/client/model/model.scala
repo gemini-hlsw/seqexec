@@ -64,6 +64,7 @@ case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
 case class UpdateObserver(view: SequenceView, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
 case class UpdateImageQuality(iq: ImageQuality) extends Action
+case class UpdateCloudCover(cc: CloudCover) extends Action
 
 // End Actions
 
