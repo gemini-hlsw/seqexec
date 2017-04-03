@@ -1,6 +1,6 @@
 package gem
 
-import doobie.contrib.postgresql.pgtypes._
+import doobie.postgres.imports._
 import doobie.imports._
 import edu.gemini.spModel.core._
 

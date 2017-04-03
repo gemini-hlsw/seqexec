@@ -1,6 +1,6 @@
 package gem.ocs2
 
-import doobie.contrib.postgresql.syntax._
+import doobie.postgres.imports._
 import doobie.imports._
 
 import java.util.logging.{Level, Logger}
@@ -36,4 +36,5 @@ trait DoobieClient {
       s <- HC.setSavepoint
       n <- fa.onUniqueViolation(HC.rollback(s).as(0)) ensuring HC.releaseSavepoint(s)
     } yield n
+    
 }
