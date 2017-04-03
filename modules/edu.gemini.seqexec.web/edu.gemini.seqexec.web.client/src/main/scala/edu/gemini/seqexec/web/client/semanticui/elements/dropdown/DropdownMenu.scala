@@ -32,14 +32,13 @@ object DropdownMenu {
             "disabled" -> p.disabled
           ),
           <.div(
-            ^.cls := "default text",
+            ^.cls := "text",
+            ^.classSet(
+              "default" -> p.defaultSelect.isEmpty
+            ),
             p.defaultSelect.fold(p.defaultSelectText)(_.shows)
           ),
           IconDropdown,
-          <.input(
-            ^.`type` :="hidden",
-            ^.name :="iq"
-          ),
           <.div(
             ^.cls := "menu",
             p.items.map(i => Item(i.shows))
