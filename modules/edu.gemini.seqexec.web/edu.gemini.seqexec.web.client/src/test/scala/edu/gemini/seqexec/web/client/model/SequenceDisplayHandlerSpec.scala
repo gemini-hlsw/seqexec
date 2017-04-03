@@ -17,7 +17,7 @@ class SequenceDisplayHandlerSpec extends FlatSpec with Matchers with PropertyChe
       val handler = new SequenceDisplayHandler(new RootModelRW(SequencesOnDisplay.empty))
       val result = handler.handle(SelectToDisplay(sequence))
       result should matchPattern {
-        case ModelUpdate(SequencesOnDisplay(None, t)) if t.findNext(_.sequence === SeqexecCircuit.sequenceRef(sequence.id)).isEmpty =>
+        case ModelUpdate(SequencesOnDisplay(t)) if t.findNext(_.sequence === SeqexecCircuit.sequenceRef(sequence.id)).isEmpty =>
       }
     }
   }
