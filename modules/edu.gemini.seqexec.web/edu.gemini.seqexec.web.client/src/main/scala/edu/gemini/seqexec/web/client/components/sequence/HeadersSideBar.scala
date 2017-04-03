@@ -54,6 +54,8 @@ object HeadersSideBar {
       $.props >>= {_.conditions.dispatchCB(UpdateWaterVapor(wv))}
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
+      val enabled = p.status().isLogged && p.status().anySelected
+
       val operatorEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
       <.div(
         ^.cls := "ui raised secondary segment",
@@ -71,10 +73,10 @@ object HeadersSideBar {
             ))
           ),
 
-          DropdownMenu(DropdownMenu.Props("Image Quality", p.conditions().iq.some, "Select", ImageQuality.all, disabled = !p.status().isLogged, iqChanged)),
-          DropdownMenu(DropdownMenu.Props("Cloud Cover", p.conditions().cc.some, "Select", CloudCover.all, disabled = !p.status().isLogged, ccChanged)),
-          DropdownMenu(DropdownMenu.Props("Water Vapor", p.conditions().wv.some, "Select", WaterVapor.all, disabled = !p.status().isLogged, wvChanged)),
-          DropdownMenu(DropdownMenu.Props("Sky Background", p.conditions().sb.some, "Select", SkyBackground.all, disabled = !p.status().isLogged, sbChanged))
+          DropdownMenu(DropdownMenu.Props("Image Quality", p.conditions().iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
+          DropdownMenu(DropdownMenu.Props("Cloud Cover", p.conditions().cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged)),
+          DropdownMenu(DropdownMenu.Props("Water Vapor", p.conditions().wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
+          DropdownMenu(DropdownMenu.Props("Sky Background", p.conditions().sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
         )
       )
     }

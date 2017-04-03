@@ -77,29 +77,32 @@ case object SectionClosed extends SectionVisibilityState
 
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
-// Model for the tabbed area of sequences
-case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-  // Display a given step on the focused sequence
-  def showStep(i: Int):SequencesOnDisplay =
-    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
-
-  // Don't show steps for the sequence
-  def unshowStep:SequencesOnDisplay =
-    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
-
-  def focusOnSequence(s: RefTo[Option[SequenceView]]):SequencesOnDisplay = {
-    // Replace the sequence for the instrument and focus
-    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
-    copy(instrumentSequences = q | instrumentSequences)
-  }
-}
-
 /**
   * Internal list of object names.
   * TODO This should belong to the model
   */
 object InstrumentNames {
   val instruments = NonEmptyList[Instrument]("Flamingos2", "GMOS-S", "GPI", "GSAOI")
+}
+
+// Model for the tabbed area of sequences
+case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+  // Display a given step on the focused sequence
+  def showStep(i: Int): SequencesOnDisplay =
+    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
+
+  // Don't show steps for the sequence
+  def unshowStep: SequencesOnDisplay =
+    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
+
+  def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+    // Replace the sequence for the instrument and focus
+    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
+
+  def currentSequences: Map[Instrument, Option[SequenceView]] =
+    instrumentSequences.map(tab => tab.instrument -> tab.sequence()).toStream.toMap
 }
 
 /**

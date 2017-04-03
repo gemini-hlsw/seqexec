@@ -7,8 +7,7 @@ import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
-import edu.gemini.seqexec.model.Model.Conditions
+import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -383,9 +382,11 @@ object PotEq {
 /**
   * Utility class to let components more easily switch parts of the UI depending on the context
   */
-case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
+case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selectedSequence: Map[Instrument, Option[SequenceView]]) {
   def isLogged: Boolean = u.isDefined
   def isConnected: Boolean = w.ws.isReady
+  // Indicates if any sequence is being displayed
+  def anySelected: Boolean = selectedSequence.exists(_._2.isDefined)
 }
 
 /**
@@ -420,7 +421,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   }
 
   // Reader to indicate the allowed interactions
-  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws, m.sequencesOnDisplay.currentSequences))
 
   // Reader for search results
   val searchResults: ModelR[SeqexecAppRootModel, Pot[SequencesQueue[SequenceId]]] = zoom(_.searchResults)
