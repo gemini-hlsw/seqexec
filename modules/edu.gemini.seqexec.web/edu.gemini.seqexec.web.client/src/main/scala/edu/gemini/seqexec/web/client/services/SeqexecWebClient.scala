@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.services
 import java.util.logging.LogRecord
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
-import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground}
+import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
@@ -109,6 +109,17 @@ object SeqexecWebClient extends ModelBooPicklers {
       url = s"$baseUrl/commands/cc",
       responseType = "arraybuffer",
       data = Pickle.intoBytes[CloudCover](cc)
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
+    * Requests the backend to set the WaterVapor
+    */
+  def setWaterVapor(wv: WaterVapor): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/wv",
+      responseType = "arraybuffer",
+      data = Pickle.intoBytes[WaterVapor](wv)
     ).map(unpickle[RegularCommand])
   }
 

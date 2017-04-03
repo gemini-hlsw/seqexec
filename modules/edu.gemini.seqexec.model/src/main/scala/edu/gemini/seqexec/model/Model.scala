@@ -252,6 +252,8 @@ object Model {
     case object Percent80 extends WaterVapor { val toInt: Int = 80  }
     case object Any       extends WaterVapor { val toInt: Int = 100 } // ODB is 100
 
+    val all: List[WaterVapor] = List(Percent20, Percent50, Percent80, Any)
+
     implicit val equal: Equal[WaterVapor] = Equal.equalA[WaterVapor]
 
     implicit val showWaterVapor: Show[WaterVapor] = Show.shows[WaterVapor] {

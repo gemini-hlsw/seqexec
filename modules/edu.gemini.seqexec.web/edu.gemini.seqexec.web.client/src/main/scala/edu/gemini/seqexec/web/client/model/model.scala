@@ -66,6 +66,7 @@ case class UpdateOperator(name: String) extends Action
 case class UpdateImageQuality(iq: ImageQuality) extends Action
 case class UpdateCloudCover(cc: CloudCover) extends Action
 case class UpdateSkyBackground(sb: SkyBackground) extends Action
+case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
 // End Actions
 

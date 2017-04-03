@@ -78,10 +78,10 @@ trait ModelBooPicklers {
     .addConcreteType[SkyBackground.Percent80.type]
 
   implicit val waterVaporPickler = compositePickler[WaterVapor]
+    .addConcreteType[WaterVapor.Any.type]
     .addConcreteType[WaterVapor.Percent20.type]
     .addConcreteType[WaterVapor.Percent50.type]
     .addConcreteType[WaterVapor.Percent80.type]
-    .addConcreteType[WaterVapor.Any.type]
 
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets

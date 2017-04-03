@@ -230,6 +230,11 @@ class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandle
       val updatedSequences = value.copy(sb = sb)
       updated(updatedSequences, updateE)
 
+    case UpdateWaterVapor(wv) =>
+      val updateE = Effect(SeqexecWebClient.setWaterVapor(wv).map(_ => NoAction))
+      val updatedSequences = value.copy(wv = wv)
+      updated(updatedSequences, updateE)
+
   }
 }
 
