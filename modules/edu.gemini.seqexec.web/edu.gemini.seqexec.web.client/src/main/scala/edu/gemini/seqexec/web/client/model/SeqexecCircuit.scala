@@ -315,7 +315,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedSequences, WebSocketsLog, Option[UserDetails], Conditions)]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedSequences, WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
@@ -343,7 +343,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
           (q :: seq, eff)
         }
       }
-      updated(value.copy(_1 = SequencesQueue(s.view.conditions, sequencesWithObserver), _4 = s.view.conditions),
+      updated(value.copy(_1 = SequencesQueue(s.view.conditions, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(s) =>
@@ -389,11 +389,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user, m.conditions))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3, conditions = v._4)))
+  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
   val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
-  val conditionsHandler      = new ConditionsHandler(zoomTo(_.conditions))
+  val conditionsHandler      = new ConditionsHandler(zoomTo(_.sequences.conditions))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -415,7 +415,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
-  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.conditions))
+  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
 
   /**
     * Makes a reference to a sequence on the queue.
