@@ -1,7 +1,7 @@
 
 lazy val argonautVersion          = "6.2-M3"
 lazy val kpVersion                = "0.8.0"
-lazy val doobieVersion            = "0.3.0" // TODO
+lazy val doobieVersion            = "0.4.1"
 lazy val scalazVersion            = "7.2.4"
 lazy val shapelessVersion         = "2.3.1"
 lazy val argonautShapelessVersion = "1.2.0-M1"
@@ -68,8 +68,8 @@ lazy val db = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "doobie-core"               % doobieVersion,
-      "org.tpolecat" %% "doobie-contrib-postgresql" % doobieVersion
+      "org.tpolecat" %% "doobie-core"     % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres" % doobieVersion
     ),
     initialCommands += """
       |import scalaz._, Scalaz._, scalaz.effect.IO
