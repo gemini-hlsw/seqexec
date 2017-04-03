@@ -225,6 +225,11 @@ class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandle
       val updatedSequences = value.copy(cc = cc)
       updated(updatedSequences, updateE)
 
+    case UpdateSkyBackground(sb) =>
+      val updateE = Effect(SeqexecWebClient.setSkyBackground(sb).map(_ => NoAction))
+      val updatedSequences = value.copy(sb = sb)
+      updated(updatedSequences, updateE)
+
   }
 }
 

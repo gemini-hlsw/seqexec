@@ -65,6 +65,7 @@ case class UpdateObserver(view: SequenceView, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
 case class UpdateImageQuality(iq: ImageQuality) extends Action
 case class UpdateCloudCover(cc: CloudCover) extends Action
+case class UpdateSkyBackground(sb: SkyBackground) extends Action
 
 // End Actions
 

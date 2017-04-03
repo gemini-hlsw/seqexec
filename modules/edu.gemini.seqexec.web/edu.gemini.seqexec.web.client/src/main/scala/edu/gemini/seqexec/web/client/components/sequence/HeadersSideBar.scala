@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality}
+import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
@@ -44,8 +44,11 @@ object HeadersSideBar {
     def iqChanged(iq: ImageQuality): Callback =
       $.props >>= {_.conditions.dispatchCB(UpdateImageQuality(iq))}
 
-    def ccChanged(iq: CloudCover): Callback =
-      $.props >>= {_.conditions.dispatchCB(UpdateCloudCover(iq))}
+    def ccChanged(i: CloudCover): Callback =
+      $.props >>= {_.conditions.dispatchCB(UpdateCloudCover(i))}
+
+    def sbChanged(sb: SkyBackground): Callback =
+      $.props >>= {_.conditions.dispatchCB(UpdateSkyBackground(sb))}
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
       val operatorEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
@@ -68,7 +71,7 @@ object HeadersSideBar {
           DropdownMenu(DropdownMenu.Props("Image Quality", p.conditions().iq.some, "Select", ImageQuality.all, disabled = !p.status().isLogged, iqChanged)),
           DropdownMenu(DropdownMenu.Props("Cloud Cover", p.conditions().cc.some, "Select", CloudCover.all, disabled = !p.status().isLogged, ccChanged)),
           DropdownMenu(DropdownMenu.Props("Water Vapor", None, "Select", List("WV20", "WV50", "WV80", "Any"), disabled = !p.status().isLogged)),
-          DropdownMenu(DropdownMenu.Props("Sky Background", None, "Select", List("SB20", "SB50", "SB80", "Any"), disabled = !p.status().isLogged))
+          DropdownMenu(DropdownMenu.Props("Sky Background", p.conditions().sb.some, "Select", SkyBackground.all, disabled = !p.status().isLogged, sbChanged))
         )
       )
     }
