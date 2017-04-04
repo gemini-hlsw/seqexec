@@ -40,7 +40,7 @@ object GcalKeywordsReaderImpl extends GcalKeywordReader {
     val xe   = GcalEpics.instance.lampXe().filter(_ == BinaryOnOff.On) *> "Xe".some
 
     // Order is important to preserve alphabetical order
-    List(ar, cuAr, ir, qh, thAr, xe).flatten.mkString("+")
+    List(ar, cuAr, ir, qh, thAr, xe).flatten.mkString(" + ")
   }
 
   def getShutter: SeqAction[Option[String]] = GcalEpics.instance.shutter
