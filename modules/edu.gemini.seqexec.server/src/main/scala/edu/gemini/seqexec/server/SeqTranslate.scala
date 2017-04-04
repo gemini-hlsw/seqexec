@@ -53,12 +53,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
         for {
           id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
-          _ <- sendDataStart(id)
-          _ <- headers.map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
-          _ <- inst.observe(config)(id)
-          _ <- headers.map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
-          _ <- closeImage(id, systems.dhs)
-          _ <- sendDataEnd(id)
+          _  <- sendDataStart(id)
+          _  <- headers.map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
+          _  <- inst.observe(config)(id)
+          _  <- headers.map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+          _  <- closeImage(id, systems.dhs)
+          _  <- sendDataEnd(id)
         } yield ObserveResult(id)
       }
 
@@ -81,12 +81,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       )
     }
 
-
     for {
-      stepType <- calcStepType(config)
-      inst     <- toInstrumentSys(stepType.instrument)
-      systems  <- calcSystems(stepType)
-      headers  <- calcHeaders(config, stepType)
+      stepType  <- calcStepType(config)
+      inst      <- toInstrumentSys(stepType.instrument)
+      systems   <- calcSystems(stepType)
+      headers   <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
 
@@ -138,10 +137,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
     if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader,
+    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader,
     // TODO: Replace Unit by something that can read the State
     StateKeywordsReader(Unit)
   ))
-
 
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[List[Header]] = stepType match {
     case CelestialObject(inst) => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
@@ -166,9 +165,9 @@ object SeqTranslate {
   case class Settings(
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
-                      gwsKeywords: Boolean
+                      gwsKeywords: Boolean,
+                      gcalKeywords: Boolean
                      )
-
 
   private sealed trait StepType {
     val instrument: Resource.Instrument
@@ -184,8 +183,6 @@ object SeqTranslate {
   private case object AlignAndCalib extends StepType {
     override val instrument = Resource.GPI
   }
-
-
 
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
@@ -206,7 +203,6 @@ object SeqTranslate {
         case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
       }
     }
-
 
     ( config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
       |@| extractInstrument(config) ) { (obsType, inst) =>
