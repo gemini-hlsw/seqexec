@@ -33,8 +33,8 @@ object Gcal {
 
   implicit class Recover[T](v: \/[ConfigUtilOps.ExtractFailure, T]) {
     def recoverWithDefault[R >:T](d: R): TrySeq[R] = v.recoverWith[ConfigUtilOps.ExtractFailure, R] {
-          case ConfigUtilOps.KeyNotFound(_) => d.right[ConfigUtilOps.ExtractFailure]
-          case e@ConfigUtilOps.ConversionError(_, _) => e.left
+          case ConfigUtilOps.KeyNotFound(_)            => d.right[ConfigUtilOps.ExtractFailure]
+          case e @ ConfigUtilOps.ConversionError(_, _) => e.left
         }.leftMap(explainExtractError)
   }
 
@@ -76,16 +76,16 @@ object Gcal {
 
     SeqAction.either(
       for {
-        lm <- lamps
-        ar <- arLamp.map(_.map(ArLampState))
+        lm   <- lamps
+        ar   <- arLamp.map(_.map(ArLampState))
         cuar <- cuarLamp.map(_.map(CuArLampState))
         thar <- tharLamp.map(_.map(ThArLampState))
-        qh <- qhLamp.map(_.map(QHLampState))
-        xe <- xeLamp.map(_.map(XeLampState))
-        ir <- (if (isCP) irLampCP else irLampMK).map(_.map(IrLampState))
-        sht <- shutter
-        flt <- filter
-        dif <- diffuser
+        qh   <- qhLamp.map(_.map(QHLampState))
+        xe   <- xeLamp.map(_.map(XeLampState))
+        ir   <- (if (isCP) irLampCP else irLampMK).map(_.map(IrLampState))
+        sht  <- shutter
+        flt  <- filter
+        dif  <- diffuser
       } yield if(lamps.isEmpty && List(sht, flt, dif).all(_.isEmpty)) GcalConfig.allOff
               else GcalConfig(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
     )
