@@ -211,27 +211,27 @@ object SeqexecEngine {
                       gcalKeywords: Boolean,
                       instForceError: Boolean)
   val defaultSettings = Settings(Site.GS, "localhost", LocalDate.of(2017, 1,1), "http://localhost/", true,
-      true, true, true, false, false, false, false, false, false)
+    true, true, true, false, false, false, false, false, false)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
-      val site = cfg.require[String]("seqexec-engine.site") match {
-        case "GS" => Site.GS
-        case "GN" => Site.GN
-      }
-      val odbHost = cfg.require[String]("seqexec-engine.odb")
-      val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
-      val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
-      val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
-      val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
-      val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
-      val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-      val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
-      val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
-      val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
-      val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
-      val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
+    val site = cfg.require[String]("seqexec-engine.site") match {
+      case "GS" => Site.GS
+      case "GN" => Site.GN
+    }
+    val odbHost = cfg.require[String]("seqexec-engine.odb")
+    val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
+    val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
+    val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
+    val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
+    val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+    val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
+    val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
+    val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
+    val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
+    val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
+    val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
@@ -245,35 +245,35 @@ object SeqexecEngine {
         }
       )
 
-      val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
-      // More instruments to be added to the list here
-      val instInit = if(f2Keywords || !instSim)
-        Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
-      else Task.now(())
-      val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
-      val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
+    val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
+    // More instruments to be added to the list here
+    val instInit = if(f2Keywords || !instSim)
+      Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
+    else Task.now(())
+    val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
+    val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
 
-      tcsInit *>
-        gwsInit *>
-        gcalInit *>
-        instInit *>
-        (for {
-          now <- Task(LocalDate.now)
-        } yield Settings(site,
-                         odbHost,
-                         now,
-                         dhsServer,
-                         dhsSim,
-                         tcsSim,
-                         instSim,
-                         gcalSim,
-                         odbNotifications,
-                         tcsKeywords,
-                         f2Keywords,
-                         gwsKeywords,
-                         gcalKeywords,
-                         instForceError)
-        )
+    tcsInit *>
+      gwsInit *>
+      gcalInit *>
+      instInit *>
+      (for {
+        now <- Task(LocalDate.now)
+      } yield Settings(site,
+                       odbHost,
+                       now,
+                       dhsServer,
+                       dhsSim,
+                       tcsSim,
+                       instSim,
+                       gcalSim,
+                       odbNotifications,
+                       tcsKeywords,
+                       f2Keywords,
+                       gwsKeywords,
+                       gcalKeywords,
+                       instForceError)
+      )
 
     }
   }
