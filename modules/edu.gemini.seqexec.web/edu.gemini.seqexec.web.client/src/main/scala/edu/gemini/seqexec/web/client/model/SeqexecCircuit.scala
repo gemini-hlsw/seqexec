@@ -7,7 +7,7 @@ import diode.react.ReactConnector
 import diode.util.RunAfterJS
 import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
-import edu.gemini.seqexec.model.Model.{SeqexecEvent, SeqexecModelUpdate, SequenceId, SequenceView, SequencesQueue}
+import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -199,9 +199,40 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       }
 
     case UpdateOperator(name) =>
-      val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
-      val updatedSequences = value.copy(operator = Some(name))
-      updated(updatedSequences, updateOperatorE)
+      // val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
+      // val updatedSequences = value.copy(operator = Some(name))
+      // updated(updatedSequences, updateOperatorE)
+      noChange
+
+  }
+}
+
+/**
+ * Handles updates to conditions
+ */
+class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateImageQuality(iq) =>
+      val updateE = Effect(SeqexecWebClient.setImageQuality(iq).map(_ => NoAction))
+      val updatedSequences = value.copy(iq = iq)
+      updated(updatedSequences, updateE)
+
+    case UpdateCloudCover(cc) =>
+      val updateE = Effect(SeqexecWebClient.setCloudCover(cc).map(_ => NoAction))
+      val updatedSequences = value.copy(cc = cc)
+      updated(updatedSequences, updateE)
+
+    case UpdateSkyBackground(sb) =>
+      val updateE = Effect(SeqexecWebClient.setSkyBackground(sb).map(_ => NoAction))
+      val updatedSequences = value.copy(sb = sb)
+      updated(updatedSequences, updateE)
+
+    case UpdateWaterVapor(wv) =>
+      val updateE = Effect(SeqexecWebClient.setWaterVapor(wv).map(_ => NoAction))
+      val updatedSequences = value.copy(wv = wv)
+      updated(updatedSequences, updateE)
 
   }
 }
@@ -326,7 +357,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
           (q :: seq, eff)
         }
       }
-      updated(value.copy(_1 = SequencesQueue(value._1.conditions, sequencesWithObserver)),
+      updated(value.copy(_1 = SequencesQueue(s.view.conditions, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(s) =>
@@ -351,9 +382,11 @@ object PotEq {
 /**
   * Utility class to let components more easily switch parts of the UI depending on the context
   */
-case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
+case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selectedSequence: Map[Instrument, Option[SequenceView]]) {
   def isLogged: Boolean = u.isDefined
   def isConnected: Boolean = w.ws.isReady
+  // Indicates if any sequence is being displayed
+  def anySelected: Boolean = selectedSequence.exists(_._2.isDefined)
 }
 
 /**
@@ -376,6 +409,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
   val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
+  val conditionsHandler      = new ConditionsHandler(zoomTo(_.sequences.conditions))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -387,7 +421,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   }
 
   // Reader to indicate the allowed interactions
-  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws))
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws, m.sequencesOnDisplay.currentSequences))
 
   // Reader for search results
   val searchResults: ModelR[SeqexecAppRootModel, Pot[SequencesQueue[SequenceId]]] = zoom(_.searchResults)
@@ -397,6 +431,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
+  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
 
   /**
     * Makes a reference to a sequence on the queue.
@@ -415,6 +450,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     wsLogHandler,
     sequenceDisplayHandler,
     globalLogHandler,
+    conditionsHandler,
     sequenceExecHandler)
 
   /**

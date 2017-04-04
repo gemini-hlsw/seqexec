@@ -192,6 +192,8 @@ object Model {
     case object Percent80 extends CloudCover { val toInt: Int = 80  }
     case object Any       extends CloudCover { val toInt: Int = 100 } // ODB is 100
 
+    val all: List[CloudCover] = List(Percent50, Percent70, Percent80, Any)
+
     implicit val equalCloudCover: Equal[CloudCover] = Equal.equalA[CloudCover]
 
     implicit val showCloudCover: Show[CloudCover] = Show.shows[CloudCover] {
@@ -209,6 +211,8 @@ object Model {
     case object Percent70 extends ImageQuality { val toInt: Int = 70  }
     case object Percent85 extends ImageQuality { val toInt: Int = 85  }
     case object Any       extends ImageQuality { val toInt: Int = 100 } // ODB is 100
+
+    val all: List[ImageQuality] = List(Percent20, Percent70, Percent85, Any)
 
     implicit val equalImageQuality: Equal[ImageQuality] = Equal.equalA[ImageQuality]
 
@@ -228,6 +232,8 @@ object Model {
     case object Percent80 extends SkyBackground { val toInt: Int = 80  }
     case object Any       extends SkyBackground { val toInt: Int = 100 } // ODB is 100
 
+    val all: List[SkyBackground] = List(Percent20, Percent50, Percent80, Any)
+
     implicit val equal: Equal[SkyBackground] = Equal.equalA[SkyBackground]
 
     implicit val showSkyBackground: Show[SkyBackground] = Show.shows[SkyBackground] {
@@ -245,6 +251,8 @@ object Model {
     case object Percent50 extends WaterVapor { val toInt: Int = 50  }
     case object Percent80 extends WaterVapor { val toInt: Int = 80  }
     case object Any       extends WaterVapor { val toInt: Int = 100 } // ODB is 100
+
+    val all: List[WaterVapor] = List(Percent20, Percent50, Percent80, Any)
 
     implicit val equal: Equal[WaterVapor] = Equal.equalA[WaterVapor]
 

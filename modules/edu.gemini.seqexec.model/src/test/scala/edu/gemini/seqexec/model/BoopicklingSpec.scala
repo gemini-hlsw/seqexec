@@ -36,6 +36,7 @@ object SharedModelArbitraries {
   implicit val lmArb  = implicitly[Arbitrary[NewLogMessage]]
   implicit val opArb  = implicitly[Arbitrary[OperatorUpdated]]
   implicit val obArb  = implicitly[Arbitrary[ObserverUpdated]]
+  implicit val iqArb  = implicitly[Arbitrary[ImageQuality]]
 }
 
 /**
@@ -98,5 +99,8 @@ class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with Mo
     it should "pickle/depickle SequencesQueue[SequenceId]" in {
       // events
       testPickleUnpickle[SequencesQueue[SequenceId]]
+    }
+    it should "pickle/depickle ImageQuality" in {
+      testPickleUnpickle[ImageQuality]
     }
 }

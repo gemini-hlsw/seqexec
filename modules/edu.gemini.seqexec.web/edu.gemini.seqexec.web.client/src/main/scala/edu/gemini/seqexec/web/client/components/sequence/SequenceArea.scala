@@ -111,21 +111,22 @@ object SequenceTabsBody {
 }
 
 object SequenceHeadersAndTable {
-  case class Props(proxy: ModelProxy[(ClientStatus, SequencesOnDisplay)])
-  private val component = ReactComponentB[Props]("SequenceHeadersAndTable")
+  val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
+  val statusConditionsConnect: ReactConnectProxy[(ClientStatus, Conditions)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndConditions)
+  private val component = ReactComponentB[Unit]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "row",
         <.div(
           ^.cls := "four wide column computer tablet only",
-          HeadersSideBar(p.proxy.zoom(_._2.operator), p.proxy.zoom(_._1))
+          statusConditionsConnect(HeadersSideBar.apply)
         ),
-        SequenceTabsBody(p.proxy)
+        sequencesDisplayConnect(SequenceTabsBody.apply)
       )
     ) .build
 
-  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
+  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
 }
 /**
   * Contains all the tabs for the sequences available in parallel
@@ -133,7 +134,6 @@ object SequenceHeadersAndTable {
   */
 object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
-  val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
 
   private val component = ReactComponentB[Unit]("SequenceTabs")
     .stateless
@@ -142,7 +142,7 @@ object SequenceTabs {
         ^.cls := "ui bottom attached segment",
         <.div(
           ^.cls := "ui two column vertically divided grid",
-          sequencesDisplayConnect(SequenceHeadersAndTable.apply),
+          SequenceHeadersAndTable(),
           <.div(
             ^.cls := "row computer only",
             <.div(

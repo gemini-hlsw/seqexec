@@ -63,6 +63,10 @@ case class FlipSkipStep(view: SequenceView, step: Step) extends Action
 case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
 case class UpdateObserver(view: SequenceView, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
+case class UpdateImageQuality(iq: ImageQuality) extends Action
+case class UpdateCloudCover(cc: CloudCover) extends Action
+case class UpdateSkyBackground(sb: SkyBackground) extends Action
+case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
 // End Actions
 
@@ -73,23 +77,6 @@ case object SectionClosed extends SectionVisibilityState
 
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
-// Model for the tabbed area of sequences
-case class SequencesOnDisplay(operator: Option[String], instrumentSequences: Zipper[SequenceTab]) {
-  // Display a given step on the focused sequence
-  def showStep(i: Int):SequencesOnDisplay =
-    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
-
-  // Don't show steps for the sequence
-  def unshowStep:SequencesOnDisplay =
-    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
-
-  def focusOnSequence(s: RefTo[Option[SequenceView]]):SequencesOnDisplay = {
-    // Replace the sequence for the instrument and focus
-    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
-    copy(instrumentSequences = q | instrumentSequences)
-  }
-}
-
 /**
   * Internal list of object names.
   * TODO This should belong to the model
@@ -98,13 +85,33 @@ object InstrumentNames {
   val instruments = NonEmptyList[Instrument]("Flamingos2", "GMOS-S", "GPI", "GSAOI")
 }
 
+// Model for the tabbed area of sequences
+case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+  // Display a given step on the focused sequence
+  def showStep(i: Int): SequencesOnDisplay =
+    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
+
+  // Don't show steps for the sequence
+  def unshowStep: SequencesOnDisplay =
+    copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
+
+  def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+    // Replace the sequence for the instrument and focus
+    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
+
+  def currentSequences: Map[Instrument, Option[SequenceView]] =
+    instrumentSequences.map(tab => tab.instrument -> tab.sequence()).toStream.toMap
+}
+
 /**
   * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
   */
 object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
-  val empty = SequencesOnDisplay(None, InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
+  val empty = SequencesOnDisplay(InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)

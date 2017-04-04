@@ -44,11 +44,21 @@ object SemanticUI {
   }
 
   @js.native
+  trait JsDropdownOptions extends js.Object
+
+  object JsDropdownOptions extends JsDropdownOptionBuilder(noOpts)
+
+  class JsDropdownOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsDropdownOptions, JsDropdownOptionBuilder](new JsDropdownOptionBuilder(_)) {
+    def onChange[A, B, C](t: js.Function2[A, B, C]) = jsOpt("onChange", t)
+  }
+
+  @js.native
   trait SemanticCommands extends JQuery {
     def visibility(o: JsVisiblityOptions): this.type = js.native
 
     def dropdown(): this.type = js.native
     def dropdown(cmd: String): this.type = js.native
+    def dropdown(o: JsDropdownOptions): this.type = js.native
 
     def tab(): this.type = js.native
 
