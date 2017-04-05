@@ -198,12 +198,19 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
         noChange
       }
 
-    case UpdateOperator(name) =>
-      // val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
-      // val updatedSequences = value.copy(operator = Some(name))
-      // updated(updatedSequences, updateOperatorE)
-      noChange
+  }
+}
 
+/**
+ * Handles updates to the operator
+ */
+class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateOperator(name) =>
+      val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
+      updated(name.some, updateOperatorE)
   }
 }
 
@@ -357,7 +364,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
           (q :: seq, eff)
         }
       }
-      updated(value.copy(_1 = SequencesQueue(s.view.conditions, None, sequencesWithObserver)),
+      updated(value.copy(_1 = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(s) =>
@@ -389,7 +396,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selected
   def anySelected: Boolean = selectedSequence.exists(_._2.isDefined)
 }
 
-case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator])
+case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 /**
   * Contains the model for Diode
   */
@@ -411,6 +418,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
   val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
   val conditionsHandler      = new ConditionsHandler(zoomTo(_.sequences.conditions))
+  val operatorHandler        = new OperatorHandler(zoomTo(_.sequences.operator))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -433,7 +441,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
-  val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
+  def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
     SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.user, c.ws, c.sequencesOnDisplay.currentSequences), c.sequences.conditions, c.sequences.operator))
 
   /**
@@ -454,6 +462,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     sequenceDisplayHandler,
     globalLogHandler,
     conditionsHandler,
+    operatorHandler,
     sequenceExecHandler)
 
   /**

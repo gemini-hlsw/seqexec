@@ -29,7 +29,7 @@ object SequenceObserverField {
   case class State(currentText: Option[String])
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
-    def updateObserver(s: SequenceView, name: String): CallbackTo[Unit] =
+    def updateObserver(s: SequenceView, name: String): Callback =
       $.props >>= { p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))) }
 
     def updateState(value: String): Callback =
@@ -68,13 +68,11 @@ object SequenceObserverField {
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
-    .componentDidMount(c => Callback.when(c.props.isLogged)(c.backend.setupTimer))
+    .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
+      val observer = f.nextProps.s.metadata.observer
       // Update the observer field
-      val updateOperatorCB = Callback.when((f.nextProps.s.metadata.observer =/= f.$.state.currentText) && f.nextProps.s.metadata.observer.nonEmpty)(f.$.modState(_.copy(currentText = f.nextProps.s.metadata.observer)))
-      // Add the timer if we login
-      val setupTimerCB = Callback.log(f.nextProps.isLogged && !f.currentProps.isLogged) >> Callback.when(f.nextProps.isLogged && !f.currentProps.isLogged)(f.$.backend.setupTimer)
-      updateOperatorCB >> setupTimerCB
+      Callback.when((observer =/= f.$.state.currentText) && observer.nonEmpty)(f.$.modState(_.copy(currentText = observer)))
     }
     .build
 
@@ -84,7 +82,7 @@ object SequenceObserverField {
 object SequenceDefaultToolbar {
   case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
   case class State(runRequested: Boolean, pauseRequested: Boolean)
-  private  val ST = ReactS.Fix[State]
+  private val ST = ReactS.Fix[State]
 
   def requestRun(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false)).liftCB
