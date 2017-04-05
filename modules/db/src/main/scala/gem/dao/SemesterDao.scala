@@ -16,10 +16,17 @@ object SemesterDao {
     Meta[String].nxmap(Semester.parse, _.toString)
 
   def canonicalize(s: Semester): ConnectionIO[Semester] =
-    sql"""
-      INSERT INTO semester (semester_id, year, half)
-      VALUES (${s.toString}, ${s.getYear}, ${s.getHalf})
-      ON CONFLICT DO NOTHING
-    """.update.run.as(s)
+    Statements.canonicalize(s).run.as(s)
+
+  object Statements {
+
+    def canonicalize(s: Semester): Update0 =
+      sql"""
+        INSERT INTO semester (semester_id, year, half)
+        VALUES (${s.toString}, ${s.getYear}, ${s.getHalf})
+        ON CONFLICT DO NOTHING
+      """.update
+
+  }
 
 }

@@ -6,19 +6,26 @@ import java.util.logging.Level
 
 object LogDao {
 
-  private def stack(t: Throwable): String = {
-    val sw = new java.io.StringWriter
-    val pw = new java.io.PrintWriter(sw)
-    t.printStackTrace(pw)
-    pw.close
-    sw.close
-    sw.toString
-  }
-
   def insert(user: User[_], level: Level, pid: Option[Program.Id], msg: String, t: Option[Throwable], elapsed: Option[Long]): ConnectionIO[Int] =
-    sql"""
-      INSERT INTO log (user_id, "timestamp", level, program, message, stacktrace, elapsed)
-           VALUES (${user.id}, now(), $level :: log_level, $pid, $msg, ${t.map(stack)}, $elapsed)
-     """.update.run
+    Statements.insert(user, level, pid, msg, t, elapsed).run
+
+  object Statements {
+
+    def insert(user: User[_], level: Level, pid: Option[Program.Id], msg: String, t: Option[Throwable], elapsed: Option[Long]): Update0 =
+      sql"""
+        INSERT INTO log (user_id, "timestamp", level, program, message, stacktrace, elapsed)
+             VALUES (${user.id}, now(), $level :: log_level, $pid, $msg, ${t.map(stack)}, $elapsed)
+       """.update
+
+    private def stack(t: Throwable): String = {
+      val sw = new java.io.StringWriter
+      val pw = new java.io.PrintWriter(sw)
+      t.printStackTrace(pw)
+      pw.close
+      sw.close
+      sw.toString
+    }
+
+  }
 
 }

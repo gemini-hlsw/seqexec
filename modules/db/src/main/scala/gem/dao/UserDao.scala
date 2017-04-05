@@ -13,29 +13,10 @@ object UserDao {
     select("root")
 
   def select(id: String): ConnectionIO[User[Nothing]] =
-    sql"""
-      SELECT id, first, last, email, staff
-      FROM gem_user
-      WHERE id = $id
-    """.query[(String, String, String, String, Boolean)]
-       .unique.map { case (i, f, l, e, s) =>
-         User(i, f, l, e, s, Map.empty)
-       }
+    Statements.select(id).unique
 
   def selectWithRoles(id: String, pass: String): ConnectionIO[Option[User[ProgramRole]]] =
-    sql"""
-      SELECT u.id,
-             u.first,
-             u.last,
-             u.email,
-             u.staff,
-             g.program_id,
-             g.program_role
-        FROM gem_user u LEFT OUTER JOIN gem_user_program g ON g.user_id = u.id
-        WHERE id = $id
-        AND "md5" = md5($pass)
-    """
-      .query[(String, String, String, String, Boolean, Option[Program.Id], Option[ProgramRole])]
+    Statements.selectWithRoles(id, pass)
       .list
       .map { rows =>
         rows.headOption.map {
@@ -48,11 +29,43 @@ object UserDao {
       }
 
   def changePassword(uid: User.Id, oldPassword: String, newPassword: String): ConnectionIO[Boolean] =
-    sql"""
-      UPDATE gem_user
-      SET    md5 = md5($newPassword)
-      WHERE  id  = ${uid}
-      AND    md5 = md5($oldPassword)
-    """.update.run.map(_ == 1)
+    Statements.changePassword(uid, oldPassword, newPassword).run.map(_ == 1)
+
+  object Statements {
+
+    def select(id: String): Query0[User[Nothing]] =
+      sql"""
+        SELECT id, first, last, email, staff
+        FROM gem_user
+        WHERE id = $id
+      """.query[(String, String, String, String, Boolean)]
+         .map { case (i, f, l, e, s) =>
+           User(i, f, l, e, s, Map.empty)
+         }
+
+    def selectWithRoles(id: String, pass: String): Query0[(String, String, String, String, Boolean, Option[Program.Id], Option[ProgramRole])] =
+      sql"""
+        SELECT u.id,
+               u.first,
+               u.last,
+               u.email,
+               u.staff,
+               g.program_id,
+               g.program_role
+          FROM gem_user u LEFT OUTER JOIN gem_user_program g ON g.user_id = u.id
+          WHERE id = $id
+          AND "md5" = md5($pass)
+      """
+        .query[(String, String, String, String, Boolean, Option[Program.Id], Option[ProgramRole])]
+
+    def changePassword(uid: User.Id, oldPassword: String, newPassword: String): Update0 =
+      sql"""
+        UPDATE gem_user
+        SET    md5 = md5($newPassword)
+        WHERE  id  = ${uid}
+        AND    md5 = md5($oldPassword)
+      """.update
+
+  }
 
 }

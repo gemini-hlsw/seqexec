@@ -68,8 +68,9 @@ lazy val db = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "doobie-core"     % doobieVersion,
-      "org.tpolecat" %% "doobie-postgres" % doobieVersion
+      "org.tpolecat" %% "doobie-core"      % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
+      "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test"
     ),
     initialCommands += """
       |import scalaz._, Scalaz._, scalaz.effect.IO
