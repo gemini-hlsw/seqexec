@@ -3,7 +3,7 @@ package edu.gemini.seqexec.engine
 import scalaz._
 import Scalaz._
 
-import edu.gemini.seqexec.model.Model.Conditions
+import edu.gemini.seqexec.model.Model.{Conditions, Operator}
 
 /**
   * A Map of `Sequence`s.
@@ -24,11 +24,11 @@ object Engine {
       Engine(q.sequences.mapValues(_.map(f)))
   }
 
-  case class State(conditions: Conditions, sequences: Map[Sequence.Id, Sequence.State])
+  case class State(conditions: Conditions, operator: Option[Operator], sequences: Map[Sequence.Id, Sequence.State])
 
   object State {
 
-    def empty: State = State(Conditions.default, Map.empty)
+    def empty: State = State(Conditions.default, None, Map.empty)
 
   }
 

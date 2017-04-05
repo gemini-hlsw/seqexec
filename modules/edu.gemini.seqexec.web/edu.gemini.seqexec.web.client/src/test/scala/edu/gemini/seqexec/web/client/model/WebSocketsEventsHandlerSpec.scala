@@ -27,7 +27,7 @@ class WebSocketsEventsHandlerSpec extends FlatSpec with Matchers {
     result.newModelOpt.flatMap(_.user) shouldBe Some(user)
   }
   it should "accept a loaded SequencesQueue" in {
-    val sequences = SequencesQueue(Conditions.default, List.empty[SequenceView])
+    val sequences = SequencesQueue(Conditions.default, None, List.empty[SequenceView])
     val handler = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
     val result = handler.handle(ServerMessage(SequenceLoaded(sequences)))
     // No user set

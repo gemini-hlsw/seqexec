@@ -357,7 +357,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (SeqexecAppRootModel.LoadedS
           (q :: seq, eff)
         }
       }
-      updated(value.copy(_1 = SequencesQueue(s.view.conditions, sequencesWithObserver)),
+      updated(value.copy(_1 = SequencesQueue(s.view.conditions, None, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(s) =>

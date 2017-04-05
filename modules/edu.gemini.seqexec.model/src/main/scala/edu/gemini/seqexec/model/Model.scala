@@ -123,7 +123,6 @@ object Model {
   // TODO Une a proper instrument class
   case class SequenceMetadata(
     instrument: Instrument,
-    operator: Option[Operator],
     observer: Option[Observer]
   )
 
@@ -139,7 +138,7 @@ object Model {
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
     * Or a list of fully hydrated SequenceViews
     */
-  case class SequencesQueue[T](conditions: Conditions, queue: List[T])
+  case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
 
   // Ported from OCS' SPSiteQuality.java
 

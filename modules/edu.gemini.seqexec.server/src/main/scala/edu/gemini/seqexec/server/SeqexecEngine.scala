@@ -87,6 +87,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         toSeqexecEvent(ev)(
           SequencesQueue(
             qState.conditions,
+            qState.operator,
             qState.sequences.values.map(
               s => viewSequence(s.toSequence, s.status)
             ).toList

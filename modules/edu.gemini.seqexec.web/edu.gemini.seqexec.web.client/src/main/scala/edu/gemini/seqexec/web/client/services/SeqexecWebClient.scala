@@ -36,7 +36,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
         // If not found, we'll consider it like an empty response
-        SequencesQueue(Conditions.default, Nil)
+        SequencesQueue(Conditions.default, None, Nil)
     }
 
   /**

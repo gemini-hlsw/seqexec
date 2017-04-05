@@ -17,7 +17,8 @@ object SharedModelArbitraries {
   def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
     for {
       b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
-    } yield SequencesQueue(Conditions.default, b)
+      o <- Gen.option(Gen.alphaStr)
+    } yield SequencesQueue(Conditions.default, o, b)
   }
 
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]
