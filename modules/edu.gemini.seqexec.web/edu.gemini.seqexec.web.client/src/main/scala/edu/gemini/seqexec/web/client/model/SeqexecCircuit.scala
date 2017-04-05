@@ -389,6 +389,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selected
   def anySelected: Boolean = selectedSequence.exists(_._2.isDefined)
 }
 
+case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator])
 /**
   * Contains the model for Diode
   */
@@ -432,6 +433,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
+  val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
+    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.user, c.ws, c.sequencesOnDisplay.currentSequences), c.sequences.conditions, c.sequences.operator))
 
   /**
     * Makes a reference to a sequence on the queue.

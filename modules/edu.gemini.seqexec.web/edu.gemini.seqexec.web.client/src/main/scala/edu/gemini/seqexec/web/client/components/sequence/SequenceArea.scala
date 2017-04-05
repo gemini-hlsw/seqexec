@@ -112,7 +112,7 @@ object SequenceTabsBody {
 
 object SequenceHeadersAndTable {
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
-  val statusConditionsConnect: ReactConnectProxy[(ClientStatus, Conditions)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndConditions)
+  val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
   private val component = ReactComponentB[Unit]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
@@ -120,7 +120,7 @@ object SequenceHeadersAndTable {
         ^.cls := "row",
         <.div(
           ^.cls := "four wide column computer tablet only",
-          statusConditionsConnect(HeadersSideBar.apply)
+          headerSideBarConnect(HeadersSideBar.apply)
         ),
         sequencesDisplayConnect(SequenceTabsBody.apply)
       )
