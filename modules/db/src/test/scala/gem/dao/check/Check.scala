@@ -38,6 +38,7 @@ trait Check extends FlatSpec with Matchers with QueryChecker {
     val gcalDiffuser  = GcalDiffuser.Ir
     val gcalShutter   = GcalShutter.Open
     val gcalConfig    = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
+    val user          = User[Nothing]("", "", "", "", false, Map.empty)
   }
 
 }
