@@ -464,7 +464,6 @@ class StandardHeader(
     gwsKeywords
   }
 
-
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
     List(
       buildDouble(tcsReader.getAirMass, "AIRMASS"),

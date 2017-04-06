@@ -37,7 +37,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics
   )
 
-  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords, gwsKeywords = settings.gwsKeywords)
+  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords, gwsKeywords = settings.gwsKeywords, gcalKeywords = settings.gcalKeywords)
 
   val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
@@ -149,49 +149,49 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
   }
 
-    // TODO: Better name and move it to `engine`
-    type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
-    type StepAR = engine.Step[engine.Action \/ engine.Result]
+  // TODO: Better name and move it to `engine`
+  type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
+  type StepAR = engine.Step[engine.Action \/ engine.Result]
 
-    def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView = {
+  def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView = {
 
-      def engineSteps(seq: SequenceAR): List[Step] = {
+    def engineSteps(seq: SequenceAR): List[Step] = {
 
-        def viewStep(step: StepAR): StandardStep =
-          StandardStep(
-            step.id,
-            step.config,
-            engine.Step.status(step),
-            // TODO: Implement breakpoints at Engine level
-            breakpoint = step.breakpoint,
-            // TODO: Implement skipping at Engine level
-            skip = false,
-            configStatus = Map.empty,
-            // TODO: Implement standard step at Engine level
-            observeStatus = ActionStatus.Pending,
-            fileId = step.fileId
-          )
+      def viewStep(step: StepAR): StandardStep =
+        StandardStep(
+          step.id,
+          step.config,
+          engine.Step.status(step),
+          // TODO: Implement breakpoints at Engine level
+          breakpoint = step.breakpoint,
+          // TODO: Implement skipping at Engine level
+          skip = false,
+          configStatus = Map.empty,
+          // TODO: Implement standard step at Engine level
+          observeStatus = ActionStatus.Pending,
+          fileId = step.fileId
+        )
 
-        // Couldn't find this on Scalaz
-        def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
-          l.splitAt(l.indexWhere(p))
+      // Couldn't find this on Scalaz
+      def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
+        l.splitAt(l.indexWhere(p))
 
-        // TODO: Calculate the whole status here and remove `Engine.Step.status`
-        // This will be easier once the exact status labels in the UI are fixed.
-        seq.steps.map(viewStep) match {
-          // Find first Pending Step when no Step is Running and mark it as Running
-          case steps if (st === SequenceState.Running || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
-            val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
-            xs ++ (y.copy(status = StepState.Running) :: ys)
-          case steps if st === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
-            val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
-            xs ++ (y.copy(status = StepState.Paused) :: ys)
-          case x => x
-        }
+      // TODO: Calculate the whole status here and remove `Engine.Step.status`
+      // This will be easier once the exact status labels in the UI are fixed.
+      seq.steps.map(viewStep) match {
+        // Find first Pending Step when no Step is Running and mark it as Running
+        case steps if (st === SequenceState.Running || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
+          val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
+          xs ++ (y.copy(status = StepState.Running) :: ys)
+        case steps if st === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
+          val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
+          xs ++ (y.copy(status = StepState.Paused) :: ys)
+        case x => x
       }
-      // TODO: Implement willStopIn
-      SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
     }
+    // TODO: Implement willStopIn
+    SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
+  }
 }
 
 // Configuration stuff
@@ -209,28 +209,30 @@ object SeqexecEngine {
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
                       gwsKeywords: Boolean,
+                      gcalKeywords: Boolean,
                       instForceError: Boolean)
   val defaultSettings = Settings(Site.GS, "localhost", LocalDate.of(2017, 1,1), "http://localhost/", true,
-    true, true, true, false, false, false, false, false)
+    true, true, true, false, false, false, false, false, false)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
-      val site = cfg.require[String]("seqexec-engine.site") match {
-        case "GS" => Site.GS
-        case "GN" => Site.GN
-      }
-      val odbHost = cfg.require[String]("seqexec-engine.odb")
-      val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
-      val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
-      val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
-      val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
-      val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
-      val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-      val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
-      val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
-      val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
-      val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
+    val site = cfg.require[String]("seqexec-engine.site") match {
+      case "GS" => Site.GS
+      case "GN" => Site.GN
+    }
+    val odbHost = cfg.require[String]("seqexec-engine.odb")
+    val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
+    val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
+    val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
+    val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
+    val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
+    val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
+    val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
+    val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
+    val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
+    val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
+    val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
@@ -244,34 +246,35 @@ object SeqexecEngine {
         }
       )
 
-      val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
-      // More instruments to be added to the list here
-      val instInit = if(f2Keywords || !instSim)
-        Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
-      else Task.now(())
-      val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
-      val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
+    val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
+    // More instruments to be added to the list here
+    val instInit = if(f2Keywords || !instSim)
+      Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
+    else Task.now(())
+    val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
+    val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
 
-      tcsInit *>
-        gwsInit *>
-        gcalInit *>
-        instInit *>
-        (for {
-          now <- Task(LocalDate.now)
-        } yield Settings(site,
-                         odbHost,
-                         now,
-                         dhsServer,
-                         dhsSim,
-                         tcsSim,
-                         instSim,
-                         gcalSim,
-                         odbNotifications,
-                         tcsKeywords,
-                         f2Keywords,
-                         gwsKeywords,
-                         instForceError)
-        )
+    tcsInit *>
+      gwsInit *>
+      gcalInit *>
+      instInit *>
+      (for {
+        now <- Task(LocalDate.now)
+      } yield Settings(site,
+                       odbHost,
+                       now,
+                       dhsServer,
+                       dhsSim,
+                       tcsSim,
+                       instSim,
+                       gcalSim,
+                       odbNotifications,
+                       tcsKeywords,
+                       f2Keywords,
+                       gwsKeywords,
+                       gcalKeywords,
+                       instForceError)
+      )
 
     }
   }
