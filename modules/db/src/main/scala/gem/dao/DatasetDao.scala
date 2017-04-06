@@ -16,6 +16,14 @@ object DatasetDao {
 
   object Statements {
 
+    // StepId has a DISTINCT type due to its check constraint so we need a fine-grained mapping
+    // here to satisfy the query checker.
+    private case class StepId(toInt: Int)
+    private object StepId {
+      implicit val StepIdMeta: Meta[StepId] =
+        Distinct.integer("id_index").xmap(StepId(_), _.toInt)
+    }
+
     def insert(sid: Int, d: Dataset): Update0 =
       sql"""
         INSERT INTO dataset (dataset_label,
@@ -26,7 +34,7 @@ object DatasetDao {
                              timestamp)
             VALUES (${d.label},
                     ${d.label.oid},
-                    ${d.label.index},
+                    ${StepId(d.label.index)},
                     ${sid},
                     ${d.filename},
                     ${d.timestamp})

@@ -2,6 +2,7 @@ package gem
 
 import doobie.postgres.imports._
 import doobie.imports._
+import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, _ }
 import edu.gemini.spModel.core._
 
 import java.sql.Timestamp
@@ -107,6 +108,24 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   implicit val DurationMeta: Meta[Duration] =
     Meta[Long].xmap(Duration.ofMillis, _.toMillis)
+
+  /**
+   * Constructor for a Meta instances with an underlying types that are reported by JDBC as
+   * type Distinct, as happens when a column has a check constraint. By using a data type with
+   * a Distinct Meta instance we can satisfy the query checker.
+   */
+  object Distinct {
+
+    def integer(name: String): Meta[Int] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, Integer),
+        NonEmptyList(name),
+        _ getInt _,
+        FPS.setInt,
+        FRS.updateInt
+      )
+
+  }
 
   def capply2[A, B, T](f: (A, B) => T)(
     implicit ca: Composite[(Option[A], Option[B])]
