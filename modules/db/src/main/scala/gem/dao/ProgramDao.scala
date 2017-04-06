@@ -49,6 +49,14 @@ object ProgramDao {
 
   object Statements {
 
+    // StepId has a DISTINCT type due to its check constraint so we need a fine-grained mapping
+    // here to satisfy the query checker.
+    private case class Index(toInt: Int)
+    private object Index {
+      implicit val IndexMeta: Meta[Index] =
+        Distinct.integer("id_index").xmap(Index(_), _.toInt)
+    }
+
     def selectFlat(pid: Program.Id): Query0[Program[Nothing]] =
       sql"""
         SELECT title
@@ -63,7 +71,7 @@ object ProgramDao {
          FROM program
         WHERE lower(program_id) like lower($pat) OR lower(title) like lower($pat)
       ORDER BY program_id, title
-        LIMIT $max
+        LIMIT ${max.toLong}
       """.query[(Program.Id, String)]
         .map { case (pid, title) => Program(pid, title, Nil) }
 
@@ -75,9 +83,9 @@ object ProgramDao {
                              semester_id,
                              program_type)
               VALUES (${pid: Program.Id},
-                      ${pid.site.map(_.toString)},
+                      ${pid.site},
                       ${pid.semester.map(_.toString)},
-                      ${pid.ptype.map(_.toString)})
+                      ${pid.ptype})
       """.update
 
     def insertDailyProgramIdSlice(pid: ProgramId.Daily): Update0 =
@@ -87,8 +95,8 @@ object ProgramDao {
                             program_type,
                             day)
               VALUES (${pid: Program.Id},
-                      ${pid.siteVal.toString},
-                      ${pid.ptypeVal.toString},
+                      ${pid.siteVal},
+                      ${pid.ptypeVal},
                       ${new java.util.Date(pid.start)})
       """.update
 
@@ -101,10 +109,10 @@ object ProgramDao {
                              program_type,
                              index)
              VALUES (${pid: Program.Id},
-                     ${pid.siteVal.toString},
+                     ${pid.siteVal},
                      ${pid.semesterVal.toString},
-                     ${pid.ptypeVal.toString},
-                     ${pid.index})
+                     ${pid.ptypeVal},
+                     ${Index(pid.index)})
       """.update
 
     // N.B. assumes program id slice has been inserted

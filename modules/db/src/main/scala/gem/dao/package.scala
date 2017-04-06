@@ -2,6 +2,7 @@ package gem
 
 import doobie.postgres.imports._
 import doobie.imports._
+import doobie.util.invariant._
 import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, _ }
 import edu.gemini.spModel.core._
 
@@ -95,6 +96,14 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Distinct.string("identifier").nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+
+  // Site by tag as DISTINCT (identifier)
+  implicit val SiteMeta: Meta[Site] =
+    Distinct.string("identifier").nxmap(Site.parse, _.displayName)
+
+  // ProgramType by tag as DISTINCT (identifier)
+  implicit val ProgramTypeMeta: Meta[ProgramType] =
+    Distinct.string("identifier").nxmap(s => ProgramType.read(s).getOrElse(throw InvalidEnum[ProgramType](s)), _.abbreviation)
 
   // Java Log Levels (not nullable)
   implicit def levelMeta: Meta[Level] =
