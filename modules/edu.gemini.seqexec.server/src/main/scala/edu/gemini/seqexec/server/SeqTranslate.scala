@@ -9,6 +9,7 @@ import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.SeqTranslate.{Settings, Systems}
 import edu.gemini.seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
+import edu.gemini.seqexec.server.TcsController.ScienceFoldPosition
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants
@@ -53,12 +54,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
         for {
           id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
-          _  <- sendDataStart(id)
-          _  <- headers.map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
-          _  <- inst.observe(config)(id)
-          _  <- headers.map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
-          _  <- closeImage(id, systems.dhs)
-          _  <- sendDataEnd(id)
+          _ <- sendDataStart(id)
+          _ <- headers.map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
+          _ <- inst.observe(config)(id)
+          _ <- headers.map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+          _ <- closeImage(id, systems.dhs)
+          _ <- sendDataEnd(id)
         } yield ObserveResult(id)
       }
 
@@ -81,11 +82,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       )
     }
 
+
     for {
-      stepType  <- calcStepType(config)
-      inst      <- toInstrumentSys(stepType.instrument)
-      systems   <- calcSystems(stepType)
-      headers   <- calcHeaders(config, stepType)
+      stepType <- calcStepType(config)
+      inst     <- toInstrumentSys(stepType.instrument)
+      systems  <- calcSystems(stepType)
+      headers  <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
 
@@ -113,22 +115,22 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
-    case CelestialObject(inst) => TrySeq(Set(inst, Resource.Mount, Resource.ScienceFold, Resource.Gcal))
-    case FlatOrArc(inst)       => TrySeq(Set(inst, Resource.Gcal, Resource.ScienceFold))
+    case CelestialObject(inst) => TrySeq(Set(inst, Resource.TCS, Resource.Gcal))
+    case FlatOrArc(inst)       => TrySeq(Set(inst, Resource.Gcal, Resource.TCS))
     case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
   }
 
   private def calcSystems(stepType: StepType): TrySeq[List[System]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs), Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Gcal(systems.gcal, site == Site.GS)))
+      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, false, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, true, ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
     }
   }
 
   private def calcInstHeader(config: Config, inst: Resource.Instrument): TrySeq[Header] = inst match {
     case Resource.F2 =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
-      if (settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
+      if(settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
     case _           =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
@@ -172,8 +174,16 @@ object SeqTranslate {
                       gcalKeywords: Boolean
                      )
 
+
   private sealed trait StepType {
     val instrument: Resource.Instrument
+  }
+
+  private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
+    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap{
+      case Flamingos2.name => TrySeq(Resource.F2)
+      case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
+    }
   }
 
   private final case class CelestialObject(override val instrument: Resource.Instrument) extends StepType
@@ -187,16 +197,6 @@ object SeqTranslate {
     override val instrument = Resource.GPI
   }
 
-  def explainExtractError(e: ExtractFailure): SeqexecFailure =
-    SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
-
-  private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
-    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].leftMap(explainExtractError).flatMap{
-      case Flamingos2.name => TrySeq(Resource.F2)
-      case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
-    }
-  }
-
   private def calcStepType(config: Config): TrySeq[StepType] = {
     def extractGaos(inst: Resource.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
       case -\/(ConfigUtilOps.ConversionError(_,_)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
@@ -206,6 +206,7 @@ object SeqTranslate {
         case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
       }
     }
+
 
     ( config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
       |@| extractInstrument(config) ) { (obsType, inst) =>

@@ -62,7 +62,7 @@ class packageSpec extends FlatSpec {
                  1,
                  None,
                  config,
-                 Set(Resource.Mount, Resource.F2),
+                 Set(Resource.TCS, Resource.F2),
                  breakpoint = false,
                  List(
                    List(configureTcs, configureInst), // Execution
@@ -73,7 +73,7 @@ class packageSpec extends FlatSpec {
                  2,
                  None,
                  config,
-                 Set(Resource.Mount, Resource.OI, Resource.F2),
+                 Set(Resource.TCS, Resource.OI, Resource.F2),
                  breakpoint = false,
                  List(
                    List(configureTcs, configureInst), // Execution

@@ -281,6 +281,9 @@ final class TcsEpics(epicsService: CaService) {
 
   def inPosition: Option[String] = Option(inPositionAttr.value)
 
+  val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
+  def agInPosition: Option[Double] = Option(agInPositionAttr.value).map(_.doubleValue)
+
   object pwfs1ProbeGuideConfig extends ProbeGuideConfig("p1", tcsState)
 
   object pwfs2ProbeGuideConfig extends ProbeGuideConfig("p2", tcsState)
@@ -340,6 +343,58 @@ final class TcsEpics(epicsService: CaService) {
       }
     })))
 
+  def waitAGInPosition(timeout: Time): SeqAction[Unit] =
+    EpicsCommand.safe(EitherT(Task.async[TrySeq[Unit]]((f) => {
+
+      val resultGuard = new AtomicInteger(1)
+      val lock = new ReentrantLock()
+      def locked(f: => Unit): Unit = {
+        lock.lock()
+        try {
+          f
+        } finally {
+          lock.unlock()
+        }
+      }
+
+      if (!agInPositionAttr.values.isEmpty && agInPositionAttr.value == 1.0) {
+        f(TrySeq(()).right)
+      } else {
+
+        val timer = new Timer
+        val statusListener = new CaAttributeListener[java.lang.Double] {
+
+          override def onValueChange(newVals: util.List[java.lang.Double]): Unit = {
+            if (!newVals.isEmpty && newVals.get(0) == 1.0 && resultGuard.getAndDecrement() == 1) {
+              locked {
+                agInPositionAttr.removeListener(this)
+                timer.cancel()
+              }
+
+              f(TrySeq(()).right)
+            }
+          }
+
+          override def onValidityChange(newValidity: Boolean): Unit = {}
+        }
+
+        locked {
+          if (timeout.toMilliseconds.toLong > 0) {
+            timer.schedule(new TimerTask {
+              override def run(): Unit = if (resultGuard.getAndDecrement() == 1) {
+                locked {
+                  agInPositionAttr.removeListener(statusListener)
+                }
+
+                f(TrySeq.fail(SeqexecFailure.Timeout("waiting for AG inposition flag.")).right)
+
+              }
+            }, timeout.toMilliseconds.toLong)
+          }
+          agInPositionAttr.addListener(statusListener)
+        }
+      }
+    })))
 
   def hourAngle: Option[String] = Option(tcsState.getStringAttribute("ha").value)
 
@@ -458,6 +513,15 @@ final class TcsEpics(epicsService: CaService) {
   val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
 
   def oiwfsIntegrationTime = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
+
+  private def instPort(name: String) = Option(tcsState.getIntegerAttribute(name + "Port").value).map(_.intValue)
+  def gsaoiPort = instPort("gsaoi")
+  def gpiPort = instPort("gpi")
+  def f2Port = instPort("f2")
+  def niriPort = instPort("niri")
+  def gnirsPort = instPort("nirs")
+  def nifsPort = instPort("nifs")
+  def gmosPort = instPort("gmos")
 
 }
 

@@ -7,7 +7,6 @@ import java.beans.PropertyDescriptor
 
 import scala.reflect.ClassTag
 import scala.collection.breakOut
-
 import scalaz._
 import Scalaz._
 
@@ -23,6 +22,13 @@ object ConfigUtilOps {
   def explain(e: ExtractFailure): String = e match {
     case KeyNotFound(k) => s"Missing config value for key ${k.getPath}"
     case ConversionError(k, msg) => s"Error reading key ${k.getPath}: $msg"
+  }
+
+  def explainExtractError(e: ExtractFailure): SeqexecFailure =
+    SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
+
+  implicit class TrySeqed[A] private [server] (r: ExtractFailure \/ A) {
+    def asTrySeq: TrySeq[A] = r.leftMap(explainExtractError)
   }
 
   // key syntax: parent / child
@@ -53,5 +59,6 @@ object ConfigUtilOps {
             }(breakOut): Map[String, String])
       }
     }
+
   }
 }

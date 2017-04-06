@@ -1,10 +1,11 @@
 package edu.gemini.seqexec.server
 
+import edu.gemini.seqexec.engine.Resource
 import edu.gemini.spModel.core.Wavelength
 
-import scalaz._, Scalaz._
-
-import squants.{Length, Angle}
+import scalaz._
+import Scalaz._
+import squants.{Angle, Length}
 
 /**
  * Created by jluhrs on 7/30/15.
@@ -21,6 +22,8 @@ trait TcsController {
   def guide(gc: GuideConfig): SeqAction[Unit]
 
   def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit]
+
+  def applyScienceFoldConfig(agc: AGConfig): SeqAction[Unit]
 
 }
 
@@ -171,7 +174,7 @@ object TcsController {
   sealed trait ScienceFoldPosition
   object ScienceFoldPosition {
     case object Parked extends ScienceFoldPosition
-    final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
+    final case class Position(source: LightSource, sink: Resource.Instrument) extends ScienceFoldPosition
   }
 
   /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
