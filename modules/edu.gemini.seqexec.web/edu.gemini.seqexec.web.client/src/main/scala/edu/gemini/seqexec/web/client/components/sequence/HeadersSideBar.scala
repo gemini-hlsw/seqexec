@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{Operator, Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
@@ -24,7 +24,9 @@ import scala.concurrent.duration._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(conditions: ModelProxy[Conditions], status: ModelProxy[ClientStatus])
+  case class Props(model: ModelProxy[HeaderSideBarReader]) {
+    def isLogged: Boolean = model().status.isLogged
+  }
 
   case class State(currentText: Option[String])
 
@@ -33,30 +35,37 @@ object HeadersSideBar {
   }
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
+    def updateOperator(name: String): Callback =
+      $.props >>= { p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateOperator(name)))) }
+
     def updateState(value: String): Callback =
       $.modState(_.copy(currentText = Some(value)))
 
+    def setupTimer: Callback =
+      // Every 2 seconds check if the field has changed and submit
+      setInterval(submitIfChanged, 2.second)
+
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.empty // Callback.when(s.currentText =/= p.operator())(Callback.empty) // We are not submitting until the backend properly update this property
+        case (s, p) => Callback.when(s.currentText =/= p.model().operator)(updateOperator(~s.currentText))
       }
 
     def iqChanged(iq: ImageQuality): Callback =
-      $.props >>= {_.conditions.dispatchCB(UpdateImageQuality(iq))}
+      $.props >>= {_.model.dispatchCB(UpdateImageQuality(iq))}
 
     def ccChanged(i: CloudCover): Callback =
-      $.props >>= {_.conditions.dispatchCB(UpdateCloudCover(i))}
+      $.props >>= {_.model.dispatchCB(UpdateCloudCover(i))}
 
     def sbChanged(sb: SkyBackground): Callback =
-      $.props >>= {_.conditions.dispatchCB(UpdateSkyBackground(sb))}
+      $.props >>= {_.model.dispatchCB(UpdateSkyBackground(sb))}
 
     def wvChanged(wv: WaterVapor): Callback =
-      $.props >>= {_.conditions.dispatchCB(UpdateWaterVapor(wv))}
+      $.props >>= {_.model.dispatchCB(UpdateWaterVapor(wv))}
 
     def render(p: Props, s: State): ReactTagOf[Div] = {
-      val enabled = p.status().isLogged && p.status().anySelected
+      val enabled = p.model().status.isLogged && p.model().status.anySelected
 
-      val operatorEV = ExternalVar(s.currentText.getOrElse(""))(updateState)
+      val operatorEV = ExternalVar(~s.currentText)(updateState)
       <.div(
         ^.cls := "ui raised secondary segment",
         <.h4("Headers"),
@@ -68,15 +77,15 @@ object HeadersSideBar {
             InputEV(InputEV.Props("operator", "operator",
               operatorEV,
               placeholder = "Operator...",
-              disabled = !p.status().isLogged,
-              onBlur = name => Callback.empty// >> p.operator.dispatchCB(UpdateOperator(name)))) TODO Enable when the backend accepts this property
+              disabled = !enabled,
+              onBlur = _ => submitIfChanged
             ))
           ),
 
-          DropdownMenu(DropdownMenu.Props("Image Quality", p.conditions().iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
-          DropdownMenu(DropdownMenu.Props("Cloud Cover", p.conditions().cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged)),
-          DropdownMenu(DropdownMenu.Props("Water Vapor", p.conditions().wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
-          DropdownMenu(DropdownMenu.Props("Sky Background", p.conditions().sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
+          DropdownMenu(DropdownMenu.Props("Image Quality", p.model().conditions.iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
+          DropdownMenu(DropdownMenu.Props("Cloud Cover", p.model().conditions.cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged)),
+          DropdownMenu(DropdownMenu.Props("Water Vapor", p.model().conditions.wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
+          DropdownMenu(DropdownMenu.Props("Sky Background", p.model().conditions.sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
         )
       )
     }
@@ -86,14 +95,15 @@ object HeadersSideBar {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .shouldComponentUpdate { f =>
-      // If the state changes, don't update the UI
-      f.$.state === f.nextState
+    .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(~p.model().operator)})
+    .componentDidMount(_.backend.setupTimer)
+    .componentWillReceiveProps { f =>
+      val operator = f.nextProps.model().operator
+      // Update the operator field
+      Callback.when((operator =/= f.$.state.currentText) && operator.nonEmpty)(f.$.modState(_.copy(currentText = operator)))
     }
-    // Every 2 seconds check if the field has changed and submit
-    .componentDidMount(c => c.backend.setInterval(c.backend.submitIfChanged, 2.second))
     .build
 
-  def apply(model: ModelProxy[(ClientStatus, Conditions)]): ReactComponentU[Props, State, Backend, TopNode] =
-    component(Props(model.zoom(_._2), model.zoom(_._1)))
+  def apply(model: ModelProxy[HeaderSideBarReader]): ReactComponentU[Props, State, Backend, TopNode] =
+    component(Props(model))
 }

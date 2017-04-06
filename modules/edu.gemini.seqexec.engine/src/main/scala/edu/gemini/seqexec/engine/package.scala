@@ -81,25 +81,25 @@ package object engine {
     modifyS(id)(_.rollback)
 
   def setOperator(name: String): Handle[Unit] =
-    modify(st => Engine.State(st.conditions, st.sequences.mapValues(_.setOperator(name))))
+    modify(st => Engine.State(st.conditions, name.some, st.sequences))
 
   def setObserver(id: Sequence.Id)(name: String): Handle[Unit] =
     modifyS(id)(_.setObserver(name))
 
   def setConditions(conditions: Conditions): Handle[Unit] =
-    modify(st => Engine.State(conditions, st.sequences))
+    modify(st => Engine.State(conditions, st.operator, st.sequences))
 
   def setImageQuality(iq: ImageQuality): Handle[Unit] =
-    modify(st => Engine.State(st.conditions.copy(iq = iq), st.sequences))
+    modify(st => Engine.State(st.conditions.copy(iq = iq), st.operator, st.sequences))
 
   def setWaterVapor(wv: WaterVapor): Handle[Unit] =
-    modify(st => Engine.State(st.conditions.copy(wv = wv), st.sequences))
+    modify(st => Engine.State(st.conditions.copy(wv = wv), st.operator, st.sequences))
 
   def setSkyBackground(sb: SkyBackground): Handle[Unit] =
-    modify(st => Engine.State(st.conditions.copy(sb = sb), st.sequences))
+    modify(st => Engine.State(st.conditions.copy(sb = sb), st.operator, st.sequences))
 
   def setCloudCover(cc: CloudCover): Handle[Unit] =
-    modify(st => Engine.State(st.conditions.copy(cc = cc), st.sequences))
+    modify(st => Engine.State(st.conditions.copy(cc = cc), st.operator, st.sequences))
 
 
   /**
@@ -109,6 +109,7 @@ package object engine {
     modify(
       st => Engine.State(
         st.conditions,
+        st.operator,
         st.sequences.get(id).map(
           t => t.status match {
             case SequenceState.Running => st.sequences
@@ -327,13 +328,14 @@ package object engine {
     modify(
       st => Engine.State(
         st.conditions,
+        st.operator,
         st.sequences.get(id).map(
           s => st.sequences.updated(id, f(s))).getOrElse(st.sequences)
       )
     )
 
   private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] =
-    modify(st => Engine.State(st.conditions, st.sequences.updated(id, s)))
+    modify(st => Engine.State(st.conditions, st.operator, st.sequences.updated(id, s)))
 
   // For introspection
   def printSequenceState(id: Sequence.Id): Handle[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])

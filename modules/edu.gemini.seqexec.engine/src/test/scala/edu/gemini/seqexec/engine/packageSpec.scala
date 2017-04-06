@@ -50,12 +50,13 @@ class packageSpec extends FlatSpec {
   val qs1: Engine.State =
     Engine.State(
       Conditions.default,
+      None,
       Map(
         (seqId,
          Sequence.State.init(
            Sequence(
              "First",
-             SequenceMetadata("F2", None, None),
+             SequenceMetadata("F2", None),
              List(
                Step(
                  1,
@@ -90,7 +91,7 @@ class packageSpec extends FlatSpec {
     Sequence.State.init(
       Sequence(
         "First",
-        SequenceMetadata("GMOS", None, None),
+        SequenceMetadata("GMOS", None),
         List(
           Step(
             1,
@@ -110,8 +111,8 @@ class packageSpec extends FlatSpec {
   val seqId1 = seqId
   val seqId2 = "TEST-02"
   val seqId3 = "TEST-03"
-  val qs2 = Engine.State(Conditions.default, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
-  val qs3 = Engine.State(Conditions.default, qs2.sequences + (seqId3 -> seqG))
+  val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
+  val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
 
   def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
     def isFinished(status: SequenceState): Boolean =

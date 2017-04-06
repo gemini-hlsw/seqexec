@@ -52,7 +52,7 @@ class SequenceSpec extends FlatSpec {
 
   }
 
-  val metadata = SequenceMetadata("F2", None, None)
+  val metadata = SequenceMetadata("F2", None)
 
   def simpleStep(id: Int, breakpoint: Boolean): Step[Action] =
     Step(
@@ -83,12 +83,13 @@ class SequenceSpec extends FlatSpec {
     val qs0: Engine.State =
       Engine.State(
         Conditions.default,
+        None,
         Map(
           (seqId,
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None, None),
+               SequenceMetadata("F2", None),
                List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
              )
            )
@@ -112,12 +113,13 @@ class SequenceSpec extends FlatSpec {
     val qs0: Engine.State =
       Engine.State(
         Conditions.default,
+        None,
         Map(
           (seqId,
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None, None),
+               SequenceMetadata("F2", None),
                List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
              )
            )
@@ -142,7 +144,6 @@ class SequenceSpec extends FlatSpec {
     }
 
   }
-
 
   // TODO: Share these fixtures with StepSpec
   val result = Result.OK(Result.Observed("dummyId"))

@@ -107,7 +107,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
                       .fold(Task.fail, Task.now)
                 u     <- se.load(inputQueue, obsId)
                 resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
-                  Ok(SequencesQueue[SequenceId](Conditions.default, List(oid))))
+                  Ok(SequencesQueue[SequenceId](Conditions.default, None, List(oid))))
               } yield resp
             }.handleWith {
               case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")

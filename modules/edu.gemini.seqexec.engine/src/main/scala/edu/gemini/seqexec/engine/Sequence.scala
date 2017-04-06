@@ -23,7 +23,7 @@ object Sequence {
 
   type Id = String
 
-  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None, None), Nil)
+  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None), Nil)
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
@@ -147,8 +147,6 @@ object Sequence {
 
     def setObserver(name: String): State
 
-    def setOperator(name: String): State
-
     /**
       * Current Execution
       */
@@ -227,8 +225,6 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
-      override def setOperator(name: String): State = operatorL.set(self, Some(name))
-
       override def setObserver(name: String): State = observerL.set(self, Some(name))
 
       override val done: List[Step[Result]] = zipper.done
@@ -238,9 +234,6 @@ object Sequence {
 
       private val metadataL: Zipper @> SequenceMetadata =
         zipperL >=> Lens.lensu((x, y) => x.copy(metadata = y), _.metadata)
-
-      private val operatorL: Zipper @> Option[String] =
-        metadataL >=> Lens.lensu((x, y) => x.copy(operator = y), _.operator)
 
       private val observerL: Zipper @> Option[String] =
         metadataL >=> Lens.lensu((x, y) => x.copy(observer = y), _.observer)
@@ -284,8 +277,6 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = false
 
-      override def setOperator(name: String): State = operatorL.set(self, Some(name))
-
       override def setObserver(name: String): State = observerL.set(self, Some(name))
 
       override val done: List[Step[Result]] = seq.steps
@@ -299,9 +290,6 @@ object Sequence {
 
       private val metadataL: Final @> SequenceMetadata =
         sequenceL >=> Lens.lensu((x, y) => x.copy(metadata = y), _.metadata)
-
-      private val operatorL: Final @> Option[String] =
-        metadataL >=> Lens.lensu((x, y) => x.copy(operator = y), _.operator)
 
       private val observerL: Final @> Option[String] =
         metadataL >=> Lens.lensu((x, y) => x.copy(observer = y), _.observer)
