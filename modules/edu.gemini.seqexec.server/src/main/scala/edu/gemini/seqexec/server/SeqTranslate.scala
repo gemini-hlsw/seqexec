@@ -128,7 +128,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def calcInstHeader(config: Config, inst: Resource.Instrument): TrySeq[Header] = inst match {
     case Resource.F2 =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
-      if(settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
+      if (settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
     case _           =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
@@ -137,14 +137,17 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
     if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader,
-    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader,
     // TODO: Replace Unit by something that can read the State
     StateKeywordsReader(Unit)
   ))
 
+  private val gcalHeaders: Header = new GcalHeader(
+    systems.dhs,
+    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader)
+
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[List[Header]] = stepType match {
     case CelestialObject(inst) => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(_ :: commonHeaders(config)) //TODO: Add GCAL keywords here
+    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(f => f :: gcalHeaders :: commonHeaders(config)) //TODO: Add GCAL keywords here
     case DarkOrBias(inst)      => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
     case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
   }

@@ -210,7 +210,6 @@ class StandardHeader(
   obsReader: ObsKeywordsReader,
   tcsReader: TcsKeywordsReader,
   gwsReader: GwsKeywordReader,
-  gcalReader: GcalKeywordReader,
   stateReader: StateKeywordsReader) extends Header {
 
   import Header._
@@ -293,16 +292,6 @@ class StandardHeader(
 
     val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
       List(buildDouble(tcsReader.getOiwfsFreq, "OIFREQ")))
-
-    val gcalKeywords = {
-      val keywords = List(
-        buildString(gcalReader.getDiffuser, "GCALDIFF"),
-        buildString(gcalReader.getFilter, "GCALFILT"),
-        buildString(gcalReader.getLamp, "GCALLAMP"),
-        buildString(gcalReader.getShutter, "GCALSHUT")
-      )
-      sendKeywords(id, inst, hs, keywords)
-    }
 
     val gwsKeywords = gwsReader.getHealth.flatMap{
       case Some(0) => sendKeywords(id, inst, hs, List(
@@ -472,10 +461,8 @@ class StandardHeader(
     pwfs2Keywords *>
     oiwfsKeywords *>
     aowfsKeywords *>
-    gwsKeywords *>
-    gcalKeywords
+    gwsKeywords
   }
-
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
     List(
