@@ -92,9 +92,9 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
     Meta[String].nxmap(Dataset.Label.unsafeFromString, _.toString)
 
-  // Enumerated by tag as string
+  // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
-    Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+    Distinct.string("identifier").nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
 
   // Java Log Levels (not nullable)
   implicit def levelMeta: Meta[Level] =
@@ -123,6 +123,15 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
         _ getInt _,
         FPS.setInt,
         FRS.updateInt
+      )
+
+    def string(name: String): Meta[String] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, VarChar),
+        NonEmptyList(name),
+        _ getString _,
+        FPS.setString,
+        FRS.updateString
       )
 
   }

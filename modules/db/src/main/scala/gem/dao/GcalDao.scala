@@ -18,10 +18,18 @@ object GcalDao {
 
   object Statements {
 
+    // CoAdds has a DISTINCT type due to its check constraint so we need a fine-grained mapping
+    // here to satisfy the query checker.
+    private case class CoAdds(toInt: Int)
+    private object CoAdds {
+      implicit val StepIdMeta: Meta[CoAdds] =
+        Distinct.integer("coadds").xmap(CoAdds(_), _.toInt)
+    }
+
     def insert(gcal: GcalConfig, step: Option[Int]): Update0 = {
       val arcs: GcalArc => Boolean = gcal.arcs.member
       sql"""INSERT INTO gcal (step_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
-            VALUES ($step, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${gcal.coadds})
+            VALUES ($step, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
          """.update
     }
 
