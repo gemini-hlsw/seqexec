@@ -10,8 +10,11 @@ object Resource {
 
   case object P1 extends Resource
   case object OI extends Resource
-  case object Mount extends Resource
-  case object ScienceFold extends Resource
+  // Mount and science fold cannot be controlled independently. Maybe in the future.
+  // For now, I replaced them with TCS
+//  case object Mount extends Resource
+//  case object ScienceFold extends Resource
+  case object TCS extends Resource
   case object Gcal extends Resource
   case object Gems extends Resource
   case object Altair extends Resource

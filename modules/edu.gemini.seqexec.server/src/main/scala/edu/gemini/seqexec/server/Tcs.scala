@@ -2,6 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
+import edu.gemini.seqexec.engine.Resource
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.spModel.config2.{Config, ItemKey}
@@ -13,13 +14,14 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scalaz.concurrent.Task
-import scalaz._, Scalaz._
-import squants.space.{ Millimeters, LengthConversions }
+import scalaz._
+import Scalaz._
+import squants.space.{LengthConversions, Millimeters}
 
 /**
  * Created by jluhrs on 4/23/15.
  */
-final case class Tcs(tcsController: TcsController) extends System {
+final case class Tcs(tcsController: TcsController, sfOnly: Boolean, scienceFoldPosition: ScienceFoldPosition) extends System {
 
   import Tcs._
   import MountGuideOption._
@@ -64,9 +66,18 @@ final case class Tcs(tcsController: TcsController) extends System {
     } yield ConfigResult(this)
   }
 
-  override def configure(config: Config): SeqAction[ConfigResult] = {
-    tcsController.getConfig.flatMap(configure(config, _))
+  private def configureAG(tcsState: TcsConfig): SeqAction[ConfigResult] = {
+    val agConfig = tcsState.agc.copy(sfPos = scienceFoldPosition)
+
+    Log.info("Applying AG configuration " + agConfig)
+
+    tcsController.applyScienceFoldConfig(agConfig).map(_ => ConfigResult(this))
   }
+
+  override def configure(config: Config): SeqAction[ConfigResult] = {
+    tcsController.getConfig.flatMap(if(sfOnly) configureAG(_) else configure(config, _))
+  }
+
 }
 
 object Tcs {

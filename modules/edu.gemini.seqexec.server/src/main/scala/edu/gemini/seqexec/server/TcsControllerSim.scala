@@ -72,4 +72,5 @@ object TcsControllerSim extends TcsController {
       } yield TrySeq(())
     )
 
+  override def applyScienceFoldConfig(agc: AGConfig): SeqAction[Unit] = SeqAction(Log.log(Level.INFO, "Applying AG configuration"))
 }

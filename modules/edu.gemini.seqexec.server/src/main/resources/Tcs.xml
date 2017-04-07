@@ -2442,6 +2442,48 @@
             <type>STRING</type>
             <description>Carousel Mode</description>
         </attribute>
+        <attribute name="f2Port">
+            <channel>port:f2.VAL</channel>
+            <type>INTEGER</type>
+            <description>FLAMINGOS-2 Port</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="gsaoiPort">
+            <channel>port:gsaoi.VAL</channel>
+            <type>INTEGER</type>
+            <description>GSAOI Port</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="nifsPort">
+            <channel>port:nifs.VAL</channel>
+            <type>INTEGER</type>
+            <description>NIFS Port</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="niriPort">
+            <channel>port:niri.VAL</channel>
+            <type>INTEGER</type>
+            <description>NIRI Port</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="nirsPort">
+            <channel>port:nirs.VAL</channel>
+            <type>INTEGER</type>
+            <description>GNIRS Port</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="gmosPort">
+            <channel>port:gmos.VAL</channel>
+            <type>INTEGER</type>
+            <description>GMOS Port</description>
+            <top>ag</top>
+        </attribute>
+        <attribute name="gpiPort">
+            <channel>port:gpi.VAL</channel>
+            <type>INTEGER</type>
+            <description>GPI Port</description>
+            <top>ag</top>
+        </attribute>
     </Status>
     <Status name="pwfs1state">
         <top>pwfs1</top>

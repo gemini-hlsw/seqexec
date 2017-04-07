@@ -9,7 +9,9 @@ import squants.time.Seconds
 import collection.JavaConversions._
 import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.epics.acm.{CaAttributeListener, CaService, XMLBuilder}
+import edu.gemini.seqexec.engine.Resource
 import edu.gemini.spModel.core.Wavelength
+import squants.Length
 import squants.space.{Angstroms, Degrees, Microns, Millimeters}
 
 import scalaz._
@@ -173,6 +175,17 @@ object TcsControllerEpics extends TcsController {
       GuiderSensorOptionAO(aoOn)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
 
+  private def getInstPort(inst: Resource.Instrument): Option[Int] = (inst match {
+    case Resource.GMOS  => TcsEpics.instance.gmosPort
+    case Resource.GSAOI => TcsEpics.instance.gsaoiPort
+    case Resource.F2    => TcsEpics.instance.f2Port
+    case Resource.GPI   => TcsEpics.instance.gpiPort
+    case Resource.NIRI  => TcsEpics.instance.niriPort
+    case Resource.GNIRS => TcsEpics.instance.gnirsPort
+    case Resource.NIFS  => TcsEpics.instance.nifsPort
+    case _              => None
+  }).flatMap(p => if (p == 0) None else Some(p))
+
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an
   // object
   private object CodexScienceFoldPosition {
@@ -182,34 +195,56 @@ object TcsControllerEpics extends TcsController {
 
     private val AO_PREFIX = "ao2"
     private val GCAL_PREFIX = "gcal2"
+    private val PARK_POS = "park-pos"
 
-    // I have the feeling this operation will be needed in other places
-    private def findInstrument(name: String): Instrument =
-      List(GmosSouth).find(x => name.startsWith(x.sfName)).getOrElse(UnknownInstrument)
+    final case class SFInstName(self: String) extends AnyVal
+    object SFInstName {
+      implicit val EqualSFInstName: Equal[SFInstName] =
+        Equal.equalA // natural equality here
+    }
 
-    implicit val decodeScienceFoldPosition: DecodeEpicsValue[String, Position] = DecodeEpicsValue((t: String)
-    => if (t.startsWith(AO_PREFIX)) Position(AO, findInstrument(t.substring(AO_PREFIX.length)))
-      else if (t.startsWith(GCAL_PREFIX)) Position(GCAL, findInstrument(t.substring(GCAL_PREFIX.length)))
-      else Position(Sky, findInstrument(t)))
+    val instNameMap: Map[Resource.Instrument, SFInstName] = Map(
+      Resource.GMOS  -> SFInstName("gmos"),
+      Resource.GSAOI -> SFInstName("gsaoi"),
+      Resource.F2    -> SFInstName("f2"),
+      Resource.GPI   -> SFInstName("gpi")
+    )
 
-    implicit val encodeScienceFoldPosition: EncodeEpicsValue[Position, String] = EncodeEpicsValue((a: Position)
-    => a.source match {
-        case Sky => a.sink.sfName
-        case AO => AO_PREFIX + a.sink.sfName
-        case GCAL => GCAL_PREFIX + a.sink.sfName
-      }
+    private def findInstrument(str: String): Option[Resource.Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)
+
+    implicit val decodeScienceFoldPosition: DecodeEpicsValue[String, Option[ScienceFoldPosition]] = DecodeEpicsValue(
+      (t: String) => if (t.startsWith(PARK_POS)) Parked.some
+        else if (t.startsWith(AO_PREFIX)) findInstrument(t.substring(AO_PREFIX.length)).map(Position(AO, _))
+        else if (t.startsWith(GCAL_PREFIX)) findInstrument(t.substring(GCAL_PREFIX.length)).map(Position(GCAL, _))
+        else findInstrument(t).map(Position(Sky, _))
+    )
+
+    implicit val encodeScienceFoldPosition: EncodeEpicsValue[Position, Option[String]] = EncodeEpicsValue((a: Position)
+    => {
+      val instAGName = for {
+        name <- instNameMap.get(a.sink)
+        port <- getInstPort(a.sink)
+      } yield name.self +  port.toString
+
+      instAGName.map(n => a.source match {
+        case Sky  => n
+        case AO   => AO_PREFIX + n
+        case GCAL => GCAL_PREFIX + n
+      })
+    }
     )
   }
 
   import CodexScienceFoldPosition._
 
   private def getScienceFoldPosition: Option[ScienceFoldPosition] = for {
-    sfPos <- TcsEpics.instance.sfName.map(decode[String, ScienceFoldPosition.Position])
+    sfPosOpt <- TcsEpics.instance.sfName.map(decode[String, Option[ScienceFoldPosition]])
+    sfPos    <- sfPosOpt
     sfParked <- TcsEpics.instance.sfParked.map {
       _ != 0
     }
   } yield if (sfParked) ScienceFoldPosition.Parked
-    else sfPos
+          else sfPos
 
   implicit val decodeHwrsPickupPosition: DecodeEpicsValue[String, HrwfsPickupPosition] = DecodeEpicsValue((t: String)
   => if (t.trim == "IN") HrwfsPickupPosition.IN
@@ -306,15 +341,20 @@ object TcsControllerEpics extends TcsController {
     _ <- setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, c.oiwfs.self)
   } yield TrySeq(())
 
+  // Special case: if source is the sky and the instrument is at the bottom port (port 1), the science fold must be parked.
   def setScienceFoldConfig(sfPos: ScienceFoldPosition): SeqAction[Unit] = sfPos match {
     case ScienceFoldPosition.Parked => TcsEpics.instance.scienceFoldParkCmd.mark
-    case p: ScienceFoldPosition.Position => TcsEpics.instance.scienceFoldPosCmd.setScfold(encode(p))
+    case p@ScienceFoldPosition.Position(LightSource.Sky, inst) => getInstPort(inst).flatMap(port =>
+      if (port == 1) TcsEpics.instance.scienceFoldParkCmd.mark.some
+      else encode(p).map(TcsEpics.instance.scienceFoldPosCmd.setScfold)
+    ).getOrElse(SeqAction(()))
+    case p: ScienceFoldPosition.Position => encode(p).map(TcsEpics.instance.scienceFoldPosCmd.setScfold).getOrElse(SeqAction(()))
   }
 
   implicit private val encodeHrwfsPickupPosition: EncodeEpicsValue[HrwfsPickupPosition, String] = EncodeEpicsValue((op: HrwfsPickupPosition)
   => op match {
-      case HrwfsPickupPosition.IN => "IN"
-      case HrwfsPickupPosition.OUT => "OUT"
+      case HrwfsPickupPosition.IN     => "IN"
+      case HrwfsPickupPosition.OUT    => "OUT"
       case HrwfsPickupPosition.Parked => "park-pos."
     })
 
@@ -331,7 +371,7 @@ object TcsControllerEpics extends TcsController {
 
   implicit private val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] = EncodeEpicsValue((op: MountGuideOption)
   => op match {
-      case MountGuideOn => "on"
+      case MountGuideOn  => "on"
       case MountGuideOff => "off"
     })
 
@@ -340,7 +380,7 @@ object TcsControllerEpics extends TcsController {
   implicit private val encodeM1GuideConfig: EncodeEpicsValue[M1GuideConfig, String] = EncodeEpicsValue((op: M1GuideConfig)
   => op match {
       case M1GuideOn(_) => "on"
-      case M1GuideOff => "off"
+      case M1GuideOff   => "off"
     })
 
   private def setM1Guide(c: M1GuideConfig): SeqAction[Unit] = TcsEpics.instance.m1GuideCmd.setState(encode(c))
@@ -348,7 +388,7 @@ object TcsControllerEpics extends TcsController {
   implicit private val encodeM2GuideConfig: EncodeEpicsValue[M2GuideConfig, String] = EncodeEpicsValue((op: M2GuideConfig)
   => op match {
       case M2GuideOn(_, _) => "on"
-      case M2GuideOff => "off"
+      case M2GuideOff      => "off"
     })
 
   private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.instance.m2GuideCmd.setState(encode(c))
@@ -373,6 +413,14 @@ object TcsControllerEpics extends TcsController {
     _ <- setM2Guide(gc.m2Guide)
     _ <- TcsEpics.instance.post
     _ <- EitherT(Task(Log.info("TCS guide command post").right))
+  } yield TrySeq(())
+
+  override def applyScienceFoldConfig(agc: AGConfig): SeqAction[Unit] = for {
+    _ <- setAGConfig(agc)
+    _ <- TcsEpics.instance.post
+    _ <- EitherT(Task(Log.info("AG configuration command post").right))
+    _ <- TcsEpics.instance.waitAGInPosition(Seconds(30))
+    _ <- EitherT(Task(Log.info("AG inposition").right))
   } yield TrySeq(())
 
 }
