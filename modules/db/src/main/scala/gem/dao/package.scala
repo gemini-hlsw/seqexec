@@ -16,6 +16,9 @@ import Scalaz._
 
 package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
+  // Uncomment to turn on statement logging
+  // implicit val han = LogHandler.jdkLogHandler
+
   type MaybeConnectionIO[A] = OptionT[ConnectionIO, A]
 
   object MaybeConnectionIO {
@@ -83,37 +86,37 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   // Program.Id as string
   implicit val ProgramIdMeta: Meta[Program.Id] =
-    Meta[String].nxmap(Program.Id.parse, _.toString)
+    Meta[String].xmap(Program.Id.parse, _.toString)
 
   // Observation.Id as string
   implicit val ObservationIdMeta: Meta[Observation.Id] =
-    Meta[String].nxmap(Observation.Id.unsafeFromString, _.toString)
+    Meta[String].xmap(Observation.Id.unsafeFromString, _.toString)
 
   // Dataset.Label as string
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
-    Meta[String].nxmap(Dataset.Label.unsafeFromString, _.toString)
+    Meta[String].xmap(Dataset.Label.unsafeFromString, _.toString)
 
   // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
-    Distinct.string("identifier").nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+    Distinct.string("identifier").xmap[A](ev.unsafeFromTag(_), ev.tag(_))
 
   // Site by tag as DISTINCT (identifier)
   implicit val SiteMeta: Meta[Site] =
-    Distinct.string("identifier").nxmap(Site.parse, _.displayName)
+    Distinct.string("identifier").xmap(Site.parse, _.abbreviation)
 
   // ProgramType by tag as DISTINCT (identifier)
   implicit val ProgramTypeMeta: Meta[ProgramType] =
-    Distinct.string("identifier").nxmap(s => ProgramType.read(s).getOrElse(throw InvalidEnum[ProgramType](s)), _.abbreviation)
+    Distinct.string("identifier").xmap(s => ProgramType.read(s).getOrElse(throw InvalidEnum[ProgramType](s)), _.abbreviation)
 
   // Java Log Levels (not nullable)
   implicit def levelMeta: Meta[Level] =
-    Meta[String].nxmap(Level.parse, _.getName)
+    Meta[String].xmap(Level.parse, _.getName)
 
   implicit val InstantMeta: Meta[Instant] =
-    Meta[Timestamp].nxmap(_.toInstant, Timestamp.from)
+    Meta[Timestamp].xmap(_.toInstant, Timestamp.from)
 
   implicit val LocationMeta: Meta[Location.Middle] =
-    Meta[List[Int]].nxmap(Location.unsafeMiddle(_), _.toList)
+    Meta[List[Int]].xmap(Location.unsafeMiddle(_), _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
     Meta[Long].xmap(Duration.ofMillis, _.toMillis)

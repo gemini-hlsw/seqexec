@@ -1,7 +1,9 @@
+resolvers in ThisBuild +=
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 lazy val argonautVersion          = "6.2-M3"
 lazy val kpVersion                = "0.8.0"
-lazy val doobieVersion            = "0.4.1"
+lazy val doobieVersion            = "0.4.2-SNAPSHOT"
 lazy val scalazVersion            = "7.2.4"
 lazy val shapelessVersion         = "2.3.1"
 lazy val argonautShapelessVersion = "1.2.0-M1"
@@ -22,7 +24,7 @@ lazy val commonSettings = Seq(
     "-feature",
     "-language:higherKinds",
     "-unchecked",
-    "-Xfatal-warnings",
+    // "-Xfatal-warnings",
     "-Xlint",
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
@@ -81,7 +83,8 @@ lazy val db = project
       |  "jdbc:postgresql:gem",
       |  "postgres",
       |  "")
-      |import xa.yolo._
+      |val y = xa.yolo
+      |import y._
     """.stripMargin.trim
   )
 

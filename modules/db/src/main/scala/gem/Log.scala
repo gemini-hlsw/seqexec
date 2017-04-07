@@ -7,7 +7,7 @@ import java.util.logging._
 import scalaz._, Scalaz._, scalaz.concurrent.Task
 
 /** Logger that logs to the database and a JDK logger, on its own thread, in effect type M. */
-class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], delay: Capture[M]) {
+class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task, _], delay: Capture[M]) {
 
   val jdkLogger: Logger =
     Logger.getLogger(name)
@@ -62,7 +62,7 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], d
 
 object Log {
 
-  def newLog[M[_]: Monad: Catchable](name: String, xa: Transactor[Task])(implicit delay: Capture[M]): M[Log[M]] =
+  def newLog[M[_]: Monad: Catchable](name: String, xa: Transactor[Task, _])(implicit delay: Capture[M]): M[Log[M]] =
     delay(new Log(name, xa, delay))
 
 }
