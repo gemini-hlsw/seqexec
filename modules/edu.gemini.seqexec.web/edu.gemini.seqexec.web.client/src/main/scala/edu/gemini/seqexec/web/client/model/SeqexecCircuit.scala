@@ -95,9 +95,9 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
       }))
 
     case FlipBreakpointStep(sequence, step) =>
-      val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequence, step).map(_ => NoAction))
+      val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequence, step.flipBreakpoint).map(_ => NoAction))
       updated(value.copy(queue = value.queue.collect {
-        case s if s == sequence => sequence.flipBreakpaintAtStep(step)
+        case s if s == sequence => sequence.flipBreakpointAtStep(step)
         case s                  => s
       }), breakpointRequest)
   }
