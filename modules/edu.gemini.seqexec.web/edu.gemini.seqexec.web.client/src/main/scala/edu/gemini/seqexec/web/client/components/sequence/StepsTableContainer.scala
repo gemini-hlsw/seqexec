@@ -153,7 +153,7 @@ object StepsTableContainer {
       }
 
     def selectRow(step: Step, index: Int): Callback =
-      Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})
+      $.props >>= { p => Callback.when(p.status.isLogged)(Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})) }
 
     def mouseEnter(index: Int): Callback =
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
@@ -165,10 +165,10 @@ object StepsTableContainer {
       $.modState(_.copy(onHover = None))
 
     def markAsSkipped(view: SequenceView, step: Step): Callback =
-      Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }
+      $.props >>= {p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }) }
 
     def breakpointAt(view: SequenceView, step: Step): Callback =
-      Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(view, step)) }
+      $.props >>= { p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(view, step)) }) }
 
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
