@@ -281,7 +281,7 @@ final class TcsEpics(epicsService: CaService) {
 
   def inPosition: Option[String] = Option(inPositionAttr.value)
 
-  val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
+  private val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
   def agInPosition: Option[Double] = Option(agInPositionAttr.value).map(_.doubleValue)
 
   object pwfs1ProbeGuideConfig extends ProbeGuideConfig("p1", tcsState)
@@ -290,11 +290,18 @@ final class TcsEpics(epicsService: CaService) {
 
   object oiwfsProbeGuideConfig extends ProbeGuideConfig("oi", tcsState)
 
+  // This functions returns a Task that, when run, will wait up to `timeout` seconds for the TCS in-position flag to
+  // set to TRUE
   def waitInPosition(timeout: Time): SeqAction[Unit] =
     EpicsCommand.safe(EitherT(Task.async[TrySeq[Unit]]((f) => {
+      //The task is created with Task.async. So we do whatever we need to do, adn then call `f` to signal the completion
+      // of the task.
 
+      //`resultGuard` and `lock` are used for synchronization.
       val resultGuard = new AtomicInteger(1)
       val lock = new ReentrantLock()
+
+      //`locked` gets a piece of code and runs it protected by `lock`
       def locked(f: => Unit): Unit = {
         lock.lock()
         try {
@@ -304,10 +311,15 @@ final class TcsEpics(epicsService: CaService) {
         }
       }
 
+      // First we verify that the in-position flag is not already active.
       if (!inPositionAttr.values().isEmpty && inPositionAttr.value == "TRUE") {
         f(TrySeq(()).right)
       } else {
 
+        // If not, we set a timer for the timeout, and a listener for the EPICS channel corresponding to the TCS
+        // in-position flag.
+        // The timer and the listener can both complete the Task. The first one to do it cancels the other. The use of
+        // `resultGuard` guarantees that only one of them will complete the Task.
         val timer = new Timer
         val statusListener = new CaAttributeListener[String] {
 
@@ -318,6 +330,7 @@ final class TcsEpics(epicsService: CaService) {
                 timer.cancel()
               }
 
+              // This `right` looks a bit confusing because is not related to the `TrySeq`, but to the result of `Task`.
               f(TrySeq(()).right)
             }
           }
@@ -343,6 +356,7 @@ final class TcsEpics(epicsService: CaService) {
       }
     })))
 
+  // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
   def waitAGInPosition(timeout: Time): SeqAction[Unit] =
     EpicsCommand.safe(EitherT(Task.async[TrySeq[Unit]]((f) => {
 
