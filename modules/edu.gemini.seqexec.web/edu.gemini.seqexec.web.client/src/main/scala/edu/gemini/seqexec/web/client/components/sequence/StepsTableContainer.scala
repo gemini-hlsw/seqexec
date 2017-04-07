@@ -146,7 +146,7 @@ object StepsTableContainer {
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
-        case StepState.Error(msg)                  => stepInError(p.status.isLogged, p.s, msg)
+        case StepState.Error(msg)                 => stepInError(p.status.isLogged, p.s, msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)

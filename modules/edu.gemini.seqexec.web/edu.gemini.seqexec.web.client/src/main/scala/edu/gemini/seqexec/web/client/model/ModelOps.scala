@@ -57,9 +57,9 @@ object ModelOps {
         //case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation, AbortObservation)
         // Regular instrument that support pause/stop/abort
         case "Flamingos2" if s.status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
-        case "Flamingos2" if step.hasError => List(ResumeObservation, AbortObservation)
-        case "Flamingos2" if step.status == StepState.Paused  => List(ResumeObservation, StopObservation, AbortObservation)
-        case _                                               => Nil
+        case "Flamingos2" if step.hasError                     => List(ResumeObservation, AbortObservation)
+        case "Flamingos2" if step.status == StepState.Paused   => List(ResumeObservation, StopObservation, AbortObservation)
+        case _                                                 => Nil
       }
 
     /**
@@ -68,7 +68,7 @@ object ModelOps {
      */
     def allowedSequenceOperations: List[SequenceOperations] = Nil
 
-    def flipBreakpaintAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
+    def flipBreakpointAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
       case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
       case st               => st
     })
@@ -92,6 +92,11 @@ object ModelOps {
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {
+    def flipBreakpoint: Step = s match {
+      case st: StandardStep => st.copy(breakpoint = !st.breakpoint)
+      case st               => st
+    }
+
     def file: Option[String] = None
 
     def canSetBreakpoint: Boolean = s.status match {
