@@ -126,7 +126,7 @@ object StepDao {
   private case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
-    gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalFilter], Option[GcalDiffuser], Option[GcalShutter], Option[Duration], Option[Int]),
+    gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalFilter], Option[GcalDiffuser], Option[GcalShutter], Option[Duration], Option[Short]),
     telescope: (Option[OffsetP],  Option[OffsetQ]),
     smartGcalType: Option[SmartGcalType])
   {
@@ -354,7 +354,7 @@ object StepDao {
     def insertBaseSlice(oid: Observation.Id, loc: Loc, i: InstrumentConfig, t: StepType): Update0 =
       sql"""
         INSERT INTO step (observation_id, location, instrument, step_type)
-        VALUES ($oid, $loc, ${Instrument.forConfig(i).tag}, ${t.tag} :: step_type)
+        VALUES ($oid, $loc, ${Instrument.forConfig(i)}, ${t} :: step_type)
       """.update
 
   }

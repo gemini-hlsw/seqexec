@@ -72,9 +72,11 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
       EitherConnectionIO.right[A, T](c)
   }
 
-  // Angle mapping to signed arcseconds. NOT implicit.
+  // Angle mapping to signed arcseconds via NUMERIC. NOT implicit.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
-    Meta[Double].xmap(Angle.fromArcsecs, _.toSignedDegrees * 3600)
+    Meta[BigDecimal]
+      .xmap[Double](_.toDouble, BigDecimal(_))
+      .xmap[Angle](Angle.fromArcsecs, _.toSignedDegrees * 3600)
 
   // OffsetP maps to a signed angle in arcseconds
   implicit val OffsetPMeta: Meta[OffsetP] =
@@ -119,7 +121,7 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
     Meta[List[Int]].xmap(Location.unsafeMiddle(_), _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
-    Meta[Long].xmap(Duration.ofMillis, _.toMillis)
+    Distinct.long("milliseconds").xmap(Duration.ofMillis, _.toMillis)
 
   /**
    * Constructor for a Meta instances with an underlying types that are reported by JDBC as
@@ -135,6 +137,24 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
         _ getInt _,
         FPS.setInt,
         FRS.updateInt
+      )
+
+    def long(name: String): Meta[Long] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, BigInt),
+        NonEmptyList(name),
+        _ getLong _,
+        FPS.setLong,
+        FRS.updateLong
+      )
+
+    def short(name: String): Meta[Short] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, SmallInt),
+        NonEmptyList(name),
+        _ getShort _,
+        FPS.setShort,
+        FRS.updateShort
       )
 
     def string(name: String): Meta[String] =

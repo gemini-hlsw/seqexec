@@ -4,7 +4,7 @@ package check
 import gem._
 import gem.enum._
 import gem.config._
-import edu.gemini.spModel.core.{ Site, ProgramType, Semester }
+import edu.gemini.spModel.core.{ Site, ProgramType, Semester, _ }
 
 import doobie.imports._
 import doobie.scalatest.imports._
@@ -50,6 +50,13 @@ trait Check extends FlatSpec with Matchers with QueryChecker {
     val f2SmartGcalKey   = F2SmartGcalKey(F2Disperser.NoDisperser, F2Filter.Dark, F2FpUnit.LongSlit1)
     val gcalLampType     = GcalLampType.Arc
     val gcalBaselineType = GcalBaselineType.Day
+    val locationMiddle   = Location.unsafeMiddle(1)
+    val f2Config         = F2Config(F2Disperser.NoDisperser, duration, F2Filter.Dark, F2FpUnit.LongSlit1,
+      F2LyotWheel.F16, false, F2ReadMode.Bright, F2WindowCover.Close)
+    val telescopeConfig  = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
+    val smartGcalType    = SmartGcalType.Arc
+    val instrumentConfig = f2Config
+    val stepType         = StepType.Science
   }
 
 

@@ -10,7 +10,7 @@ import Scalaz._
 
 import GcalConfig.GcalLamp
 
-case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Int) {
+case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Short) {
   def continuum: Option[GcalContinuum] =
     lamp.swap.toOption
 
@@ -51,4 +51,3 @@ object GcalConfig {
       }
   }
 }
-

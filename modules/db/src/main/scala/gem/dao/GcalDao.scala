@@ -20,10 +20,10 @@ object GcalDao {
 
     // CoAdds has a DISTINCT type due to its check constraint so we need a fine-grained mapping
     // here to satisfy the query checker.
-    private case class CoAdds(toInt: Int)
+    private case class CoAdds(toShort: Short)
     private object CoAdds {
       implicit val StepIdMeta: Meta[CoAdds] =
-        Distinct.integer("coadds").xmap(CoAdds(_), _.toInt)
+        Distinct.short("coadds").xmap(CoAdds(_), _.toShort)
     }
 
     def insert(gcal: GcalConfig, step: Option[Int]): Update0 = {
@@ -63,7 +63,7 @@ object GcalDao {
       {
         def toGcalConfig: Option[GcalConfig] =
           GcalLamp.fromConfig(continuum, ArArc -> ar_arc, CuArArc -> cuar_arc, ThArArc -> thar_arc, XeArc -> xe_arc).map { lamp =>
-            GcalConfig(lamp, filter, diffuser, shutter, expTime, coadds.toInt)
+            GcalConfig(lamp, filter, diffuser, shutter, expTime, coadds)
           }
       }
   }
