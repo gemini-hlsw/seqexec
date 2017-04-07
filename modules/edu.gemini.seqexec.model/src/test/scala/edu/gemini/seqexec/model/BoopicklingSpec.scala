@@ -17,8 +17,9 @@ object SharedModelArbitraries {
   def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
     for {
       b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
-      o <- Gen.option(Gen.alphaStr)
-    } yield SequencesQueue(Conditions.default, o, b)
+      // We are already testing serialization of conditions and Strings
+      // Let's reduce the test space by only testing the list of items
+    } yield SequencesQueue(Conditions.default, Some("operator"), b)
   }
 
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]
@@ -38,6 +39,10 @@ object SharedModelArbitraries {
   implicit val opArb  = implicitly[Arbitrary[OperatorUpdated]]
   implicit val obArb  = implicitly[Arbitrary[ObserverUpdated]]
   implicit val iqArb  = implicitly[Arbitrary[ImageQuality]]
+  implicit val wvArb  = implicitly[Arbitrary[WaterVapor]]
+  implicit val sbArb  = implicitly[Arbitrary[SkyBackground]]
+  implicit val ccArb  = implicitly[Arbitrary[CloudCover]]
+  implicit val conArb = implicitly[Arbitrary[Conditions]]
 }
 
 /**
@@ -103,5 +108,17 @@ class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with Mo
     }
     it should "pickle/depickle ImageQuality" in {
       testPickleUnpickle[ImageQuality]
+    }
+    it should "pickle/depickle WaterVapor" in {
+      testPickleUnpickle[WaterVapor]
+    }
+    it should "pickle/depickle SkyBackground" in {
+      testPickleUnpickle[SkyBackground]
+    }
+    it should "pickle/depickle CloudCover" in {
+      testPickleUnpickle[CloudCover]
+    }
+    it should "pickle/depickle Conditions" in {
+      testPickleUnpickle[Conditions]
     }
 }

@@ -20,6 +20,8 @@ resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw
 // Add e.g. a `jres.sbt` file with your particular configuration
 ocsJreDir in ThisBuild := Path.userHome / ".jres8"
 
+parallelExecution in (ThisBuild, Test) := false
+
 lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .settings(commonSettings: _*)
