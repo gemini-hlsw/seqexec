@@ -110,7 +110,7 @@ object StepsTableContainer {
 
     def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): ReactNode =
       <.div(
-        ^.cls := "ui two column grid",
+        ^.cls := "ui two column grid stackable",
         <.div(
           ^.cls := "ui row",
           <.div(
@@ -121,7 +121,7 @@ object StepsTableContainer {
             )
           ),
           loggedIn ?= <.div(
-            ^.cls := "right column ten wide right floated",
+            ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             <.div(
               ^.cls := "ui icon buttons",
               observationControlButtons(sequenceView, step)
