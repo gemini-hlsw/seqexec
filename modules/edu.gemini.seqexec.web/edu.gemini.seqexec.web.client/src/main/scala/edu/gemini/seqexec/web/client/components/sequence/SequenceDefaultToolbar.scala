@@ -101,11 +101,11 @@ object SequenceDefaultToolbar {
             "Sequence completed"
           ),
         <.div(
-          ^.cls := "ui two column grid",
+          ^.cls := "ui column grid",
           <.div(
             ^.cls := "ui row",
             <.div(
-              ^.cls := "left bottom aligned six wide column",
+              ^.cls := "left bottom aligned seven wide column computer tablet only",
               p.status.isLogged && p.s.hasError ?=
                 Button(
                   Button.Props(
@@ -153,7 +153,7 @@ object SequenceDefaultToolbar {
               <.div(
                 ^.cls := "right column",
                 ^.classSet(
-                  "ten wide" -> p.status.isLogged,
+                  "nine wide computer nine wide tablet sixteen wide mobile" -> p.status.isLogged,
                   "sixteen wide" -> !p.status.isLogged
                 ),
                 SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
