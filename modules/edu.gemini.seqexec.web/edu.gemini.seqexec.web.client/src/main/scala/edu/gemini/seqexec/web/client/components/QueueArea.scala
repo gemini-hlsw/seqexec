@@ -136,6 +136,7 @@ object QueueAreaTitle {
         p.user().fold(<.div()) { _ =>
           <.div(
             ^.cls := "right menu",
+            SeqexecStyles.notInMobile,
             statusAndSearchResultsConnect(SequenceSearch.apply)
           )
         }

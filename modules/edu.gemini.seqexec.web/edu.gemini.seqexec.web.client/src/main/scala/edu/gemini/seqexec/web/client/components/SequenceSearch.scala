@@ -39,48 +39,6 @@ object LoadSequenceResultsHeader {
 }
 
 /**
-  * Displays the results of the search
-  * NOTE This component is not in use at the moment
-  */
-object SequenceSearchResultsBody {
-  case class Props(model: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]) {
-    def searchResults: Pot[SequencesQueue[SequenceId]] = model()._2
-    def status: ClientStatus = model()._1
-  }
-
-  def addToQueue[A](p: ModelProxy[A], u: SequenceId): Callback = Callback.empty
-
-  def removeFromResults[A](p: ModelProxy[A], u: SequenceId):Callback = Callback.empty
-
-  def onAdding[A](p: ModelProxy[A], u: SequenceId):Callback = addToQueue(p, u) >> removeFromResults(p, u)
-
-  private val component = ReactComponentB[Props]("SequenceSearchResultBody")
-    .stateless
-    .render_P(p =>
-      <.tbody(
-        p.searchResults.renderReady(s => s.queue.zipWithIndex.collect { case (u, i) =>
-            <.tr(
-              ^.key := i,
-              <.td(
-                ^.cls := "collapsing",
-                u
-              ),
-              <.td(
-                ^.cls := "collapsing",
-                Button(Button.Props(icon = Some(IconPlus), circular = true,
-                  onClick = onAdding(p.model, u), disabled = !p.status.isConnected))
-              )
-            )
-          }
-        )
-      )
-    )
-    .build
-
-  def apply(p: ModelProxy[(ClientStatus, Pot[SequencesQueue[SequenceId]])]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
-}
-
-/**
   * Shows a table with search results
   */
 object SequenceLoad {
