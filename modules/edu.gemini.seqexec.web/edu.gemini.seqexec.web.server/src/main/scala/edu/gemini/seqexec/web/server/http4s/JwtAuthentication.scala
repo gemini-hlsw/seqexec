@@ -10,7 +10,6 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 
-
 trait CookiesService {
   def name: String
   def ssl: Boolean
@@ -22,6 +21,8 @@ trait CookiesService {
     Cookie(name, token, path = "/".some, expires = exp.some, secure = ssl, httpOnly = true)
   }
 
+  def loginCookie(auth: AuthenticationService, user: UserDetails): Task[Cookie] =
+    auth.buildToken(user) >>= buildCookie
 }
 
 object CookiesService {
@@ -49,11 +50,11 @@ case class JwtAuthentication(auth: AuthenticationService, override val optionalA
   def loginCookie(user: UserDetails): Task[Cookie] =
     auth.buildToken(user) >>= cookieService.buildCookie
 
-  override def apply(service: HttpService): HttpService = super.apply(service).andThenK { (resp: Response) =>
+  /*override def apply(service: HttpService): HttpService = super.apply(service).andThenK { (resp: MaybeResponse) =>
     // If the user has the attribute replace the cookie
     resp.attributes.get(JwtAuthentication.authenticatedUser).flatten.fold(Task.delay(resp)){ user =>
       loginCookie(user) >>= { cookie => Task.delay(resp.addCookie(cookie)) }
     }
-  }
+  }*/
 }
 

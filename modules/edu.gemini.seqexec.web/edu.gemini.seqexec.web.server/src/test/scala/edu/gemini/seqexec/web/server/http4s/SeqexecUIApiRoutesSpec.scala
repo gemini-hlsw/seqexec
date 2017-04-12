@@ -14,7 +14,7 @@ import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server.SeqexecEngine.Settings
 import org.http4s._
 import org.http4s.headers.`Set-Cookie`
-import org.http4s.util.CaseInsensitiveStringSyntax
+import org.http4s.syntax.StringSyntax
 import org.http4s.websocket.WebsocketBits
 import scodec.bits.ByteVector
 import squants.time._
@@ -29,7 +29,7 @@ import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.{Queue, Topic}
 import org.scalatest.{FlatSpec, Matchers}
 
-class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with CaseInsensitiveStringSyntax {
+class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with StringSyntax {
   val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
   val authService = AuthenticationService(config)
@@ -37,28 +37,28 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()
   val queues: (Queue[Event], Topic[SeqexecEvent]) = (inq, out)
 
-  val service: Service[Request, Response] = new SeqexecUIApiRoutes(authService, queues, engine).service
+  val service: Service[Request, MaybeResponse] = new SeqexecUIApiRoutes(authService, queues, engine).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {
-      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).unsafePerformSync.status should equal(Status.BadRequest)
+      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).unsafePerformSync.orNotFound.status should equal(Status.BadRequest)
     }
     it should "reject GET requests" in {
       // This should in principle return a 405
       // see https://github.com/http4s/http4s/issues/234
-      service.apply(Request(uri = uri("/seqexec/login"))).unsafePerformSync.status should equal(Status.NotFound)
+      service.apply(Request(uri = uri("/seqexec/login"))).unsafePerformSync.orNotFound.status should equal(Status.NotFound)
     }
     it should "reject requests with string body" in {
       val b = emit(ByteVector.view("hello".getBytes(StandardCharsets.UTF_8)))
-      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafePerformSync.status should equal(Status.BadRequest)
+      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafePerformSync.orNotFound.status should equal(Status.BadRequest)
     }
     it should "not authorize requests with unmatching credentials" in {
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("a", "b"))))
-      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafePerformSync.status should equal(Status.Unauthorized)
+      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafePerformSync.orNotFound.status should equal(Status.Unauthorized)
     }
     it should "authorize requests with matching credentials and return a Cookie" in {
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
-      val response: Response = service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafePerformSync
+      val response: Response = service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafePerformSync.orNotFound
       response.status should equal(Status.Ok)
       atLeast (1, response.headers.toList.map(_.name)) should be ("Set-Cookie".ci)
       val cookieHeader = response.headers.find(_.name === "Set-Cookie".ci)
@@ -76,14 +76,14 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
     "reject GET requests" in {
       // This should in principle return a 405
       // see https://github.com/http4s/http4s/issues/234
-      service.apply(Request(uri = uri("/seqexec/logout"))).unsafePerformSync.status should equal(Status.NotFound)
+      service.apply(Request(uri = uri("/seqexec/logout"))).unsafePerformSync.orNotFound.status should equal(Status.NotFound)
     }
     it should "remove the cookie on logout" in {
       // First make a valid cookie
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
       for {
         loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
-        cookieHeader = loginResp.headers.find(_.name === "Set-Cookie".ci)
+        cookieHeader = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
         setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
         logoutResp   <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout")).addCookie(setCookie.cookie)).map(Option.apply))
       } yield logoutResp
@@ -102,7 +102,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       val openEvent =
         for {
           response   <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*)).map(Option.apply))
-          exchange   <- OptionT(Task.now(response.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
+          exchange   <- OptionT(Task.now(response.orNotFound.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
           frames     <- OptionT(exchange.run(Process.empty).take(1).runLog.map(Option.apply))
           firstFrame <- OptionT(Task.now(frames.headOption.collect {case WebsocketBits.Binary(data, _) => data}))
           firstEvent <- OptionT(Task.now(Unpickle[SeqexecEvent].fromBytes(ByteBuffer.wrap(firstFrame))).map(Option.apply))
@@ -116,10 +116,10 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       val openEvent =
         for {
           loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
-          cookieHeader =  loginResp.headers.find(_.name === "Set-Cookie".ci)
+          cookieHeader =  loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
           setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
           response     <- OptionT(service.apply(Request(uri = uri("/seqexec/events"), method = Method.GET).putHeaders(handshakeHeaders: _*).addCookie(setCookie.cookie)).map(Option.apply))
-          exchange     <- OptionT(Task.now(response.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
+          exchange     <- OptionT(Task.now(response.orNotFound.attributes.get(org.http4s.server.websocket.websocketKey).map(_.exchange)))
           frames       <- OptionT(exchange.run(Process.empty).take(1).runLog.map(Option.apply))
           firstFrame   <- OptionT(Task.now(frames.headOption.collect {case WebsocketBits.Binary(data, _) => data}))
           firstEvent   <- OptionT(Task.now(Unpickle[SeqexecEvent].fromBytes(ByteBuffer.wrap(firstFrame))).map(Option.apply))
