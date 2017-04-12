@@ -9,7 +9,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.security.AuthenticationService
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, HttpAuthentication}
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.spModel.core.SPBadIDException
@@ -35,6 +35,10 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 
+  // Handles authentication
+  val httpAuthentication = new HttpAuthentication(auth)
+  val middleware = AuthMiddleware(httpAuthentication.optAuthUser)
+
   val (inputQueue, engineOutput) = events
 
   /**
@@ -57,7 +61,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         auth.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // if successful set a cookie
-            cookieService.loginCookie(auth, user) >>= { cookie => Ok(user).addCookie(cookie) }
+            httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
@@ -81,10 +85,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         Ok()
       }
   }
-
-  val authUser: Kleisli[Task, Request, AuthResult] = Kleisli(_ => Task.delay(???))
-
-  val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
 
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
@@ -112,8 +112,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
           case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")
         }
     }
-
-  val middleware = AuthMiddleware(authUser)
 
   def service = publicService || middleware(protectedServices) || logService
 }
