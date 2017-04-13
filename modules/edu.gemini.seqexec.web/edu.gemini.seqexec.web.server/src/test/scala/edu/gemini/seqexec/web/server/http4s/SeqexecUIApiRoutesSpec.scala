@@ -81,12 +81,15 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
     it should "remove the cookie on logout" in {
       // First make a valid cookie
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
-      for {
+      val logout = for {
         loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
         cookieHeader = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
         setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
         logoutResp   <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/logout")).addCookie(setCookie.cookie)).map(Option.apply))
-      } yield logoutResp
+      } yield logoutResp.orNotFound
+      val cookieOpt = logout.run.unsafePerformSync.flatMap(_.headers.find(_.name === "Set-Cookie".ci).flatMap(u => `Set-Cookie`.parse(u.value).toOption))
+      // On logout we clear the cookie
+      cookieOpt.map(_.cookie.content) shouldBe Some("")
     }
 
   val handshakeHeaders: List[Header] = List(
