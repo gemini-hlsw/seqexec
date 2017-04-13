@@ -3,8 +3,10 @@ package edu.gemini.seqexec.web.server.security
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
-import org.http4s.{Request, Cookie}
+import org.http4s.{AuthedService, Request, Cookie}
+import org.http4s.dsl._
 import org.http4s.headers
+import org.http4s.server.AuthMiddleware
 
 import scalaz._
 import Scalaz._
@@ -28,6 +30,11 @@ class Http4sAuthentication(auth: AuthenticationService) {
     } yield user
     Task.delay(authResult)
   })
+
+  val optAuth = AuthMiddleware(authUser)
+
+  val onFailure: AuthedService[AuthenticationFailure] = Kleisli(req => Forbidden())
+  val reqAuth = AuthMiddleware(authUser, onFailure)
 
 }
 

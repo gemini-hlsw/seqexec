@@ -17,7 +17,6 @@ import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
 import org.http4s.server.websocket._
-import org.http4s.server.AuthMiddleware
 import org.http4s.websocket.WebsocketBits._
 import org.http4s.server.middleware.GZip
 
@@ -37,7 +36,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
 
   // Handles authentication
   val httpAuthentication = new Http4sAuthentication(auth)
-  val middleware = AuthMiddleware(httpAuthentication.authUser)
 
   val (inputQueue, engineOutput) = events
 
@@ -113,5 +111,5 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         }
     }
 
-  def service = publicService || middleware(protectedServices) || logService
+  def service = publicService || httpAuthentication.optAuth(protectedServices) || logService
 }
