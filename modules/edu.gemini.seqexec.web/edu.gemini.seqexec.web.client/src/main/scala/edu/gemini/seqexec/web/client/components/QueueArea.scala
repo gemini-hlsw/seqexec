@@ -5,10 +5,11 @@ import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCheckmark, IconCircleNotched, IconAttention}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react._
+import org.scalajs.dom.html.TableRow
 
 import scala.scalajs.js
 import scalacss.ScalaCssReact._
@@ -20,7 +21,7 @@ object QueueTableBody {
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
-  def emptyRow(k: String, sectionOpen: SectionVisibilityState) = {
+  def emptyRow(k: String, sectionOpen: SectionVisibilityState): ReactTagOf[TableRow] = {
     <.tr(
       ^.key := k, // React requires unique keys
       <.td(iconEmpty),
@@ -46,7 +47,7 @@ object QueueTableBody {
     // Request to display the selected sequence
     p.sequences.dispatchCB(SelectToDisplay(s))
 
-  val component = ReactComponentB[Props]("QueueTableBody")
+  private val component = ReactComponentB[Props]("QueueTableBody")
     .render_P( p =>
       <.tbody(
         // Render after data arrives
@@ -95,7 +96,7 @@ object QueueTableBody {
     )
     .build
 
-  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences], s: SectionVisibilityState) = component(Props(p, s))
+  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences], s: SectionVisibilityState): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p, s))
 
 }
 
@@ -105,7 +106,7 @@ object QueueTableBody {
 object LoadingErrorMsg {
   case class Props(queue :ModelProxy[SeqexecAppRootModel.LoadedSequences])
 
-  val component = ReactComponentB[Props]("LoadingErrorMessage")
+  private val component = ReactComponentB[Props]("LoadingErrorMessage")
     .stateless
     .render_P( p =>
       <.div(
@@ -116,43 +117,44 @@ object LoadingErrorMsg {
     )
     .build
 
-  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p))
+  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
 }
 
 /**
   * Component for the title of the queue area, including the search component
   */
 object QueueAreaTitle {
-  val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults, "key.queue.search": js.Any)
-  val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue.area": js.Any)
+  private val statusAndSearchResultsConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndSearchResults, "key.queue.search": js.Any)
+  private val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue.area": js.Any)
 
   case class Props(user: ModelProxy[Option[UserDetails]])
 
-  val component = ReactComponentB[Props]("QueueAreaTitle")
+  private val component = ReactComponentB[Props]("QueueAreaTitle")
     .stateless
     .render_P(p =>
       TextMenuSegment("Night Queue", "key.queue.menu",
         p.user().fold(<.div()) { _ =>
           <.div(
             ^.cls := "right menu",
+            SeqexecStyles.notInMobile,
             statusAndSearchResultsConnect(SequenceSearch.apply)
           )
         }
       )
     ).build.withKey("key.area.title")
 
-  def apply(user: ModelProxy[Option[UserDetails]]) = component(Props(user))
+  def apply(user: ModelProxy[Option[UserDetails]]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(user))
 }
 
 /**
   * Container for the queue table
   */
 object QueueTableSection {
-  val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue": js.Any)
+  private val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue": js.Any)
 
   case class Props(opened: SectionVisibilityState)
 
-  val component = ReactComponentB[Props]("QueueTableSection")
+  private val component = ReactComponentB[Props]("QueueTableSection")
     .stateless
     .render_P(p =>
       <.div(
@@ -186,7 +188,7 @@ object QueueTableSection {
       )
     ).build
 
-  def apply(p: SectionVisibilityState) = component(Props(p))
+  def apply(p: SectionVisibilityState): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
 
 }
 
@@ -194,12 +196,12 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  val sequencesConnect = SeqexecCircuit.connect(_.sequences)
-  val userConnect = SeqexecCircuit.connect(_.user)
+  private val sequencesConnect = SeqexecCircuit.connect(_.sequences)
+  private val userConnect = SeqexecCircuit.connect(_.user)
 
   case class Props(searchArea: ModelProxy[SectionVisibilityState])
 
-  val component = ReactComponentB[Props]("QueueArea")
+  private val component = ReactComponentB[Props]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -228,6 +230,6 @@ object QueueArea {
     )
     .build
 
-  def apply(p: ModelProxy[SectionVisibilityState]) = component(Props(p))
+  def apply(p: ModelProxy[SectionVisibilityState]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
 
 }

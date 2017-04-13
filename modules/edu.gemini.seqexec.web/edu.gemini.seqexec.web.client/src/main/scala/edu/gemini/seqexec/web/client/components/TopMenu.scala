@@ -66,6 +66,7 @@ object TopMenu {
     .render_P( p =>
       <.div(
         ^.cls := "ui secondary right menu",
+        SeqexecStyles.notInMobile,
         p.i.u.fold(
           <.div(
             ^.cls := "ui item",

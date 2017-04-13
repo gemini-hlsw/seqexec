@@ -70,6 +70,7 @@ object SeqexecStyles extends StyleSheet.Inline {
 
   val queueListPane: StyleA = style {
     maxHeight(13.1.em)
+    marginTop(0.px).important
   }
 
   val searchResultListPane: StyleA = style {
@@ -129,7 +130,7 @@ object SeqexecStyles extends StyleSheet.Inline {
     color.inherit,
     padding(0.5.em, 0.5.em, 0.5.em, 0.em),
     noMargin,
-    (boxShadow := ("none")).important
+    (boxShadow := "none").important
   )
 
   // CSS for a segment where a step is running

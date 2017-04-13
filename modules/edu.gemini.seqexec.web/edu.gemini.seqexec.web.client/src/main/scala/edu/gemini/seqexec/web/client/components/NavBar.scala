@@ -25,28 +25,32 @@ object NavBar {
       <.div(
         SeqexecStyles.mainContainer,
         <.div(
-          ^.cls := "ui container",
+          ^.cls := "ui container five column stackable grid",
           <.div(
-            ^.href :="#",
-            ^.cls := "ui header item",
-            <.img(
-              ^.cls := "logo",
-              ^.src :="images/launcher.png"
+            ^.cls := "ui row",
+            <.div(
+              ^.href :="#",
+              ^.cls := "ui header item",
+              <.img(
+                ^.cls := "logo",
+                ^.src :="images/launcher.png"
+              ),
+              "Seqexec"
             ),
-            "Seqexec"
-          ),
-          <.div(
-            ^.cls := "header item",
-            OcsBuildInfo.version
-          ),
-          TagMod.devOnly(
             <.div(
               ^.cls := "header item",
-              IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
-            )
-          ),
-          wsConnect(ConnectionState.apply),
-          userConnect(TopMenu.apply)
+              OcsBuildInfo.version
+            ),
+            TagMod.devOnly(
+              <.div(
+                ^.cls := "header item",
+                SeqexecStyles.notInMobile,
+                IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
+              )
+            ),
+            wsConnect(ConnectionState.apply),
+            userConnect(TopMenu.apply)
+          )
         )
       )
     )
