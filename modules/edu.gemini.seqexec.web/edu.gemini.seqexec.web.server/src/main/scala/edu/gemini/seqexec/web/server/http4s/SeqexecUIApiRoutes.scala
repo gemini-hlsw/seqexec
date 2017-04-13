@@ -111,5 +111,5 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         }
     }
 
-  def service = publicService || httpAuthentication.optAuth(protectedServices) || logService
+  def service = publicService || GZip(httpAuthentication.optAuth(protectedServices)) || logService
 }

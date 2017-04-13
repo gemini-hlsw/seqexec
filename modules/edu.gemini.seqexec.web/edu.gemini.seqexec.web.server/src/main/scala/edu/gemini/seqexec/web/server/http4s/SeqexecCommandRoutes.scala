@@ -107,5 +107,5 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
 
   }
 
-  val service = httpAuthentication.reqAuth(commandServices)
+  val service = GZip(httpAuthentication.reqAuth(commandServices))
 }
