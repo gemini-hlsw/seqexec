@@ -9,7 +9,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.security.{AuthenticationService, HttpAuthentication}
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication}
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.spModel.core.SPBadIDException
@@ -36,8 +36,8 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
   val clientLog = Logger.getLogger("clients")
 
   // Handles authentication
-  val httpAuthentication = new HttpAuthentication(auth)
-  val middleware = AuthMiddleware(httpAuthentication.optAuthUser)
+  val httpAuthentication = new Http4sAuthentication(auth)
+  val middleware = AuthMiddleware(httpAuthentication.authUser)
 
   val (inputQueue, engineOutput) = events
 

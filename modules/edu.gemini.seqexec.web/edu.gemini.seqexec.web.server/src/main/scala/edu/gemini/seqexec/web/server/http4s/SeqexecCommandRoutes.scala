@@ -8,7 +8,7 @@ import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, Sky
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.AuthenticationService
-import edu.gemini.seqexec.web.server.security.{AuthenticationService, HttpAuthentication}
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication}
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
 import org.http4s._
@@ -27,8 +27,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
 
   val commands = Commands(se.odbProxy)
   // Handles authentication
-  val httpAuthentication = new HttpAuthentication(auth)
-  val middleware = AuthMiddleware(httpAuthentication.optAuthUser)
+  val httpAuthentication = new Http4sAuthentication(auth)
+  val middleware = AuthMiddleware(httpAuthentication.authUser)
 
   val commandServices: AuthedService[AuthResult] = AuthedService {
     case GET  -> Root  / "host" as user =>

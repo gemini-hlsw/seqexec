@@ -12,6 +12,25 @@ import scalaz.concurrent.Task
 
 import java.time.Instant
 
+/**
+  * Bridge between http4s authentication and the actual internal authenticator
+  */
+class Http4sAuthentication(auth: AuthenticationService) {
+  val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
+
+  def loginCookie(user: UserDetails): Task[Cookie] = cookieService.loginCookie(auth, user)
+
+  val authUser: Kleisli[Task, Request, AuthResult] = Kleisli({ request =>
+    val authResult = for {
+      header <- headers.Cookie.from(request.headers).toRightDisjunction(MissingCookie)
+      cookie <- header.values.list.find(_.name === auth.config.cookieName).toRightDisjunction(MissingCookie)
+      user   <- auth.decodeToken(cookie.content)
+    } yield user
+    Task.delay(authResult)
+  })
+
+}
+
 trait CookiesService {
   def name: String
   def ssl: Boolean
@@ -35,18 +54,3 @@ object CookiesService {
   }
 }
 
-class HttpAuthentication(auth: AuthenticationService) {
-  val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
-
-  def loginCookie(user: UserDetails): Task[Cookie] = cookieService.loginCookie(auth, user)
-
-  val optAuthUser: Kleisli[Task, Request, AuthResult] = Kleisli({ request =>
-    val authResult = for {
-      header <- headers.Cookie.from(request.headers).toRightDisjunction(NoAuthenticator)
-      cookie <- header.values.list.find(_.name === auth.config.cookieName).toRightDisjunction(NoAuthenticator)
-      user   <- auth.decodeToken(cookie.content)
-    } yield user
-    Task.delay(authResult)
-  })
-
-}

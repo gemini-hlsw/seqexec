@@ -101,7 +101,7 @@ object AuthenticationService {
         case x :: Nil => x.authenticateUser(username, password)
         case x :: xs  => x.authenticateUser(username, password) match {
             case u @ \/-(_) => u
-            case -\/(e)     => go(xs)
+            case -\/(_)     => go(xs)
           }
       }
       // Discard empty values right away
