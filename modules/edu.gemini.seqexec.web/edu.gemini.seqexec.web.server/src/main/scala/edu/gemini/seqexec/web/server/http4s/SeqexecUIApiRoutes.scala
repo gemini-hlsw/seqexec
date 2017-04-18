@@ -9,7 +9,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication}
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.spModel.core.SPBadIDException
@@ -65,7 +65,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         }
       }
 
-      case req @ POST -> Root / "seqexec" / "logout"              =>
+      case POST -> Root / "seqexec" / "logout"              =>
         // Clean the auth cookie
         val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
           secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
@@ -86,7 +86,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
 
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
-      case req @ GET -> Root / "seqexec" / "events" as user        =>
+      case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping
         WS(
           Exchange(
@@ -96,7 +96,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
           )
         )
 
-      case req @ GET -> Root / "seqexec" / "sequence" / oid as user =>
+      case GET -> Root / "seqexec" / "sequence" / oid as user =>
         user.toOption.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
           for {
             obsId <-
@@ -107,9 +107,9 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
               Ok(SequencesQueue[SequenceId](Conditions.default, None, List(oid))))
           } yield resp
         }.handleWith {
-          case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")
+          case _: SPBadIDException => BadRequest(s"Bad sequence id $oid")
         }
     }
 
-  def service = publicService || GZip(httpAuthentication.optAuth(protectedServices)) || logService
+  def service: Service[Request, MaybeResponse] = publicService || TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices))) || logService
 }

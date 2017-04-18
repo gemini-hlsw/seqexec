@@ -4,13 +4,12 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, SkyBackground, CloudCover}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
-import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication}
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
-
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
@@ -107,5 +106,5 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
 
   }
 
-  val service = GZip(httpAuthentication.reqAuth(commandServices))
+  val service: HttpService = TokenRefresher(httpAuthentication, GZip(httpAuthentication.reqAuth(commandServices)))
 }

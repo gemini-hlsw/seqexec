@@ -2,16 +2,13 @@ package edu.gemini.seqexec.web.server.security
 
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
-
-import org.http4s.{AuthedService, Request, Cookie}
+import org.http4s._
 import org.http4s.dsl._
-import org.http4s.headers
 import org.http4s.server.AuthMiddleware
 
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-
 import java.time.Instant
 
 /**
@@ -36,6 +33,26 @@ class Http4sAuthentication(auth: AuthenticationService) {
   val onFailure: AuthedService[AuthenticationFailure] = Kleisli(req => Forbidden())
   val reqAuth = AuthMiddleware(authUser, onFailure)
 
+}
+
+/**
+  * Middleware used to keep the session alive as long as authenticated request are comming
+  * It has some cost as it needs to decode/encode the cookie with JWT
+  */
+object TokenRefresher {
+  def apply(auth: Http4sAuthentication, service: HttpService): HttpService = auth.authUser.flatMap { result =>
+    Service.lift { request: Request =>
+       result.fold(_ => service(request), user =>
+         auth.loginCookie(user) >>= { c =>
+           service.map {
+             case resp: Response =>
+               // If auth is found replace the cookie
+               resp.addCookie(c)
+             case Pass => Pass
+           }.apply(request)
+         })
+    }
+  }
 }
 
 trait CookiesService {
