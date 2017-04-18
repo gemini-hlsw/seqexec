@@ -43,11 +43,10 @@ trait CookiesService {
   def ssl: Boolean
   def ttl: Long
 
-  def buildCookie(token: String): Task[Cookie] = Task.delay {
-    // if successful set a cookie
-    val exp = Instant.now().plusSeconds(ttl)
-    Cookie(name, token, path = "/".some, expires = exp.some, secure = ssl, httpOnly = true)
-  }
+  def buildCookie(token: String): Task[Cookie] =
+    Task.delay {
+      Instant.now().plusSeconds(ttl)
+    }.map { exp => Cookie(name, token, path = "/".some, expires = exp.some, secure = ssl, httpOnly = true) }
 
   def loginCookie(auth: AuthenticationService, user: UserDetails): Task[Cookie] =
     auth.buildToken(user) >>= buildCookie

@@ -1,7 +1,5 @@
 package edu.gemini.seqexec.web.server.http4s.encoder
 
-import java.nio.ByteBuffer
-
 import boopickle.Default._
 import boopickle.Pickler
 
