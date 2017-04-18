@@ -106,9 +106,9 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
         loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
         cookieHeader = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
         setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
-        seqResp      <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/GS-2017A-Q-0-1")).addCookie(setCookie.cookie)).map(Option.apply))
+        seqResp      <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/GS-2016A-Q-0-1999999")).addCookie(setCookie.cookie)).map(Option.apply))
       } yield seqResp
-      sequence.run.unsafePerformSync.map(_.orNotFound.status) shouldBe Some(Status.Ok)
+      sequence.run.unsafePerformSync.flatMap(_.toOption).map(_.status) shouldBe Some(Status.NotFound)
     }
 
   val handshakeHeaders: List[Header] = List(
