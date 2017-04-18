@@ -110,6 +110,17 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       } yield seqResp
       sequence.run.unsafePerformSync.flatMap(_.toOption).map(_.status) shouldBe Some(Status.NotFound)
     }
+    it should "reject requests with non valid sequence ids" in {
+      // First make a valid cookie
+      val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
+      val sequence = for {
+        loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
+        cookieHeader = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
+        setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
+        seqResp      <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/abc")).addCookie(setCookie.cookie)).map(Option.apply))
+      } yield seqResp
+      sequence.run.unsafePerformSync.flatMap(_.toOption).map(_.status) shouldBe Some(Status.BadRequest)
+    }
 
   val handshakeHeaders: List[Header] = List(
     Header("Upgrade", "websocket"),
