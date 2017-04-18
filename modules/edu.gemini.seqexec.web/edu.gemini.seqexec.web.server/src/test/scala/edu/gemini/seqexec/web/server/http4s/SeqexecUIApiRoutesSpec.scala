@@ -25,9 +25,12 @@ import scalaz.stream.Process.emit
 import scalaz.stream.Process
 import scalaz.stream.async
 import scalaz.OptionT
+import scalaz.syntax.std.option._
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.{Queue, Topic}
 import org.scalatest.{FlatSpec, Matchers}
+
+import scala.concurrent.duration._
 
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with StringSyntax {
   val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
@@ -120,6 +123,19 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
         seqResp      <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/abc")).addCookie(setCookie.cookie)).map(Option.apply))
       } yield seqResp
       sequence.run.unsafePerformSync.flatMap(_.toOption).map(_.status) shouldBe Some(Status.BadRequest)
+    }
+    it should "replace the authentication cookie" in {
+      val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
+      val sequence = for {
+        loginResp           <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
+        cookieHeader        = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
+        setCookie           <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
+        _                   <- OptionT(Task.schedule(().some, 1.seconds)) // We need to add a delay to have a different cookie
+        seqResp             <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/abc")).addCookie(setCookie.cookie)).map(Option.apply))
+        updatedCookieHeader = seqResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
+        updatedCookie       <- OptionT(Task.now(updatedCookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
+      } yield setCookie.cookie.content != updatedCookie.cookie.content
+      sequence.run.unsafePerformSync shouldBe Some(true)
     }
 
   val handshakeHeaders: List[Header] = List(
