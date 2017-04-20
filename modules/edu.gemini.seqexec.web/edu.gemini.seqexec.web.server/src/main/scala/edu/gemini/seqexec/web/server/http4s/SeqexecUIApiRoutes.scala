@@ -9,7 +9,8 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.server.security.AuthenticationService
+import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
+import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.spModel.core.SPBadIDException
 import org.http4s._
@@ -33,6 +34,11 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")
 
+  // Handles authentication
+  val httpAuthentication = new Http4sAuthentication(auth)
+
+  val (inputQueue, engineOutput) = events
+
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
@@ -45,8 +51,6 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
     awakeEvery(1.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map { _ => Ping() }
   }
 
-  val tokenAuthService = JwtAuthentication(auth, optionalAllowed = true)
-
   val publicService: HttpService = GZip { HttpService {
 
     case req @ POST -> Root / "seqexec" / "login" =>
@@ -55,13 +59,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         auth.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // if successful set a cookie
-            tokenAuthService.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
+            httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
             Unauthorized(Challenge("jwt", "seqexec"))
         }
       }
 
-      case req @ POST -> Root / "seqexec" / "logout"              =>
+      case POST -> Root / "seqexec" / "logout"              =>
         // Clean the auth cookie
         val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
           secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
@@ -80,42 +84,32 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
       }
   }
 
-  def userInRequest(req: Request) = req.attributes.get(JwtAuthentication.authenticatedUser).flatten
+  val protectedServices: AuthedService[AuthResult] =
+    AuthedService {
+      case GET -> Root / "seqexec" / "events" as user        =>
+        // Stream seqexec events to clients and a ping
+        WS(
+          Exchange(
+            Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption)))) ++
+              (pingProcess merge engineOutput.subscribe.map(v => Binary(trimmedArray(v)))),
+            scalaz.stream.Process.empty
+          )
+        )
 
-  val (inputQueue, engineOutput) = events
-  val protectedServices: HttpService =
-    tokenAuthService {
-      GZip {
-        HttpService {
-          case req @ GET -> Root / "seqexec" / "events"         =>
-            // Stream seqexec events to clients and a ping
-            val user = userInRequest(req)
-            WS(
-              Exchange(
-                Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user)))) ++
-                  (pingProcess merge engineOutput.subscribe.map(v => Binary(trimmedArray(v)))),
-                scalaz.stream.Process.empty
-              )
-            )
-
-          case req @ GET -> Root / "seqexec" / "sequence" / oid =>
-            val user = userInRequest(req)
-            user.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
-              for {
-                obsId <-
-                    \/.fromTryCatchNonFatal(new SPObservationID(oid))
-                      .fold(Task.fail, Task.now)
-                u     <- se.load(inputQueue, obsId)
-                resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
-                  Ok(SequencesQueue[SequenceId](Conditions.default, None, List(oid))))
-              } yield resp
-            }.handleWith {
-              case e: SPBadIDException => BadRequest(s"Bad sequence id $oid")
-            }
-
+      case GET -> Root / "seqexec" / "sequence" / oid as user =>
+        user.toOption.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
+          for {
+            obsId <-
+                \/.fromTryCatchNonFatal(new SPObservationID(oid))
+                  .fold(Task.fail, Task.now)
+            u     <- se.load(inputQueue, obsId)
+            resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
+              Ok(SequencesQueue[SequenceId](Conditions.default, None, List(oid))))
+          } yield resp
+        }.handleWith {
+          case _: SPBadIDException => BadRequest(s"Bad sequence id $oid")
         }
-      }
     }
 
-  def service = publicService || protectedServices || logService
+  def service: Service[Request, MaybeResponse] = publicService || TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices))) || logService
 }
