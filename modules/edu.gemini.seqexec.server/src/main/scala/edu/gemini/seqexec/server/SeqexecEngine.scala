@@ -230,6 +230,7 @@ object SeqexecEngine {
     val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
     val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
     val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
+    val gmosKeywords = cfg.require[Boolean]("seqexec-engine.gmosKeywords")
     val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
     val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
     val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
@@ -248,9 +249,7 @@ object SeqexecEngine {
 
     val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
     // More instruments to be added to the list here
-    val instInit = if(f2Keywords || !instSim)
-      Nondeterminism[Task].gatherUnordered(List(Flamingos2Epics).map(initEpicsSystem(_)))
-    else Task.now(())
+    val instInit = Nondeterminism[Task].gatherUnordered(List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics)).filter(_._1 || !instSim).map(x => initEpicsSystem(x._2)))
     val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
     val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
 

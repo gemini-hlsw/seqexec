@@ -1,0 +1,660 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="tcs">tcs</Top>
+    <Top name="gm">gm</Top>
+    <Top name="ag">ag</Top>
+    <Apply name="gmos::apply">
+        <top>gm</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>IS Primary Apply Record </description>
+        <command name="gmos::config">
+            <description>Setup a Configuration</description>
+            <parameter name="disperserMode">
+                <channel>grSelect.A</channel>
+                <type>STRING</type>
+                <description>Disperser Mode</description>
+            </parameter>
+            <parameter name="disperser">
+                <channel>grSelect.B</channel>
+                <type>STRING</type>
+                <description>Disperser</description>
+            </parameter>
+            <parameter name="stageMode">
+                <channel>dtaTrack.A</channel>
+                <type>STRING</type>
+                <description>Translation Stage Mode</description>
+            </parameter>
+            <!--
+            <parameter name="useElectronicOffsetting">
+                <channel>wfs:followA.K</channel>
+                <type>INTEGER</type>
+                <description>Electronic Offsets</description>
+            </parameter>
+            -->
+            <parameter name="filter2">
+                <channel>fltPos.B</channel>
+                <type>STRING</type>
+                <description>Filter2</description>
+            </parameter>
+            <parameter name="dtaXOffset">
+                <channel>dtaTrack.B</channel>
+                <type>STRING</type>
+                <description>Translation Stage X Offset</description>
+            </parameter>
+            <parameter name="inbeam">
+                <channel>mskPos.B</channel>
+                <type>STRING</type>
+                <description>In/Out the beam</description>
+            </parameter>
+            <parameter name="disperserOrder">
+                <channel>grSelect.D</channel>
+                <type>STRING</type>
+                <description>Disperser Order</description>
+            </parameter>
+            <parameter name="disperserLambda">
+                <channel>grSelect.C</channel>
+                <type>STRING</type>
+                <description>Disperser Wavelength</description>
+            </parameter>
+            <parameter name="filter1">
+                <channel>fltPos.A</channel>
+                <type>STRING</type>
+                <description>Filter1</description>
+            </parameter>
+            <parameter name="fpu">
+                <channel>mskPos.A</channel>
+                <type>STRING</type>
+                <description>Focal Plane Unit</description>
+            </parameter>
+        </command>
+        <command name="gmos::endObserve">
+            <record>endObserve</record>
+            <description>End Observe</description>
+        </command>
+    </Apply>
+    <Apply name="gmos::dcapply">
+        <top>gm</top>
+        <apply>dc:apply</apply>
+        <car>dc:applyC</car>
+        <description>DC Primary Apply Record</description>
+        <command name="gmos::dcconfig">
+            <description>Setup a DC Configuration</description>
+            <!--
+            <parameter name="roiNumUsed">
+                <channel>dc:roiNumrois</channel>
+                <type>DOUBLE</type>
+                <description>Number of ROI used</description>
+            </parameter>
+            -->
+            <parameter name="ccdYsize4">
+                <channel>dc:roi.P</channel>
+                <type>INTEGER</type>
+                <description>CCD Y size</description>
+            </parameter>
+            <parameter name="ccdYstart5">
+                <channel>dc:roi.R</channel>
+                <type>INTEGER</type>
+                <description>CCD Y start</description>
+            </parameter>
+            <parameter name="ccdXstart5">
+                <channel>dc:roi.Q</channel>
+                <type>INTEGER</type>
+                <description>CCD X start</description>
+            </parameter>
+            <parameter name="ccdXstart2">
+                <channel>dc:roi.E</channel>
+                <type>INTEGER</type>
+                <description>CCD X start</description>
+            </parameter>
+            <parameter name="ccdXsize4">
+                <channel>dc:roi.O</channel>
+                <type>INTEGER</type>
+                <description>CCD X size</description>
+            </parameter>
+            <parameter name="shutterState">
+                <channel>dc:dcSetup.B</channel>
+                <type>STRING</type>
+                <description>Shutter State</description>
+            </parameter>
+            <parameter name="ccdXsize1">
+                <channel>dc:roi.C</channel>
+                <type>INTEGER</type>
+                <description>CCD X size</description>
+            </parameter>
+            <parameter name="ccdYstart2">
+                <channel>dc:roi.F</channel>
+                <type>INTEGER</type>
+                <description>CCD Y start</description>
+            </parameter>
+            <parameter name="ccdXsize5">
+                <channel>dc:roi.S</channel>
+                <type>INTEGER</type>
+                <description>CCD X size</description>
+            </parameter>
+            <parameter name="ccdYstart1">
+                <channel>dc:roi.B</channel>
+                <type>INTEGER</type>
+                <description>CCD Y start</description>
+            </parameter>
+            <parameter name="exposureTime">
+                <channel>dc:dcSetup.A</channel>
+                <type>DOUBLE</type>
+                <description>Exposure Time</description>
+            </parameter>
+            <parameter name="ccdYstart3">
+                <channel>dc:roi.J</channel>
+                <type>INTEGER</type>
+                <description>CCD Y start</description>
+            </parameter>
+            <parameter name="ns_state">
+                <channel>dc:dcSetup.F</channel>
+                <type>STRING</type>
+                <description>NodShuffle State     </description>
+            </parameter>
+            <parameter name="ccdYsize3">
+                <channel>dc:roi.L</channel>
+                <type>INTEGER</type>
+                <description>CCD Y size</description>
+            </parameter>
+            <parameter name="ccdYsize1">
+                <channel>dc:roi.D</channel>
+                <type>INTEGER</type>
+                <description>CCD Y size</description>
+            </parameter>
+            <parameter name="ampCount">
+                <channel>dc:dcSetup.E</channel>
+                <type>INTEGER</type>
+                <description>Detector Readout Amplifier Count</description>
+            </parameter>
+            <parameter name="nsPairs">
+                <channel>dc:dcSetup.I</channel>
+                <type>INTEGER</type>
+                <description>Number of nod-shuffle pairs</description>
+            </parameter>
+            <parameter name="ampReadMode">
+                <channel>dc:dcSetup.D</channel>
+                <type>STRING</type>
+                <description>Amplifier Read Mode     </description>
+            </parameter>
+            <parameter name="ccdYstart4">
+                <channel>dc:roi.N</channel>
+                <type>INTEGER</type>
+                <description>CCD Y start</description>
+            </parameter>
+            <parameter name="ccdYsize2">
+                <channel>dc:roi.H</channel>
+                <type>INTEGER</type>
+                <description>CCD Y size</description>
+            </parameter>
+            <!--
+            <parameter name="ccdYBinning">
+                <channel>dc:roiYBin</channel>
+                <type>DOUBLE</type>
+                <description>CCD Y Binning Value</description>
+            </parameter>
+            -->
+            <parameter name="gainSetting">
+                <channel>dc:dcSetup.C</channel>
+                <type>STRING</type>
+                <description>Amplifier Gain Setting</description>
+            </parameter>
+            <!--
+            <parameter name="ccdXBinning">
+                <channel>dc:roiXBin</channel>
+                <type>DOUBLE</type>
+                <description>CCD X Binning Value</description>
+            </parameter>
+            -->
+            <parameter name="ccdXstart4">
+                <channel>dc:roi.M</channel>
+                <type>INTEGER</type>
+                <description>CCD X start</description>
+            </parameter>
+            <parameter name="ccdXsize3">
+                <channel>dc:roi.K</channel>
+                <type>INTEGER</type>
+                <description>CCD X size</description>
+            </parameter>
+            <parameter name="ccdYsize5">
+                <channel>dc:roi.T</channel>
+                <type>INTEGER</type>
+                <description>CCD Y size</description>
+            </parameter>
+            <parameter name="ccdXstart1">
+                <channel>dc:roi.A</channel>
+                <type>INTEGER</type>
+                <description>CCD X start</description>
+            </parameter>
+            <parameter name="ccdXstart3">
+                <channel>dc:roi.I</channel>
+                <type>INTEGER</type>
+                <description>CCD X start</description>
+            </parameter>
+            <parameter name="nsRows">
+                <channel>dc:dcSetup.G</channel>
+                <type>INTEGER</type>
+                <description>Number of rows used for shuffle</description>
+            </parameter>
+            <parameter name="ccdXsize2">
+                <channel>dc:roi.G</channel>
+                <type>INTEGER</type>
+                <description>CCD X size</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Apply name="gmos::observeapply">
+        <top>gm</top>
+        <apply>dc:apply</apply>
+        <car>dc:observeC</car>
+        <description>Observe Apply Record</description>
+        <command name="gmos::pause">
+            <record>dc:pause</record>
+            <description>Pause observation</description>
+        </command>
+        <command name="gmos::abort">
+            <record>dc:abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="gmos::continue">
+            <record>dc:continue</record>
+            <description>Continue observation</description>
+        </command>
+        <command name="gmos::observe">
+            <record>dc:observe</record>
+            <description>Observe</description>
+            <parameter name="label">
+                <channel>dc:observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+        </command>
+        <command name="gmos::stop">
+            <record>dc:stop</record>
+            <description>Stop observation</description>
+        </command>
+    </Apply>
+    <Status name="gmos::dcstatus">
+        <top>gm</top>
+        <description>GMOS status</description>
+        <attribute name="ccdXstart4">
+            <channel>dc:roi.VALM</channel>
+            <type>INTEGER</type>
+            <description>CCD X start</description>
+        </attribute>
+        <attribute name="ccdYstart3">
+            <channel>dc:roi.VALJ</channel>
+            <type>INTEGER</type>
+            <description>CCD Y start</description>
+        </attribute>
+        <attribute name="ccdYsize3">
+            <channel>dc:roi.VALL</channel>
+            <type>INTEGER</type>
+            <description>CCD Y size</description>
+        </attribute>
+        <attribute name="ccdYstart5">
+            <channel>dc:roi.VALR</channel>
+            <type>INTEGER</type>
+            <description>CCD Y start</description>
+        </attribute>
+        <attribute name="ccdXstart2">
+            <channel>dc:roi.VALE</channel>
+            <type>INTEGER</type>
+            <description>CCD X start</description>
+        </attribute>
+        <attribute name="currentCycle">
+            <channel>sad:dc:nsCurrentCycle</channel>
+            <type>INTEGER</type>
+            <description>Current Cycle </description>
+        </attribute>
+        <attribute name="ccdYstart1">
+            <channel>dc:roi.VALB</channel>
+            <type>INTEGER</type>
+            <description>CCD Y start</description>
+        </attribute>
+        <attribute name="nsRows">
+            <channel>sad:dc:nsRows</channel>
+            <type>INTEGER</type>
+            <description>Number of rows used for shuffle</description>
+        </attribute>
+        <attribute name="dhsConnected">
+            <channel>dc:dhsConnect.VALA</channel>
+            <type>STRING</type>
+            <description>Dhs status</description>
+        </attribute>
+        <attribute name="ccdXsize1">
+            <channel>dc:roi.VALC</channel>
+            <type>INTEGER</type>
+            <description>CCD X size</description>
+        </attribute>
+        <attribute name="ccdYsize1">
+            <channel>dc:roi.VALD</channel>
+            <type>INTEGER</type>
+            <description>CCD Y size</description>
+        </attribute>
+        <attribute name="ccdYsize5">
+            <channel>dc:roi.VALT</channel>
+            <type>INTEGER</type>
+            <description>CCD Y size</description>
+        </attribute>
+        <attribute name="countdown">
+            <channel>sad:dc:timeleft</channel>
+            <type>DOUBLE</type>
+            <description>countdown</description>
+        </attribute>
+        <attribute name="ccdXstart3">
+            <channel>dc:roi.VALI</channel>
+            <type>INTEGER</type>
+            <description>CCD X start</description>
+        </attribute>
+        <attribute name="gainSetting">
+            <channel>dc:dcSetup.VALC</channel>
+            <type>INTEGER</type>
+            <description>gainSetting</description>
+        </attribute>
+        <attribute name="ccdXsize3">
+            <channel>dc:roi.VALK</channel>
+            <type>INTEGER</type>
+            <description>CCD X size</description>
+        </attribute>
+        <attribute name="bexpcnt">
+            <channel>sad:dc:BExpCount</channel>
+            <type>INTEGER</type>
+            <description>Completed B Nod counts this step</description>
+        </attribute>
+        <attribute name="ccdXsize5">
+            <channel>dc:roi.VALS</channel>
+            <type>INTEGER</type>
+            <description>CCD X size</description>
+        </attribute>
+        <attribute name="ampCount">
+            <channel>dc:dcSetup.VALE</channel>
+            <type>STRING</type>
+            <description>ampCount</description>
+        </attribute>
+        <attribute name="ccdXstart5">
+            <channel>dc:roi.VALQ</channel>
+            <type>INTEGER</type>
+            <description>CCD X start</description>
+        </attribute>
+        <attribute name="ccdYstart4">
+            <channel>dc:roi.VALN</channel>
+            <type>INTEGER</type>
+            <description>CCD Y start</description>
+        </attribute>
+        <attribute name="shutterState">
+            <channel>dc:dcSetup.VALB</channel>
+            <type>STRING</type>
+            <description>shutterState</description>
+        </attribute>
+        <attribute name="nsPairs">
+            <channel>sad:dc:nsPairs</channel>
+            <type>INTEGER</type>
+            <description>Number of nod-shuffle pairs</description>
+        </attribute>
+        <attribute name="ccdXBinning">
+            <channel>dc:roiXBin</channel>
+            <type>DOUBLE</type>
+            <description>CCD X Binning Value</description>
+        </attribute>
+        <attribute name="ccdXstart1">
+            <channel>dc:roi.VALA</channel>
+            <type>INTEGER</type>
+            <description>CCD X start</description>
+        </attribute>
+        <attribute name="ampReadMode">
+            <channel>dc:dcSetup.VALD</channel>
+            <type>STRING</type>
+            <description>ampReadMode</description>
+        </attribute>
+        <attribute name="ccdYBinning">
+            <channel>dc:roiYBin</channel>
+            <type>DOUBLE</type>
+            <description>CCD Y Binning Value</description>
+        </attribute>
+        <attribute name="ccdYsize2">
+            <channel>dc:roi.VALH</channel>
+            <type>INTEGER</type>
+            <description>CCD Y size</description>
+        </attribute>
+        <attribute name="aexpcnt">
+            <channel>sad:dc:AExpCount</channel>
+            <type>INTEGER</type>
+            <description>Completed A Nod counts this step</description>
+        </attribute>
+        <attribute name="ccdYstart2">
+            <channel>dc:roi.VALF</channel>
+            <type>INTEGER</type>
+            <description>CCD Y start</description>
+        </attribute>
+        <attribute name="ccdXsize4">
+            <channel>dc:roi.VALO</channel>
+            <type>INTEGER</type>
+            <description>CCD X size</description>
+        </attribute>
+        <attribute name="ccdXsize2">
+            <channel>dc:roi.VALG</channel>
+            <type>INTEGER</type>
+            <description>CCD X size</description>
+        </attribute>
+        <attribute name="ns_state">
+            <channel>dc:dcSetup.VALF</channel>
+            <type>STRING</type>
+            <description>ns_state</description>
+        </attribute>
+        <attribute name="ccdYsize4">
+            <channel>dc:roi.VALP</channel>
+            <type>INTEGER</type>
+            <description>CCD Y size</description>
+        </attribute>
+        <attribute name="exposureTime">
+            <channel>dc:dcSetup.VALA</channel>
+            <type>INTEGER</type>
+            <description>Exposure Time</description>
+        </attribute>
+        <attribute name="exposure">
+            <channel>sad:dc:exposedRQ</channel>
+            <type>INTEGER</type>
+            <description>Requested exposure time in seconds</description>
+        </attribute>
+        <attribute name="detid">
+            <channel>sad:dc:detId</channel>
+            <type>STRING</type>
+            <description>Chip IDs</description>
+        </attribute>
+        <attribute name="detnroi">
+            <channel>sad:dc:roiCnt</channel>
+            <type>INTEGER</type>
+            <description>No. regions of interest</description>
+        </attribute>
+        <attribute name="dettype">
+            <channel>sad:dc:detType</channel>
+            <type>STRING</type>
+            <description>Detector array type</description>
+        </attribute>
+        <attribute name="gmosdc">
+            <channel>sad:dc:name</channel>
+            <type>STRING</type>
+            <description>GMOS detector controller s/w</description>
+        </attribute>
+    </Status>
+    <Status name="gmos::status">
+        <top>gm</top>
+        <description>GMOS status</description>
+        <attribute name="gmoscc">
+            <channel>sad:cc:name</channel>
+            <type>STRING</type>
+            <description>GMOS components controller s/w</description>
+        </attribute>
+        <attribute name="adcexpen">
+            <channel>sad:atmExpEnd</channel>
+            <type>DOUBLE</type>
+            <description>End exit prism angle of ADC</description>
+        </attribute>
+        <attribute name="adcwlen2">
+            <channel>sad:atmWavelen2</channel>
+            <type>DOUBLE</type>
+            <description>Upper wavelength for ADC calculation</description>
+        </attribute>
+        <attribute name="adcused">
+            <channel>sad:cc:atmPresent</channel>
+            <type>INTEGER</type>
+            <description>ADC used? (1=yes/0=no)</description>
+        </attribute>
+        <attribute name="adcwlen1">
+            <channel>sad:atmWavelen1</channel>
+            <type>DOUBLE</type>
+            <description>Lower wavelength for ADC calculation</description>
+        </attribute>
+        <attribute name="inbeam">
+            <channel>sad:cc:mskLoc</channel>
+            <type>INTEGER</type>
+            <description>In/Out the beam</description>
+        </attribute>
+        <attribute name="filterID1">
+            <channel>sad:cc:fltID1</channel>
+            <type>INTEGER</type>
+            <description>filter 1 current ID </description>
+        </attribute>
+        <attribute name="fpu">
+            <channel>mskPos.A</channel>
+            <type>STRING</type>
+            <description>Focal Plane Unit</description>
+        </attribute>
+        <attribute name="disperserInBeam">
+            <channel>sad:cc:grInBeam</channel>
+            <type>INTEGER</type>
+            <description>Disperser in beam</description>
+        </attribute>
+        <attribute name="disperserOrder">
+            <channel>sad:grOrder</channel>
+            <type>INTEGER</type>
+            <description>Disperser Order</description>
+        </attribute>
+        <attribute name="disperserParked">
+            <channel>sad:cc:grPark</channel>
+            <type>INTEGER</type>
+            <description>Disperser parked</description>
+        </attribute>
+        <attribute name="filter1">
+            <channel>sad:filtName1</channel>
+            <type>STRING</type>
+            <description>filter 1</description>
+        </attribute>
+        <attribute name="disperserID">
+            <channel>sad:cc:grID</channel>
+            <type>INTEGER</type>
+            <description>Disperser current ID</description>
+        </attribute>
+        <attribute name="filterID2">
+            <channel>sad:cc:fltID2</channel>
+            <type>INTEGER</type>
+            <description>filter 2 current ID </description>
+        </attribute>
+        <attribute name="filter2">
+            <channel>sad:filtName2</channel>
+            <type>STRING</type>
+            <description>filter 2</description>
+        </attribute>
+        <attribute name="disperser">
+            <channel>sad:grName</channel>
+            <type>STRING</type>
+            <description>Disperser</description>
+        </attribute>
+        <attribute name="stageMode">
+            <channel>dtaTrack.VALA</channel>
+            <type>STRING</type>
+            <description>dtaTrack</description>
+        </attribute>
+        <attribute name="useElectronicOffsetting">
+            <channel>wfs:ElectronicOffsets</channel>
+            <type>INTEGER</type>
+            <description>Electronic Offsets on/off </description>
+        </attribute>
+        <attribute name="disperserLambda">
+            <channel>sad:grWavelen</channel>
+            <type>DOUBLE</type>
+            <description>Disperser Wavelength</description>
+        </attribute>
+        <attribute name="adcexpst">
+            <channel>sad:atmExpStart</channel>
+            <type>DOUBLE</type>
+            <description>Start exit prism angle of ADC</description>
+        </attribute>
+        <attribute name="dtazst">
+            <channel>sad:dtaZStart</channel>
+            <type>DOUBLE</type>
+            <description>Focus at obs start (microns)</description>
+        </attribute>
+        <attribute name="adcmode">
+            <channel>atmTrack.VALA</channel>
+            <type>STRING</type>
+            <description>ADC mode</description>
+        </attribute>
+        <attribute name="grstep">
+            <channel>sad:cc:grMotorSteps</channel>
+            <type>DOUBLE</type>
+            <description>Requested grating motor step position</description>
+        </attribute>
+        <attribute name="dtay">
+            <channel>sad:cc:dtaY</channel>
+            <type>DOUBLE</type>
+            <description>Detector translation Y pos (microns)</description>
+        </attribute>
+        <attribute name="adjgrwlen">
+            <channel>sad:grAdjWavelen</channel>
+            <type>DOUBLE</type>
+            <description>Grating wavelength at slit (nm)</description>
+        </attribute>
+        <attribute name="adcenpen">
+            <channel>sad:atmEnpEnd</channel>
+            <type>DOUBLE</type>
+            <description>End entrance prism angle of ADC</description>
+        </attribute>
+        <attribute name="adcenpme">
+            <channel>sad:atmEnpMean</channel>
+            <type>DOUBLE</type>
+            <description>Mean entrance prism angle of ADC</description>
+        </attribute>
+        <attribute name="dtazme">
+            <channel>sad:dtaZMean</channel>
+            <type>DOUBLE</type>
+            <description>Mean focus during obs (microns)</description>
+        </attribute>
+        <attribute name="dtaz">
+            <channel>sad:cc:dtaZ</channel>
+            <type>DOUBLE</type>
+            <description>Detector translation Z pos (microns)</description>
+        </attribute>
+        <attribute name="dtazen">
+            <channel>sad:dtaZEnd</channel>
+            <type>DOUBLE</type>
+            <description>Focus at obs end (microns)</description>
+        </attribute>
+        <attribute name="masktyp">
+            <channel>sad:cc:mskFP</channel>
+            <type>INTEGER</type>
+            <description>Mask/IFU type (0=none/-1=IFU/1=mask)</description>
+        </attribute>
+        <attribute name="grtilt">
+            <channel>sad:cc:grTilt</channel>
+            <type>DOUBLE</type>
+            <description>Grating tilt (degrees)</description>
+        </attribute>
+        <attribute name="adcenpst">
+            <channel>sad:atmEnpStart</channel>
+            <type>DOUBLE</type>
+            <description>Start entrance prism angle of ADC</description>
+        </attribute>
+        <attribute name="adcexpme">
+            <channel>sad:atmExpMean</channel>
+            <type>DOUBLE</type>
+            <description>Mean exit prism angle of ADC</description>
+        </attribute>
+        <attribute name="maskid">
+            <channel>sad:cc:mskID</channel>
+            <type>INTEGER</type>
+            <description>Barcode of mask or IFU in beam</description>
+        </attribute>
+    </Status>
+</Records>
