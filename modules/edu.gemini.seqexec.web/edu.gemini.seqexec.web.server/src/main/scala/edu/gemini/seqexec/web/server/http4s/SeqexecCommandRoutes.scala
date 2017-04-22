@@ -12,6 +12,7 @@ import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuth
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import org.http4s._
 import org.http4s.dsl._
+import org.http4s.server.syntax._
 import org.http4s.server.middleware.GZip
 import org.http4s.server.AuthMiddleware
 
@@ -101,10 +102,13 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
         se.setCloudCover(inputQueue, cc) *> Ok(s"Set cloud cover to $cc")
       )
 
-    case GET -> Root / "refresh" as _ =>
+    }
+
+  val refreshCommand: HttpService = HttpService {
+    case GET -> Root / "refresh" =>
       se.requestRefresh(inputQueue) *> NoContent()
 
   }
 
-  val service: HttpService = TokenRefresher(httpAuthentication, GZip(httpAuthentication.reqAuth(commandServices)))
+  val service: Service[Request, MaybeResponse] = refreshCommand || TokenRefresher(httpAuthentication, GZip(httpAuthentication.reqAuth(commandServices)))
 }
