@@ -49,7 +49,7 @@ object Settings {
     val unboundId    = "3.1.1"
     val jwt          = "0.12.0"
     val slf4j        = "1.7.21"
-    val knobs        = "3.12.27a"
+    val knobs        = "4.0.30-scalaz-7.2"
 
     // test libraries
     val scalaTest             = "3.0.1"
