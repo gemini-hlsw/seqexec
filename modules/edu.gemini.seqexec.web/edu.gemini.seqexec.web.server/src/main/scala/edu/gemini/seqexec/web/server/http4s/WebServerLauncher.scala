@@ -68,7 +68,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     }
 
   // Configuration of the authentication service
-  val authConf: Task[AuthenticationConfig] =
+  val authConf: Kleisli[Task, WebServerConfiguration, AuthenticationConfig] = Kleisli { conf =>
     for {
       ld <- ldapConf
       cfg <- config
@@ -77,9 +77,10 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       val sessionTimeout = cfg.require[Int]("authentication.sessionLifeHrs")
       val cookieName = cfg.require[String]("authentication.cookieName")
       val secretKey = cfg.require[String]("authentication.secretKey")
-      val useSSL = cfg.require[Boolean]("authentication.useSSL")
-      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), Hours(sessionTimeout), cookieName, secretKey, useSSL, ld)
+      val sslSettings = cfg.lookup[String]("web-server.tls.keyStore")
+      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), Hours(sessionTimeout), cookieName, secretKey, sslSettings.isDefined, ld)
     }
+  }
 
   /**
     * Configures the Authentication service
@@ -125,9 +126,9 @@ object WebServerLauncher extends ServerApp with LogInitialization {
         // Launch web server
         for {
           _  <- configLog
-          ac <- authConf
-          as <- authService.run(ac)
           wc <- serverConf
+          ac <- authConf.run(wc)
+          as <- authService.run(ac)
           ws <- webServer(as, (inq, out), se).run(wc)
         } yield ws
       ).map(_._2)
