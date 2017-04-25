@@ -94,73 +94,70 @@ object SequenceDefaultToolbar {
     .initialState(State(runRequested = false, pauseRequested = false))
     .renderPS( ($, p, s) =>
       <.div(
-        ^.cls := "row",
-        p.status.isLogged && p.s.status === SequenceState.Completed ?=
-          <.h3(
-            ^.cls := "ui green header",
-            "Sequence completed"
-          ),
+        ^.cls := "ui column grid",
         <.div(
-          ^.cls := "ui column grid",
+          ^.cls := "ui row",
           <.div(
-            ^.cls := "ui row",
-            <.div(
-              ^.cls := "left bottom aligned seven wide column computer tablet only",
-              p.status.isLogged && p.s.hasError ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPlay),
-                    labeled = true,
-                    onClick = $.runState(requestRun(p.s)),
-                    color = Some("blue"),
-                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
-                    disabled = !p.status.isConnected || s.runRequested),
-                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-                ),
-              p.status.isLogged && p.s.status === SequenceState.Idle ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPlay),
-                    labeled = true,
-                    onClick = $.runState(requestRun(p.s)),
-                    color = Some("blue"),
-                    dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
-                    disabled = !p.status.isConnected || s.runRequested),
-                  s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-                ),
-              p.status.isLogged && p.s.status === SequenceState.Running ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPause),
-                    labeled = true,
-                    onClick = $.runState(requestPause(p.s)),
-                    color = Some("teal"),
-                    dataTooltip = Some("Pause the sequence after the current step completes"),
-                    disabled = !p.status.isConnected || s.pauseRequested),
-                  "Pause"
-                ),
-              p.status.isLogged && p.s.status === SequenceState.Paused ?=
-                Button(
-                  Button.Props(
-                    icon = Some(IconPlay),
-                    labeled = true,
-                    onClick = $.runState(requestPause(p.s)),
-                    color = Some("teal"),
-                    disabled = !p.status.isConnected),
-                  "Continue from step 1"
-                )
+            ^.cls := "left bottom aligned seven wide column computer tablet only",
+            p.status.isLogged && p.s.status === SequenceState.Completed ?=
+              <.h3(
+                ^.cls := "ui green header",
+                "Sequence complete"
               ),
-              <.div(
-                ^.cls := "right column",
-                ^.classSet(
-                  "nine wide computer nine wide tablet sixteen wide mobile" -> p.status.isLogged,
-                  "sixteen wide" -> !p.status.isLogged
-                ),
-                SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
+            p.status.isLogged && p.s.hasError ?=
+              Button(
+                Button.Props(
+                  icon = Some(IconPlay),
+                  labeled = true,
+                  onClick = $.runState(requestRun(p.s)),
+                  color = Some("blue"),
+                  dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                  disabled = !p.status.isConnected || s.runRequested),
+                s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+              ),
+            p.status.isLogged && p.s.status === SequenceState.Idle ?=
+              Button(
+                Button.Props(
+                  icon = Some(IconPlay),
+                  labeled = true,
+                  onClick = $.runState(requestRun(p.s)),
+                  color = Some("blue"),
+                  dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                  disabled = !p.status.isConnected || s.runRequested),
+                s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+              ),
+            p.status.isLogged && p.s.status === SequenceState.Running ?=
+              Button(
+                Button.Props(
+                  icon = Some(IconPause),
+                  labeled = true,
+                  onClick = $.runState(requestPause(p.s)),
+                  color = Some("teal"),
+                  dataTooltip = Some("Pause the sequence after the current step completes"),
+                  disabled = !p.status.isConnected || s.pauseRequested),
+                "Pause"
+              ),
+            p.status.isLogged && p.s.status === SequenceState.Paused ?=
+              Button(
+                Button.Props(
+                  icon = Some(IconPlay),
+                  labeled = true,
+                  onClick = $.runState(requestPause(p.s)),
+                  color = Some("teal"),
+                  disabled = !p.status.isConnected),
+                "Continue from step 1"
               )
+            ),
+            <.div(
+              ^.cls := "right column",
+              ^.classSet(
+                "nine wide computer nine wide tablet sixteen wide mobile" -> p.status.isLogged,
+                "sixteen wide" -> !p.status.isLogged
+              ),
+              SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
             )
           )
-      )
+    )
     ).componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
       Callback.when(f.nextProps.s.status === SequenceState.Running && f.$.state.runRequested)(f.$.modState(_.copy(runRequested = false)))
