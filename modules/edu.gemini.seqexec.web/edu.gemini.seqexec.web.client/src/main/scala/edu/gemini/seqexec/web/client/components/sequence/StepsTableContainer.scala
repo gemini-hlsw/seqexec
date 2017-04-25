@@ -122,6 +122,7 @@ object StepsTableContainer {
           ),
           loggedIn ?= <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
+            SeqexecStyles.buttonsRow,
             <.div(
               ^.cls := "ui icon buttons",
               observationControlButtons(sequenceView, step)
