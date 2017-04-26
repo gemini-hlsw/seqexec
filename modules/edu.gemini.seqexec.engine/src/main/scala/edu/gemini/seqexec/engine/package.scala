@@ -57,16 +57,24 @@ package object engine {
     */
   def switch(q: EventQueue)(id: Sequence.Id)(st: SequenceState): Handle[Unit] =
     resources.flatMap(
-      ores => modifyS(id)(
-        seq =>
-        if (st === SequenceState.Running)
-          // No resources being used by other running sequences
-          if (seq.toSequence.resources.intersect(ores).isEmpty)
-            Sequence.State.status.set(seq, st)
-          // Some resources are being used, sequence unchanged
-          else seq
-        else Sequence.State.status.set(seq, st)
-      )
+      ores => getS(id).flatMap {
+        case Some(seq) =>
+          if (st === SequenceState.Running)
+            // No resources being used by other running sequences
+            if (seq.toSequence.resources.intersect(ores).isEmpty)
+              putS(id)(Sequence.State.status.set(seq, st))
+            // Some resources are being used
+            else
+              send(q)(
+                failed(
+                  id,
+                  0,
+                  Result.Error("Unable to run Sequence, some of the resources needed are in use")
+                )
+              )
+          else putS(id)(Sequence.State.status.set(seq, st))
+        case None => unit
+      }
     )
 
   val resources: Handle[Set[Resource]] =
