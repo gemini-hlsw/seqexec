@@ -18,7 +18,9 @@ object Model {
 
     case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceLoaded(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    case class SequenceLoaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    case class SequenceUnloaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 

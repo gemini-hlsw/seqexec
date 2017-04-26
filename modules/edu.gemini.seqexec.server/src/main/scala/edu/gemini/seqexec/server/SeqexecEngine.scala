@@ -10,12 +10,15 @@ import edu.gemini.seqexec.engine.{Engine, Event, EventSystem, Executed, Failed, 
 
 import scalaz._
 import Scalaz._
-import scalaz.concurrent.Task
-import scalaz.stream.Process
-import knobs._
+import scalaz.concurrent.{Strategy, Task}
+import scala.concurrent.duration._
+import scalaz.stream.{DefaultScheduler, Process, wye}
+import scalaz.stream.wye._
+import scalaz.stream.time._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.spModel.core.Peer
+import knobs.Config
 
 /**
   * Created by jluhrs on 10/7/16.
@@ -76,13 +79,14 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setCloudCover(q: engine.EventQueue, cc: CloudCover): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setCloudCover(cc)).map(_.right)
 
-  // TODO: Add seqId: SPObservationID as parameter
   def setSkipMark(q: engine.EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
 
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
+  def seqQueueRefreshProcess(q: engine.EventQueue): Process[Task, Event]= awakeEvery(10.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList(q)))
+
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
-    engine.process(q)(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
+    engine.process(q, wye(q.dequeue, seqQueueRefreshProcess(q))(mergeHaltBoth))(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
@@ -122,11 +126,16 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     u.run
   }
 
+  def unload(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
+    q.enqueueOne(Event.unload(seqId.stringValue)).map(_.right)
+  }
+
   private def toSeqexecEvent(ev: engine.Event)(svs: SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_)            => SequenceStart(svs)
       case engine.Pause(_)            => SequencePauseRequested(svs)
-      case engine.Load(_, _)          => SequenceLoaded(svs)
+      case engine.Load(id, _)         => SequenceLoaded(id, svs)
+      case engine.Unload(id)          => SequenceUnloaded(id, svs)
       case engine.Breakpoint(_, _, _) => StepBreakpointChanged(svs)
       case engine.SetOperator(_)      => OperatorUpdated(svs)
       case engine.SetObserver(_, _)   => ObserverUpdated(svs)
@@ -137,6 +146,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetCloudCover(_)    => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
+      case engine.GetState(_)         => NewLogMessage("Internal state request")
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
@@ -192,6 +202,14 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     // TODO: Implement willStopIn
     SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
   }
+
+  private def refreshSequenceList(q: engine.EventQueue): Engine.State => Task[Unit] = {
+    st: Engine.State => odbProxy.queuedSequences().flatMap(seqs => EitherT(Nondeterminism[Task].gatherUnordered{
+      seqs.filter(x => !st.sequences.keys.exists(id => x.equals(new SPObservationID(id)))).map(id => load(q, id)) ++
+        st.sequences.keys.filter(id => !seqs.contains(new SPObservationID(id))).map(id => unload(q, new SPObservationID(id)))
+    }.map(_.sequenceU))).run.map(_ => ())
+  }
+
 }
 
 // Configuration stuff

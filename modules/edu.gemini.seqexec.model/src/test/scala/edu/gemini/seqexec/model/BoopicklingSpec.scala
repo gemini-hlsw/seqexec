@@ -32,6 +32,7 @@ object SharedModelArbitraries {
   implicit val seeArb = implicitly[Arbitrary[StepExecuted]]
   implicit val sceArb = implicitly[Arbitrary[SequenceCompleted]]
   implicit val sleArb = implicitly[Arbitrary[SequenceLoaded]]
+  implicit val sueArb = implicitly[Arbitrary[SequenceUnloaded]]
   implicit val sbeArb = implicitly[Arbitrary[StepBreakpointChanged]]
   implicit val smeArb = implicitly[Arbitrary[StepSkipMarkChanged]]
   implicit val speArb = implicitly[Arbitrary[SequencePauseRequested]]
@@ -85,6 +86,10 @@ class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with Mo
     it should "pickle/depickle SequenceLoaded" in {
       // events
       testPickleUnpickle[SequenceLoaded]
+    }
+    it should "pickle/depickle SequenceUnloaded" in {
+      // events
+      testPickleUnpickle[SequenceUnloaded]
     }
     it should "pickle/depickle StepBreakpointChanged" in {
       // events
