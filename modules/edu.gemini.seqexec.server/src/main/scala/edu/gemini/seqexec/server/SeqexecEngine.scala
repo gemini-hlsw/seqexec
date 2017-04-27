@@ -47,13 +47,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def start(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
 
-  def requestPause(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit ]=
+  def requestPause(q: engine.EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.pause(id.stringValue())).map(_.right)
 
   def setBreakpoint(q: engine.EventQueue,
                     seqId: SPObservationID,
                     stepId: edu.gemini.seqexec.engine.Step.Id,
-                    v: Boolean): Task[SeqexecFailure \/ Unit]=
+                    v: Boolean): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.breakpoint(seqId.stringValue(), stepId, v)).map(_.right)
 
   def setOperator(q: engine.EventQueue, name: String): Task[SeqexecFailure \/ Unit] =
@@ -83,7 +83,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def requestRefresh(q: engine.EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
-  def seqQueueRefreshProcess(q: engine.EventQueue): Process[Task, Event]= awakeEvery(10.seconds)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList(q)))
+  def seqQueueRefreshProcess(q: engine.EventQueue): Process[Task, Event] = awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList(q)))
 
   def eventProcess(q: engine.EventQueue): Process[Task, SeqexecEvent] =
     engine.process(q, wye(q.dequeue, seqQueueRefreshProcess(q))(mergeHaltBoth))(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
@@ -104,23 +104,23 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     (i match {
       case (EventSystem(Failed(id, _, e)), _) => for {
-          obsId <- safeGetObsId(id)
-          _     <- systems.odb.obsAbort(obsId, e.msg)
-        } yield ()
-       case (EventSystem(Executed(id)), st) if st.sequences.get(id).map(
-         _.status === SequenceState.Idle
-       ).getOrElse(false) => for {
-         obsId <- safeGetObsId(id)
-         _     <- systems.odb.obsPause(obsId, "Sequence paused by user")
-       } yield ()
+        obsId <- safeGetObsId(id)
+        _ <- systems.odb.obsAbort(obsId, e.msg)
+      } yield ()
+      case (EventSystem(Executed(id)), st) if st.sequences.get(id).map(
+        _.status === SequenceState.Idle
+      ).getOrElse(false) => for {
+        obsId <- safeGetObsId(id)
+        _ <- systems.odb.obsPause(obsId, "Sequence paused by user")
+      } yield ()
       case _ => SeqAction(())
     }).run.map(_ => i)
   }
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
-    val t = EitherT( for {
-        odbSeq <- Task(odbProxy.read(seqId))
-      } yield odbSeq.flatMap(s => translator.sequence(translatorSettings)(seqId, s))
+    val t = EitherT(for {
+      odbSeq <- Task(odbProxy.read(seqId))
+    } yield odbSeq.flatMap(s => translator.sequence(translatorSettings)(seqId, s))
     )
     val u = t.flatMapF(x => q.enqueueOne(Event.load(seqId.stringValue(), x)).map(_.right))
     u.run
@@ -199,15 +199,22 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         case x => x
       }
     }
+
     // TODO: Implement willStopIn
     SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
   }
 
-  private def refreshSequenceList(q: engine.EventQueue): Engine.State => Task[Unit] = {
-    st: Engine.State => odbProxy.queuedSequences().flatMap(seqs => EitherT(Nondeterminism[Task].gatherUnordered{
-      seqs.filter(x => !st.sequences.keys.exists(id => x.equals(new SPObservationID(id)))).map(id => load(q, id)) ++
-        st.sequences.keys.filter(id => !seqs.contains(new SPObservationID(id))).map(id => unload(q, new SPObservationID(id)))
-    }.map(_.sequenceU))).run.map(_ => ())
+  private def refreshSequenceList(q: engine.EventQueue): Engine.State => Task[Unit] = (st: Engine.State) => {
+
+    val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
+
+    def loads(odbList: Seq[SPObservationID]): Seq[Task[SeqexecFailure \/ Unit]] = odbList.diff(seqexecList).map(id => load(q, id))
+
+    def unloads(odbList: Seq[SPObservationID]): Seq[Task[SeqexecFailure \/ Unit]] = seqexecList.diff(odbList).map(id => unload(q, id))
+
+    odbProxy.queuedSequences().flatMap(seqs => EitherT(Nondeterminism[Task].gatherUnordered(loads(seqs) ++
+      unloads(seqs)).map(_.sequenceU))
+    ).run.map(_ => ())
   }
 
 }
@@ -228,9 +235,10 @@ object SeqexecEngine {
                       f2Keywords: Boolean,
                       gwsKeywords: Boolean,
                       gcalKeywords: Boolean,
-                      instForceError: Boolean)
+                      instForceError: Boolean,
+                      odbQueuePollingInterval: Duration)
   val defaultSettings = Settings(Site.GS, "localhost", LocalDate.of(2017, 1,1), "http://localhost/", true,
-    true, true, true, false, false, false, false, false, false)
+    true, true, true, false, false, false, false, false, false, 10.seconds)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
@@ -252,6 +260,7 @@ object SeqexecEngine {
     val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
     val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
     val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
+    val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
@@ -290,7 +299,8 @@ object SeqexecEngine {
                        f2Keywords,
                        gwsKeywords,
                        gcalKeywords,
-                       instForceError)
+                       instForceError,
+                       odbQueuePollingInterval)
       )
 
     }
