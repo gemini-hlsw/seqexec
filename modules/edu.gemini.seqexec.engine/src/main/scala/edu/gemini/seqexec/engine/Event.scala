@@ -2,6 +2,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import Result.{OK, Partial, PartialVal, RetVal}
+import scalaz.concurrent.Task
 
 /**
   * Anything that can go through the Event Queue.
@@ -17,6 +18,7 @@ sealed trait UserEvent
 case class Start(id: Sequence.Id) extends UserEvent
 case class Pause(id: Sequence.Id) extends UserEvent
 case class Load(id: Sequence.Id, sequence: Sequence[Action]) extends UserEvent
+case class Unload(id: Sequence.Id) extends UserEvent
 case class Breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean) extends UserEvent
 case class SetOperator(name: String) extends UserEvent
 case class SetObserver(id: Sequence.Id, name: String) extends UserEvent
@@ -27,6 +29,7 @@ case class SetSkyBackground(wv: SkyBackground) extends UserEvent
 case class SetCloudCover(cc: CloudCover) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
+case class GetState(f: (Engine.State) => Task[Unit]) extends UserEvent
 
 /**
   * Events generated internally by the Engine.
@@ -44,6 +47,7 @@ object Event {
   def start(id: Sequence.Id): Event = EventUser(Start(id))
   def pause(id: Sequence.Id): Event = EventUser(Pause(id))
   def load(id: Sequence.Id, sequence: Sequence[Action]): Event = EventUser(Load(id, sequence))
+  def unload(id: Sequence.Id): Event = EventUser(Unload(id))
   def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, step, v))
   def setOperator(name: String): Event = EventUser(SetOperator(name))
   def setObserver(id: Sequence.Id, name: String): Event = EventUser(SetObserver(id, name))
@@ -54,6 +58,7 @@ object Event {
   def setCloudCover(cc: CloudCover): Event = EventUser(SetCloudCover(cc))
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
+  def getState(f: (Engine.State) => Task[Unit]): Event = EventUser(GetState(f))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
   def completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]): Event = EventSystem(Completed(id, i, r))

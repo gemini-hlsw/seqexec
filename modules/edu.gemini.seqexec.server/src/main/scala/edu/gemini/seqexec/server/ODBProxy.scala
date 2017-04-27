@@ -20,6 +20,7 @@ class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
   def read(oid: SPObservationID): SeqexecFailure \/ ConfigSequence =
     SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
 
+  val queuedSequences: () => SeqAction[Seq[SPObservationID]] = cmds.queuedSequences
   val datasetStart: (SPObservationID, String, ImageFileId) => SeqAction[Boolean] = cmds.datasetStart
   val datasetComplete: (SPObservationID, String, ImageFileId) => SeqAction[Boolean] = cmds.datasetComplete
   val obsAbort: (SPObservationID, String) => SeqAction[Boolean] = cmds.obsAbort
@@ -33,6 +34,7 @@ class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
 
 object ODBProxy {
   trait OdbCommands {
+    def queuedSequences(): SeqAction[Seq[SPObservationID]]
     def datasetStart(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean]
     def datasetComplete(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean]
     def obsAbort(obsId: SPObservationID, reason: String): SeqAction[Boolean]
@@ -52,6 +54,7 @@ object ODBProxy {
     override def obsContinue(obsId: SPObservationID): SeqAction[Boolean] = SeqAction(false)
     override def obsPause(obsId: SPObservationID, reason: String): SeqAction[Boolean] = SeqAction(false)
     override def obsStop(obsId: SPObservationID, reason: String): SeqAction[Boolean] = SeqAction(false)
+    override def queuedSequences(): SeqAction[Seq[SPObservationID]] = SeqAction(List.empty)
   }
 
   case class OdbCommandsImpl(host: Peer) extends OdbCommands {
@@ -105,6 +108,12 @@ object ODBProxy {
         xmlrpcClient.observationStop(sessionName, obsId.stringValue, reason)
       ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
     )
+
+    override def queuedSequences(): SeqAction[Seq[SPObservationID]] = EitherT(
+          Task.delay(
+            xmlrpcClient.getObservations(sessionName).toList.map(new SPObservationID(_))
+          ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+        )
   }
 
 }

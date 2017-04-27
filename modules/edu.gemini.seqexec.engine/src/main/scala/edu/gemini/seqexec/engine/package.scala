@@ -120,6 +120,19 @@ package object engine {
         )
       )
     )
+  def unload(id: Sequence.Id): Handle[Unit] =
+    modify(
+      st => Engine.State(
+        st.conditions,
+        st.operator,
+        st.sequences.get(id).map(
+          t => t.status match {
+            case SequenceState.Running => st.sequences
+            case _                     => st.sequences - id
+          }
+        ).getOrElse(st.sequences)
+      )
+    )
 
   /**
     * Adds the current `Execution` to the completed `Queue`, makes the next
@@ -195,6 +208,8 @@ package object engine {
     )
   }
 
+  private def getState(f: Engine.State => Task[Unit]): Handle[Unit] = get.flatMap(f(_).liftM[HandleStateT])
+
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
     * marks the `Action` as completed and returns the new updated `State`.
@@ -243,7 +258,8 @@ package object engine {
       case Start(id)               => log("Output: Started") *> rollback(q)(id) *>
         switch(q)(id)(SequenceState.Running) *> send(q)(Event.executing(id))
       case Pause(id)               => log("Output: Paused") *> switch(q)(id)(SequenceState.Stopping)
-      case Load(id, seq) => log("Output: Sequence loaded") *> load(id, seq)
+      case Load(id, seq)           => log("Output: Sequence loaded") *> load(id, seq)
+      case Unload(id)              => log("Output: Sequence unloaded") *> unload(id)
       case Breakpoint(id, step, v) => log("Output: breakpoint changed") *>
         modifyS(id)(_.setBreakpoint(step, v))
       case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
@@ -255,6 +271,7 @@ package object engine {
       case SetCloudCover(cc)       => log("Output: Setting cloud cover") *> setCloudCover(cc)
       case Poll                    => log("Output: Polling current state")
       case Exit                    => log("Bye") *> close(q)
+      case GetState(f)             => getState(f)
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
@@ -293,8 +310,8 @@ package object engine {
   def processE(q: EventQueue): Process[Handle, (Event, Engine.State)] =
     receive(q).evalMap(runE(q))
 
-  def process(q: EventQueue)(qs: Engine.State): Process[Task, (Event, Engine.State)] =
-    mapEvalState(q.dequeue, qs, runE(q))
+  def process(q: EventQueue, input: Process[Task, Event])(qs: Engine.State): Process[Task, (Event, Engine.State)] =
+    mapEvalState(input, qs, runE(q))
 
   // Functions for type bureaucracy
 
