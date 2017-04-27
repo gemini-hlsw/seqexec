@@ -64,14 +64,7 @@ package object engine {
             if (seq.toSequence.resources.intersect(ores).isEmpty)
               putS(id)(Sequence.State.status.set(seq, st))
             // Some resources are being used
-            else
-              send(q)(
-                failed(
-                  id,
-                  0,
-                  Result.Error("Unable to run Sequence, some of the resources needed are in use")
-                )
-              )
+            else send(q)(busy(id))
           else putS(id)(Sequence.State.status.set(seq, st))
         case None => unit
       }
@@ -263,32 +256,33 @@ package object engine {
   private def run(q: EventQueue)(ev: Event): Handle[Engine.State] = {
 
     def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
-      case Start(id)               => log("Output: Started") *> rollback(q)(id) *>
+      case Start(id)               => log("Engine: Started") *> rollback(q)(id) *>
         switch(q)(id)(SequenceState.Running) *> send(q)(Event.executing(id))
-      case Pause(id)               => log("Output: Paused") *> switch(q)(id)(SequenceState.Stopping)
-      case Load(id, seq)           => log("Output: Sequence loaded") *> load(id, seq)
-      case Unload(id)              => log("Output: Sequence unloaded") *> unload(id)
-      case Breakpoint(id, step, v) => log("Output: breakpoint changed") *>
+      case Pause(id)               => log("Engine: Paused") *> switch(q)(id)(SequenceState.Stopping)
+      case Load(id, seq)           => log("Engine: Sequence loaded") *> load(id, seq)
+      case Unload(id)              => log("Engine: Sequence unloaded") *> unload(id)
+      case Breakpoint(id, step, v) => log("Engine: breakpoint changed") *>
         modifyS(id)(_.setBreakpoint(step, v))
-      case SetOperator(name)       => log("Output: Setting Operator name") *> setOperator(name)
-      case SetObserver(id, name)   => log("Output: Setting Observer name") *> setObserver(id)(name)
-      case SetConditions(conds)    => log("Output: Setting conditions") *> setConditions(conds)
-      case SetImageQuality(iq)     => log("Output: Setting image quality") *> setImageQuality(iq)
-      case SetWaterVapor(wv)       => log("Output: Setting water vapor") *> setWaterVapor(wv)
-      case SetSkyBackground(sb)    => log("Output: Setting sky background") *> setSkyBackground(sb)
-      case SetCloudCover(cc)       => log("Output: Setting cloud cover") *> setCloudCover(cc)
-      case Poll                    => log("Output: Polling current state")
-      case Exit                    => log("Bye") *> close(q)
+      case SetOperator(name)       => log("Engine: Setting Operator name") *> setOperator(name)
+      case SetObserver(id, name)   => log("Engine: Setting Observer name") *> setObserver(id)(name)
+      case SetConditions(conds)    => log("Engine: Setting conditions") *> setConditions(conds)
+      case SetImageQuality(iq)     => log("Engine: Setting image quality") *> setImageQuality(iq)
+      case SetWaterVapor(wv)       => log("Engine: Setting water vapor") *> setWaterVapor(wv)
+      case SetSkyBackground(sb)    => log("Engine: Setting sky background") *> setSkyBackground(sb)
+      case SetCloudCover(cc)       => log("Engine: Setting cloud cover") *> setCloudCover(cc)
+      case Poll                    => log("Engine: Polling current state")
+      case Exit                    => log("Engine: Bye") *> close(q)
       case GetState(f)             => getState(f)
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
-      case Completed(id, i, r) => log("Output: Action completed") *> complete(id, i, r)
-      case PartialResult(id, i, r)   => log("Output: Partial result") *> partialResult(id,i, r)
-      case Failed(id, i, e)    => log("Output: Action failed") *> fail(q)(id)(i, e)
-      case Executed(id)        => log("Output: Execution completed") *> next(q)(id)
-      case Executing(id)       => log("Output: Executing") *> execute(q)(id)
-      case Finished(id)        => log("Output: Finished") *> switch(q)(id)(SequenceState.Completed)
+      case Completed(id, i, r)     => log("Engine: Action completed") *> complete(id, i, r)
+      case PartialResult(id, i, r) => log("Engine: Partial result") *> partialResult(id,i, r)
+      case Failed(id, i, e)        => log("Engine: Action failed") *> fail(q)(id)(i, e)
+      case Busy(id)                => log("Engine: Resources needed this sequence are busy")
+      case Executed(id)            => log("Engine: Execution completed") *> next(q)(id)
+      case Executing(id)           => log("Engine: Executing") *> execute(q)(id)
+      case Finished(id)            => log("Engine: Finished") *> switch(q)(id)(SequenceState.Completed)
     }
 
     (ev match {
