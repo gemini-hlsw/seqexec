@@ -271,7 +271,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     import org.scalajs.dom.document
 
     val host = document.location.host
-    val url = s"ws://$host/api/seqexec/events"
+    val protocol = document.location.protocol.startsWith("https") ? "wss" | "ws"
+    val url = s"$protocol://$host/api/seqexec/events"
 
     val ws = new WebSocket(url)
 

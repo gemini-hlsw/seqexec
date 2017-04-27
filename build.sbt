@@ -22,6 +22,8 @@ ocsJreDir in ThisBuild := Path.userHome / ".jres8"
 
 parallelExecution in (ThisBuild, Test) := false
 
+cancelable in Global := true
+
 lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .settings(commonSettings: _*)

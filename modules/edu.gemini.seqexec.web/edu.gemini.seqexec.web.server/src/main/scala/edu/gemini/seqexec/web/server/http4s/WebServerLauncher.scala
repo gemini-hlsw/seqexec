@@ -10,6 +10,7 @@ import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
+import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.server.{Server, ServerApp}
 import squants.time.Hours
@@ -22,10 +23,12 @@ import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ServerApp with LogInitialization {
 
+  case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
+
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
+  case class WebServerConfiguration(host: String, port: Int, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -50,7 +53,11 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       val host = cfg.require[String]("web-server.host")
       val port = cfg.require[Int]("web-server.port")
       val devMode = cfg.require[String]("mode")
-      WebServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"))
+      val keystore = cfg.lookup[String]("web-server.tls.keyStore")
+      val keystorePwd = cfg.lookup[String]("web-server.tls.keyStorePwd")
+      val certPwd = cfg.lookup[String]("web-server.tls.certPwd")
+      val sslConfig = (keystore |@| keystorePwd |@| certPwd)(SSLConfig.apply)
+      WebServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"), sslConfig)
     }
 
   // Configuration of the ldap clients
@@ -61,7 +68,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     }
 
   // Configuration of the authentication service
-  val authConf: Task[AuthenticationConfig] =
+  val authConf: Kleisli[Task, WebServerConfiguration, AuthenticationConfig] = Kleisli { conf =>
     for {
       ld <- ldapConf
       cfg <- config
@@ -70,9 +77,10 @@ object WebServerLauncher extends ServerApp with LogInitialization {
       val sessionTimeout = cfg.require[Int]("authentication.sessionLifeHrs")
       val cookieName = cfg.require[String]("authentication.cookieName")
       val secretKey = cfg.require[String]("authentication.secretKey")
-      val useSSL = cfg.require[Boolean]("authentication.useSSL")
-      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), Hours(sessionTimeout), cookieName, secretKey, useSSL, ld)
+      val sslSettings = cfg.lookup[String]("web-server.tls.keyStore")
+      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), Hours(sessionTimeout), cookieName, secretKey, sslSettings.isDefined, ld)
     }
+  }
 
   /**
     * Configures the Authentication service
@@ -88,12 +96,15 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
 
-    BlazeBuilder.bindHttp(conf.port, conf.host)
+    val builder = BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
       .mountService(new SeqexecUIApiRoutes(as, events, se).service, "/api")
-      .start
+    conf.sslConfig.fold(builder) { ssl =>
+      val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
+      builder.withSSL(storeInfo, ssl.certPwd, "TLS")
+    }.start
   }
 
   /**
@@ -115,9 +126,9 @@ object WebServerLauncher extends ServerApp with LogInitialization {
         // Launch web server
         for {
           _  <- configLog
-          ac <- authConf
-          as <- authService.run(ac)
           wc <- serverConf
+          ac <- authConf.run(wc)
+          as <- authService.run(ac)
           ws <- webServer(as, (inq, out), se).run(wc)
         } yield ws
       ).map(_._2)
