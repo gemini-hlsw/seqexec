@@ -38,6 +38,7 @@ sealed trait SystemEvent
 case class Completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]) extends SystemEvent
 case class PartialResult[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]) extends SystemEvent
 case class Failed(id: Sequence.Id, i: Int, e: Result.Error) extends SystemEvent
+case class Busy(id: Sequence.Id) extends SystemEvent
 case class Executed(id: Sequence.Id) extends SystemEvent
 case class Executing(id: Sequence.Id) extends SystemEvent
 case class Finished(id: Sequence.Id) extends SystemEvent
@@ -63,6 +64,7 @@ object Event {
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
   def completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]): Event = EventSystem(Completed(id, i, r))
   def partial[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]): Event = EventSystem(PartialResult(id, i, r))
+  def busy(id: Sequence.Id): Event = EventSystem(Busy(id))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
   def finished(id: Sequence.Id): Event = EventSystem(Finished(id))
