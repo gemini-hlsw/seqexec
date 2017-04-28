@@ -76,6 +76,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             config.toStepConfig,
             resources,
             false,
+            false,
             (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
             else List())
             ++
@@ -97,6 +98,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             config.toStepConfig,
             // No resources when done
             Set.empty,
+            false,
             false,
             // TODO: Is it possible to reconstruct done executions from the ODB?
             List(Nil)

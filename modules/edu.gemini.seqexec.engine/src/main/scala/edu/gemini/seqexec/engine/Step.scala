@@ -14,6 +14,7 @@ case class Step[+A](
   config: StepConfig,
   resources: Set[Resource],
   breakpoint: Boolean,
+  skip: Boolean,
   executions: List[List[A]]
 )
 
@@ -71,6 +72,7 @@ object Step {
     config: StepConfig,
     resources: Set[Resource],
     breakpoint: Boolean,
+    skip: Boolean,
     pending: List[Actions],
     focus: Execution,
     done: List[Results],
@@ -103,7 +105,7 @@ object Step {
       */
     val uncurrentify: Option[Step[Result]] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, fileId, config, resources, breakpoint, x :: done)
+        x => Step(id, fileId, config, resources, breakpoint, skip, x :: done)
       )
       else None
 
@@ -118,6 +120,7 @@ object Step {
         config,
         resources,
         breakpoint,
+        skip,
         // TODO: Functor composition?
         done.map(_.map(_.right)) ++
           List(focus.execution) ++
@@ -144,6 +147,7 @@ object Step {
               step.config,
               step.resources,
               step.breakpoint,
+              step.skip,
               exes,
               x,
               Nil,

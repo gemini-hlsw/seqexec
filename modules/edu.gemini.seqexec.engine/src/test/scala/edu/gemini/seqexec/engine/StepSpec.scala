@@ -104,6 +104,7 @@ class StepSpec extends FlatSpec {
                    config,
                    Set.empty,
                    false,
+                   false,
                    List(
                      List(configureTcs, configureInst, triggerPause(q)).map(_.left), // Execution
                      List(observe.left) // Execution
@@ -125,7 +126,7 @@ class StepSpec extends FlatSpec {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (SequenceState.Idle)
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
 
         }
@@ -152,6 +153,7 @@ class StepSpec extends FlatSpec {
                  config,
                  Set.empty,
                  false,
+                 false,
                  Nil,
                  Execution(List(observe.left)),
                  List(List(result, result)),
@@ -170,7 +172,7 @@ class StepSpec extends FlatSpec {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Running)
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
     }
@@ -213,6 +215,7 @@ class StepSpec extends FlatSpec {
                    None,
                    config,
                    Set.empty,
+                   false,
                    false,
                    List(
                      List(
@@ -260,7 +263,7 @@ class StepSpec extends FlatSpec {
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, false, false, pending, focus, done, rollback)
   }
 
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
@@ -294,12 +297,12 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step[Action] = Step(1, None, config, Set.empty, false, List(Nil))
-  val step1: Step[Action] = Step(1, None, config, Set.empty, false, List(List(action)))
-  val step2: Step[Action] = Step(2, None, config, Set.empty, false, List(List(action, action), List(action)))
+  val step0: Step[Action] = Step(1, None, config, Set.empty, false, false, List(Nil))
+  val step1: Step[Action] = Step(1, None, config, Set.empty, false, false, List(List(action)))
+  val step2: Step[Action] = Step(2, None, config, Set.empty, false, false, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, false, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, false, false, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
@@ -317,6 +320,7 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
+          false,
           false,
           Nil,
           Execution(List(action.left, failure.right, result.right)),
@@ -336,6 +340,7 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Set.empty,
           false,
+          false,
           Nil,
           Execution(List(result.right, result.right, result.right)),
           Nil,
@@ -354,6 +359,7 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Set.empty,
           false,
+          false,
           Nil,
           Execution(List(result.right, action.left, result.right)),
           Nil,
@@ -371,6 +377,7 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
+          false,
           false,
           Nil,
           Execution(List(action.left, action.left, action.left)),
