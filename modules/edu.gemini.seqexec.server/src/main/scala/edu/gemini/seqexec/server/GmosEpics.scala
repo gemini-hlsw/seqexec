@@ -249,34 +249,14 @@ class GmosEpics(epicsService: CaService) {
   def gratingTilt: Option[Double] = Option(state.getDoubleAttribute("grtilt").value.toDouble)
 }
 
-object GmosEpics extends EpicsSystem {
-  val Log = Logger.getLogger(getClass.getName)
-  val CA_CONFIG_FILE = "/Gmos.xml"
-  val GMOS_TOP = "gm:"
+object GmosEpics extends EpicsSystem[GmosEpics] {
 
-  private var instanceInternal = Option.empty[GmosEpics]
-  lazy val instance: GmosEpics = instanceInternal.getOrElse(
-    throw new Exception("Attempt to reference GmosEpics single instance before initialization."))
+  override val className = getClass.getName
+  override val Log = Logger.getLogger(className)
+  override val CA_CONFIG_FILE = "/Gmos.xml"
 
-  override def init(service: CaService): TrySeq[Unit] = {
-    try {
-      (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
-        .withCaService(service)
-        .withTop("gm", GMOS_TOP)
-        .buildAll()
+  override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service)
 
-      instanceInternal = Some(new GmosEpics(service))
-
-      TrySeq(())
-
-    } catch {
-      case c: Throwable =>
-        Log.warning("TcsEpics: Problem initializing EPICS service: " + c.getMessage + "\n"
-          + c.getStackTrace.mkString("\n"))
-        TrySeq.fail(SeqexecFailure.SeqexecException(c))
-    }
-  }
-  
   class RoiParameters(cs: Option[CaCommandSender], i: Int) {
     val ccdXstart = cs.map(_.getInteger(s"ccdXstart$i"))
     def setCcdXstart1(v: Integer): SeqAction[Unit] = setParameter(ccdXstart, v)
@@ -297,5 +277,5 @@ object GmosEpics extends EpicsSystem {
     def ccdXsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXsize$i").value.toInt)
     def ccdYsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYsize$i").value.toInt)
   }
-  
+
 }

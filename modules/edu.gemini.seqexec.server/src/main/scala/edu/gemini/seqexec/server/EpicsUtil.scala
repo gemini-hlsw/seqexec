@@ -1,10 +1,10 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.epics.acm.{CaService, CaCommandListener, CaCommandSender, CaParameter}
-import edu.gemini.seqexec.server.SeqexecFailure.{Timeout, SeqexecException}
+import java.util.logging.Logger
 
-import scala.concurrent.TimeoutException
-import scala.concurrent.duration.Duration
+import edu.gemini.epics.acm._
+import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
+
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -32,8 +32,37 @@ trait EpicsCommand {
   )
 }
 
-trait EpicsSystem {
-  def init(service: CaService): TrySeq[Unit]
+trait EpicsSystem[T] {
+
+  val className: String
+  val Log: Logger
+  val CA_CONFIG_FILE: String
+
+  def build(service: CaService, tops: Map[String, String]): T
+
+  // Still using a var, but at least now it's hidden. Attempts to access the single instance will
+  // now result in an Exception with a meaningful message, instead of a NullPointerException
+  private var instanceInternal = Option.empty[T]
+  lazy val instance: T = instanceInternal.getOrElse(
+    throw new Exception(s"Attempt to reference $className single instance before initialization."))
+
+  def init(service: CaService, tops: Map[String, String]): TrySeq[Unit] = {
+    println(tops)
+    try {
+      tops.foldLeft((new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
+        .withCaService(service))((b, a) => b.withTop(a._1, a._2)).buildAll()
+
+        instanceInternal = Some(build(service, tops))
+
+        TrySeq(())
+
+    } catch {
+      case c: Throwable =>
+        Log.warning(s"$className: Problem initializing EPICS service: " + c.getMessage + "\n"
+          + c.getStackTrace.mkString("\n"))
+        TrySeq.fail(SeqexecFailure.SeqexecException(c))
+    }
+  }
 }
 
 object EpicsCommand {
@@ -78,4 +107,5 @@ object EpicsCodex {
   }
 
   def decode[T, A](t: T)(implicit e: DecodeEpicsValue[T, A]): A = e.decode(t)
+
 }

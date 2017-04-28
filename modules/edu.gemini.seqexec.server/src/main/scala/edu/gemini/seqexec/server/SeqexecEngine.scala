@@ -243,6 +243,9 @@ object SeqexecEngine {
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
+
+  private def decodeTops(s: String): Map[String, String] = s.split("=|,").grouped(2).map { case Array(k, v) => k.trim -> v.trim }.toMap
+
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
@@ -262,12 +265,13 @@ object SeqexecEngine {
     val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
     val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
+    val tops = decodeTops(cfg.require[String]("seqexec-engine.tops"))
 
     // TODO: Review initialization of EPICS systems
-    def initEpicsSystem(sys: EpicsSystem): Task[Unit] = Task(Option(CaService.getInstance()) match {
+    def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] = Task(Option(CaService.getInstance()) match {
           case None => throw new Exception("Unable to start EPICS service.")
           case Some(s) => {
-            sys.init(s).leftMap {
+            sys.init(s, tops).leftMap {
                 case SeqexecFailure.SeqexecException(ex) => throw ex
                 case c: SeqexecFailure => throw new Exception(SeqexecFailure.explain(c))
             }
@@ -275,11 +279,11 @@ object SeqexecEngine {
         }
       )
 
-    val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics) else Task.now(())
+    val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics, tops) else Task.now(())
     // More instruments to be added to the list here
-    val instInit = Nondeterminism[Task].gatherUnordered(List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics)).filter(_._1 || !instSim).map(x => initEpicsSystem(x._2)))
-    val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics) else Task.now(())
-    val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics) else Task.now(())
+    val instInit = Nondeterminism[Task].gatherUnordered(List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics)).filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
+    val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics, tops) else Task.now(())
+    val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics, tops) else Task.now(())
 
     tcsInit *>
       gwsInit *>
