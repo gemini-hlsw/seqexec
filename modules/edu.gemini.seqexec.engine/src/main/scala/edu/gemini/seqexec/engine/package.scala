@@ -57,11 +57,11 @@ package object engine {
     */
   def switch(q: EventQueue)(id: Sequence.Id)(st: SequenceState): Handle[Unit] =
     resources.flatMap(
-      ores => getS(id).flatMap {
+      other => getS(id).flatMap {
         case Some(seq) =>
           if (st === SequenceState.Running)
             // No resources being used by other running sequences
-            if (seq.toSequence.resources.intersect(ores).isEmpty)
+            if (seq.toSequence.resources.intersect(other).isEmpty)
               putS(id)(Sequence.State.status.set(seq, st))
             // Some resources are being used
             else send(q)(busy(id))

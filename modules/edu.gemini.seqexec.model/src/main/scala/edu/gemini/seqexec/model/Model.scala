@@ -36,6 +36,8 @@ object Model {
 
     case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    case class ResourcesBusy(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     //Generic update. It will probably become useless if we have a special Event for every case.
     case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
