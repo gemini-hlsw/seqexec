@@ -47,7 +47,6 @@ trait EpicsSystem[T] {
     throw new Exception(s"Attempt to reference $className single instance before initialization."))
 
   def init(service: CaService, tops: Map[String, String]): TrySeq[Unit] = {
-    println(tops)
     try {
       tops.foldLeft((new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
         .withCaService(service))((b, a) => b.withTop(a._1, a._2)).buildAll()
