@@ -11,7 +11,6 @@ import japgolly.scalajs.react.vdom.prefix_<^._
   */
 object SeqexecUI {
   val lbConnect = SeqexecCircuit.connect(_.loginBox)
-  val qaConnect = SeqexecCircuit.connect(_.searchAreaState)
   val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
 
   val component = ReactComponentB[Unit]("Seqexec")
@@ -20,7 +19,7 @@ object SeqexecUI {
       <.div(
         NavBar(),
         wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
-        qaConnect(QueueArea.apply),
+        QueueArea(),
         SequenceArea(),
         lbConnect(LoginBox.apply)
       )

@@ -45,8 +45,7 @@ class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) ext
       updated(action.potResult)
 
     case action: LoadSequence =>
-      // If there is a non-empty response close the search area in 1 sec
-      updated(action.potResult, Effect.action(CloseSearchArea).after(1.second))
+      updated(action.potResult)
   }
 }
 
@@ -98,21 +97,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
         case s if s == sequence => sequence.flipBreakpointAtStep(step)
         case s                  => s
       }), breakpointRequest)
-  }
-}
-
-/**
-  * Handles actions related to the search area, used to open/close the area
-  */
-class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case OpenSearchArea  =>
-      updated(SectionOpen)
-
-    case CloseSearchArea =>
-      updated(SectionClosed)
   }
 }
 
@@ -408,7 +392,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
   val searchHandler          = new LoadHandler(zoomTo(_.searchResults))
-  val searchAreaHandler      = new SearchAreaHandler(zoomTo(_.searchAreaState))
   val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
@@ -453,7 +436,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   override protected def actionHandler = composeHandlers(
     wsHandler,
     searchHandler,
-    searchAreaHandler,
     devConsoleHandler,
     loginBoxHandler,
     userLoginHandler,

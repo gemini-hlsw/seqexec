@@ -20,10 +20,6 @@ case class LoadSequence(criteria: String, potResult: Pot[SequencesQueue[Sequence
   }
 }
 
-// Actions to close and/open the search area
-case object OpenSearchArea extends Action
-case object CloseSearchArea extends Action
-
 // Actions to close and/open the dev console area
 case object ToggleDevConsole extends Action
 
@@ -144,7 +140,6 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
                                sequences: SeqexecAppRootModel.LoadedSequences,
-                               searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
@@ -157,5 +152,5 @@ object SeqexecAppRootModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
   val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
-    SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+    SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }
