@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.model
 import java.time.LocalTime
 
 import diode.{Action, RootModelR}
-import diode.data.{Empty, Pot, PotAction, RefTo}
+import diode.data.{Empty, Pot, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
 import org.scalajs.dom.WebSocket
@@ -12,17 +12,6 @@ import scalaz._
 import Scalaz._
 
 // Actions
-
-// Request a search
-case class LoadSequence(criteria: String, potResult: Pot[SequencesQueue[SequenceId]] = Empty) extends PotAction[SequencesQueue[SequenceId], LoadSequence] {
-  override def next(newResult: Pot[SequencesQueue[SequenceId]]) = {
-    LoadSequence(criteria, newResult)
-  }
-}
-
-// Actions to close and/open the search area
-case object OpenSearchArea extends Action
-case object CloseSearchArea extends Action
 
 // Actions to close and/open the dev console area
 case object ToggleDevConsole extends Action
@@ -144,7 +133,6 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 case class SeqexecAppRootModel(ws: WebSocketConnection,
                                user: Option[UserDetails],
                                sequences: SeqexecAppRootModel.LoadedSequences,
-                               searchAreaState: SectionVisibilityState,
                                devConsoleState: SectionVisibilityState,
                                loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
@@ -157,5 +145,5 @@ object SeqexecAppRootModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
   val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
-    SectionClosed, SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+    SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

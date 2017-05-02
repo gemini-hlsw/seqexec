@@ -6,9 +6,9 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest
 import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
-import org.scalajs.dom.ext.{Ajax, AjaxException}
+import org.scalajs.dom.ext.Ajax
 import boopickle.Default._
-import edu.gemini.seqexec.model.Model.{SequenceId, SequencesQueue, SequenceView, Step}
+import edu.gemini.seqexec.model.Model.{SequenceView, Step}
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
@@ -26,18 +26,6 @@ object SeqexecWebClient extends ModelBooPicklers {
     val ab = TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer])
     Unpickle[A].fromBytes(ab)
   }
-
-  def read(id: String): Future[SequencesQueue[SequenceId]] =
-    Ajax.get(
-      url = s"$baseUrl/sequence/$id",
-      responseType = "arraybuffer"
-    )
-    .map(unpickle[SequencesQueue[SequenceId]])
-    .recover {
-      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
-        // If not found, we'll consider it like an empty response
-        SequencesQueue(Conditions.default, None, Nil)
-    }
 
   /**
     * Requests the backend to execute a sequence
@@ -64,7 +52,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def setOperator(name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/operator/${name}",
+      url = s"$baseUrl/commands/operator/$name",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -74,7 +62,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def setObserver(s: SequenceView, name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/observer/${name}",
+      url = s"$baseUrl/commands/${s.id}/observer/$name",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

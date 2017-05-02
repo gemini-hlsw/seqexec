@@ -120,6 +120,11 @@ object SeqexecStyles extends StyleSheet.Inline {
     borderTop(3.px, red, solid).important
   )
 
+  val buttonsRow: StyleA = style(
+    marginRight(0.8.rem).important,
+    marginLeft(0.8.rem).important
+  )
+
   val progressVCentered: StyleA = style("ui.progress.vcentered")(
     marginBottom(0.px)
   )

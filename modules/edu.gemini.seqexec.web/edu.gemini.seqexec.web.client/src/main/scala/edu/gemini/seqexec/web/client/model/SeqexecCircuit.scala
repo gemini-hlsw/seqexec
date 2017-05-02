@@ -14,7 +14,6 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import org.scalajs.dom._
-import org.scalajs.dom.ext.AjaxException
 import boopickle.Default._
 
 import scala.concurrent.Future
@@ -23,32 +22,6 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz._
 import Scalaz._
-
-/**
-  * Handles actions related to search
-  */
-class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action @ LoadSequence(_, Empty) =>
-      // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
-      action.handleWith(this, loadEffect)(PotAction.handler())
-
-    case action @ LoadSequence(_, Ready(r: SeqexecCircuit.SearchResults)) if r.queue.isEmpty =>
-      // Don't close the search area on an empty response
-      updated(action.potResult)
-
-    case action @ LoadSequence(_, Failed(_: AjaxException)) =>
-      // Don't close the search area on errors
-      updated(action.potResult)
-
-    case action: LoadSequence =>
-      // If there is a non-empty response close the search area in 1 sec
-      updated(action.potResult, Effect.action(CloseSearchArea).after(1.second))
-  }
-}
 
 /**
   * Handles sequence execution actions
@@ -98,21 +71,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
         case s if s == sequence => sequence.flipBreakpointAtStep(step)
         case s                  => s
       }), breakpointRequest)
-  }
-}
-
-/**
-  * Handles actions related to the search area, used to open/close the area
-  */
-class SearchAreaHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case OpenSearchArea  =>
-      updated(SectionOpen)
-
-    case CloseSearchArea =>
-      updated(SectionClosed)
   }
 }
 
@@ -407,8 +365,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  val searchHandler          = new LoadHandler(zoomTo(_.searchResults))
-  val searchAreaHandler      = new SearchAreaHandler(zoomTo(_.searchAreaState))
   val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
@@ -431,13 +387,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws, m.sequencesOnDisplay.currentSequences))
 
-  // Reader for search results
-  val searchResults: ModelR[SeqexecAppRootModel, Pot[SequencesQueue[SequenceId]]] = zoom(_.searchResults)
-
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
 
-  val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
@@ -452,8 +404,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    searchHandler,
-    searchAreaHandler,
     devConsoleHandler,
     loginBoxHandler,
     userLoginHandler,
