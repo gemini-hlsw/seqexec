@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.model
 import java.time.LocalTime
 
 import diode.{Action, RootModelR}
-import diode.data.{Empty, Pot, PotAction, RefTo}
+import diode.data.{Empty, Pot, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
 import org.scalajs.dom.WebSocket

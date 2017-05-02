@@ -14,7 +14,6 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import org.scalajs.dom._
-import org.scalajs.dom.ext.AjaxException
 import boopickle.Default._
 
 import scala.concurrent.Future

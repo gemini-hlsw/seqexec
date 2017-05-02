@@ -2,7 +2,6 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react._
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
-import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
@@ -89,26 +88,6 @@ object QueueTableBody {
 }
 
 /**
-  * Shows a message when there is an error loading the queue
-  */
-object LoadingErrorMsg {
-  case class Props(queue :ModelProxy[SeqexecAppRootModel.LoadedSequences])
-
-  private val component = ReactComponentB[Props]("LoadingErrorMessage")
-    .stateless
-    .render_P( p =>
-      <.div(
-        /*p.queue().renderFailed(_ =>
-          CloseableMessage(CloseableMessage.Props(Some("Sorry, there was an error reading the queue from the server"), CloseableMessage.Style.Negative))
-        )*/
-      )
-    )
-    .build
-
-  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
-}
-
-/**
   * Container for the queue table
   */
 object QueueTableSection {
@@ -116,7 +95,7 @@ object QueueTableSection {
 
   private val component = ReactComponentB[Unit]("QueueTableSection")
     .stateless
-    .render_P(p =>
+    .render_P(_ =>
       <.div(
         ^.cls := "ui segment scroll pane",
         SeqexecStyles.queueListPane,
@@ -145,8 +124,6 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  private val sequencesConnect = SeqexecCircuit.connect(_.sequences)
-
   private val component = ReactComponentB[Unit]("QueueArea")
     .stateless
     .render_P(p =>
@@ -161,8 +138,6 @@ object QueueArea {
               ^.cls := "stretched row",
               <.div(
                 ^.cls := "sixteen wide column",
-                // If there was an error on the process display a message
-                sequencesConnect(LoadingErrorMsg(_)),
                 QueueTableSection()
               )
             )

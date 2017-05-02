@@ -1,19 +1,18 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
-import edu.gemini.seqexec.web.client.model.{SectionVisibilityState, SeqexecCircuit}
-import japgolly.scalajs.react.ReactComponentB
+import edu.gemini.seqexec.web.client.model.SeqexecCircuit
+import japgolly.scalajs.react.{ReactComponentB, ReactComponentC, ReactComponentU, TopNode}
 import japgolly.scalajs.react.vdom.prefix_<^._
 
 /**
   * Top level UI component
   */
 object SeqexecUI {
-  val lbConnect = SeqexecCircuit.connect(_.loginBox)
-  val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
+  private val lbConnect = SeqexecCircuit.connect(_.loginBox)
+  private val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
 
-  val component = ReactComponentB[Unit]("Seqexec")
+  val component: ReactComponentC.ConstProps[Unit, Unit, Unit, TopNode] = ReactComponentB[Unit]("Seqexec")
     .stateless
     .render(_ =>
       <.div(
@@ -26,6 +25,6 @@ object SeqexecUI {
     )
     .build
 
-  def apply() = component()
+  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
 }
 
