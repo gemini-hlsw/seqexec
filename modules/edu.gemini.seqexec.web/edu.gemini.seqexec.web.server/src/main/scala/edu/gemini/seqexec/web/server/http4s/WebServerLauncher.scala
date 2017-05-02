@@ -12,16 +12,19 @@ import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.server.{Server, ServerApp}
+import org.http4s.server.Server
+import org.http4s.util.ProcessApp
 import squants.time.Hours
 
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
+import scalaz.concurrent.Task._
+import scalaz.stream.Process
 import scalaz.stream.async
 import scalaz.stream.async.mutable.Topic
 
-object WebServerLauncher extends ServerApp with LogInitialization {
+object WebServerLauncher extends ProcessApp with LogInitialization {
 
   case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
@@ -110,7 +113,7 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   /**
     * Reads the configuration and launches the web server
     */
-  override def server(args: List[String]): Task[Server] = {
+  override def process(args: List[String]): Process[Task, Unit] = {
     val engineTask = for {
       c    <- config
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)
@@ -119,20 +122,23 @@ object WebServerLauncher extends ServerApp with LogInitialization {
     val inq  = async.boundedQueue[engine.Event](10)
     val out  = async.topic[SeqexecEvent]()
 
-    engineTask flatMap (
-      se => Nondeterminism[Task].both(
-        // Launch engine and broadcast channel
-        se.eventProcess(inq).to(out.publish).run,
-        // Launch web server
-        for {
-          _  <- configLog
-          wc <- serverConf
-          ac <- authConf.run(wc)
-          as <- authService.run(ac)
-          ws <- webServer(as, (inq, out), se).run(wc)
-        } yield ws
-      ).map(_._2)
-    )
+    // It should be possible to cleanup the engine at shutdown in this function
+    def cleanup = (s: SeqexecEngine) => Process.eval_(Task.now(()))
+    Process.bracket(engineTask)(cleanup) { case et =>
+        val pt = Nondeterminism[Task].both(
+          // Launch engine and broadcast channel
+          et.eventProcess(inq).to(out.publish).run,
+          // Launch web server
+          for {
+            _  <- configLog
+            wc <- serverConf
+            ac <- authConf.run(wc)
+            as <- authService.run(ac)
+            ws <- webServer(as, (inq, out), et).run(wc)
+          } yield ws
+        )
+      Process.eval_(pt.map(_._2))
+    }
   }
 
 }
