@@ -96,7 +96,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
-  def sequence(settings: Settings)(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String): (List[SeqexecFailure], Option[Sequence[Action]]) = {
+  private def extractStatus(config: Config): String =
+    config.getItemValue(new ItemKey("observe:status")).toString
+
+    def sequence(settings: Settings)(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String): (List[SeqexecFailure], Option[Sequence[Action]]) = {
+
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {

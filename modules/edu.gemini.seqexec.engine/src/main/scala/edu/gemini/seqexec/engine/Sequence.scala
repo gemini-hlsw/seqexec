@@ -189,7 +189,7 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action]): State = Sequence.Zipper.currentify(q).map(Zipper(_, SequenceState.Idle))
+    def init(q: Sequence[Action \/ Result]): State = Sequence.Zipper.currentify(q).map(Zipper(_, SequenceState.Idle))
       .getOrElse(Final(Sequence.empty(q.id), SequenceState.Idle))
 
     /**
