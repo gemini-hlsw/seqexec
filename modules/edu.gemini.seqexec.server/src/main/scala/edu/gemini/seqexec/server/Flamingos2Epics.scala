@@ -101,30 +101,11 @@ final class Flamingos2Epics(epicsService: CaService) {
 
 }
 
-object Flamingos2Epics extends EpicsSystem {
-  
-  val Log = Logger.getLogger(getClass.getName)
-  val CA_CONFIG_FILE = "/Flamingos2.xml"
-  
-  // Still using a var, but at least now it's hidden. Attempts to access the single instance will
-  // now result in an Exception with a meaningful message, instead of a NullPointerException
-  private var instanceInternal = Option.empty[Flamingos2Epics]
-  lazy val instance: Flamingos2Epics = instanceInternal.getOrElse(
-    throw new Exception("Attempt to reference Flamingos2Epics single instance before initialization."))
+object Flamingos2Epics extends EpicsSystem[Flamingos2Epics] {
 
-  override def init(service: CaService): TrySeq[Unit] = {
-    try {
-      (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
-        .buildAll()
+  override val className: String = getClass.getName
+  override val Log = Logger.getLogger(className)
+  override val CA_CONFIG_FILE = "/Flamingos2.xml"
 
-      instanceInternal = Some(new Flamingos2Epics(service))
-
-      TrySeq(())
-    } catch {
-      case c: Throwable =>
-        Log.warning("Flamingos2Epics: Problem initializing EPICS service: " + c.getMessage + "\n"
-          + c.getStackTrace.mkString("\n"))
-        SeqexecFailure.SeqexecException(c).left
-    }
-  }
+  override def build(service: CaService, tops: Map[String, String]) = new Flamingos2Epics(service)
 }

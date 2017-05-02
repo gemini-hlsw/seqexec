@@ -8,10 +8,12 @@ import edu.gemini.seqexec.server.gcal.BinaryOnOff
 /**
   * Created by jluhrs on 3/14/17.
   */
-class GcalEpics(epicsService: CaService) {
+class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
 
   import EpicsCommand.setParameter
   import GcalEpics._
+
+  val GCAL_TOP = tops.get("gc").getOrElse("")
 
   def post: SeqAction[Unit] = lampsCmd.post
 
@@ -81,7 +83,7 @@ class GcalEpics(epicsService: CaService) {
   val state = epicsService.getStatusAcceptor("gcal::status")
 
   def createLampAttribute(name: String, longName: String): EnumAttribute[BinaryOnOff] =
-    new EnumAttribute[BinaryOnOff](state, name + "LampState", name + "_LampState", longName + " lamp state")(classOf[BinaryOnOff])
+    new EnumAttribute[BinaryOnOff](state, name + "LampState", GCAL_TOP + name + "_LampState", longName + " lamp state")(classOf[BinaryOnOff])
 
   val lampAr: EnumAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
 
@@ -102,38 +104,16 @@ class GcalEpics(epicsService: CaService) {
   def diffuser: Option[String] = Option(state.getStringAttribute("diffuser").value)
 }
 
-object GcalEpics extends EpicsSystem {
+object GcalEpics extends EpicsSystem[GcalEpics] {
 
-  val Log = Logger.getLogger(getClass.getName)
-  val CA_CONFIG_FILE = "/Gcal.xml"
-  val GCAL_TOP = "gc:"
+  override val className = getClass.getName
+  override val Log = Logger.getLogger(className)
+  override val CA_CONFIG_FILE = "/Gcal.xml"
 
-  private var instanceInternal = Option.empty[GcalEpics]
-  lazy val instance: GcalEpics = instanceInternal.getOrElse(
-    throw new Exception("Attempt to reference GcalEpics single instance before initialization."))
-
-  override def init(service: CaService): TrySeq[Unit] = {
-    try {
-      (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
-        .withCaService(service)
-        .withTop("gc", GCAL_TOP)
-        .buildAll()
-
-        instanceInternal = Some(new GcalEpics(service))
-
-        TrySeq(())
-
-    } catch {
-      case c: Throwable =>
-        Log.warning("GcalEpics: Problem initializing EPICS service: " + c.getMessage + "\n"
-          + c.getStackTrace.mkString("\n"))
-        TrySeq.fail(SeqexecFailure.SeqexecException(c))
-    }
-  }
+  override def build(service: CaService, tops: Map[String, String]) = new GcalEpics(service, tops)
 
   class EnumAttribute[T <: Enum[T]](sa: CaStatusAcceptor, attrName: String, attrChannel: String, desc: String)(c: Class[T]) {
-    private val attribute: Option[CaAttribute[T]] = Option(sa.addEnum(attrName,
-        GCAL_TOP + attrChannel, c, desc))
+    private val attribute: Option[CaAttribute[T]] = Option(sa.addEnum(attrName, attrChannel, c, desc))
     def apply(): Option[T] = attribute.flatMap(v => Option(v.value))
   }
 

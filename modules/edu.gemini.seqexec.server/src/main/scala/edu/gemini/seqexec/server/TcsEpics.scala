@@ -5,13 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import java.util.{Timer, TimerTask}
 import java.util.logging.Logger
+
+import edu.gemini.epics.EpicsService
 import edu.gemini.seqexec.server.EpicsCommand._
-import edu.gemini.seqexec.server.tcs.{BinaryYesNo, BinaryOnOff}
+import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 
 import scala.collection.JavaConverters._
-
 import squants.Time
-
 import edu.gemini.epics.acm._
 
 import scalaz._
@@ -25,10 +25,12 @@ import scalaz.concurrent.Task
  * Created by jluhrs on 10/1/15.
  */
 
-final class TcsEpics(epicsService: CaService) {
+final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   import TcsEpics._
   import EpicsCommand.setParameter
+
+  val TCS_TOP = tops.get("tcs").getOrElse("")
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
@@ -539,41 +541,13 @@ final class TcsEpics(epicsService: CaService) {
 
 }
 
-object TcsEpics extends EpicsSystem {
+object TcsEpics extends EpicsSystem[TcsEpics] {
 
-  val Log = Logger.getLogger(getClass.getName)
-  val CA_CONFIG_FILE = "/Tcs.xml"
-  val TCS_TOP = "tc1:"
+  override val className = getClass.getName
+  override val Log = Logger.getLogger(className)
+  override val CA_CONFIG_FILE = "/Tcs.xml"
 
-
-  // Still using a var, but at least now it's hidden. Attempts to access the single instance will
-  // now result in an Exception with a meaningful message, instead of a NullPointerExecption
-  private var instanceInternal = Option.empty[TcsEpics]
-  lazy val instance: TcsEpics = instanceInternal.getOrElse(
-    throw new Exception("Attempt to reference TcsEpics single instance before initialization."))
-
-  override def init(service: CaService): TrySeq[Unit] = {
-    try {
-      (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
-        .withCaService(service)
-        .withTop("tcs", TcsEpics.TCS_TOP)
-        .withTop("ag", "tag:")
-        .withTop("m2", "tc1:m2:")
-        .withTop("ao", "tc1:ao:")
-        .withTop("oiwfs", "toiwfs:")
-        .buildAll()
-
-        instanceInternal = Some(new TcsEpics(service))
-
-        TrySeq(())
-
-    } catch {
-      case c: Throwable =>
-        Log.warning("TcsEpics: Problem initializing EPICS service: " + c.getMessage + "\n"
-          + c.getStackTrace.mkString("\n"))
-        TrySeq.fail(SeqexecFailure.SeqexecException(c))
-    }
-  }
+  override def build(service: CaService, tops: Map[String, String]) = new TcsEpics(service, tops)
 
   sealed class ProbeGuideCmd(csName: String, epicsService: CaService) extends EpicsCommand {
     override val cs = Option(epicsService.getCommandSender(csName))

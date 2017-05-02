@@ -7,8 +7,8 @@ import squants.motion.{Bars, MetersPerSecond, Pressure}
 import squants.space.{Angle, Degrees}
 import squants.thermal.Celsius
 import squants.{Temperature, Velocity}
-
 import edu.gemini.epics.acm.{CaService, XMLBuilder}
+import edu.gemini.seqexec.server.TcsEpics.className
 
 /**
   * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather Server.
@@ -29,31 +29,10 @@ final class GwsEpics private (epicsService: CaService) {
 
 }
 
-object GwsEpics extends EpicsSystem {
-  val Log = Logger.getLogger(getClass.getName)
-  val CA_CONFIG_FILE = "/Gws.xml"
-  val GWS_TOP = "ws:"
+object GwsEpics extends EpicsSystem[GwsEpics] {
+  override val className: String = getClass.getName
+  override val Log = Logger.getLogger(className)
+  override val CA_CONFIG_FILE = "/Gws.xml"
 
-  private var instanceInternal = Option.empty[GwsEpics]
-  lazy val instance: GwsEpics = instanceInternal.getOrElse(
-    throw new Exception("Attempt to reference TcsEpics single instance before initialization."))
-
-  override def init(service: CaService): TrySeq[Unit] = {
-    try {
-      (new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
-        .withCaService(service)
-        .withTop("gws", GWS_TOP)
-        .buildAll()
-
-        instanceInternal = Some(new GwsEpics(service))
-
-        TrySeq(())
-
-    } catch {
-      case c: Throwable =>
-        Log.warning("GwsEpics: Problem initializing EPICS service: " + c.getMessage + "\n"
-          + c.getStackTrace.mkString("\n"))
-        TrySeq.fail(SeqexecFailure.SeqexecException(c))
-    }
-  }
+  override def build(service: CaService, tops: Map[String, String]) = new GwsEpics(service)
 }
