@@ -25,31 +25,6 @@ import scalaz._
 import Scalaz._
 
 /**
-  * Handles actions related to search
-  */
-class LoadHandler[M](modelRW: ModelRW[M, Pot[SeqexecCircuit.SearchResults]]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case action @ LoadSequence(_, Empty) =>
-      // Request loading the queue with ajax
-      val loadEffect = action.effect(SeqexecWebClient.read(action.criteria))(identity)
-      action.handleWith(this, loadEffect)(PotAction.handler())
-
-    case action @ LoadSequence(_, Ready(r: SeqexecCircuit.SearchResults)) if r.queue.isEmpty =>
-      // Don't close the search area on an empty response
-      updated(action.potResult)
-
-    case action @ LoadSequence(_, Failed(_: AjaxException)) =>
-      // Don't close the search area on errors
-      updated(action.potResult)
-
-    case action: LoadSequence =>
-      updated(action.potResult)
-  }
-}
-
-/**
   * Handles sequence execution actions
   */
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.LoadedSequences]) extends ActionHandler(modelRW) {
@@ -391,7 +366,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  val searchHandler          = new LoadHandler(zoomTo(_.searchResults))
   val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
@@ -414,13 +388,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws, m.sequencesOnDisplay.currentSequences))
 
-  // Reader for search results
-  val searchResults: ModelR[SeqexecAppRootModel, Pot[SequencesQueue[SequenceId]]] = zoom(_.searchResults)
-
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
 
-  val statusAndSearchResults: ModelR[SeqexecAppRootModel, (ClientStatus, Pot[SequencesQueue[SequenceId]])] = SeqexecCircuit.status.zip(SeqexecCircuit.searchResults)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
@@ -435,7 +405,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    searchHandler,
     devConsoleHandler,
     loginBoxHandler,
     userLoginHandler,

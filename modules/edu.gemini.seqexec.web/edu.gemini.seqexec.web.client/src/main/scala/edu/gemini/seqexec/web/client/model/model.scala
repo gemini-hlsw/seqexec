@@ -13,13 +13,6 @@ import Scalaz._
 
 // Actions
 
-// Request a search
-case class LoadSequence(criteria: String, potResult: Pot[SequencesQueue[SequenceId]] = Empty) extends PotAction[SequencesQueue[SequenceId], LoadSequence] {
-  override def next(newResult: Pot[SequencesQueue[SequenceId]]) = {
-    LoadSequence(criteria, newResult)
-  }
-}
-
 // Actions to close and/open the dev console area
 case object ToggleDevConsole extends Action
 
