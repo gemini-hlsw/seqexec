@@ -128,6 +128,7 @@ object SequenceDefaultToolbar {
                   disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
                 s"Sync"
               ),
+            p.status.isLogged && p.s.status === SequenceState.Idle ?=
               Button(
                 Button.Props(
                   icon = Some(IconPlay),
