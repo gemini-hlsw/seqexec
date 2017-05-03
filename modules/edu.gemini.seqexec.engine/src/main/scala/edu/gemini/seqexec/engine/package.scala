@@ -273,6 +273,7 @@ package object engine {
       case Poll                    => log("Engine: Polling current state")
       case Exit                    => log("Engine: Bye") *> close(q)
       case GetState(f)             => getState(f)
+      case Log(msg)                => log(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
