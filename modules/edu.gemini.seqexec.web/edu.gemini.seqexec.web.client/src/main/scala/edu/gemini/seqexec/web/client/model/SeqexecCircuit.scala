@@ -33,6 +33,9 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SeqexecAppRootModel.Loaded
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
 
+    case RequestSync(s) =>
+      effectOnly(Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
+
     case RequestPause(s) =>
       effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))
 
