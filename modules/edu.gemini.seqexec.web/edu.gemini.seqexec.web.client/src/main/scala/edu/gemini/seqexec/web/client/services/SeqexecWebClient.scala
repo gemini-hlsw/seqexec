@@ -3,10 +3,10 @@ package edu.gemini.seqexec.web.client.services
 import java.util.logging.LogRecord
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
-import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor, SequencesQueue, SequenceId}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
-import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.ext.{Ajax, AjaxException}
 import boopickle.Default._
 import edu.gemini.seqexec.model.Model.{SequenceView, Step}
 import org.scalajs.dom.XMLHttpRequest
@@ -26,6 +26,18 @@ object SeqexecWebClient extends ModelBooPicklers {
     val ab = TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer])
     Unpickle[A].fromBytes(ab)
   }
+
+  def sync(id: String): Future[SequencesQueue[SequenceId]] =
+    Ajax.get(
+      url = s"$baseUrl/sequence/$id",
+      responseType = "arraybuffer"
+    )
+    .map(unpickle[SequencesQueue[SequenceId]])
+    .recover {
+      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
+        // If not found, we'll consider it like an empty response
+        SequencesQueue(Conditions.default, None, Nil)
+    }
 
   /**
     * Requests the backend to execute a sequence
