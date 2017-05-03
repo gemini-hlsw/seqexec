@@ -30,6 +30,7 @@ case class SetCloudCover(cc: CloudCover) extends UserEvent
 case object Poll extends UserEvent
 case object Exit extends UserEvent
 case class GetState(f: (Engine.State) => Task[Unit]) extends UserEvent
+case class Log(msg: String) extends UserEvent
 
 /**
   * Events generated internally by the Engine.
@@ -60,6 +61,7 @@ object Event {
   val poll: Event = EventUser(Poll)
   val exit: Event = EventUser(Exit)
   def getState(f: (Engine.State) => Task[Unit]): Event = EventUser(GetState(f))
+  def logMsg(msg: String): Event = EventUser(Log(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
   def completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]): Event = EventSystem(Completed(id, i, r))

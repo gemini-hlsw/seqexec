@@ -147,6 +147,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Poll                => SequenceRefreshed(svs)
       case engine.Exit                => NewLogMessage("Exit requested by user")
       case engine.GetState(_)         => NewLogMessage("Internal state request")
+      case engine.Log(msg)            => NewLogMessage(msg)
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
