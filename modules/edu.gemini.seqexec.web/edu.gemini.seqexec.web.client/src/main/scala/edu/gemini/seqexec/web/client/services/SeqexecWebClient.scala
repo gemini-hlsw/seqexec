@@ -27,9 +27,9 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def sync(id: String): Future[SequencesQueue[SequenceId]] =
+  def sync(s: SequenceView): Future[SequencesQueue[SequenceId]] =
     Ajax.get(
-      url = s"$baseUrl/sequence/$id",
+      url = s"$baseUrl/sequence/${s.id}",
       responseType = "arraybuffer"
     )
     .map(unpickle[SequencesQueue[SequenceId]])

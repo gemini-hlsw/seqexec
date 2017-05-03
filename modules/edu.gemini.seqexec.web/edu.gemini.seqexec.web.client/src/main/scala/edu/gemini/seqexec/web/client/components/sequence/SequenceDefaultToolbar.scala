@@ -88,12 +88,12 @@ object SequenceDefaultToolbar {
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false, syncRequested = false)).liftCB
 
   def requestSync(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
+    ST.retM(Callback { SeqexecCircuit.dispatch(RequestSync(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
 
   def requestPause(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
-  private val component = ReactComponentB[Props]("SequencesDefaultToolbar")
+  private def component = ReactComponentB[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS( ($, p, s) =>
       <.div(
