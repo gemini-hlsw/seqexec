@@ -101,7 +101,7 @@ object SequenceDefaultToolbar {
         <.div(
           ^.cls := "ui row",
           <.div(
-            ^.cls := "left bottom aligned seven wide column computer tablet only",
+            ^.cls := "left column bottom aligned eight wide computer ten wide tablet only",
             p.status.isLogged && p.s.status === SequenceState.Completed ?=
               <.h3(
                 ^.cls := "ui green header",
@@ -126,7 +126,7 @@ object SequenceDefaultToolbar {
                   color = Some("purple"),
                   dataTooltip = Some(s"Sync sequence"),
                   disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-                s"Sync"
+                s" Sync"
               ),
             p.status.isLogged && p.s.status === SequenceState.Idle ?=
               Button(
@@ -164,7 +164,7 @@ object SequenceDefaultToolbar {
             <.div(
               ^.cls := "right column",
               ^.classSet(
-                "nine wide computer nine wide tablet sixteen wide mobile" -> p.status.isLogged,
+                "eight wide computer six wide tablet sixteen wide mobile" -> p.status.isLogged,
                 "sixteen wide" -> !p.status.isLogged
               ),
               SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
