@@ -81,17 +81,20 @@ object SequenceObserverField {
 
 object SequenceDefaultToolbar {
   case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
-  case class State(runRequested: Boolean, pauseRequested: Boolean)
+  case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
   private val ST = ReactS.Fix[State]
 
   def requestRun(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false)).liftCB
+    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false, syncRequested = false)).liftCB
+
+  def requestSync(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
+    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
 
   def requestPause(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true)).liftCB
+    ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
   private val component = ReactComponentB[Props]("SequencesDefaultToolbar")
-    .initialState(State(runRequested = false, pauseRequested = false))
+    .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS( ($, p, s) =>
       <.div(
         ^.cls := "ui column grid",
@@ -112,10 +115,19 @@ object SequenceDefaultToolbar {
                   onClick = $.runState(requestRun(p.s)),
                   color = Some("blue"),
                   dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
-                  disabled = !p.status.isConnected || s.runRequested),
+                  disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
                 s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
               ),
             p.status.isLogged && p.s.status === SequenceState.Idle ?=
+              Button(
+                Button.Props(
+                  icon = Some(IconRefresh),
+                  onClick = $.runState(requestSync(p.s)),
+                  color = Some("purple"),
+                  dataTooltip = Some(s"Sync sequence"),
+                  disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
+                s"Sync"
+              ),
               Button(
                 Button.Props(
                   icon = Some(IconPlay),
@@ -123,7 +135,7 @@ object SequenceDefaultToolbar {
                   onClick = $.runState(requestRun(p.s)),
                   color = Some("blue"),
                   dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
-                  disabled = !p.status.isConnected || s.runRequested),
+                  disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
                 s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
               ),
             p.status.isLogged && p.s.status === SequenceState.Running ?=
@@ -134,7 +146,7 @@ object SequenceDefaultToolbar {
                   onClick = $.runState(requestPause(p.s)),
                   color = Some("teal"),
                   dataTooltip = Some("Pause the sequence after the current step completes"),
-                  disabled = !p.status.isConnected || s.pauseRequested),
+                  disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested),
                 "Pause"
               ),
             p.status.isLogged && p.s.status === SequenceState.Paused ?=
@@ -144,7 +156,7 @@ object SequenceDefaultToolbar {
                   labeled = true,
                   onClick = $.runState(requestPause(p.s)),
                   color = Some("teal"),
-                  disabled = !p.status.isConnected),
+                  disabled = !p.status.isConnected || s.syncRequested),
                 "Continue from step 1"
               )
             ),
