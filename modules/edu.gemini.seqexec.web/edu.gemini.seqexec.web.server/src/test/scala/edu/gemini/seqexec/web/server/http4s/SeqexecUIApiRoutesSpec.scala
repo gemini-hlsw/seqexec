@@ -94,7 +94,37 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       // On logout we clear the cookie
       cookieOpt.map(_.cookie.content) shouldBe Some("")
     }
-    ignore should "replace the authentication cookie" in {
+
+  "SeqexecUIApiRoutes sequences" should
+    "reject GET requests" in {
+      service.apply(Request(uri = uri("/seqexec/sequence/GS-2017A-Q-0-1"))).unsafePerformSync.orNotFound.status should equal(Status.Unauthorized)
+    }
+    it should "reject requests without authentication" in {
+      service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/GS-2017A-Q-0-1"))).unsafePerformSync.orNotFound.status should equal(Status.Unauthorized)
+    }
+    it should "accept requests with a valid cookie though the sequence is not found" in {
+      // First make a valid cookie
+      val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
+      val sequence = for {
+        loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
+        cookieHeader = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
+        setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
+        seqResp      <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/GS-2016A-Q-0-1999999")).addCookie(setCookie.cookie)).map(Option.apply))
+      } yield seqResp
+      sequence.run.unsafePerformSync.flatMap(_.toOption).map(_.status) shouldBe Some(Status.NotFound)
+    }
+    it should "reject requests with non valid sequence ids" in {
+      // First make a valid cookie
+      val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
+      val sequence = for {
+        loginResp    <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))
+        cookieHeader = loginResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
+        setCookie    <- OptionT(Task.now(cookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
+        seqResp      <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/abc")).addCookie(setCookie.cookie)).map(Option.apply))
+      } yield seqResp
+      sequence.run.unsafePerformSync.flatMap(_.toOption).map(_.status) shouldBe Some(Status.BadRequest)
+    }
+    it should "replace the authentication cookie" in {
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
       val sequence = for {
         loginResp           <- OptionT(service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).map(Option.apply))

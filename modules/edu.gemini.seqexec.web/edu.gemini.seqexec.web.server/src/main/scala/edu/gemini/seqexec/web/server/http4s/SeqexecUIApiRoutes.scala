@@ -95,6 +95,20 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
             scalaz.stream.Process.empty
           )
         )
+
+      case GET -> Root / "seqexec" / "sequence" / oid as user =>
+        user.toOption.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>
+          for {
+            obsId <-
+                \/.fromTryCatchNonFatal(new SPObservationID(oid))
+                  .fold(Task.fail, Task.now)
+            u     <- se.load(inputQueue, obsId)
+            resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
+              Ok(SequencesQueue[SequenceId](Conditions.default, None, List(oid))))
+          } yield resp
+        }.handleWith {
+          case _: SPBadIDException => BadRequest(s"Bad sequence id $oid")
+        }
     }
 
   def service: Service[Request, MaybeResponse] = publicService || TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices))) || logService
