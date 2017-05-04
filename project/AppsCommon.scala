@@ -98,20 +98,6 @@ object AppsCommon {
 
   lazy val embeddedJreSettingsLinux64 = embeddedJreSettings(DeploymentTarget.Linux64)
 
-  lazy val configurationFromSVN = Seq(
-    // Download the configuration from svn
-    downloadConfiguration := {
-      import sys.process._
-      // This incarnation will get the configuration from svn. Note that we use the local svn client so you need
-      // to have it setup including your credentials
-      val targetFile = (resourceDirectory in Compile).value / "app.conf"
-      val targetDir = targetFile.getParentFile.getAbsolutePath
-      val exitCode = s"svn co http://source.gemini.edu/software/ocs3/trunk/configurations/${applicationConfName.value}/production/${applicationConfSite.value.site}/ $targetDir".!
-      if (exitCode == 0) Seq(targetFile) else throw new RuntimeException("Settings download failed")
-    }
-
-  )
-
   /**
     * Settings for meta projects to make them non-publishable
     */

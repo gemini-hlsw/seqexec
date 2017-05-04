@@ -287,16 +287,6 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
     }
   )
 
-lazy val seqexecTestServerSettings = Seq(
-  // Put the jre on the RPM
-  linuxPackageMappings in Rpm += {
-    val jresDir = (ocsJreDir in ThisBuild).value
-    // RPM are of interest only for linux 64 bit
-    val linux64Jre = jresDir.toPath.resolve("linux").resolve("JRE64_1.8")
-    packageDirectoryAndContentsMapping((linux64Jre.toFile, (rpmPrefix in Rpm).value.map(_ + "").getOrElse("")))
-  }
-)
-
 /**
   * Project for the seqexec test server at GS on Linux 64
   */
@@ -307,7 +297,6 @@ lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexe
   .enablePlugins(JavaServerAppPackaging)
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
-  .settings(seqexecTestServerSettings: _*)
   .settings(deployedAppMappings: _*)
   .settings(embeddedJreSettingsLinux64: _*)
   .settings(
@@ -324,7 +313,6 @@ lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexe
   .enablePlugins(JavaServerAppPackaging)
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
-  .settings(seqexecTestServerSettings: _*)
   .settings(deployedAppMappings: _*)
   .settings(embeddedJreSettingsLinux64: _*)
   .settings(
@@ -343,23 +331,10 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
   .settings(embeddedJreSettingsLinux64: _*)
-  .settings(configurationFromSVN: _*)
   .settings(
     description := "Seqexec Gemini South server production",
     applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GS,
-
-    // Download the configuration from svn
-    packageZipTarball in Universal := ((packageZipTarball in Universal).dependsOn(downloadConfiguration)).value,
-    packageBin in Rpm := ((packageBin in Rpm).dependsOn(downloadConfiguration)).value,
-
-    // Put the jre on the RPM
-    linuxPackageMappings in Rpm += {
-      val jresDir = (ocsJreDir in ThisBuild).value
-      // RPM are of interest only for linux 64 bit
-      val linux64Jre = jresDir.toPath.resolve("linux").resolve("JRE64_1.8")
-      packageDirectoryAndContentsMapping((linux64Jre.toFile, (rpmPrefix in Rpm).value.map(_ + "").getOrElse("")))
-    }
+    applicationConfSite := DeploymentSite.GS
   ).dependsOn(seqexec_server)
 
 // Root web project
