@@ -130,18 +130,19 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
   private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
-    val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action]])] = for {
-      odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
-      progIdString <- EitherT(Task.delay(odbSeq.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
-      progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
-      name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
-    } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
+    ???
+    // val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action]])] = for {
+    //   odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
+    //   progIdString <- EitherT(Task.delay(odbSeq.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
+    //   progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
+    //   name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
+    // } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
 
-    t.map{
-      case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
-      case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logMsg(SeqexecFailure.explain(e)))
-      case _                 => List()
-    }
+    // t.map{
+    //   case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
+    //   case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logMsg(SeqexecFailure.explain(e)))
+    //   case _                 => List()
+    // }
   }
 
   private def unloadEvent(seqId: SPObservationID): Event = Event.unload(seqId.stringValue)
