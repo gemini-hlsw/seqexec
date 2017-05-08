@@ -10,7 +10,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import scalaz.{EitherT, Reader}
 import scalaz.concurrent.Task
 
-object GmosSouth extends Instrument {
+final case class GmosSouth() extends Instrument {
 
   override val name: String = INSTRUMENT_NAME_PROP
 
@@ -18,7 +18,7 @@ object GmosSouth extends Instrument {
 
   val Log = Logger.getLogger(getClass.getName)
 
-  var imageCount = 0
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = ???
 
   override def configure(config: Config): SeqAction[ConfigResult] = EitherT(Task {
     val items = config.getAll(INSTRUMENT_KEY).itemEntries()
@@ -31,17 +31,10 @@ object GmosSouth extends Instrument {
     TrySeq(ConfigResult(this))
   })
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader { id =>
-    for {
-      _ <- EitherT(Task {
-        Log.log(Level.INFO, name + ": starting observation " + id)
-        Thread.sleep(5000)
-        Log.log(Level.INFO, name + ": observation completed")
-        TrySeq(())
-      })
-    } yield ObserveResult(id)
-  }
-
   override val contributorName: String = "gmos"
   override val dhsInstrumentName: String = "GMOS-S"
+}
+
+object GmosSouth {
+
 }
