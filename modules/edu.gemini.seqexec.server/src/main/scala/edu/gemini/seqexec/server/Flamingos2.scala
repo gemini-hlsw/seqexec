@@ -47,16 +47,16 @@ object Flamingos2 {
   val sfName: String = "f2"
 
   def fpuFromFPUnit(fpu: FPUnit):FocalPlaneUnit = fpu match {
-    case FPUnit.FPU_NONE => FocalPlaneUnit.Open
+    case FPUnit.FPU_NONE       => FocalPlaneUnit.Open
     case FPUnit.SUBPIX_PINHOLE => FocalPlaneUnit.GridSub1Pix
-    case FPUnit.PINHOLE => FocalPlaneUnit.Grid2Pix
-    case FPUnit.LONGSLIT_1 => FocalPlaneUnit.Slit1Pix
-    case FPUnit.LONGSLIT_2 => FocalPlaneUnit.Slit2Pix
-    case FPUnit.LONGSLIT_3 => FocalPlaneUnit.Slit3Pix
-    case FPUnit.LONGSLIT_4 => FocalPlaneUnit.Slit4Pix
-    case FPUnit.LONGSLIT_6 => FocalPlaneUnit.Slit6Pix
-    case FPUnit.LONGSLIT_8 => FocalPlaneUnit.Slit8Pix
-    case FPUnit.CUSTOM_MASK => FocalPlaneUnit.Custom("")
+    case FPUnit.PINHOLE        => FocalPlaneUnit.Grid2Pix
+    case FPUnit.LONGSLIT_1     => FocalPlaneUnit.Slit1Pix
+    case FPUnit.LONGSLIT_2     => FocalPlaneUnit.Slit2Pix
+    case FPUnit.LONGSLIT_3     => FocalPlaneUnit.Slit3Pix
+    case FPUnit.LONGSLIT_4     => FocalPlaneUnit.Slit4Pix
+    case FPUnit.LONGSLIT_6     => FocalPlaneUnit.Slit6Pix
+    case FPUnit.LONGSLIT_8     => FocalPlaneUnit.Slit8Pix
+    case FPUnit.CUSTOM_MASK    => FocalPlaneUnit.Custom("")
   }
 
   def readsFromReadMode(readMode: ReadMode): Flamingos2Controller.Reads = readMode match {
@@ -115,8 +115,8 @@ object Flamingos2 {
     // Reads is usually inferred from the read mode, but it can be explicit.
     q <- config.extract(OBSERVE_KEY / READS_PROP).as[Reads] match {
           case a: \/-[Reads] => a
-          case _         => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
-                            .map(readsFromReadMode)
+          case _             => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
+                                .map(readsFromReadMode)
         }
     // Readout mode defaults to SCIENCE if not present.
     r <- \/-(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE))
