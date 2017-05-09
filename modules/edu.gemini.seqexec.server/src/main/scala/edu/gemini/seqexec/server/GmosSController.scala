@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
+import squants.Length
 import scala.concurrent.duration.Duration
 
 trait GmosSController {
@@ -19,50 +20,36 @@ trait GmosSController {
 
 object GmosSController {
 
-  /*type WindowCover = edu.gemini.spModel.gemini.GmosS.GmosS.WindowCover
-
-  type Decker = edu.gemini.spModel.gemini.GmosS.GmosS.Decker
-
-  sealed trait FocalPlaneUnit
-  object FocalPlaneUnit {
-    object Open extends FocalPlaneUnit
-    object GridSub1Pix extends FocalPlaneUnit
-    object Grid2Pix extends FocalPlaneUnit
-    object Slit1Pix extends FocalPlaneUnit
-    object Slit2Pix extends FocalPlaneUnit
-    object Slit3Pix extends FocalPlaneUnit
-    object Slit4Pix extends FocalPlaneUnit
-    object Slit6Pix extends FocalPlaneUnit
-    object Slit8Pix extends FocalPlaneUnit
-    final case class Custom(mask: String) extends FocalPlaneUnit
-  }
-
-  type Filter = edu.gemini.spModel.gemini.GmosS.GmosS.Filter
-
-  type Lyot = edu.gemini.spModel.gemini.GmosS.GmosS.LyotWheel
-
-  type Grism = edu.gemini.spModel.gemini.GmosS.GmosS.Disperser
-
-
-  type Reads = edu.gemini.spModel.gemini.GmosS.GmosS.Reads
-
-  type ReadoutMode = edu.gemini.spModel.gemini.GmosS.GmosS.ReadoutMode
-
-  sealed trait BiasMode
-  object BiasMode {
-    object Imaging extends BiasMode
-    object LongSlit extends BiasMode
-    object MOS extends BiasMode
-  }*/
-
+  type Filter = edu.gemini.spModel.gemini.gmos.GmosSouthType.FilterSouth
+  type FPUSouth = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
+  type GmosSouthStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
+  type Disperser = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
+  type DTAX = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
+  type ADC = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
+  type UseElectronicOffset = edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
+  type DisperserOrder = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
   type Binning = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
   type AmpReadMode = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
   type AmpGain = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
   type AmpCount = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
   type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
   type ExposureTime = Duration
+  type PosAngle = edu.gemini.spModel.core.Angle
 
-  final case class CCConfig()
+  sealed trait GmosSouthFPU
+  final case class BuiltInFPU(fpu: FPUSouth) extends GmosSouthFPU
+  final case class CustomFPU(mask: String) extends GmosSouthFPU
+
+  final case class GmosSouthDisperser(disperser: Disperser, order: Option[Disperser], lambda: Option[Length])
+
+  final case class CCConfig(posAngle: PosAngle,
+    filter: Filter,
+    disperser: GmosSouthDisperser,
+    fpu: GmosSouthFPU,
+    stage: GmosSouthStageMode,
+    dtaX: DTAX,
+    adc: ADC,
+    useElectronicOffset: Option[UseElectronicOffset])
 
   final case class CCDBinning(x: Binning, y: Binning)
 
