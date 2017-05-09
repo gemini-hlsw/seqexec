@@ -61,7 +61,7 @@ object Settings {
     val jQuery         = "3.0.0"
     val semanticUI     = "2.2.7"
     val jQueryTerminal = "0.11.2"
-    val ocsVersion     = "2017001.1.1"
+    val ocsVersion     = "2017001.1.6"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.0"
