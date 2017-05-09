@@ -56,13 +56,21 @@ object GmosSController {
   }*/
 
   type Binning = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
+  type AmpReadMode = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
+  type AmpGain = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+  type AmpCount = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
+  type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
   type ExposureTime = Duration
+
+  final case class CCConfig()
 
   final case class CCDBinning(x: Binning, y: Binning)
 
-  final case class CCConfig() //w: WindowCover, d: Decker, fpu: FocalPlaneUnit, f: Filter, l: Lyot, g: Grism)
+  final case class CCDReadout(ampReadMode: AmpReadMode, gainChoice: AmpGain, ampCount: AmpCount, gainSetting: Double)
 
-  final case class DCConfig(t: ExposureTime, b: CCDBinning)
+  final case class RegionsOfInterest(bulitInROI: ROI, customROI: List[ROI])
+
+  final case class DCConfig(t: ExposureTime, r: CCDReadout, b: CCDBinning, roi: RegionsOfInterest)
 
   final case class GmosSConfig(cc: CCConfig, dc: DCConfig)
 
