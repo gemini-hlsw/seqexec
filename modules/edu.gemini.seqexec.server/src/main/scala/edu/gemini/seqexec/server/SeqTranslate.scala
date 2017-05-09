@@ -32,9 +32,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case \/-(r) => Result.OK(r)
   }
 
-  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean): TrySeq[Step[Action]] = {
+  private def step(
+    obsId: SPObservationID,
+    i: Int,
+    config: Config,
+    last: Boolean
+  ): TrySeq[Step[Action \/ Result]] = {
 
-    def buildStep(inst: Instrument, sys: List[System], headers: List[Header], resources: Set[Resource]): Step[Action] = {
+    def buildStep(inst: Instrument, sys: List[System], headers: List[Header], resources: Set[Resource]): Step[Action \/ Result] = {
 
       def observe(config: Config): SeqAction[ObserveResult] = {
         val dataId: SeqAction[String] = EitherT(Task(config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
@@ -63,23 +68,40 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         } yield ObserveResult(id)
       }
 
-      Step[Action](
-        i,
-        None,
-        config.toStepConfig,
-        resources,
-        false,
-        (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
-        else List())
-        ++
-        List(
-          sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-          List(toAction(observe(config).map(x => Result.Observed(x.dataId))))
-        )
-        ++
-        (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
-        else List())
-      )
+      extractStatus(config) match {
+        case "ready" =>
+          Step(
+            i,
+            None,
+            config.toStepConfig,
+            resources,
+            false,
+            (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
+            else List())
+            ++
+            List(
+              sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
+              List(toAction(observe(config).map(x => Result.Observed(x.dataId))))
+            )
+            ++
+            (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
+            else List())
+          ).map(_.left)
+        // Strictly this should pattern match "complete" only, but for now it
+        // catches everything until more statuses are properly handled.
+        case _ =>
+          Step(
+            i,
+            // TODO: Get image fileId?
+            None,
+            config.toStepConfig,
+            // No resources when done
+            Set.empty,
+            false,
+            // TODO: Is it possible to reconstruct done executions from the ODB?
+            List(Nil)
+            )
+      }
     }
 
     for {
@@ -99,7 +121,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def extractStatus(config: Config): String =
     config.getItemValue(new ItemKey("observe:status")).toString
 
-    def sequence(settings: Settings)(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String): (List[SeqexecFailure], Option[Sequence[Action]]) = {
+  def sequence(settings: Settings)
+              (obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String):
+      (List[SeqexecFailure], Option[Sequence[Action \/ Result]]) = {
 
     val configs = sequenceConfig.getAllSteps.toList
 
@@ -110,7 +134,19 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
 
     steps match {
-      case (errs, ss) => (errs, if(ss.isEmpty) None else Some(Sequence[Action](obsId.stringValue(), SequenceMetadata(instName, None, name), ss)))
+      case (errs, ss) => (
+        errs,
+        if (ss.isEmpty)
+          None
+        else
+          Some(
+            Sequence[Action \/ Result](
+              obsId.stringValue(),
+              SequenceMetadata(instName, None, name),
+              ss
+            )
+          )
+      )
     }
   }
 
