@@ -5,8 +5,8 @@ import java.time.LocalDate
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.model.p1.immutable.Site
-import edu.gemini.seqexec.{engine, server}
-import edu.gemini.seqexec.engine.{Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
+import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.engine.{Engine, Event, EventSystem, Executed, Failed}
 
 import scalaz._
 import Scalaz._
@@ -107,9 +107,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         obsId <- safeGetObsId(id)
         _ <- systems.odb.obsAbort(obsId, e.msg)
       } yield ()
-      case (EventSystem(Executed(id)), st) if st.sequences.get(id).map(
-        _.status === SequenceState.Idle
-      ).getOrElse(false) => for {
+      case (EventSystem(Executed(id)), st) if st.sequences.get(id).exists(_.status === SequenceState.Idle) => for {
         obsId <- safeGetObsId(id)
         _ <- systems.odb.obsPause(obsId, "Sequence paused by user")
       } yield ()
@@ -242,8 +240,21 @@ object SeqexecEngine {
                       gcalKeywords: Boolean,
                       instForceError: Boolean,
                       odbQueuePollingInterval: Duration)
-  val defaultSettings = Settings(Site.GS, "localhost", LocalDate.of(2017, 1,1), "http://localhost/", true,
-    true, true, true, false, false, false, false, false, false, 10.seconds)
+  val defaultSettings = Settings(Site.GS,
+    "localhost",
+    LocalDate.of(2017, 1,1),
+    "http://localhost/",
+    dhsSim = true,
+    tcsSim = true,
+    instSim = true,
+    gcalSim = true,
+    odbNotifications = false,
+    tcsKeywords = false,
+    f2Keywords = false,
+    gwsKeywords = false,
+    gcalKeywords = false,
+    instForceError = false,
+    10.seconds)
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
@@ -255,41 +266,53 @@ object SeqexecEngine {
       case "GS" => Site.GS
       case "GN" => Site.GN
     }
-    val odbHost = cfg.require[String]("seqexec-engine.odb")
-    val dhsServer = cfg.require[String]("seqexec-engine.dhsServer")
-    val dhsSim = cfg.require[Boolean]("seqexec-engine.dhsSim")
-    val tcsSim = cfg.require[Boolean]("seqexec-engine.tcsSim")
-    val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
-    val gcalSim = cfg.require[Boolean]("seqexec-engine.gcalSim")
-    val odbNotifications = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-    val tcsKeywords = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
-    val f2Keywords = cfg.require[Boolean]("seqexec-engine.f2Keywords")
-    val gmosKeywords = cfg.require[Boolean]("seqexec-engine.gmosKeywords")
-    val gwsKeywords = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
-    val gcalKeywords = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
-    val instForceError = cfg.require[Boolean]("seqexec-engine.instForceError")
+    val odbHost                 = cfg.require[String]("seqexec-engine.odb")
+    val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
+    val dhsSim                  = cfg.require[Boolean]("seqexec-engine.dhsSim")
+    val tcsSim                  = cfg.require[Boolean]("seqexec-engine.tcsSim")
+    val instSim                 = cfg.require[Boolean]("seqexec-engine.instSim")
+    val gcalSim                 = cfg.require[Boolean]("seqexec-engine.gcalSim")
+    val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
+    val tcsKeywords             = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
+    val f2Keywords              = cfg.require[Boolean]("seqexec-engine.f2Keywords")
+    val gmosKeywords            = cfg.require[Boolean]("seqexec-engine.gmosKeywords")
+    val gwsKeywords             = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
+    val gcalKeywords            = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
+    val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
-    val tops = decodeTops(cfg.require[String]("seqexec-engine.tops"))
+    val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
+    val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
 
     // TODO: Review initialization of EPICS systems
-    def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] = Task(Option(CaService.getInstance()) match {
+    def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
+      Task.delay(
+        Option(CaService.getInstance()) match {
           case None => throw new Exception("Unable to start EPICS service.")
-          case Some(s) => {
+          case Some(s) =>
             sys.init(s, tops).leftMap {
                 case SeqexecFailure.SeqexecException(ex) => throw ex
                 case c: SeqexecFailure => throw new Exception(SeqexecFailure.explain(c))
             }
-          }
         }
       )
 
-    val tcsInit = if(tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics, tops) else Task.now(())
+    val taskUnit = Task.now(())
+    // Ensure there is a valid way to init CaService either from
+    // the configuration file or from the environment
+    val caInit   = caAddrList.map(a => Task.delay(CaService.setAddressList(a))).getOrElse {
+      Task.delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
+        case Some(_) => taskUnit // Do nothing, just check that it exists
+        case _       => Task.fail(new RuntimeException("Cannot initialize EPICS subsystem"))
+      }
+    }
+    val tcsInit  = if (tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics, tops) else taskUnit
     // More instruments to be added to the list here
     val instInit = Nondeterminism[Task].gatherUnordered(List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics)).filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
-    val gwsInit = if(gwsKeywords) initEpicsSystem(GwsEpics, tops) else Task.now(())
-    val gcalInit = if(!gcalSim) initEpicsSystem(GcalEpics, tops) else Task.now(())
+    val gwsInit  = if (gwsKeywords) initEpicsSystem(GwsEpics, tops) else taskUnit
+    val gcalInit = if (!gcalSim) initEpicsSystem(GcalEpics, tops) else taskUnit
 
-    tcsInit *>
+    caInit *>
+      tcsInit *>
       gwsInit *>
       gcalInit *>
       instInit *>

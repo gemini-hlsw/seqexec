@@ -6,7 +6,6 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.{Timer, TimerTask}
 import java.util.logging.Logger
 
-import edu.gemini.epics.EpicsService
 import edu.gemini.seqexec.server.EpicsCommand._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 
@@ -30,7 +29,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   import TcsEpics._
   import EpicsCommand.setParameter
 
-  val TCS_TOP = tops.get("tcs").getOrElse("")
+  val TCS_TOP = tops.getOrElse("tcs", "")
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
