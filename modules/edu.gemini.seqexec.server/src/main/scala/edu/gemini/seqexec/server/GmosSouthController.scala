@@ -4,8 +4,8 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 import squants.Length
 import scala.concurrent.duration.Duration
 
-trait GmosSController {
-  import GmosSController._
+trait GmosSouthController {
+  import GmosSouthController._
 
   // I'm not sure if getConfig will be used. It made sense for TCS, because parts of the TCS configuration cannot be
   // inferred from the sequence, and because Seqexec needs to temporarily change parts of the TCS configuration only to
@@ -18,11 +18,11 @@ trait GmosSController {
   def observe(obsid: ImageFileId): SeqAction[ImageFileId]
 }
 
-object GmosSController {
+object GmosSouthController {
 
   type Filter = edu.gemini.spModel.gemini.gmos.GmosSouthType.FilterSouth
-  type FPUSouth = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
-  type GmosSouthStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
+  type FPU = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
+  type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
   type Disperser = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
   type DTAX = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
   type ADC = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
@@ -36,17 +36,17 @@ object GmosSController {
   type ExposureTime = Duration
   type PosAngle = edu.gemini.spModel.core.Angle
 
-  sealed trait GmosSouthFPU
-  final case class BuiltInFPU(fpu: FPUSouth) extends GmosSouthFPU
-  final case class CustomFPU(mask: String) extends GmosSouthFPU
+  sealed trait GmosFPU
+  final case class BuiltInFPU(fpu: FPU) extends GmosFPU
+  final case class CustomFPU(mask: String) extends GmosFPU
 
-  final case class GmosSouthDisperser(disperser: Disperser, order: Option[Disperser], lambda: Option[Length])
+  final case class GmosDisperser(disperser: Disperser, order: Option[Disperser], lambda: Option[Length])
 
   final case class CCConfig(posAngle: PosAngle,
     filter: Filter,
-    disperser: GmosSouthDisperser,
-    fpu: GmosSouthFPU,
-    stage: GmosSouthStageMode,
+    disperser: GmosDisperser,
+    fpu: GmosFPU,
+    stage: GmosStageMode,
     dtaX: DTAX,
     adc: ADC,
     useElectronicOffset: Option[UseElectronicOffset])
