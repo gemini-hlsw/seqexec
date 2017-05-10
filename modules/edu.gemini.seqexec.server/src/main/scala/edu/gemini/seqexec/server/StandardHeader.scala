@@ -42,7 +42,7 @@ trait ObsKeywordsReader {
   def getObsObject: SeqAction[String]
   def getGeminiQA: SeqAction[String]
   def getPIReq: SeqAction[String]
-  def getSciBand: SeqAction[Int]
+  def getSciBand: SeqAction[Option[Int]]
   def getRequestedAirMassAngle: Map[String, SeqAction[Double]]
   def getTimingWindows: List[(Int, TimingWindowKeywords)]
   def getRequestedConditions: Map[String, SeqAction[String]]
@@ -189,9 +189,8 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 
   override def getPIReq: SeqAction[String] = SeqAction("UNKNOWN")
 
-  override def getSciBand: SeqAction[Int] =
-    SeqAction.either(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt)
-      .leftMap(explainExtractError))
+  override def getSciBand: SeqAction[Option[Int]] =
+    SeqAction(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt)toOption)
 }
 
 // TODO: Replace Unit by something that can read the state for real

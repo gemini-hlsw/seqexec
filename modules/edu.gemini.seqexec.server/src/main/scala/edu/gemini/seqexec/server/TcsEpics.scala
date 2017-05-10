@@ -264,7 +264,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def oiwfsOn: Option[BinaryYesNo] = oiwfsOnAttr.flatMap(v => Option(v.value))
 
-  def aowfsOn: Option[Double] = Option(tcsState.getDoubleAttribute("aowfsOn").value).map(_.doubleValue)
+  //def aowfsOn: Option[Double] = Option(tcsState.getDoubleAttribute("aowfsOn").value).map(_.doubleValue)
 
   def sfName: Option[String] = Option(tcsState.getStringAttribute("sfName").value)
 

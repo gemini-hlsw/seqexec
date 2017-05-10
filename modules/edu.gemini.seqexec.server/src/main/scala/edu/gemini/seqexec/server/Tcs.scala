@@ -67,7 +67,7 @@ final case class Tcs(tcsController: TcsController, sfOnly: Boolean, scienceFoldP
   }
 
   private def configureAG(tcsState: TcsConfig): SeqAction[ConfigResult] = {
-    val agConfig = tcsState.agc.copy(sfPos = scienceFoldPosition)
+    val agConfig = tcsState.agc.copy(sfPos = scienceFoldPosition.some)
 
     Log.info("Applying AG configuration " + agConfig)
 

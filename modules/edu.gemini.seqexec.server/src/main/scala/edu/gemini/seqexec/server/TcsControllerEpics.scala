@@ -170,9 +170,7 @@ object TcsControllerEpics extends TcsController {
       p1On <- TcsEpics.instance.pwfs1On.map(decode[BinaryYesNo, GuiderSensorOption])
       p2On <- TcsEpics.instance.pwfs2On.map(decode[BinaryYesNo, GuiderSensorOption])
       oiOn <- TcsEpics.instance.oiwfsOn.map(decode[BinaryYesNo, GuiderSensorOption])
-      aoOn <- TcsEpics.instance.aowfsOn.map(decode[Double, GuiderSensorOption])
-    } yield TrySeq(GuidersEnabled(GuiderSensorOptionP1(p1On), GuiderSensorOptionP2(p2On), GuiderSensorOptionOI(oiOn),
-      GuiderSensorOptionAO(aoOn)))
+    } yield TrySeq(GuidersEnabled(GuiderSensorOptionP1(p1On), GuiderSensorOptionP2(p2On), GuiderSensorOptionOI(oiOn)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
 
   private def getInstPort(inst: Resource.Instrument): Option[Int] = (inst match {
@@ -258,12 +256,7 @@ object TcsControllerEpics extends TcsController {
   } yield if (hwParked) HrwfsPickupPosition.Parked
     else hwPos
 
-  private def getAGConfig: TrySeq[AGConfig] = {
-    for {
-      sf <- getScienceFoldPosition
-      hrwfs <- getHrwfsPickupPosition
-    } yield TrySeq(AGConfig(sf, hrwfs))
-  }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read AG state from TCS.")))
+  private def getAGConfig: TrySeq[AGConfig] = TrySeq(AGConfig(getScienceFoldPosition, getHrwfsPickupPosition))
 
   private def getIAA: TrySeq[InstrumentAlignAngle] = {
     for {
@@ -363,11 +356,9 @@ object TcsControllerEpics extends TcsController {
     case _ => TcsEpics.instance.hrwfsPosCmd.setHrwfsPos(encode(hrwfsPos))
   }
 
-  private def setAGConfig(c: AGConfig): SeqAction[Unit] = for {
-    _ <- setScienceFoldConfig(c.sfPos)
-    _ <- setHRPickupConfig(c.hrwfsPos)
-  } yield TrySeq(())
-
+  private def setAGConfig(c: AGConfig): SeqAction[Unit] =
+    c.sfPos.map(setScienceFoldConfig).getOrElse(SeqAction(())) *>
+      c.hrwfsPos.map(setHRPickupConfig).getOrElse(SeqAction(()))
 
   implicit private val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] = EncodeEpicsValue((op: MountGuideOption)
   => op match {
