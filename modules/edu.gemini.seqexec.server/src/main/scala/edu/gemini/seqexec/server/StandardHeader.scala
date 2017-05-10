@@ -190,7 +190,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   override def getPIReq: SeqAction[String] = SeqAction("UNKNOWN")
 
   override def getSciBand: SeqAction[Option[Int]] =
-    SeqAction(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt)toOption)
+    SeqAction(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt).toOption)
 }
 
 // TODO: Replace Unit by something that can read the state for real
