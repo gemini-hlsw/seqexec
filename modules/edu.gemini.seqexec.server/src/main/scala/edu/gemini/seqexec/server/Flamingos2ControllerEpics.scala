@@ -105,10 +105,11 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
 
   implicit val encodeGrismPosition: EncodeEpicsValue[Grism, String] = EncodeEpicsValue((a: Grism)
     => a match {
-      case Disperser.NONE  => "Open"
-      case Disperser.R1200HK => "HK_G5802"
-      case Disperser.R1200JH => "JH_G5801"
-      case Disperser.R3000 => "R3K_G5803"
+      case Grism.Open    => "Open"
+      case Grism.R1200HK => "HK_G5802"
+      case Grism.R1200JH => "JH_G5801"
+      case Grism.R3000   => "R3K_G5803"
+      case Grism.Dark    => "DK_G5804"
     }
   )
 

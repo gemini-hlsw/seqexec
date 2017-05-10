@@ -16,6 +16,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
 import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
+import scala.PartialFunction._
 import scalaz.concurrent.Task
 import scalaz._
 import Scalaz._
@@ -85,18 +86,27 @@ object Flamingos2 {
     case _                    => WindowCover.OPEN
   }
 
+  implicit def grismFromSPDisperser(d: Disperser): Grism = d match {
+    case Disperser.NONE    => Grism.Open
+    case Disperser.R1200HK => Grism.R1200HK
+    case Disperser.R1200JH => Grism.R1200JH
+    case Disperser.R3000   => Grism.R3000
+  }
+
+  private def disperserFromObserveType(observeType: String, d: Disperser): Grism = observeType match {
+    case DARK_OBSERVE_TYPE    => Grism.Dark
+    case _                    => d
+  }
+
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] = ( for {
+      obsType <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
       // WINDOW_COVER_PROP is optional. If not present, then window cover position is inferred from observe type.
-      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover] match {
-            case a: \/-[WindowCover] => a
-            case _         => config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
-                              .map(windowCoverFromObserveType)
-          }
+      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover].recover(PartialFunction((x:ConfigUtilOps.ExtractFailure) => windowCoverFromObserveType(obsType)))
       q <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
       r <- fpuConfig(config)
       s <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
       t <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP).as[LyotWheel]
-      u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
+      u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser].map(disperserFromObserveType(obsType, _))
 
     } yield CCConfig(p, q, r, s, t, u) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 

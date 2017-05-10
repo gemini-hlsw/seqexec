@@ -119,6 +119,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
     case CelestialObject(inst) => TrySeq(Set(inst, Resource.TCS, Resource.Gcal))
     case FlatOrArc(inst)       => TrySeq(Set(inst, Resource.Gcal, Resource.TCS))
+    case DarkOrBias(inst)      => TrySeq(Set(inst))
     case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
   }
 
@@ -126,6 +127,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, false, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
       case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, true, ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
+      case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
     }
   }
