@@ -36,9 +36,9 @@ object Header {
   object Defaults {
     implicit def fromStringOption(v: SeqAction[Option[String]]): SeqAction[String] = v.map(_.getOrElse("No Value"))
 
-    implicit def fromDoubleOption(v: SeqAction[Option[Double]]): SeqAction[Double] = v.map(_.getOrElse(9999.0))
+    implicit def fromDoubleOption(v: SeqAction[Option[Double]]): SeqAction[Double] = v.map(_.getOrElse(-9999.0))
 
-    implicit def fromIntOption(v: SeqAction[Option[Int]]): SeqAction[Int] = v.map(_.getOrElse(9999))
+    implicit def fromIntOption(v: SeqAction[Option[Int]]): SeqAction[Int] = v.map(_.getOrElse(-9999))
 
     implicit def fromBooleanOption(v: SeqAction[Option[Boolean]]): SeqAction[Boolean] = v.map(_.getOrElse(false))
   }
