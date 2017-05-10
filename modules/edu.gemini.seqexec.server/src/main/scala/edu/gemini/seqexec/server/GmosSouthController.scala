@@ -11,9 +11,9 @@ trait GmosSouthController {
   // inferred from the sequence, and because Seqexec needs to temporarily change parts of the TCS configuration only to
   // later revert those changes to the previous values. But for most (if not all) instruments, the sequence completely
   // defines the instrument configuration.
-  def getConfig: SeqAction[GmosSConfig]
+  def getConfig: SeqAction[GmosSouthConfig]
 
-  def applyConfig(config: GmosSConfig): SeqAction[Unit]
+  def applyConfig(config: GmosSouthConfig): SeqAction[Unit]
 
   def observe(obsid: ImageFileId): SeqAction[ImageFileId]
 }
@@ -59,6 +59,6 @@ object GmosSouthController {
 
   final case class DCConfig(t: ExposureTime, r: CCDReadout, b: CCDBinning, roi: RegionsOfInterest)
 
-  final case class GmosSConfig(cc: CCConfig, dc: DCConfig)
+  final case class GmosSouthConfig(cc: CCConfig, dc: DCConfig)
 
 }
