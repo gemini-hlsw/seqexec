@@ -60,7 +60,7 @@ object Gcal {
   }
 
   def fromSequenceConfig(config: Config, isCP: Boolean): SeqAction[GcalConfig] = {
-    val lamps = config.extract(CALIBRATION_KEY / LAMP_PROP).as[java.util.TreeSet[Lamp]].map(_.toList).recoverWithDefault(List.empty)
+    val lamps = config.extract(CALIBRATION_KEY / LAMP_PROP).as[java.util.Set[Lamp]].map(_.toList).recoverWithDefault(List.empty)
 
     val arLamp = lamps.map(v => if (v.contains(Lamp.AR_ARC)) Some(LampState.On) else Some(LampState.Off))
     val cuarLamp = lamps.map(v => if (v.contains(Lamp.CUAR_ARC)) Some(LampState.On) else Some(LampState.Off))

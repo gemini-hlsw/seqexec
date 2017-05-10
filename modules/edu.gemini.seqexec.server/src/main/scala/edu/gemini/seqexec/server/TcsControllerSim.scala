@@ -7,7 +7,8 @@ import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.spModel.core.Wavelength
 import squants.space.{Degrees, Nanometers, Millimeters}
 
-import scalaz.EitherT
+import scalaz._
+import Scalaz._
 import scalaz.concurrent.Task
 
 /**
@@ -33,9 +34,8 @@ object TcsControllerSim extends TcsController {
   val guidersActivityState = newTaskRef(GuidersEnabled(
     GuiderSensorOptionP1(GuiderSensorOff),
     GuiderSensorOptionP2(GuiderSensorOff),
-    GuiderSensorOptionOI(GuiderSensorOff),
-    GuiderSensorOptionAO(GuiderSensorOff)))
-  val agState = newTaskRef(AGConfig(ScienceFoldPosition.Parked, HrwfsPickupPosition.Parked))
+    GuiderSensorOptionOI(GuiderSensorOff)))
+  val agState = newTaskRef(AGConfig(ScienceFoldPosition.Parked.some, HrwfsPickupPosition.Parked.some))
   val iaaState = newTaskRef(InstrumentAlignAngle(Degrees(0.0)))
   private val Log = Logger.getLogger(getClass.getName)
 

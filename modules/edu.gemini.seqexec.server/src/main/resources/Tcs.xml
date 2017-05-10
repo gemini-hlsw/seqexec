@@ -6,7 +6,6 @@
     <Top name="pwfs1">pwfs1</Top>
     <Top name="pwfs2">pwfs2</Top>
     <Top name="oiwfs">oiwfs</Top>
-    <Top name="ao">ao</Top>
     <!--
     <Top name="bto">bto</Top>
     <Apply name="btoFsaApply">
@@ -997,40 +996,6 @@
             <description>Canopus probe 2 park</description>
         </command>
     </Apply>
-    <!--
-    <Apply name="aolgsApply">
-        <top>ao</top>
-        <apply>wfcs:strap</apply>
-        <car>wfcs:strapGtCtl.BUSY</car>
-        <description>Strap controller</description>
-        <command name="strapCorrCtl">
-            <record>wfcs:strapCorrCtl</record>
-            <description>ALTAIR sfo</description>
-            <parameter name="onoff">
-                <channel>wfcs:strapCorrCtl.A</channel>
-                <type>STRING</type>
-                <description>Strap onoff loop control</description>
-            </parameter>
-        </command>
-        <command name="aoStrap">
-            <record>wfcs:strapGtCtl</record>
-            <description>ALTAIR strap</description>
-            <parameter name="gate">
-                <channel>wfcs:strapGtCtl.A</channel>
-                <type>STRING</type>
-                <description>Gate control</description>
-            </parameter>
-        </command>
-        <command name="aoSfoLoop">
-            <description>ALTAIR sfo</description>
-            <parameter name="onoff">
-                <channel>cc:lgszoomSfoLoop</channel>
-                <type>STRING</type>
-                <description>Sfo loop control</description>
-            </parameter>
-        </command>
-    </Apply>
-    -->
     <Status name="tcsApply">
         <top>tcs</top>
         <attribute name="mess">
@@ -1039,51 +1004,8 @@
             <description>Command completion message</description>
         </attribute>
     </Status>
-    <Status name="aolgs">
-        <top>ao</top>
-        <!--
-        <attribute name="strapTPStat">
-            <channel>strapDevStatus.VALL</channel>
-            <type>STRING</type>
-            <description>STRAP Temp Ctl Status (1:OK, 0:not OK)</description>
-        </attribute>
-        <attribute name="strapgate">
-            <channel>strapDevStatus.VALH</channel>
-            <type>STRING</type>
-            <description>STRAP gate level</description>
-        </attribute>
-        -->
-        <attribute name="straploop">
-            <channel>wfcs:strapCorrCtl.VALA</channel>
-            <type>INTEGER</type>
-            <description>STRAP loop</description>
-        </attribute>
-        <!--
-        <attribute name="strapRTStat">
-            <channel>strapDevStatus.VALO</channel>
-            <type>STRING</type>
-            <description>STRAP RT Ctl Status (1:OK, 0:not OK)</description>
-        </attribute>
-        <attribute name="strapHVStat">
-            <channel>strapDevStatus.VALI</channel>
-            <type>STRING</type>
-            <description>STRAP HVolt Status (1:OK, 0:not OK)</description>
-        </attribute>
-        <attribute name="sfoloop">
-            <channel>cc:lgszoomSfoLoop</channel>
-            <type>STRING</type>
-            <description>Sfo loop</description>
-        </attribute>
-        -->
-    </Status>
     <Status name="tcsstate">
         <top>tcs</top>
-        <attribute name="aowfsOn">
-            <channel>wfcs:loopRunning</channel>
-            <type>DOUBLE</type>
-            <description>AO loop on</description>
-            <top>ao</top>
-        </attribute>
         <attribute name="decson">
             <channel>chopControl.VALB</channel>
             <type>STRING</type>
@@ -1535,12 +1457,6 @@
             <type>DOUBLE</type>
             <description>Chop Frequency</description>
         </attribute>
-        <attribute name="aoSettled">
-            <channel>wfcs:settled</channel>
-            <type>DOUBLE</type>
-            <description>AO loop settled</description>
-            <top>ao</top>
-        </attribute>
         <attribute name="oiFollowS">
             <channel>oi:followS</channel>
             <type>STRING</type>
@@ -1584,18 +1500,6 @@
             <type>DOUBLE</type>
             <description>X offset</description>
         </attribute>
-        <attribute name="conmatx">
-            <channel>conMatY</channel>
-            <type>DOUBLE</type>
-            <description>Control matrix star X</description>
-            <top>ao</top>
-        </attribute>
-        <attribute name="conmaty">
-            <channel>conMatX</channel>
-            <type>DOUBLE</type>
-            <description>Control matrix star Y</description>
-            <top>ao</top>
-        </attribute>
         <attribute name="p1FollowS">
             <channel>p1:followS</channel>
             <type>STRING</type>
@@ -1617,14 +1521,6 @@
             <type>STRING</type>
             <description>TCS in position</description>
         </attribute>
-        <!--
-        <attribute name="cmprepBusy">
-            <channel>prepareCm.BUSY</channel>
-            <type>STRING</type>
-            <description>PrepareCm busy</description> 
-            <top>ao</top>
-        </attribute>
-        -->
         <attribute name="instrAA">
             <channel>sad:instrAA</channel>
             <type>DOUBLE</type>
@@ -1697,12 +1593,6 @@
             <type>STRING</type>
             <description>M2 P1 guide config</description>
         </attribute>
-        <attribute name="lgsp1On">
-            <channel>lgsttSource.VALA</channel>
-            <type>INTEGER</type>
-            <description>LgsP1 mode</description>
-            <top>ao</top>
-        </attribute>
         <attribute name="agHwParked">
             <channel>hwParked</channel>
             <type>STRING</type>
@@ -1745,12 +1635,6 @@
             <channel>m1GuideConfig.VALB</channel>
             <type>STRING</type>
             <description>M1 guide source</description>
-        </attribute>
-        <attribute name="lgsoiOn">
-            <channel>lgsttSource.VALB</channel>
-            <type>INTEGER</type>
-            <description>LgsOI mode</description>
-            <top>ao</top>
         </attribute>
         <!--
         <attribute name="pwfs1On">
@@ -1805,12 +1689,6 @@
             <channel>sad:g4Wavelength</channel>
             <type>DOUBLE</type>
             <description>G4 Wavelength</description>
-        </attribute>
-        <attribute name="aoFollowS">
-            <channel>followS</channel>
-            <type>STRING</type>
-            <description>AO follow mode</description>
-            <top>ao</top>
         </attribute>
         <!--
         <attribute name="m2GuideState">

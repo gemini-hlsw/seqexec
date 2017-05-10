@@ -281,16 +281,14 @@ object TcsController {
   final case class GuidersEnabled(
     pwfs1: GuiderSensorOptionP1, 
     pwfs2: GuiderSensorOptionP2,
-    oiwfs: GuiderSensorOptionOI, 
-    aowfs: GuiderSensorOptionAO
+    oiwfs: GuiderSensorOptionOI
   ) {
-    def setPwfs1GuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(GuiderSensorOptionP1(v), pwfs2, oiwfs, aowfs)
-    def setPwfs2GuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, GuiderSensorOptionP2(v), oiwfs, aowfs)
-    def setOiwfsGuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, pwfs2, GuiderSensorOptionOI(v), aowfs)
-    def setAowfsGuiderSensorOption(v: GuiderSensorOption) = GuidersEnabled(pwfs1, pwfs2, oiwfs, GuiderSensorOptionAO(v))
+    def setPwfs1GuiderSensorOption(v: GuiderSensorOption) = this.copy(pwfs1 = GuiderSensorOptionP1(v))
+    def setPwfs2GuiderSensorOption(v: GuiderSensorOption) = this.copy(pwfs2 = GuiderSensorOptionP2(v))
+    def setOiwfsGuiderSensorOption(v: GuiderSensorOption) = this.copy(oiwfs = GuiderSensorOptionOI(v))
   }
 
-  final case class AGConfig(sfPos: ScienceFoldPosition, hrwfsPos: HrwfsPickupPosition)
+  final case class AGConfig(sfPos: Option[ScienceFoldPosition], hrwfsPos: Option[HrwfsPickupPosition])
 
   final case class InstrumentAlignAngle(self: Angle) extends AnyVal
 

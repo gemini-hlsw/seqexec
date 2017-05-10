@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="ao">ao</Top>
+    <Apply name="aolgsApply">
+        <top>ao</top>
+        <apply>wfcs:strap</apply>
+        <car>wfcs:strapGtCtl.BUSY</car>
+        <description>Strap controller</description>
+        <command name="strapCorrCtl">
+            <record>wfcs:strapCorrCtl</record>
+            <description>ALTAIR sfo</description>
+            <parameter name="onoff">
+                <channel>wfcs:strapCorrCtl.A</channel>
+                <type>STRING</type>
+                <description>Strap onoff loop control</description>
+            </parameter>
+        </command>
+        <command name="aoStrap">
+            <record>wfcs:strapGtCtl</record>
+            <description>ALTAIR strap</description>
+            <parameter name="gate">
+                <channel>wfcs:strapGtCtl.A</channel>
+                <type>STRING</type>
+                <description>Gate control</description>
+            </parameter>
+        </command>
+        <command name="aoSfoLoop">
+            <description>ALTAIR sfo</description>
+            <parameter name="onoff">
+                <channel>cc:lgszoomSfoLoop</channel>
+                <type>STRING</type>
+                <description>Sfo loop control</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Status name="aolgs">
+        <top>ao</top>
+        <attribute name="strapTPStat">
+            <channel>strapDevStatus.VALL</channel>
+            <type>STRING</type>
+            <description>STRAP Temp Ctl Status (1:OK, 0:not OK)</description>
+        </attribute>
+        <attribute name="strapgate">
+            <channel>strapDevStatus.VALH</channel>
+            <type>STRING</type>
+            <description>STRAP gate level</description>
+        </attribute>
+        <attribute name="straploop">
+            <channel>wfcs:strapCorrCtl.VALA</channel>
+            <type>INTEGER</type>
+            <description>STRAP loop</description>
+        </attribute>
+        <attribute name="strapRTStat">
+            <channel>strapDevStatus.VALO</channel>
+            <type>STRING</type>
+            <description>STRAP RT Ctl Status (1:OK, 0:not OK)</description>
+        </attribute>
+        <attribute name="strapHVStat">
+            <channel>strapDevStatus.VALI</channel>
+            <type>STRING</type>
+            <description>STRAP HVolt Status (1:OK, 0:not OK)</description>
+        </attribute>
+        <attribute name="sfoloop">
+            <channel>cc:lgszoomSfoLoop</channel>
+            <type>STRING</type>
+            <description>Sfo loop</description>
+        </attribute>
+    </Status>
+    <Status name = "aostate">
+        <top>ao</top>
+        <attribute name="aowfsOn">
+            <channel>wfcs:loopRunning</channel>
+            <type>DOUBLE</type>
+            <description>AO loop on</description>
+        </attribute>
+        <attribute name="aoSettled">
+            <channel>wfcs:settled</channel>
+            <type>DOUBLE</type>
+            <description>AO loop settled</description>
+        </attribute>
+        <attribute name="conmatx">
+            <channel>conMatY</channel>
+            <type>DOUBLE</type>
+            <description>Control matrix star X</description>
+        </attribute>
+        <attribute name="conmaty">
+            <channel>conMatX</channel>
+            <type>DOUBLE</type>
+            <description>Control matrix star Y</description>
+        </attribute>
+        <attribute name="cmprepBusy">
+            <channel>prepareCm.BUSY</channel>
+            <type>STRING</type>
+            <description>PrepareCm busy</description>
+        </attribute>
+        <attribute name="lgsp1On">
+            <channel>lgsttSource.VALA</channel>
+            <type>INTEGER</type>
+            <description>LgsP1 mode</description>
+        </attribute>
+        <attribute name="lgsoiOn">
+            <channel>lgsttSource.VALB</channel>
+            <type>INTEGER</type>
+            <description>LgsOI mode</description>
+        </attribute>
+        <attribute name="aoFollowS">
+            <channel>followS</channel>
+            <type>STRING</type>
+            <description>AO follow mode</description>
+        </attribute>
+    </Status>
+</Records>
