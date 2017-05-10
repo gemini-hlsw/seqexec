@@ -37,10 +37,11 @@ object GmosSouthController {
   type PosAngle = edu.gemini.spModel.core.Angle
 
   sealed trait GmosFPU
+  final case object UnknownFPU extends GmosFPU
   final case class BuiltInFPU(fpu: FPU) extends GmosFPU
-  final case class CustomFPU(mask: String) extends GmosFPU
+  final case class CustomMaskFPU(mask: String) extends GmosFPU
 
-  final case class GmosDisperser(disperser: Disperser, order: Option[Disperser], lambda: Option[Length])
+  final case class GmosDisperser(disperser: Disperser, order: Option[DisperserOrder], lambda: Option[Length])
 
   final case class CCConfig(posAngle: PosAngle,
     filter: Filter,
@@ -51,9 +52,9 @@ object GmosSouthController {
     adc: ADC,
     useElectronicOffset: Option[UseElectronicOffset])
 
-  final case class CCDBinning(x: Binning, y: Binning)
-
   final case class CCDReadout(ampReadMode: AmpReadMode, gainChoice: AmpGain, ampCount: AmpCount, gainSetting: Double)
+
+  final case class CCDBinning(x: Binning, y: Binning)
 
   final case class RegionsOfInterest(bulitInROI: ROI, customROI: List[ROI])
 
