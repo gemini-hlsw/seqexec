@@ -41,11 +41,13 @@
         </command>
         <command name="flamingos2::config">
             <description>Setup a Configuration</description>
+            <!--
             <parameter name="useElectronicOffsetting">
                 <channel>wfs:followA.K</channel>
                 <type>INTEGER</type>
                 <description>0 Electronic Offsets</description>
             </parameter>
+            -->
             <parameter name="filter">
                 <channel>instrumentSetup.F</channel>
                 <type>STRING</type>

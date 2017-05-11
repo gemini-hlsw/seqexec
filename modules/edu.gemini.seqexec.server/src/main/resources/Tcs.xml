@@ -1008,7 +1008,7 @@
         <top>tcs</top>
         <attribute name="decson">
             <channel>chopControl.VALB</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>SCS DECS on flag</description>
             <top>m2</top>
         </attribute>
@@ -1377,7 +1377,7 @@
         </attribute>
         <attribute name="chopon">
             <channel>chopControl.VALA</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>SCS Chop on flag</description>
             <top>m2</top>
         </attribute>
@@ -1595,7 +1595,7 @@
         </attribute>
         <attribute name="agHwParked">
             <channel>hwParked</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>AcqCam parked</description>
             <top>ag</top>
         </attribute>
@@ -1681,7 +1681,7 @@
         </attribute>
         <attribute name="sfParked">
             <channel>sfParked</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>Science Fold parked</description>
             <top>ag</top>
         </attribute>
@@ -2383,7 +2383,8 @@
         <top>oiwfs</top>
         <attribute name="intTime">
             <channel>dc:intTime.VAL</channel>
-            <type>DOUBLE</type>
+            <!--Should be changed to DOUBLE when the EPICS DB is corrected-->
+            <type>STRING</type>
             <description>Integration time</description>
         </attribute>
     </Status>
