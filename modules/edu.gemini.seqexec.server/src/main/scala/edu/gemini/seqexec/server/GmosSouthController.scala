@@ -43,8 +43,7 @@ object GmosSouthController {
 
   final case class GmosDisperser(disperser: Disperser, order: Option[DisperserOrder], lambda: Option[Length])
 
-  final case class CCConfig(posAngle: PosAngle,
-    filter: Filter,
+  final case class CCConfig(filter: Filter,
     disperser: GmosDisperser,
     fpu: GmosFPU,
     stage: GmosStageMode,

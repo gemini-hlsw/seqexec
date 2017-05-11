@@ -54,7 +54,6 @@ object GmosSouth {
 
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] =
     (for {
-      posAngle         <- config.extract(INSTRUMENT_KEY / POS_ANGLE_PROP).as[java.lang.Double].map(d => Angle.fromDegrees(d.toDouble))
       filter           <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
       disp             <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
       disperserOrder   =  config.extract(INSTRUMENT_KEY / DISPERSER_ORDER_PROP).as[DisperserOrder]
@@ -67,7 +66,7 @@ object GmosSouth {
       adc              <- config.extract(INSTRUMENT_KEY / ADC_PROP).as[ADC]
       electronicOffset =  config.extract(INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP).as[UseElectronicOffset]
       disperser = GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-    } yield CCConfig(posAngle, filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e =>SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e =>SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
