@@ -48,7 +48,7 @@ final class Flamingos2Epics(epicsService: CaService) {
   object configCmd extends EpicsCommand {
     override val cs = Option(epicsService.getCommandSender("flamingos2::config"))
 
-    val useElectronicOffsetting = cs.map(_.getInteger("useElectronicOffsetting"))
+    val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", "wfs:followA.K", "Enable electronic Offsets", false))
     def setUseElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     val filter = cs.map(_.getString("filter"))
