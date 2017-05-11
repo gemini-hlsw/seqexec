@@ -72,14 +72,14 @@ object GmosSouth {
     (for {
       exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
       ampReadMode  <- config.extract(INSTRUMENT_KEY / AMP_READ_MODE_PROP).as[AmpReadMode]
-      ampGain      <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
+      gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
       ampCount     <- config.extract(INSTRUMENT_KEY / AMP_COUNT_PROP).as[AmpCount]
       gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[java.lang.Double]
       xBinning     <- config.extract(INSTRUMENT_KEY / CCD_X_BIN_PROP).as[Binning]
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
       builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[ROI]
       // TODO Add the custom ROI
-    } yield DCConfig(exposureTime, CCDReadout(ampReadMode, ampGain, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, Nil))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield DCConfig(exposureTime, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, Nil))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: Config): SeqAction[GmosSouthConfig] = EitherT( Task ( for {
       cc <- ccConfigFromSequenceConfig(config)

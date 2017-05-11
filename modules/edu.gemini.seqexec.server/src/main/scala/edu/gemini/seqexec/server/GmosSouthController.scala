@@ -30,7 +30,7 @@ object GmosSouthController {
   type DisperserOrder = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
   type Binning = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
   type AmpReadMode = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
-  type AmpGain = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+  type GainChoice = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
   type AmpCount = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
   type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
   type ExposureTime = Duration
@@ -51,7 +51,7 @@ object GmosSouthController {
     adc: ADC,
     useElectronicOffset: Option[UseElectronicOffset])
 
-  final case class CCDReadout(ampReadMode: AmpReadMode, gainChoice: AmpGain, ampCount: AmpCount, gainSetting: Double)
+  final case class CCDReadout(ampReadMode: AmpReadMode, gainChoice: GainChoice, ampCount: AmpCount, gainSetting: Double)
 
   final case class CCDBinning(x: Binning, y: Binning)
 
