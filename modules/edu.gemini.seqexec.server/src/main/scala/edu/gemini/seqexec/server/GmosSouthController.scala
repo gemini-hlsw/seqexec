@@ -32,6 +32,7 @@ object GmosSouthController {
   type AmpReadMode = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
   type GainChoice = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
   type AmpCount = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
+  type BuiltInROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
   type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
   type ExposureTime = Duration
   type PosAngle = edu.gemini.spModel.core.Angle
@@ -55,7 +56,7 @@ object GmosSouthController {
 
   final case class CCDBinning(x: Binning, y: Binning)
 
-  final case class RegionsOfInterest(bulitInROI: ROI, customROI: List[ROI])
+  final case class RegionsOfInterest(bulitInROI: BuiltInROI, customROI: List[ROI])
 
   final case class DCConfig(t: ExposureTime, r: CCDReadout, b: CCDBinning, roi: RegionsOfInterest)
 

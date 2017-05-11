@@ -17,6 +17,7 @@ import edu.gemini.spModel.core.Angle
 
 import squants.space.LengthConversions._
 import scalaz.{EitherT, Reader}
+import scalaz.syntax.std.string._
 import scalaz.concurrent.Task
 
 import scala.concurrent.duration._
@@ -42,6 +43,8 @@ final case class GmosSouth(controller: GmosSouthController) extends Instrument {
 }
 
 object GmosSouth {
+  val name: String = INSTRUMENT_NAME_PROP
+
   import GmosSouthController._
 
   def fpuFromFPUnit(n: Option[FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
@@ -66,18 +69,18 @@ object GmosSouth {
       adc              <- config.extract(INSTRUMENT_KEY / ADC_PROP).as[ADC]
       electronicOffset =  config.extract(INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP).as[UseElectronicOffset]
       disperser = GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-    } yield CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e =>SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
       exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
-      ampReadMode  <- config.extract(INSTRUMENT_KEY / AMP_READ_MODE_PROP).as[AmpReadMode]
+      ampReadMode  <- {println(INSTRUMENT_KEY / AMP_READ_MODE_PROP);config.extract(AmpReadMode.KEY).as[AmpReadMode]}
       gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
       ampCount     <- config.extract(INSTRUMENT_KEY / AMP_COUNT_PROP).as[AmpCount]
-      gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[java.lang.Double]
+      gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[String].flatMap(_.parseDouble.disjunction.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))
       xBinning     <- config.extract(INSTRUMENT_KEY / CCD_X_BIN_PROP).as[Binning]
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
-      builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[ROI]
+      builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltInROI]
       // TODO Add the custom ROI
     } yield DCConfig(exposureTime, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, Nil))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
