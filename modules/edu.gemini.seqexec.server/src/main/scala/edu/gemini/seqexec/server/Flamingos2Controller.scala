@@ -42,7 +42,14 @@ object Flamingos2Controller {
 
   type Lyot = edu.gemini.spModel.gemini.flamingos2.Flamingos2.LyotWheel
 
-  type Grism = edu.gemini.spModel.gemini.flamingos2.Flamingos2.Disperser
+  sealed trait Grism
+  object Grism {
+    object Open extends Grism
+    object R1200JH extends Grism
+    object R1200HK extends Grism
+    object R3000 extends Grism
+    object Dark extends Grism
+  }
 
   type ExposureTime = Duration
 
