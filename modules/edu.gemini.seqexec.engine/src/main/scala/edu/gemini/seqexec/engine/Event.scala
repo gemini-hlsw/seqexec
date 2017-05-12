@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.engine
 
 import scalaz._
-import Scalaz._
 
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import Result.{OK, Partial, PartialVal, RetVal}

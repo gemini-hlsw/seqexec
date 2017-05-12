@@ -54,7 +54,7 @@ class SequenceSpec extends FlatSpec {
 
   val metadata = SequenceMetadata("F2", None, "")
 
-  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] =
+  def simpleStep(id: Int, breakpoint: Boolean): Step[Action \/ Result] =
     Step(
       id,
       None,
@@ -62,8 +62,8 @@ class SequenceSpec extends FlatSpec {
       Set.empty,
       breakpoint,
       List(
-        List(action, action), // Execution
-        List(action) // Execution
+        List(action.left, action.left), // Execution
+        List(action.left) // Execution
       )
     )
 
