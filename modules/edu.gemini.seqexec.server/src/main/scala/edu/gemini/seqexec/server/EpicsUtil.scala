@@ -74,6 +74,7 @@ object EpicsCommand {
     safe(SeqAction.either {
       p.map(_.set(f(v)).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
     } )
+    
   def setParameter[T](p: Option[CaParameter[T]], v: T): SeqAction[Unit] =
     safe(SeqAction.either {
       p.map(_.set(v).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)

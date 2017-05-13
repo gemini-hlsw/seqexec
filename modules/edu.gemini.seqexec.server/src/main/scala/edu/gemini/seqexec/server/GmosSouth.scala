@@ -74,7 +74,7 @@ object GmosSouth {
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
       exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
-      ampReadMode  <- {println(INSTRUMENT_KEY / AMP_READ_MODE_PROP);config.extract(AmpReadMode.KEY).as[AmpReadMode]}
+      ampReadMode  <- config.extract(AmpReadMode.KEY).as[AmpReadMode]
       gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
       ampCount     <- config.extract(INSTRUMENT_KEY / AMP_COUNT_PROP).as[AmpCount]
       gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[String].flatMap(_.parseDouble.disjunction.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))

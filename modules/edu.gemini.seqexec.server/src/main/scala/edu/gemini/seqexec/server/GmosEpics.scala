@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.server
+
 import java.util.logging.Logger
+import java.lang.{Double => JDouble}
 
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor, XMLBuilder}
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
@@ -84,30 +86,30 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v))
 
     val roi1 = new RoiParameters(cs, 1)
-    
+
     val roi2 = new RoiParameters(cs, 2)
-    
+
     val roi3 = new RoiParameters(cs, 3)
-    
+
     val roi4 = new RoiParameters(cs, 4)
-    
+
     val roi5 = new RoiParameters(cs, 5)
-    
+
     val shutterState = cs.map(_.getString("shutterState"))
     def setShutterState(v: String): SeqAction[Unit] = setParameter(shutterState, v)
-    
+
     val exposureTime = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: java.lang.Double): SeqAction[Unit] = setParameter(exposureTime, v)
-    
+    def setExposureTime(v: Duration): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v.toSeconds))
+
     val ampCount = cs.map(_.getInteger("ampCount"))
     def setAmpCount(v: Integer): SeqAction[Unit] = setParameter(ampCount, v)
 
     val ampReadMode = cs.map(_.getString("ampReadMode"))
     def setAmpReadMode(v: String): SeqAction[Unit] = setParameter(ampReadMode, v)
-    
+
     val gainSetting = cs.map(_.getString("gainSetting"))
     def setGainSetting(v: String): SeqAction[Unit] = setParameter(gainSetting, v)
-    
+
     val ccdXBinning = cs.map(_.addDouble("ccdXBinning", "dc:roiXBin", "CCD X Binning Value", false))
     def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v))
 
@@ -119,7 +121,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
     val nsRows = cs.map(_.getInteger("nsRows"))
     def setNsRows(v: Integer): SeqAction[Unit] = setParameter(nsRows, v)
-    
+
     val nsState = cs.map(_.getString("ns_state"))
     def setNsState(v: String): SeqAction[Unit] = setParameter(nsState, v)
 
