@@ -5,692 +5,698 @@
 -->
 <channels>
   <channel>
-    <name>gm:apply.DIR</name>
+    <name>gm1:dc:roiNumrois</name>
+    <type>double</type>
+    <value>0</value>
+  </channel>
+
+  <channel>
+    <name>gm1:apply.DIR</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:apply.VAL</name>
+    <name>gm1:apply.VAL</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:apply.MESS</name>
+    <name>gm1:apply.MESS</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:applyC.CLID</name>
+    <name>gm1:applyC.CLID</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:applyC.VAL</name>
+    <name>gm1:applyC.VAL</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:applyC.OMSS</name>
+    <name>gm1:applyC.OMSS</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:grSelect.A</name>
+    <name>gm1:grSelect.A</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:grSelect.B</name>
+    <name>gm1:grSelect.B</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dtaTrack.A</name>
+    <name>gm1:dtaTrack.A</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:fltPos.B</name>
+    <name>gm1:fltPos.B</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dtaTrack.B</name>
+    <name>gm1:dtaTrack.B</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:mskPos.B</name>
+    <name>gm1:mskPos.B</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:grSelect.D</name>
+    <name>gm1:grSelect.D</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:grSelect.C</name>
+    <name>gm1:grSelect.C</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:fltPos.A</name>
+    <name>gm1:fltPos.A</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:mskPos.A</name>
+    <name>gm1:mskPos.A</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:endObserve.DIR</name>
+    <name>gm1:endObserve.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:apply.DIR</name>
+    <name>gm1:dc:apply.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:apply.VAL</name>
+    <name>gm1:dc:apply.VAL</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:apply.MESS</name>
+    <name>gm1:dc:apply.MESS</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:applyC.CLID</name>
+    <name>gm1:dc:applyC.CLID</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:applyC.VAL</name>
+    <name>gm1:dc:applyC.VAL</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:applyC.OMSS</name>
+    <name>gm1:dc:applyC.OMSS</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.P</name>
+    <name>gm1:dc:roi.P</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.R</name>
+    <name>gm1:dc:roi.R</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.Q</name>
+    <name>gm1:dc:roi.Q</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.E</name>
+    <name>gm1:dc:roi.E</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.O</name>
+    <name>gm1:dc:roi.O</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.B</name>
+    <name>gm1:dc:dcSetup.B</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.C</name>
+    <name>gm1:dc:roi.C</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.F</name>
+    <name>gm1:dc:roi.F</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.S</name>
+    <name>gm1:dc:roi.S</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.B</name>
+    <name>gm1:dc:roi.B</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.A</name>
+    <name>gm1:dc:dcSetup.A</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.J</name>
+    <name>gm1:dc:roi.J</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.F</name>
+    <name>gm1:dc:dcSetup.F</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.L</name>
+    <name>gm1:dc:roi.L</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.D</name>
+    <name>gm1:dc:roi.D</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.E</name>
+    <name>gm1:dc:dcSetup.E</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.I</name>
+    <name>gm1:dc:dcSetup.I</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.D</name>
+    <name>gm1:dc:dcSetup.D</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.N</name>
+    <name>gm1:dc:roi.N</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.H</name>
+    <name>gm1:dc:roi.H</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.C</name>
+    <name>gm1:dc:dcSetup.C</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.M</name>
+    <name>gm1:dc:roi.M</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.K</name>
+    <name>gm1:dc:roi.K</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.T</name>
+    <name>gm1:dc:roi.T</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.A</name>
+    <name>gm1:dc:roi.A</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.I</name>
+    <name>gm1:dc:roi.I</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.G</name>
+    <name>gm1:dc:dcSetup.G</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.G</name>
+    <name>gm1:dc:roi.G</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:apply.DIR</name>
+    <name>gm1:dc:apply.DIR</name>
     <type>string</type>
     <value></value>
    </channel>
    <channel>
-    <name>gm:dc:apply.VAL</name>
+    <name>gm1:dc:apply.VAL</name>
     <type>string</type>
     <value></value>
    </channel>
    <channel>
-    <name>gm:dc:apply.MESS</name>
+    <name>gm1:dc:apply.MESS</name>
     <type>string</type>
     <value></value>
    </channel>
    <channel>
-   <name>gm:dc:observeC.CLID</name>
+   <name>gm1:dc:observeC.CLID</name>
    <type>string</type>
    <value></value>
   </channel>
   <channel>
-    <name>gm:dc:observeC.VAL</name>
+    <name>gm1:dc:observeC.VAL</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:observeC.OMSS</name>
+    <name>gm1:dc:observeC.OMSS</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:pause.DIR</name>
+    <name>gm1:dc:pause.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:abort.DIR</name>
+    <name>gm1:dc:abort.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:continue.DIR</name>
+    <name>gm1:dc:continue.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:observe.DIR</name>
+    <name>gm1:dc:observe.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:observe.A</name>
+    <name>gm1:dc:observe.A</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:stop.DIR</name>
+    <name>gm1:dc:stop.DIR</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALM</name>
+    <name>gm1:dc:roi.VALM</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALJ</name>
+    <name>gm1:dc:roi.VALJ</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALL</name>
+    <name>gm1:dc:roi.VALL</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALR</name>
+    <name>gm1:dc:roi.VALR</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALE</name>
+    <name>gm1:dc:roi.VALE</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:dc:nsCurrentCycle</name>
+    <name>gm1:sad:dc:nsCurrentCycle</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALB</name>
+    <name>gm1:dc:roi.VALB</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:dc:nsRows</name>
+    <name>gm1:sad:dc:nsRows</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dhsConnect.VALA</name>
+    <name>gm1:dc:dhsConnect.VALA</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALC</name>
+    <name>gm1:dc:roi.VALC</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALD</name>
+    <name>gm1:dc:roi.VALD</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALT</name>
+    <name>gm1:dc:roi.VALT</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:dc:timeleft</name>
+    <name>gm1:sad:dc:timeleft</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALI</name>
+    <name>gm1:dc:roi.VALI</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.VALC</name>
+    <name>gm1:dc:dcSetup.VALC</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALK</name>
+    <name>gm1:dc:roi.VALK</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:dc:BExpCount</name>
+    <name>gm1:sad:dc:BExpCount</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALS</name>
+    <name>gm1:dc:roi.VALS</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.VALE</name>
+    <name>gm1:dc:dcSetup.VALE</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALQ</name>
+    <name>gm1:dc:roi.VALQ</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALN</name>
+    <name>gm1:dc:roi.VALN</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.VALB</name>
+    <name>gm1:dc:dcSetup.VALB</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:dc:nsPairs</name>
+    <name>gm1:sad:dc:nsPairs</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roiXBin</name>
+    <name>gm1:dc:roiXBin</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALA</name>
+    <name>gm1:dc:roi.VALA</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.VALD</name>
+    <name>gm1:dc:dcSetup.VALD</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roiYBin</name>
+    <name>gm1:dc:roiYBin</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALH</name>
+    <name>gm1:dc:roi.VALH</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:dc:AExpCount</name>
+    <name>gm1:sad:dc:AExpCount</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALF</name>
+    <name>gm1:dc:roi.VALF</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALO</name>
+    <name>gm1:dc:roi.VALO</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALG</name>
+    <name>gm1:dc:roi.VALG</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.VALF</name>
+    <name>gm1:dc:dcSetup.VALF</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dc:roi.VALP</name>
+    <name>gm1:dc:roi.VALP</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:dc:dcSetup.VALA</name>
+    <name>gm1:dc:dcSetup.VALA</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:dc:exposedRQ</name>
+    <name>gm1:sad:dc:exposedRQ</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:dc:detId</name>
+    <name>gm1:sad:dc:detId</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:dc:roiCnt</name>
+    <name>gm1:sad:dc:roiCnt</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:dc:detType</name>
+    <name>gm1:sad:dc:detType</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:dc:name</name>
+    <name>gm1:sad:dc:name</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:cc:name</name>
+    <name>gm1:sad:cc:name</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:atmExpEnd</name>
+    <name>gm1:sad:atmExpEnd</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:atmWavelen2</name>
+    <name>gm1:sad:atmWavelen2</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:atmPresent</name>
+    <name>gm1:sad:cc:atmPresent</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:atmWavelen1</name>
+    <name>gm1:sad:atmWavelen1</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:mskLoc</name>
+    <name>gm1:sad:cc:mskLoc</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:fltID1</name>
+    <name>gm1:sad:cc:fltID1</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:mskPos.A</name>
+    <name>gm1:mskPos.A</name>
     <type>string</type>
     <value></value>
    </channel>
    <channel>
-   <name>gm:sad:cc:grInBeam</name>
+   <name>gm1:sad:cc:grInBeam</name>
    <type>int</type>
    <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:grOrder</name>
+    <name>gm1:sad:grOrder</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:grPark</name>
+    <name>gm1:sad:cc:grPark</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:filtName1</name>
+    <name>gm1:sad:filtName1</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:cc:grID</name>
+    <name>gm1:sad:cc:grID</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:fltID2</name>
+    <name>gm1:sad:cc:fltID2</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:filtName2</name>
+    <name>gm1:sad:filtName2</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:grName</name>
+    <name>gm1:sad:grName</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:dtaTrack.VALA</name>
+    <name>gm1:dtaTrack.VALA</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:wfs:ElectronicOffsets</name>
+    <name>gm1:wfs:ElectronicOffsets</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:grWavelen</name>
+    <name>gm1:sad:grWavelen</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:atmExpStart</name>
+    <name>gm1:sad:atmExpStart</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:dtaZStart</name>
+    <name>gm1:sad:dtaZStart</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:atmTrack.VALA</name>
+    <name>gm1:atmTrack.VALA</name>
     <type>string</type>
     <value></value>
   </channel>
   <channel>
-    <name>gm:sad:cc:grMotorSteps</name>
+    <name>gm1:sad:cc:grMotorSteps</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:dtaY</name>
+    <name>gm1:sad:cc:dtaY</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:grAdjWavelen</name>
+    <name>gm1:sad:grAdjWavelen</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:atmEnpEnd</name>
+    <name>gm1:sad:atmEnpEnd</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:atmEnpMean</name>
+    <name>gm1:sad:atmEnpMean</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:dtaZMean</name>
+    <name>gm1:sad:dtaZMean</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:dtaZ</name>
+    <name>gm1:sad:cc:dtaZ</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:dtaZEnd</name>
+    <name>gm1:sad:dtaZEnd</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:mskFP</name>
+    <name>gm1:sad:cc:mskFP</name>
     <type>int</type>
     <value>0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:grTilt</name>
+    <name>gm1:sad:cc:grTilt</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:atmEnpStart</name>
+    <name>gm1:sad:atmEnpStart</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:atmExpMean</name>
+    <name>gm1:sad:atmExpMean</name>
     <type>double</type>
     <value>0.0</value>
   </channel>
   <channel>
-    <name>gm:sad:cc:mskID</name>
+    <name>gm1:sad:cc:mskID</name>
     <type>int</type>
     <value>0</value>
   </channel>
