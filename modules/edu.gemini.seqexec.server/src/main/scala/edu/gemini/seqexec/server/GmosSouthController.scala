@@ -37,6 +37,12 @@ object GmosSouthController {
   type ExposureTime = Duration
   type PosAngle = edu.gemini.spModel.core.Angle
 
+  // I'm not totally sure this is being used
+  sealed trait BiasTime
+  case object BiasTimeSet extends BiasTime
+  case object BiasTimeEmpty extends BiasTime
+  case object BiasTimeUnset extends BiasTime
+
   sealed trait GmosFPU
   final case object UnknownFPU extends GmosFPU
   final case class BuiltInFPU(fpu: FPU) extends GmosFPU

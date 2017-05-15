@@ -13,10 +13,11 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType._
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
+import edu.gemini.spModel.obscomp.InstConstants.{INSTRUMENT_NAME_PROP => _, EXPOSURE_TIME_PROP => _, _}
 import edu.gemini.spModel.core.Angle
 
 import squants.space.LengthConversions._
-import scalaz.{EitherT, Reader}
+import scalaz.{EitherT, Reader, \/}
 import scalaz.syntax.std.string._
 import scalaz.concurrent.Task
 
@@ -55,6 +56,16 @@ object GmosSouth {
     }
   }
 
+  // It seems this is unused but it shows up on the DC apply config
+  private def biasTimeObserveType(observeType: String): BiasTime = observeType match {
+    case SCIENCE_OBSERVE_TYPE => BiasTimeUnset
+    case FLAT_OBSERVE_TYPE    => BiasTimeUnset
+    case ARC_OBSERVE_TYPE     => BiasTimeEmpty
+    case DARK_OBSERVE_TYPE    => BiasTimeEmpty
+    case BIAS_OBSERVE_TYPE    => BiasTimeUnset
+    case _                    => BiasTimeUnset
+  }
+
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] =
     (for {
       filter           <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
@@ -73,6 +84,8 @@ object GmosSouth {
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
+      obsType      <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
+      biasTime     <- \/.right(biasTimeObserveType(obsType))
       exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
       ampReadMode  <- config.extract(AmpReadMode.KEY).as[AmpReadMode]
       gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
