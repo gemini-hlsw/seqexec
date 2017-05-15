@@ -7,6 +7,7 @@ import edu.gemini.seqexec.server.GmosSouthController._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 
 import scalaz.Scalaz._
 import scalaz.EitherT
@@ -51,6 +52,12 @@ object GmosControllerEpics extends GmosSouthController {
     case s            => GmosEpics.instance.configDCCmd.setShutterState(encode(s))
   }
 
+  private def roiNumUsed(s: RegionsOfInterest): Int = s match {
+    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => 1
+    case RegionsOfInterest(b, rois)                        => rois.length
+  }
+
+
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
     // TODO nsRow, nsPairs
     _ <- GmosEpics.instance.configDCCmd.setExposureTime(dc.t)
@@ -59,6 +66,7 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- GmosEpics.instance.configDCCmd.setAmpReadMode(encode(dc.r.ampReadMode))
     _ <- GmosEpics.instance.configDCCmd.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
     _ <- GmosEpics.instance.configDCCmd.setAmpCount(encode(dc.r.ampCount))
+    _ <- GmosEpics.instance.configDCCmd.setRoiNumUsed(roiNumUsed(dc.roi))
   } yield ()
 
   /*implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue((a: WindowCover)
