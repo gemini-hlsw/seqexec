@@ -62,7 +62,7 @@ object GmosControllerEpics extends GmosSouthController {
 
   case class ROI(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
-  private def builtInROI(b: BuiltinROI): ROI = b match {
+  private def builtInROI(binning: CCDBinning, b: BuiltinROI): ROI = b match {
     case BuiltinROI.FULL_FRAME       => ROI(xStart = 1, xSize = 6144, yStart = 1, ySize = 4608)
     case BuiltinROI.CCD2             => ROI(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4608)
     case BuiltinROI.CENTRAL_SPECTRUM => ROI(xStart = 1, xSize = 6144, yStart = 1793, ySize = 1024)
@@ -70,19 +70,19 @@ object GmosControllerEpics extends GmosSouthController {
     case _                           => ROI(xStart = 0, xSize = 0, yStart = 0, ySize = 0)
   }
 
-  private def setROI(s: RegionsOfInterest): SeqAction[Unit] = s match {
-    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(1, builtInROI(b))
+  private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s match {
+    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(binning, 1, builtInROI(binning, b))
     // TODO Support custom ROIs
     case RegionsOfInterest(b, rois)                        => SeqAction.void
   }
 
-  private def roiParameters(index: Int, roi: ROI): SeqAction[Unit] = {
+  private def roiParameters(binning: CCDBinning, index: Int, roi: ROI): SeqAction[Unit] = {
     GmosEpics.instance.configDCCmd.rois.get(index).map { r =>
       for {
         _ <- r.setCcdXstart1(roi.xStart)
-        _ <- r.setCcdXsize1(roi.xSize)
+        _ <- r.setCcdXsize1(roi.xSize / binning.x.getValue)
         _ <- r.setCcdYstart1(roi.yStart)
-        _ <- r.setCcdYsize1(roi.ySize)
+        _ <- r.setCcdYsize1(roi.ySize / binning.y.getValue)
       } yield ()
     }.fold(SeqAction.void)(identity)
   }
@@ -96,7 +96,7 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- GmosEpics.instance.configDCCmd.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
     _ <- GmosEpics.instance.configDCCmd.setAmpCount(encode(dc.r.ampCount))
     _ <- GmosEpics.instance.configDCCmd.setRoiNumUsed(roiNumUsed(dc.roi))
-    _ <- setROI(dc.roi)
+    _ <- setROI(dc.bi, dc.roi)
     _ <- GmosEpics.instance.configDCCmd.setCcdXBinning(encode(dc.bi.x))
     _ <- GmosEpics.instance.configDCCmd.setCcdYBinning(encode(dc.bi.y))
   } yield ()
