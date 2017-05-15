@@ -6,6 +6,7 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.GmosSouthController._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 
 import scalaz.Scalaz._
 import scalaz.EitherT
@@ -32,6 +33,12 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val ampGainSettingEncoder: EncodeEpicsValue[AmpGainSetting, String] = EncodeEpicsValue(_.value.toString)
 
+  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, Int] = EncodeEpicsValue {
+    case AmpCount.THREE  => 3
+    case AmpCount.SIX    => 6
+    case AmpCount.TWELVE => 12
+  }
+
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
     case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
     case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(1)
@@ -51,6 +58,7 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- setShutterState(dc.s)
     _ <- GmosEpics.instance.configDCCmd.setAmpReadMode(encode(dc.r.ampReadMode))
     _ <- GmosEpics.instance.configDCCmd.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
+    _ <- GmosEpics.instance.configDCCmd.setAmpCount(encode(dc.r.ampCount))
   } yield ()
 
   /*implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue((a: WindowCover)
