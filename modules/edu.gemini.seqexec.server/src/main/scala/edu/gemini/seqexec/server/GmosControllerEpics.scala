@@ -5,6 +5,7 @@ import java.util.logging.Logger
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.GmosSouthController._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 
 import scalaz.Scalaz._
 import scalaz.EitherT
@@ -25,8 +26,17 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val shutterStateEncoder: EncodeEpicsValue[ShutterState, String] = EncodeEpicsValue {
     case OpenShutter  => "OPEN"
-    case CloseShutter => "CLOSEd"
-    case _                         => ""
+    case CloseShutter => "CLOSED"
+    case _            => ""
+  }
+
+  implicit val ampGainSettingEncoder: EncodeEpicsValue[AmpGainSetting, String] = EncodeEpicsValue(_.value.toString)
+
+  private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
+    case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
+    case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(1)
+    case (AmpReadMode.FAST, AmpGain.LOW)  => AmpGainSetting(6)
+    case (AmpReadMode.FAST, AmpGain.HIGH) => AmpGainSetting(5)
   }
 
   private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
@@ -35,11 +45,12 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
+    // TODO nsRow, nsPairs
     _ <- GmosEpics.instance.configDCCmd.setExposureTime(dc.t)
     // TODO Bias time?
-    // TODO Shutter state
     _ <- setShutterState(dc.s)
     _ <- GmosEpics.instance.configDCCmd.setAmpReadMode(encode(dc.r.ampReadMode))
+    _ <- GmosEpics.instance.configDCCmd.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
   } yield ()
 
   /*implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue((a: WindowCover)

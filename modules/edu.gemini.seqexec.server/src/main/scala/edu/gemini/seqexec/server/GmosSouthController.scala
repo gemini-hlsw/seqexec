@@ -30,7 +30,7 @@ object GmosSouthController {
   type DisperserOrder = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
   type Binning = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
   type AmpReadMode = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
-  type GainChoice = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+  type AmpGain = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
   type AmpCount = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
   type BuiltInROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
   type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
@@ -54,6 +54,8 @@ object GmosSouthController {
   final case class BuiltInFPU(fpu: FPU) extends GmosFPU
   final case class CustomMaskFPU(mask: String) extends GmosFPU
 
+  final case class AmpGainSetting(value: Int)
+
   final case class GmosDisperser(disperser: Disperser, order: Option[DisperserOrder], lambda: Option[Length])
 
   final case class CCConfig(filter: Filter,
@@ -64,7 +66,7 @@ object GmosSouthController {
     adc: ADC,
     useElectronicOffset: Option[UseElectronicOffset])
 
-  final case class CCDReadout(ampReadMode: AmpReadMode, gainChoice: GainChoice, ampCount: AmpCount, gainSetting: Double)
+  final case class CCDReadout(ampReadMode: AmpReadMode, ampGain: AmpGain, ampCount: AmpCount, gainSetting: Double)
 
   final case class CCDBinning(x: Binning, y: Binning)
 
