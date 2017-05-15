@@ -85,15 +85,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val roiNumUsed = cs.map(_.addDouble("roiNumUsed", "dc:roiNumrois", "Number of ROI used", false))
     def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v))
 
-    val roi1 = new RoiParameters(cs, 1)
-
-    val roi2 = new RoiParameters(cs, 2)
-
-    val roi3 = new RoiParameters(cs, 3)
-
-    val roi4 = new RoiParameters(cs, 4)
-
-    val roi5 = new RoiParameters(cs, 5)
+    val rois: Map[Int, RoiParameters] = (1 to 5).map(i => i -> RoiParameters(cs, i))(breakOut)
 
     val shutterState = cs.map(_.getString("shutterState"))
     def setShutterState(v: String): SeqAction[Unit] = setParameter(shutterState, v)
@@ -261,7 +253,7 @@ object GmosEpics extends EpicsSystem[GmosEpics] {
 
   override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)
 
-  class RoiParameters(cs: Option[CaCommandSender], i: Int) {
+  case class RoiParameters(cs: Option[CaCommandSender], i: Int) {
     val ccdXstart = cs.map(_.getInteger(s"ccdXstart$i"))
     def setCcdXstart1(v: Integer): SeqAction[Unit] = setParameter(ccdXstart, v)
 
