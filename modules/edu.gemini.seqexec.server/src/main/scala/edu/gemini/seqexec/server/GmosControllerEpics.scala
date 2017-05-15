@@ -23,18 +23,22 @@ object GmosControllerEpics extends GmosSouthController {
     case AmpReadMode.FAST => "FAST"
   }
 
-  /*implicit val encodeBiasMode: EncodeEpicsValue[BiasMode, String] = EncodeEpicsValue((a: BiasMode)
-    => a match {
-      case BiasMode.Imaging  => "Imaging"
-      case BiasMode.LongSlit => "Long_Slit"
-      case BiasMode.MOS      => "Mos"
-    }
-  )*/
+  implicit val shutterStateEncoder: EncodeEpicsValue[ShutterState, String] = EncodeEpicsValue {
+    case OpenShutter  => "OPEN"
+    case CloseShutter => "CLOSEd"
+    case _                         => ""
+  }
+
+  private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
+    case UnsetShutter => SeqAction(())
+    case s            => GmosEpics.instance.configDCCmd.setShutterState(encode(s))
+  }
 
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
     _ <- GmosEpics.instance.configDCCmd.setExposureTime(dc.t)
-    // TODO Bias time
+    // TODO Bias time?
     // TODO Shutter state
+    _ <- setShutterState(dc.s)
     _ <- GmosEpics.instance.configDCCmd.setAmpReadMode(encode(dc.r.ampReadMode))
   } yield ()
 

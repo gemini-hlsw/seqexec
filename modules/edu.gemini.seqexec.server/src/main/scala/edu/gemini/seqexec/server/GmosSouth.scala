@@ -66,6 +66,15 @@ object GmosSouth {
     case _                    => BiasTimeUnset
   }
 
+  private def shutterStateObserveType(observeType: String): ShutterState = observeType match {
+    case SCIENCE_OBSERVE_TYPE => UnsetShutter
+    case FLAT_OBSERVE_TYPE    => UnsetShutter
+    case ARC_OBSERVE_TYPE     => OpenShutter
+    case DARK_OBSERVE_TYPE    => CloseShutter
+    case BIAS_OBSERVE_TYPE    => CloseShutter
+    case _                    => UnsetShutter
+  }
+
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] =
     (for {
       filter           <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
@@ -86,6 +95,7 @@ object GmosSouth {
     (for {
       obsType      <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
       biasTime     <- \/.right(biasTimeObserveType(obsType))
+      shutterState <- \/.right(shutterStateObserveType(obsType))
       exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
       ampReadMode  <- config.extract(AmpReadMode.KEY).as[AmpReadMode]
       gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
@@ -95,7 +105,7 @@ object GmosSouth {
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
       builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltInROI]
       // TODO Add the custom ROI
-    } yield DCConfig(exposureTime, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, Nil))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, Nil))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: Config): SeqAction[GmosSouthConfig] = EitherT( Task ( for {
       cc <- ccConfigFromSequenceConfig(config)

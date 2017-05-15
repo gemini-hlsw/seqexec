@@ -43,6 +43,12 @@ object GmosSouthController {
   case object BiasTimeEmpty extends BiasTime
   case object BiasTimeUnset extends BiasTime
 
+  // Used for the shutterState
+  sealed trait ShutterState
+  case object UnsetShutter extends ShutterState
+  case object OpenShutter extends ShutterState
+  case object CloseShutter extends ShutterState
+
   sealed trait GmosFPU
   final case object UnknownFPU extends GmosFPU
   final case class BuiltInFPU(fpu: FPU) extends GmosFPU
@@ -64,7 +70,7 @@ object GmosSouthController {
 
   final case class RegionsOfInterest(bulitInROI: BuiltInROI, customROI: List[ROI])
 
-  final case class DCConfig(t: ExposureTime, r: CCDReadout, b: CCDBinning, roi: RegionsOfInterest)
+  final case class DCConfig(t: ExposureTime, b: BiasTime, s: ShutterState, r: CCDReadout, bi: CCDBinning, roi: RegionsOfInterest)
 
   final case class GmosSouthConfig(cc: CCConfig, dc: DCConfig)
 
