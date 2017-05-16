@@ -9,8 +9,11 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
+
+import squants.Length
 
 import scalaz.Scalaz._
 import scalaz.EitherT
@@ -45,7 +48,11 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue() }
 
-  implicit val disperserEncoder: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue(_.displayValue)
+  implicit val disperserEncoder: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue(_.sequenceValue)
+
+  implicit val disperserOrderEncoder: EncodeEpicsValue[DisperserOrder, String] = EncodeEpicsValue(_.sequenceValue)
+
+  implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, String] = EncodeEpicsValue((l: Length) => l.toNanometers.toString)
 
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
     case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
@@ -157,6 +164,8 @@ object GmosControllerEpics extends GmosSouthController {
     for {
       _ <- GmosEpics.instance.configCmd.setDisperser(disperser)
       _ <- GmosEpics.instance.configCmd.setDisperserMode(disperserMode)
+      _ <- d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => GmosEpics.instance.configCmd.setDisperserOrder(encode(o)))
+      _ <- d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.exists(_ == Order.ZERO)).fold(SeqAction.void)(o => GmosEpics.instance.configCmd.setDisperserOrder(encode(o)))
     } yield ()
   }
 
