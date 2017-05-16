@@ -1,21 +1,31 @@
 package edu.gemini.seqexec.web.server.odbclient
 
-import scalaz.Kleisli
-import knobs.Config
-import scalaz.concurrent.Task
-import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.seqexec.model.Model.SequenceId
+import edu.gemini.spModel.core.SPProgramID
+import knobs.Config
 import org.http4s.client.blaze._
-import org.http4s.Uri
+import org.http4s.{Uri, scalaxml}
+
+import scala.xml.Elem
+import scalaz.Kleisli
+import scalaz.concurrent.Task
 
 case class ODBClientConfig(odbHost: String)
 
 case class ODBClient(config: ODBClientConfig) {
   val httpClient = PooledHttp1Client()
+  // Entity Decoder for xml
+  implicit val decoder = scalaxml.xml()
   def observationTitle(id: SPProgramID, obsId: SequenceId): Task[String] = {
     val baseUri = s"${config.odbHost}/odbbrowser/observations"
     val target = Uri.fromString(baseUri).toOption.get +?("programReference", id.stringValue)
-    httpClient.expect[String](target)
+    httpClient.expect[Elem](target).map { xml =>
+      for {
+        x <- xml \\ "observations" \ "observation"
+        if (x \ "id").text == obsId
+        n <- x \ "name"
+      } yield n
+    }.map(_.text)
   }
 }
 
