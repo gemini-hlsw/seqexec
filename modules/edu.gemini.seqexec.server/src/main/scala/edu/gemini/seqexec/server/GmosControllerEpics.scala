@@ -9,6 +9,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 
 import scalaz.Scalaz._
 import scalaz.EitherT
@@ -101,10 +102,52 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- GmosEpics.instance.configDCCmd.setCcdYBinning(encode(dc.bi.y))
   } yield ()
 
+  def setFilters(f: Filter): SeqAction[Unit] = {
+    val (filter1, filter2) = f match {
+      case Filter.Z_G0343       => ("Z_G0343", "open2-8")
+      case Filter.Y_G0344       => ("Y_G0344", "open2-8")
+      case Filter.HeII_G0340    => ("HeII_G0340", "open2-8")
+      case Filter.HeIIC_G0341   => ("HeIIC_G0341", "open2-8")
+      case Filter.SII_G0335     => ("open1-6", "SII_G0335")
+      case Filter.Ha_G0336      => ("open1-6", "Ha_G0336")
+      case Filter.HaC_G0337     => ("open1-6", "HaC_G0337")
+      case Filter.OIII_G0338    => ("open1-6", "OIII_G0338")
+      case Filter.OIIIC_G0339   => ("open1-6", "OIIIC_G0339")
+      case Filter.u_G0332       => ("open1-6", "u_G0332")
+      case Filter.g_G0325       => ("open1-6", "g_G0325")
+      case Filter.r_G0326       => ("open1-6", "r_G0326")
+      case Filter.i_G0327       => ("open1-6", "i_G0327")
+      case Filter.z_G0328       => ("open1-6", "z_G0328")
+      case Filter.GG455_G0329   => ("GG455_G0329", "open2-8")
+      case Filter.OG515_G0330   => ("OG515_G0330", "open2-8")
+      case Filter.RG610_G0331   => ("RG610_G0331", "open2-8")
+      case Filter.CaT_G0333     => ("CaT_G0333", "open2-8")
+      case Filter.HartmannA_G0337_r_G0326 => ("HartmannA_G0337", "r_G0326")
+      case Filter.HartmannB_G0338_r_G0326 => ("HartmannB_G0338", "r_G0326")
+      case Filter.g_G0325_GG455_G0329     => ("GG455_G0329", "g_G0325")
+      case Filter.g_G0325_OG515_G0330     => ("OG515_G0330", "g_G0325")
+      case Filter.r_G0326_RG610_G0331     => ("RG610_G0331", "r_G0326")
+      case Filter.i_G0327_CaT_G0333       => ("CaT_G0333", "i_G0327")
+      case Filter.i_G0327_RG780_G0334     => ("CaT_G0333", "i_G0327")
+      case Filter.z_G0328_CaT_G0333       => ("RG780_G0334", "i_G0327")
+      case Filter.RG780_G0334    => ("RG780_G0334", "open2-8")
+      case Filter.Lya395_G0342   => ("open1-6", "Lya395_G0342")
+      case Filter.NONE           => ("open1-6", "open2-8")
+    }
+    for {
+      _ <- GmosEpics.instance.configCmd.setFilter1(filter1)
+      _ <- GmosEpics.instance.configCmd.setFilter2(filter2)
+    } yield ()
+  }
+
+  def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
+    _ <- setFilters(cc.filter)
+  } yield ()
+
   override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
     _ <- setDCConfig(config.dc)
-    // _ <- setCCConfig(config.cc//)
+    _ <- setCCConfig(config.cc)
     _ <- GmosEpics.instance.post
     _ <- EitherT(Task(Log.info("Completed Gmos configuration").right))
   } yield ()
