@@ -144,15 +144,16 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   def setDisperser(d: GmosDisperser): SeqAction[Unit] = {
-    val (disperser, disperserMode) = d.disperser match {
-      case Disperser.MIRROR      => ("mirror", "Select Grating and Tilt")
-      case Disperser.B1200_G5321 => ("B1200+_G5321", "Select Grating and Tilt")
-      case Disperser.R831_G5322  => ("R831+_G5322", "Select Grating and Tilt")
-      case Disperser.B600_G5323  => ("B600+_G5323", "Select Grating and Tilt")
-      case Disperser.R600_G5324  => ("R600+_G5324", "Select Grating and Tilt")
-      case Disperser.R400_G5325  => ("R400+_G5325", "Select Grating and Tilt")
-      case Disperser.R150_G5326  => ("R150+_G5326", "Select Grating and Tilt")
+    val disperser = d.disperser match {
+      case Disperser.MIRROR      => "mirror"
+      case Disperser.B1200_G5321 => "B1200+_G5321"
+      case Disperser.R831_G5322  => "R831+_G5322"
+      case Disperser.B600_G5323  => "B600+_G5323"
+      case Disperser.R600_G5324  => "R600+_G5324"
+      case Disperser.R400_G5325  => "R400+_G5325"
+      case Disperser.R150_G5326  => "R150+_G5326"
     }
+    val disperserMode = "Select Grating and Tilt"
     for {
       _ <- GmosEpics.instance.configCmd.setDisperser(disperser)
       _ <- GmosEpics.instance.configCmd.setDisperserMode(disperserMode)
