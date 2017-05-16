@@ -10,6 +10,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 
 import scalaz.Scalaz._
 import scalaz.EitherT
@@ -43,6 +44,8 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue() }
+
+  implicit val disperserEncoder: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue(_.displayValue)
 
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
     case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
@@ -140,8 +143,25 @@ object GmosControllerEpics extends GmosSouthController {
     } yield ()
   }
 
+  def setDisperser(d: GmosDisperser): SeqAction[Unit] = {
+    val (disperser, disperserMode) = d.disperser match {
+      case Disperser.MIRROR      => ("mirror", "Select Grating and Tilt")
+      case Disperser.B1200_G5321 => ("B1200+_G5321", "Select Grating and Tilt")
+      case Disperser.R831_G5322  => ("R831+_G5322", "Select Grating and Tilt")
+      case Disperser.B600_G5323  => ("B600+_G5323", "Select Grating and Tilt")
+      case Disperser.R600_G5324  => ("R600+_G5324", "Select Grating and Tilt")
+      case Disperser.R400_G5325  => ("R400+_G5325", "Select Grating and Tilt")
+      case Disperser.R150_G5326  => ("R150+_G5326", "Select Grating and Tilt")
+    }
+    for {
+      _ <- GmosEpics.instance.configCmd.setDisperser(disperser)
+      _ <- GmosEpics.instance.configCmd.setDisperserMode(disperserMode)
+    } yield ()
+  }
+
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)
+    _ <- setDisperser(cc.disperser)
   } yield ()
 
   override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = for {
