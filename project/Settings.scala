@@ -102,6 +102,9 @@ object Settings {
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4s,
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
 
+    val Http4sClient  = Seq(
+      "org.http4s" %% "http4s-blaze-client" % LibraryVersions.http4s)
+
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(
       "com.github.japgolly.scalajs-react" %%% "core"         % LibraryVersions.scalajsReact,
