@@ -201,9 +201,11 @@ package object engine {
       _.map { seq =>
         seq match {
           case Sequence.State.Final(_,_) => unit
-          case _          => Nondeterminism[Task].gatherUnordered (
-            seq.current.actions.zipWithIndex.map (act)
-            ).liftM[HandleStateT] *> send (q) (executed (id) )
+          case _                         => Task.delay {
+            (Nondeterminism[Task].gatherUnordered (
+              seq.current.actions.zipWithIndex.map (act)
+            ) *> q.enqueueOne(executed (id) )).unsafePerformAsync(x => ())
+          }.liftM[HandleStateT]
         }
       }.getOrElse(unit)
     )
