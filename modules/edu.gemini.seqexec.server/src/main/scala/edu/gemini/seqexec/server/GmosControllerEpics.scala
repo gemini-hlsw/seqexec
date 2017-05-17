@@ -257,8 +257,8 @@ object GmosControllerEpics extends GmosSouthController {
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = for {
     _ <- EitherT(Task(Log.info("Start Gmos observation").right))
-    // _ <- Gmos.instance.observeCmd.setLabel(obsid)
-    // _ <- Gmos.instance.observeCmd.post
+    _ <- GmosEpics.instance.observeCmd.setLabel(obsid)
+    _ <- GmosEpics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
   } yield obsid
 }
