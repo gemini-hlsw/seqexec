@@ -70,6 +70,8 @@ object GmosControllerEpics extends GmosSouthController {
     case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
   }
 
+  implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
+
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
     case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
     case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(1)
@@ -160,6 +162,7 @@ object GmosControllerEpics extends GmosSouthController {
       case Filter.Lya395_G0342   => ("open1-6", "Lya395_G0342")
       case Filter.NONE           => ("open1-6", "open2-8")
     }
+
     for {
       _ <- CC.setFilter1(filter1)
       _ <- CC.setFilter2(filter2)
@@ -239,6 +242,9 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- setDisperser(cc.disperser)
     _ <- setFPU(cc.fpu)
     _ <- CC.setStageMode(encode(cc.stage))
+    // TODO Is DTaX channel a double?
+    _ <- CC.setDtaXOffset(cc.dtaX.toString)
+    _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
   } yield ()
 
   override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = for {
