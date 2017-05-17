@@ -9,12 +9,10 @@ import edu.gemini.spModel.gemini.gmos.InstGmosSouth.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
-import edu.gemini.spModel.gemini.gmos.GmosSouthType._
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
 import edu.gemini.spModel.obscomp.InstConstants.{INSTRUMENT_NAME_PROP => _, EXPOSURE_TIME_PROP => _, _}
-import edu.gemini.spModel.core.Angle
 
 import squants.space.LengthConversions._
 import scalaz.{EitherT, Reader, \/}

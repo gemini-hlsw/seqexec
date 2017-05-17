@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import java.util.logging.Logger
 import java.lang.{Double => JDouble}
 
-import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor, XMLBuilder}
+import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
 import edu.gemini.seqexec.server.GmosEpics.{RoiParameters, RoiStatus}
 

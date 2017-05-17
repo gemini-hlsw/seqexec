@@ -50,7 +50,7 @@ object GmosControllerEpics extends GmosSouthController {
     case AmpCount.TWELVE => 12
   }
 
-  implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue() }
+  implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue }
 
   implicit val disperserEncoder: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue(_.sequenceValue)
 
@@ -184,7 +184,7 @@ object GmosControllerEpics extends GmosSouthController {
       _ <- CC.setDisperser(disperser)
       _ <- CC.setDisperserMode(disperserMode)
       _ <- d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
-      _ <- d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.exists(_ == Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
+      _ <- d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.contains(Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
     } yield ()
   }
 
