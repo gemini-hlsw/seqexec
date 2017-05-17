@@ -13,7 +13,7 @@ lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
-sbt-ctags-deps-srcs/
+sbt-ctags-dep-srcs/
 buildinfo.properties
 
 # Scala-IDE specific
