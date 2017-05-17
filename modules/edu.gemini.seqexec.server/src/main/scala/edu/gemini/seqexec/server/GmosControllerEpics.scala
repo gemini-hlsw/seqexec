@@ -13,6 +13,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FPUnitSouth => FPU}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{StageModeSouth => StageMode}
 
 import squants.Length
 
@@ -60,6 +61,13 @@ object GmosControllerEpics extends GmosSouthController {
   implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
     case OutOfBeam => "OUT-OF-BEAM"
     case InBeam    => "IN-BEAM"
+  }
+
+  implicit val stageModeEncoder: EncodeEpicsValue[StageMode, String] = EncodeEpicsValue {
+    case StageMode.NO_FOLLOW     => "MOVE"
+    case StageMode.FOLLOW_XYZ    => "FOLLOW"
+    case StageMode.FOLLOW_XY     => "FOLLOW-XY"
+    case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
   }
 
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
@@ -177,7 +185,7 @@ object GmosControllerEpics extends GmosSouthController {
     } yield ()
   }
 
-  def setFPU(cc: CCConfig): SeqAction[Unit] = {
+  def setFPU(cc: GmosFPU): SeqAction[Unit] = {
     def builtInFPU(fpu: FPU): SeqAction[Unit] = {
       val (fpuName, beam: Option[Beam]) = fpu match {
         case FPU.FPU_NONE    => (none, OutOfBeam.some)
@@ -219,7 +227,7 @@ object GmosControllerEpics extends GmosSouthController {
       } yield ()
     }
 
-    cc.fpu match {
+    cc match {
       case UnknownFPU          => SeqAction.void
       case BuiltInFPU(fpu)     => builtInFPU(fpu)
       case CustomMaskFPU(name) => customFPU(name)
@@ -229,7 +237,8 @@ object GmosControllerEpics extends GmosSouthController {
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)
     _ <- setDisperser(cc.disperser)
-    _ <- CC.setFpu("")
+    _ <- setFPU(cc.fpu)
+    _ <- CC.setStageMode(encode(cc.stage))
   } yield ()
 
   override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = for {
