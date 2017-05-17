@@ -12,6 +12,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FPUnitSouth => FPU}
 
 import squants.Length
 
@@ -24,10 +25,12 @@ object GmosControllerEpics extends GmosSouthController {
 
   import EpicsCodex._
 
+  val CC = GmosEpics.instance.configCmd
+  val DC = GmosEpics.instance.configDCCmd
+
   override def getConfig: SeqAction[GmosSouthConfig] = ???
 
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
-    // Taken from gmosAmpReadMode.lut
     case AmpReadMode.SLOW => "SLOW"
     case AmpReadMode.FAST => "FAST"
   }
@@ -54,6 +57,11 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, String] = EncodeEpicsValue((l: Length) => l.toNanometers.toString)
 
+  implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
+    case OutOfBeam => "OUT-OF-BEAM"
+    case InBeam    => "IN-BEAM"
+  }
+
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
     case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
     case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(1)
@@ -63,7 +71,7 @@ object GmosControllerEpics extends GmosSouthController {
 
   private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
     case UnsetShutter => SeqAction.void
-    case s            => GmosEpics.instance.configDCCmd.setShutterState(encode(s))
+    case s            => DC.setShutterState(encode(s))
   }
 
   private def roiNumUsed(s: RegionsOfInterest): Int = s match {
@@ -88,7 +96,7 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   private def roiParameters(binning: CCDBinning, index: Int, roi: ROI): SeqAction[Unit] = {
-    GmosEpics.instance.configDCCmd.rois.get(index).map { r =>
+    DC.rois.get(index).map { r =>
       for {
         _ <- r.setCcdXstart1(roi.xStart)
         _ <- r.setCcdXsize1(roi.xSize / binning.x.getValue)
@@ -100,16 +108,16 @@ object GmosControllerEpics extends GmosSouthController {
 
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
     // TODO nsRow, nsPairs
-    _ <- GmosEpics.instance.configDCCmd.setExposureTime(dc.t)
+    _ <- DC.setExposureTime(dc.t)
     // TODO Bias time?
     _ <- setShutterState(dc.s)
-    _ <- GmosEpics.instance.configDCCmd.setAmpReadMode(encode(dc.r.ampReadMode))
-    _ <- GmosEpics.instance.configDCCmd.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
-    _ <- GmosEpics.instance.configDCCmd.setAmpCount(encode(dc.r.ampCount))
-    _ <- GmosEpics.instance.configDCCmd.setRoiNumUsed(roiNumUsed(dc.roi))
+    _ <- DC.setAmpReadMode(encode(dc.r.ampReadMode))
+    _ <- DC.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
+    _ <- DC.setAmpCount(encode(dc.r.ampCount))
+    _ <- DC.setRoiNumUsed(roiNumUsed(dc.roi))
     _ <- setROI(dc.bi, dc.roi)
-    _ <- GmosEpics.instance.configDCCmd.setCcdXBinning(encode(dc.bi.x))
-    _ <- GmosEpics.instance.configDCCmd.setCcdYBinning(encode(dc.bi.y))
+    _ <- DC.setCcdXBinning(encode(dc.bi.x))
+    _ <- DC.setCcdYBinning(encode(dc.bi.y))
   } yield ()
 
   def setFilters(f: Filter): SeqAction[Unit] = {
@@ -145,8 +153,8 @@ object GmosControllerEpics extends GmosSouthController {
       case Filter.NONE           => ("open1-6", "open2-8")
     }
     for {
-      _ <- GmosEpics.instance.configCmd.setFilter1(filter1)
-      _ <- GmosEpics.instance.configCmd.setFilter2(filter2)
+      _ <- CC.setFilter1(filter1)
+      _ <- CC.setFilter2(filter2)
     } yield ()
   }
 
@@ -162,16 +170,66 @@ object GmosControllerEpics extends GmosSouthController {
     }
     val disperserMode = "Select Grating and Tilt"
     for {
-      _ <- GmosEpics.instance.configCmd.setDisperser(disperser)
-      _ <- GmosEpics.instance.configCmd.setDisperserMode(disperserMode)
-      _ <- d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => GmosEpics.instance.configCmd.setDisperserOrder(encode(o)))
-      _ <- d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.exists(_ == Order.ZERO)).fold(SeqAction.void)(o => GmosEpics.instance.configCmd.setDisperserOrder(encode(o)))
+      _ <- CC.setDisperser(disperser)
+      _ <- CC.setDisperserMode(disperserMode)
+      _ <- d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
+      _ <- d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.exists(_ == Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
     } yield ()
+  }
+
+  def setFPU(cc: CCConfig): SeqAction[Unit] = {
+    def builtInFPU(fpu: FPU): SeqAction[Unit] = {
+      val (fpuName, beam: Option[Beam]) = fpu match {
+        case FPU.FPU_NONE    => (none, OutOfBeam.some)
+        case FPU.LONGSLIT_1  => ("0.25arcsec".some, InBeam.some)
+        case FPU.LONGSLIT_2  => ("0.5arcsec".some, InBeam.some)
+        case FPU.LONGSLIT_3  => ("0.75arcsec".some, InBeam.some)
+        case FPU.LONGSLIT_4  => ("1.0arcsec".some, InBeam.some)
+        case FPU.LONGSLIT_5  => ("1.5arcsec".some, InBeam.some)
+        case FPU.LONGSLIT_6  => ("2.0arcsec".some, InBeam.some)
+        case FPU.LONGSLIT_7  => ("5.0arcsec".some, InBeam.some)
+        case FPU.IFU_1       => ("IFU-2".some, InBeam.some)
+        case FPU.IFU_2       => ("IFU-B".some, InBeam.some)
+        case FPU.IFU_3       => ("IFU-R".some, InBeam.some)
+        case FPU.BHROS       => (none, none)
+        case FPU.IFU_N       => ("IFU-NS-2".some, InBeam.some)
+        case FPU.IFU_N_B     => ("IFU-NS-B".some, InBeam.some)
+        case FPU.IFU_N_R     => ("IFU-NS-R".some, InBeam.some)
+        case FPU.NS_1        => ("NS0.5arcsec".some, InBeam.some)
+        case FPU.NS_2        => ("NS0.75arcsec".some, InBeam.some)
+        case FPU.NS_3        => ("NS1.0arcsec".some, InBeam.some)
+        case FPU.NS_4        => ("NS1.5arcsec".some, InBeam.some)
+        case FPU.NS_5        => ("NS2.0arcsec".some, InBeam.some)
+        case FPU.CUSTOM_MASK => (none, none)
+      }
+      for {
+        _ <- fpuName.fold(SeqAction.void)(CC.setFpu)
+        _ <- beam.fold(SeqAction.void)(b => CC.setInBeam(encode(b)))
+      } yield ()
+    }
+
+    def customFPU(name: String): SeqAction[Unit] = {
+      val (fpuName, beam: Option[Beam]) = name match {
+        case "None" => (none, none)
+        case _      => (name.some, InBeam.some)
+      }
+      for {
+        _ <- fpuName.fold(SeqAction.void)(CC.setFpu)
+        _ <- beam.fold(SeqAction.void)(b => CC.setInBeam(encode(b)))
+      } yield ()
+    }
+
+    cc.fpu match {
+      case UnknownFPU          => SeqAction.void
+      case BuiltInFPU(fpu)     => builtInFPU(fpu)
+      case CustomMaskFPU(name) => customFPU(name)
+    }
   }
 
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)
     _ <- setDisperser(cc.disperser)
+    _ <- CC.setFpu("")
   } yield ()
 
   override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = for {

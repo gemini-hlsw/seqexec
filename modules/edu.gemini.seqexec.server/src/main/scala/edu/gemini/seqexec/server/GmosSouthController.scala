@@ -54,6 +54,10 @@ object GmosSouthController {
   final case class BuiltInFPU(fpu: FPU) extends GmosFPU
   final case class CustomMaskFPU(mask: String) extends GmosFPU
 
+  sealed trait Beam
+  case object InBeam extends Beam
+  case object OutOfBeam extends Beam
+
   final case class AmpGainSetting(value: Int)
 
   final case class GmosDisperser(disperser: Disperser, order: Option[DisperserOrder], lambda: Option[Length])
