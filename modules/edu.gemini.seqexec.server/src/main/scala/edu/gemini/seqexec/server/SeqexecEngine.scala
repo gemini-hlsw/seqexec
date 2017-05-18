@@ -37,7 +37,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) {
       if (settings.instForceError) Flamingos2ControllerSimBad
       else Flamingos2ControllerSim
-    } else Flamingos2ControllerEpics
+    } else Flamingos2ControllerSim, // DONT MERGE
+    if (settings.instSim) GmosSouthControllerSim else GmosControllerEpics
   )
 
   val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords, gwsKeywords = settings.gwsKeywords, gcalKeywords = settings.gcalKeywords)

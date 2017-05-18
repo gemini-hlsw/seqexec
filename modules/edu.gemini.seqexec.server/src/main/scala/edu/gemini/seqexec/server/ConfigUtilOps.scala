@@ -20,7 +20,7 @@ object ConfigUtilOps {
   case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
 
   def explain(e: ExtractFailure): String = e match {
-    case KeyNotFound(k) => s"Missing config value for key ${k.getPath}"
+    case KeyNotFound(k)          => s"Missing config value for key ${k.getPath}"
     case ConversionError(k, msg) => s"Error reading key ${k.getPath}: $msg"
   }
 

@@ -25,6 +25,7 @@ package object server {
     def apply[A](a: => A): SeqAction[A]          = EitherT(Task.delay(TrySeq(a)))
     def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(Task.delay(a))
     def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(Task.delay(TrySeq.fail(p)))
+    def void = SeqAction.apply(())
   }
 
   implicit class SeqActionOps[A](a: SeqAction[A]) {

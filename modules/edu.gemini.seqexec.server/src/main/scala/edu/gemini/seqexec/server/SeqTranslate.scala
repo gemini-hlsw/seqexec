@@ -82,7 +82,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       )
     }
 
-
     for {
       stepType <- calcStepType(config)
       inst     <- toInstrumentSys(stepType.instrument)
@@ -112,8 +111,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def toInstrumentSys(inst: Resource.Instrument): TrySeq[Instrument] = inst match {
-    case Resource.F2 => TrySeq(Flamingos2(systems.flamingos2))
-    case _           => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case Resource.F2   => TrySeq(Flamingos2(systems.flamingos2))
+    case Resource.GMOS => TrySeq(GmosSouth(systems.gmosSouth))
+    case _             => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
   private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
@@ -133,10 +133,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def calcInstHeader(config: Config, inst: Resource.Instrument): TrySeq[Header] = inst match {
-    case Resource.F2 =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
-      if(settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
+    case Resource.F2   =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+      if (settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
-    case _           =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case Resource.GMOS =>  TrySeq(GmosSouthHeader(systems.dhs, if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
+    case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
   private def commonHeaders(config: Config): List[Header] = List(new StandardHeader(systems.dhs,
@@ -168,7 +169,8 @@ object SeqTranslate {
                       dhs: DhsClient,
                       tcs: TcsController,
                       gcal: GcalController,
-                      flamingos2: Flamingos2Controller
+                      flamingos2: Flamingos2Controller,
+                      gmosSouth: GmosSouthController
                     )
 
   case class Settings(
@@ -186,6 +188,7 @@ object SeqTranslate {
   private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
     config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap{
       case Flamingos2.name => TrySeq(Resource.F2)
+      case GmosSouth.name  => TrySeq(Resource.GMOS)
       case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
     }
   }
@@ -210,7 +213,6 @@ object SeqTranslate {
         case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
       }
     }
-
 
     ( config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
       |@| extractInstrument(config) ) { (obsType, inst) =>
