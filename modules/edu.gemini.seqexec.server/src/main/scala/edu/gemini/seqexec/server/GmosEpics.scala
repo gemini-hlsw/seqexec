@@ -8,7 +8,9 @@ import edu.gemini.seqexec.server.GmosEpics.{RoiParameters, RoiStatus}
 /**
   * Created by jluhrs on 4/20/17.
   */
-class GmosEpics(epicsService: CaService) {
+class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
+
+  val GMOS_TOP = tops.getOrElse("gm", "")
 
   object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::apply"))
@@ -22,7 +24,7 @@ class GmosEpics(epicsService: CaService) {
     val stageMode = cs.map(_.getString("stageMode"))
     def setStageMode(v: String): SeqAction[Unit] = setParameter(stageMode, v)
 
-    val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", "wfs:followA.K", "Enable electronic Offsets", false))
+    val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", GMOS_TOP + "wfs:followA.K", "Enable electronic Offsets", false))
     def setElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     val filter1 = cs.map(_.getString("filter1"))
@@ -255,7 +257,7 @@ object GmosEpics extends EpicsSystem[GmosEpics] {
   override val Log = Logger.getLogger(className)
   override val CA_CONFIG_FILE = "/Gmos.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service)
+  override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)
 
   class RoiParameters(cs: Option[CaCommandSender], i: Int) {
     val ccdXstart = cs.map(_.getInteger(s"ccdXstart$i"))

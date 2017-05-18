@@ -122,7 +122,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     )
     val u = t.flatMapF{
       case (err::errs, None) => q.enqueueOne(Event.logMsg(SeqexecFailure.explain(err))).map(_.right)
-      case (errs, Some(seq)) => ((if(errs.isEmpty) Task(()) else q.enqueueAll(errs.map(e => Event.logMsg(SeqexecFailure.explain(e))))) *> q.enqueueOne(Event.load(seqId.stringValue(), seq))).map(_.right)
+      case (errs, Some(seq)) => (if(errs.isEmpty) Task(()) else q.enqueueAll(errs.map(e => Event.logMsg(SeqexecFailure.explain(e))))) *> Task.delay {
+        q.enqueueOne(Event.load(seqId.stringValue(), seq)).unsafePerformAsync(x => ()).right[SeqexecFailure]
+      }
       case _                 => Task(().right)
     }
     u.run

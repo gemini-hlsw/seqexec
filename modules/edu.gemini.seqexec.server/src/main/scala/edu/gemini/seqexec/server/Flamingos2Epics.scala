@@ -7,9 +7,11 @@ import Scalaz._
 
 import edu.gemini.epics.acm.{XMLBuilder, CaService}
 
-final class Flamingos2Epics(epicsService: CaService) {
+final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) {
 
   import EpicsCommand.setParameter
+
+  val F2_TOP = tops.getOrElse("f2", "")
 
   def post: SeqAction[Unit] = configCmd.post
 
@@ -48,7 +50,7 @@ final class Flamingos2Epics(epicsService: CaService) {
   object configCmd extends EpicsCommand {
     override val cs = Option(epicsService.getCommandSender("flamingos2::config"))
 
-    val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", "wfs:followA.K", "Enable electronic Offsets", false))
+    val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", F2_TOP + "wfs:followA.K", "Enable electronic Offsets", false))
     def setUseElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     val filter = cs.map(_.getString("filter"))
@@ -107,5 +109,5 @@ object Flamingos2Epics extends EpicsSystem[Flamingos2Epics] {
   override val Log = Logger.getLogger(className)
   override val CA_CONFIG_FILE = "/Flamingos2.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new Flamingos2Epics(service)
+  override def build(service: CaService, tops: Map[String, String]) = new Flamingos2Epics(service, tops)
 }
