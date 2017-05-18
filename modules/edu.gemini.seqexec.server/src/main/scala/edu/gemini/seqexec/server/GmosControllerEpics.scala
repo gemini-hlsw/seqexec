@@ -91,7 +91,7 @@ object GmosControllerEpics extends GmosSouthController {
 
   case class ROI(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
-  private def builtInROI(binning: CCDBinning, b: BuiltinROI): ROI = b match {
+  private def builtInROI(b: BuiltinROI): ROI = b match {
     case BuiltinROI.FULL_FRAME       => ROI(xStart = 1, xSize = 6144, yStart = 1, ySize = 4608)
     case BuiltinROI.CCD2             => ROI(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4608)
     case BuiltinROI.CENTRAL_SPECTRUM => ROI(xStart = 1, xSize = 6144, yStart = 1793, ySize = 1024)
@@ -100,7 +100,7 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s match {
-    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(binning, 1, builtInROI(binning, b))
+    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(binning, 1, builtInROI(b))
     // TODO Support custom ROIs
     case RegionsOfInterest(b, rois)                        => SeqAction.void
   }
