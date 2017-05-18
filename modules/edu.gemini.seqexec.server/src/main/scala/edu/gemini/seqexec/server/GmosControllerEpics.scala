@@ -44,10 +44,10 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val ampGainSettingEncoder: EncodeEpicsValue[AmpGainSetting, String] = EncodeEpicsValue(_.value.toString)
 
-  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, Int] = EncodeEpicsValue {
-    case AmpCount.THREE  => 3
-    case AmpCount.SIX    => 6
-    case AmpCount.TWELVE => 12
+  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, String] = EncodeEpicsValue {
+    case AmpCount.THREE  => "BEST"
+    case AmpCount.SIX    => "ALL"
+    case AmpCount.TWELVE => "SECONDARY"
   }
 
   implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue }
@@ -119,7 +119,6 @@ object GmosControllerEpics extends GmosSouthController {
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
     // TODO nsRow, nsPairs
     _ <- DC.setExposureTime(dc.t)
-    // TODO Bias time?
     _ <- setShutterState(dc.s)
     _ <- DC.setAmpReadMode(encode(dc.r.ampReadMode))
     _ <- DC.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
