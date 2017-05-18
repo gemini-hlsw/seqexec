@@ -7,12 +7,14 @@ import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
 import edu.gemini.seqexec.server.GmosEpics.{RoiParameters, RoiStatus}
 
-/**
-  * Created by jluhrs on 4/20/17.
-  */
+import scala.concurrent.duration._
+import scala.collection.breakOut
+
 class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   val GMOS_TOP = tops.getOrElse("gm", "")
+
+  def post: SeqAction[Unit] = configCmd.post
 
   object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::apply"))
