@@ -84,7 +84,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   object configDCCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::dcconfig"))
 
-    val roiNumUsed = cs.map(_.addDouble("roiNumUsed", "dc:roiNumrois", "Number of ROI used", false))
+    val roiNumUsed = cs.map(_.addDouble("roiNumUsed", GMOS_TOP + "dc:roiNumrois", "Number of ROI used", false))
     def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v))
 
     val rois: Map[Int, RoiParameters] = (1 to 5).map(i => i -> RoiParameters(cs, i))(breakOut)
@@ -104,10 +104,10 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val gainSetting = cs.map(_.getString("gainSetting"))
     def setGainSetting(v: String): SeqAction[Unit] = setParameter(gainSetting, v)
 
-    val ccdXBinning = cs.map(_.addDouble("ccdXBinning", "dc:roiXBin", "CCD X Binning Value", false))
+    val ccdXBinning = cs.map(_.addDouble("ccdXBinning", GMOS_TOP + "dc:roiXBin", "CCD X Binning Value", false))
     def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v))
 
-    val ccdYBinning = cs.map(_.addDouble("ccdYBinning", "dc:roiYBin", "CCD Y Binning Value", false))
+    val ccdYBinning = cs.map(_.addDouble("ccdYBinning", GMOS_TOP + "dc:roiYBin", "CCD Y Binning Value", false))
     def setCcdYBinning(v: Int): SeqAction[Unit] = setParameter(ccdYBinning, java.lang.Double.valueOf(v))
 
     val nsPairs = cs.map(_.getInteger("nsPairs"))
