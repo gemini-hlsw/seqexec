@@ -37,7 +37,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) {
       if (settings.instForceError) Flamingos2ControllerSimBad
       else Flamingos2ControllerSim
-    } else Flamingos2ControllerSim, // DONT MERGE
+    } else Flamingos2ControllerEpics,
     if (settings.instSim) GmosSouthControllerSim else GmosControllerEpics
   )
 
