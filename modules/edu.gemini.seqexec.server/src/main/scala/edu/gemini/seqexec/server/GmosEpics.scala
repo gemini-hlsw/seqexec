@@ -190,7 +190,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def adcExitLowerWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen1").value.toDouble)
 
-  def inBeam: Option[Boolean] = Option(state.getIntegerAttribute("inbeam").value).map(_!=0)
+  def inBeam: Option[Int] = Option(state.getIntegerAttribute("inbeam").value.toInt)
 
   def filter1Id: Option[Int] = Option(dcState.getIntegerAttribute("filterID1").value.toInt)
 
