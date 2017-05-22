@@ -110,5 +110,5 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.Event
 
   }
 
-  val service: Service[Request, MaybeResponse] = refreshCommand || TokenRefresher(httpAuthentication, GZip(httpAuthentication.reqAuth(commandServices)))
+  val service: Service[Request, MaybeResponse] = refreshCommand |+| TokenRefresher(httpAuthentication, GZip(httpAuthentication.reqAuth(commandServices)))
 }
