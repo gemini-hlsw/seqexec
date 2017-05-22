@@ -44,10 +44,11 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val ampGainSettingEncoder: EncodeEpicsValue[AmpGainSetting, String] = EncodeEpicsValue(_.value.toString)
 
-  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, Int] = EncodeEpicsValue {
-    case AmpCount.THREE  => 3
-    case AmpCount.SIX    => 6
-    case AmpCount.TWELVE => 12
+  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, String] = EncodeEpicsValue {
+    // gmosAmpCount.lut
+    case AmpCount.THREE  => ""
+    case AmpCount.SIX    => "BEST"
+    case AmpCount.TWELVE => "ALL"
   }
 
   implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue }
@@ -73,10 +74,11 @@ object GmosControllerEpics extends GmosSouthController {
   implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
 
   private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
-    case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(2)
-    case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(1)
-    case (AmpReadMode.FAST, AmpGain.LOW)  => AmpGainSetting(6)
-    case (AmpReadMode.FAST, AmpGain.HIGH) => AmpGainSetting(5)
+    // gmosAutoGain.lut
+    case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(0)
+    case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(0)
+    case (AmpReadMode.FAST, AmpGain.LOW)  => AmpGainSetting(10)
+    case (AmpReadMode.FAST, AmpGain.HIGH) => AmpGainSetting(0)
   }
 
   private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
@@ -92,10 +94,11 @@ object GmosControllerEpics extends GmosSouthController {
   case class ROI(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
   private def builtInROI(b: BuiltinROI): ROI = b match {
-    case BuiltinROI.FULL_FRAME       => ROI(xStart = 1, xSize = 6144, yStart = 1, ySize = 4608)
-    case BuiltinROI.CCD2             => ROI(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4608)
-    case BuiltinROI.CENTRAL_SPECTRUM => ROI(xStart = 1, xSize = 6144, yStart = 1793, ySize = 1024)
-    case BuiltinROI.CENTRAL_STAMP    => ROI(xStart = 2923, xSize = 300, yStart = 2155, ySize = 300)
+    // gmosROI.lut
+    case BuiltinROI.FULL_FRAME       => ROI(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
+    case BuiltinROI.CCD2             => ROI(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
+    case BuiltinROI.CENTRAL_SPECTRUM => ROI(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
+    case BuiltinROI.CENTRAL_STAMP    => ROI(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
     case _                           => ROI(xStart = 0, xSize = 0, yStart = 0, ySize = 0)
   }
 
@@ -119,7 +122,6 @@ object GmosControllerEpics extends GmosSouthController {
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
     // TODO nsRow, nsPairs
     _ <- DC.setExposureTime(dc.t)
-    // TODO Bias time?
     _ <- setShutterState(dc.s)
     _ <- DC.setAmpReadMode(encode(dc.r.ampReadMode))
     _ <- DC.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))

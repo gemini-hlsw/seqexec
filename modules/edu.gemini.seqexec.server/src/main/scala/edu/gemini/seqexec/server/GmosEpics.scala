@@ -95,8 +95,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val exposureTime = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Duration): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v.toSeconds))
 
-    val ampCount = cs.map(_.getInteger("ampCount"))
-    def setAmpCount(v: Integer): SeqAction[Unit] = setParameter(ampCount, v)
+    val ampCount = cs.map(_.getString("ampCount"))
+    def setAmpCount(v: String): SeqAction[Unit] = setParameter(ampCount, v)
 
     val ampReadMode = cs.map(_.getString("ampReadMode"))
     def setAmpReadMode(v: String): SeqAction[Unit] = setParameter(ampReadMode, v)
