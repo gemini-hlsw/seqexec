@@ -41,7 +41,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) GmosSouthControllerSim else GmosControllerEpics
   )
 
-  val translatorSettings = SeqTranslate.Settings(tcsKeywords = settings.tcsKeywords, f2Keywords = settings.f2Keywords, gwsKeywords = settings.gwsKeywords, gcalKeywords = settings.gcalKeywords)
+  val translatorSettings = SeqTranslate.Settings(
+    tcsKeywords = settings.tcsKeywords,
+    f2Keywords = settings.f2Keywords,
+    gwsKeywords = settings.gwsKeywords,
+    gcalKeywords = settings.gcalKeywords,
+    gmosKeywords = settings.gmosKeywords)
 
   val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
@@ -240,6 +245,7 @@ object SeqexecEngine {
                       odbNotifications: Boolean,
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
+                      gmosKeywords: Boolean,
                       gwsKeywords: Boolean,
                       gcalKeywords: Boolean,
                       instForceError: Boolean,
@@ -255,6 +261,7 @@ object SeqexecEngine {
     odbNotifications = false,
     tcsKeywords = false,
     f2Keywords = false,
+    gmosKeywords = false,
     gwsKeywords = false,
     gcalKeywords = false,
     instForceError = false,
@@ -333,6 +340,7 @@ object SeqexecEngine {
                        odbNotifications,
                        tcsKeywords,
                        f2Keywords,
+                       gmosKeywords,
                        gwsKeywords,
                        gcalKeywords,
                        instForceError,

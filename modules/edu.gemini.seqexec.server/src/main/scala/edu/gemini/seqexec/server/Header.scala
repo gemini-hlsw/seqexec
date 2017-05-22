@@ -13,12 +13,12 @@ trait Header {
 
 object Header {
 
-  val intDefault = -9999
-  val doubleDefault = -9999.0
-  val strDefault = "No Value"
+  val IntDefault = -9999
+  val DoubleDefault = -9999.0
+  val StrDefault = "No Value"
 
-  def buildKeyword[A](get: SeqAction[A], name: String, f: (String, A) => DhsClient.Keyword[A]): KeywordBag => SeqAction[KeywordBag] = k =>
-      get.map(x => k.add(f(name, x)))
+  def buildKeyword[A](get: SeqAction[A], name: String, f: (String, A) => DhsClient.Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
+    k => get.map(x => k.add(f(name, x)))
   def buildInt8(get: SeqAction[Byte], name: String ): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int8Keyword)
   def buildInt16(get: SeqAction[Short], name: String ): KeywordBag => SeqAction[KeywordBag]     = buildKeyword(get, name, Int16Keyword)
   def buildInt32(get: SeqAction[Int], name: String ): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
@@ -39,11 +39,11 @@ object Header {
 
 
   object Defaults {
-    implicit def fromStringOption(v: SeqAction[Option[String]]): SeqAction[String] = v.map(_.getOrElse(strDefault))
+    implicit def fromStringOption(v: SeqAction[Option[String]]): SeqAction[String] = v.map(_.getOrElse(StrDefault))
 
-    implicit def fromDoubleOption(v: SeqAction[Option[Double]]): SeqAction[Double] = v.map(_.getOrElse(doubleDefault))
+    implicit def fromDoubleOption(v: SeqAction[Option[Double]]): SeqAction[Double] = v.map(_.getOrElse(DoubleDefault))
 
-    implicit def fromIntOption(v: SeqAction[Option[Int]]): SeqAction[Int] = v.map(_.getOrElse(intDefault))
+    implicit def fromIntOption(v: SeqAction[Option[Int]]): SeqAction[Int] = v.map(_.getOrElse(IntDefault))
 
     implicit def fromBooleanOption(v: SeqAction[Option[Boolean]]): SeqAction[Boolean] = v.map(_.getOrElse(false))
   }
