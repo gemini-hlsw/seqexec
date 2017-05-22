@@ -22,6 +22,3 @@ before_script:
 script:
   - sudo chmod +x /usr/local/bin/sbt
   - sbt ++$TRAVIS_SCALA_VERSION -J-Xmx3G -J-XX:-UseGCOverheadLimit test
-  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server/universal:packageZipTarball; fi'
-  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server_gs_test/universal:packageZipTarball; fi'
-  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then sbt ++$TRAVIS_SCALA_VERSION seqexec_server_gn_test/universal:packageZipTarball; fi'
