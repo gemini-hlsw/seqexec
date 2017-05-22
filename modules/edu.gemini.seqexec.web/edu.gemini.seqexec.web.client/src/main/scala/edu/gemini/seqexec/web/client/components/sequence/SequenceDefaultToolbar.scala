@@ -8,8 +8,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 
-import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactComponentB, ReactComponentU, ScalazReact, TopNode}
 import japgolly.scalajs.react.ScalazReact._
 
@@ -44,8 +44,8 @@ object SequenceObserverField {
       // Every 2 seconds check if the field has changed and submit
       setInterval(submitIfChanged, 2.second)
 
-    def render(p: Props, s: State): ReactTagOf[Div] = {
-      val observerEV = ExternalVar(~s.currentText)(updateState)
+    def render(p: Props, s: State): VdomTagOf[Div] = {
+      val observerEV = StateSnapshot(~s.currentText)(updateState)
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -63,7 +63,7 @@ object SequenceObserverField {
     }
   }
 
-  private val component = ReactComponentB[Props]("SequenceObserverField")
+  private val component = ScalaComponent.builder[Props]("SequenceObserverField")
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
@@ -93,7 +93,7 @@ object SequenceDefaultToolbar {
   def requestPause(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
-  private def component = ReactComponentB[Props]("SequencesDefaultToolbar")
+  private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS( ($, p, s) =>
       <.div(

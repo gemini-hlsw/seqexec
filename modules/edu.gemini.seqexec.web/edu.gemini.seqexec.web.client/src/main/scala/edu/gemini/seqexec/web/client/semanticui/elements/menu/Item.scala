@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.menu
 
-import japgolly.scalajs.react.{ReactComponentB, ReactNode}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 
 /**
   * Semantic UI Menu Item component
@@ -9,7 +9,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 object Item {
   case class Props(name: String)
 
-  val component = ReactComponentB[Props]("Item")
+  val component = ScalaComponent.builder[Props]("Item")
     .stateless
     .renderPC( (_, p, c) =>
       <.div(
@@ -19,5 +19,5 @@ object Item {
       )
     ).build
 
-  def apply(name: String, children: ReactNode*) = component(Props(name), children: _*)
+  def apply(name: String, children: VdomNode*) = component(Props(name))(children: _*)
 }

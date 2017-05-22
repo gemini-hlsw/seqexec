@@ -2,15 +2,15 @@ package edu.gemini.seqexec.web.client.semanticui.elements.message
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.Size
-import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{ReactComponentB, ReactNode}
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.ScalaComponent
 
 /**
   * React component for a message with a large icon
   */
 object IconMessage extends Message {
 
-  def component = ReactComponentB[IconMessage.Props]("Message")
+  def component = ScalaComponent.builder[IconMessage.Props]("Message")
     .stateless
     .renderPC((_, p, c) =>
       <.div(
@@ -38,7 +38,7 @@ object IconMessage extends Message {
               ^.cls := "header",
               h
             )
-          ),
+          ).whenDefined,
           c
         )
       )
@@ -47,5 +47,5 @@ object IconMessage extends Message {
 
   case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined, size: Size = Size.NotSized)
 
-  def apply(p: Props, children: ReactNode*) = component(p, children: _*)
+  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
 }

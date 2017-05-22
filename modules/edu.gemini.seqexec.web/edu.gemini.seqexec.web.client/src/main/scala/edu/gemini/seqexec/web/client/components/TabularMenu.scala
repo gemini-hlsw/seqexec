@@ -4,8 +4,8 @@ import edu.gemini.seqexec.web.client.model.SequencesOnDisplay
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model.ModelOps._
-import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{Callback, ScalaComponent}
 import scalacss.ScalaCssReact._
 
 /**
@@ -17,7 +17,7 @@ object TabularMenu {
 
   def sequencesTabs(d: SequencesOnDisplay) = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument, a.sequence().map(_.hasError).getOrElse(false)))
 
-  val component = ReactComponentB[Props]("TabularMenu")
+  val component = ScalaComponent.builder[Props]("TabularMenu")
     .stateless
     .render_P(p =>
       <.div(
@@ -29,21 +29,21 @@ object TabularMenu {
               "active" -> t.isActive,
               "error"  -> t.hasError
             ),
-            t.hasError ?= SeqexecStyles.errorTab,
+            SeqexecStyles.errorTab.when(t.hasError),
             dataTab := t.dataItem,
-            t.hasError ?= IconAttention.copyIcon(color = Some("red")),
+            IconAttention.copyIcon(color = Some("red")).when(t.hasError),
             t.title
           )
-        )
+        ).toTagMod
       )
 
-    ).componentDidMount(s =>
+    ).componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
         import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 
-        $(ReactDOM.findDOMNode(s)).find(".item").tab()
+        $(ctx.getDOMNode).find(".item").tab()
       }
     ).build
 

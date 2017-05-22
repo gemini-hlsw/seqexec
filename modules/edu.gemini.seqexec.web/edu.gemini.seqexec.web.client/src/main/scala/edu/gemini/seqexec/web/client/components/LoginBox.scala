@@ -2,8 +2,8 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM, ReactEventI}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM, ReactEventFromInput}
+import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
@@ -27,13 +27,13 @@ object LoginBox {
   val formId = "login"
 
   class Backend($: BackendScope[Props, State]) {
-    def pwdMod(e: ReactEventI) = {
+    def pwdMod(e: ReactEventFromInput) = {
       // Capture the value outside setState, react reuses the events
       val v = e.target.value
       $.modState(_.copy(password = v))
     }
 
-    def userMod(e: ReactEventI) = {
+    def userMod(e: ReactEventFromInput) = {
       val v = e.target.value
       $.modState(_.copy(username = v))
     }
@@ -134,7 +134,7 @@ object LoginBox {
       )
   }
 
-  val component = ReactComponentB[Props]("Login")
+  val component = ScalaComponent.builder[Props]("Login")
     .initialState(State("", "", None, None))
     .renderBackend[Backend]
     .componentDidUpdate(s =>

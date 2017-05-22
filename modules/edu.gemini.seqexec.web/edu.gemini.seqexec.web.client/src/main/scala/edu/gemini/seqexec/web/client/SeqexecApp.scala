@@ -40,6 +40,6 @@ object SeqexecApp extends JSApp {
     SeqexecCircuit.dispatch(WSConnect(0))
 
     // Render the UI using React
-    ReactDOM.render(SeqexecUI(), document.getElementById("content"))
+    SeqexecUI().renderIntoDOM(document.getElementById("content"))
   }
 }

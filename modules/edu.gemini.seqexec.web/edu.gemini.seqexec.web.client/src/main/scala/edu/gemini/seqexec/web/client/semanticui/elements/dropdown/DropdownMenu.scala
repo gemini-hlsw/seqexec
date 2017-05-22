@@ -2,8 +2,8 @@ package edu.gemini.seqexec.web.client.semanticui.elements.dropdown
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactComponentC, ReactComponentU, ReactDOM, TopNode}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{Callback, ReactDOM, ScalaComponent}
+import japgolly.scalajs.react.vdom.html_<^._
 
 import scalaz.Show
 import scalaz.syntax.show._
@@ -20,7 +20,7 @@ object DropdownMenu {
                    disabled: Boolean,
                    onChange: A => Callback = (a: A) => Callback.empty)
 
-  def component[A: Show]: ReactComponentC.ReqProps[Props[A], Unit, Unit, TopNode] = ReactComponentB[Props[A]]("DropDownMenu")
+  def component[A: Show] = ScalaComponent.builder[Props[A]]("DropDownMenu")
     .stateless
     .render_P(p =>
       <.div(
@@ -41,28 +41,28 @@ object DropdownMenu {
           IconDropdown,
           <.div(
             ^.cls := "menu",
-            p.items.map(i => Item(i.shows))
+            p.items.map(i => Item(i.shows)).toTagMod
           )
         )
       )
     )
-    .componentDidMount(s =>
+    .componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
         import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 
-        $(ReactDOM.findDOMNode(s)).find(".ui.dropdown").dropdown(
+        $(ctx.getDOMNode).find(".ui.dropdown").dropdown(
           JsDropdownOptions
             .onChange { (value: String, text: String) =>
               // The text comes wrapped on react tags
               val cleanText = $(text).text()
               // We need to run the callback explicitly as we are outside the event loop
-              s.props.items.find(_.shows === cleanText).map(s.props.onChange).foreach(_.runNow)
+              ctx.props.items.find(_.shows === cleanText).map(ctx.props.onChange).foreach(_.runNow)
             }
         )
       }
     ).build
 
-  def apply[A: Show](p: Props[A]): ReactComponentU[Props[A], Unit, Unit, TopNode] = component[A](implicitly[Show[A]])(p)
+  def apply[A: Show](p: Props[A]) = component[A](implicitly[Show[A]])(p)
 }

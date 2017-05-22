@@ -1,11 +1,11 @@
 package edu.gemini.seqexec.web.client
 
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 
 package object semanticui {
   // Custom attributes used by SemanticUI
-  val dataTab     = "data-tab".reactAttr
-  val dataTooltip = "data-tooltip".reactAttr
-  val formId      = "form".reactAttr
+  val dataTab     = VdomAttr("data-tab")
+  val dataTooltip = VdomAttr("data-tooltip")
+  val formId      = VdomAttr("form")
 
 }

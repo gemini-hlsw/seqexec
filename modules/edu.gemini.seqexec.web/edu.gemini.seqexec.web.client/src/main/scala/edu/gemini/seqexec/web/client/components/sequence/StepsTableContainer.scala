@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactNode, Ref}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, VdomNode, Ref}
+import japgolly.scalajs.react.vdom.html_<^._
 
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
@@ -69,7 +69,7 @@ object StepsTableContainer {
         )
       )
 
-    def stepProgress(step: Step): ReactNode =
+    def stepProgress(step: Step): VdomNode =
       step.status match {
         case StepState.Running =>
           <.div(
@@ -86,7 +86,7 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(s: SequenceView, step: Step): List[ReactNode] = {
+    def observationControlButtons(s: SequenceView, step: Step): List[VdomNode] = {
       s.allowedObservationOperations(step).map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
@@ -108,7 +108,7 @@ object StepsTableContainer {
       }
     }
 
-    def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): ReactNode =
+    def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): VdomNode =
       <.div(
         ^.cls := "ui two column grid stackable",
         <.div(
@@ -131,7 +131,7 @@ object StepsTableContainer {
         )
       )
 
-    def stepInError(loggedIn: Boolean, s: SequenceView, msg: String): ReactNode =
+    def stepInError(loggedIn: Boolean, s: SequenceView, msg: String): VdomNode =
         <.div(
           <.p(s"Error: $msg"),
           loggedIn ?=
@@ -143,7 +143,7 @@ object StepsTableContainer {
               )
         )
 
-    def stepDisplay(p: Props, step: Step): ReactNode =
+    def stepDisplay(p: Props, step: Step): VdomNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
         case StepState.Completed                  => <.p(step.status.shows)
@@ -268,7 +268,7 @@ object StepsTableContainer {
         )
       )
 
-    def render(p: Props, s: State): ReactTagOf[Div] = {
+    def render(p: Props, s: State): VdomTagOf[Div] = {
       <.div(
         ^.cls := "ui row scroll pane",
         SeqexecStyles.stepsListPane,
@@ -291,7 +291,7 @@ object StepsTableContainer {
   // Reference to the specifc DOM marked by the name `scrollRef`
   private val scrollRef = Ref[HTMLElement]("scrollRef")
 
-  val component = ReactComponentB[Props]("StepsTable")
+  val component = ScalaComponent.builder[Props]("StepsTable")
     .initialState(State(0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>

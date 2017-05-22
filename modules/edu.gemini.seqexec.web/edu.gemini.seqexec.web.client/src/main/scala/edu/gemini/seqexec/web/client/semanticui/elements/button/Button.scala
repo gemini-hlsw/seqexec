@@ -4,7 +4,7 @@ import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 
 object Button {
@@ -69,37 +69,37 @@ object Button {
       "massive"   -> (p.size == Size.Massive)
     )
 
-  def component = ReactComponentB[Props]("Button")
+  def component = ScalaComponent.builder[Props]("Button")
     .renderPC((_, p, c) =>
       if (p.animated == NotAnimated)
         <.button(
           ^.cls := "ui button",
-          p.extraStyles.map(styleaToTagMod),
+          p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
           ^.`type` := (p.buttonType match {
             case ButtonType => "button"
             case SubmitType => "submit"
             case ResetType  => "reset"
           }),
-          p.form.map(f => formId := f),
-          p.color.map(u => ^.cls := u),
-          p.dataTooltip.map(t => dataTooltip := t),
+          p.form.map(f => formId := f).whenDefined,
+          p.color.map(u => ^.cls := u).whenDefined,
+          p.dataTooltip.map(t => dataTooltip := t).whenDefined,
           classSet(p),
           ^.onClick --> p.onClick,
-          p.icon,
+          p.icon.whenDefined,
           c
         )
       else {
         <.div(
           ^.cls := "ui button",
-          ^.tabIndex := p.tabIndex,
+          ^.tabIndex :=? p.tabIndex,
           classSet(p),
           ^.onClick --> p.onClick,
-          p.icon,
+          p.icon.whenDefined,
           c
         )
       }
     ).build
 
-  def apply(p: Props, children: ReactNode*) = component(p, children: _*)
-  def apply(text: String) = component(Props(), text)
+  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
+  def apply(text: String) = component(Props())(text)
 }

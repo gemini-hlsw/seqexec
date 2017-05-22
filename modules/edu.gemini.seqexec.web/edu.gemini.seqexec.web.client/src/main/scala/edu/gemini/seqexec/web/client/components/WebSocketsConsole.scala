@@ -1,14 +1,14 @@
 package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionVisibilityState, WebSocketsLog}
-import japgolly.scalajs.react.ReactComponentB
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 
 object WebSocketsConsole {
   case class Props(searchArea: SectionVisibilityState, log: WebSocketsLog)
 
-  val component = ReactComponentB[Props]("WebSocketsConsole")
+  val component = ScalaComponent.builder[Props]("WebSocketsConsole")
     .stateless
     .render_P(p =>
       if (p.searchArea == SectionOpen) {

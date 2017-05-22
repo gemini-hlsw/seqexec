@@ -4,7 +4,7 @@ import diode.react.ModelProxy
 import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.OcsBuildInfo
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
@@ -19,7 +19,7 @@ object NavBar {
   val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
   val wsConnect = SeqexecCircuit.connect(_.ws)
 
-  val component = ReactComponentB[Unit]("SeqexecAppBar")
+  val component = ScalaComponent.builder[Unit]("SeqexecAppBar")
     .stateless
     .render(_ =>
       <.div(
@@ -81,7 +81,7 @@ object ConnectionState {
     f"${delay / 1000}%d"
   }
 
-  val component = ReactComponentB[Props]("ConnectionState")
+  val component = ScalaComponent.builder[Props]("ConnectionState")
     .stateless
     .render_P( p =>
       <.div(

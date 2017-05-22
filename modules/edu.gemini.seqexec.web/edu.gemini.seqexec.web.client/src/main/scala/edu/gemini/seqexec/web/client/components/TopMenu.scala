@@ -9,8 +9,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconDropdown, IconSignOut}
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react.vdom.html_<^._
 
 import scalacss.ScalaCssReact._
 
@@ -19,7 +19,7 @@ import scalacss.ScalaCssReact._
 object LoggedInMenu {
   case class Props(u: UserDetails)
 
-  val component = ReactComponentB[Props]("SeqexecLoggedInMenu")
+  val component = ScalaComponent.builder[Props]("SeqexecLoggedInMenu")
     .stateless
     .render_P(p =>
       <.div(
@@ -33,7 +33,7 @@ object LoggedInMenu {
           Item("Settings")
         )
       )
-    ).componentDidMount(s =>
+    ).componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
@@ -61,7 +61,7 @@ object TopMenu {
   def logoutButton(text: String, enabled: Boolean) =
     Button(Button.Props(size = Size.Medium, onClick = logout, icon = Some(IconSignOut), disabled = !enabled), text)
 
-  val component = ReactComponentB[Props]("SeqexecTopMenu")
+  val component = ScalaComponent.builder[Props]("SeqexecTopMenu")
     .stateless
     .render_P( p =>
       <.div(

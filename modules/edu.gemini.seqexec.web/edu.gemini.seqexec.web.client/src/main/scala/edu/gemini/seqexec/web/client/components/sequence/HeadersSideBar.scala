@@ -8,8 +8,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactComponentU, TopNode}
-import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
+import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
 
 import scalaz.syntax.equal._
@@ -62,10 +62,10 @@ object HeadersSideBar {
     def wvChanged(wv: WaterVapor): Callback =
       $.props >>= {_.model.dispatchCB(UpdateWaterVapor(wv))}
 
-    def render(p: Props, s: State): ReactTagOf[Div] = {
+    def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.isLogged && p.model().status.anySelected
 
-      val operatorEV = ExternalVar(~s.currentText)(updateState)
+      val operatorEV = StateSnapshot(~s.currentText)(updateState)
       <.div(
         ^.cls := "ui raised secondary segment",
         <.h4("Headers"),
@@ -91,7 +91,7 @@ object HeadersSideBar {
     }
   }
 
-  private val component = ReactComponentB[Props]("HeadersSideBar")
+  private val component = ScalaComponent.builder[Props]("HeadersSideBar")
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)

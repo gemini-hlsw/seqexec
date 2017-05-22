@@ -6,7 +6,7 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import org.scalajs.dom.html.TableRow
 
@@ -20,7 +20,7 @@ object QueueTableBody {
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
-  def emptyRow(k: String): ReactTagOf[TableRow] = {
+  def emptyRow(k: String): VdomTagOf[TableRow] = {
     <.tr(
       ^.key := k, // React requires unique keys
       <.td(iconEmpty),
@@ -37,7 +37,7 @@ object QueueTableBody {
     // Request to display the selected sequence
     p.sequences.dispatchCB(SelectToDisplay(s))
 
-  private val component = ReactComponentB[Props]("QueueTableBody")
+  private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P( p =>
       <.tbody(
         // Render after data arrives
@@ -83,7 +83,7 @@ object QueueTableBody {
     )
     .build
 
-  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]): ReactComponentU[Props, Unit, Unit, TopNode] = component(Props(p))
+  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p))
 
 }
 
@@ -93,7 +93,7 @@ object QueueTableBody {
 object QueueTableSection {
   private val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue": js.Any)
 
-  private val component = ReactComponentB[Unit]("QueueTableSection")
+  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
     .stateless
     .render_P(_ =>
       <.div(
@@ -116,7 +116,7 @@ object QueueTableSection {
       )
     ).build
 
-  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
+  def apply() = component()
 
 }
 
@@ -124,7 +124,7 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  private val component = ReactComponentB[Unit]("QueueArea")
+  private val component = ScalaComponent.builder[Unit]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -147,6 +147,6 @@ object QueueArea {
     )
     .build
 
-  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
+  def apply() = component()
 
 }
