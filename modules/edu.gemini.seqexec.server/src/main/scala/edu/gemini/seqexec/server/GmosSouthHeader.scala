@@ -19,7 +19,8 @@ case class GmosSouthHeader(hs: DhsClient, tcsKeywordsReader: TcsKeywordsReader) 
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
     sendKeywords(id, inst, hs, List(
       buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
-      buildString(tcsKeywordsReader.getUT, "TIME-OBS")
+      buildString(tcsKeywordsReader.getUT, "TIME-OBS"),
+      buildInt32(tcsKeywordsReader.getGmosInstPort, "INPORT")
     ))
   }
 
