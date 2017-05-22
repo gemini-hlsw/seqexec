@@ -7,13 +7,15 @@ import edu.gemini.p1backend.server.OcsBuildInfo
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
 import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.server.{Server, ServerApp}
+import org.http4s.util.ProcessApp
+import org.http4s.server.Server
 
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.Process
 
-object WebServerLauncher extends ServerApp with LogInitialization {
+object WebServerLauncher extends ProcessApp with LogInitialization {
 
   /**
     * Configuration for the web server
@@ -62,13 +64,13 @@ object WebServerLauncher extends ServerApp with LogInitialization {
   /**
     * Reads the configuration and launches the web server
     */
-  override def server(args: List[String]): Task[Server] = {
+  override def process(args: List[String]): Process[Task, Unit] = {
     // Launch web server
-    for {
+    Process.eval_(for {
       _  <- configLog
       sc <- serverConf
       ws <- webServer.run(sc)
-    } yield ws
+    } yield ws)
   }
 
 }

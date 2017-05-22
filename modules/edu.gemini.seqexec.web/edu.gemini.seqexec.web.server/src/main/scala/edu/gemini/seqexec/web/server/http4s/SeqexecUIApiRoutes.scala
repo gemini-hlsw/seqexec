@@ -111,5 +111,5 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         }
     }
 
-  def service: Service[Request, MaybeResponse] = publicService || TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices))) || logService
+  def service: Service[Request, MaybeResponse] = publicService |+| TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices))) |+| logService
 }
