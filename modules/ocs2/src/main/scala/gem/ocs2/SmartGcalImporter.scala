@@ -80,7 +80,10 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
 
   /** Truncates all the smart gcal tables. */
   val clean: ConnectionIO[Unit] =
-    smartTables.map(_.tableName).traverseU(t => Update0(s"truncate $t cascade", None).run).void
+    for {
+      _ <- smartTables.map(_.tableName).traverseU(t => Update0(s"TRUNCATE $t CASCADE", None).run)
+      _ <- sql"DELETE FROM gcal WHERE step_id IS NULL".update.run
+    } yield ()
 
   /** Reads a smart gcal csv file into a List of lines where each line is a
     * list of String entries.  This relies on the fact that all the smart gcal
@@ -127,15 +130,35 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
     (l, b, k, g)
   }
 
-  def loadCsv(fileNamePrefix: String, lampType: GcalLampType, parser: KeyParser): IO[Unit] =
-    for {
-      lines <- readSmartGcalFile(new File(dir, s"${fileNamePrefix}_${lampType.tag.toUpperCase}.csv"))
-      rows   = lines.map(parseFile(_, lampType, parser))
-      _     <- rows.traverseU { case (l, b, k, g) => SmartGcalDao.insert(l, b, k, g) }.transact(xa)
-    } yield ()
+  type SmartGcalLine = (GcalLampType, GcalBaselineType, SmartGcalKey, GcalConfig)
 
-  def loadInstrument(fileNamePrefix: String, parser: KeyParser): IO[Unit] =
-    GcalLampType.all.traverseU(t => loadCsv(fileNamePrefix, t, parser)).void
+  /** A program that will read all SmartGcal config .csv files into a list of
+    * parsed lines.
+    */
+  val readConfig: IO[List[SmartGcalLine]] = {
+    // Creates a program that will read a single .csv file into a parsed list of
+    // smart gcal configuration.  There is a file per FLAT/ARC per instrument.
+    def readCsv(fileNamePrefix: String, lampType: GcalLampType, parser: KeyParser): IO[List[SmartGcalLine]] =
+      readSmartGcalFile(new File(dir, s"${fileNamePrefix}_${lampType.tag.toUpperCase}.csv")).map {
+        _.map(parseFile(_, lampType, parser))
+      }
+
+    // Creates a program that will reads the FLAT/ARC files for a single
+    // instrument with the given file name prefix.
+    def readInstrument(fileNamePrefix: String, parser: KeyParser): IO[List[SmartGcalLine]] =
+      GcalLampType.all.traverseU(t => readCsv(fileNamePrefix, t, parser)).map(_.flatten)
+
+    // A program that will read all smart gcal config files for all instruments
+    smartTables.traverseU(d => readInstrument(d.filePrefix, d.parser)).map(_.flatten)
+  }
+
+  /** Creates a program that will clean all smart gcal config information in
+    * the database and then import the given configuration.
+    */
+  def cleanAndImport(lines: List[SmartGcalLine]): IO[Unit] =
+    (clean *> lines.traverseU { case (l, b, k, g) =>
+      SmartGcalDao.insert(l, b, k, g)
+    }).void.transact(xa)
 
   override def runl(args: List[String]): IO[Unit] =
     for {
@@ -143,8 +166,8 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
       l <- Log.newLog[IO]("smartgcal importer", lxa)
       _ <- checkSmartDir
       _ <- IO(configureLogging)
-      _ <- clean.transact(xa)
-      _ <- smartTables.traverseU(d => loadInstrument(d.filePrefix, d.parser))
+      c <- readConfig
+      _ <- cleanAndImport(c)
       _ <- l.shutdown(5 * 1000)
       _ <- IO.putStrLn("Done.")
     } yield ()
