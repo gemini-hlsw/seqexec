@@ -48,7 +48,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, importer, json, ocs2, service, telnetd)
+  .aggregate(core, db, json, ocs2, service, telnetd)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -82,18 +82,6 @@ lazy val db = project
       |  "")
       |import xa.yolo._
     """.stripMargin.trim
-  )
-
-lazy val importer = project
-  .in(file("modules/importer"))
-  .dependsOn(core, db)
-  .settings(commonSettings)
-  .settings(
-    // IDEA needs to see these but sbt doesn't. Go figure.
-    libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-xml"                % "1.0.3",
-      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-    )
   )
 
 lazy val json = project
