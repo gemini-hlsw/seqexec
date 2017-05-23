@@ -25,7 +25,11 @@ case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, 
       // TODO PREIMAGE, NOD*
       buildInt32(gmosHeader.maskId, "MASKID"),
       buildString(gmosHeader.maskName, "MASKNAME"),
-      buildInt32(gmosHeader.maskType, "MASKTYP")
+      buildInt32(gmosHeader.maskType, "MASKTYP"),
+      buildString(gmosHeader.filter1, "FILTER1"),
+      buildString(gmosHeader.filter2, "FILTER2"),
+      buildInt32(gmosHeader.filter1Id, "FILTID1"),
+      buildInt32(gmosHeader.filter2Id, "FILTID2")
     ))
   }
 
@@ -39,6 +43,10 @@ object GmosHeader {
     def maskName: SeqAction[String]
     def maskType: SeqAction[Int]
     def maskLoc: SeqAction[Int]
+    def filter1: SeqAction[String]
+    def filter2: SeqAction[String]
+    def filter1Id: SeqAction[Int]
+    def filter2Id: SeqAction[Int]
   }
 
   object DummyInstKeywordReader extends InstKeywordsReader {
@@ -47,6 +55,10 @@ object GmosHeader {
     override def maskName: SeqAction[String] = SeqAction(Header.StrDefault)
     override def maskType: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def maskLoc: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def filter1: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def filter2: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def filter1Id: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def filter2Id: SeqAction[Int] = SeqAction(Header.IntDefault)
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
@@ -62,5 +74,9 @@ object GmosHeader {
     override def maskName: SeqAction[String] = GmosEpics.instance.fpu.toSeqAction
     override def maskType: SeqAction[Int] = GmosEpics.instance.maskType.toSeqAction
     override def maskLoc: SeqAction[Int] = GmosEpics.instance.inBeam.toSeqAction
+    override def filter1: SeqAction[String] = GmosEpics.instance.filter1.toSeqAction
+    override def filter2: SeqAction[String] = GmosEpics.instance.filter2.toSeqAction
+    override def filter1Id: SeqAction[Int] = GmosEpics.instance.filter1Id.toSeqAction
+    override def filter2Id: SeqAction[Int] = GmosEpics.instance.filter2Id.toSeqAction
   }
 }
