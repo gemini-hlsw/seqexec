@@ -204,6 +204,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def disperserParked: Option[Int] = Option(dcState.getIntegerAttribute("disperserParked").value.toInt)
 
+  def disperserId: Option[Int] = Option(state.getIntegerAttribute("disperserID").value.toInt)
+
   def filter1: Option[String] = Option(state.getStringAttribute("filter1").value)
 
   def filter2: Option[String] = Option(state.getStringAttribute("filter2").value)
