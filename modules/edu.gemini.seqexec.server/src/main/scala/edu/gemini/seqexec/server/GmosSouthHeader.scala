@@ -36,7 +36,14 @@ case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, 
       buildDouble(gmosHeader.gratingAdjustedWavelength, "CENTWAVE"),
       buildInt32(gmosHeader.gratingOrder, "GRORDER"),
       buildDouble(gmosHeader.gratingTilt, "GRATILT"),
-      buildDouble(gmosHeader.gratingStep, "GRASTEP")
+      buildDouble(gmosHeader.gratingStep, "GRASTEP"),
+      buildDouble(gmosHeader.dtaX, "DTAX"),
+      buildDouble(gmosHeader.dtaY, "DTAY"),
+      buildDouble(gmosHeader.dtaZ, "DTAZ"),
+      buildDouble(gmosHeader.dtaZst, "DTAZST"),
+      buildDouble(gmosHeader.dtaZen, "DTAZEN"),
+      buildDouble(gmosHeader.dtaZme, "DTAZME"),
+      buildString(gmosHeader.stageMode, "DTMODE")
     ))
   }
 
@@ -62,6 +69,13 @@ object GmosHeader {
     def gratingTilt: SeqAction[Double]
     def gratingInBeam: SeqAction[Int]
     def gratingStep: SeqAction[Double]
+    def dtaX: SeqAction[Double]
+    def dtaY: SeqAction[Double]
+    def dtaZ: SeqAction[Double]
+    def dtaZst: SeqAction[Double]
+    def dtaZen: SeqAction[Double]
+    def dtaZme: SeqAction[Double]
+    def stageMode: SeqAction[String]
     /*def gratingTurretA: SeqAction[String]
     def gratingTurretB: SeqAction[String]
     def gratingTurretC: SeqAction[String]
@@ -86,6 +100,13 @@ object GmosHeader {
     override def gratingTilt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def gratingInBeam: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def gratingStep: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def dtaX: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def dtaY: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def dtaZ: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def dtaZst: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def dtaZen: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def dtaZme: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def stageMode: SeqAction[String] = SeqAction(Header.StrDefault)
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
@@ -117,6 +138,13 @@ object GmosHeader {
     override def gratingTilt: SeqAction[Double] = GmosEpics.instance.gratingTilt.toSeqAction
     override def gratingInBeam: SeqAction[Int] = GmosEpics.instance.disperserInBeam.toSeqAction
     override def gratingStep: SeqAction[Double] = GmosEpics.instance.reqGratingMotorSteps.toSeqAction
+    override def dtaX: SeqAction[Double] = GmosEpics.instance.dtaX.toSeqAction
+    override def dtaY: SeqAction[Double] = GmosEpics.instance.dtaY.toSeqAction
+    override def dtaZ: SeqAction[Double] = GmosEpics.instance.dtaZ.toSeqAction
+    override def dtaZst: SeqAction[Double] = GmosEpics.instance.dtaZStart.toSeqAction
+    override def dtaZen: SeqAction[Double] = GmosEpics.instance.dtaZEnd.toSeqAction
+    override def dtaZme: SeqAction[Double] = GmosEpics.instance.dtaZMean.toSeqAction
+    override def stageMode: SeqAction[String] = GmosEpics.instance.stageMode.toSeqAction
     // TODO Implement gratingTurrent*
     /*override def gratingTurretA: SeqAction[String] =
     override def gratingTurretB: SeqAction[String] =
