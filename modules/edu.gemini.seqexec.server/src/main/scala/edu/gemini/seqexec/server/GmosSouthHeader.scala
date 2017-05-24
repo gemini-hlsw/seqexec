@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
+import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
@@ -13,7 +13,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
+case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header._
   import Header.Defaults._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
@@ -21,39 +21,40 @@ case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, 
       buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
       buildString(tcsKeywordsReader.getUT, "TIME-OBS"),
       buildInt32(tcsKeywordsReader.getGmosInstPort, "INPORT"),
-      buildString(gmosHeader.ccName, "GMOSCC"),
+      buildString(gmosReader.ccName, "GMOSCC"),
+      buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
       // TODO PREIMAGE, NOD*
-      buildInt32(gmosHeader.maskId, "MASKID"),
-      buildString(gmosHeader.maskName, "MASKNAME"),
-      buildInt32(gmosHeader.maskType, "MASKTYP"),
-      buildString(gmosHeader.filter1, "FILTER1"),
-      buildString(gmosHeader.filter2, "FILTER2"),
-      buildInt32(gmosHeader.filter1Id, "FILTID1"),
-      buildInt32(gmosHeader.filter2Id, "FILTID2"),
-      buildString(gmosHeader.grating, "GRATING"),
-      buildInt32(gmosHeader.gratingId, "GRATID"),
-      buildDouble(gmosHeader.gratingWavelength, "GRWLEN"),
-      buildDouble(gmosHeader.gratingAdjustedWavelength, "CENTWAVE"),
-      buildInt32(gmosHeader.gratingOrder, "GRORDER"),
-      buildDouble(gmosHeader.gratingTilt, "GRATILT"),
-      buildDouble(gmosHeader.gratingStep, "GRASTEP"),
-      buildDouble(gmosHeader.dtaX, "DTAX"),
-      buildDouble(gmosHeader.dtaY, "DTAY"),
-      buildDouble(gmosHeader.dtaZ, "DTAZ"),
-      buildDouble(gmosHeader.dtaZst, "DTAZST"),
-      buildDouble(gmosHeader.dtaZen, "DTAZEN"),
-      buildDouble(gmosHeader.dtaZme, "DTAZME"),
-      buildString(gmosHeader.stageMode, "DTMODE"),
-      buildString(gmosHeader.adcMode, "ADCMODE"),
-      buildInt32(gmosHeader.adcUsed, "ADCUSED"),
-      buildDouble(gmosHeader.adcPrismEntSt, "ADCENPST"),
-      buildDouble(gmosHeader.adcPrismEntEnd, "ADCENPEN"),
-      buildDouble(gmosHeader.adcPrismEntSt, "ADCENPST"),
-      buildDouble(gmosHeader.adcPrismExtEnd, "ADCEXPEN"),
-      buildDouble(gmosHeader.adcPrismExtMe, "ADCEXPME"),
-      buildDouble(gmosHeader.adcPrismExtMe, "ADCEXPME"),
-      buildDouble(gmosHeader.adcWavelength1, "ADCWLEN1"),
-      buildDouble(gmosHeader.adcWavelength2, "ADCWLEN2")
+      buildInt32(gmosReader.maskId, "MASKID"),
+      buildString(gmosReader.maskName, "MASKNAME"),
+      buildInt32(gmosReader.maskType, "MASKTYP"),
+      buildString(gmosReader.filter1, "FILTER1"),
+      buildString(gmosReader.filter2, "FILTER2"),
+      buildInt32(gmosReader.filter1Id, "FILTID1"),
+      buildInt32(gmosReader.filter2Id, "FILTID2"),
+      buildString(gmosReader.grating, "GRATING"),
+      buildInt32(gmosReader.gratingId, "GRATID"),
+      buildDouble(gmosReader.gratingWavelength, "GRWLEN"),
+      buildDouble(gmosReader.gratingAdjustedWavelength, "CENTWAVE"),
+      buildInt32(gmosReader.gratingOrder, "GRORDER"),
+      buildDouble(gmosReader.gratingTilt, "GRATILT"),
+      buildDouble(gmosReader.gratingStep, "GRASTEP"),
+      buildDouble(gmosReader.dtaX, "DTAX"),
+      buildDouble(gmosReader.dtaY, "DTAY"),
+      buildDouble(gmosReader.dtaZ, "DTAZ"),
+      buildDouble(gmosReader.dtaZst, "DTAZST"),
+      buildDouble(gmosReader.dtaZen, "DTAZEN"),
+      buildDouble(gmosReader.dtaZme, "DTAZME"),
+      buildString(gmosReader.stageMode, "DTMODE"),
+      buildString(gmosReader.adcMode, "ADCMODE"),
+      buildInt32(gmosReader.adcUsed, "ADCUSED"),
+      buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+      buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
+      buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+      buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
+      buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
+      buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
+      buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
+      buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
     ))
   }
 
@@ -61,6 +62,15 @@ case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, 
 }
 
 object GmosHeader {
+  trait ObsKeywordsReader {
+    def preimage: SeqAction[YesNoType]
+  }
+
+  case class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
+    override def preimage: SeqAction[YesNoType] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+      .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+  }
+
   trait InstKeywordsReader {
     def ccName: SeqAction[String]
     // TODO Add NOD*

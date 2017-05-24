@@ -138,8 +138,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
     case Resource.GMOS =>
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
-      val gmosReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-      TrySeq(GmosHeader(systems.dhs, gmosReader, tcsReader))
+      val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
+      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config),gmosInstReader, tcsReader))
     case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
