@@ -214,6 +214,12 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("GmosSouthDisperser") {
+        type GmosSouthDisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'rulingDensity -> Int`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, ruling_density FROM e_gmos_south_disperser""".query[(String, GmosSouthDisperserRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("EventType") {
         type EventTypeRec = Record.`'tag -> String`.T
         val io = sql"""
