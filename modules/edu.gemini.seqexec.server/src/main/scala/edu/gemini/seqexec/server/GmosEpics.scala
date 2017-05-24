@@ -128,15 +128,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def roiNumUsed: Option[Int] = Option(dcState.getDoubleAttribute("detnroi").value.toInt)
 
-  val roi1 = new RoiStatus(dcState, 1)
-
-  val roi2 = new RoiStatus(dcState, 2)
-
-  val roi3 = new RoiStatus(dcState, 3)
-
-  val roi4 = new RoiStatus(dcState, 4)
-
-  val roi5 = new RoiStatus(dcState, 5)
+  val rois: Map[Int, RoiStatus] = (1 to 5).map(i => i -> RoiStatus(dcState, i))(breakOut)
 
   def ccdXBinning: Option[Int] = Option(dcState.getDoubleAttribute("ccdXBinning").value.toInt)
 
@@ -271,7 +263,7 @@ object GmosEpics extends EpicsSystem[GmosEpics] {
     def setCcdYsize1(v: Integer): SeqAction[Unit] = setParameter(ccdYsize, v)
   }
 
-  class RoiStatus(sa: CaStatusAcceptor, i: Int) {
+  case class RoiStatus(sa: CaStatusAcceptor, i: Int) {
     def ccdXstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXstart$i").value.toInt)
     def ccdYstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYstart$i").value.toInt)
     def ccdXsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXsize$i").value.toInt)

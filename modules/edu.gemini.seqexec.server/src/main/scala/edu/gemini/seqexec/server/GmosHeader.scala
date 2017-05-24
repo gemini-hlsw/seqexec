@@ -18,7 +18,7 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
   import Header._
   import Header.Defaults._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
-    def adcKeywords = {
+    val adcKeywords = {
       if (GmosEpics.instance.adcUsed.forall(_ == true)) {
         List(
           buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
@@ -32,6 +32,17 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
         )
       } else Nil
     }
+
+    val roiKeywords = gmosReader.roiValues.map {
+      case (i, rv) =>
+        List(
+          buildInt32(rv.xStart, s"DETRO${i}X"),
+          buildInt32(rv.xSize, s"DETRO${i}XS"),
+          buildInt32(rv.yStart, s"DETRO${i}Y"),
+          buildInt32(rv.ySize, s"DETRO${i}YS")
+        )
+    }.toList
+
     sendKeywords(id, inst, hs, List(
       buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
       buildString(tcsKeywordsReader.getUT, "TIME-OBS"),
@@ -65,14 +76,16 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildString(gmosReader.detectorType, "DETTYPE"),
       buildString(gmosReader.detectorId, "DETID"),
       buildInt32(gmosReader.exposureTime, "EXPOSURE"),
-      buildInt32(gmosReader.adcUsed, "ADCUSED")
-    ) ++ adcKeywords)
+      buildInt32(gmosReader.adcUsed, "ADCUSED"),
+      buildInt32(gmosReader.detNRoi, "DETNROI")
+    ) ::: adcKeywords ::: roiKeywords.flatten)
   }
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = SeqAction(())
 }
 
 object GmosHeader {
+  case class RoiValues(xStart: SeqAction[Int], xSize: SeqAction[Int], yStart: SeqAction[Int], ySize: SeqAction[Int])
   trait ObsKeywordsReader {
     def preimage: SeqAction[YesNoType]
   }
@@ -128,6 +141,8 @@ object GmosHeader {
     def adcPrismExtMe: SeqAction[Double]
     def adcWavelength1: SeqAction[Double]
     def adcWavelength2: SeqAction[Double]
+    def detNRoi: SeqAction[Int]
+    def roiValues: Map[Int, RoiValues]
     /*def gratingTurretA: SeqAction[String]
     def gratingTurretB: SeqAction[String]
     def gratingTurretC: SeqAction[String]
@@ -172,6 +187,8 @@ object GmosHeader {
     override def adcPrismExtMe: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def adcWavelength1: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def adcWavelength2: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def detNRoi: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def roiValues: Map[Int, RoiValues] = Map.empty
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
@@ -225,6 +242,15 @@ object GmosHeader {
     override def adcPrismExtMe: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleEnd.toSeqAction
     override def adcWavelength1: SeqAction[Double] = GmosEpics.instance.adcExitLowerWavel.toSeqAction
     override def adcWavelength2: SeqAction[Double] = GmosEpics.instance.adcExitUpperWavel.toSeqAction
+    override def detNRoi: SeqAction[Int] = SeqAction(GmosEpics.instance.roiNumUsed.getOrElse(0))
+    override def roiValues: Map[Int, RoiValues] =
+      (for {
+        i <- 1 to GmosEpics.instance.roiNumUsed.getOrElse(0)
+        roi = GmosEpics.instance.rois.get(i)
+      } yield roi.map { r =>
+          i ->
+            RoiValues(r.ccdXstart.toSeqAction, r.ccdXsize.toSeqAction, r.ccdYstart.toSeqAction, r.ccdYsize.toSeqAction)
+        }).toList.flatten.toMap
     // TODO Implement gratingTurrent*
     /*override def gratingTurretA: SeqAction[String] =
     override def gratingTurretB: SeqAction[String] =
