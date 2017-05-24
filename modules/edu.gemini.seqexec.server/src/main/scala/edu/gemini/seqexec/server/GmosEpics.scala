@@ -186,7 +186,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def adcExitUpperWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen2").value.toDouble)
 
-  def adcUsed: Option[Boolean] = Option(state.getIntegerAttribute("adcused").value).map(_!=0)
+  def adcUsed: Option[Int] = Option(state.getIntegerAttribute("adcused").value.toInt)
 
   def adcExitLowerWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen1").value.toDouble)
 

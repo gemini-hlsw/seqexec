@@ -43,7 +43,17 @@ case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, 
       buildDouble(gmosHeader.dtaZst, "DTAZST"),
       buildDouble(gmosHeader.dtaZen, "DTAZEN"),
       buildDouble(gmosHeader.dtaZme, "DTAZME"),
-      buildString(gmosHeader.stageMode, "DTMODE")
+      buildString(gmosHeader.stageMode, "DTMODE"),
+      buildString(gmosHeader.adcMode, "ADCMODE"),
+      buildInt32(gmosHeader.adcUsed, "ADCUSED"),
+      buildDouble(gmosHeader.adcPrismEntSt, "ADCENPST"),
+      buildDouble(gmosHeader.adcPrismEntEnd, "ADCENPEN"),
+      buildDouble(gmosHeader.adcPrismEntSt, "ADCENPST"),
+      buildDouble(gmosHeader.adcPrismExtEnd, "ADCEXPEN"),
+      buildDouble(gmosHeader.adcPrismExtMe, "ADCEXPME"),
+      buildDouble(gmosHeader.adcPrismExtMe, "ADCEXPME"),
+      buildDouble(gmosHeader.adcWavelength1, "ADCWLEN1"),
+      buildDouble(gmosHeader.adcWavelength2, "ADCWLEN2")
     ))
   }
 
@@ -53,6 +63,14 @@ case class GmosHeader(hs: DhsClient, gmosHeader: GmosHeader.InstKeywordsReader, 
 object GmosHeader {
   trait InstKeywordsReader {
     def ccName: SeqAction[String]
+    // TODO Add NOD*
+    /*def nodMode: SeqAction[String]
+    def nodPix: SeqAction[Int]
+    def nodCount: SeqAction[Int]
+    def nodAxOff: SeqAction[Int]
+    def nodAyOff: SeqAction[Int]
+    def nodBxOff: SeqAction[Int]
+    def nodByOff: SeqAction[Int]*/
     def maskId: SeqAction[Int]
     def maskName: SeqAction[String]
     def maskType: SeqAction[Int]
@@ -76,6 +94,16 @@ object GmosHeader {
     def dtaZen: SeqAction[Double]
     def dtaZme: SeqAction[Double]
     def stageMode: SeqAction[String]
+    def adcMode: SeqAction[String]
+    def adcUsed: SeqAction[Int]
+    def adcPrismEntSt: SeqAction[Double]
+    def adcPrismEntEnd: SeqAction[Double]
+    def adcPrismEntMe: SeqAction[Double]
+    def adcPrismExtSt: SeqAction[Double]
+    def adcPrismExtEnd: SeqAction[Double]
+    def adcPrismExtMe: SeqAction[Double]
+    def adcWavelength1: SeqAction[Double]
+    def adcWavelength2: SeqAction[Double]
     /*def gratingTurretA: SeqAction[String]
     def gratingTurretB: SeqAction[String]
     def gratingTurretC: SeqAction[String]
@@ -107,6 +135,16 @@ object GmosHeader {
     override def dtaZen: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def dtaZme: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def stageMode: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def adcMode: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def adcUsed: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def adcPrismEntSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcPrismEntEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcPrismEntMe: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcPrismExtSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcPrismExtEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcPrismExtMe: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcWavelength1: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+    override def adcWavelength2: SeqAction[Double] = SeqAction(Header.DoubleDefault)
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
@@ -145,6 +183,16 @@ object GmosHeader {
     override def dtaZen: SeqAction[Double] = GmosEpics.instance.dtaZEnd.toSeqAction
     override def dtaZme: SeqAction[Double] = GmosEpics.instance.dtaZMean.toSeqAction
     override def stageMode: SeqAction[String] = GmosEpics.instance.stageMode.toSeqAction
+    override def adcMode: SeqAction[String] = GmosEpics.instance.adcMode.toSeqAction
+    override def adcUsed: SeqAction[Int] = GmosEpics.instance.adcUsed.toSeqAction
+    override def adcPrismEntSt: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleStart.toSeqAction
+    override def adcPrismEntEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqAction
+    override def adcPrismEntMe: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleMean.toSeqAction
+    override def adcPrismExtSt: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleStart.toSeqAction
+    override def adcPrismExtEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqAction
+    override def adcPrismExtMe: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleEnd.toSeqAction
+    override def adcWavelength1: SeqAction[Double] = GmosEpics.instance.adcExitLowerWavel.toSeqAction
+    override def adcWavelength2: SeqAction[Double] = GmosEpics.instance.adcExitUpperWavel.toSeqAction
     // TODO Implement gratingTurrent*
     /*override def gratingTurretA: SeqAction[String] =
     override def gratingTurretB: SeqAction[String] =
