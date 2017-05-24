@@ -61,6 +61,10 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildDouble(gmosReader.dtaZme, "DTAZME"),
       buildString(gmosReader.stageMode, "DTMODE"),
       buildString(gmosReader.adcMode, "ADCMODE"),
+      buildString(gmosReader.dcName, "GMOSDC"),
+      buildString(gmosReader.detectorType, "DETTYPE"),
+      buildString(gmosReader.detectorId, "DETID"),
+      buildInt32(gmosReader.exposureTime, "EXPOSURE"),
       buildInt32(gmosReader.adcUsed, "ADCUSED")
     ) ++ adcKeywords)
   }
@@ -111,6 +115,10 @@ object GmosHeader {
     def dtaZme: SeqAction[Double]
     def stageMode: SeqAction[String]
     def adcMode: SeqAction[String]
+    def dcName: SeqAction[String]
+    def detectorType: SeqAction[String]
+    def detectorId: SeqAction[String]
+    def exposureTime: SeqAction[Int]
     def adcUsed: SeqAction[Int]
     def adcPrismEntSt: SeqAction[Double]
     def adcPrismEntEnd: SeqAction[Double]
@@ -151,6 +159,10 @@ object GmosHeader {
     override def dtaZme: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def stageMode: SeqAction[String] = SeqAction(Header.StrDefault)
     override def adcMode: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def dcName: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def detectorType: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def detectorId: SeqAction[String] = SeqAction(Header.StrDefault)
+    override def exposureTime: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def adcUsed: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def adcPrismEntSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def adcPrismEntEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)
@@ -200,6 +212,10 @@ object GmosHeader {
     override def dtaZme: SeqAction[Double] = GmosEpics.instance.dtaZMean.toSeqAction
     override def stageMode: SeqAction[String] = GmosEpics.instance.stageMode.toSeqAction
     override def adcMode: SeqAction[String] = GmosEpics.instance.adcMode.toSeqAction
+    override def dcName: SeqAction[String] = GmosEpics.instance.dcName.toSeqAction
+    override def detectorType: SeqAction[String] = GmosEpics.instance.detectorType.toSeqAction
+    override def detectorId: SeqAction[String] = GmosEpics.instance.detectorId.toSeqAction
+    override def exposureTime: SeqAction[Int] = GmosEpics.instance.reqExposureTime.toSeqAction
     override def adcUsed: SeqAction[Int] = GmosEpics.instance.adcUsed.toSeqAction
     override def adcPrismEntSt: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleStart.toSeqAction
     override def adcPrismEntEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqAction
