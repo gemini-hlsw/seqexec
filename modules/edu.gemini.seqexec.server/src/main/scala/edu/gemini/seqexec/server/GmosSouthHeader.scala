@@ -10,7 +10,8 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
-import scalaz.EitherT
+import scalaz._
+import Scalaz._
 import scalaz.concurrent.Task
 
 case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
@@ -23,7 +24,7 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildInt32(tcsKeywordsReader.getGmosInstPort, "INPORT"),
       buildString(gmosReader.ccName, "GMOSCC"),
       buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
-      // TODO PREIMAGE, NOD*
+      // TODO NOD*
       buildInt32(gmosReader.maskId, "MASKID"),
       buildString(gmosReader.maskName, "MASKNAME"),
       buildInt32(gmosReader.maskType, "MASKTYP"),
@@ -36,8 +37,8 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildDouble(gmosReader.gratingWavelength, "GRWLEN"),
       buildDouble(gmosReader.gratingAdjustedWavelength, "CENTWAVE"),
       buildInt32(gmosReader.gratingOrder, "GRORDER"),
-      buildDouble(gmosReader.gratingTilt, "GRATILT"),
-      buildDouble(gmosReader.gratingStep, "GRASTEP"),
+      buildDouble(gmosReader.gratingTilt, "GRTILT"),
+      buildDouble(gmosReader.gratingStep, "GRSTEP"),
       buildDouble(gmosReader.dtaX, "DTAX"),
       buildDouble(gmosReader.dtaY, "DTAY"),
       buildDouble(gmosReader.dtaZ, "DTAZ"),
@@ -95,7 +96,6 @@ object GmosHeader {
     def gratingAdjustedWavelength: SeqAction[Double]
     def gratingOrder: SeqAction[Int]
     def gratingTilt: SeqAction[Double]
-    def gratingInBeam: SeqAction[Int]
     def gratingStep: SeqAction[Double]
     def dtaX: SeqAction[Double]
     def dtaY: SeqAction[Double]
@@ -136,7 +136,6 @@ object GmosHeader {
     override def gratingAdjustedWavelength: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def gratingOrder: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def gratingTilt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-    override def gratingInBeam: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def gratingStep: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def dtaX: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def dtaY: SeqAction[Double] = SeqAction(Header.DoubleDefault)
@@ -169,6 +168,7 @@ object GmosHeader {
     implicit class Double2SeqAction(val v: Option[Double]) extends AnyVal {
       def toSeqAction: SeqAction[Double] = SeqAction(v.getOrElse(Header.DoubleDefault))
     }
+
     override def ccName: SeqAction[String] = GmosEpics.instance.ccName.toSeqAction
     override def maskId: SeqAction[Int] = GmosEpics.instance.maskId.toSeqAction
     override def maskName: SeqAction[String] = GmosEpics.instance.fpu.toSeqAction
@@ -184,8 +184,8 @@ object GmosHeader {
     override def gratingAdjustedWavelength: SeqAction[Double] = GmosEpics.instance.gratingWavel.toSeqAction
     override def gratingOrder: SeqAction[Int] = GmosEpics.instance.disperserOrder.toSeqAction
     override def gratingTilt: SeqAction[Double] = GmosEpics.instance.gratingTilt.toSeqAction
-    override def gratingInBeam: SeqAction[Int] = GmosEpics.instance.disperserInBeam.toSeqAction
-    override def gratingStep: SeqAction[Double] = GmosEpics.instance.reqGratingMotorSteps.toSeqAction
+    override def gratingStep: SeqAction[Double] =
+      GmosEpics.instance.reqGratingMotorSteps.filter(_ => GmosEpics.instance.inBeam === Some(1)).toSeqAction
     override def dtaX: SeqAction[Double] = GmosEpics.instance.dtaX.toSeqAction
     override def dtaY: SeqAction[Double] = GmosEpics.instance.dtaY.toSeqAction
     override def dtaZ: SeqAction[Double] = GmosEpics.instance.dtaZ.toSeqAction
