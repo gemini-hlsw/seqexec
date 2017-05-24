@@ -5,6 +5,9 @@ import java.time.format.DateTimeFormatter
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
+import edu.gemini.seqexec.server.Header._
+import edu.gemini.seqexec.server.Header.Implicits._
+
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
@@ -15,16 +18,13 @@ import Scalaz._
 import scalaz.concurrent.Task
 
 case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
-  import Header._
-  import Header.Defaults._
-
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] ={
     sendKeywords(id, inst, hs, List(
-      buildInt32(tcsKeywordsReader.getGmosInstPort, "INPORT"),
+      buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
       buildString(gmosReader.ccName, "GMOSCC"),
       buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
       buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
-      buildString(tcsKeywordsReader.getUT, "TIME-OBS"))
+      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"))
       // TODO NOD*
     )
   }
@@ -202,17 +202,6 @@ object GmosHeader {
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
-    implicit class String2SeqAction(val v: Option[String]) extends AnyVal {
-      def toSeqAction: SeqAction[String] = SeqAction(v.getOrElse(Header.StrDefault))
-    }
-
-    implicit class Int2SeqAction(val v: Option[Int]) extends AnyVal {
-      def toSeqAction: SeqAction[Int] = SeqAction(v.getOrElse(Header.IntDefault))
-    }
-
-    implicit class Double2SeqAction(val v: Option[Double]) extends AnyVal {
-      def toSeqAction: SeqAction[Double] = SeqAction(v.getOrElse(Header.DoubleDefault))
-    }
 
     override def ccName: SeqAction[String] = GmosEpics.instance.ccName.toSeqAction
     override def maskId: SeqAction[Int] = GmosEpics.instance.maskId.toSeqAction
