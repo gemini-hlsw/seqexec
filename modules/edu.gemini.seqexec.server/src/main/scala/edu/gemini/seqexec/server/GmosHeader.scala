@@ -77,7 +77,10 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildString(gmosReader.detectorId, "DETID"),
       buildInt32(gmosReader.exposureTime, "EXPOSURE"),
       buildInt32(gmosReader.adcUsed, "ADCUSED"),
-      buildInt32(gmosReader.detNRoi, "DETNROI")
+      buildInt32(gmosReader.detNRoi, "DETNROI"),
+      buildInt32(gmosReader.aExpCount, "ANODCNT"),
+      buildInt32(gmosReader.bExpCount, "BNODCNT"),
+      buildInt32(gmosReader.exposureTime, "SUBINT")
     ) ::: adcKeywords ::: roiKeywords.flatten)
   }
 
@@ -143,6 +146,8 @@ object GmosHeader {
     def adcWavelength2: SeqAction[Double]
     def detNRoi: SeqAction[Int]
     def roiValues: Map[Int, RoiValues]
+    def aExpCount: SeqAction[Int]
+    def bExpCount: SeqAction[Int]
     /*def gratingTurretA: SeqAction[String]
     def gratingTurretB: SeqAction[String]
     def gratingTurretC: SeqAction[String]
@@ -189,6 +194,8 @@ object GmosHeader {
     override def adcWavelength2: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def detNRoi: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def roiValues: Map[Int, RoiValues] = Map.empty
+    override def aExpCount: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def bExpCount: SeqAction[Int] = SeqAction(Header.IntDefault)
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
@@ -251,6 +258,8 @@ object GmosHeader {
           i ->
             RoiValues(r.ccdXstart.toSeqAction, r.ccdXsize.toSeqAction, r.ccdYstart.toSeqAction, r.ccdYsize.toSeqAction)
         }).toList.flatten.toMap
+    override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
+    override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     // TODO Implement gratingTurrent*
     /*override def gratingTurretA: SeqAction[String] =
     override def gratingTurretB: SeqAction[String] =
