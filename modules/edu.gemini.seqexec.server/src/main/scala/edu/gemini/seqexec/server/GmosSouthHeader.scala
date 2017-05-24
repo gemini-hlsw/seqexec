@@ -18,6 +18,20 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
   import Header._
   import Header.Defaults._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
+    def adcKeywords = {
+      if (GmosEpics.instance.adcUsed.forall(_ == true)) {
+        List(
+          buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+          buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
+          buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+          buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
+          buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
+          buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
+          buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
+          buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
+        )
+      } else Nil
+    }
     sendKeywords(id, inst, hs, List(
       buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
       buildString(tcsKeywordsReader.getUT, "TIME-OBS"),
@@ -47,16 +61,8 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildDouble(gmosReader.dtaZme, "DTAZME"),
       buildString(gmosReader.stageMode, "DTMODE"),
       buildString(gmosReader.adcMode, "ADCMODE"),
-      buildInt32(gmosReader.adcUsed, "ADCUSED"),
-      buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
-      buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
-      buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
-      buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
-      buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
-      buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
-      buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
-      buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
-    ))
+      buildInt32(gmosReader.adcUsed, "ADCUSED")
+    ) ++ adcKeywords)
   }
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = SeqAction(())
