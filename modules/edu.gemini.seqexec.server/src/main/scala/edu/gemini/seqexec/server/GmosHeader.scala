@@ -59,9 +59,10 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildInt32(gmosReader.maskId, "MASKID"),
       buildString(gmosReader.maskName, "MASKNAME"),
       buildInt32(gmosReader.maskType, "MASKTYP"),
+      buildInt32(gmosReader.maskLoc, "MASKLOC"),
       buildString(gmosReader.filter1, "FILTER1"),
-      buildString(gmosReader.filter2, "FILTER2"),
       buildInt32(gmosReader.filter1Id, "FILTID1"),
+      buildString(gmosReader.filter2, "FILTER2"),
       buildInt32(gmosReader.filter2Id, "FILTID2"),
       buildString(gmosReader.grating, "GRATING"),
       buildInt32(gmosReader.gratingId, "GRATID"),
@@ -83,10 +84,11 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildString(gmosReader.detectorId, "DETID"),
       buildInt32(gmosReader.exposureTime, "EXPOSURE"),
       buildInt32(gmosReader.adcUsed, "ADCUSED"),
-      buildInt32(gmosReader.detNRoi, "DETNROI"),
-      buildInt32(gmosReader.aExpCount, "ANODCNT"),
+      buildInt32(gmosReader.detNRoi, "DETNROI")
+      // TODO These are enabled on N&S only
+      /*buildInt32(gmosReader.aExpCount, "ANODCNT"),
       buildInt32(gmosReader.bExpCount, "BNODCNT"),
-      buildInt32(gmosReader.exposureTime, "SUBINT")
+      buildInt32(gmosReader.exposureTime, "SUBINT")*/
     ) ::: adcKeywords ::: roiKeywords.flatten)
   }
 
@@ -153,10 +155,6 @@ object GmosHeader {
     def roiValues: Map[Int, RoiValues]
     def aExpCount: SeqAction[Int]
     def bExpCount: SeqAction[Int]
-    /*def gratingTurretA: SeqAction[String]
-    def gratingTurretB: SeqAction[String]
-    def gratingTurretC: SeqAction[String]
-    def gratingTurretD: SeqAction[String]*/
   }
 
   object DummyInstKeywordReader extends InstKeywordsReader {
@@ -227,11 +225,12 @@ object GmosHeader {
     override def filter2Id: SeqAction[Int] = GmosEpics.instance.filter2Id.toSeqAction
     override def grating: SeqAction[String] = GmosEpics.instance.disperser.toSeqAction
     override def gratingId: SeqAction[Int] = GmosEpics.instance.disperserId.toSeqAction
-    override def gratingWavelength: SeqAction[Double] = GmosEpics.instance.disperserWavel.toSeqAction
-    override def gratingAdjustedWavelength: SeqAction[Double] = GmosEpics.instance.gratingWavel.toSeqAction
+    override def gratingWavelength: SeqAction[Double] = GmosEpics.instance.gratingWavel.toSeqAction
+    override def gratingAdjustedWavelength: SeqAction[Double] = GmosEpics.instance.disperserWavel.toSeqAction
     override def gratingOrder: SeqAction[Int] = GmosEpics.instance.disperserOrder.toSeqAction
     override def gratingTilt: SeqAction[Double] = GmosEpics.instance.gratingTilt.toSeqAction
     override def gratingStep: SeqAction[Double] =
+      // Set the value to the epics channel if inBeam is    1
       GmosEpics.instance.reqGratingMotorSteps.filter(_ => GmosEpics.instance.inBeam === Some(1)).toSeqAction
     override def dtaX: SeqAction[Double] = GmosEpics.instance.dtaX.toSeqAction
     override def dtaY: SeqAction[Double] = GmosEpics.instance.dtaY.toSeqAction
@@ -244,6 +243,7 @@ object GmosHeader {
     override def dcName: SeqAction[String] = GmosEpics.instance.dcName.toSeqAction
     override def detectorType: SeqAction[String] = GmosEpics.instance.detectorType.toSeqAction
     override def detectorId: SeqAction[String] = GmosEpics.instance.detectorId.toSeqAction
+    // TODO Exposure changes with N&S
     override def exposureTime: SeqAction[Int] = GmosEpics.instance.reqExposureTime.toSeqAction
     override def adcUsed: SeqAction[Int] = GmosEpics.instance.adcUsed.toSeqAction
     override def adcPrismEntSt: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleStart.toSeqAction
@@ -254,7 +254,8 @@ object GmosHeader {
     override def adcPrismExtMe: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleEnd.toSeqAction
     override def adcWavelength1: SeqAction[Double] = GmosEpics.instance.adcExitLowerWavel.toSeqAction
     override def adcWavelength2: SeqAction[Double] = GmosEpics.instance.adcExitUpperWavel.toSeqAction
-    override def detNRoi: SeqAction[Int] = SeqAction(GmosEpics.instance.roiNumUsed.getOrElse(0))
+    // The TCL code does some verifications to ensure the value is not negative
+    override def detNRoi: SeqAction[Int] = SeqAction(GmosEpics.instance.roiNumUsed.filter(_ > 0).getOrElse(0))
     override def roiValues: Map[Int, RoiValues] =
       (for {
         i <- 1 to GmosEpics.instance.roiNumUsed.getOrElse(0)
@@ -265,10 +266,5 @@ object GmosHeader {
         }).toList.flatten.toMap
     override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
-    // TODO Implement gratingTurrent*
-    /*override def gratingTurretA: SeqAction[String] =
-    override def gratingTurretB: SeqAction[String] =
-    override def gratingTurretC: SeqAction[String] =
-    override def gratingTurretD: SeqAction[String] =*/
   }
 }

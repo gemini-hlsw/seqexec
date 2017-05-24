@@ -13,8 +13,8 @@ trait Header {
 
 object Header {
 
-  val IntDefault = -9999
-  val DoubleDefault = -9999.0
+  val IntDefault: Int = -9999
+  val DoubleDefault: Double = -9999.0
   val StrDefault = "No Value"
 
   def buildKeyword[A](get: SeqAction[A], name: String, f: (String, A) => DhsClient.Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
@@ -34,7 +34,7 @@ object Header {
 
   def sendKeywords(id: ImageFileId, inst: String, hs: DhsClient, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
     bag <- bundleKeywords(inst, b)
-    _   <- hs.setKeywords(id, bag, false)
+    _   <- hs.setKeywords(id, bag, finalFlag = false)
   } yield ()
 
 
