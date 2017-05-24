@@ -17,7 +17,19 @@ import scalaz.concurrent.Task
 case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header._
   import Header.Defaults._
-  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
+
+  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] ={
+    sendKeywords(id, inst, hs, List(
+      buildInt32(tcsKeywordsReader.getGmosInstPort, "INPORT"),
+      buildString(gmosReader.ccName, "GMOSCC"),
+      buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
+      buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
+      buildString(tcsKeywordsReader.getUT, "TIME-OBS"))
+      // TODO NOD*
+    )
+  }
+
+  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = {
     val adcKeywords = {
       if (GmosEpics.instance.adcUsed.forall(_ == true)) {
         List(
@@ -44,12 +56,6 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
     }.toList
 
     sendKeywords(id, inst, hs, List(
-      buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
-      buildString(tcsKeywordsReader.getUT, "TIME-OBS"),
-      buildInt32(tcsKeywordsReader.getGmosInstPort, "INPORT"),
-      buildString(gmosReader.ccName, "GMOSCC"),
-      buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
-      // TODO NOD*
       buildInt32(gmosReader.maskId, "MASKID"),
       buildString(gmosReader.maskName, "MASKNAME"),
       buildInt32(gmosReader.maskType, "MASKTYP"),
@@ -84,7 +90,6 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
     ) ::: adcKeywords ::: roiKeywords.flatten)
   }
 
-  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = SeqAction(())
 }
 
 object GmosHeader {
