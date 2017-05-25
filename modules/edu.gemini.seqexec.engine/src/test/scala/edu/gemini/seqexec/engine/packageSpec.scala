@@ -1,12 +1,14 @@
 package edu.gemini.seqexec.engine
 
-import Result._
+import java.util.concurrent.Semaphore
+
 import Event._
 import org.scalatest.FlatSpec
 
-import edu.gemini.seqexec.model.Model.SequenceState.{Idle, Error}
+import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
+import scala.concurrent.duration._
 import scalaz.syntax.apply._
 import scalaz.syntax.foldable._
 import scalaz.Nondeterminism
@@ -114,9 +116,10 @@ class packageSpec extends FlatSpec {
   val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
   val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
 
+  def isFinished(status: SequenceState): Boolean =
+    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+
   def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
-    def isFinished(status: SequenceState): Boolean =
-      status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
     q.enqueueOne(start(seqId)).flatMap(
       _ => processE(q).drop(1).takeThrough(
@@ -196,5 +199,42 @@ class packageSpec extends FlatSpec {
         processE(q).take(6).runLast.eval(qs3)
       ).unsafePerformSync._2.get._2.sequences(seqId3).status === SequenceState.Running
     )
+  }
+
+  "engine" should "keep processing input messages regardless of how long Actions take" in {
+    val q = async.boundedQueue[Event](10)
+    val startedFlag = new Semaphore(0)
+    val finishFlag = new Semaphore(0)
+
+    val qs = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata("GMOS", None),
+        List(
+          Step(
+            1,
+            None,
+            config,
+            Set(Resource.GMOS),
+            breakpoint = false,
+            List(
+              List(Task.apply{
+                startedFlag.release
+                finishFlag.acquire
+                Result.OK(Result.Configured("TCS"))
+              } )
+            )
+          )
+        )
+      ) ) ) )
+    )
+
+    val result = Nondeterminism[Task].both(
+        q.enqueueOne(start(seqId)) *> Task.apply(startedFlag.acquire) *>
+          q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release}}),
+        processE(q).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run.eval(qs)
+      ).timed(5.seconds).unsafePerformSyncAttempt
+    assert(result.isRight)
   }
 }
