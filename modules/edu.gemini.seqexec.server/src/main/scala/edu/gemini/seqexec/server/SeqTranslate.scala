@@ -136,7 +136,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Resource.F2   =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
       if (settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
-    case Resource.GMOS =>  TrySeq(GmosSouthHeader(systems.dhs, if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
+    case Resource.GMOS =>
+      val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
+      val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
+      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config),gmosInstReader, tcsReader))
     case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
@@ -177,7 +180,8 @@ object SeqTranslate {
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
                       gwsKeywords: Boolean,
-                      gcalKeywords: Boolean
+                      gcalKeywords: Boolean,
+                      gmosKeywords: Boolean
                      )
 
 

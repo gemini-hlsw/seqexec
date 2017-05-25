@@ -531,7 +531,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
     }
   }
 
-  private def instPort(name: String) = Option(tcsState.getIntegerAttribute(name + "Port").value).map(_.intValue)
+  private def instPort(name: String): Option[Int] = Option(tcsState.getIntegerAttribute(s"${name}Port").value).map(_.intValue)
   def gsaoiPort = instPort("gsaoi")
   def gpiPort = instPort("gpi")
   def f2Port = instPort("f2")
@@ -539,7 +539,6 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def gnirsPort = instPort("nirs")
   def nifsPort = instPort("nifs")
   def gmosPort = instPort("gmos")
-
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics] {

@@ -70,6 +70,7 @@ trait TcsKeywordsReader {
   def getPwfs1Freq: SeqAction[Option[Double]]
   def getPwfs2Freq: SeqAction[Option[Double]]
   def getOiwfsFreq: SeqAction[Option[Double]]
+  def getGmosInstPort: SeqAction[Option[Int]]
 }
 
 object DummyTargetKeywordsReader extends TargetKeywordsReader {
@@ -146,6 +147,8 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
   override def getOiwfsFreq: SeqAction[Option[Double]] = -9999.0
 
   override def getCarouselMode: SeqAction[Option[String]] = "Basic"
+
+  override def getGmosInstPort: SeqAction[Option[Int]] = 0
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader {
@@ -173,6 +176,7 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getSFTilt: SeqAction[Option[Double]] = TcsEpics.instance.sfTilt
   override def getSFLinear: SeqAction[Option[Double]] = TcsEpics.instance.sfLinear
   override def getInstrumentPA: SeqAction[Option[Double]] = TcsEpics.instance.instrPA
+  override def getGmosInstPort: SeqAction[Option[Int]] = TcsEpics.instance.gmosPort
 
   private val xoffIndex = 6
   private val yoffIndex = 7

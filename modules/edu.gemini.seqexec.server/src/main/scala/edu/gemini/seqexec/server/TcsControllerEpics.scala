@@ -116,14 +116,14 @@ object TcsControllerEpics extends TcsController {
       cb <- g.nodcchopb.map(decodeNodChopOption)
       cc <- g.nodcchopc.map(decodeNodChopOption)
 
-      // This last production is slightly tricky. 
+      // This last production is slightly tricky.
       o  <- if (List(aa, ab, ac, ba, bb, bc, ca, cb, cc).exists(_ == true)) {
               if (List(aa, bb, cc).forall(_ == true) && List(ab, ac, ba, bc, ca, cb).forall(_ == false)) {
                 Some(NodChopTrackingConfig.Normal)
               } else {
                 List(
-                  (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)), (ac, NodChop(Beam.A, Beam.C)), 
-                  (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B)), (bc, NodChop(Beam.B, Beam.C)), 
+                  (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)), (ac, NodChop(Beam.A, Beam.C)),
+                  (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B)), (bc, NodChop(Beam.B, Beam.C)),
                   (ca, NodChop(Beam.C, Beam.A)), (cb, NodChop(Beam.C, Beam.B)), (cc, NodChop(Beam.C, Beam.C))
                 ) collect {
                   case (true, a) => a
@@ -132,15 +132,15 @@ object TcsControllerEpics extends TcsController {
                   case Nil    => None // the list is empty
                 }
               }
-            } else Some(NodChopTrackingConfig.None)   
+            } else Some(NodChopTrackingConfig.None)
 
     } yield o
 
   private def calcProbeTrackingConfig(f: FollowOption, t: NodChopTrackingConfig): ProbeTrackingConfig = (f, t) match {
-    case (_, NodChopTrackingConfig.None) => ProbeTrackingConfig.Off
-    case (FollowOn, NodChopTrackingConfig.Normal) => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
+    case (_, NodChopTrackingConfig.None)              => ProbeTrackingConfig.Off
+    case (FollowOn, NodChopTrackingConfig.Normal)     => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
     case (FollowOn, v: NodChopTrackingConfig.Special) => ProbeTrackingConfig.On(v)
-    case _ => ProbeTrackingConfig.Off
+    case _                                            => ProbeTrackingConfig.Off
   }
 
   implicit private val decodeFollowOption: DecodeEpicsValue[String, FollowOption] = DecodeEpicsValue((s: String)
@@ -160,10 +160,11 @@ object TcsControllerEpics extends TcsController {
       ProbeTrackingConfigAO(ProbeTrackingConfig.Off)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read probes guide from TCS.")))
 
-  implicit private val decodeGuideSensorOption: DecodeEpicsValue[BinaryYesNo, GuiderSensorOption] = DecodeEpicsValue((s: BinaryYesNo)
-  => if (s == BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn)
-  implicit private val decodeAltairSensorOption: DecodeEpicsValue[Double, GuiderSensorOption] = DecodeEpicsValue((s: Double)
-  => if (s == 0.0) GuiderSensorOff else GuiderSensorOn)
+  implicit private val decodeGuideSensorOption: DecodeEpicsValue[BinaryYesNo, GuiderSensorOption] =
+    DecodeEpicsValue((s: BinaryYesNo) => if (s == BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn)
+
+  implicit private val decodeAltairSensorOption: DecodeEpicsValue[Double, GuiderSensorOption] =
+    DecodeEpicsValue((s: Double) => if (s == 0.0) GuiderSensorOff else GuiderSensorOn)
 
   private def getGuidersEnabled: TrySeq[GuidersEnabled] = {
     for {
@@ -296,8 +297,8 @@ object TcsControllerEpics extends TcsController {
     _ <- TcsEpics.instance.m2Beam.setBeam(encode(c.m2beam))
   } yield TrySeq(())
 
-  implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] = 
-    EncodeEpicsValue { (op: NodChopTrackingOption) => 
+  implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
+    EncodeEpicsValue { (op: NodChopTrackingOption) =>
       op match {
         case NodChopTrackingOption.NodChopTrackingOn  => "on"
         case NodChopTrackingOption.NodChopTrackingOff => "off"

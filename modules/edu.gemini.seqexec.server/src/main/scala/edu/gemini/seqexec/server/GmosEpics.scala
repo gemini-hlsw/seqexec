@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import java.util.logging.Logger
 import java.lang.{Double => JDouble}
 
-import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
+import edu.gemini.epics.acm.{CaCommandSender, CaParameter, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
 import edu.gemini.seqexec.server.GmosEpics.{RoiParameters, RoiStatus}
 
@@ -12,44 +12,44 @@ import scala.collection.breakOut
 
 class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
-  val GMOS_TOP = tops.getOrElse("gm", "")
+  val GMOS_TOP: String = tops.getOrElse("gm", "")
 
   def post: SeqAction[Unit] = configCmd.post
 
   object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::apply"))
 
-    val disperserMode = cs.map(_.getString("disperserMode"))
+    val disperserMode: Option[CaParameter[String]] = cs.map(_.getString("disperserMode"))
     def setDisperserMode(v: String): SeqAction[Unit] = setParameter(disperserMode, v)
 
-    val disperser = cs.map(_.getString("disperser"))
+    val disperser: Option[CaParameter[String]] = cs.map(_.getString("disperser"))
     def setDisperser(v: String): SeqAction[Unit] = setParameter(disperser, v)
 
-    val stageMode = cs.map(_.getString("stageMode"))
+    val stageMode: Option[CaParameter[String]] = cs.map(_.getString("stageMode"))
     def setStageMode(v: String): SeqAction[Unit] = setParameter(stageMode, v)
 
-    val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", GMOS_TOP + "wfs:followA.K", "Enable electronic Offsets", false))
+    val useElectronicOffsetting: Option[CaParameter[Integer]] = cs.map(_.addInteger("useElectronicOffsetting", GMOS_TOP + "wfs:followA.K", "Enable electronic Offsets", false))
     def setElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
-    val filter1 = cs.map(_.getString("filter1"))
+    val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
     def setFilter1(v: String): SeqAction[Unit] = setParameter(filter1, v)
 
-    val filter2 = cs.map(_.getString("filter2"))
+    val filter2: Option[CaParameter[String]] = cs.map(_.getString("filter2"))
     def setFilter2(v: String): SeqAction[Unit] = setParameter(filter2, v)
 
-    val dtaXOffset = cs.map(_.getString("dtaXOffset"))
+    val dtaXOffset: Option[CaParameter[String]] = cs.map(_.getString("dtaXOffset"))
     def setDtaXOffset(v: String): SeqAction[Unit] = setParameter(dtaXOffset, v)
 
-    val inBeam = cs.map(_.getString("inbeam"))
+    val inBeam: Option[CaParameter[String]] = cs.map(_.getString("inbeam"))
     def setInBeam(v: String): SeqAction[Unit] = setParameter(inBeam, v)
 
-    val disperserOrder = cs.map(_.getString("disperserOrder"))
+    val disperserOrder: Option[CaParameter[String]] = cs.map(_.getString("disperserOrder"))
     def setDisperserOrder(v: String): SeqAction[Unit] = setParameter(disperserOrder, v)
 
-    val disperserLambda = cs.map(_.getString("disperserLambda"))
+    val disperserLambda: Option[CaParameter[String]] = cs.map(_.getString("disperserLambda"))
     def setDisperserLambda(v: String): SeqAction[Unit] = setParameter(disperserLambda, v)
 
-    val fpu = cs.map(_.getString("fpu"))
+    val fpu: Option[CaParameter[String]] = cs.map(_.getString("fpu"))
     def setFpu(v: String): SeqAction[Unit] = setParameter(fpu, v)
 
   }
@@ -77,66 +77,58 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   object observeCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
 
-    val label = cs.map(_.getString("label"))
+    val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
   }
 
   object configDCCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::dcconfig"))
 
-    val roiNumUsed = cs.map(_.addDouble("roiNumUsed", GMOS_TOP + "dc:roiNumrois", "Number of ROI used", false))
+    val roiNumUsed: Option[CaParameter[JDouble]] = cs.map(_.addDouble("roiNumUsed", GMOS_TOP + "dc:roiNumrois", "Number of ROI used", false))
     def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v))
 
     val rois: Map[Int, RoiParameters] = (1 to 5).map(i => i -> RoiParameters(cs, i))(breakOut)
 
-    val shutterState = cs.map(_.getString("shutterState"))
+    val shutterState: Option[CaParameter[String]] = cs.map(_.getString("shutterState"))
     def setShutterState(v: String): SeqAction[Unit] = setParameter(shutterState, v)
 
-    val exposureTime = cs.map(_.getDouble("exposureTime"))
+    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Duration): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v.toSeconds))
 
-    val ampCount = cs.map(_.getString("ampCount"))
+    val ampCount: Option[CaParameter[String]] = cs.map(_.getString("ampCount"))
     def setAmpCount(v: String): SeqAction[Unit] = setParameter(ampCount, v)
 
-    val ampReadMode = cs.map(_.getString("ampReadMode"))
+    val ampReadMode: Option[CaParameter[String]] = cs.map(_.getString("ampReadMode"))
     def setAmpReadMode(v: String): SeqAction[Unit] = setParameter(ampReadMode, v)
 
-    val gainSetting = cs.map(_.getString("gainSetting"))
+    val gainSetting: Option[CaParameter[String]] = cs.map(_.getString("gainSetting"))
     def setGainSetting(v: String): SeqAction[Unit] = setParameter(gainSetting, v)
 
-    val ccdXBinning = cs.map(_.addDouble("ccdXBinning", GMOS_TOP + "dc:roiXBin", "CCD X Binning Value", false))
+    val ccdXBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdXBinning", GMOS_TOP + "dc:roiXBin", "CCD X Binning Value", false))
     def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v))
 
-    val ccdYBinning = cs.map(_.addDouble("ccdYBinning", GMOS_TOP + "dc:roiYBin", "CCD Y Binning Value", false))
+    val ccdYBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdYBinning", GMOS_TOP + "dc:roiYBin", "CCD Y Binning Value", false))
     def setCcdYBinning(v: Int): SeqAction[Unit] = setParameter(ccdYBinning, java.lang.Double.valueOf(v))
 
-    val nsPairs = cs.map(_.getInteger("nsPairs"))
+    val nsPairs: Option[CaParameter[Integer]] = cs.map(_.getInteger("nsPairs"))
     def setNsPairs(v: Integer): SeqAction[Unit] = setParameter(nsPairs, v)
 
-    val nsRows = cs.map(_.getInteger("nsRows"))
+    val nsRows: Option[CaParameter[Integer]] = cs.map(_.getInteger("nsRows"))
     def setNsRows(v: Integer): SeqAction[Unit] = setParameter(nsRows, v)
 
-    val nsState = cs.map(_.getString("ns_state"))
+    val nsState: Option[CaParameter[String]] = cs.map(_.getString("ns_state"))
     def setNsState(v: String): SeqAction[Unit] = setParameter(nsState, v)
 
   }
 
-  val state = epicsService.getStatusAcceptor("gmos::status")
-  val dcState = epicsService.getStatusAcceptor("gmos::dcstatus")
+  val state: CaStatusAcceptor = epicsService.getStatusAcceptor("gmos::status")
+  val dcState: CaStatusAcceptor = epicsService.getStatusAcceptor("gmos::dcstatus")
 
   // DC status values
 
   def roiNumUsed: Option[Int] = Option(dcState.getDoubleAttribute("detnroi").value.toInt)
 
-  val roi1 = new RoiStatus(dcState, 1)
-
-  val roi2 = new RoiStatus(dcState, 2)
-
-  val roi3 = new RoiStatus(dcState, 3)
-
-  val roi4 = new RoiStatus(dcState, 4)
-
-  val roi5 = new RoiStatus(dcState, 5)
+  val rois: Map[Int, RoiStatus] = (1 to 5).map(i => i -> RoiStatus(dcState, i))(breakOut)
 
   def ccdXBinning: Option[Int] = Option(dcState.getDoubleAttribute("ccdXBinning").value.toInt)
 
@@ -186,11 +178,11 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def adcExitUpperWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen2").value.toDouble)
 
-  def adcUsed: Option[Boolean] = Option(state.getIntegerAttribute("adcused").value).map(_!=0)
+  def adcUsed: Option[Int] = Option(state.getIntegerAttribute("adcused").value.toInt)
 
   def adcExitLowerWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen1").value.toDouble)
 
-  def inBeam: Option[Boolean] = Option(state.getIntegerAttribute("inbeam").value).map(_!=0)
+  def inBeam: Option[Int] = Option(state.getIntegerAttribute("inbeam").value.toInt)
 
   def filter1Id: Option[Int] = Option(dcState.getIntegerAttribute("filterID1").value.toInt)
 
@@ -203,6 +195,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   def disperserOrder: Option[Int] = Option(dcState.getIntegerAttribute("disperserOrder").value.toInt)
 
   def disperserParked: Option[Int] = Option(dcState.getIntegerAttribute("disperserParked").value.toInt)
+
+  def disperserId: Option[Int] = Option(state.getIntegerAttribute("disperserID").value.toInt)
 
   def filter1: Option[String] = Option(state.getStringAttribute("filter1").value)
 
@@ -256,20 +250,20 @@ object GmosEpics extends EpicsSystem[GmosEpics] {
   override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)
 
   case class RoiParameters(cs: Option[CaCommandSender], i: Int) {
-    val ccdXstart = cs.map(_.getInteger(s"ccdXstart$i"))
+    val ccdXstart: Option[CaParameter[Integer]] = cs.map(_.getInteger(s"ccdXstart$i"))
     def setCcdXstart1(v: Integer): SeqAction[Unit] = setParameter(ccdXstart, v)
 
-    val ccdYstart = cs.map(_.getInteger(s"ccdYstart$i"))
+    val ccdYstart: Option[CaParameter[Integer]] = cs.map(_.getInteger(s"ccdYstart$i"))
     def setCcdYstart1(v: Integer): SeqAction[Unit] = setParameter(ccdYstart, v)
 
-    val ccdXsize = cs.map(_.getInteger(s"ccdXsize$i"))
+    val ccdXsize: Option[CaParameter[Integer]] = cs.map(_.getInteger(s"ccdXsize$i"))
     def setCcdXsize1(v: Integer): SeqAction[Unit] = setParameter(ccdXsize, v)
 
-    val ccdYsize = cs.map(_.getInteger(s"ccdYsize$i"))
+    val ccdYsize: Option[CaParameter[Integer]] = cs.map(_.getInteger(s"ccdYsize$i"))
     def setCcdYsize1(v: Integer): SeqAction[Unit] = setParameter(ccdYsize, v)
   }
 
-  class RoiStatus(sa: CaStatusAcceptor, i: Int) {
+  case class RoiStatus(sa: CaStatusAcceptor, i: Int) {
     def ccdXstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXstart$i").value.toInt)
     def ccdYstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYstart$i").value.toInt)
     def ccdXsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXsize$i").value.toInt)
