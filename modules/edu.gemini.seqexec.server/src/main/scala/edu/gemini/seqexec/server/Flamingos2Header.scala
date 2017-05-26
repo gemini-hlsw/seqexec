@@ -19,7 +19,7 @@ import scalaz.concurrent.Task
 
 class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, f2Reader: Flamingos2Header.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header._
-  import Header.Defaults._
+  import Header.Implicits._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
 
     sendKeywords(id, inst, hs, List(
@@ -35,7 +35,7 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
       }, "NREADS"),
       buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), "PREIMAGE"),
       buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
-      buildString(tcsKeywordsReader.getUT, "TIME-OBS")
+      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS")
     ))
   }
 
@@ -43,6 +43,7 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
 }
 
 object Flamingos2Header {
+  import Header.Implicits._
 
   def apply(hs: DhsClient, f2ObsReader: ObsKeywordsReader, f2Reader: InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) = new Flamingos2Header(hs, f2ObsReader, f2Reader, tcsKeywordsReader)
 
@@ -71,11 +72,9 @@ object Flamingos2Header {
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
-    implicit def fromStringOption(v: Option[String]): SeqAction[String] = SeqAction(v.getOrElse("No Value"))
+    override def getHealth: SeqAction[String] = Flamingos2Epics.instance.health.toSeqAction
 
-    override def getHealth: SeqAction[String] = Flamingos2Epics.instance.health
-
-    override def getState: SeqAction[String] = Flamingos2Epics.instance.state
+    override def getState: SeqAction[String] = Flamingos2Epics.instance.state.toSeqAction
   }
 
 }

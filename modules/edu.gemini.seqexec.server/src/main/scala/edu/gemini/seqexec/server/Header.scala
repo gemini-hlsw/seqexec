@@ -3,19 +3,20 @@ package edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient._
 
-/**
-  * Created by jluhrs on 1/31/17.
-  */
+import scalaz._
+import Scalaz._
+
 trait Header {
   def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit]
   def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit]
 }
 
 object Header {
-
+  // Default values for FITS headers
   val IntDefault: Int = -9999
   val DoubleDefault: Double = -9999.0
-  val StrDefault = "No Value"
+  val StrDefault: String = "No Value"
+  val BooleanDefault: Boolean = false
 
   def buildKeyword[A](get: SeqAction[A], name: String, f: (String, A) => DhsClient.Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
     k => get.map(x => k.add(f(name, x)))
@@ -38,14 +39,30 @@ object Header {
   } yield ()
 
 
-  object Defaults {
-    implicit def fromStringOption(v: SeqAction[Option[String]]): SeqAction[String] = v.map(_.getOrElse(StrDefault))
+  object Implicits {
+    // A simple typeclass to encapsulate default values
+    trait DefaultValue[A] {
+      def default: A
+    }
+    implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultValue[A]) {
+      def orDefault: A = d.default
+    }
+    implicit val IntDefaultValue = new DefaultValue[Int] {
+      val default = IntDefault
+    }
+    implicit val DoubleDefaultValue = new DefaultValue[Double] {
+      val default = DoubleDefault
+    }
+    implicit val StrDefaultValue = new DefaultValue[String] {
+      val default = StrDefault
+    }
 
-    implicit def fromDoubleOption(v: SeqAction[Option[Double]]): SeqAction[Double] = v.map(_.getOrElse(DoubleDefault))
+    implicit class A2SeqAction[A: DefaultValue](val v: Option[A]) {
+      def toSeqAction: SeqAction[A] = SeqAction(v.orDefault)
+    }
 
-    implicit def fromIntOption(v: SeqAction[Option[Int]]): SeqAction[Int] = v.map(_.getOrElse(IntDefault))
-
-    implicit def fromBooleanOption(v: SeqAction[Option[Boolean]]): SeqAction[Boolean] = v.map(_.getOrElse(false))
+    implicit class SeqActionOption2SeqAction[A: DefaultValue](val v: SeqAction[Option[A]]) {
+      def orDefault: SeqAction[A] = v.map(_.orDefault)
+    }
   }
-
 }
