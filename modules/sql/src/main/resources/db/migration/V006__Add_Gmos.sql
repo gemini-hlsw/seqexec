@@ -106,6 +106,44 @@ ZPrime_CaT	z+CaT	z_G0304 + CaT_G0309	0.890	f
 UPrime	u	u_G0308	0.350	t
 \.
 
+
+--
+-- Name: e_gmos_north_fpu; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gmos_north_fpu (
+    id         identifier            PRIMARY KEY,
+    short_name character varying(12) NOT NULL,
+    long_name  character varying(30) NOT NULL,
+    slit_width numeric(3,2)
+);
+
+ALTER TABLE e_gmos_north_fpu OWNER TO postgres;
+
+
+--
+-- Data for Name: e_gmos_south_disperser; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gmos_north_fpu (id, short_name, long_name, slit_width) FROM stdin;
+Longslit1	0.25arcsec	Longslit 0.25 arcsec	0.25
+Longslit2	0.50arcsec	Longslit 0.50 arcsec	0.50
+Longslit3	0.75arcsec	Longslit 0.75 arcsec	0.75
+Longslit4	1.0arcsec	Longslit 1.00 arcsec	1.00
+Longslit5	1.5arcsec	Longslit 1.50 arcsec	1.50
+Longslit6	2.0arcsec	Longslit 2.00 arcsec	2.00
+Longslit7	5.0arcsec	Longslit 5.00 arcsec	5.00
+Ifu2	IFU-B	IFU Left Slit (blue)	\N
+Ifu3	IFU-R	IFU Right Slit (red)	\N
+Ns0	NS0.25arcsec	N and S 0.25 arcsec	0.25
+Ns1	NS0.5arcsec	N and S 0.50 arcsec	0.50
+Ns2	NS0.75arcsec	N and S 0.75 arcsec	0.75
+Ns3	NS1.0arcsec	N and S 1.00 arcsec	1.00
+Ns4	NS1.5arcsec	N and S 1.50 arcsec	1.50
+Ns5	NS2.0arcsec	N and S 2.00 arcsec	2.00
+\.
+
+
 --
 -- Name: e_gmos_south_disperser; Type: TABLE; Schema: public; Owner: postgres
 --
