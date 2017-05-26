@@ -220,6 +220,12 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("GmosNorthFilter") {
+        type GmosNorthFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Double, 'obsolete -> Boolean`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_gmos_north_filter""".query[(String, GmosNorthFilterRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("GmosSouthDisperser") {
         type GmosSouthDisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'rulingDensity -> Int, 'obsolete -> Boolean`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, ruling_density, obsolete FROM e_gmos_south_disperser""".query[(String, GmosSouthDisperserRec)].list
