@@ -133,3 +133,54 @@ R600_G5324	R600	R600_G5324	600	f
 R400_G5325	R400	R400_G5325	400	f
 R150_G5326	R150	R150_G5326	150	f
 \.
+
+
+--
+-- Name: e_gmos_south_filter; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gmos_south_filter (
+    id         identifier            PRIMARY KEY,
+    short_name character varying(10) NOT NULL,
+    long_name  character varying(30) NOT NULL,
+    wavelength numeric(4,3)          NOT NULL,
+    obsolete   boolean               NOT NULL
+);
+
+ALTER TABLE e_gmos_south_filter OWNER TO postgres;
+
+
+--
+-- Data for Name: e_gmos_south_filter; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gmos_south_filter(id, short_name, long_name, wavelength, obsolete) FROM stdin;
+UPrime	u	u_G0332	0.350	f
+GPrime	g	g_G0325	0.475	f
+RPrime	r	r_G0326	0.630	f
+IPrime	i	i_G0327	0.780	f
+ZPrime	z	z_G0328	0.925	f
+Z	Z	Z_G0343	0.876	f
+Y	Y	Y_G0344	1.01	f
+GG455	GG455	GG455_G0329	0.680	f
+OG515	OG515	OG515_G0330	0.710	f
+RG610	RG610	RG610_G0331	0.750	f
+RG780	RG780	RG780_G0334	0.850	f
+CaT	CaT	CaT_G0333	0.860	f
+HartmannA_RPrime	r+HartA	HartmannA_G0337 + r_G0326	0.630	f
+HartmannB_RPrime	r+HartB	HartmannB_G0338 + r_G0326	0.630	f
+GPrime_GG455	g+GG455	g_G0325 + GG455_G0329	0.506	f
+GPrime_OG515	g+OG515	g_G0325 + OG515_G0330	0.536	f
+RPrime_RG610	r+RG610	r_G0326 + RG610_G0331	0.657	f
+IPrime_RG780	i+RG780	i_G0327 + RG780_G0334	0.819	f
+IPrime_CaT	i+CaT	i_G0327 + CaT_G0333	0.815	f
+ZPrime_CaT	z+Cat	z_G0328 + CaT_G0333	0.890	f
+Ha	Ha	Ha_G0336	0.656	f
+SII	SII	SII_G0335	0.672	f
+HaC	HaC	HaC_G0337	0.662	f
+OIII	OIII	OIII_G0338	0.499	f
+OIIIC	OIIIC	OIIIC_G0339	0.514	f
+HeII	HeII	HeII_G0340	0.468	f
+HeIIC	HeIIC	HeIIC_G0341	0.478	f
+Lya395	Lya395	Lya395_G0342	0.3955	f
+\.
