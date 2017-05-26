@@ -74,6 +74,21 @@ object GmosSouth {
     case _                    => UnsetShutter
   }
 
+  private def customROIs(config: Config): List[ROI] = {
+    def attemptROI(i: Int): Option[ROI] =
+      (for {
+        xStart <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Xmin").as[Int]
+        xRange <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Xrange").as[Int]
+        yStart <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Ymin").as[Int]
+        yRange <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Yrange").as[Int]
+      } yield new ROI(xStart, yStart, xRange, yRange)).toOption
+      
+    val rois = for {
+      i <- 1 to 5
+    } yield attemptROI(i)
+    rois.toList.flatten
+  }
+
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] =
     (for {
       filter           <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
@@ -103,8 +118,9 @@ object GmosSouth {
       xBinning     <- config.extract(INSTRUMENT_KEY / CCD_X_BIN_PROP).as[Binning]
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
       builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltinROI]
+      customROI = if (builtInROI == BuiltinROI.CUSTOM) customROIs(config) else Nil
       // TODO Add the custom ROI
-    } yield DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, Nil))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, customROI))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: Config): SeqAction[GmosSouthConfig] = EitherT( Task ( for {
       cc <- ccConfigFromSequenceConfig(config)
