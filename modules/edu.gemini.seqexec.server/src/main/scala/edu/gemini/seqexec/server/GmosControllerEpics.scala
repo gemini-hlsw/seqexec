@@ -91,24 +91,27 @@ object GmosControllerEpics extends GmosSouthController {
     case RegionsOfInterest(b, rois)                        => rois.length
   }
 
-  case class ROI(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
+  case class ROIValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
-  private def builtInROI(b: BuiltinROI): ROI = b match {
+  private def builtInROI(b: BuiltinROI): ROIValues = b match {
     // gmosROI.lut
-    case BuiltinROI.FULL_FRAME       => ROI(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
-    case BuiltinROI.CCD2             => ROI(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
-    case BuiltinROI.CENTRAL_SPECTRUM => ROI(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
-    case BuiltinROI.CENTRAL_STAMP    => ROI(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
-    case _                           => ROI(xStart = 0, xSize = 0, yStart = 0, ySize = 0)
+    case BuiltinROI.FULL_FRAME       => ROIValues(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
+    case BuiltinROI.CCD2             => ROIValues(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
+    case BuiltinROI.CENTRAL_SPECTRUM => ROIValues(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
+    case BuiltinROI.CENTRAL_STAMP    => ROIValues(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
+    case _                           => ROIValues(xStart = 0, xSize = 0, yStart = 0, ySize = 0)
   }
 
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s match {
     case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(binning, 1, builtInROI(b))
-    // TODO Support custom ROIs
-    case RegionsOfInterest(b, rois)                        => SeqAction.void
+    case RegionsOfInterest(b, rois)                        => rois.zipWithIndex.map { case (roi, i) =>
+      roiParameters(binning, i, toRoiValues(roi))
+    }.sequenceU.map(_ => ())
   }
 
-  private def roiParameters(binning: CCDBinning, index: Int, roi: ROI): SeqAction[Unit] = {
+  def toRoiValues(roi: ROI): ROIValues = ROIValues(xStart = roi.getXStart, xSize = roi.getYStart, yStart = 0, ySize = 0)
+
+  private def roiParameters(binning: CCDBinning, index: Int, roi: ROIValues): SeqAction[Unit] = {
     DC.rois.get(index).map { r =>
       for {
         _ <- r.setCcdXstart1(roi.xStart)

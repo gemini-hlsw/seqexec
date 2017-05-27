@@ -83,10 +83,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
 
     for {
-      stepType <- calcStepType(config)
-      inst     <- toInstrumentSys(stepType.instrument)
-      systems  <- calcSystems(stepType)
-      headers  <- calcHeaders(config, stepType)
+      stepType  <- calcStepType(config)
+      inst      <- toInstrumentSys(stepType.instrument)
+      systems   <- calcSystems(stepType)
+      headers   <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
 
@@ -139,7 +139,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Resource.GMOS =>
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
       val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config),gmosInstReader, tcsReader))
+      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsReader))
     case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
