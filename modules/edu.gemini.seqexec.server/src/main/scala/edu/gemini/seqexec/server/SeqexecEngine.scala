@@ -20,7 +20,7 @@ import scalaz.stream.time._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.spModel.core.Peer
-import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.core.SPProgramID
 import knobs.Config
@@ -130,9 +130,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
     val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action]])] = for {
-      odbSeq <- EitherT(Task(odbProxy.read(seqId)))
-      progId <- EitherT(Task.delay(odbSeq.extract(OBSERVE_KEY / InstConstants.PROGRAMID_PROP).as[SPProgramID].leftMap(ConfigUtilOps.explainExtractError)))
-      name   <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
+      odbSeq       <- EitherT(Task(odbProxy.read(seqId)))
+      progIdString <- EitherT(Task.delay(odbSeq.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
+      progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
+      name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
     } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
 
     val u = t.flatMapF{
