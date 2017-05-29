@@ -210,9 +210,10 @@ object SeqTranslate {
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
     def extractGaos(inst: Resource.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
-      case -\/(ConfigUtilOps.ConversionError(_,_)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
-      case -\/(ConfigUtilOps.KeyNotFound(_))       => TrySeq(CelestialObject(inst))
-      case \/-(gaos)                               => gaos match {
+      case -\/(ConfigUtilOps.ConversionError(_, _)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
+      case -\/(ConfigUtilOps.ContentError(_))       => TrySeq.fail(Unexpected("Logical error"))
+      case -\/(ConfigUtilOps.KeyNotFound(_))        => TrySeq(CelestialObject(inst))
+      case \/-(gaos)                                => gaos match {
         case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
         case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
       }
