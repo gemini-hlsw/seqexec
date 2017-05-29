@@ -1,13 +1,14 @@
-package edu.gemini.seqexec.web.server.odbclient
+package edu.gemini.seqexec.server.odbclient
 
 import edu.gemini.seqexec.model.Model.SequenceId
+import edu.gemini.seqexec.server.ConfigUtilOps.ExtractFailure
 import edu.gemini.spModel.core.SPProgramID
 import knobs.Config
 import org.http4s.client.blaze._
 import org.http4s.{Uri, scalaxml}
 
 import scala.xml.Elem
-import scalaz.Kleisli
+import scalaz.{Kleisli, \/}
 import scalaz.concurrent.Task
 
 case class ODBClientConfig(odbHost: String)
@@ -16,7 +17,8 @@ case class ODBClient(config: ODBClientConfig) {
   val httpClient = PooledHttp1Client()
   // Entity Decoder for xml
   implicit val decoder = scalaxml.xml()
-  def observationTitle(id: SPProgramID, obsId: SequenceId): Task[String] = {
+
+  def observationTitle(id: SPProgramID, obsId: SequenceId): Task[ExtractFailure \/ String] = {
     val baseUri = s"${config.odbHost}/odbbrowser/observations"
     val target = Uri.fromString(baseUri).toOption.get +?("programReference", id.stringValue)
     httpClient.expect[Elem](target).map { xml =>
@@ -25,7 +27,7 @@ case class ODBClient(config: ODBClientConfig) {
         if (x \ "id").text == obsId
         n <- x \ "name"
       } yield n
-    }.map(_.text)
+    }.map(_.text).map(\/.right)
   }
 }
 

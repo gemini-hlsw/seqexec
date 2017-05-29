@@ -6,7 +6,9 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.{Engine, Event, EventSystem, Executed, Failed}
+import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Sequence}
+import edu.gemini.seqexec.server.odbclient.{ODBClient, ODBClientConfig}
+import edu.gemini.seqexec.server.ConfigUtilOps._
 
 import scalaz._
 import Scalaz._
@@ -18,6 +20,9 @@ import scalaz.stream.time._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.spModel.core.Peer
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import edu.gemini.spModel.obscomp.InstConstants
+import edu.gemini.spModel.core.SPProgramID
 import knobs.Config
 
 /**
@@ -28,6 +33,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
+
+  val odbClient = ODBClient(ODBClientConfig(settings.odbHost))
 
   val systems = SeqTranslate.Systems(
     odbProxy,
@@ -122,11 +129,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
   def load(q: engine.EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
-    val t = EitherT(for {
-      odbSeq <- Task(odbProxy.read(seqId))
-      name   <- Task.now("Name")
-    } yield odbSeq.map(s => translator.sequence(translatorSettings)(seqId, s, name))
-    )
+    val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action]])] = for {
+      odbSeq <- EitherT(Task(odbProxy.read(seqId)))
+      progId <- EitherT(Task.delay(odbSeq.extract(OBSERVE_KEY / InstConstants.PROGRAMID_PROP).as[SPProgramID].leftMap(ConfigUtilOps.explainExtractError)))
+      name   <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
+    } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
+
     val u = t.flatMapF{
       case (err :: _, None)  => q.enqueueOne(Event.logMsg(SeqexecFailure.explain(err))).map(_.right)
       case (errs, Some(seq)) =>
