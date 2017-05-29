@@ -31,7 +31,7 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = {
     val adcKeywords = {
-      if (GmosEpics.instance.adcUsed.forall(_ == true)) {
+      if (gmosReader.isADCInUse) {
         List(
           buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
           buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
@@ -155,6 +155,7 @@ object GmosHeader {
     def roiValues: Map[Int, RoiValues]
     def aExpCount: SeqAction[Int]
     def bExpCount: SeqAction[Int]
+    def isADCInUse: Boolean
   }
 
   object DummyInstKeywordReader extends InstKeywordsReader {
@@ -199,6 +200,7 @@ object GmosHeader {
     override def roiValues: Map[Int, RoiValues] = Map.empty
     override def aExpCount: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def bExpCount: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def isADCInUse: Boolean = false
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader {
@@ -255,5 +257,7 @@ object GmosHeader {
         }).toList.flatten.toMap
     override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
+    override def isADCInUse: Boolean =
+      GmosEpics.instance.adcUsed.forall(_ == true)
   }
 }
