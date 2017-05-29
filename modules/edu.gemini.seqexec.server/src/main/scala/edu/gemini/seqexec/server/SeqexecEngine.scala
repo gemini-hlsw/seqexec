@@ -34,7 +34,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  val odbClient = ODBClient(ODBClientConfig(settings.odbHost))
+  val odbClient = ODBClient(ODBClientConfig(settings.odbHost, ODBClient.DefaultODBBrowserPort))
 
   val systems = SeqTranslate.Systems(
     odbProxy,
