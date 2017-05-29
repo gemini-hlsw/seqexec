@@ -58,7 +58,7 @@ class packageSpec extends FlatSpec {
          Sequence.State.init(
            Sequence(
              "First",
-             SequenceMetadata("F2", None),
+             SequenceMetadata("F2", None, ""),
              List(
                Step(
                  1,
@@ -93,7 +93,7 @@ class packageSpec extends FlatSpec {
     Sequence.State.init(
       Sequence(
         "First",
-        SequenceMetadata("GMOS", None),
+        SequenceMetadata("GMOS", None, ""),
         List(
           Step(
             1,
@@ -210,7 +210,7 @@ class packageSpec extends FlatSpec {
       None,
       Map((seqId, Sequence.State.init(Sequence(
         "First",
-        SequenceMetadata("GMOS", None),
+        SequenceMetadata("GMOS", None, ""),
         List(
           Step(
             1,

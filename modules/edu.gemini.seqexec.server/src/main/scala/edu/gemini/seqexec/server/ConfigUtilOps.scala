@@ -77,7 +77,7 @@ object ConfigUtilOps {
   }
 
   implicit class ConfigSequenceOps(val c: ConfigSequence) extends AnyVal {
-    // config syntax: cfg.extract(key).as[Type]
+    // config syntax: cfgSequence.extract(key).as[Type]
     def extract(key: ItemKey): Extracted[ConfigSequence] = new Extracted(c, key)
   }
 }
