@@ -55,7 +55,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s ++ Http4sClient,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s,
 
     // Settings to optimize the use of sbt-revolver
 
@@ -192,7 +192,7 @@ lazy val edu_gemini_seqexec_server = project
           POT,
           EpicsACM,
           Knobs
-      ) ++ WDBAClient ++ TestLibs.value
+      ) ++ WDBAClient ++ Http4sClient ++ TestLibs.value
   )
 
 // This should eventually replaced by seqexec_server
