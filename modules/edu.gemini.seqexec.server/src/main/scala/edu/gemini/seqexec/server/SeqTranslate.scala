@@ -213,14 +213,15 @@ object SeqTranslate {
       case -\/(ConfigUtilOps.ConversionError(_, _)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case -\/(ConfigUtilOps.ContentError(_))       => TrySeq.fail(Unexpected("Logical error"))
       case -\/(ConfigUtilOps.KeyNotFound(_))        => TrySeq(CelestialObject(inst))
-      case \/-(gaos)                                => gaos match {
-        case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
-        case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
-      }
+      case \/-(gaos)                                =>
+        gaos match {
+          case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
+          case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
+        }
     }
 
-    ( config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
-      |@| extractInstrument(config) ) { (obsType, inst) =>
+    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
+      |@| extractInstrument(config)) { (obsType, inst) =>
       obsType match {
         case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))

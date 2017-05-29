@@ -77,10 +77,10 @@ object GmosSouth {
   private def customROIs(config: Config): List[ROI] = {
     def attemptROI(i: Int): Option[ROI] =
       (for {
-        xStart <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Xmin").as[Int]
-        xRange <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Xrange").as[Int]
-        yStart <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Ymin").as[Int]
-        yRange <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Yrange").as[Int]
+        xStart <- config.extract(INSTRUMENT_KEY / s"customROI${i}Xmin").as[java.lang.Integer].map(_.toInt)
+        xRange <- config.extract(INSTRUMENT_KEY / s"customROI${i}Xrange").as[java.lang.Integer].map(_.toInt)
+        yStart <- config.extract(INSTRUMENT_KEY / s"customROI${i}Ymin").as[java.lang.Integer].map(_.toInt)
+        yRange <- config.extract(INSTRUMENT_KEY / s"customROI${i}Yrange").as[java.lang.Integer].map(_.toInt)
       } yield new ROI(xStart, yStart, xRange, yRange)).toOption
 
     val rois = for {
