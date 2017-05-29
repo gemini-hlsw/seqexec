@@ -17,6 +17,7 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType.{StageModeSouth => StageMode
 
 import squants.Length
 
+import scalaz._
 import scalaz.Scalaz._
 import scalaz.EitherT
 import scalaz.concurrent.Task
@@ -87,24 +88,27 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   private def roiNumUsed(s: RegionsOfInterest): Int = s match {
-    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => 1
-    case RegionsOfInterest(b, rois)                        => rois.length
+    case RegionsOfInterest(\/-(rois)) => rois.length
+    case RegionsOfInterest(-\/(b))    => 1
   }
 
   // Parameters to define a ROI
-  // Make the values impossible to build with invalid values
   sealed abstract case class XStart(value: Int)
+  // Make the values impossible to build with invalid values
   object XStart {
     def apply(v: Int): Option[XStart] = (v > 0) option new XStart(v) {}
   }
+
   sealed abstract case class XSize(value: Int)
   object XSize {
     def apply(v: Int): Option[XSize] = (v > 0) option new XSize(v) {}
   }
+
   sealed abstract case class YStart(value: Int)
   object YStart {
     def apply(v: Int): Option[YStart] = (v > 0) option new YStart(v) {}
   }
+
   sealed abstract case class YSize(value: Int)
   object YSize {
     def apply(v: Int): Option[YSize] = (v > 0) option new YSize(v) {}
@@ -134,8 +138,8 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s match {
-    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(binning, 1, ROIValues.builtInROI(b))
-    case RegionsOfInterest(b, rois)                        => rois.zipWithIndex.map { case (roi, i) =>
+    case RegionsOfInterest(-\/(b))    => roiParameters(binning, 1, ROIValues.builtInROI(b))
+    case RegionsOfInterest(\/-(rois)) => rois.zipWithIndex.map { case (roi, i) =>
       roiParameters(binning, i, ROIValues(roi))
     }.sequenceU.flatMap(_ => SeqAction.void)
   }

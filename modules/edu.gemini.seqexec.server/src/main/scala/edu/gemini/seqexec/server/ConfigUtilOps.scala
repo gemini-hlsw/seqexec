@@ -18,10 +18,12 @@ object ConfigUtilOps {
   sealed trait ExtractFailure
   case class KeyNotFound(key: ItemKey) extends ExtractFailure
   case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
+  case class ContentError(msg: String) extends ExtractFailure
 
   def explain(e: ExtractFailure): String = e match {
     case KeyNotFound(k)          => s"Missing config value for key ${k.getPath}"
     case ConversionError(k, msg) => s"Error reading key ${k.getPath}: $msg"
+    case ContentError(msg)       => s"Logical error: $msg"
   }
 
   def explainExtractError(e: ExtractFailure): SeqexecFailure =

@@ -1,8 +1,12 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
+import edu.gemini.seqexec.server.SeqexecFailure._
+import edu.gemini.seqexec.odb.SeqFailure
 import squants.Length
 import scala.concurrent.duration.Duration
+import scalaz.{\/, -\/, \/-}
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 
 trait GmosSouthController {
   import GmosSouthController._
@@ -74,7 +78,16 @@ object GmosSouthController {
 
   final case class CCDBinning(x: Binning, y: Binning)
 
-  final case class RegionsOfInterest(bulitInROI: BuiltinROI, customROI: List[ROI])
+  sealed abstract class RegionsOfInterest(val rois: BuiltinROI \/ List[ROI])
+  object RegionsOfInterest {
+    def fromOCS(builtIn: BuiltinROI, custom: List[ROI]): SeqexecFailure \/ RegionsOfInterest =
+      (builtIn, custom) match {
+        case (b, r) if b != BuiltinROI.CUSTOM && r.isEmpty => \/.right(new RegionsOfInterest(\/.left(b)) {})
+        case (BuiltinROI.CUSTOM, r) if r.nonEmpty => \/.right(new RegionsOfInterest(\/.right(r)) {})
+        case _ => \/.left(Unexpected("Inconsistent values for GMOS regions of interest"))
+      }
+    def unapply(r: RegionsOfInterest): Option[BuiltinROI \/ List[ROI]] = Some(r.rois)
+  }
 
   final case class DCConfig(t: ExposureTime, b: BiasTime, s: ShutterState, r: CCDReadout, bi: CCDBinning, roi: RegionsOfInterest)
 

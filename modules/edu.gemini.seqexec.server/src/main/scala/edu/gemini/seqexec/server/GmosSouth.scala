@@ -82,7 +82,7 @@ object GmosSouth {
         yStart <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Ymin").as[Int]
         yRange <- config.extract(INSTRUMENT_KEY / s"${CUSTOM_ROI_PROP.getName}${i}Yrange").as[Int]
       } yield new ROI(xStart, yStart, xRange, yRange)).toOption
-      
+
     val rois = for {
       i <- 1 to 5
     } yield attemptROI(i)
@@ -119,8 +119,10 @@ object GmosSouth {
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
       builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltinROI]
       customROI = if (builtInROI == BuiltinROI.CUSTOM) customROIs(config) else Nil
-      // TODO Add the custom ROI
-    } yield DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), RegionsOfInterest(builtInROI, customROI))).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      roi          <- RegionsOfInterest.fromOCS(builtInROI, customROI).leftMap(e => ContentError(SeqexecFailure.explain(e)))
+    } yield
+      DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))
+        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: Config): SeqAction[GmosSouthConfig] = EitherT( Task ( for {
       cc <- ccConfigFromSequenceConfig(config)
