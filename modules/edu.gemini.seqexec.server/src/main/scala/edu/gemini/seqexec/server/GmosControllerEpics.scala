@@ -17,6 +17,7 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType.{StageModeSouth => StageMode
 
 import squants.Length
 
+import scalaz._
 import scalaz.Scalaz._
 import scalaz.EitherT
 import scalaz.concurrent.Task
@@ -87,34 +88,69 @@ object GmosControllerEpics extends GmosSouthController {
   }
 
   private def roiNumUsed(s: RegionsOfInterest): Int = s match {
-    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => 1
-    case RegionsOfInterest(b, rois)                        => rois.length
+    case RegionsOfInterest(\/-(rois)) => rois.length
+    case RegionsOfInterest(-\/(b))    => 1
   }
 
-  case class ROI(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
+  // Parameters to define a ROI
+  sealed abstract case class XStart(value: Int)
+  // Make the values impossible to build with invalid values
+  object XStart {
+    def fromInt(v: Int): Option[XStart] = (v > 0) option new XStart(v) {}
+  }
 
-  private def builtInROI(b: BuiltinROI): ROI = b match {
-    // gmosROI.lut
-    case BuiltinROI.FULL_FRAME       => ROI(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
-    case BuiltinROI.CCD2             => ROI(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
-    case BuiltinROI.CENTRAL_SPECTRUM => ROI(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
-    case BuiltinROI.CENTRAL_STAMP    => ROI(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
-    case _                           => ROI(xStart = 0, xSize = 0, yStart = 0, ySize = 0)
+  sealed abstract case class XSize(value: Int)
+  object XSize {
+    def fromInt(v: Int): Option[XSize] = (v > 0) option new XSize(v) {}
+  }
+
+  sealed abstract case class YStart(value: Int)
+  object YStart {
+    def fromInt(v: Int): Option[YStart] = (v > 0) option new YStart(v) {}
+  }
+
+  sealed abstract case class YSize(value: Int)
+  object YSize {
+    def fromInt(v: Int): Option[YSize] = (v > 0) option new YSize(v) {}
+  }
+
+  sealed abstract case class ROIValues(xStart: XStart, xSize: XSize, yStart: YStart, ySize: YSize)
+
+  object ROIValues {
+    // Build out of fixed values, I wish this could be constrained a bit more
+    // but these are hardcoded values according to LUTS
+    // Being private we ensure it is mostly sane
+    private def fromInt(xStart: Int, xSize: Int, yStart: Int, ySize: Int): Option[ROIValues] =
+      (XStart.fromInt(xStart) |@| XSize.fromInt(xSize) |@| YStart.fromInt(yStart) |@| YSize.fromInt(ySize))(new ROIValues(_, _, _, _) {})
+
+    // Built from OCS ROI values
+    def fromOCS(roi: ROI): Option[ROIValues] =
+      (XStart.fromInt(roi.getXStart) |@| XSize.fromInt(roi.getXSize) |@| YStart.fromInt(roi.getYStart) |@| YSize.fromInt(roi.getYSize))(new ROIValues(_, _, _, _) {})
+
+    def builtInROI(b: BuiltinROI): Option[ROIValues] = b match {
+      // gmosROI.lut
+      case BuiltinROI.FULL_FRAME       => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
+      case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
+      case BuiltinROI.CENTRAL_SPECTRUM => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
+      case BuiltinROI.CENTRAL_STAMP    => ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
+      case _                           => None
+    }
   }
 
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s match {
-    case RegionsOfInterest(b, _) if b != BuiltinROI.CUSTOM => roiParameters(binning, 1, builtInROI(b))
-    // TODO Support custom ROIs
-    case RegionsOfInterest(b, rois)                        => SeqAction.void
+    case RegionsOfInterest(-\/(b))    => roiParameters(binning, 1, ROIValues.builtInROI(b))
+    case RegionsOfInterest(\/-(rois)) => rois.zipWithIndex.map { case (roi, i) =>
+      roiParameters(binning, i, ROIValues.fromOCS(roi))
+    }.sequenceU.flatMap(_ => SeqAction.void)
   }
 
-  private def roiParameters(binning: CCDBinning, index: Int, roi: ROI): SeqAction[Unit] = {
-    DC.rois.get(index).map { r =>
+  private def roiParameters(binning: CCDBinning, index: Int, roi: Option[ROIValues]): SeqAction[Unit] = {
+    (roi |@| DC.rois.get(index)) { (roi, r) =>
       for {
-        _ <- r.setCcdXstart1(roi.xStart)
-        _ <- r.setCcdXsize1(roi.xSize / binning.x.getValue)
-        _ <- r.setCcdYstart1(roi.yStart)
-        _ <- r.setCcdYsize1(roi.ySize / binning.y.getValue)
+        _ <- r.setCcdXstart1(roi.xStart.value)
+        _ <- r.setCcdXsize1(roi.xSize.value / binning.x.getValue)
+        _ <- r.setCcdYstart1(roi.yStart.value)
+        _ <- r.setCcdYsize1(roi.ySize.value / binning.y.getValue)
       } yield ()
     }.fold(SeqAction.void)(identity)
   }

@@ -83,10 +83,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
 
     for {
-      stepType <- calcStepType(config)
-      inst     <- toInstrumentSys(stepType.instrument)
-      systems  <- calcSystems(stepType)
-      headers  <- calcHeaders(config, stepType)
+      stepType  <- calcStepType(config)
+      inst      <- toInstrumentSys(stepType.instrument)
+      systems   <- calcSystems(stepType)
+      headers   <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
 
@@ -139,7 +139,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Resource.GMOS =>
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
       val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config),gmosInstReader, tcsReader))
+      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsReader))
     case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
@@ -210,16 +210,18 @@ object SeqTranslate {
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
     def extractGaos(inst: Resource.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
-      case -\/(ConfigUtilOps.ConversionError(_,_)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
-      case -\/(ConfigUtilOps.KeyNotFound(_))       => TrySeq(CelestialObject(inst))
-      case \/-(gaos)                               => gaos match {
-        case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
-        case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
-      }
+      case -\/(ConfigUtilOps.ConversionError(_, _)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
+      case -\/(ConfigUtilOps.ContentError(_))       => TrySeq.fail(Unexpected("Logical error"))
+      case -\/(ConfigUtilOps.KeyNotFound(_))        => TrySeq(CelestialObject(inst))
+      case \/-(gaos)                                =>
+        gaos match {
+          case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
+          case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
+        }
     }
 
-    ( config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
-      |@| extractInstrument(config) ) { (obsType, inst) =>
+    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
+      |@| extractInstrument(config)) { (obsType, inst) =>
       obsType match {
         case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
