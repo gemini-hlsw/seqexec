@@ -1,5 +1,7 @@
 import doobie.imports._
 
+import edu.gemini.spModel.core.Angle
+
 import java.io.File
 
 import java.time.Duration
@@ -27,14 +29,19 @@ object gen2 {
   implicit val DurationMeta: Meta[Duration] =
     Meta[Long].xmap(Duration.ofMillis, _.toMillis)
 
+  implicit val AngleMeta: Meta[Angle] =
+    Meta[Double].xmap(Angle.fromArcsecs, _.toArcsecs)
+
   object ToDeclaration extends Poly1 {
     implicit def caseString  [S <: Symbol] = at[(S, String)  ] { case (s, _) => "  val " + s.name + ": String" }
     implicit def caseInt     [S <: Symbol] = at[(S, Int)     ] { case (s, _) => "  val " + s.name + ": Int" }
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
     implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": java.time.Duration" }
+    implicit def caseAngle   [S <: Symbol] = at[(S, Angle)   ] { case (s, _) => "  val " + s.name + ": edu.gemini.spModel.core.Angle"}
 
-    implicit def caseOptionDouble [S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
+    implicit def caseOptionAngle [S <: Symbol] = at[(S, Option[Angle] ) ] { case (s, _) => "  val " + s.name + ": Option[edu.gemini.spModel.core.Angle]" }
+    implicit def caseOptionDouble[S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
   }
 
   object ToLiteral extends Poly1 {
@@ -43,6 +50,9 @@ object gen2 {
     implicit val caseBoolean      = at[Boolean ](a => a.toString)
     implicit val caseDouble       = at[Double  ](a => a.toString)
     implicit val caseDuration     = at[Duration](a => s"java.time.Duration.ofMillis(${a.toMillis})")
+    implicit val caseAngle        = at[Angle   ](a => s"edu.gemini.spModel.core.Angle.fromArcsecs(${a.toArcsecs})")
+
+    implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[edu.gemini.spModel.core.Angle]")(a0 => s"Some(edu.gemini.spModel.core.Angle.fromArcsecs(${a0.toArcsecs}))"))
     implicit val caseOptionDouble = at[Option[Double]](a => a.toString)
   }
 
@@ -209,7 +219,7 @@ object gen2 {
       },
 
       enum("GmosDetector") {
-        type GmosDetectorRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Double, 'southPixelSize -> Double, 'suffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
+        type GmosDetectorRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Angle, 'southPixelSize -> Angle, 'suffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, north_pixel_size, south_pixel_size, shuffle_offset, x_size, y_size, max_rois FROM e_gmos_detector""".query[(String, GmosDetectorRec)].list
         io.transact(xa).unsafePerformIO
       },
@@ -221,13 +231,13 @@ object gen2 {
       },
 
       enum("GmosNorthFilter") {
-        type GmosNorthFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Double, 'obsolete -> Boolean`.T
+        type GmosNorthFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Angle, 'obsolete -> Boolean`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_gmos_north_filter""".query[(String, GmosNorthFilterRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("GmosNorthFpu") {
-        type GmosNorthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Double]`.T
+        type GmosNorthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Angle]`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, slit_width FROM e_gmos_north_fpu""".query[(String, GmosNorthFpuRec)].list
         io.transact(xa).unsafePerformIO
       },
@@ -239,13 +249,13 @@ object gen2 {
       },
 
       enum("GmosSouthFilter") {
-        type GmosSouthFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Double, 'obsolete -> Boolean`.T
+        type GmosSouthFilterRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Angle, 'obsolete -> Boolean`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_gmos_south_filter""".query[(String, GmosSouthFilterRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("GmosSouthFpu") {
-        type GmosSouthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Double]`.T
+        type GmosSouthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Angle]`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, slit_width FROM e_gmos_south_fpu""".query[(String, GmosSouthFpuRec)].list
         io.transact(xa).unsafePerformIO
       },
