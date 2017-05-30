@@ -52,9 +52,9 @@ object Settings {
     val knobs        = "4.0.30-scalaz-7.2"
 
     // test libraries
-    val scalaTest             = "3.0.1"
-    val scalaCheck            = "1.13.4"
-    val scalaCheckShapeless   = "1.1.3"
+    val scalaTest             = "3.0.3"
+    val scalaCheck            = "1.13.5"
+    val scalaCheckShapeless   = "1.1.5"
 
     // Pure JS libraries
     val reactJS        = "15.3.2"
