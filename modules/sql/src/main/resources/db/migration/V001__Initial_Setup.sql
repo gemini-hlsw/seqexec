@@ -61,7 +61,7 @@ ALTER TYPE f2_decker OWNER TO postgres;
 --
 
 CREATE DOMAIN identifier AS character varying(32)
-	CONSTRAINT identifier_check CHECK (((VALUE)::text ~ '^[A-Z][A-Za-z0-9]*$'::text));
+	CONSTRAINT identifier_check CHECK (((VALUE)::text ~ '^[A-Z][A-Za-z0-9_]*$'::text));
 
 
 ALTER DOMAIN identifier OWNER TO postgres;

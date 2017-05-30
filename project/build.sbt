@@ -6,3 +6,5 @@ libraryDependencies ++= Seq(
 )
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full)
+
+unmanagedJars in Compile += baseDirectory.value / "../modules/core/lib/edu-gemini-spmodel-core_2.11-2016001.1.1.jar"
