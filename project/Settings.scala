@@ -38,7 +38,7 @@ object Settings {
     val scalaJQuery  = "1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.10"
+    val scalaZ       = "7.2.13"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
