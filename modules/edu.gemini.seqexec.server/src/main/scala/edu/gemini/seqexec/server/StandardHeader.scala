@@ -14,7 +14,7 @@ import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import squants.motion.{Pressure, PressureUnit}
+import squants.motion.Pressure
 
 import scalaz._
 import Scalaz._
@@ -304,10 +304,7 @@ class StandardHeader(
           buildDouble(x.orDefault, "TAMBIEN2")
         },
         {
-          val x = gwsReader.getAirPressure.map(_.map(_.to(new PressureUnit {
-              override def symbol = "mmHg"
-              override def conversionFactor = 133.32239
-            })))
+          val x = gwsReader.getAirPressure.map(_.map(_.toMillimetersOfMercury))
           buildDouble(x.orDefault, "PRESSURE")
         },
         {

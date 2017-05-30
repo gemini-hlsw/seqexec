@@ -43,7 +43,7 @@ object Settings {
 
     // Scala libraries
     val http4s       = "0.16.0a-M2"
-    val squants      = "1.2.0"
+    val squants      = "1.3.0"
     val argonaut     = "6.2"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
