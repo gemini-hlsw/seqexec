@@ -40,9 +40,13 @@ psql -U postgres -d gem
 
 to poke around with the database on the commandline. For real work I recommend a more full-featured front end. I use [Toad](https://www.toadworld.com/products/toad-mac-edition) but there are a lot of options.
 
-### Importing Old Programs
+### Importing
 
-To import old programs into Postgres you need to create a symlink to some old programs first
+There are several options for importing existing OCS2 program and Smart Gcal data.
+
+#### Importing Old Programs
+
+To import old science program `.xml` files into Postgres you need to create a symlink to a directory containing some old programs first
 
 ```
 ln -s /path/to/some/old/xml/files archive
@@ -51,9 +55,10 @@ ln -s /path/to/some/old/xml/files archive
 You can then import from the `sbt` prompt:
 
 ```
-sbt> importer/runMain gem.Importer 123     Import the first 123 programs.
-sbt> importer/run                          Import everything; same as passing Int.MaxValue
+sbt> ocs2/runMain gem.ocs2.FileImporter 123     Import the first 123 programs.
 ```
+
+You can skip the program limit argument if you want to import all the program files.
 
 Right now just a sketch is imported:
 
@@ -63,11 +68,72 @@ Right now just a sketch is imported:
 - sequence steps, generically, with slices for
   - bias
   - dark
-  - gcal (lamp, shutter)
+  - gcal
   - science (offset p/q)
-    - F2 (fpu, pre-imaging, exposure time, filter, lyot wheel, disperser)
+    - F2
 
 There are no other instrument-specific slices for science steps yet.
+
+
+#### Importing Smart Gcal Configuration
+
+Smart Gcal configuration is stored in database tables like everything else instead of in `.csv` files downloaded from SVN as in OCS2.  The `.csv` files can be imported though much like old program `.xml` files.  First, make a symlink to a directory containing the `.csv` files. 
+
+```
+ln -s /path/to/old/smart/gcal/csv smartgcal
+```
+
+If you've ever used the old OT or ODB, you will likely have downloaded the `.csv` files for Smart Gcal. For example, for the production OT you can find them in your home directory:
+
+```
+~/.ocs15/Gemini\ OT\ 2017A.1.1.2_mac/data/jsky.app.ot/smartgcal
+```
+
+Having created the symlink, you can then import from the `sbt` prompt:
+
+```
+sbt> ocs2/runMain gem.ocs2.SmartGcalImporter
+```
+
+#### Import Server
+
+You can run an import server which will import programs or observations on demand directly from a running OCS2 Observing Database.  You start it with
+
+```
+sbt> ocs2/runMain gem.ocs2.ImportServer [odb-hostname]
+```
+
+where the `odb-hostname` defaults to `localhost` if not specified.  Once running, it accepts http requests to import data.  For example, to import program `GS-2017A-Q-1` from the ODB:
+
+```
+http://localhost:8989/import/prog/GS-2017A-Q-1
+```
+
+or to just get observation `GS-2017A-Q-1-2`:
+
+```
+http://localhost:8989/import/obs/GS-2017A-Q-1-2
+```
+
+When you re-import a program or observation, any existing data associated with it is first purged.
+
+
+#### Import Menu
+
+Another option for importing is to just type the following at the sbt prompt
+
+```
+sbt> ocs2/run
+
+Multiple main classes detected, select one to run:
+
+ [1] gem.ocs2.FileImporter
+ [2] gem.ocs2.ImportServer
+ [3] gem.ocs2.SmartGcalImporter
+```
+
+If you pick the program importer, it will import everything which is the same as explicitly passing in `Int.MaxValue`.
+
 
 ### Enumerated Types
 

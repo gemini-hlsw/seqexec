@@ -21,25 +21,25 @@ class SmartGcalSpec extends FlatSpec with Matchers {
 
   import SmartGcalSpec._
 
-  // "SmartGcalDao" should "expand smart gcal arc steps" in {
-  //   runF2Expansion(SmartGcalType.Arc) { (_, steps) =>
-  //     verifySteps(GcalLampType.Arc.left, steps)
-  //   }
-  // }
-  //
-  // it should "expand smart gcal flat steps" in {
-  //   runF2Expansion(SmartGcalType.Flat) { (_, steps) =>
-  //     verifySteps(GcalLampType.Flat.left, steps)
-  //   }
-  // }
-  //
-  // it should "expand smart gcal baseline steps" in {
-  //   runF2Expansion(SmartGcalType.NightBaseline) { (_, steps) =>
-  //     verifySteps(GcalBaselineType.Night.right, steps)
-  //   }
-  // }
+  "SmartGcalDao" should "expand smart gcal arc steps" in {
+    runF2Expansion(SmartGcalType.Arc) { (_, steps) =>
+      verifySteps(GcalLampType.Arc.left, steps)
+    }
+  }
 
-  "SmartGcalDao"  should "fail when there is no corresponding mapping" in {
+  it should "expand smart gcal flat steps" in {
+    runF2Expansion(SmartGcalType.Flat) { (_, steps) =>
+      verifySteps(GcalLampType.Flat.left, steps)
+    }
+  }
+
+  it should "expand smart gcal baseline steps" in {
+    runF2Expansion(SmartGcalType.NightBaseline) { (_, steps) =>
+      verifySteps(GcalBaselineType.Night.right, steps)
+    }
+  }
+
+  it should "fail when there is no corresponding mapping" in {
     runF2Expansion(SmartGcalType.DayBaseline) { (expansion, steps) =>
       expansion    shouldEqual noMappingDefined.left[ExpandedSteps]
       steps.values shouldEqual List(SmartGcalStep(f2, SmartGcalType.DayBaseline))
@@ -66,21 +66,21 @@ class SmartGcalSpec extends FlatSpec with Matchers {
     expansion shouldEqual notSmartGcal.left[ExpandedSteps]
   }
 
-  // it should "expand intermediate smart gcal steps" in {
-  //   val steps = doTest {
-  //     for {
-  //       _  <- StepDao.insert(oid, loc1, BiasStep(f2))
-  //       _  <- StepDao.insert(oid, loc2, SmartGcalStep(f2, SmartGcalType.NightBaseline))
-  //       _  <- StepDao.insert(oid, loc9, DarkStep(f2))
-  //       _  <- SmartGcalDao.expand(oid, loc2).run
-  //       ss <- StepDao.selectAll(oid)
-  //       _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
-  //     } yield ss
-  //   }
-  //
-  //   val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => GcalStep(f2, config) }
-  //   steps.values shouldEqual (BiasStep(f2) :: exp) :+ DarkStep(f2)
-  // }
+  it should "expand intermediate smart gcal steps" in {
+    val steps = doTest {
+      for {
+        _  <- StepDao.insert(oid, loc1, BiasStep(f2))
+        _  <- StepDao.insert(oid, loc2, SmartGcalStep(f2, SmartGcalType.NightBaseline))
+        _  <- StepDao.insert(oid, loc9, DarkStep(f2))
+        _  <- SmartGcalDao.expand(oid, loc2).run
+        ss <- StepDao.selectAll(oid)
+        _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
+      } yield ss
+    }
+
+    val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => GcalStep(f2, config) }
+    steps.values shouldEqual (BiasStep(f2) :: exp) :+ DarkStep(f2)
+  }
 
   private def verifySteps(m: GcalLampType \/ GcalBaselineType, ss: Location.Middle ==>> Step[InstrumentConfig]): Assertion = {
     def lookup(m: GcalLampType \/ GcalBaselineType): List[GcalConfig] =
