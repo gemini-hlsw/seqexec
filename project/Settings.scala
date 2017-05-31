@@ -19,7 +19,8 @@ object Settings {
       "-language:implicitConversions",
       "-target:jvm-1.8",
       "-Xlint",
-      "-Xlint:-stars-align"
+      "-Xlint:-stars-align",
+      "-Xfatal-warnings"
     )
   }
 

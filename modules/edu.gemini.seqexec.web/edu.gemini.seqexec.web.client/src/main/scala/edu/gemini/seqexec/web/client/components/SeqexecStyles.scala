@@ -1,11 +1,10 @@
 package edu.gemini.seqexec.web.client.components
 
-import scalacss.Defaults._
+import scalacss.DevDefaults._
 
 object SeqexecCSSTypedValues {
   import scalacss.internal._
   import scalacss.internal.ValueT.TypedAttrBase
-
   // These should be converted to a PR for ScalaCSS
 
   // Typed backgroundClip
@@ -30,7 +29,8 @@ object SeqexecCSSTypedValues {
 /**
   * Custom CSS for the Seqexec UI
   */
-object SeqexecStyles extends StyleSheet.Inline {
+object SeqexecStyles extends scalacss.StyleSheet.Inline {
+
   import dsl._
 
   val gutterWidth = 25

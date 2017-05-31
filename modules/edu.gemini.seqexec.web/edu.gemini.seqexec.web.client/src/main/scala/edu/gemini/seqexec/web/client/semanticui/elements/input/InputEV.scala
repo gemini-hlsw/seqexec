@@ -36,7 +36,7 @@ object InputEV {
     // Capture the value outside setState, react reuses the events
     val v = e.target.value
     // First update the internal state, then call the outside listener
-    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.onChange(v)) >> ST.retM(p.value.set(v))
+    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.onChange(v)) >> ST.retM(p.value.setState(v))
   }
 
   def onBlur(c: ChangeCallback): ReactST[CallbackTo, State, Unit] =
