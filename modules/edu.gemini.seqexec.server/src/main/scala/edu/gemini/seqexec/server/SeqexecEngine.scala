@@ -7,7 +7,6 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Sequence}
-import edu.gemini.seqexec.server.odbclient.{ODBClient, ODBClientConfig}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 
 import scalaz._
