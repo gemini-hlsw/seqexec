@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, VdomNode, Ref}
+import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
 import edu.gemini.seqexec.web.client.semanticui._
@@ -59,13 +59,13 @@ object StepsTableContainer {
                       "positive" -> sub.startsWith("instrument"),
                       "warning"  -> sub.startsWith("telescope")
                     ),
-                    k.startsWith("observe") ?= SeqexecStyles.observeConfig,
-                    k.startsWith("ocs") ?= SeqexecStyles.observeConfig,
+                    SeqexecStyles.observeConfig.when(k.startsWith("observe")),
+                    SeqexecStyles.observeConfig.when(k.startsWith("ocs")),
                     <.td(k),
                     <.td(v)
                   )
               }
-            }
+          }.flatten.toSeq.toTagMod
         )
       )
 
@@ -86,7 +86,7 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(s: SequenceView, step: Step): List[VdomNode] = {
+    def observationControlButtons(s: SequenceView, step: Step) = {
       s.allowedObservationOperations(step).map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
@@ -105,7 +105,7 @@ object StepsTableContainer {
           Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
         case StopGracefullyObservation   =>
           Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
-      }
+      }.toTagMod
     }
 
     def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): VdomNode =
@@ -120,27 +120,26 @@ object StepsTableContainer {
               step.status.shows
             )
           ),
-          loggedIn ?= <.div(
+          <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
             <.div(
               ^.cls := "ui icon buttons",
               observationControlButtons(sequenceView, step)
             )
-          )
+          ).when(loggedIn)
         )
       )
 
     def stepInError(loggedIn: Boolean, s: SequenceView, msg: String): VdomNode =
         <.div(
           <.p(s"Error: $msg"),
-          loggedIn ?=
-            IconMessage(
-              IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
-                s"Press ",
-                <.b(s.isPartiallyExecuted ? "Continue" | "Run"),
-                " to re-try"
-              )
+          IconMessage(
+            IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
+              s"Press ",
+              <.b(s.isPartiallyExecuted ? "Continue" | "Run"),
+              " to re-try"
+          ).when(loggedIn)
         )
 
     def stepDisplay(p: Props, step: Step): VdomNode =
@@ -235,7 +234,7 @@ object StepsTableContainer {
                     "active"   -> (step.status === StepState.Skipped),
                     "disabled" -> step.skip
                   ),
-                  step.status == StepState.Running ?= SeqexecStyles.stepRunning,
+                  SeqexecStyles.stepRunning.when(step.status == StepState.Running),
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
@@ -264,7 +263,7 @@ object StepsTableContainer {
                   )
                 )
               )
-          }
+          }.flatten.toTagMod
         )
       )
 
@@ -272,7 +271,7 @@ object StepsTableContainer {
       <.div(
         ^.cls := "ui row scroll pane",
         SeqexecStyles.stepsListPane,
-        ^.ref := scrollRef,
+        //^.ref := scrollRef,
         p.stepConfigDisplayed.map { i =>
           // TODO consider the failure case
           val step = p.s.steps(i)
@@ -289,7 +288,7 @@ object StepsTableContainer {
   def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
-  private val scrollRef = Ref[HTMLElement]("scrollRef")
+  //private val scrollRef = Ref[HTMLElement]("scrollRef")
 
   val component = ScalaComponent.builder[Props]("StepsTable")
     .initialState(State(0, None, autoScrolled = false))
@@ -301,16 +300,16 @@ object StepsTableContainer {
 
       // Called when the props have changed. At this time we can recalculate
       // if the scroll position needs to be updated and store it in the State
-      val div = scrollRef(f.$)
+      /*val div = scrollRef(f.$)
       val scrollStateCB = if (f.nextProps.s.id =/= f.currentProps.s.id) {
         // It will reset to 0 if the sequence changes
         // TODO It may be better to remember the pos of executed steps per sequence
-        f.$.modState(_.copy(nextScrollPos = 0, autoScrolled = true))
+        f.modState(_.copy(nextScrollPos = 0, autoScrolled = true))
       } else {
         div.fold(Callback.empty) { scrollPane =>
-          /**
+          **
             * Calculates if the element is visible inside the scroll pane up the dom tree
-            */
+            *
           def visibleY(el: Element): Boolean = {
             val rect = el.getBoundingClientRect()
             val top = rect.top
@@ -331,9 +330,9 @@ object StepsTableContainer {
             go(el.parentNode)
           }
 
-          /**
+          **
             * Calculates the new scroll position if the relevant row is not visible
-            */
+            *
           def scrollPosition: Option[Double] = {
             // Build a css selector for the relevant row, either the last one when complete
             // or the currently running one
@@ -353,20 +352,21 @@ object StepsTableContainer {
             f.$.modState(_.copy(nextScrollPos = p, autoScrolled = true))
           }
         }
-      }
+      }*/
       // Run both callbacks, to update the runRequested state and the scroll position
-      scrollStateCB *> nextStepToRunCB
+      /*scrollStateCB *> */nextStepToRunCB
     }.componentWillUpdate { f =>
       // Called before the DOM is rendered on the updated props. This is the chance
       // to update the scroll position if needed
-      val div = scrollRef(f.$)
+      /*val div = scrollRef(f.$)
       div.fold(Callback.empty){ scrollPane =>
         // If the state indicates to scroll, update the scroll position
         Callback.when(f.nextState.autoScrolled)(Callback {
             scrollPane.scrollTop = f.nextState.nextScrollPos
           }
         )
-      }
+      }*/
+      Callback.empty
     }.build
 
   def apply(p: Props) = component(p)

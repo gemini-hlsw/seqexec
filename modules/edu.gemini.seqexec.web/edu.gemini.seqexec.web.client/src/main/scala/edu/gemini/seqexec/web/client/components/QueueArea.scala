@@ -78,7 +78,7 @@ object QueueTableBody {
               )
             case (_, i) =>
               emptyRow(s"item.queue.$i")
-          }
+          }.toTagMod
       )
     )
     .build

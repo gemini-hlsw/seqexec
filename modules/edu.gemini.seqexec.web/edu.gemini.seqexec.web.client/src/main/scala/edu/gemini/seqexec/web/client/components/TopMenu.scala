@@ -38,7 +38,7 @@ object LoggedInMenu {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
 
-        $(ReactDOM.findDOMNode(s)).dropdown()
+        $(ctx.getDOMNode).dropdown()
       }
     ).build
 

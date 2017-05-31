@@ -7,7 +7,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactComponentU, TopNode}
+import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
@@ -100,10 +100,10 @@ object HeadersSideBar {
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator
       // Update the operator field
-      Callback.when((operator =/= f.$.state.currentText) && operator.nonEmpty)(f.$.modState(_.copy(currentText = operator)))
+      Callback.when((operator =/= f.state.currentText) && operator.nonEmpty)(f.modState(_.copy(currentText = operator)))
     }
     .build
 
-  def apply(model: ModelProxy[HeaderSideBarReader]): ReactComponentU[Props, State, Backend, TopNode] =
+  def apply(model: ModelProxy[HeaderSideBarReader]) =
     component(Props(model))
 }

@@ -11,7 +11,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CallbackTo, ReactComponentB, ReactComponentU, VdomNode, ScalazReact, TopNode}
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
 
 import scalacss.ScalaCssReact._
@@ -35,7 +35,7 @@ object StepConfigToolbar {
       )
     ).build
 
-  def apply(p: Props): ReactComponentU[Props, Unit, Unit, TopNode] = component(p)
+  def apply(p: Props) = component(p)
 }
 
 object SequenceStepsTableContainer {
@@ -60,7 +60,7 @@ object SequenceStepsTableContainer {
       f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.build
 
-  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]): ReactComponentU[Props, State, Unit, TopNode] = component(Props(s, status, stepConfigDisplayed))
+  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
 }
 
 /**
@@ -86,7 +86,7 @@ object SequenceTabContent {
     )
     .build
 
-  def apply(p: Props): ReactComponentU[Props, Unit, Unit, TopNode] = component(p)
+  def apply(p: Props) = component(p)
 }
 
 /**
@@ -102,7 +102,7 @@ object SequenceTabsBody {
       <.div(
         ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
         TabularMenu(p.d),
-        tabContents(p.s, p.d).map(SequenceTabContent.apply)
+        tabContents(p.s, p.d).map(SequenceTabContent.apply).toTagMod
       )
     )
     .build
@@ -126,7 +126,7 @@ object SequenceHeadersAndTable {
       )
     ) .build
 
-  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
+  def apply() = component()
 }
 /**
   * Contains all the tabs for the sequences available in parallel
@@ -155,7 +155,7 @@ object SequenceTabs {
     )
     .build
 
-  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
+  def apply() = component()
 }
 
 object SequenceArea {
@@ -170,5 +170,5 @@ object SequenceArea {
       )
     ).build
 
-  def apply(): ReactComponentU[Unit, Unit, Unit, TopNode] = component()
+  def apply() = component()
 }

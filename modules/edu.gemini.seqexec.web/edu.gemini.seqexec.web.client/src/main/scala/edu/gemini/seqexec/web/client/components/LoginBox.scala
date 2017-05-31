@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM, ReactEventFromInput}
+import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent, ReactEventFromInput}
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -115,14 +115,14 @@ object LoginBox {
                   IconCircleNotched.copyIcon(loading = true),
                   m
                 )
-              ),
+              ).whenDefined,
               s.errorMsg.map( m =>
                 <.div(
                   ^.cls := "left floated left aligned six wide column red",
                   IconAttention,
                   m
                 )
-              ),
+              ).whenDefined,
               <.div(
                 ^.cls := "right floated right aligned ten wide column",
                 Button(Button.Props(onClick = closeBox), "Cancel"),
@@ -137,7 +137,7 @@ object LoginBox {
   val component = ScalaComponent.builder[Props]("Login")
     .initialState(State("", "", None, None))
     .renderBackend[Backend]
-    .componentDidUpdate(s =>
+    .componentDidUpdate(ctx =>
       Callback {
         // To properly handle the model we need to do updates with jQuery and
         // the Semantic UI javascript library
@@ -145,22 +145,22 @@ object LoginBox {
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
-        if (s.currentProps.open() == SectionClosed) {
-          $(ReactDOM.findDOMNode(s.$)).modal("hide")
+        if (ctx.currentProps.open() == SectionClosed) {
+          $(ctx.getDOMNode).modal("hide")
         }
-        if (s.currentProps.open() == SectionOpen) {
+        if (ctx.currentProps.open() == SectionOpen) {
           // Configure the modal to autofoucs and to act properly on closing
-          $(ReactDOM.findDOMNode(s.$)).modal(
+          $(ctx.getDOMNode).modal(
             JsModalOptions
               .autofocus(true)
               .onHidden { () =>
                 // Need to call direct access as this is outside the event loop
-                s.$.accessDirect.setState(empty)
+                ctx.setState(empty)
                 SeqexecCircuit.dispatch(CloseLoginBox)
               }
           )
           // Show the modal box
-          $(ReactDOM.findDOMNode(s.$)).modal("show")
+          $(ctx.getDOMNode).modal("show")
         }
       }
     ).build

@@ -54,13 +54,13 @@ object NavBar {
         )
       )
     )
-    .componentDidMount(s =>
+    .componentDidMount(ctx =>
       Callback {
         // Mount the Semantic component using jQuery
         import org.querki.jquery.$
 
         // Pick the top bar and make it stay visible regardless of scrolling
-        $(ReactDOM.findDOMNode(s)).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))
+        $(ctx.getDOMNode).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))
       }
     )
     .build
