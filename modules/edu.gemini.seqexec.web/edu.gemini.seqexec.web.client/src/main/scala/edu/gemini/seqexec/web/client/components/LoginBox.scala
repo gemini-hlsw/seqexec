@@ -74,7 +74,7 @@ object LoginBox {
             ^.action := "#",
             <.div(
               ^.cls :="required field",
-              Label(Label.Props("Username", "username")),
+              Label(Label.Props("Username", Some("username"))),
               <.div(
                 ^.cls :="ui icon input",
                 <.input(
@@ -90,7 +90,7 @@ object LoginBox {
             ),
             <.div(
               ^.cls :="required field",
-              Label(Label.Props("Password", "password")),
+              Label(Label.Props("Password", Some("password"))),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(

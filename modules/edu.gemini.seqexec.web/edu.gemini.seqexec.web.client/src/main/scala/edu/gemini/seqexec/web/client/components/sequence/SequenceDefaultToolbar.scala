@@ -48,7 +48,7 @@ object SequenceObserverField {
         ^.cls := "ui form",
         <.div(
           ^.cls := "required field",
-          Label(Label.Props("Observer", "")),
+          Label(Label.Props("Observer")),
           InputEV(InputEV.Props(
             p.s.metadata.instrument + ".observer",
             p.s.metadata.instrument + ".observer",
@@ -100,6 +100,13 @@ object SequenceDefaultToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned eight wide computer ten wide tablet only",
+            <.div(
+              ^.cls := "ui form",
+              <.div(
+                ^.cls := "field",
+                Label(Label.Props(s"Name: ${p.s.metadata.name}"))
+              )
+            ),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
@@ -152,16 +159,16 @@ object SequenceDefaultToolbar {
                 disabled = !p.status.isConnected || s.syncRequested),
               "Continue from step 1"
             ).when(p.status.isLogged && p.s.status === SequenceState.Paused)
+          ),
+          <.div(
+            ^.cls := "right column",
+            ^.classSet(
+              "eight wide computer six wide tablet sixteen wide mobile" -> p.status.isLogged,
+              "sixteen wide" -> !p.status.isLogged
             ),
-            <.div(
-              ^.cls := "right column",
-              ^.classSet(
-                "eight wide computer six wide tablet sixteen wide mobile" -> p.status.isLogged,
-                "sixteen wide" -> !p.status.isLogged
-              ),
-              SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
-            )
+            SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
           )
+        )
     )
     ).componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
