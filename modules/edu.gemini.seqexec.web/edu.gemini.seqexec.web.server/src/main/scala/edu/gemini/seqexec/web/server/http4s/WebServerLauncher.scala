@@ -113,7 +113,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Reads the configuration and launches the web server
     */
-  override def process(args: List[String]): Process[Task, Unit] = {
+  override def process(args: List[String]): Process[Task, Nothing] = {
     val engineTask = for {
       c    <- config
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)

@@ -25,7 +25,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scala        = "2.11.8"
+    val scala        = "2.11.11"
 
     // ScalaJS libraries
     val scalaDom     = "0.9.1"
@@ -34,27 +34,27 @@ object Settings {
     val booPickle    = "1.2.6"
     val diode        = "1.1.1"
     val javaTimeJS   = "0.2.0"
-    val javaLogJS    = "0.1.0"
+    val javaLogJS    = "0.1.1"
     val scalaJQuery  = "1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.10"
+    val scalaZ       = "7.2.13"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
-    val http4s       = "0.16.0a-M2"
-    val squants      = "1.2.0"
+    val http4s       = "0.16.0a-M3"
+    val squants      = "1.3.0"
     val argonaut     = "6.2"
-    val commonsHttp  = "2.0"
-    val unboundId    = "3.1.1"
-    val jwt          = "0.12.0"
-    val slf4j        = "1.7.21"
-    val knobs        = "4.0.30-scalaz-7.2"
+    val commonsHttp  = "2.0.2"
+    val unboundId    = "3.2.1"
+    val jwt          = "0.12.1"
+    val slf4j        = "1.7.25"
+    val knobs        = "4.0.31-scalaz-7.2"
 
     // test libraries
-    val scalaTest             = "3.0.1"
-    val scalaCheck            = "1.13.4"
-    val scalaCheckShapeless   = "1.1.3"
+    val scalaTest             = "3.0.3"
+    val scalaCheck            = "1.13.5"
+    val scalaCheckShapeless   = "1.1.5"
 
     // Pure JS libraries
     val reactJS        = "15.3.2"
@@ -64,7 +64,7 @@ object Settings {
     val ocsVersion     = "2017001.1.6"
 
     //Apache XMLRPC
-    val apacheXMLRPC   = "3.0"
+    val apacheXMLRPC   = "3.1.3"
   }
 
   /**
