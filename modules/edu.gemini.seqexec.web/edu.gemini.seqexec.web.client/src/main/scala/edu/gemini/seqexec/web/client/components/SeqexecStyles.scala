@@ -2,30 +2,6 @@ package edu.gemini.seqexec.web.client.components
 
 import scalacss.DevDefaults._
 
-object SeqexecCSSTypedValues {
-  import scalacss.internal._
-  import scalacss.internal.ValueT.TypedAttrBase
-  // These should be converted to a PR for ScalaCSS
-
-  // Typed backgroundClip
-  object backgroundClip extends TypedAttrBase with BackgroundClipDecorationOps {
-    override val attr = Attr.real("background-clip", Transform keys CanIUse.backgroundImgOpts)
-
-    override protected def next(v: Value): Accum = new Accum(v)
-    final class Accum(v: Value) extends ToAV with BackgroundClipDecorationOps {
-      override def av: AV = AV(attr, v)
-      override protected def next(v: Value): Accum = new Accum(this.v + " " + v)
-    }
-  }
-
-  trait BackgroundClipDecorationOps {
-    protected def next(v: Value): backgroundClip.Accum
-    final def contentBox: backgroundClip.Accum = next(Literal.contentBox)
-    final def paddingBox: backgroundClip.Accum = next(Literal.paddingBox)
-    final def borderBox: backgroundClip.Accum = next(Literal.borderBox)
-  }*/
-}
-
 /**
   * Custom CSS for the Seqexec UI
   */
@@ -249,6 +225,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
-    SeqexecCSSTypedValues.backgroundClip.contentBox.paddingBox.important
+    backgroundClip.contentBox.paddingBox.important
   )
 }
