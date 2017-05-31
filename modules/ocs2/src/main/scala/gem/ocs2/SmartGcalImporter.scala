@@ -117,7 +117,7 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
     val d = diffuserS.parseAs(diffuser)
     val s = shutterS .parseAs(shutter )
     val e = Duration.ofMillis(expS.toLong * 1000)
-    val c = coaddsS.toInt
+    val c = coaddsS.toShort
 
     val b = GcalBaselineType.unsafeFromTag(baselineS)
 

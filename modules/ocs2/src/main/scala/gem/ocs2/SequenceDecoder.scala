@@ -140,7 +140,7 @@ object SequenceDecoder extends PioDecoder[List[Step[InstrumentConfig]]] {
             s <- Shutter.parse(cm)
             e <- ExposureTime.parse(cm)
             c <- Coadds.parse(cm)
-          } yield GcalStep(instrument, GcalConfig(l, f, d, s, e, c))
+          } yield GcalStep(instrument, GcalConfig(l, f, d, s, e, c.toShort))
 
         case x =>
           PioError.parseError(x, "ObserveType").left
