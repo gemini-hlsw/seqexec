@@ -23,7 +23,7 @@ object Sequence {
 
   type Id = String
 
-  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None), Nil)
+  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None, ""), Nil)
 
   implicit val SequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =

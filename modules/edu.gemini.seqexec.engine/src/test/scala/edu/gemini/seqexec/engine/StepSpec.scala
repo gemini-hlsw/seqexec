@@ -101,7 +101,7 @@ class StepSpec extends FlatSpec {
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None),
+               SequenceMetadata("F2", None, ""),
                List(
                  Step(
                    1,
@@ -147,7 +147,7 @@ class StepSpec extends FlatSpec {
            Sequence.State.Zipper(
              Sequence.Zipper(
                "First",
-               SequenceMetadata("F2", None),
+               SequenceMetadata("F2", None, ""),
                Nil,
                Step.Zipper(
                  2,
@@ -214,7 +214,7 @@ class StepSpec extends FlatSpec {
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None),
+               SequenceMetadata("F2", None, ""),
                List(
                  Step(
                    1,

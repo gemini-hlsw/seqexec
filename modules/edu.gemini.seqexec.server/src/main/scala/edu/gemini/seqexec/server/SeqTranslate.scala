@@ -96,7 +96,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
-  def sequence(settings: Settings)(obsId: SPObservationID, sequenceConfig: ConfigSequence): (List[SeqexecFailure], Option[Sequence[Action]]) = {
+  def sequence(settings: Settings)(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String): (List[SeqexecFailure], Option[Sequence[Action]]) = {
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {
@@ -106,7 +106,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
 
     steps match {
-      case (errs, ss) => (errs, if(ss.isEmpty) None else Some(Sequence[Action](obsId.stringValue(), SequenceMetadata(instName, None), ss)))
+      case (errs, ss) => (errs, if(ss.isEmpty) None else Some(Sequence[Action](obsId.stringValue(), SequenceMetadata(instName, None, name), ss)))
     }
   }
 

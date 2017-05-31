@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
 import edu.gemini.seqexec.model.Model.StepConfig
 
 import java.beans.PropertyDescriptor
@@ -39,17 +39,29 @@ object ConfigUtilOps {
     def /(p: PropertyDescriptor): ItemKey = /(p.getName)
   }
 
-  final class Extracted private [server] (c: Config, key: ItemKey) {
+  trait ExtractItem[A] {
+    def itemValue(a: A, key: ItemKey): Option[AnyRef]
+  }
+
+  implicit val ConfigExtractItem = new ExtractItem[Config] {
+    override def itemValue(c: Config, key: ItemKey): Option[AnyRef] = Option(c.getItemValue(key))
+  }
+
+  implicit val ConfigSequenceExtractItem = new ExtractItem[ConfigSequence] {
+    override def itemValue(c: ConfigSequence, key: ItemKey): Option[AnyRef] = Option(c.getItemValue(0, key))
+  }
+
+  final class Extracted[C] private [server] (c: C, key: ItemKey)(implicit ei: ExtractItem[C]) {
     def as[A](implicit clazz: ClassTag[A]): ExtractFailure \/ A =
       for {
-        v <- Option(c.getItemValue(key)) \/> KeyNotFound(key)
+        v <- ei.itemValue(c, key) \/> KeyNotFound(key)
         b <- \/.fromTryCatchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(e => ConversionError(key,e.getMessage))
       } yield b
   }
 
   implicit class ConfigOps(val c: Config) extends AnyVal {
     // config syntax: cfg.extract(key).as[Type]
-    def extract(key: ItemKey): Extracted = new Extracted(c, key)
+    def extract(key: ItemKey): Extracted[Config] = new Extracted(c, key)
 
     // config syntax: cfg.toStepConfig
     def toStepConfig: StepConfig = {
@@ -62,5 +74,10 @@ object ConfigUtilOps {
       }
     }
 
+  }
+
+  implicit class ConfigSequenceOps(val c: ConfigSequence) extends AnyVal {
+    // config syntax: cfgSequence.extract(key).as[Type]
+    def extract(key: ItemKey): Extracted[ConfigSequence] = new Extracted(c, key)
   }
 }
