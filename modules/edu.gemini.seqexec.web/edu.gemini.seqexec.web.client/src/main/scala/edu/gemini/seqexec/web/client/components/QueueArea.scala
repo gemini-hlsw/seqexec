@@ -5,6 +5,7 @@ import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
+import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
@@ -24,7 +25,9 @@ object QueueTableBody {
   def emptyRow(k: String): VdomTagOf[TableRow] = {
     <.tr(
       ^.key := k, // React requires unique keys
-      <.td(iconEmpty),
+      <.td(
+        ^.cls := "collapsing",
+        iconEmpty),
       <.td(nbsp),
       <.td(nbsp),
       <.td(nbsp),
@@ -73,8 +76,8 @@ object QueueTableBody {
                   s.metadata.instrument
                 ),
                 <.td(
-                  SeqexecStyles.notInMobile//,
-                  //s.error.map(e => <.p(IconAttention, s" $e")).getOrElse(<.p("-"))
+                  SeqexecStyles.notInMobile,
+                  s.metadata.name
                 )
               )
             case (_, i) =>
@@ -105,11 +108,11 @@ object QueueTableSection {
           <.thead(
             <.tr(
               SeqexecStyles.notInMobile,
-              <.th(iconEmpty),
-              <.th("Obs ID"),
-              <.th("State"),
-              <.th("Instrument"),
-              <.th("Notes")
+              TableHeader(TableHeader.Props(collapsing = true),  iconEmpty),
+              TableHeader("Obs ID"),
+              TableHeader("State"),
+              TableHeader("Instrument"),
+              TableHeader("Obs. Name")
             )
           ),
           queueConnect(QueueTableBody(_))

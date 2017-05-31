@@ -15,6 +15,10 @@ object TableHeader {
     key: String = ""
   )
 
+  object Props {
+    def zero = Props()
+  }
+
   private val component = ScalaComponent.builder[Props]("th")
     .stateless
     .renderPC((_, p, c) =>
@@ -47,4 +51,5 @@ object TableHeader {
     ).build
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
+  def apply(children: VdomNode*): Unmounted[Props, Unit, Unit] = component(Props.zero)(children: _*)
 }
