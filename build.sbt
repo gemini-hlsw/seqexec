@@ -15,7 +15,7 @@ lazy val testLibs = Seq(
 )
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.11",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding", "UTF-8",
