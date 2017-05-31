@@ -10,48 +10,62 @@ import java.time.Duration
 
 object GcalDao {
 
-  def insert(gcal: GcalConfig, step: Option[Int]): ConnectionIO[Int] = {
-    val arcs: GcalArc => Boolean = gcal.arcs.member
+  def insert(gcal: GcalConfig, step: Option[Int]): ConnectionIO[Int] =
+    Statements.insert(gcal, step).withUniqueGeneratedKeys[Int]("gcal_id") // janky, hm
 
-    for {
-      _ <- sql"""INSERT INTO gcal (step_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
-                      VALUES ($step, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${gcal.coadds})
-              """.update.run
-      id <- sql"select lastval()".query[Int].unique
-    } yield id
-  }
+  def select(id: Int): ConnectionIO[Option[GcalConfig]] =
+    Statements.select(id).option.map(_.flatten)
 
-  private case class GcalKernel(
-    continuum: Option[GcalContinuum],
-    ar_arc:    Boolean,
-    cuar_arc:  Boolean,
-    thar_arc:  Boolean,
-    xe_arc:    Boolean,
-    filter:    GcalFilter,
-    diffuser:  GcalDiffuser,
-    shutter:   GcalShutter,
-    expTime:   Duration,
-    coadds:    Int)
-  {
-    def toGcalConfig: Option[GcalConfig] =
-      GcalLamp.fromConfig(continuum, ArArc -> ar_arc, CuArArc -> cuar_arc, ThArArc -> thar_arc, XeArc -> xe_arc).map { lamp =>
-        GcalConfig(lamp, filter, diffuser, shutter, expTime, coadds)
+  object Statements {
+
+    // CoAdds has a DISTINCT type due to its check constraint so we need a fine-grained mapping
+    // here to satisfy the query checker.
+    private case class CoAdds(toShort: Short)
+    private object CoAdds {
+      implicit val StepIdMeta: Meta[CoAdds] =
+        Distinct.short("coadds").xmap(CoAdds(_), _.toShort)
+    }
+
+    def insert(gcal: GcalConfig, step: Option[Int]): Update0 = {
+      val arcs: GcalArc => Boolean = gcal.arcs.member
+      sql"""INSERT INTO gcal (step_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
+            VALUES ($step, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
+         """.update
+    }
+
+    def select(id: Int): Query0[Option[GcalConfig]] =
+      sql"""
+        SELECT continuum,
+               ar_arc,
+               cuar_arc,
+               thar_arc,
+               xe_arc,
+               filter,
+               diffuser,
+               shutter,
+               exposure_time,
+               coadds
+          FROM gcal
+         WHERE gcal_id =$id
+      """.query[GcalKernel].map(_.toGcalConfig)
+
+      private case class GcalKernel(
+        continuum: Option[GcalContinuum],
+        ar_arc:    Boolean,
+        cuar_arc:  Boolean,
+        thar_arc:  Boolean,
+        xe_arc:    Boolean,
+        filter:    GcalFilter,
+        diffuser:  GcalDiffuser,
+        shutter:   GcalShutter,
+        expTime:   Duration,
+        coadds:    Short)
+      {
+        def toGcalConfig: Option[GcalConfig] =
+          GcalLamp.fromConfig(continuum, ArArc -> ar_arc, CuArArc -> cuar_arc, ThArArc -> thar_arc, XeArc -> xe_arc).map { lamp =>
+            GcalConfig(lamp, filter, diffuser, shutter, expTime, coadds)
+          }
       }
   }
 
-  def select(id: Int): ConnectionIO[Option[GcalConfig]] =
-    sql"""
-      SELECT continuum,
-             ar_arc,
-             cuar_arc,
-             thar_arc,
-             xe_arc,
-             filter,
-             diffuser,
-             shutter,
-             exposure_time,
-             coadds
-        FROM gcal
-       WHERE gcal_id =$id
-    """.query[GcalKernel].option.map(_.flatMap(_.toGcalConfig))
 }

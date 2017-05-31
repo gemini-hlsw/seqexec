@@ -11,54 +11,25 @@ import scalaz._, Scalaz._
 
 object SmartGcalDao {
 
-  def selectF2(k: F2SmartGcalKey, t: SmartGcalType): ConnectionIO[List[Int]] = {
-    def byLamp(l: GcalLampType): ConnectionIO[List[Int]] =
-      sql"""
-        SELECT gcal_id
-          FROM smart_f2
-         WHERE lamp      = $l :: gcal_lamp_type
-           AND disperser = ${k.disperser}
-           AND filter    = ${k.filter}
-           AND fpu       = ${k.fpu}
-      """.query[Int].list
-
-    def byBaseline(b: GcalBaselineType): ConnectionIO[List[Int]] =
-      sql"""
-        SELECT gcal_id
-          FROM smart_f2
-         WHERE baseline  = $b :: gcal_baseline_type
-           AND disperser = ${k.disperser}
-           AND filter    = ${k.filter}
-           AND fpu       = ${k.fpu}
-      """.query[Int].list
-
-    t.fold(byLamp, byBaseline)
-  }
+  def selectF2(k: F2SmartGcalKey, t: SmartGcalType): ConnectionIO[List[Int]] =
+    t.fold(Statements.selectF2byLamp(k), Statements.selectF2byBaseline(k)).list
 
   def select(k: SmartGcalKey, t: SmartGcalType): ConnectionIO[List[GcalConfig]] =
     for {
       ids <- k match {
-              case f2: F2SmartGcalKey => selectF2(f2, t)
-            }
+               case f2: F2SmartGcalKey => selectF2(f2, t)
+             }
       gcs <- ids.traverseU { GcalDao.select }.map(_.flatten)
     } yield gcs
 
-
-  def insert(l: GcalLampType, b: GcalBaselineType, k: SmartGcalKey, g: GcalConfig): ConnectionIO[Int] = {
-    def insertSmartF2(gcalId: Int, k: F2SmartGcalKey): ConnectionIO[Int] =
-      sql"""
-        INSERT INTO smart_f2 (lamp, baseline, disperser, filter, fpu, gcal_id)
-             VALUES ($l :: gcal_lamp_type, $b :: gcal_baseline_type, ${k.disperser}, ${k.filter}, ${k.fpu}, $gcalId)
-      """.update.run
-
+  def insert(l: GcalLampType, b: GcalBaselineType, k: SmartGcalKey, g: GcalConfig): ConnectionIO[Int] =
     for {
       id <- GcalDao.insert(g, None)
       r  <-
         k match {
-          case f2: F2SmartGcalKey => insertSmartF2(id, f2)
+          case f2: F2SmartGcalKey => Statements.insertSmartF2(l, b, id, f2).run
         }
     } yield r
-  }
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
 
@@ -147,4 +118,35 @@ object SmartGcalDao {
       _     <- insert(locBefore, gcal, locAfter).injectRight
     } yield gcal
   }
+
+  object Statements {
+
+    def selectF2byLamp(k: F2SmartGcalKey)(l: GcalLampType): Query0[Int] =
+        sql"""
+          SELECT gcal_id
+            FROM smart_f2
+           WHERE lamp      = $l :: gcal_lamp_type
+             AND disperser = ${k.disperser}
+             AND filter    = ${k.filter}
+             AND fpu       = ${k.fpu}
+        """.query[Int]
+
+    def selectF2byBaseline(k: F2SmartGcalKey)(b: GcalBaselineType): Query0[Int] =
+        sql"""
+          SELECT gcal_id
+            FROM smart_f2
+           WHERE baseline  = $b :: gcal_baseline_type
+             AND disperser = ${k.disperser}
+             AND filter    = ${k.filter}
+             AND fpu       = ${k.fpu}
+        """.query[Int]
+
+    def insertSmartF2(l: GcalLampType, b: GcalBaselineType, gcalId: Int, k: F2SmartGcalKey): Update0 =
+      sql"""
+        INSERT INTO smart_f2 (lamp, baseline, disperser, filter, fpu, gcal_id)
+             VALUES ($l :: gcal_lamp_type, $b :: gcal_baseline_type, ${k.disperser}, ${k.filter}, ${k.fpu}, $gcalId)
+      """.update
+
+  }
+
 }

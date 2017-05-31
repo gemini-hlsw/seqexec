@@ -2,6 +2,8 @@ package gem
 
 import doobie.postgres.imports._
 import doobie.imports._
+import doobie.util.invariant._
+import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, _ }
 import edu.gemini.spModel.core._
 
 import java.sql.Timestamp
@@ -13,6 +15,9 @@ import scalaz._
 import Scalaz._
 
 package object dao extends MoreTupleOps with ToUserProgramRoleOps {
+
+  // Uncomment to turn on statement logging
+  // implicit val han = LogHandler.jdkLogHandler
 
   type MaybeConnectionIO[A] = OptionT[ConnectionIO, A]
 
@@ -67,9 +72,11 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
       EitherConnectionIO.right[A, T](c)
   }
 
-  // Angle mapping to signed arcseconds. NOT implicit.
+  // Angle mapping to signed arcseconds via NUMERIC. NOT implicit.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
-    Meta[Double].xmap(Angle.fromArcsecs, _.toSignedDegrees * 3600)
+    Meta[BigDecimal]
+      .xmap[Double](_.toDouble, BigDecimal(_))
+      .xmap[Angle](Angle.fromArcsecs, _.toSignedDegrees * 3600)
 
   // OffsetP maps to a signed angle in arcseconds
   implicit val OffsetPMeta: Meta[OffsetP] =
@@ -81,32 +88,85 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   // Program.Id as string
   implicit val ProgramIdMeta: Meta[Program.Id] =
-    Meta[String].nxmap(Program.Id.parse, _.toString)
+    Meta[String].xmap(Program.Id.parse, _.toString)
 
   // Observation.Id as string
   implicit val ObservationIdMeta: Meta[Observation.Id] =
-    Meta[String].nxmap(Observation.Id.unsafeFromString, _.toString)
+    Meta[String].xmap(Observation.Id.unsafeFromString, _.toString)
 
   // Dataset.Label as string
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
-    Meta[String].nxmap(Dataset.Label.unsafeFromString, _.toString)
+    Meta[String].xmap(Dataset.Label.unsafeFromString, _.toString)
 
-  // Enumerated by tag as string
+  // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
-    Meta[String].nxmap[A](ev.unsafeFromTag(_), ev.tag(_))
+    Distinct.string("identifier").xmap[A](ev.unsafeFromTag(_), ev.tag(_))
+
+  // Site by tag as DISTINCT (identifier)
+  implicit val SiteMeta: Meta[Site] =
+    Distinct.string("identifier").xmap(Site.parse, _.abbreviation)
+
+  // ProgramType by tag as DISTINCT (identifier)
+  implicit val ProgramTypeMeta: Meta[ProgramType] =
+    Distinct.string("identifier").xmap(s => ProgramType.read(s).getOrElse(throw InvalidEnum[ProgramType](s)), _.abbreviation)
 
   // Java Log Levels (not nullable)
   implicit def levelMeta: Meta[Level] =
-    Meta[String].nxmap(Level.parse, _.getName)
+    Meta[String].xmap(Level.parse, _.getName)
 
   implicit val InstantMeta: Meta[Instant] =
-    Meta[Timestamp].nxmap(_.toInstant, Timestamp.from)
+    Meta[Timestamp].xmap(_.toInstant, Timestamp.from)
 
   implicit val LocationMeta: Meta[Location.Middle] =
-    Meta[List[Int]].nxmap(Location.unsafeMiddle(_), _.toList)
+    Meta[List[Int]].xmap(Location.unsafeMiddle(_), _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
-    Meta[Long].xmap(Duration.ofMillis, _.toMillis)
+    Distinct.long("milliseconds").xmap(Duration.ofMillis, _.toMillis)
+
+  /**
+   * Constructor for a Meta instances with an underlying types that are reported by JDBC as
+   * type Distinct, as happens when a column has a check constraint. By using a data type with
+   * a Distinct Meta instance we can satisfy the query checker.
+   */
+  object Distinct {
+
+    def integer(name: String): Meta[Int] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, Integer),
+        NonEmptyList(name),
+        _ getInt _,
+        FPS.setInt,
+        FRS.updateInt
+      )
+
+    def long(name: String): Meta[Long] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, BigInt),
+        NonEmptyList(name),
+        _ getLong _,
+        FPS.setLong,
+        FRS.updateLong
+      )
+
+    def short(name: String): Meta[Short] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, SmallInt),
+        NonEmptyList(name),
+        _ getShort _,
+        FPS.setShort,
+        FRS.updateShort
+      )
+
+    def string(name: String): Meta[String] =
+      Meta.advanced(
+        NonEmptyList(JdbcDistinct, VarChar),
+        NonEmptyList(name),
+        _ getString _,
+        FPS.setString,
+        FRS.updateString
+      )
+
+  }
 
   def capply2[A, B, T](f: (A, B) => T)(
     implicit ca: Composite[(Option[A], Option[B])]
