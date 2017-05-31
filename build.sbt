@@ -47,7 +47,7 @@ lazy val testLibs = Seq(
 
 lazy val commonSettings = Seq(
   scalaOrganization := "org.typelevel",
-  scalaVersion := "2.11.11",
+  scalaVersion := "2.11.11-bin-typelevel-4",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding", "UTF-8",
@@ -69,7 +69,7 @@ lazy val commonSettings = Seq(
     "-Ywarn-unused-import"
   ))),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
-  libraryDependencies ++= ("org.scala-lang" %  "scala-reflect" % scalaVersion.value +: testLibs),
+  libraryDependencies ++= (scalaOrganization.value %  "scala-reflect" % scalaVersion.value +: testLibs),
   name := "gem-" + name.value
 )
 
