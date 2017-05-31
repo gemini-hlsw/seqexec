@@ -1,12 +1,12 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Operator, Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -17,7 +17,6 @@ import scalaz.std.string._
 import scalaz.std.option._
 import scalaz.syntax.std.option._
 import scalaz.Equal
-
 import scala.concurrent.duration._
 
 /**
@@ -104,6 +103,6 @@ object HeadersSideBar {
     }
     .build
 
-  def apply(model: ModelProxy[HeaderSideBarReader]) =
+  def apply(model: ModelProxy[HeaderSideBarReader]): Unmounted[Props, State, Backend] =
     component(Props(model))
 }

@@ -8,6 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttentio
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
 import org.scalajs.dom.html.TableRow
 
 import scala.scalajs.js
@@ -116,7 +117,7 @@ object QueueTableSection {
       )
     ).build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 
 }
 
@@ -147,6 +148,6 @@ object QueueArea {
     )
     .build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 
 }

@@ -4,13 +4,14 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 /**
   * React component for a message with a large icon
   */
 object IconMessage extends Message {
 
-  def component = ScalaComponent.builder[IconMessage.Props]("Message")
+  private def component = ScalaComponent.builder[IconMessage.Props]("Message")
     .stateless
     .renderPC((_, p, c) =>
       <.div(
@@ -47,5 +48,5 @@ object IconMessage extends Message {
 
   case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined, size: Size = Size.NotSized)
 
-  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
+  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

@@ -9,7 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 case class TextMenuSegment(p: TextMenuSegment.Props, children: Seq[VdomNode], key: String) {
   import TextMenuSegment.Props
 
-  def component = ScalaComponent.builder[Props]("TextMenuSegment")
+  private def component = ScalaComponent.builder[Props]("TextMenuSegment")
     .stateless
     .renderPC((_, p, c) =>
       <.div(

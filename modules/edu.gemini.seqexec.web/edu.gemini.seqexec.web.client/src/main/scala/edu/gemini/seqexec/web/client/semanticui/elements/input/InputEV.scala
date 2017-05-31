@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.input
 
 import japgolly.scalajs.react.{Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.StateSnapshot
 
@@ -66,5 +67,5 @@ object InputEV {
       Callback.when((f.nextProps.value.value =/= f.state.value) && !f.state.changed)(f.setState(State(f.nextProps.value.value)))
     }.build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }

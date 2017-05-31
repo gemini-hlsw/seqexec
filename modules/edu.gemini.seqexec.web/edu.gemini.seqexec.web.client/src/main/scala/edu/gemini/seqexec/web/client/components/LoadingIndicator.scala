@@ -4,6 +4,7 @@ import diode.FastEq
 import diode.data.Pot
 import diode.react.ModelProxy
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 /**
@@ -11,7 +12,7 @@ import japgolly.scalajs.react.vdom.html_<^._
   */
 class LoadingIndicator[A] private (text: String) {
 
-  val component = ScalaComponent.builder[ModelProxy[Pot[A]]]("LoadingIndicator")
+  private val component = ScalaComponent.builder[ModelProxy[Pot[A]]]("LoadingIndicator")
     .render_P(p =>
       <.div(
         ^.cls := "ui dimmer",
@@ -29,5 +30,5 @@ class LoadingIndicator[A] private (text: String) {
 }
 
 object LoadingIndicator {
-  def apply[A](text: String, p: ModelProxy[Pot[A]])(implicit feq: FastEq[_ >: Pot[A]]) = new LoadingIndicator(text).component(p)
+  def apply[A](text: String, p: ModelProxy[Pot[A]])(implicit feq: FastEq[_ >: Pot[A]]): Unmounted[ModelProxy[Pot[A]], Unit, Unit] = new LoadingIndicator[A](text).component(p)
 }

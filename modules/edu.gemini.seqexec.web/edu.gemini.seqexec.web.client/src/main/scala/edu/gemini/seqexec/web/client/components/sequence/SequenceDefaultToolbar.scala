@@ -7,12 +7,11 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
-
+import japgolly.scalajs.react.component.Scala.Unmounted
 import org.scalajs.dom.html.Div
 
 import scalaz.syntax.equal._
@@ -20,7 +19,6 @@ import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import scalaz.std.string._
 import scalaz.std.option._
-
 import scala.concurrent.duration._
 
 object SequenceObserverField {
@@ -76,7 +74,7 @@ object SequenceObserverField {
     }
     .build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
 
 object SequenceDefaultToolbar {
@@ -170,5 +168,5 @@ object SequenceDefaultToolbar {
       Callback.when(f.nextProps.s.status === SequenceState.Running && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }

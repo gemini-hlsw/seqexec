@@ -23,7 +23,7 @@ object SeqexecCSSTypedValues {
     final def contentBox: backgroundClip.Accum = next(Literal.contentBox)
     final def paddingBox: backgroundClip.Accum = next(Literal.paddingBox)
     final def borderBox: backgroundClip.Accum = next(Literal.borderBox)
-  }
+  }*/
 }
 
 /**

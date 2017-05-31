@@ -10,7 +10,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 object CloseableMessage extends Message {
   case class Props(header: Option[String] = None, style: Style = Style.NotDefined)
 
-  def component = ScalaComponent.builder[Props]("Message")
+  private def component = ScalaComponent.builder[Props]("Message")
     .stateless
     .renderPC((_, p, c) =>
       <.div(

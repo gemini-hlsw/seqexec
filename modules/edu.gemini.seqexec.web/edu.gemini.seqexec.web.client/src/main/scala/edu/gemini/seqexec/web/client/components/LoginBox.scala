@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent, ReactEventFromInput}
+import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -10,6 +10,9 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.TagOf
+import org.scalajs.dom.html.Div
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -27,13 +30,13 @@ object LoginBox {
   val formId = "login"
 
   class Backend($: BackendScope[Props, State]) {
-    def pwdMod(e: ReactEventFromInput) = {
+    def pwdMod(e: ReactEventFromInput): CallbackTo[Unit] = {
       // Capture the value outside setState, react reuses the events
       val v = e.target.value
       $.modState(_.copy(password = v))
     }
 
-    def userMod(e: ReactEventFromInput) = {
+    def userMod(e: ReactEventFromInput): CallbackTo[Unit] = {
       val v = e.target.value
       $.modState(_.copy(username = v))
     }
@@ -55,7 +58,7 @@ object LoginBox {
       )
     }
 
-    def render(p: Props, s: State) =
+    def render(p: Props, s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
         <.div(
@@ -134,7 +137,7 @@ object LoginBox {
       )
   }
 
-  val component = ScalaComponent.builder[Props]("Login")
+  private val component = ScalaComponent.builder[Props]("Login")
     .initialState(State("", "", None, None))
     .renderBackend[Backend]
     .componentDidUpdate(ctx =>
@@ -165,5 +168,5 @@ object LoginBox {
       }
     ).build
 
-  def apply(s: ModelProxy[SectionVisibilityState]) = component(Props(s))
+  def apply(s: ModelProxy[SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(s))
 }

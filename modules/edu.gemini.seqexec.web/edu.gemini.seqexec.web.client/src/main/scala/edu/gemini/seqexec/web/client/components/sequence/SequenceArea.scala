@@ -13,6 +13,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
 
@@ -35,7 +36,7 @@ object StepConfigToolbar {
       )
     ).build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 object SequenceStepsTableContainer {
@@ -60,7 +61,7 @@ object SequenceStepsTableContainer {
       f.modState(_.copy(nextStepToRun = f.props.s.nextStepToRun.getOrElse(0)))
     }.build
 
-  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]) = component(Props(s, status, stepConfigDisplayed))
+  def apply(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int]): Unmounted[Props, State, Unit] = component(Props(s, status, stepConfigDisplayed))
 }
 
 /**
@@ -86,7 +87,7 @@ object SequenceTabContent {
     )
     .build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**
@@ -107,7 +108,7 @@ object SequenceTabsBody {
     )
     .build
 
-  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]) = component(Props(p()._1, p()._2))
+  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
@@ -126,7 +127,7 @@ object SequenceHeadersAndTable {
       )
     ) .build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 /**
   * Contains all the tabs for the sequences available in parallel
@@ -155,7 +156,7 @@ object SequenceTabs {
     )
     .build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 object SequenceArea {
@@ -170,5 +171,5 @@ object SequenceArea {
       )
     ).build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }

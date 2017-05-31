@@ -4,7 +4,9 @@ import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+
 import scalacss.ScalaCssReact._
 
 object Button {
@@ -46,7 +48,7 @@ object Button {
                    dataTooltip: Option[String]                 = None,
                    extraStyles: List[scalacss.internal.StyleA] = Nil)
 
-  def classSet(p: Props) =
+  private def classSet(p: Props): TagMod =
     ^.classSet(
       "active"    -> (p.state == Active),
       "primary"   -> (p.emphasis == Primary),
@@ -69,7 +71,7 @@ object Button {
       "massive"   -> (p.size == Size.Massive)
     )
 
-  def component = ScalaComponent.builder[Props]("Button")
+  private def component = ScalaComponent.builder[Props]("Button")
     .renderPC((_, p, c) =>
       if (p.animated == NotAnimated)
         <.button(
@@ -100,6 +102,6 @@ object Button {
       }
     ).build
 
-  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
-  def apply(text: String) = component(Props())(text)
+  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
+  def apply(text: String): Unmounted[Props, Unit, Unit] = component(Props())(text)
 }

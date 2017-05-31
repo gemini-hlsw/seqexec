@@ -9,6 +9,7 @@ import edu.gemini.seqexec.web.client.OcsBuildInfo
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
 
@@ -16,10 +17,10 @@ import scalacss.ScalaCssReact._
   * Component for the bar at the top of the page
   */
 object NavBar {
-  val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
-  val wsConnect = SeqexecCircuit.connect(_.ws)
+  private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
+  private val wsConnect = SeqexecCircuit.connect(_.ws)
 
-  val component = ScalaComponent.builder[Unit]("SeqexecAppBar")
+  private val component = ScalaComponent.builder[Unit]("SeqexecAppBar")
     .stateless
     .render(_ =>
       <.div(
@@ -65,7 +66,7 @@ object NavBar {
     )
     .build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 /**
@@ -81,7 +82,7 @@ object ConnectionState {
     f"${delay / 1000}%d"
   }
 
-  val component = ScalaComponent.builder[Props]("ConnectionState")
+  private val component = ScalaComponent.builder[Props]("ConnectionState")
     .stateless
     .render_P( p =>
       <.div(

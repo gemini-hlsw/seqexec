@@ -2,7 +2,6 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -15,13 +14,12 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
-
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
-
 import org.scalajs.dom.raw.{Element, HTMLElement, Node}
 import org.scalajs.dom.document
 import org.scalajs.dom.html.Div
@@ -50,14 +48,14 @@ object StepsTableContainer {
           )
         ),
         <.tbody(
-          step.config.map {
+          step.config.flatMap {
             case (sub, c) =>
               c.map {
                 case (k, v) =>
                   <.tr(
                     ^.classSet(
                       "positive" -> sub.startsWith("instrument"),
-                      "warning"  -> sub.startsWith("telescope")
+                      "warning" -> sub.startsWith("telescope")
                     ),
                     SeqexecStyles.observeConfig.when(k.startsWith("observe")),
                     SeqexecStyles.observeConfig.when(k.startsWith("ocs")),
@@ -65,7 +63,7 @@ object StepsTableContainer {
                     <.td(v)
                   )
               }
-          }.flatten.toSeq.toTagMod
+          }.toSeq.toTagMod
         )
       )
 
@@ -86,7 +84,7 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(s: SequenceView, step: Step) = {
+    def observationControlButtons(s: SequenceView, step: Step): TagMod = {
       s.allowedObservationOperations(step).map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
@@ -186,7 +184,7 @@ object StepsTableContainer {
         ),
         <.tbody(
           SeqexecStyles.stepsListBody,
-          p.s.steps.zipWithIndex.map {
+          p.s.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
                 <.tr(
@@ -227,23 +225,23 @@ object StepsTableContainer {
                   // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
                   ^.classSet(
                     "positive" -> (step.status === StepState.Completed),
-                    "warning"  -> (step.status === StepState.Running),
+                    "warning" -> (step.status === StepState.Running),
                     "negative" -> (step.status === StepState.Paused),
                     // TODO Show error case
                     "negative" -> step.hasError,
-                    "active"   -> (step.status === StepState.Skipped),
+                    "active" -> (step.status === StepState.Skipped),
                     "disabled" -> step.skip
                   ),
                   SeqexecStyles.stepRunning.when(step.status == StepState.Running),
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
-                      case StepState.Completed       => IconCheckmark
-                      case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
-                      case StepState.Error(_)        => IconAttention
+                      case StepState.Completed => IconCheckmark
+                      case StepState.Running => IconCircleNotched.copyIcon(loading = true)
+                      case StepState.Error(_) => IconAttention
                       case _ if i == p.nextStepToRun => IconChevronRight
-                      case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-                      case _                         => iconEmpty
+                      case _ if step.skip => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+                      case _ => iconEmpty
                     }
                   ),
                   <.td(
@@ -263,7 +261,7 @@ object StepsTableContainer {
                   )
                 )
               )
-          }.flatten.toTagMod
+          }.toTagMod
         )
       )
 
@@ -290,7 +288,7 @@ object StepsTableContainer {
   // Reference to the specifc DOM marked by the name `scrollRef`
   //private val scrollRef = Ref[HTMLElement]("scrollRef")
 
-  val component = ScalaComponent.builder[Props]("StepsTable")
+  private val component = ScalaComponent.builder[Props]("StepsTable")
     .initialState(State(0, None, autoScrolled = false))
     .renderBackend[Backend]
     .componentWillReceiveProps { f =>
@@ -369,6 +367,6 @@ object StepsTableContainer {
       Callback.empty
     }.build
 
-  def apply(p: Props) = component(p)
+  def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
 

@@ -2,13 +2,15 @@ package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionVisibilityState, WebSocketsLog}
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+
 import scalacss.ScalaCssReact._
 
 object WebSocketsConsole {
   case class Props(searchArea: SectionVisibilityState, log: WebSocketsLog)
 
-  val component = ScalaComponent.builder[Props]("WebSocketsConsole")
+  private val component = ScalaComponent.builder[Props]("WebSocketsConsole")
     .stateless
     .render_P(p =>
       if (p.searchArea == SectionOpen) {
@@ -40,5 +42,5 @@ object WebSocketsConsole {
     )
     .build
 
-  def apply(s: SectionVisibilityState, l:WebSocketsLog) = component(Props(s, l))
+  def apply(s: SectionVisibilityState, l:WebSocketsLog): Unmounted[Props, Unit, Unit] = component(Props(s, l))
 }

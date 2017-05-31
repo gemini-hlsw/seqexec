@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.table
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui._
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalaz.syntax.equal._
 
@@ -14,7 +15,7 @@ object TableHeader {
     key: String = ""
   )
 
-  val component = ScalaComponent.builder[Props]("th")
+  private val component = ScalaComponent.builder[Props]("th")
     .stateless
     .renderPC((_, p, c) =>
       <.th(
@@ -45,5 +46,5 @@ object TableHeader {
       )
     ).build
 
-  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
+  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

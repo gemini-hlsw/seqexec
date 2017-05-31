@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.dropdown
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{Callback, ReactDOM, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
@@ -20,7 +21,7 @@ object DropdownMenu {
                    disabled: Boolean,
                    onChange: A => Callback = (a: A) => Callback.empty)
 
-  def component[A: Show] = ScalaComponent.builder[Props[A]]("DropDownMenu")
+  private def component[A: Show] = ScalaComponent.builder[Props[A]]("DropDownMenu")
     .stateless
     .render_P(p =>
       <.div(
@@ -64,5 +65,5 @@ object DropdownMenu {
       }
     ).build
 
-  def apply[A: Show](p: Props[A]) = component[A](implicitly[Show[A]])(p)
+  def apply[A: Show](p: Props[A]): Unmounted[Props[A], Unit, Unit] = component[A](implicitly[Show[A]])(p)
 }

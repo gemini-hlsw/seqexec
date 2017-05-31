@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client
 
-import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.vdom.html_<^.VdomAttr
 
 package object semanticui {
   // Custom attributes used by SemanticUI

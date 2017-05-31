@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.divider
 
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 /**
   * Semantic UI Divider component
@@ -15,7 +16,7 @@ object Divider {
                    section: Boolean = false,
                    clearing: Boolean = false)
 
-  def component = ScalaComponent.builder[Props]("Divider")
+  private def component = ScalaComponent.builder[Props]("Divider")
     .renderPC((_, p, c) =>
       <.div(
         ^.cls := "ui divider",
@@ -32,6 +33,6 @@ object Divider {
       )
     ).build
 
-  def apply(children: VdomNode*) = component(Props())(children: _*)
-  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
+  def apply(children: VdomNode*): Unmounted[Props, Unit, Unit] = component(Props())(children: _*)
+  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

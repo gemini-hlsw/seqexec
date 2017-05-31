@@ -672,7 +672,7 @@ object Icon {
                    onClick: Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration
-  implicit def icon2TagMod(i: Icon):VdomElement = i.component
+  implicit def icon2TagMod(i: Icon): VdomElement = i.component
 
-  def apply(s: String, children: VdomNode*):Icon = Icon(Props(s), children)
+  def apply(s: String, children: VdomNode*): Icon = Icon(Props(s), children)
 }
