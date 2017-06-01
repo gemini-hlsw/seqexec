@@ -65,9 +65,9 @@ class StepSpec extends FlatSpec {
       status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
     q.enqueueOne(start(seqId)).flatMap(
-      _ => processE(q).drop(1).takeThrough(
+      _ => process(q, q.dequeue)(s0).drop(1).takeThrough(
         a => !isFinished(a._2.sequences(seqId).status)
-      ).runLast.eval(s0)
+      ).runLast
     ).unsafePerformSync.get._2
   }
 
@@ -76,9 +76,9 @@ class StepSpec extends FlatSpec {
       status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
     q.enqueueOne(start(seqId)).flatMap(
-      _ => processE(q).drop(1).takeThrough(
+      _ => process(q, q.dequeue)(s0).drop(1).takeThrough(
         a => !isFinished(a._2.sequences.get(seqId).get.status)
-      ).runLog.eval(s0)
+      ).runLog
     ).unsafePerformSync.map(_._2).toList
 
   }
@@ -169,7 +169,7 @@ class StepSpec extends FlatSpec {
 
     val qs1 = (
       q.enqueueOne(start(seqId)).flatMap(_ =>
-        processE(q).take(1).runLast.eval(qs0)
+        process(q, q.dequeue)(qs0).take(1).runLast
       )
     ).unsafePerformSync.get._2
 

@@ -4,14 +4,20 @@ import java.io.{PrintWriter, StringWriter}
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.{Conditions, ImageQuality, WaterVapor, SkyBackground, CloudCover, SequenceState}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor}
 
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.Process
-import scalaz.stream.Sink
+import scalaz.stream.{Process, Sink, merge}
 import scalaz.stream.async.mutable.{Queue => SQueue}
+
+package engine {
+  case class HandleP[A](run: Handle[(A, Option[Process[Task, Event]])])
+  object HandleP {
+    def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
+  }
+}
 
 package object engine {
 
@@ -49,13 +55,46 @@ package object engine {
   // Helper alias to facilitate lifting.
   type HandleStateT[M[_], A] = StateT[M, Engine.State, A]
 
+  implicit val handlePInstances = new Applicative[HandleP] with Monad[HandleP] {
+    private def concatOpP(op1: Option[Process[Task, Event]],
+                          op2: Option[Process[Task, Event]]): Option[Process[Task, Event]] = (op1, op2) match {
+      case (None, None)         => None
+      case (Some(p1), None)     => Some(p1)
+      case (None, Some(p2))     => Some(p2)
+      case (Some(p1), Some(p2)) => Some(p1 ++ p2)
+    }
+
+    override def point[A](a: => A): HandleP[A] = HandleP(Applicative[Handle].pure((a, None)))
+
+
+    // I tried to use a for comprehension here, but the compiler failed with error
+    // "value filter is not a member of edu.gemini.seqexec.engine.Handle"
+    override def ap[A, B](fa: => HandleP[A])(f: => HandleP[(A) => B]): HandleP[B] = HandleP(
+      fa.run.flatMap{
+        case (a, op1) => f.run.map {
+          case (g, op2) => (g(a), concatOpP(op1, op2)) } })
+
+    override def bind[A, B](fa: HandleP[A])(f: (A) => HandleP[B]): HandleP[B] = HandleP(
+      fa.run.flatMap{
+        case (a, op1) => f(a).run.map{
+          case (b, op2) => (b, concatOpP(op1, op2))
+        }
+      }
+    )
+
+  }
+
+  implicit class HandleToHandleP[A](self: Handle[A]) {
+    def toHandleP: HandleP[A] = HandleP(self.map((_, None)))
+  }
+
   /**
     * Changes the `Status` and returns the new `Queue.State`.
     *
     * It also takes care of initiating the execution when transitioning to
     * `Running` `Status`.
     */
-  def switch(q: EventQueue)(id: Sequence.Id)(st: SequenceState): Handle[Unit] =
+  def switch(id: Sequence.Id)(st: SequenceState): HandleP[Unit] =
     resources.flatMap(
       other => getS(id).flatMap {
         case Some(seq) =>
@@ -64,13 +103,13 @@ package object engine {
             if (seq.toSequence.resources.intersect(other).isEmpty)
               putS(id)(Sequence.State.status.set(seq, st))
             // Some resources are being used
-            else send(q)(busy(id))
+            else send(busy(id))
           else putS(id)(Sequence.State.status.set(seq, st))
         case None => unit
       }
     )
 
-  val resources: Handle[Set[Resource]] =
+  val resources: HandleP[Set[Resource]] =
     gets(_.sequences
           .values
           .toList
@@ -78,35 +117,35 @@ package object engine {
           .foldMap(_.toSequence.resources)
     )
 
-  def rollback(q: EventQueue)(id: Sequence.Id): Handle[Unit] =
+  def rollback(q: EventQueue)(id: Sequence.Id): HandleP[Unit] =
     modifyS(id)(_.rollback)
 
-  def setOperator(name: String): Handle[Unit] =
+  def setOperator(name: String): HandleP[Unit] =
     modify(st => Engine.State(st.conditions, name.some, st.sequences))
 
-  def setObserver(id: Sequence.Id)(name: String): Handle[Unit] =
+  def setObserver(id: Sequence.Id)(name: String): HandleP[Unit] =
     modifyS(id)(_.setObserver(name))
 
-  def setConditions(conditions: Conditions): Handle[Unit] =
+  def setConditions(conditions: Conditions): HandleP[Unit] =
     modify(st => Engine.State(conditions, st.operator, st.sequences))
 
-  def setImageQuality(iq: ImageQuality): Handle[Unit] =
+  def setImageQuality(iq: ImageQuality): HandleP[Unit] =
     modify(st => Engine.State(st.conditions.copy(iq = iq), st.operator, st.sequences))
 
-  def setWaterVapor(wv: WaterVapor): Handle[Unit] =
+  def setWaterVapor(wv: WaterVapor): HandleP[Unit] =
     modify(st => Engine.State(st.conditions.copy(wv = wv), st.operator, st.sequences))
 
-  def setSkyBackground(sb: SkyBackground): Handle[Unit] =
+  def setSkyBackground(sb: SkyBackground): HandleP[Unit] =
     modify(st => Engine.State(st.conditions.copy(sb = sb), st.operator, st.sequences))
 
-  def setCloudCover(cc: CloudCover): Handle[Unit] =
+  def setCloudCover(cc: CloudCover): HandleP[Unit] =
     modify(st => Engine.State(st.conditions.copy(cc = cc), st.operator, st.sequences))
 
 
   /**
     * Loads a sequence
     */
-  def load(id: Sequence.Id, seq: Sequence[Action]): Handle[Unit] =
+  def load(id: Sequence.Id, seq: Sequence[Action]): HandleP[Unit] =
     modify(
       st => Engine.State(
         st.conditions,
@@ -121,7 +160,7 @@ package object engine {
         )
       )
     )
-  def unload(id: Sequence.Id): Handle[Unit] =
+  def unload(id: Sequence.Id): HandleP[Unit] =
     modify(
       st => Engine.State(
         st.conditions,
@@ -141,33 +180,33 @@ package object engine {
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  def next(q: EventQueue)(id: Sequence.Id): Handle[Unit] =
+  def next(q: EventQueue)(id: Sequence.Id): HandleP[Unit] =
     getS(id).flatMap(
       _.map { seq =>
         seq.status match {
           case SequenceState.Stopping =>
             seq.next match {
               case None =>
-                send(q)(finished(id))
+                send(finished(id))
               // Final State
               case Some(qs: Sequence.State.Final) =>
-                putS(id)(qs) *> send(q)(finished(id))
+                putS(id)(qs) *> send(finished(id))
               // Execution completed
               case Some(qs) =>
-                putS(id)(qs) *> switch(q)(id)(SequenceState.Idle)
+                putS(id)(qs) *> switch(id)(SequenceState.Idle)
             }
           case SequenceState.Running =>
             seq.next match {
               // Empty state
               case None =>
-                send(q)(finished(id))
+                send(finished(id))
               // Final State
               case Some(qs: Sequence.State.Final) =>
-                putS(id)(qs) *> send(q)(finished(id))
+                putS(id)(qs) *> send(finished(id))
               // Execution completed. Check breakpoint here
               case Some(qs) =>
-                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(q)(id)(SequenceState.Idle)
-                                 else send(q)(executing(id)))
+                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(id)(SequenceState.Idle)
+                                 else send(executing(id)))
             }
           case _ => unit
         }
@@ -178,7 +217,7 @@ package object engine {
     * Executes all actions in the `Current` `Execution` in parallel. When all are done it emits the `Executed` event.
     * It also updates the `State` as needed.
     */
-  private def execute(q: EventQueue)(id: Sequence.Id): Handle[Unit] = {
+  private def execute(id: Sequence.Id): HandleP[Unit] = {
 
     def stackToString(e: Throwable): String = {
       val sw = new StringWriter
@@ -187,31 +226,31 @@ package object engine {
     }
 
     // Send the expected event when the `Action` is executed
-    def act(t: (Action, Int)): Task[Unit] = t match {
+    def act(t: (Action, Int)): Process[Task, Event] = t match {
       case (action, i) =>
-        action.attempt.map(_.valueOr(e =>
-          Result.Error(if (e.getMessage == null || e.getMessage.isEmpty) stackToString(e) else e.getMessage))).flatMap {
-          case r@Result.OK(_)         => q.enqueueOne(completed(id, i, r))
-          case r@Result.Partial(_, c) => q.enqueueOne(partial(id, i, r)) *> act((c, i))
-          case e@Result.Error(_)      => q.enqueueOne(failed(id, i, e))
-        }
+        Process.eval(action.attempt).flatMap(_.valueOr(e =>
+          Result.Error(if (e.getMessage == null || e.getMessage.isEmpty) stackToString(e) else e.getMessage)) match {
+          case r@Result.OK(_)         => Process(completed(id, i, r))
+          case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i))
+          case e@Result.Error(_)      => Process(failed(id, i, e))
+        })
     }
 
     getS(id).flatMap(
       _.map { seq =>
         seq match {
           case Sequence.State.Final(_,_) => unit
-          case _                         => Task.delay {
-            (Nondeterminism[Task].gatherUnordered (
-              seq.current.actions.zipWithIndex.map (act)
-            ) *> q.enqueueOne(executed (id) )).unsafePerformAsync(x => ())
-          }.liftM[HandleStateT]
+          case _                         => {
+            val u = seq.current.actions.zipWithIndex.map(act)
+            val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed (id))
+            HandleP.fromProcess(v)
+          }
         }
       }.getOrElse(unit)
     )
   }
 
-  private def getState(f: Engine.State => Task[Unit]): Handle[Unit] = get.flatMap(f(_).liftM[HandleStateT])
+  private def getState(f: Engine.State => Task[Unit]): HandleP[Unit] = get.flatMap(s => HandleP(f(s).liftM[HandleStateT].map((_, None))))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -219,48 +258,47 @@ package object engine {
     *
     * When the index doesn't exist it does nothing.
     */
-  def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): Handle[Unit] = modifyS(id)(_.mark(i)(r))
+  def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(r))
 
-  def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): Handle[Unit] = modifyS(id)(_.mark(i)(p))
+  def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail(q: EventQueue)(id: Sequence.Id)(i: Int, e: Result.Error): Handle[Unit] =
+  def fail(q: EventQueue)(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit] =
     modifyS(id)(_.mark(i)(e)) *>
-      switch(q)(id)(SequenceState.Error("There was an error"))
+      switch(id)(SequenceState.Error("There was an error"))
 
   /**
     * Ask for the current Handle `Status`.
     */
-  def status(id: Sequence.Id): Handle[Option[SequenceState]] = gets(_.sequences.get(id).map(_.status))
+  def status(id: Sequence.Id): HandleP[Option[SequenceState]] = gets(_.sequences.get(id).map(_.status))
 
   /**
     * Log something and return the `State`.
     */
   // XXX: Proper Java logging
-  def log(msg: String): Handle[Unit] = pure(println(msg))
+  def log(msg: String): HandleP[Unit] = pure((println(msg), None))
 
   /** Terminates the `Handle` returning the final `State`.
     */
-  def close(queue: EventQueue): Handle[Unit] = queue.close.liftM[HandleStateT]
+  def close(queue: EventQueue): HandleP[Unit] = HandleP(queue.close.liftM[HandleStateT].map((_, None)))
 
   /**
     * Enqueue `Event` in the Handle.
     */
-  private def send(q: EventQueue)(ev: Event): Handle[Unit] = q.enqueueOne(ev).liftM[HandleStateT]
+  private def send(ev: Event): HandleP[Unit] = HandleP.fromProcess(Process(ev))
 
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(q: EventQueue)(ev: Event): Handle[Engine.State] = {
-
-    def handleUserEvent(ue: UserEvent): Handle[Unit] = ue match {
+  private def run(q: EventQueue)(ev: Event): HandleP[Engine.State] = {
+    def handleUserEvent(ue: UserEvent): HandleP[Unit] = ue match {
       case Start(id)               => log("Engine: Started") *> rollback(q)(id) *>
-        switch(q)(id)(SequenceState.Running) *> send(q)(Event.executing(id))
-      case Pause(id)               => log("Engine: Paused") *> switch(q)(id)(SequenceState.Stopping)
+        switch(id)(SequenceState.Running) *> send(Event.executing(id))
+      case Pause(id)               => log("Engine: Paused") *> switch(id)(SequenceState.Stopping)
       case Load(id, seq)           => log("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)              => log("Engine: Sequence unloaded") *> unload(id)
       case Breakpoint(id, step, v) => log("Engine: breakpoint changed") *>
@@ -278,45 +316,44 @@ package object engine {
       case Log(msg)                => log(msg)
     }
 
-    def handleSystemEvent(se: SystemEvent): Handle[Unit] = se match {
+    def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => log("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => log("Engine: Partial result") *> partialResult(id,i, r)
       case Failed(id, i, e)        => log("Engine: Action failed") *> fail(q)(id)(i, e)
       case Busy(id)                => log("Engine: Resources needed this sequence are busy")
       case Executed(id)            => log("Engine: Execution completed") *> next(q)(id)
-      case Executing(id)           => log("Engine: Executing") *> execute(q)(id)
-      case Finished(id)            => log("Engine: Finished") *> switch(q)(id)(SequenceState.Completed)
+      case Executing(id)           => log("Engine: Executing") *> execute(id)
+      case Finished(id)            => log("Engine: Finished") *> switch(id)(SequenceState.Completed)
     }
 
     (ev match {
         case EventUser(ue)   => handleUserEvent(ue)
         case EventSystem(se) => handleSystemEvent(se)
-      }) *> get
+    }) *> get
   }
 
   // Kudos to @tpolecat
   /** Traverse a process with a stateful computation. */
-  private def mapEvalState[F[_]: Monad: Catchable, A, S, B](
-    fs: Process[F, A], s: S, f: A => StateT[F, S, B]
-  ): Process[F, B] = {
-    def go(fs: Process[F, A], s: S): Process[F, B] =
+  private def mapEvalState[A, S, B](
+    fs: Process[Task, A], s0: S, f: A => StateT[Task, S, (B, Option[Process[Task, A]])]
+  ): Process[Task, B] = {
+    def go(fs: Process[Task, A], si: S): Process[Task, B] = {
       Process.eval(fs.unconsOption).flatMap {
-        case None         => Process.halt
-        case Some((h, t)) => Process.eval(f(h).run(s)).flatMap {
-          case (s, a) => Process.emit(a) ++ go(t, s)
+        case None => Process.halt
+        case Some((h, t)) => Process.eval(f(h).run(si)).flatMap {
+          case (s, (b, p)) => Process.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
         }
       }
-    go(fs, s)
+    }
+
+    go(fs, s0)
   }
 
-  def runE(q: EventQueue)(ev: Event): Handle[(Event, Engine.State)] =
+  def runE(q: EventQueue)(ev: Event): HandleP[(Event, Engine.State)] =
     run(q)(ev).map((ev, _))
 
-  def processE(q: EventQueue): Process[Handle, (Event, Engine.State)] =
-    receive(q).evalMap(runE(q))
-
   def process(q: EventQueue, input: Process[Task, Event])(qs: Engine.State): Process[Task, (Event, Engine.State)] =
-    mapEvalState(input, qs, runE(q))
+    mapEvalState(input, qs, (e: Event) => runE(q)(e).run)
 
   // Functions for type bureaucracy
 
@@ -325,28 +362,28 @@ package object engine {
     */
   def receive(queue: EventQueue): Process[Handle, Event] = hoistHandle(queue.dequeue)
 
-  def pure[A](a: A): Handle[A] = Applicative[Handle].pure(a)
+  def pure[A](a: A): HandleP[A] = Applicative[HandleP].pure(a)
 
-  private val unit: Handle[Unit] = pure(Unit)
+  private val unit: HandleP[Unit] = pure(Unit)
 
-  val get: Handle[Engine.State] =
-    MonadState[Handle, Engine.State].get
+  val get: HandleP[Engine.State] =
+    MonadState[Handle, Engine.State].get.toHandleP
 
-  private def gets[A](f: (Engine.State) => A): Handle[A] =
-    MonadState[Handle, Engine.State].gets(f)
+  private def gets[A](f: (Engine.State) => A): HandleP[A] =
+    MonadState[Handle, Engine.State].gets(f).toHandleP
 
-  private def modify(f: (Engine.State) => Engine.State): Handle[Unit] =
-    MonadState[Handle, Engine.State].modify(f)
+  private def modify(f: (Engine.State) => Engine.State): HandleP[Unit] =
+    MonadState[Handle, Engine.State].modify(f).toHandleP
 
-  private def put(qs: Engine.State): Handle[Unit] =
-    MonadState[Handle, Engine.State].put(qs)
+  private def put(qs: Engine.State): HandleP[Unit] =
+    MonadState[Handle, Engine.State].put(qs).toHandleP
 
-  private def getS(id: Sequence.Id): Handle[Option[Sequence.State]] = get.map(_.sequences.get(id))
+  private def getS(id: Sequence.Id): HandleP[Option[Sequence.State]] = get.map(_.sequences.get(id))
 
-  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): Handle[Option[A]] =
+  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): HandleP[Option[A]] =
     gets(_.sequences.get(id).map(f))
 
-  private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): Handle[Unit] =
+  private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): HandleP[Unit] =
     modify(
       st => Engine.State(
         st.conditions,
@@ -356,11 +393,11 @@ package object engine {
       )
     )
 
-  private def putS(id: Sequence.Id)(s: Sequence.State): Handle[Unit] =
+  private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
     modify(st => Engine.State(st.conditions, st.operator, st.sequences.updated(id, s)))
 
   // For introspection
-  def printSequenceState(id: Sequence.Id): Handle[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])
+  def printSequenceState(id: Sequence.Id): HandleP[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])
 
   // The `Catchable` instance of `Handle`` needs to be manually written.
   // Without it it's not possible to use `Handle` as a scalaz-stream process effects.

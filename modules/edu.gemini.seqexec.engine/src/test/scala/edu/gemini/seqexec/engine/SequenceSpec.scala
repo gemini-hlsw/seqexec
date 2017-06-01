@@ -72,9 +72,9 @@ class SequenceSpec extends FlatSpec {
       status == Idle || status == SequenceState.Completed || status === Error
 
     q.enqueueOne(start(seqId)).flatMap(_ =>
-      processE(q).drop(1).takeThrough(
+      process(q, q.dequeue)(s0).drop(1).takeThrough(
         a => !isFinished(a._2.sequences(seqId).status)
-      ).runLast.eval(s0)).unsafePerformSync.get._2
+      ).runLast).unsafePerformSync.get._2
   }
 
   it should "stop on breakpoints" in {

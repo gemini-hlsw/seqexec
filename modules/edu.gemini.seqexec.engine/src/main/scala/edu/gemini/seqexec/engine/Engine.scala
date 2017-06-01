@@ -19,10 +19,11 @@ object Engine {
 
   def empty[A]: Engine[A] = Engine(Map.empty)
 
-  implicit val engineFunctor = new Functor[Engine] {
-    def map[A, B](q: Engine[A])(f: A => B): Engine[B] =
-      Engine(q.sequences.mapValues(_.map(f)))
-  }
+// This fails to compile with the error "not found: type $anon"
+//  implicit val engineFunctor = new Functor[Engine] {
+//    def map[A, B](q: Engine[A])(f: A => B): Engine[B] =
+//      Engine(q.sequences.mapValues(_.map(f)))
+//  }
 
   case class State(conditions: Conditions, operator: Option[Operator], sequences: Map[Sequence.Id, Sequence.State])
 
