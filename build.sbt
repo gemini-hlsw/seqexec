@@ -2,8 +2,8 @@ resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 lazy val argonautVersion          = "6.2-M3"
-lazy val kpVersion                = "0.8.0"
 lazy val doobieVersion            = "0.4.2-SNAPSHOT"
+lazy val kpVersion                = "0.9.3"
 lazy val scalazVersion            = "7.2.4"
 lazy val shapelessVersion         = "2.3.1"
 lazy val argonautShapelessVersion = "1.2.0-M1"
@@ -11,13 +11,43 @@ lazy val scalaTestVersion         = "3.0.0"
 lazy val scalaCheckVersion        = "1.13.1"
 lazy val http4sVersion            = "0.15.2a"
 
+enablePlugins(GitVersioning)
+
+git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
+
+// Before printing the prompt check git to make sure all is well.
+shellPrompt in ThisBuild := { state =>
+  import scala.sys.process._
+  import scala.Console.{ RED, RESET }
+  try {
+    val revision = "git rev-parse HEAD".!!.trim
+    val dirty    = "git status -s".!!.trim.length > 0
+    val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
+    val actual   = version.value
+    val stale    = expected != actual
+    if (stale) {
+      print(RED)
+      println(s"Computed version doesn't match the filesystem anymore.")
+      println(s"Please `reload` to get back in sync.")
+      print(RESET)
+    }
+  } catch {
+    case e: Exception =>
+      print(RED)
+      println(s"Couldn't run `git` to check on versioning. Something is amiss.")
+      print(RESET)
+  }
+  "> "
+}
+
 lazy val testLibs = Seq(
   "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
   "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test"
 )
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.11.11",
+  scalaOrganization := "org.typelevel",
+  scalaVersion := "2.11.11-bin-typelevel-4",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding", "UTF-8",
@@ -31,10 +61,16 @@ lazy val commonSettings = Seq(
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     "-Xfuture",
-    "-Ywarn-unused-import"
+    "-Ywarn-unused-import",
+    "-Ypartial-unification"
   ),
+  scalacOptions in (Compile, console) ~= (_.filterNot(Set(
+    "-Xfatal-warnings",
+    "-Ywarn-unused-import"
+  ))),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
-  libraryDependencies ++= ("org.scala-lang" %  "scala-reflect" % scalaVersion.value +: testLibs)
+  libraryDependencies ++= (scalaOrganization.value %  "scala-reflect" % scalaVersion.value +: testLibs),
+  name := "gem-" + name.value
 )
 
 lazy val flywaySettings = Seq(
@@ -50,7 +86,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, json, ocs2, service, telnetd)
+  .aggregate(core, db, json, ocs2, service, telnetd, ctl)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -131,9 +167,24 @@ lazy val telnetd = project
   .in(file("modules/telnetd"))
   .dependsOn(service, sql)
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
   .settings(commonSettings)
   .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
     libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0",
-    dockerExposedPorts  := List(6666)
+    dockerExposedPorts  := List(6666),
+    dockerRepository    := Some("geminihlsw")
+  )
+
+lazy val ctl = project
+  .in(file("modules/ctl"))
+  .settings(commonSettings)
+  .settings (
+    resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven",
+    libraryDependencies ++= Seq(
+      "org.scalaz"  %% "scalaz-core"   % scalazVersion,
+      "org.scalaz"  %% "scalaz-effect" % scalazVersion,
+      "net.bmjames" %% "scala-optparse-applicative" % "0.5"
+    ),
+    addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
   )

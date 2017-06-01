@@ -4,7 +4,7 @@ package telnetd
 import tuco._, Tuco._
 import doobie.imports._
 import org.flywaydb.core.Flyway
-import scalaz._, Scalaz._, effect._, scalaz.concurrent.Task
+import scalaz._, scalaz.effect._, scalaz.concurrent.Task
 
 /**
  * Entry point for running Gem with a telnet server. This will go away at some point and the telnet
@@ -26,12 +26,12 @@ object Main extends SafeApp {
     DriverManagerTransactor[M]("org.postgresql.Driver", url, user, pass)
 
   /** Run migrations. */
-  def mirgrate(url: String, user: String, pass: String): IO[Unit] =
+  def migrate(url: String, user: String, pass: String): IO[Int] =
     IO {
       val flyway = new Flyway()
       flyway.setDataSource(url, user, pass);
       flyway.migrate()
-    }.void
+    }
 
   override def runc: IO[Unit] =
     for {
@@ -39,7 +39,7 @@ object Main extends SafeApp {
       user <- getEnv(ENV_GEM_DB_USER, "postgres")
       pass <- getEnv(ENV_GEM_DB_URL,  "")
       _    <- IO.putStrLn(s"Connecting with URL $url, user $user, pass «hidden»")
-      _    <- mirgrate(url, user, pass)
+      _    <- migrate(url, user, pass)
       sxa  = xa[SessionIO](url, user, pass)
       txa  = xa[Task     ](url, user, pass)
       _    <- Config(Interaction.main(sxa, txa), 6666).run(simpleServer)
