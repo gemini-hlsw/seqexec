@@ -153,6 +153,8 @@ object Parsers {
       ("JH",      "JH (spectroscopic)", JH    ),
       ("K_LONG",  "K-long (2.20 um)",   KLong ),
       ("K_SHORT", "K-short (2.15 um)",  KShort),
+      ("K_BLUE",  "K-blue (2.06 um)",   KBlue ),
+      ("K_RED",   "K-red (2.31 um)",    KRed  ),
       ("Y",       "Y (1.02 um)",        Y     )
     )
 
