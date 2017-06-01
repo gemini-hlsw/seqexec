@@ -5,13 +5,13 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object Label {
-  case class Props(text: String, htmlFor: String)
+  case class Props(text: String, htmlFor: Option[String] = None)
 
   private val component = ScalaComponent.builder[Props]("Label")
     .stateless
     .renderPC((_, p, c) =>
       <.label(
-        ^.htmlFor := p.htmlFor,
+        ^.htmlFor :=? p.htmlFor,
         p.text,
         c
       )

@@ -72,7 +72,7 @@ object HeadersSideBar {
           ^.cls := "ui form",
           <.div(
             ^.cls := "required field",
-            Label(Label.Props("Operator", "operator")),
+            Label(Label.Props("Operator", Some("operator"))),
             InputEV(InputEV.Props("operator", "operator",
               operatorEV,
               placeholder = "Operator...",
