@@ -93,7 +93,8 @@ object SequenceDefaultToolbar {
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
-    .renderPS( ($, p, s) =>
+    .renderPS{ ($, p, s) =>
+      val isLogged = p.status.isLogged
       <.div(
         ^.cls := "ui column grid",
         <.div(
@@ -104,13 +105,13 @@ object SequenceDefaultToolbar {
               ^.cls := "ui form",
               <.div(
                 ^.cls := "field",
-                Label(Label.Props(s"Name: ${p.s.metadata.name}"))
+                Label(Label.Props(s"Name: ${p.s.metadata.name}")).when(isLogged)
               )
             ),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
-            ).when(p.status.isLogged && p.s.status === SequenceState.Completed),
+            ).when(isLogged && p.s.status === SequenceState.Completed),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
@@ -120,7 +121,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-            ).when(p.status.isLogged && p.s.hasError),
+            ).when(isLogged && p.s.hasError),
             Button(
               Button.Props(
                 icon = Some(IconRefresh),
@@ -129,7 +130,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(s"Sync sequence"),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               s" Sync"
-            ).when(p.status.isLogged && p.s.status === SequenceState.Idle),
+            ).when(isLogged && p.s.status === SequenceState.Idle),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
@@ -139,7 +140,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-            ).when(p.status.isLogged && p.s.status === SequenceState.Idle),
+            ).when(isLogged && p.s.status === SequenceState.Idle),
             Button(
               Button.Props(
                 icon = Some(IconPause),
@@ -149,7 +150,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some("Pause the sequence after the current step completes"),
                 disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested),
               "Pause"
-            ).when(p.status.isLogged && p.s.status === SequenceState.Running),
+            ).when(isLogged && p.s.status === SequenceState.Running),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
@@ -158,19 +159,19 @@ object SequenceDefaultToolbar {
                 color = Some("teal"),
                 disabled = !p.status.isConnected || s.syncRequested),
               "Continue from step 1"
-            ).when(p.status.isLogged && p.s.status === SequenceState.Paused)
+            ).when(isLogged && p.s.status === SequenceState.Paused)
           ),
           <.div(
             ^.cls := "right column",
             ^.classSet(
-              "eight wide computer six wide tablet sixteen wide mobile" -> p.status.isLogged,
-              "sixteen wide" -> !p.status.isLogged
+              "eight wide computer six wide tablet sixteen wide mobile" -> isLogged,
+              "sixteen wide" -> !isLogged
             ),
-            SequenceObserverField(SequenceObserverField.Props(p.s, p.status.isLogged))
+            SequenceObserverField(SequenceObserverField.Props(p.s, isLogged))
           )
         )
     )
-    ).componentWillReceiveProps { f =>
+    }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
       Callback.when(f.nextProps.s.status === SequenceState.Running && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build

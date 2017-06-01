@@ -100,7 +100,7 @@ object QueueTableBody {
     }
     .build
 
-  def apply(p: ModelProxy[(ClientStatus, LoadedSequences)]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, LoadedSequences)]): Unmounted[Props, Unit, Unit] = component(Props(p))
 
 }
 
