@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import diode.react._
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
@@ -17,12 +18,12 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 
 object QueueTableBody {
-  case class Props(sequences: ModelProxy[SeqexecAppRootModel.LoadedSequences])
+  case class Props(sequences: ModelProxy[(ClientStatus, LoadedSequences)])
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
 
-  def emptyRow(k: String): VdomTagOf[TableRow] = {
+  def emptyRow(k: String, isLogged: Boolean): VdomTagOf[TableRow] = {
     <.tr(
       ^.key := k, // React requires unique keys
       <.td(
@@ -33,7 +34,7 @@ object QueueTableBody {
       <.td(nbsp),
       <.td(
         SeqexecStyles.notInMobile,
-        nbsp)
+        nbsp).when(isLogged)
     )
   }
 
@@ -42,17 +43,28 @@ object QueueTableBody {
     p.sequences.dispatchCB(SelectToDisplay(s))
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
-    .render_P( p =>
-      <.tbody(
-        // Render after data arrives
-        p.sequences().queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
+    .render_P { p =>
+      val (status, sequences) = p.sequences()
+      <.table(
+        ^.cls := "ui selectable compact celled table unstackable",
+        <.thead(
+          <.tr(
+            SeqexecStyles.notInMobile,
+            TableHeader(TableHeader.Props(collapsing = true),  iconEmpty),
+            TableHeader("Obs ID"),
+            TableHeader("State"),
+            TableHeader("Instrument"),
+            TableHeader("Obs. Name").when(status.isLogged)
+          )
+        ),
+        <.tbody(
+          sequences.queue.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
             case (Some(s), i) =>
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status == SequenceState.Completed),
                   "warning"  -> (s.status == SequenceState.Running),
                   "negative" -> s.hasError
-                  //"negative" -> (s.status == SequenceState.Abort)
                 ),
                 ^.key := s"item.queue.$i",
                 ^.onClick --> showSequence(p, s),
@@ -78,16 +90,17 @@ object QueueTableBody {
                 <.td(
                   SeqexecStyles.notInMobile,
                   s.metadata.name
-                )
+                ).when(status.isLogged)
               )
             case (_, i) =>
-              emptyRow(s"item.queue.$i")
+              emptyRow(s"item.queue.$i", status.isLogged)
           }.toTagMod
+        )
       )
-    )
+    }
     .build
 
-  def apply(p: ModelProxy[SeqexecAppRootModel.LoadedSequences]) = component(Props(p))
+  def apply(p: ModelProxy[(ClientStatus, LoadedSequences)]) = component(Props(p))
 
 }
 
@@ -95,7 +108,7 @@ object QueueTableBody {
   * Container for the queue table
   */
 object QueueTableSection {
-  private val queueConnect = SeqexecCircuit.connect(_.sequences, "key.queue": js.Any)
+  private val queueConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequences, "key.queue": js.Any)
 
   private val component = ScalaComponent.builder[Unit]("QueueTableSection")
     .stateless
@@ -103,20 +116,7 @@ object QueueTableSection {
       <.div(
         ^.cls := "ui segment scroll pane",
         SeqexecStyles.queueListPane,
-        <.table(
-          ^.cls := "ui selectable compact celled table unstackable",
-          <.thead(
-            <.tr(
-              SeqexecStyles.notInMobile,
-              TableHeader(TableHeader.Props(collapsing = true),  iconEmpty),
-              TableHeader("Obs ID"),
-              TableHeader("State"),
-              TableHeader("Instrument"),
-              TableHeader("Obs. Name")
-            )
-          ),
-          queueConnect(QueueTableBody(_))
-        )
+        queueConnect(QueueTableBody(_))
       )
     ).build
 
