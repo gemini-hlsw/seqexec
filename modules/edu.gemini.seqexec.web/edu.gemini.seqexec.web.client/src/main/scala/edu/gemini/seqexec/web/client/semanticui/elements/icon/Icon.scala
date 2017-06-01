@@ -1,14 +1,14 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.icon
 
 import edu.gemini.seqexec.web.client.semanticui.Size
-import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactElement, ReactNode}
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{Callback, ScalaComponent}
 import scalacss.ScalaCssReact._
 
 /**
   * Semantic UI Icon component
   */
-case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
+case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
   import Icon._
 
   // Custom copy constructor to avoid passing the id again
@@ -44,13 +44,13 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
         onClick = onClick),
       children = if (children.nonEmpty) children else this.children)
 
-  private def component = ReactComponentB[Props]("Icon")
+  private def component = ScalaComponent.builder[Props]("Icon")
     .stateless
     .renderPC((_, p, c) =>
       <.i(
         ^.cls := s"${p.id} icon",
-        p.extraStyles.map(styleaToTagMod),
-        p.color.map(u => ^.cls := u),
+        p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
+        ^.cls :=? p.color,
         ^.classSet(
           "disabled"                 -> p.disabled,
           "loading"                  -> p.loading,
@@ -75,7 +75,7 @@ case class Icon(p: Icon.Props, children: Seq[ReactNode]) {
         c
       )
     )
-    .build.withKey(p.key).apply(p, children)
+    .build.withKey(p.key).apply(p)(children: _*)
 }
 
 object Icon {
@@ -672,7 +672,7 @@ object Icon {
                    onClick: Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration
-  implicit def icon2TagMod(i: Icon):ReactElement = i.component
+  implicit def icon2TagMod(i: Icon): VdomElement = i.component
 
-  def apply(s: String, children: ReactNode*):Icon = Icon(Props(s), children)
+  def apply(s: String, children: VdomNode*): Icon = Icon(Props(s), children)
 }

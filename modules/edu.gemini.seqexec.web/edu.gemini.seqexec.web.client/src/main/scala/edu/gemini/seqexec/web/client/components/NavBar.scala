@@ -4,11 +4,12 @@ import diode.react.ModelProxy
 import diode.react.ReactPot._
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.OcsBuildInfo
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
 
@@ -16,10 +17,10 @@ import scalacss.ScalaCssReact._
   * Component for the bar at the top of the page
   */
 object NavBar {
-  val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
-  val wsConnect = SeqexecCircuit.connect(_.ws)
+  private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
+  private val wsConnect = SeqexecCircuit.connect(_.ws)
 
-  val component = ReactComponentB[Unit]("SeqexecAppBar")
+  private val component = ScalaComponent.builder[Unit]("SeqexecAppBar")
     .stateless
     .render(_ =>
       <.div(
@@ -54,18 +55,18 @@ object NavBar {
         )
       )
     )
-    .componentDidMount(s =>
+    .componentDidMount(ctx =>
       Callback {
         // Mount the Semantic component using jQuery
         import org.querki.jquery.$
 
         // Pick the top bar and make it stay visible regardless of scrolling
-        $(ReactDOM.findDOMNode(s)).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))
+        $(ctx.getDOMNode).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))
       }
     )
     .build
 
-  def apply() = component()
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 /**
@@ -81,7 +82,7 @@ object ConnectionState {
     f"${delay / 1000}%d"
   }
 
-  val component = ReactComponentB[Props]("ConnectionState")
+  private val component = ScalaComponent.builder[Props]("ConnectionState")
     .stateless
     .render_P( p =>
       <.div(

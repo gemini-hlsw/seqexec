@@ -1,15 +1,15 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Operator, Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.services.SeqexecWebClient
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactComponentU, TopNode}
-import japgolly.scalajs.react.extra.{ExternalVar, TimerSupport}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
+import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
+import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
 
 import scalaz.syntax.equal._
@@ -17,7 +17,6 @@ import scalaz.std.string._
 import scalaz.std.option._
 import scalaz.syntax.std.option._
 import scalaz.Equal
-
 import scala.concurrent.duration._
 
 /**
@@ -62,10 +61,10 @@ object HeadersSideBar {
     def wvChanged(wv: WaterVapor): Callback =
       $.props >>= {_.model.dispatchCB(UpdateWaterVapor(wv))}
 
-    def render(p: Props, s: State): ReactTagOf[Div] = {
+    def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.isLogged && p.model().status.anySelected
 
-      val operatorEV = ExternalVar(~s.currentText)(updateState)
+      val operatorEV = StateSnapshot(~s.currentText)(updateState)
       <.div(
         ^.cls := "ui raised secondary segment",
         <.h4("Headers"),
@@ -91,7 +90,7 @@ object HeadersSideBar {
     }
   }
 
-  private val component = ReactComponentB[Props]("HeadersSideBar")
+  private val component = ScalaComponent.builder[Props]("HeadersSideBar")
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
@@ -100,10 +99,10 @@ object HeadersSideBar {
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator
       // Update the operator field
-      Callback.when((operator =/= f.$.state.currentText) && operator.nonEmpty)(f.$.modState(_.copy(currentText = operator)))
+      Callback.when((operator =/= f.state.currentText) && operator.nonEmpty)(f.modState(_.copy(currentText = operator)))
     }
     .build
 
-  def apply(model: ModelProxy[HeaderSideBarReader]): ReactComponentU[Props, State, Backend, TopNode] =
+  def apply(model: ModelProxy[HeaderSideBarReader]): Unmounted[Props, State, Backend] =
     component(Props(model))
 }

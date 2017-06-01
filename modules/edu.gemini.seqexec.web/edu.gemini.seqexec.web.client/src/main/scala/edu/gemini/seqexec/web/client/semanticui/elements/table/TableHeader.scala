@@ -1,8 +1,9 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.table
 
-import japgolly.scalajs.react.{ReactComponentB, ReactNode}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui._
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalaz.syntax.equal._
 
@@ -14,7 +15,7 @@ object TableHeader {
     key: String = ""
   )
 
-  val component = ReactComponentB[Props]("th")
+  private val component = ScalaComponent.builder[Props]("th")
     .stateless
     .renderPC((_, p, c) =>
       <.th(
@@ -40,10 +41,10 @@ object TableHeader {
           "center aligned" -> (p.aligned === Aligned.Center),
           "right aligned"  -> (p.aligned === Aligned.Right)
         ),
-        p.colSpan.map(^.colSpan := _),
+        p.colSpan.map(^.colSpan := _).whenDefined,
         c
       )
     ).build
 
-  def apply(p: Props, children: ReactNode*) = component(p, children)
+  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

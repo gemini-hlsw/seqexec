@@ -6,7 +6,6 @@ import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
 import japgolly.scalajs.react.ReactDOM
 
 import scala.scalajs.js.JSApp
-import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 import org.scalajs.dom.document
 import java.util.logging.{Level, Logger}
@@ -24,6 +23,8 @@ object SeqexecApp extends JSApp {
   System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
 
   def main(): Unit = {
+    val CssSettings = scalacss.devOrProdDefaults
+    import CssSettings._
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
@@ -40,6 +41,6 @@ object SeqexecApp extends JSApp {
     SeqexecCircuit.dispatch(WSConnect(0))
 
     // Render the UI using React
-    ReactDOM.render(SeqexecUI(), document.getElementById("content"))
+    SeqexecUI().renderIntoDOM(document.getElementById("content"))
   }
 }

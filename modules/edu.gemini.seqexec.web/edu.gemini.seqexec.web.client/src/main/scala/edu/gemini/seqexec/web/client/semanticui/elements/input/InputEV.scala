@@ -1,9 +1,10 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.input
 
-import japgolly.scalajs.react.{Callback, CallbackTo, ReactComponentB, ReactComponentU, ReactEventI, TopNode}
+import japgolly.scalajs.react.{Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.ScalazReact._
-import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.extra.ExternalVar
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.StateSnapshot
 
 import scalaz.syntax.equal._
 import scalaz.std.string._
@@ -16,7 +17,7 @@ object InputEV {
 
   case class Props(name: String,
                    id: String,
-                   value: ExternalVar[String],
+                   value: StateSnapshot[String],
                    inputType: InputType = TextInput,
                    placeholder: String = "",
                    disabled: Boolean = false,
@@ -32,17 +33,17 @@ object InputEV {
   // Use state monad to hold the state of the system
   private val ST = ReactS.Fix[State]
 
-  def onTextChange(p: Props)(e: ReactEventI): ReactST[CallbackTo, State, Unit] = {
+  def onTextChange(p: Props)(e: ReactEventFromInput): ReactST[CallbackTo, State, Unit] = {
     // Capture the value outside setState, react reuses the events
     val v = e.target.value
     // First update the internal state, then call the outside listener
-    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.onChange(v)) >> ST.retM(p.value.set(v))
+    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.onChange(v)) >> ST.retM(p.value.setState(v))
   }
 
   def onBlur(c: ChangeCallback): ReactST[CallbackTo, State, Unit] =
     ST.get.liftCB.flatMap(v => ST.retM(c(v.value)))
 
-  private val component = ReactComponentB[Props]("InputEV")
+  private val component = ScalaComponent.builder[Props]("InputEV")
     .initialState(State(""))
     .renderPS { ($, p, s) =>
       <.input(
@@ -55,16 +56,16 @@ object InputEV {
         ^.id := p.id,
         ^.value := s.value,
         ^.disabled := p.disabled,
-        ^.onChange ==> $._runState(onTextChange(p)),
+        ^.onChange ==> $.runStateFn(onTextChange(p)),
         ^.onBlur   --> $.runState(onBlur(p.onBlur))
       )
-    }.componentWillMount { $ =>
+    }.componentWillMount { ctx =>
       // Update state of the input if the property has changed
-      Callback.when(($.props.value.value =/= $.state.value) && !$.state.changed)($.setState(State($.props.value.value)))
+      Callback.when((ctx.props.value.value =/= ctx.state.value) && !ctx.state.changed)(ctx.setState(State(ctx.props.value.value)))
     }.componentWillReceiveProps { f =>
       // Update state of the input if the property has changed
-      Callback.when((f.nextProps.value.value =/= f.$.state.value) && !f.$.state.changed)(f.$.setState(State(f.nextProps.value.value)))
+      Callback.when((f.nextProps.value.value =/= f.state.value) && !f.state.changed)(f.setState(State(f.nextProps.value.value)))
     }.build
 
-  def apply(p: Props): ReactComponentU[Props, State, Unit, TopNode] = component(p)
+  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }

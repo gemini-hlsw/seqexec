@@ -2,8 +2,9 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model.GlobalLog
-import japgolly.scalajs.react.ReactComponentB
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
 
 /**
   * Area to display a sequence's log
@@ -11,7 +12,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 object LogArea {
   case class Props(log: GlobalLog)
 
-  val component = ReactComponentB[Props]("LogArea")
+  private val component = ScalaComponent.builder[Props]("LogArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -31,5 +32,5 @@ object LogArea {
     )
     .build
 
-  def apply(p: ModelProxy[GlobalLog]) = component(Props(p()))
+  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, Unit, Unit] = component(Props(p()))
 }

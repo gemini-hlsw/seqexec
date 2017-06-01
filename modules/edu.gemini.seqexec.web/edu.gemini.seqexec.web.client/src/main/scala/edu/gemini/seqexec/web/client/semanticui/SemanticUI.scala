@@ -16,8 +16,8 @@ object SemanticUI {
   object JsVisiblityOptions extends JsVisiblityOptionBuilder(noOpts)
 
   class JsVisiblityOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsVisiblityOptions, JsVisiblityOptionBuilder](new JsVisiblityOptionBuilder(_)) {
-    def visibilityType(t: String) = jsOpt("type", t)
-    def offset(t: Int) = jsOpt("offset", t)
+    def visibilityType(t: String): JsVisiblityOptionBuilder = jsOpt("type", t)
+    def offset(t: Int): JsVisiblityOptionBuilder = jsOpt("offset", t)
   }
 
   @js.native
@@ -26,11 +26,11 @@ object SemanticUI {
   object JsModalOptions extends JsModalOptionBuilder(noOpts)
 
   class JsModalOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsModalOptions, JsModalOptionBuilder](new JsModalOptionBuilder(_)) {
-    def autofocus(t: Boolean) = jsOpt("autofocus", t)
-    def onDeny[A](t: js.Function0[A]) = jsOpt("onDeny", t)
-    def onHide[A](t: js.Function0[A]) = jsOpt("onHide", t)
-    def onHidden[A](t: js.Function0[A]) = jsOpt("onHidden", t)
-    def onApprove[A](t: js.Function0[A]) = jsOpt("onApprove", t)
+    def autofocus(t: Boolean): JsModalOptionBuilder = jsOpt("autofocus", t)
+    def onDeny[A](t: js.Function0[A]): JsModalOptionBuilder = jsOpt("onDeny", t)
+    def onHide[A](t: js.Function0[A]): JsModalOptionBuilder = jsOpt("onHide", t)
+    def onHidden[A](t: js.Function0[A]): JsModalOptionBuilder = jsOpt("onHidden", t)
+    def onApprove[A](t: js.Function0[A]): JsModalOptionBuilder = jsOpt("onApprove", t)
   }
 
   @js.native
@@ -39,8 +39,8 @@ object SemanticUI {
   object JsProgressOptions extends JsProgressOptionBuilder(noOpts)
 
   class JsProgressOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsProgressOptions, JsProgressOptionBuilder](new JsProgressOptionBuilder(_)) {
-    def total(v: Int) = jsOpt("total", v)
-    def value(v: Int) = jsOpt("value", v)
+    def total(v: Int): JsProgressOptionBuilder = jsOpt("total", v)
+    def value(v: Int): JsProgressOptionBuilder = jsOpt("value", v)
   }
 
   @js.native
@@ -49,7 +49,7 @@ object SemanticUI {
   object JsDropdownOptions extends JsDropdownOptionBuilder(noOpts)
 
   class JsDropdownOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsDropdownOptions, JsDropdownOptionBuilder](new JsDropdownOptionBuilder(_)) {
-    def onChange[A, B, C](t: js.Function2[A, B, C]) = jsOpt("onChange", t)
+    def onChange[A, B, C](t: js.Function2[A, B, C]): JsDropdownOptionBuilder = jsOpt("onChange", t)
   }
 
   @js.native

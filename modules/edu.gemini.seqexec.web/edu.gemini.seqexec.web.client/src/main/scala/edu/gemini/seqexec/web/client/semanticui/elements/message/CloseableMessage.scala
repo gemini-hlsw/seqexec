@@ -1,8 +1,8 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.message
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconClose
-import japgolly.scalajs.react.{Callback, ReactComponentB, ReactDOM, ReactNode}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{Callback, ReactDOM, ScalaComponent}
+import japgolly.scalajs.react.vdom.html_<^._
 
 /**
   * ReactComponent for a closeable message
@@ -10,7 +10,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 object CloseableMessage extends Message {
   case class Props(header: Option[String] = None, style: Style = Style.NotDefined)
 
-  def component = ReactComponentB[Props]("Message")
+  private def component = ScalaComponent.builder[Props]("Message")
     .stateless
     .renderPC((_, p, c) =>
       <.div(
@@ -24,7 +24,7 @@ object CloseableMessage extends Message {
           "error"    -> (p.style == Style.Error)
         ),
         IconClose,
-        p.header.map(h =>
+        p.header.whenDefined(h =>
           <.div(
             ^.cls := "header",
             h
@@ -33,19 +33,19 @@ object CloseableMessage extends Message {
         c
       )
     )
-    .componentDidMount(s =>
+    .componentDidMount(ctx =>
       Callback {
         // Need to go into jQuery and semantic to enable the close button
         import org.querki.jquery.$
         import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
         import org.scalajs.dom.Element
 
-        $(ReactDOM.findDOMNode(s)).on("click", (e: Element, ev: Any) =>
+        $(ctx.getDOMNode).on("click", (e: Element, ev: Any) =>
           $(e).closest(".message").transition("fade")
         )
       }
     )
     .build
 
-  def apply(p: Props, children: ReactNode*) = component(p, children: _*)
+  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
 }

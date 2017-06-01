@@ -2,14 +2,17 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB, ReactDOM, ReactEventI}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
+import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.TagOf
+import org.scalajs.dom.html.Div
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -27,13 +30,13 @@ object LoginBox {
   val formId = "login"
 
   class Backend($: BackendScope[Props, State]) {
-    def pwdMod(e: ReactEventI) = {
+    def pwdMod(e: ReactEventFromInput): CallbackTo[Unit] = {
       // Capture the value outside setState, react reuses the events
       val v = e.target.value
       $.modState(_.copy(password = v))
     }
 
-    def userMod(e: ReactEventI) = {
+    def userMod(e: ReactEventFromInput): CallbackTo[Unit] = {
       val v = e.target.value
       $.modState(_.copy(username = v))
     }
@@ -55,7 +58,7 @@ object LoginBox {
       )
     }
 
-    def render(p: Props, s: State) =
+    def render(p: Props, s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
         <.div(
@@ -115,14 +118,14 @@ object LoginBox {
                   IconCircleNotched.copyIcon(loading = true),
                   m
                 )
-              ),
+              ).whenDefined,
               s.errorMsg.map( m =>
                 <.div(
                   ^.cls := "left floated left aligned six wide column red",
                   IconAttention,
                   m
                 )
-              ),
+              ).whenDefined,
               <.div(
                 ^.cls := "right floated right aligned ten wide column",
                 Button(Button.Props(onClick = closeBox), "Cancel"),
@@ -134,10 +137,10 @@ object LoginBox {
       )
   }
 
-  val component = ReactComponentB[Props]("Login")
+  private val component = ScalaComponent.builder[Props]("Login")
     .initialState(State("", "", None, None))
     .renderBackend[Backend]
-    .componentDidUpdate(s =>
+    .componentDidUpdate(ctx =>
       Callback {
         // To properly handle the model we need to do updates with jQuery and
         // the Semantic UI javascript library
@@ -145,25 +148,25 @@ object LoginBox {
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
-        if (s.currentProps.open() == SectionClosed) {
-          $(ReactDOM.findDOMNode(s.$)).modal("hide")
+        if (ctx.currentProps.open() == SectionClosed) {
+          $(ctx.getDOMNode).modal("hide")
         }
-        if (s.currentProps.open() == SectionOpen) {
+        if (ctx.currentProps.open() == SectionOpen) {
           // Configure the modal to autofoucs and to act properly on closing
-          $(ReactDOM.findDOMNode(s.$)).modal(
+          $(ctx.getDOMNode).modal(
             JsModalOptions
               .autofocus(true)
               .onHidden { () =>
                 // Need to call direct access as this is outside the event loop
-                s.$.accessDirect.setState(empty)
+                ctx.setState(empty)
                 SeqexecCircuit.dispatch(CloseLoginBox)
               }
           )
           // Show the modal box
-          $(ReactDOM.findDOMNode(s.$)).modal("show")
+          $(ctx.getDOMNode).modal("show")
         }
       }
     ).build
 
-  def apply(s: ModelProxy[SectionVisibilityState]) = component(Props(s))
+  def apply(s: ModelProxy[SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(s))
 }
