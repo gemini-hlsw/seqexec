@@ -14,8 +14,9 @@ package object http4s {
                   |        }
                   |      }
                   |"""
-    val deps = if (devMode) "edu_gemini_seqexec_web_client-jsdeps.js" else s"edu_gemini_seqexec_web_client-jsdeps.min.$builtAtMillis.js"
-    val seqexecScript = if (devMode) s"seqexec.js" else s"seqexec-opt.$builtAtMillis.js"
+    val deps = if (devMode) "edu_gemini_seqexec_web_client-fastopt-library.js" else s"edu_gemini_seqexec_web_client-jsdeps.min.$builtAtMillis.js"
+    val loaderScript = if (devMode) s"edu_gemini_seqexec_web_client-fastopt-loader.js" else s"edu_gemini_seqexec_web_client-fastopt-loader-opt.$builtAtMillis.js"
+    val seqexecScript = if (devMode) s"edu_gemini_seqexec_web_client-fastopt.js" else s"edu_gemini_seqexec_web_client-opt.$builtAtMillis.js"
     val xml =
       <html lang="en">
         <head>
@@ -45,6 +46,7 @@ package object http4s {
           </div>
 
           <script src={s"/$deps"}></script>
+          <script src={s"/$loaderScript"}></script>
           <script src={s"/$seqexecScript"}></script>
           <script>
             {s"""SeqexecApp.start('$site');"""}

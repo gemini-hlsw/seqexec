@@ -99,17 +99,14 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
 
     // Settings to optimize the use of sbt-revolver
-
     // Allows to read the generated JS on client
-    resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
+    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
     // Lets the backend to read the .map file for js
-    resources in Compile += (fastOptJS in (edu_gemini_seqexec_web_client, Compile)).value.map((x: sbt.File) => new File(x.getAbsolutePath + ".map")).data,
-    // Lets the server read the jsdeps file
-    (managedResources in Compile) += (artifactPath in(edu_gemini_seqexec_web_client, Compile, packageJSDependencies)).value,
+    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map((x: sbt.Attributed[File]) => new File(x.data.getAbsolutePath + ".map")),
     // Support stopping the running server
     mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
     // do a fastOptJS on reStart
-    reStart := (reStart dependsOn (fastOptJS in (edu_gemini_seqexec_web_client, Compile))).evaluated,
+    reStart := (reStart dependsOn (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client))).evaluated,
     // This settings makes reStart to rebuild if a scala.js file changes on the client
     watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value,
     // On recompilation only consider changes to .scala and .js files
@@ -126,8 +123,30 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server, edu_gemini_web_server_common)
 
 // Client side project using Scala.js
+lazy val btest = project.in(file("modules/btest"))
+  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSBundlerPlugin)
+  .settings(commonJSSettings: _*)
+  .settings(
+    // artifactPath in (Compile, fastOptJS) := resourceManaged.value / "seqexec.js",
+    version in webpack := "2.2.1",
+    version in startWebpackDevServer := "2.2.0",
+    webpackBundlingMode := BundlingMode.LibraryOnly(),
+    npmDependencies in Compile ++= Seq(
+      "react" -> LibraryVersions.reactJS,
+      "react-dom" -> LibraryVersions.reactJS,
+      "jquery" -> LibraryVersions.jQuery,
+      "semantic-ui" -> LibraryVersions.semanticUI
+    ),
+    useYarn := true,
+    libraryDependencies ++= ReactScalaJS.value,
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+  )
+
 lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSBundlerPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
@@ -139,28 +158,28 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     // library and that conflict with the requested on jsDependencies, in particular
     // with jquery.js
     // See http://stackoverflow.com/questions/35374131/scala-js-missing-js-library, UPDATE #1
-    (scalaJSNativeLibraries in Test) := (scalaJSNativeLibraries in Test).map { l =>
-      l.map(virtualFiles => virtualFiles.filter(vf => {
-        val f = vf.toURI.toString
-        !(f.endsWith(".js") && f.contains("scala/tools"))
-      }))
-    }.value,
-    // Write the generated js to the filename seqexec.js
-    artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
-    artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
+    // (scalaJSNativeLibraries in Test) := (scalaJSNativeLibraries in Test).map { l =>
+    //   l.map(virtualFiles => virtualFiles.filter(vf => {
+    //     val f = vf.toURI.toString
+    //     !(f.endsWith(".js") && f.contains("scala/tools"))
+    //   }))
+    // }.value,
+  // Write the generated js to the filename seqexec.js
+    // artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
+    // artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
     // Requires the DOM
     jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
-    // JS dependencies from webjars
-    jsDependencies ++= Seq(
-      "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
-      "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-dom.js"         minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
-      "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js" commonJSName "jQuery",
-      "org.webjars"       % "Semantic-UI" % LibraryVersions.semanticUI  / "semantic.js"          minified "semantic.min.js" dependsOn "jquery.js"
+    webpackBundlingMode := BundlingMode.LibraryAndApplication(),
+    // JS dependencies via npm
+    npmDependencies in Compile ++= Seq(
+      "react" -> LibraryVersions.reactJS,
+      "react-dom" -> LibraryVersions.reactJS,
+      "jquery" -> LibraryVersions.jQuery,
+      "semantic-ui-css" -> LibraryVersions.semanticUI
     ),
-    // Build a js dependencies file
-    skip in packageJSDependencies := false,
     // Put the jsdeps file on a place reachable for the server
-    crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
+    useYarn := true,
+    // crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       JQuery.value,
       ScalaCSS.value,

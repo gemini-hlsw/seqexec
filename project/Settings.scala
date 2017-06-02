@@ -106,7 +106,6 @@ object Settings {
     val reactJS        = "15.6.1"
     val jQuery         = "3.2.1"
     val semanticUI     = "2.2.10"
-    val jQueryTerminal = "0.11.2"
     val ocsVersion     = "2017101.1.4"
 
     //Apache XMLRPC
