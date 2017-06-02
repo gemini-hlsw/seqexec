@@ -109,7 +109,6 @@ class SequenceSpec extends FlatSpec {
 
   it should "resume execution to completion after a breakpoint" in {
 
-    val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
         Conditions.default,
@@ -127,7 +126,7 @@ class SequenceSpec extends FlatSpec {
         )
       )
 
-    val qs1 = runToCompletion(q, qs0)
+    val qs1 = runToCompletion(async.boundedQueue[Event](10), qs0)
 
     // Check that there is something left to run
     inside (qs1.sequences(seqId)) {
@@ -135,7 +134,7 @@ class SequenceSpec extends FlatSpec {
         assert(zipper.pending.nonEmpty)
     }
 
-    val qs2 = runToCompletion(q, qs1)
+    val qs2 = runToCompletion(async.boundedQueue[Event](10), qs1)
 
     inside (qs2.sequences(seqId)) {
       case f@Sequence.State.Final(_, status) =>

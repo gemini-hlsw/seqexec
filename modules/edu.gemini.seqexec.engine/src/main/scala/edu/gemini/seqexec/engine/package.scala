@@ -70,9 +70,9 @@ package object engine {
     // I tried to use a for comprehension here, but the compiler failed with error
     // "value filter is not a member of edu.gemini.seqexec.engine.Handle"
     override def ap[A, B](fa: => HandleP[A])(f: => HandleP[(A) => B]): HandleP[B] = HandleP(
-      fa.run.flatMap{
-        case (a, op1) => f.run.map {
-          case (g, op2) => (g(a), concatOpP(op1, op2)) } })
+      f.run.flatMap{
+        case (g, op2) => fa.run.map {
+          case (a, op1) => (g(a), concatOpP(op1, op2)) } })
 
     override def bind[A, B](fa: HandleP[A])(f: (A) => HandleP[B]): HandleP[B] = HandleP(
       fa.run.flatMap{
@@ -296,8 +296,7 @@ package object engine {
     */
   private def run(q: EventQueue)(ev: Event): HandleP[Engine.State] = {
     def handleUserEvent(ue: UserEvent): HandleP[Unit] = ue match {
-      case Start(id)               => log("Engine: Started") *> rollback(q)(id) *>
-        switch(id)(SequenceState.Running) *> send(Event.executing(id))
+      case Start(id)               => log("Engine: Started") *> rollback(q)(id) *> switch(id)(SequenceState.Running) *> send(Event.executing(id))
       case Pause(id)               => log("Engine: Paused") *> switch(id)(SequenceState.Stopping)
       case Load(id, seq)           => log("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)              => log("Engine: Sequence unloaded") *> unload(id)
@@ -329,7 +328,7 @@ package object engine {
     (ev match {
         case EventUser(ue)   => handleUserEvent(ue)
         case EventSystem(se) => handleSystemEvent(se)
-    }) *> get
+    })*> get
   }
 
   // Kudos to @tpolecat
@@ -337,8 +336,8 @@ package object engine {
   private def mapEvalState[A, S, B](
     fs: Process[Task, A], s0: S, f: A => StateT[Task, S, (B, Option[Process[Task, A]])]
   ): Process[Task, B] = {
-    def go(fs: Process[Task, A], si: S): Process[Task, B] = {
-      Process.eval(fs.unconsOption).flatMap {
+    def go(fi: Process[Task, A], si: S): Process[Task, B] = {
+      Process.eval(fi.unconsOption).flatMap {
         case None => Process.halt
         case Some((h, t)) => Process.eval(f(h).run(si)).flatMap {
           case (s, (b, p)) => Process.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)

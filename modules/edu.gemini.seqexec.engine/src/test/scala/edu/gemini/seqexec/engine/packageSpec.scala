@@ -131,17 +131,17 @@ class packageSpec extends FlatSpec {
 
   it should "be in Running status after starting" in {
     val q = async.boundedQueue[Event](10)
-    val qs = (q.enqueueOne(start(seqId)) *> process(q, q.dequeue)(qs1).take(2).runLast).unsafePerformSync.get._2
+    val qs = (q.enqueueOne(start(seqId)) *> process(q, q.dequeue)(qs1).take(1).runLast).unsafePerformSync.get._2
     assert(qs.sequences(seqId).status === SequenceState.Running)
   }
 
-  ignore should "be 0 pending executions after execution" in {
+  it should "be 0 pending executions after execution" in {
     val q = async.boundedQueue[Event](10)
     val qs = runToCompletion(q, qs1)
     assert(qs.sequences(seqId).pending.isEmpty)
   }
 
-  ignore should "be 2 Steps done after execution" in {
+  it should "be 2 Steps done after execution" in {
     val q = async.boundedQueue[Event](10)
     val qs = runToCompletion(q, qs1)
     assert(qs.sequences(seqId).done.length == 2)
@@ -179,7 +179,7 @@ class packageSpec extends FlatSpec {
     )
   }
 
-  ignore should "not run 2nd sequence because it's using the same resource" in {
+  it should "not run 2nd sequence because it's using the same resource" in {
     val q = async.boundedQueue[Event](10)
 
     assert(
@@ -190,7 +190,7 @@ class packageSpec extends FlatSpec {
     )
   }
 
-  ignore should "run 2nd sequence when there are no shared resources" in {
+  it should "run 2nd sequence when there are no shared resources" in {
     val q = async.boundedQueue[Event](10)
 
     assert(
@@ -201,7 +201,7 @@ class packageSpec extends FlatSpec {
     )
   }
 
-  ignore should "keep processing input messages regardless of how long Actions take" in {
+  "engine" should "keep processing input messages regardless of how long Actions take" in {
     val q = async.boundedQueue[Event](10)
     val startedFlag = new Semaphore(0)
     val finishFlag = new Semaphore(0)
