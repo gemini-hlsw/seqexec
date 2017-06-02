@@ -3,6 +3,11 @@ package edu.gemini.seqexec.model
 import scalaz._
 import Scalaz._
 
+import monocle.{Getter, Lens, Optional, Prism}
+import monocle.macros.GenLens
+import monocle.macros.GenPrism
+import monocle.Traversal
+
 object Model {
 
   sealed trait SeqexecEvent
@@ -45,6 +50,55 @@ object Model {
     // has to be embedded in a `Task`
     case class NewLogMessage(msg: String) extends SeqexecEvent
 
+    // Some useful Monocle lenses
+    val obsNameL = GenLens[SequenceView](_.metadata.name)
+    val eachL = Traversal.fromTraverse[List, SequenceView]
+    val sequencesQueueL = GenLens[SequencesQueue[SequenceView]](_.queue)
+    val ssLens = GenLens[SequenceStart](_.view)
+    val ssPrism = Optional[SeqexecEvent, SequenceStart] {
+      case e: SequenceStart => Some(e)
+      case _ => None
+    }(_ => identity)
+
+    // Prism to focus on only the SeqexecEvents that have a queue
+    // There is a risk that we forget to update this when adding a new element
+    val sePrism = Prism.partial[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])]{
+      case e @ StepExecuted(v)           => (e, v)
+      case e @ SequenceStart(v)          => (e, v)
+      case e @ SequenceCompleted(v)      => (e, v)
+      case e @ SequenceLoaded(_, v)      => (e, v)
+      case e @ SequenceUnloaded(_, v)    => (e, v)
+      case e @ StepBreakpointChanged(v)  => (e, v)
+      case e @ OperatorUpdated(v)        => (e, v)
+      case e @ ObserverUpdated(v)        => (e, v)
+      case e @ ConditionsUpdated(v)      => (e, v)
+      case e @ StepSkipMarkChanged(v)    => (e, v)
+      case e @ SequencePauseRequested(v) => (e, v)
+      case e @ SequenceRefreshed(v)      => (e, v)
+      case e @ ResourcesBusy(v)          => (e, v)
+      case e @ SequenceUpdated(v)        => (e, v)
+    } { case (e, q) =>
+      e match {
+        case SequenceStart(_)           => SequenceStart(q)
+        case StepExecuted(_)            => StepExecuted(q)
+        case SequenceCompleted(_)       => SequenceCompleted(q)
+        case e @ SequenceLoaded(_, v)   => e.copy(view = q)
+        case e @ SequenceUnloaded(_, v) => e.copy(view = q)
+        case StepBreakpointChanged(_)   => StepBreakpointChanged(q)
+        case OperatorUpdated(_)         => OperatorUpdated(q)
+        case ObserverUpdated(_)         => ObserverUpdated(q)
+        case ConditionsUpdated(_)       => ConditionsUpdated(q)
+        case StepSkipMarkChanged(_)     => StepSkipMarkChanged(q)
+        case SequencePauseRequested(_)  => SequencePauseRequested(q)
+        case SequenceRefreshed(_)       => SequenceRefreshed(q)
+        case ResourcesBusy(_)           => ResourcesBusy(q)
+        case SequenceUpdated(_)         => SequenceUpdated(q)
+        case e                          => e
+      }
+    }
+    val tupleLens = Lens[(SeqexecEvent, SequencesQueue[SequenceView]), SequencesQueue[SequenceView]](_._2)(v => t => t.copy(_2 = v))
+    // Composite lens to change the sequence name of an event
+    val sequenceNameL = sePrism composeLens tupleLens composeLens sequencesQueueL composeTraversal eachL composeLens obsNameL
   }
 
   type SystemName = String
