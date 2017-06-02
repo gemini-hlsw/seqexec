@@ -51,6 +51,7 @@ object Settings {
     val jwt          = "0.12.1"
     val slf4j        = "1.7.25"
     val knobs        = "4.0.31-scalaz-7.2"
+    val monocle      = "1.4.0"
 
     // test libraries
     val scalaTest             = "3.0.3"
@@ -106,6 +107,10 @@ object Settings {
     val Http4sClient  = Seq(
       "org.http4s" %% "http4s-blaze-client" % LibraryVersions.http4s,
       "org.http4s" %% "http4s-scala-xml"    % LibraryVersions.http4s)
+
+    val Monocle  = Seq(
+      "com.github.julien-truffaut" %%  "monocle-core"  % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%  "monocle-macro" % LibraryVersions.monocle)
 
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(
