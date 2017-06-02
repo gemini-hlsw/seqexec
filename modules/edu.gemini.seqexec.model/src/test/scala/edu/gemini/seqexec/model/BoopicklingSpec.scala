@@ -2,6 +2,7 @@ package edu.gemini.seqexec.model
 
 import Model._
 import Model.SeqexecEvent._
+import Model.SeqexecModelUpdate
 import boopickle.Default._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary._
@@ -44,6 +45,7 @@ object SharedModelArbitraries {
   implicit val sbArb  = implicitly[Arbitrary[SkyBackground]]
   implicit val ccArb  = implicitly[Arbitrary[CloudCover]]
   implicit val conArb = implicitly[Arbitrary[Conditions]]
+  implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
 }
 
 /**

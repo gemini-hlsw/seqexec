@@ -55,13 +55,9 @@ object Model {
     val eachL = Traversal.fromTraverse[List, SequenceView]
     val sequencesQueueL = GenLens[SequencesQueue[SequenceView]](_.queue)
     val ssLens = GenLens[SequenceStart](_.view)
-    val ssPrism = Optional[SeqexecEvent, SequenceStart] {
-      case e: SequenceStart => Some(e)
-      case _ => None
-    }(_ => identity)
 
     // Prism to focus on only the SeqexecEvents that have a queue
-    // There is a risk that we forget to update this when adding a new element
+    // Unfortunately it doesn't seem to exist a more generic form to build this one
     val sePrism = Prism.partial[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])]{
       case e @ StepExecuted(v)           => (e, v)
       case e @ SequenceStart(v)          => (e, v)
