@@ -32,7 +32,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(host: String, port: Int, devMode: Boolean, sslConfig: Option[SSLConfig])
+  case class WebServerConfiguration(host: String, port: Int, insecurePort: Int, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -56,12 +56,13 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     config.map { cfg =>
       val host = cfg.require[String]("web-server.host")
       val port = cfg.require[Int]("web-server.port")
+      val insecurePort = cfg.require[Int]("web-server.insecurePort")
       val devMode = cfg.require[String]("mode")
       val keystore = cfg.lookup[String]("web-server.tls.keyStore")
       val keystorePwd = cfg.lookup[String]("web-server.tls.keyStorePwd")
       val certPwd = cfg.lookup[String]("web-server.tls.certPwd")
       val sslConfig = (keystore |@| keystorePwd |@| certPwd)(SSLConfig.apply)
-      WebServerConfiguration(host, port, devMode.equalsIgnoreCase("dev"), sslConfig)
+      WebServerConfiguration(host, port, insecurePort, devMode.equalsIgnoreCase("dev"), sslConfig)
     }
 
   // Configuration of the ldap clients
@@ -111,6 +112,12 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     }.start
   }
 
+  def redirectWebServer: Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+    val builder = BlazeBuilder.bindHttp(conf.insecurePort, conf.host)
+      .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
+    builder.start
+  }
+
   /**
     * Reads the configuration and launches the web server
     */
@@ -135,8 +142,9 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
             wc <- serverConf
             ac <- authConf.run(wc)
             as <- authService.run(ac)
+            rd <- redirectWebServer.run(wc)
             ws <- webServer(as, (inq, out), et).run(wc)
-          } yield ws
+          } yield (ws, rd)
         )
       Process.eval_(pt.map(_._2))
     }
