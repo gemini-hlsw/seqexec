@@ -6,14 +6,14 @@ import gem.enum.SmartGcalType
 import scalaz.Functor
 
 sealed abstract class Step[A] extends Product with Serializable {
-  def instrument: A
+  def dynamicConfig: A
 }
 
-final case class BiasStep     [A](instrument: A)                               extends Step[A]
-final case class DarkStep     [A](instrument: A)                               extends Step[A]
-final case class GcalStep     [A](instrument: A, gcal:      GcalConfig)        extends Step[A]
-final case class ScienceStep  [A](instrument: A, telescope: TelescopeConfig)   extends Step[A]
-final case class SmartGcalStep[A](instrument: A, smartGcalType: SmartGcalType) extends Step[A]
+final case class BiasStep     [A](dynamicConfig: A)                               extends Step[A]
+final case class DarkStep     [A](dynamicConfig: A)                               extends Step[A]
+final case class GcalStep     [A](dynamicConfig: A, gcal:      GcalConfig)        extends Step[A]
+final case class ScienceStep  [A](dynamicConfig: A, telescope: TelescopeConfig)   extends Step[A]
+final case class SmartGcalStep[A](dynamicConfig: A, smartGcalType: SmartGcalType) extends Step[A]
 
 object Step {
   implicit val FunctorStep: Functor[Step] = new Functor[Step] {

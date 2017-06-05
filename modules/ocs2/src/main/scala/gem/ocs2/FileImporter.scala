@@ -2,7 +2,7 @@ package gem.ocs2
 
 import doobie.imports._
 import gem.{Dataset, Log, Observation, Program, Step, User}
-import gem.config.InstrumentConfig
+import gem.config.{ StaticConfig, DynamicConfig }
 import gem.dao.UserDao
 import gem.ocs2.Decoders._
 import gem.ocs2.pio.PioDecoder
@@ -22,7 +22,7 @@ import scalaz.effect._
   */
 object FileImporter extends SafeApp with DoobieClient {
 
-  type Obs  = Observation[Step[InstrumentConfig]]
+  type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
   type Prog = Program[Obs]
 
   val dir = new File("archive")
@@ -46,7 +46,7 @@ object FileImporter extends SafeApp with DoobieClient {
   def read(f: File): IO[Elem] =
     IO(XML.loadFile(f))
 
-  def insert(u: User[_], p: Program[Observation[Step[InstrumentConfig]]], ds: List[Dataset], log: Log[ConnectionIO]): ConnectionIO[Unit] =
+  def insert(u: User[_], p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], log: Log[ConnectionIO]): ConnectionIO[Unit] =
     Importer.writeProgram(p, ds)(u, log)
 
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =

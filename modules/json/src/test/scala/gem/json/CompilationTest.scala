@@ -1,7 +1,7 @@
 package gem
 package json
 
-import gem.config.InstrumentConfig
+import gem.config.{ StaticConfig, DynamicConfig } 
 
 import argonaut._, Argonaut._, ArgonautShapeless._
 
@@ -12,7 +12,7 @@ trait CompilatonTests {
 
   // Sanity check
   // TODO: this, better
-  implicitly[EncodeJson[Program[Observation[Step[InstrumentConfig]]]]]
-  implicitly[DecodeJson[Program[Observation[Step[InstrumentConfig]]]]]
+  implicitly[EncodeJson[Program[Observation[StaticConfig, Step[DynamicConfig]]]]]
+  implicitly[DecodeJson[Program[Observation[StaticConfig, Step[DynamicConfig]]]]]
 
 }
