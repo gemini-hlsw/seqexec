@@ -105,7 +105,7 @@ lazy val commonSettings = Seq(
   ),
   scalacOptions in (Compile, console) ~= (_.filterNot(Set(
     "-Xfatal-warnings",
-    "-Ywarn-unused-import"
+    "-Ywarn-unused:imports"
   ))),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
   libraryDependencies ++= (scalaOrganization.value %  "scala-reflect" % scalaVersion.value +: testLibs),
