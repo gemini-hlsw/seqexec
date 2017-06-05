@@ -9,7 +9,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
+import edu.gemini.web.server.common.{LogInitialization, StaticRoutes, RedirectToHttpsRoutes}
 import knobs._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
@@ -32,7 +32,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(host: String, port: Int, insecurePort: Int, devMode: Boolean, sslConfig: Option[SSLConfig])
+  case class WebServerConfiguration(host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -54,15 +54,16 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
     config.map { cfg =>
-      val host = cfg.require[String]("web-server.host")
-      val port = cfg.require[Int]("web-server.port")
-      val insecurePort = cfg.require[Int]("web-server.insecurePort")
-      val devMode = cfg.require[String]("mode")
-      val keystore = cfg.lookup[String]("web-server.tls.keyStore")
-      val keystorePwd = cfg.lookup[String]("web-server.tls.keyStorePwd")
-      val certPwd = cfg.lookup[String]("web-server.tls.certPwd")
-      val sslConfig = (keystore |@| keystorePwd |@| certPwd)(SSLConfig.apply)
-      WebServerConfiguration(host, port, insecurePort, devMode.equalsIgnoreCase("dev"), sslConfig)
+      val host            = cfg.require[String]("web-server.host")
+      val port            = cfg.require[Int]("web-server.port")
+      val insecurePort    = cfg.require[Int]("web-server.insecurePort")
+      val externalBaseUrl = cfg.require[String]("web-server.externalBaseUrl")
+      val devMode         = cfg.require[String]("mode")
+      val keystore        = cfg.lookup[String]("web-server.tls.keyStore")
+      val keystorePwd     = cfg.lookup[String]("web-server.tls.keyStorePwd")
+      val certPwd         = cfg.lookup[String]("web-server.tls.certPwd")
+      val sslConfig       = (keystore |@| keystorePwd |@| certPwd)(SSLConfig.apply)
+      WebServerConfiguration(host, port, insecurePort, externalBaseUrl, devMode.equalsIgnoreCase("dev"), sslConfig)
     }
 
   // Configuration of the ldap clients
@@ -114,7 +115,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
 
   def redirectWebServer: Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val builder = BlazeBuilder.bindHttp(conf.insecurePort, conf.host)
-      .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
+      .mountService(RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
     builder.start
   }
 
