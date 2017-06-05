@@ -82,7 +82,7 @@ class SmartGcalSpec extends FlatSpec with Matchers {
     steps.values shouldEqual (BiasStep(f2) :: exp) :+ DarkStep(f2)
   }
 
-  private def verifySteps(m: GcalLampType \/ GcalBaselineType, ss: Location.Middle ==>> Step[InstrumentConfig]): Assertion = {
+  private def verifySteps(m: GcalLampType \/ GcalBaselineType, ss: Location.Middle ==>> Step[DynamicConfig]): Assertion = {
     def lookup(m: GcalLampType \/ GcalBaselineType): List[GcalConfig] =
       gcals.filter(t => m.fold(_ == t._1, _ == t._2)).map(_._3)
 
@@ -137,10 +137,10 @@ object SmartGcalSpec {
       ))
     )
 
-  private def runF2Expansion(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[InstrumentConfig]) => Assertion): Assertion =
+  private def runF2Expansion(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion =
     runF2Expansion(t, loc1, loc1)(verify)
 
-  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[InstrumentConfig]) => Assertion): Assertion = {
+  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion = {
     val (expansion, steps) = doTest {
       for {
         _  <- StepDao.insert(oid, insertionLoc, SmartGcalStep(f2, t))
@@ -156,7 +156,7 @@ object SmartGcalSpec {
   private def doTest[A](test: ConnectionIO[A]): A =
     (for {
       _ <- ProgramDao.insert(Program(pid, "SmartGcalSpec Prog", List.empty[Step[Nothing]]))
-      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", Some(Instrument.Flamingos2), List.empty[Step[Nothing]]))
+      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", Flamingos2StaticConfig(), List.empty[Step[Nothing]]))
       a <- test
       _ <- sql"""DELETE FROM observation WHERE observation_id = $oid""".update.run
       _ <- sql"""DELETE FROM program     WHERE program_id     = $pid""".update.run

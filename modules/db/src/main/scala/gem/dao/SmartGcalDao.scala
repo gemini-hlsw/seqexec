@@ -33,13 +33,13 @@ object SmartGcalDao {
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
 
-  private def lookup(step: MaybeConnectionIO[Step[InstrumentConfig]], loc: Location.Middle): ExpansionResult[ExpandedSteps] = {
+  private def lookup(step: MaybeConnectionIO[Step[DynamicConfig]], loc: Location.Middle): ExpansionResult[ExpandedSteps] = {
     // Information we need to extract from a smart gcal step in order to expand
     // it into manual gcal steps.  The key is used to look up the gcal config
     // from the instrument's smart table (e.g., smart_f2).  The type is used to
     // extract the matching steps (arc vs. flat, or night vs. day baseline).
     // The instrument config is needed to create the corresponding gcal steps.
-    type SmartContext = (SmartGcalKey, SmartGcalType, InstrumentConfig)
+    type SmartContext = (SmartGcalKey, SmartGcalType, DynamicConfig)
 
     // Get the key, type, and instrument config from the step.  We'll need this
     // information to lookup the corresponding GcalConfig.
@@ -97,7 +97,7 @@ object SmartGcalDao {
     // Find the previous and next location for the smart gcal step that we are
     // replacing.  This is needed to generate locations for the steps that will
     // be inserted.
-    def bounds(steps: Location.Middle ==>> Step[InstrumentConfig]): (Location, Location) =
+    def bounds(steps: Location.Middle ==>> Step[DynamicConfig]): (Location, Location) =
       steps.split(loc) match {
         case (prev, next) => (prev.findMax.map(_._1).widen[Location] | Location.beginning,
                               next.findMin.map(_._1).widen[Location] | Location.end)

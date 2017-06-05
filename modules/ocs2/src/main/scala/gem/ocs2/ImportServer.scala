@@ -4,8 +4,8 @@ import Decoders._
 
 import edu.gemini.spModel.core.SPProgramID
 
-import gem.{Dataset, Observation, Program, Step}
-import gem.config.InstrumentConfig
+import gem.{Dataset, Observation, Program, Step }
+import gem.config.{ StaticConfig, DynamicConfig }
 import gem.ocs2.pio.{PioDecoder, PioError}
 import gem.ocs2.pio.PioError._
 import org.http4s.{EntityEncoder, HttpService, Response, Status}
@@ -60,7 +60,10 @@ final class ImportServer(ocsHost: String) {
 
   def importObservation(obsIdStr: String): ServerResponse = {
     val checkId = Observation.Id.fromString(obsIdStr) \/> badRequest(obsIdStr, "observation")
-    checkId.as { fetchDecodeAndStore[Obs](obsIdStr, Importer.importObservation) }.merge
+    checkId.as { fetchDecodeAndStore[Option[Obs]](obsIdStr, {
+        case (Some(o), ds) => Importer.importObservation(o, ds)
+        case (None,    ds) => Task.now(()) // what should we do here?
+     }) }.merge
   }
 
   def importProgram(pidStr: String): ServerResponse = {
@@ -82,7 +85,7 @@ object ImportServer extends ServerApp {
   private def fetchServiceUrl(hostName: String): String =
     s"http://$hostName:8442/ocs3/fetch"
 
-  type Obs  = Observation[Step[InstrumentConfig]]
+  type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
   type Prog = Program[Obs]
 
   case class ServerResponse(status: Status, msg: String) {

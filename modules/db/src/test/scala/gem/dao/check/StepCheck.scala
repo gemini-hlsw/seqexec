@@ -6,8 +6,6 @@ class StepCheck extends Check {
   "StepDao.Statements" should
             "delete (1)"           in check(delete(Dummy.observationId, Dummy.locationMiddle))
   it should "delete (2)"           in check(delete(Dummy.observationId))
-  it should "allGenericOnly"       in check(allGenericOnly(Dummy.observationId))
-  it should "oneGenericOnly"       in check(oneGenericOnly(Dummy.observationId, Dummy.locationMiddle))
   it should "allF2Only"            in check(allF2Only(Dummy.observationId))
   it should "selectAllEmpty"       in check(selectAllEmpty(Dummy.observationId))
   it should "selectOneEmpty"       in check(selectOneEmpty(Dummy.observationId, Dummy.locationMiddle))

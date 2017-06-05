@@ -45,7 +45,7 @@ trait Check extends FlatSpec with Matchers with QueryChecker {
     val gcalShutter      = GcalShutter.Open
     val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
-    val observation      = Observation[Nothing](observationId, "", None, Nil)
+    val observation      = Observation[StaticConfig, Nothing](observationId, "", Flamingos2StaticConfig(), Nil)
     val program          = Program(programId, "", Nil)
     val f2SmartGcalKey   = F2SmartGcalKey(F2Disperser.NoDisperser, F2Filter.Dark, F2FpUnit.LongSlit1)
     val gcalLampType     = GcalLampType.Arc

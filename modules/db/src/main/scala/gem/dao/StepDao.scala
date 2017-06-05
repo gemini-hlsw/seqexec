@@ -17,9 +17,9 @@ object StepDao {
 
   type Loc = Location.Middle
 
-  def insert[I <: InstrumentConfig](oid: Observation.Id, loc: Loc, s: Step[I]): ConnectionIO[Int] =
+  def insert[I <: DynamicConfig](oid: Observation.Id, loc: Loc, s: Step[I]): ConnectionIO[Int] =
     for {
-      id <- Statements.insertBaseSlice(oid, loc, s.instrument, StepType.forStep(s)).withUniqueGeneratedKeys[Int]("step_id")
+      id <- Statements.insertBaseSlice(oid, loc, s.dynamicConfig, StepType.forStep(s)).withUniqueGeneratedKeys[Int]("step_id")
       _  <- s match {
               case BiasStep(_)         => Statements.insertBiasSlice(id).run
               case DarkStep(_)         => Statements.insertDarkSlice(id).run
@@ -27,7 +27,7 @@ object StepDao {
               case SmartGcalStep(_, t) => Statements.insertSmartGcalSlice(id, t).run
               case GcalStep(_, g)      => GcalDao.insert(g, Some(id)) >>= (Statements.insertGcalStep(id, _).run)
             }
-      _  <- insertConfigSlice(id, s.instrument)
+      _  <- insertConfigSlice(id, s.dynamicConfig)
     } yield id
 
   /** Selects a `Step` with an `Instrument` element at the given location in the
@@ -56,24 +56,16 @@ object StepDao {
   def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2Config]] =
     selectAll(oid, allF2Only)
 
-  /** Selects all steps with a generic instrument configuration data.
-    *
-    * @param oid observation whose steps are sought
-    */
-  def selectAllGeneric(oid: Observation.Id): ConnectionIO[Loc ==>> Step[GenericConfig]] =
-    selectAll(oid, allGenericOnly)
-
   /** Selects the step at the indicated location in the sequence associated with
     * the indicated observation.
     *
     * @param oid observation whose step configuration is sought
     * @param loc location within the sequence to find
     */
-  def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[InstrumentConfig]] = {
-    def instrumentConfig(s: Step[Instrument]): MaybeConnectionIO[InstrumentConfig] =
-      s.instrument match {
-        case Instrument.Flamingos2 => oneF2Only(oid, loc)     .widen[InstrumentConfig]
-        case _                     => oneGenericOnly(oid, loc).widen[InstrumentConfig]
+  def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[DynamicConfig]] = {
+    def instrumentConfig(s: Step[Instrument]): MaybeConnectionIO[DynamicConfig] =
+      s.dynamicConfig match {
+        case Instrument.Flamingos2 => oneF2Only(oid, loc).widen[DynamicConfig]
       }
 
     for {
@@ -86,11 +78,10 @@ object StepDao {
     *
     * @param oid observation whose step configurations are sought
     */
-  def selectAll(oid: Observation.Id): ConnectionIO[Loc ==>> Step[InstrumentConfig]] = {
-    def instrumentConfig(ss: Loc ==>> Step[Instrument]): ConnectionIO[Loc ==>> InstrumentConfig] =
-      ss.findMin.map(_._2.instrument).fold(==>>.empty[Loc, InstrumentConfig].point[ConnectionIO]) {
-        case Instrument.Flamingos2 => allF2Only(oid)     .map(_.widen[InstrumentConfig])
-        case _                     => allGenericOnly(oid).map(_.widen[InstrumentConfig])
+  def selectAll(oid: Observation.Id): ConnectionIO[Loc ==>> Step[DynamicConfig]] = {
+    def instrumentConfig(ss: Loc ==>> Step[Instrument]): ConnectionIO[Loc ==>> DynamicConfig] =
+      ss.findMin.map(_._2.dynamicConfig).fold(==>>.empty[Loc, DynamicConfig].point[ConnectionIO]) {
+        case Instrument.Flamingos2 => allF2Only(oid)     .map(_.widen[DynamicConfig])
       }
 
     for {
@@ -116,10 +107,9 @@ object StepDao {
 
   // HELPERS
 
-  private def insertConfigSlice(id: Int, i: InstrumentConfig): ConnectionIO[Int] =
+  private def insertConfigSlice(id: Int, i: DynamicConfig): ConnectionIO[Int] =
     i match {
       case f2: F2Config      => Statements.insertF2Config(id, f2).run
-      case GenericConfig(i)  => 0.point[ConnectionIO]
     }
 
   // The type we get when we select the fully joined step
@@ -169,12 +159,6 @@ object StepDao {
   private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2Config] =
     Statements.allF2Only(oid).list.map(==>>.fromList(_))
 
-  private def oneGenericOnly(oid: Observation.Id, loc: Loc): MaybeConnectionIO[GenericConfig] =
-    Statements.oneGenericOnly(oid, loc).maybe
-
-  private def allGenericOnly(oid: Observation.Id): ConnectionIO[Loc ==>> GenericConfig] =
-    Statements.allGenericOnly(oid).list.map(==>>.fromList(_))
-
   private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[Loc ==>> I]): ConnectionIO[Loc ==>> Step[I]] =
     for {
       ss <- selectAllEmpty(oid)
@@ -195,21 +179,6 @@ object StepDao {
         DELETE FROM step
               WHERE observation_id = $oid
       """.update
-
-    def allGenericOnly(oid: Observation.Id): Query0[(Loc, GenericConfig)] =
-      sql"""
-        SELECT location,
-               instrument
-          FROM step
-         WHERE observation_id = $oid
-      """.query[(Loc, Instrument)].map(_.map(GenericConfig))
-
-    def oneGenericOnly(oid: Observation.Id, loc: Loc): Query0[GenericConfig] =
-      sql"""
-        SELECT instrument
-          FROM step
-         WHERE observation_id = $oid AND location = $loc
-      """.query[Instrument].map(GenericConfig)
 
     def allF2Only(oid: Observation.Id): Query0[(Loc, F2Config)] =
       sql"""
@@ -351,10 +320,10 @@ object StepDao {
         VALUES ($id)
       """.update
 
-    def insertBaseSlice(oid: Observation.Id, loc: Loc, i: InstrumentConfig, t: StepType): Update0 =
+    def insertBaseSlice(oid: Observation.Id, loc: Loc, i: DynamicConfig, t: StepType): Update0 =
       sql"""
         INSERT INTO step (observation_id, location, instrument, step_type)
-        VALUES ($oid, $loc, ${Instrument.forConfig(i)}, ${t} :: step_type)
+        VALUES ($oid, $loc, ${i.instrument: Instrument}, ${t} :: step_type)
       """.update
 
   }
