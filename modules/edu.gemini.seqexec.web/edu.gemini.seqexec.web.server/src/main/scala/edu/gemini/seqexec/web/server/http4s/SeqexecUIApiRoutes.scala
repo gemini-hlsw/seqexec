@@ -5,7 +5,7 @@ import java.util.logging.Logger
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model.Model.{Conditions, SeqexecEvent, SequenceId, SequencesQueue}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
+import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
@@ -83,15 +83,20 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue
         Ok()
       }
   }
-
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping
+        def anonymize(e: SeqexecEvent) = {
+            // Hide the name for anonymous users
+            sequenceNameL.set("")(e)
+        }
+        // If the user didn't login, anonymize
+        val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
         WS(
           Exchange(
             Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption)))) ++
-              (pingProcess merge engineOutput.subscribe.map(v => Binary(trimmedArray(v)))),
+              (pingProcess merge engineOutput.subscribe.map(anonymizeF).map(v => Binary(trimmedArray(v)))),
             scalaz.stream.Process.empty
           )
         )
