@@ -46,7 +46,9 @@ There are several options for importing existing OCS2 program and Smart Gcal dat
 
 #### Importing Old Programs
 
-To import old science program `.xml` files into Postgres you need to create a symlink to a directory containing some old programs first
+You can import old programs, but unfortunately not in the standard Phase 2 XML format exported from the ODB or OT. The importer works with a modified XML format which you can obtain via the `exportOcs3` OSGi shell command running in an ODB.  It works just like `exportXML` but writes the program with expanded sequence steps.  This is a big part of what enables the importer to work without ocs2 dependencies.
+
+To import these modified `.xml` files into Postgres you need to create a symlink to a directory containing the program files first:
 
 ```
 ln -s /path/to/some/old/xml/files archive
