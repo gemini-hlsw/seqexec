@@ -28,7 +28,6 @@ case class SetWaterVapor(wv: WaterVapor) extends UserEvent
 case class SetSkyBackground(wv: SkyBackground) extends UserEvent
 case class SetCloudCover(cc: CloudCover) extends UserEvent
 case object Poll extends UserEvent
-case object Exit extends UserEvent
 case class GetState(f: (Engine.State) => Task[Unit]) extends UserEvent
 case class Log(msg: String) extends UserEvent
 
@@ -59,7 +58,6 @@ object Event {
   def setSkyBackground(sb: SkyBackground): Event = EventUser(SetSkyBackground(sb))
   def setCloudCover(cc: CloudCover): Event = EventUser(SetCloudCover(cc))
   val poll: Event = EventUser(Poll)
-  val exit: Event = EventUser(Exit)
   def getState(f: (Engine.State) => Task[Unit]): Event = EventUser(GetState(f))
   def logMsg(msg: String): Event = EventUser(Log(msg))
 

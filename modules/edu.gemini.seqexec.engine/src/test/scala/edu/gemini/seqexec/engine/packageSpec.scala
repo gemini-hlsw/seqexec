@@ -4,7 +4,6 @@ import java.util.concurrent.Semaphore
 
 import Event._
 import org.scalatest.FlatSpec
-
 import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
@@ -14,8 +13,7 @@ import scalaz.syntax.foldable._
 import scalaz.Nondeterminism
 import scalaz.std.AllInstances._
 import scalaz.concurrent.Task
-import scalaz.stream.Cause
-import scalaz.stream.async
+import scalaz.stream.{Cause, Process, async}
 
 class packageSpec extends FlatSpec {
 
@@ -119,85 +117,54 @@ class packageSpec extends FlatSpec {
   def isFinished(status: SequenceState): Boolean =
     status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
-  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
-
-    q.enqueueOne(start(seqId)).flatMap(
-      _ => processE(q).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences(seqId).status)
-      ).runLast.eval(s0)
-    ).unsafePerformSync.get._2
-
+  def runToCompletion(s0: Engine.State): Engine.State = {
+    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLast.unsafePerformSync.get._2
   }
 
   it should "be in Running status after starting" in {
-    val q = async.boundedQueue[Event](10)
-    val qs = (q.enqueueOne(start(seqId)) *> processE(q).take(1).runLast.eval(qs1)).unsafePerformSync.get._2
+    val p = Process.eval(Task.now(start(seqId)))
+    val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.get._2
     assert(qs.sequences(seqId).status === SequenceState.Running)
   }
 
   it should "be 0 pending executions after execution" in {
-    val q = async.boundedQueue[Event](10)
-    val qs = runToCompletion(q, qs1)
+    val qs = runToCompletion(qs1)
     assert(qs.sequences(seqId).pending.isEmpty)
   }
 
   it should "be 2 Steps done after execution" in {
-    val q = async.boundedQueue[Event](10)
-    val qs = runToCompletion(q, qs1)
+    val qs = runToCompletion(qs1)
     assert(qs.sequences(seqId).done.length == 2)
   }
 
-  it should "Print execution" in {
-    val q = async.boundedQueue[Event](10)
+  ignore should "Print execution" in {
+    val p = Process.eval(Task(start(seqId)))
     intercept[Cause.Terminated](
-      Nondeterminism[Task].both(
-        List(
-          q.enqueueOne(start(seqId)),
-          Task(Thread.sleep(5000)),
-          q.enqueueOne(exit)
-        ).sequence_,
-        processE(q).run.eval(qs1)
-      ).unsafePerformSync
+      process(p)(qs1).run.unsafePerformSync
     )
   }
 
-  it should "Print execution with pause" in {
-    val q = async.boundedQueue[Event](10)
+  ignore should "Print execution with pause" in {
+    val p = Process.emitAll(List(start(seqId), pause(seqId), start(seqId))).evalMap(Task.now(_))
     intercept[Cause.Terminated](
-      Nondeterminism[Task].both(
-        List(
-          q.enqueueOne(start(seqId)),
-          Task(Thread.sleep(2000)),
-          q.enqueueOne(pause(seqId)),
-          Task(Thread.sleep(1000)),
-          q.enqueueOne(start(seqId)),
-          Task(Thread.sleep(5000)),
-          q.enqueueOne(exit)
-        ).sequence_,
-       processE(q).run.eval(qs1)
-      ).unsafePerformSync
+       process(p)(qs1).run.unsafePerformSync
     )
   }
 
   it should "not run 2nd sequence because it's using the same resource" in {
-    val q = async.boundedQueue[Event](10)
-
+    val p = Process.emitAll(List(start(seqId1), start(seqId2))).evalMap(Task.now(_))
     assert(
-      Nondeterminism[Task].both(
-        q.enqueueOne(start(seqId1)) *> q.enqueueOne(start(seqId2)),
-        processE(q).take(6).runLast.eval(qs2)
-      ).unsafePerformSync._2.get._2.sequences(seqId2).status === SequenceState.Idle
+      process(p)(qs2).take(6).runLast.unsafePerformSync.get._2.sequences(seqId2).status === SequenceState.Idle
     )
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val q = async.boundedQueue[Event](10)
+    val p = Process.emitAll(List(start(seqId1), start(seqId3))).evalMap(Task.now(_))
 
     assert(
-      Nondeterminism[Task].both(
-        q.enqueueOne(start(seqId1)) *> q.enqueueOne(start(seqId3)),
-        processE(q).take(6).runLast.eval(qs3)
-      ).unsafePerformSync._2.get._2.sequences(seqId3).status === SequenceState.Running
+      process(p)(qs3).take(6).runLast.unsafePerformSync.get._2.sequences(seqId3).status === SequenceState.Running
     )
   }
 
@@ -233,7 +200,7 @@ class packageSpec extends FlatSpec {
     val result = Nondeterminism[Task].both(
         q.enqueueOne(start(seqId)) *> Task.apply(startedFlag.acquire) *>
           q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release}}),
-        processE(q).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run.eval(qs)
+        process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
       ).timed(5.seconds).unsafePerformSyncAttempt
     assert(result.isRight)
   }

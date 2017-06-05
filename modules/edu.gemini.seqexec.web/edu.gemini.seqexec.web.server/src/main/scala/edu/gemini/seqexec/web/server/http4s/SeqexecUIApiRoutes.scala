@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.server.http4s
 import java.util.logging.Logger
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.Model.{Conditions, SeqexecEvent, SequenceId, SequencesQueue}
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.seqexec.model._
@@ -29,7 +29,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
 
   // Logger for client messages
   val clientLog = Logger.getLogger("clients")

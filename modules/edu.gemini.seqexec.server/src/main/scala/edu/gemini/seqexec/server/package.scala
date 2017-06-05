@@ -1,12 +1,13 @@
 package edu.gemini.seqexec
 
+import edu.gemini.seqexec.engine.Event
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
-
 import scalaz.concurrent.Task
+import scalaz.stream.async.mutable.Queue
 
 package object server {
 
@@ -20,6 +21,8 @@ package object server {
   type SeqAction[A] = EitherT[Task, SeqexecFailure, A]
 
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
+
+  type EventQueue = Queue[Event]
 
   object SeqAction {
     def apply[A](a: => A): SeqAction[A]          = EitherT(Task.delay(TrySeq(a)))

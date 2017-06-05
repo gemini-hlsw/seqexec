@@ -8,13 +8,12 @@ import Matchers._
 import Inside._
 
 import scalaz.concurrent.Task
-import scalaz.stream.async
+import scalaz.stream.{Process, async}
 import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle, Running}
 
 import scala.Function.const
 import scalaz.\/-
-
 
 /**
   * Created by jluhrs on 9/29/16.
@@ -60,27 +59,19 @@ class StepSpec extends FlatSpec {
     // input event is enough.
   } yield Result.OK(Result.Observed("DummyFileId"))
 
-  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
-    def isFinished(status: SequenceState): Boolean =
-      status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean =
+    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
-    q.enqueueOne(start(seqId)).flatMap(
-      _ => processE(q).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences(seqId).status)
-      ).runLast.eval(s0)
-    ).unsafePerformSync.get._2
+  def runToCompletion(s0: Engine.State): Engine.State = {
+    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLast.unsafePerformSync.get._2
   }
 
-  def runToCompletionL(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): List[Engine.State] = {
-    def isFinished(status: SequenceState): Boolean =
-      status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
-
-    q.enqueueOne(start(seqId)).flatMap(
-      _ => processE(q).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences.get(seqId).get.status)
-      ).runLog.eval(s0)
-    ).unsafePerformSync.map(_._2).toList
-
+  def runToCompletionL(s0: Engine.State): List[Engine.State] = {
+    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLog.unsafePerformSync.map(_._2).toList
   }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
@@ -121,9 +112,12 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = runToCompletion(q, qs0)
+    val qs1 = (q.enqueueOne(start(seqId)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+          a => !isFinished(a._2.sequences(seqId).status)
+        ).runLast)).unsafePerformSync.get._2
 
-     inside (qs1.sequences.get(seqId).get) {
+
+     inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Idle)
         inside (zipper.focus.toStep) {
@@ -136,7 +130,6 @@ class StepSpec extends FlatSpec {
   }
 
   it should "resume execution from the non-running state in response to a resume command, rolling back a partially run step." in {
-    val q = async.boundedQueue[Event](10)
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
     val qs0: Engine.State =
       Engine.State(
@@ -167,11 +160,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = (
-      q.enqueueOne(start(seqId)).flatMap(_ =>
-        processE(q).take(1).runLast.eval(qs0)
-      )
-    ).unsafePerformSync.get._2
+    val qs1 = process(Process.eval(Task.now(start(seqId))))(qs0).take(1).runLast.unsafePerformSync.get._2
 
     inside (qs1.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
@@ -204,7 +193,6 @@ class StepSpec extends FlatSpec {
     case class RetValDouble(v: Double) extends Result.RetVal
     case class PartialValDouble(v: Double) extends Result.PartialVal
 
-    val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
         Conditions.default,
@@ -241,7 +229,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = runToCompletionL(q, qs0)
+    val qss = runToCompletionL(qs0)
 
     inside (qss.tail.head.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
