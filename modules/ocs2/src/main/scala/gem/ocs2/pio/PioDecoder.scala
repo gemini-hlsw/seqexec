@@ -16,13 +16,10 @@ trait PioDecoder[A] {
 }
 
 object PioDecoder {
-  def apply[A](implicit ev: PioDecoder[A]): PioDecoder[A] = ev
 
-  def apply[A](f: Node => PioError \/ A): PioDecoder[A] =
-    new PioDecoder[A] {
-      def decode(n: Node): PioError \/ A =
-        f(n)
-    }
+  // N.B. as of 2.12 we can also us this method to *construct* a decoder by passing a
+  // `Node => PioError \/ A)` which conforms with SAM interface PioDecoder[A] (!)
+  def apply[A](implicit ev: PioDecoder[A]): PioDecoder[A] = ev
 
   def enum[A: Typeable](m: (String, A)*): PioDecoder[A] =
     fromParseFunction[A] { m.toMap.lift }

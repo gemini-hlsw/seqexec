@@ -1,15 +1,18 @@
 resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-lazy val argonautVersion          = "6.2-M3"
+lazy val argonautVersion          = "6.2-RC2"
 lazy val doobieVersion            = "0.4.2-SNAPSHOT"
 lazy val kpVersion                = "0.9.3"
-lazy val scalazVersion            = "7.2.4"
-lazy val shapelessVersion         = "2.3.1"
-lazy val argonautShapelessVersion = "1.2.0-M1"
-lazy val scalaTestVersion         = "3.0.0"
-lazy val scalaCheckVersion        = "1.13.1"
+lazy val scalazVersion            = "7.2.13"
+lazy val shapelessVersion         = "2.3.2"
+lazy val argonautShapelessVersion = "1.2.0-M4"
+lazy val scalaTestVersion         = "3.0.1"
+lazy val scalaCheckVersion        = "1.13.5"
 lazy val http4sVersion            = "0.15.2a"
+lazy val scalaXmlVerson           = "1.0.6"
+lazy val scalaParsersVersion      = "1.0.4"
+lazy val tucoVersion              = "0.1.1"
 
 enablePlugins(GitVersioning)
 
@@ -47,7 +50,7 @@ lazy val testLibs = Seq(
 
 lazy val commonSettings = Seq(
   scalaOrganization := "org.typelevel",
-  scalaVersion := "2.11.11-bin-typelevel-4",
+  scalaVersion := "2.12.2-bin-typelevel-4",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding", "UTF-8",
@@ -143,8 +146,8 @@ lazy val ocs2 = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-xml"                % "1.0.3",
-      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
+      "org.scala-lang.modules" %% "scala-xml"                % scalaXmlVerson,
+      "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersVersion,
       "org.http4s"             %% "http4s-dsl"               % http4sVersion,
       "org.http4s"             %% "http4s-scala-xml"         % http4sVersion,
       "org.http4s"             %% "http4s-blaze-client"      % http4sVersion,
@@ -172,7 +175,7 @@ lazy val telnetd = project
   .settings(commonSettings)
   .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
-    libraryDependencies += "org.tpolecat" %% "tuco-core" % "0.1.0",
+    libraryDependencies += "org.tpolecat" %% "tuco-core" % tucoVersion,
     dockerExposedPorts  := List(6666),
     dockerRepository    := Some("geminihlsw")
   )
