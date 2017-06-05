@@ -30,10 +30,10 @@ object Observation {
 
   }
 
-  // implicit def ObservationTraverse[T]: Traverse[Observation[?]] =
-  //   new Traverse[Observation[?]] {
-  //     def traverseImpl[G[_]: Applicative, A, B](fa: Observation[A])(f: A => G[B]): G[Observation[B]] =
-  //       fa.steps.traverse(f).map(ss => fa.copy(steps = ss))
-  //   }
+  implicit val ObservationBitraverse: Bitraverse[Observation] =
+    new Bitraverse[Observation] {
+      def bitraverseImpl[G[_]: Applicative, A, B, C, D](fab: Observation[A,B])(f: A => G[C], g: B => G[D]): G[Observation[C,D]] =
+        (f(fab.staticConfig) |@| fab.steps.traverse(g))((c, d) => fab.copy(staticConfig = c, steps = d))
+    }
 
 }
