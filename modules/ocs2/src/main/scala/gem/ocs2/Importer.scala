@@ -2,10 +2,10 @@ package gem.ocs2
 
 import doobie.imports._
 
-import gem.config.InstrumentConfig
 import gem.dao._
 
 import gem.{Dataset, Location, Log, Observation, Program, Step, User}
+import gem.config.{ StaticConfig, DynamicConfig }
 
 import scalaz.Scalaz._
 import scalaz.concurrent.Task
@@ -14,7 +14,7 @@ import scalaz.concurrent.Task
   */
 object Importer extends DoobieClient {
 
-  def writeObservation(o: Observation[Step[InstrumentConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeObservation(o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
       sql"DELETE FROM observation WHERE observation_id = ${o.id}".update.run.void
@@ -48,7 +48,7 @@ object Importer extends DoobieClient {
       } yield ()
   }
 
-  def writeProgram(p: Program[Observation[Step[InstrumentConfig]]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
 
@@ -71,9 +71,9 @@ object Importer extends DoobieClient {
       _ <- l.shutdown(5 * 1000).transact(lxa) // if we're not done soon something is wrong
     } yield ()
 
-  def importObservation(o: Observation[Step[InstrumentConfig]], ds: List[Dataset]): Task[Unit] =
+  def importObservation(o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): Task[Unit] =
     doImport(writeObservation(o, ds))
 
-  def importProgram(p: Program[Observation[Step[InstrumentConfig]]], ds: List[Dataset]): Task[Unit] =
+  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): Task[Unit] =
     doImport(writeProgram(p, ds))
 }

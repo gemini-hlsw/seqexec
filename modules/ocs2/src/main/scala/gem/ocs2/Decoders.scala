@@ -1,7 +1,7 @@
 package gem.ocs2
 
 import gem.{Dataset, Observation, Program, Step}
-import gem.config.InstrumentConfig
+import gem.config._
 import gem.enum.Instrument
 import gem.ocs2.pio.PioPath._
 import gem.ocs2.pio.PioDecoder
@@ -27,6 +27,25 @@ object Decoders {
   implicit val InstrumentDecoder: PioDecoder[Instrument] =
     fromParse { Parsers.instrument }
 
+  implicit val StaticConfigDecoder: PioDecoder[StaticConfig] =
+    fromParse { Parsers.instrument } .map {
+      case Instrument.Phoenix    => PhoenixStaticConfig()
+      case Instrument.Michelle   => MichelleStaticConfig()
+      case Instrument.Gnirs      => GnirsStaticConfig()
+      case Instrument.Niri       => NiriStaticConfig()
+      case Instrument.Trecs      => TrecsStaticConfig()
+      case Instrument.Nici       => NiciStaticConfig()
+      case Instrument.Nifs       => NifsStaticConfig()
+      case Instrument.Gpi        => GpiStaticConfig()
+      case Instrument.Gsaoi      => GsaoiStaticConfig()
+      case Instrument.GmosS      => GmosSStaticConfig()
+      case Instrument.AcqCam     => AcqCamStaticConfig()
+      case Instrument.GmosN      => GmosNStaticConfig()
+      case Instrument.Bhros      => BhrosStaticConfig()
+      case Instrument.Visitor    => VisitorStaticConfig()
+      case Instrument.Flamingos2 => Flamingos2StaticConfig()
+    }
+
   implicit val DatasetDecoder: PioDecoder[Dataset] =
     PioDecoder { n =>
       for {
@@ -44,22 +63,22 @@ object Decoders {
       (n \\* "obsExecLog" \\* "&datasets" \\* "&dataset").decode[Dataset]
     }
 
-  implicit val ObservationDecoder: PioDecoder[Observation[Step[InstrumentConfig]]] =
+  implicit val ObservationDecoder: PioDecoder[Option[Observation[StaticConfig, Step[DynamicConfig]]]] =
     PioDecoder { n =>
       for {
         id <- (n \! "@name"                ).decode[Observation.Id]
         t  <- (n \! "data" \? "#title"     ).decodeOrZero[String]
-        i  <- (n \? "instrument" \! "@type").decode[Instrument]
-        s  <- (n \! "sequence"             ).decode[List[Step[InstrumentConfig]]](SequenceDecoder)
-      } yield Observation(id, t, i, s)
+        i  <- (n \? "instrument" \! "@type").decode[StaticConfig]
+        s  <- (n \! "sequence"             ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
+      } yield i.map(i => Observation(id, t, i, s))
     }
 
-  implicit val ProgramDecoder: PioDecoder[Program[Observation[Step[InstrumentConfig]]]] =
+  implicit val ProgramDecoder: PioDecoder[Program[Observation[StaticConfig, Step[DynamicConfig]]]] =
     PioDecoder { n =>
       for {
         id <- (n \! "@name"           ).decode[Program.Id]
         t  <- (n \! "data" \? "#title").decodeOrZero[String]
-        os <- (n \\* "observation"    ).decode[Observation[Step[InstrumentConfig]]]
-      } yield Program(id, t, os)
+        os <- (n \\* "observation"    ).decode[Option[Observation[StaticConfig, Step[DynamicConfig]]]]
+      } yield Program(id, t, os.flatten)
     }
 }

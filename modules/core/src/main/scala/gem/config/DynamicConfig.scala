@@ -7,22 +7,22 @@ import java.time.Duration
 
 sealed trait SmartGcalKey
 
-sealed abstract class InstrumentConfig extends Product with Serializable {
+sealed abstract class DynamicConfig extends Product with Serializable {
+
+  type I <: Instrument with Singleton
+  def instrument: I
+
   def smartGcalKey: Option[SmartGcalKey] =
     this match {
       case f2: F2Config     => Some(f2.key)
-      case GenericConfig(_) => None
+      case _ => None
     }
 
-  def instrument: Instrument = {
-    import gem.enum.Instrument._
-
-    this match {
-      case _: F2Config      => Flamingos2
-      case GenericConfig(i) => i
-    }
-  }
 }
+object DynamicConfig {
+  type Aux[I0] = DynamicConfig { type I = I0 }
+}
+
 
 final case class F2SmartGcalKey(
   disperser: F2Disperser,
@@ -39,11 +39,11 @@ final case class F2Config(
   mosPreimaging: Boolean,
   readMode:      F2ReadMode,
   windowCover:   F2WindowCover
-) extends InstrumentConfig {
+) extends DynamicConfig {
+
+  type I = Instrument.Flamingos2.type
+  def instrument = valueOf[I]
 
   def key: F2SmartGcalKey =
     F2SmartGcalKey(disperser, filter, fpu)
 }
-
-// TODO: temporary, until all instruments are supported
-case class GenericConfig(i: Instrument) extends InstrumentConfig

@@ -17,7 +17,7 @@ import Scalaz._
 
 /** Decoder for the OCS2 sequence XML.
   */
-object SequenceDecoder extends PioDecoder[List[Step[InstrumentConfig]]] {
+object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
 
   // Clean up classnames in toString, which tells you the type of the key, which should be
   // helpful for debugging.
@@ -98,7 +98,7 @@ object SequenceDecoder extends PioDecoder[List[Step[InstrumentConfig]]] {
     }
   }
 
-  def parseInstConfig(i: Instrument, cm: ConfigMap): PioError \/ InstrumentConfig =
+  def parseInstConfig(i: Instrument, cm: ConfigMap): PioError \/ DynamicConfig =
     i match {
       case Instrument.Flamingos2 =>
         import Legacy.Instrument.Flamingos2._
@@ -113,11 +113,11 @@ object SequenceDecoder extends PioDecoder[List[Step[InstrumentConfig]]] {
           w <- WindowCover.cparseOrElse(cm, F2WindowCover.Close)
         } yield F2Config(d, e, f, u, l, p, r, w)
 
-      case _ => GenericConfig(i).right
+      case _ => sys.error(s"Can't decode config $i, $cm")
     }
 
-  def parseStep(cm: ConfigMap): PioError \/ Step[InstrumentConfig] = {
-    def go(observeType: String, instrument: InstrumentConfig): PioError \/ Step[InstrumentConfig] =
+  def parseStep(cm: ConfigMap): PioError \/ Step[DynamicConfig] = {
+    def go(observeType: String, instrument: DynamicConfig): PioError \/ Step[DynamicConfig] =
       observeType match {
         case "BIAS" =>
           BiasStep(instrument).right
@@ -154,7 +154,7 @@ object SequenceDecoder extends PioDecoder[List[Step[InstrumentConfig]]] {
     } yield s
   }
 
-  def decode(n: Node): PioError \/ List[Step[InstrumentConfig]] = {
+  def decode(n: Node): PioError \/ List[Step[DynamicConfig]] = {
 
     def extractSystem(cm: ConfigMap, sys: Node): ConfigMap = {
       val sysName = (sys \ "@name").text
