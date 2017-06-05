@@ -4,6 +4,7 @@ import java.io.File
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
@@ -95,7 +96,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, events: (engine.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val logger = Logger.getLogger(getClass.getName)
     logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
 

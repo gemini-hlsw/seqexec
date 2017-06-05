@@ -12,7 +12,7 @@ import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
 
 import scalaz.concurrent.Task
-import scalaz.stream.async
+import scalaz.stream.Process
 
 /**
   * Created by jluhrs on 9/29/16.
@@ -67,19 +67,17 @@ class SequenceSpec extends FlatSpec {
       )
     )
 
-  def runToCompletion(q: scalaz.stream.async.mutable.Queue[Event], s0: Engine.State): Engine.State = {
-    def isFinished(status: SequenceState): Boolean =
-      status == Idle || status == SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean =
+    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
 
-    q.enqueueOne(start(seqId)).flatMap(_ =>
-      process(q, q.dequeue)(s0).drop(1).takeThrough(
-        a => !isFinished(a._2.sequences(seqId).status)
-      ).runLast).unsafePerformSync.get._2
+  def runToCompletion(s0: Engine.State): Engine.State = {
+    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLast.unsafePerformSync.get._2
   }
 
   it should "stop on breakpoints" in {
 
-    val q = async.boundedQueue[Event](10)
     val qs0: Engine.State =
       Engine.State(
         Conditions.default,
@@ -97,7 +95,7 @@ class SequenceSpec extends FlatSpec {
         )
       )
 
-    val qs1 = runToCompletion(q, qs0)
+    val qs1 = runToCompletion(qs0)
 
     inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
@@ -126,7 +124,7 @@ class SequenceSpec extends FlatSpec {
         )
       )
 
-    val qs1 = runToCompletion(async.boundedQueue[Event](10), qs0)
+    val qs1 = runToCompletion(qs0)
 
     // Check that there is something left to run
     inside (qs1.sequences(seqId)) {
@@ -134,7 +132,7 @@ class SequenceSpec extends FlatSpec {
         assert(zipper.pending.nonEmpty)
     }
 
-    val qs2 = runToCompletion(async.boundedQueue[Event](10), qs1)
+    val qs2 = runToCompletion(qs1)
 
     inside (qs2.sequences(seqId)) {
       case f@Sequence.State.Final(_, status) =>

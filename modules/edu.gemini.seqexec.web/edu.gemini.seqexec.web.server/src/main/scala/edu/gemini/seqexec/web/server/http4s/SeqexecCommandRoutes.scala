@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.server.http4s
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
-import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
@@ -23,7 +23,7 @@ import scalaz.concurrent.Task
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: engine.EventQueue, se: SeqexecEngine) extends BooEncoders {
+class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.EventQueue, se: SeqexecEngine) extends BooEncoders {
 
   val commands = Commands(se.odbProxy)
   // Handles authentication

@@ -10,7 +10,6 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, Sink, merge}
-import scalaz.stream.async.mutable.{Queue => SQueue}
 
 package engine {
   case class HandleP[A](run: Handle[(A, Option[Process[Task, Event]])])
@@ -28,9 +27,6 @@ package object engine {
     * systems.
     */
   type Action = Task[Result]
-
-  // Avoid name class with the proper Seqexec `Queue`
-  type EventQueue = SQueue[Event]
 
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
@@ -117,7 +113,7 @@ package object engine {
           .foldMap(_.toSequence.resources)
     )
 
-  def rollback(q: EventQueue)(id: Sequence.Id): HandleP[Unit] =
+  def rollback(id: Sequence.Id): HandleP[Unit] =
     modifyS(id)(_.rollback)
 
   def setOperator(name: String): HandleP[Unit] =
@@ -180,7 +176,7 @@ package object engine {
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  def next(q: EventQueue)(id: Sequence.Id): HandleP[Unit] =
+  def next(id: Sequence.Id): HandleP[Unit] =
     getS(id).flatMap(
       _.map { seq =>
         seq.status match {
@@ -267,7 +263,7 @@ package object engine {
     * `State`. In the future this function should handle the failed
     * action.
     */
-  def fail(q: EventQueue)(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit] =
+  def fail(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit] =
     modifyS(id)(_.mark(i)(e)) *>
       switch(id)(SequenceState.Error("There was an error"))
 
@@ -282,10 +278,6 @@ package object engine {
   // XXX: Proper Java logging
   def log(msg: String): HandleP[Unit] = pure((println(msg), None))
 
-  /** Terminates the `Handle` returning the final `State`.
-    */
-  def close(queue: EventQueue): HandleP[Unit] = HandleP(queue.close.liftM[HandleStateT].map((_, None)))
-
   /**
     * Enqueue `Event` in the Handle.
     */
@@ -294,9 +286,9 @@ package object engine {
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(q: EventQueue)(ev: Event): HandleP[Engine.State] = {
+  private def run(ev: Event): HandleP[Engine.State] = {
     def handleUserEvent(ue: UserEvent): HandleP[Unit] = ue match {
-      case Start(id)               => log("Engine: Started") *> rollback(q)(id) *> switch(id)(SequenceState.Running) *> send(Event.executing(id))
+      case Start(id)               => log("Engine: Started") *> rollback(id) *> switch(id)(SequenceState.Running) *> send(Event.executing(id))
       case Pause(id)               => log("Engine: Paused") *> switch(id)(SequenceState.Stopping)
       case Load(id, seq)           => log("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)              => log("Engine: Sequence unloaded") *> unload(id)
@@ -310,7 +302,6 @@ package object engine {
       case SetSkyBackground(sb)    => log("Engine: Setting sky background") *> setSkyBackground(sb)
       case SetCloudCover(cc)       => log("Engine: Setting cloud cover") *> setCloudCover(cc)
       case Poll                    => log("Engine: Polling current state")
-      case Exit                    => log("Engine: Bye") *> close(q)
       case GetState(f)             => getState(f)
       case Log(msg)                => log(msg)
     }
@@ -318,9 +309,9 @@ package object engine {
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => log("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => log("Engine: Partial result") *> partialResult(id,i, r)
-      case Failed(id, i, e)        => log("Engine: Action failed") *> fail(q)(id)(i, e)
+      case Failed(id, i, e)        => log("Engine: Action failed") *> fail(id)(i, e)
       case Busy(id)                => log("Engine: Resources needed this sequence are busy")
-      case Executed(id)            => log("Engine: Execution completed") *> next(q)(id)
+      case Executed(id)            => log("Engine: Execution completed") *> next(id)
       case Executing(id)           => log("Engine: Executing") *> execute(id)
       case Finished(id)            => log("Engine: Finished") *> switch(id)(SequenceState.Completed)
     }
@@ -348,18 +339,13 @@ package object engine {
     go(fs, s0)
   }
 
-  def runE(q: EventQueue)(ev: Event): HandleP[(Event, Engine.State)] =
-    run(q)(ev).map((ev, _))
+  def runE(ev: Event): HandleP[(Event, Engine.State)] =
+    run(ev).map((ev, _))
 
-  def process(q: EventQueue, input: Process[Task, Event])(qs: Engine.State): Process[Task, (Event, Engine.State)] =
-    mapEvalState(input, qs, (e: Event) => runE(q)(e).run)
+  def process(input: Process[Task, Event])(qs: Engine.State): Process[Task, (Event, Engine.State)] =
+    mapEvalState(input, qs, (e: Event) => runE(e).run)
 
   // Functions for type bureaucracy
-
-  /**
-    * This creates an `Event` Process with `Handle` as effect.
-    */
-  def receive(queue: EventQueue): Process[Handle, Event] = hoistHandle(queue.dequeue)
 
   def pure[A](a: A): HandleP[A] = Applicative[HandleP].pure(a)
 
