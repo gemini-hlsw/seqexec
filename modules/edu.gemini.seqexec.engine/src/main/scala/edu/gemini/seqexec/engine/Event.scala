@@ -3,6 +3,7 @@ package edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import Result.{OK, Partial, PartialVal, RetVal}
 import scalaz.concurrent.Task
+import scalaz.stream.Process
 
 /**
   * Anything that can go through the Event Queue.
@@ -28,7 +29,7 @@ case class SetWaterVapor(wv: WaterVapor) extends UserEvent
 case class SetSkyBackground(wv: SkyBackground) extends UserEvent
 case class SetCloudCover(cc: CloudCover) extends UserEvent
 case object Poll extends UserEvent
-case class GetState(f: (Engine.State) => Task[Unit]) extends UserEvent
+case class GetState(f: (Engine.State) => Task[Option[Process[Task, Event]]]) extends UserEvent
 case class Log(msg: String) extends UserEvent
 
 /**
@@ -58,7 +59,7 @@ object Event {
   def setSkyBackground(sb: SkyBackground): Event = EventUser(SetSkyBackground(sb))
   def setCloudCover(cc: CloudCover): Event = EventUser(SetCloudCover(cc))
   val poll: Event = EventUser(Poll)
-  def getState(f: (Engine.State) => Task[Unit]): Event = EventUser(GetState(f))
+  def getState(f: (Engine.State) => Task[Option[Process[Task, Event]]]): Event = EventUser(GetState(f))
   def logMsg(msg: String): Event = EventUser(Log(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))

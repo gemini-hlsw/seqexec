@@ -246,7 +246,7 @@ package object engine {
     )
   }
 
-  private def getState(f: Engine.State => Task[Unit]): HandleP[Unit] = get.flatMap(s => HandleP(f(s).liftM[HandleStateT].map((_, None))))
+  private def getState(f: Engine.State => Task[Option[Process[Task, Event]]]): HandleP[Unit] = get.flatMap(s => HandleP(f(s).liftM[HandleStateT].map((Unit, _))))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
