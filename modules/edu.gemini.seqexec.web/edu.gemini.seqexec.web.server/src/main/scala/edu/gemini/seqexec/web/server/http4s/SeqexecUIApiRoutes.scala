@@ -13,6 +13,7 @@ import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuth
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.spModel.core.SPBadIDException
+
 import org.http4s._
 import org.http4s.server.syntax._
 import org.http4s.dsl._
