@@ -81,7 +81,7 @@ object StepDao {
   def selectAll(oid: Observation.Id): ConnectionIO[Loc ==>> Step[DynamicConfig]] = {
     def instrumentConfig(ss: Loc ==>> Step[Instrument]): ConnectionIO[Loc ==>> DynamicConfig] =
       ss.findMin.map(_._2.dynamicConfig).fold(==>>.empty[Loc, DynamicConfig].point[ConnectionIO]) {
-        case Instrument.Flamingos2 => allF2Only(oid)     .map(_.widen[DynamicConfig])
+        case Instrument.Flamingos2 => allF2Only(oid).map(_.widen[DynamicConfig])
       }
 
     for {
@@ -188,7 +188,6 @@ object StepDao {
                i.filter,
                i.fpu,
                i.lyot_wheel,
-               i.mos_preimaging,
                i.read_mode,
                i.window_cover
           FROM step s
@@ -204,7 +203,6 @@ object StepDao {
                i.filter,
                i.fpu,
                i.lyot_wheel,
-               i.mos_preimaging,
                i.read_mode,
                i.window_cover
           FROM step s
@@ -276,7 +274,7 @@ object StepDao {
       sql"""
         INSERT INTO step_f2 (
           step_f2_id,
-          disperser, exposure_time, filter, fpu, lyot_wheel, mos_preimaging, read_mode, window_cover
+          disperser, exposure_time, filter, fpu, lyot_wheel, read_mode, window_cover
         )
         VALUES (
           $id,
@@ -285,7 +283,6 @@ object StepDao {
           ${f2.filter},
           ${f2.fpu},
           ${f2.lyotWheel},
-          ${f2.mosPreimaging},
           ${f2.readMode},
           ${f2.windowCover})
       """.update

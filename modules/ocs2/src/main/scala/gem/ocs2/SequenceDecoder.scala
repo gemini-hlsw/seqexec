@@ -76,7 +76,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
 
     case object Instrument extends System("instrument") {
       val Instrument    = Key("instrument"   )(Parsers.instrument)
-      val MosPreImaging = Key("mosPreimaging")(Parsers.yesNo     )
+//      val MosPreImaging = Key("mosPreimaging")(Parsers.yesNo     )
 
       object Flamingos2 {
         val Disperser   = Key("disperser"  )(Parsers.Flamingos2.disperser  )
@@ -108,10 +108,10 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
           f <- Filter.parse(cm)
           u <- Fpu.parse(cm)
           l <- LyotWheel.parse(cm)
-          p <- Legacy.Instrument.MosPreImaging.parse(cm)
+//          p <- Legacy.Instrument.MosPreImaging.parse(cm)
           r <- ReadMode.parse(cm)
           w <- WindowCover.cparseOrElse(cm, F2WindowCover.Close)
-        } yield F2Config(d, e, f, u, l, p, r, w)
+        } yield F2Config(d, e, f, u, l, r, w)
 
       case _ => sys.error(s"Can't decode config $i, $cm")
     }

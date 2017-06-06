@@ -43,7 +43,7 @@ object Decoders {
       case Instrument.GmosN      => GmosNStaticConfig()
       case Instrument.Bhros      => BhrosStaticConfig()
       case Instrument.Visitor    => VisitorStaticConfig()
-      case Instrument.Flamingos2 => Flamingos2StaticConfig()
+      case Instrument.Flamingos2 => Flamingos2StaticConfig(false) // TODO
     }
 
   implicit val DatasetDecoder: PioDecoder[Dataset] =

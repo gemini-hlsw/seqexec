@@ -11,23 +11,39 @@ import scalaz._, Scalaz._
 object ObservationDao {
 
   def insert(o: Observation[StaticConfig, _]): ConnectionIO[Int] =
-    Statements.insert(o).run
+    for {
+      id <- StaticConfigDao.insert(o.staticConfig)
+      _  <- Statements.insert(o, id).run
+    } yield id
 
   /** Select all the observation ids associated with the given program. */
   def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
     Statements.selectIds(pid).list
 
-  def selectFlat(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Nothing]] =
-    Statements.selectFlat(id).unique
+  def selectFlat(id: Observation.Id): ConnectionIO[Observation[Instrument, Nothing]] =
+    Statements.selectFlat(id).unique.map(_._1)
+
+  def selectStatic(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Nothing]] =
+    for {
+      obs <- selectFlat(id)
+      tup <- Statements.selectStaticId(id).unique
+      sc  <- StaticConfigDao.select(tup._1, tup._2)
+    } yield obs.leftMap(_ => sc)
 
   def select(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Step[_]]] =
     for {
-      on <- selectFlat(id)
+      on <- selectStatic(id)
       ss <- StepDao.selectAllEmpty(id)
     } yield on.copy(steps = ss.values)
 
-  def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Nothing]]] =
-    Statements.selectAllFlat(pid).list
+  def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[Instrument, Nothing]]] =
+    Statements.selectAllFlat(pid).list.map(_.map(_._1))
+
+  def selectAllStatic(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Nothing]]] =
+    for {
+      ids <- selectIds(pid)
+      oss <- ids.traverseU(selectStatic)
+    } yield oss
 
   def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[_]]]] =
     for {
@@ -45,17 +61,19 @@ object ObservationDao {
         Distinct.integer("id_index").xmap(ObservationIndex(_), _.toInt)
     }
 
-    def insert(o: Observation[StaticConfig, _]): Update0 =
+    def insert(o: Observation[StaticConfig, _], staticId: Int): Update0 =
       sql"""
         INSERT INTO observation (observation_id,
                                 program_id,
                                 observation_index,
                                 title,
+                                static_id,
                                 instrument)
               VALUES (${o.id},
                       ${o.id.pid},
                       ${ObservationIndex(o.id.index)},
                       ${o.title},
+                      $staticId,
                       ${o.staticConfig.instrument : Instrument})
       """.update
 
@@ -66,25 +84,32 @@ object ObservationDao {
          WHERE program_id = $pid
       """.query[Observation.Id]
 
-    def selectFlat(id: Observation.Id): Query0[Observation[StaticConfig, Nothing]] =
+    def selectStaticId(id: Observation.Id): Query0[(Instrument, Int)] =
       sql"""
-        SELECT title, instrument
+        SELECT instrument, static_id
+          FROM observation
+         WHERE observation_id = $id
+      """.query[(Instrument, Int)]
+
+    def selectFlat(id: Observation.Id): Query0[(Observation[Instrument, Nothing], Int)] =
+      sql"""
+        SELECT title, instrument, static_id
           FROM observation
          WHERE observation_id = ${id}
-      """.query[(String, Instrument)]
-         .map { case (t, i) =>
-           Observation(id, t, StaticConfigDao.forInstrument(i), Nil)
+      """.query[(String, Instrument, Int)]
+         .map { case (t, i, s) =>
+           (Observation(id, t, i, Nil), s)
          }
 
-    def selectAllFlat(pid: Program.Id): Query0[Observation[StaticConfig, Nothing]] =
+    def selectAllFlat(pid: Program.Id): Query0[(Observation[Instrument, Nothing], Int)] =
       sql"""
-        SELECT observation_index, title, instrument
+        SELECT observation_index, title, instrument, static_id
           FROM observation
          WHERE program_id = ${pid}
       ORDER BY observation_index
-      """.query[(Short, String, Instrument)]
-         .map { case (n, t, i) =>
-           Observation(Observation.Id(pid, n.toInt), t, StaticConfigDao.forInstrument(i), Nil)
+      """.query[(Short, String, Instrument, Int)]
+         .map { case (n, t, i, s) =>
+           (Observation(Observation.Id(pid, n.toInt), t, i, Nil), s)
          }
 
   }

@@ -112,7 +112,7 @@ object SmartGcalSpec {
       /* Filter                */ F2Filter.JH,
       /* FPU                   */ F2FpUnit.LongSlit1,
       F2LyotWheel.F16,
-      mosPreimaging = true,
+      /* mosPreimaging = true, */
       F2ReadMode.Bright,
       F2WindowCover.Open)
 
@@ -156,7 +156,7 @@ object SmartGcalSpec {
   private def doTest[A](test: ConnectionIO[A]): A =
     (for {
       _ <- ProgramDao.insert(Program(pid, "SmartGcalSpec Prog", List.empty[Step[Nothing]]))
-      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", Flamingos2StaticConfig(), List.empty[Step[Nothing]]))
+      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", Flamingos2StaticConfig(mosPreImaging = false), List.empty[Step[Nothing]]))
       a <- test
       _ <- sql"""DELETE FROM observation WHERE observation_id = $oid""".update.run
       _ <- sql"""DELETE FROM program     WHERE program_id     = $pid""".update.run
