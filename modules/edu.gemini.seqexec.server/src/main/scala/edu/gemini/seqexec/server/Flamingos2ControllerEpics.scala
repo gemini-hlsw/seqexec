@@ -87,6 +87,8 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
       case Filter.JH      => "JH_G0809"
       case Filter.HK      => "HK_G0806"
       case Filter.DARK    => "DK_G0807"
+      case Filter.K_BLUE  => ???
+      case Filter.K_RED   => ???
     }
   )
 
