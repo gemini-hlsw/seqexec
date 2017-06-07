@@ -12,7 +12,7 @@ object SeqexecUI {
   private val lbConnect = SeqexecCircuit.connect(_.loginBox)
   private val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
 
-  private val component = ScalaComponent.builder[Unit]("Seqexec")
+  val component = ScalaComponent.builder[Unit]("Seqexec")
     .stateless
     .render(_ =>
       <.div(
@@ -22,9 +22,7 @@ object SeqexecUI {
         SequenceArea(),
         lbConnect(LoginBox.apply)
       )
-    )
-    .build
+    ).build
 
-  def apply() = component()
 }
 
