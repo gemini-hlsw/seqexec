@@ -1,9 +1,6 @@
 package edu.gemini.seqexec.web.client
 
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
-import japgolly.scalajs.react.extra.router.{Redirect, Router, RouterConfigDsl, BaseUrl}
-import japgolly.scalajs.react.ReactDOM
-import japgolly.scalajs.react.vdom.html_<^._
 
 import scala.scalajs.js.JSApp
 import org.scalajs.dom.document
@@ -22,21 +19,6 @@ object SeqexecApp extends JSApp {
   System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
 
   def main(): Unit = {
-    sealed trait SeqexecPages
-    case object Root extends SeqexecPages
-    case class Instrument(name: String) extends SeqexecPages
-
-    val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
-      import dsl._
-      // Static routes
-
-      (emptyRule
-      | staticRoute(root,     Root)  ~> render(SeqexecUI.component())
-    ) .notFound(redirectToPage(Root)(Redirect.Replace)).logToConsole
-    }
-
-    val router = Router(BaseUrl.fromWindowOrigin, routerConfig)
-
     val CssSettings = scalacss.devOrProdDefaults
     import CssSettings._
     // Using the root logger setup the handlers
@@ -55,7 +37,6 @@ object SeqexecApp extends JSApp {
     SeqexecCircuit.dispatch(WSConnect(0))
 
     // Render the UI using React
-    router().renderIntoDOM(document.getElementById("content"))
-    //SeqexecUI().renderIntoDOM(document.getElementById("content"))
+    SeqexecUI.router().renderIntoDOM(document.getElementById("content"))
   }
 }

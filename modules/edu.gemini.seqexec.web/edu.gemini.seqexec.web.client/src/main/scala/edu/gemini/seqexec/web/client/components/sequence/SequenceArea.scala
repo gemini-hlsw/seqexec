@@ -3,6 +3,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
+import edu.gemini.seqexec.web.client.components.SeqexecUI.InstrumentPage
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
@@ -16,6 +17,8 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
+import scalaz.syntax.equal._
+import scalaz.std.string._
 
 object StepConfigToolbar {
   case class Props(s: SequenceView, step: Int)
@@ -94,8 +97,10 @@ object SequenceTabContent {
   * Contains the area with tabs and the sequence body
   */
 object SequenceTabsBody {
-  case class Props(s: ClientStatus, d: SequencesOnDisplay)
-  def tabContents(status: ClientStatus, d: SequencesOnDisplay): Stream[SequenceTabContent.Props] = d.instrumentSequences.map(a => SequenceTabContent.Props(isActive = a == d.instrumentSequences.focus, status, a)).toStream
+  case class Props(p: InstrumentPage, s: ClientStatus, d: SequencesOnDisplay)
+  def tabContents(p: Props): Stream[SequenceTabContent.Props] =
+    p.d.instrumentSequences.map { a =>
+      SequenceTabContent.Props(isActive = p.p.i === a.instrument, p.s, a)}.toStream
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
     .stateless
@@ -103,18 +108,18 @@ object SequenceTabsBody {
       <.div(
         ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
         TabularMenu(p.d),
-        tabContents(p.s, p.d).map(SequenceTabContent.apply).toTagMod
+        tabContents(p).map(SequenceTabContent.apply).toTagMod
       )
     )
     .build
 
-  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(p()._1, p()._2))
+  def apply(page: InstrumentPage, p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(page, p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
   val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-  private val component = ScalaComponent.builder[Unit]("SequenceHeadersAndTable")
+  private val component = ScalaComponent.builder[InstrumentPage]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
@@ -123,12 +128,13 @@ object SequenceHeadersAndTable {
           ^.cls := "four wide column computer tablet only",
           headerSideBarConnect(HeadersSideBar.apply)
         ),
-        sequencesDisplayConnect(SequenceTabsBody.apply)
+        sequencesDisplayConnect(proxy => SequenceTabsBody(p, proxy))
       )
     ) .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(p: InstrumentPage): Unmounted[InstrumentPage, Unit, Unit] = component(p)
 }
+
 /**
   * Contains all the tabs for the sequences available in parallel
   * All connects at this level, be careful about adding connects below here
@@ -136,14 +142,14 @@ object SequenceHeadersAndTable {
 object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
 
-  private val component = ScalaComponent.builder[Unit]("SequenceTabs")
+  private val component = ScalaComponent.builder[InstrumentPage]("SequenceTabs")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui bottom attached segment",
         <.div(
           ^.cls := "ui two column vertically divided grid",
-          SequenceHeadersAndTable(),
+          SequenceHeadersAndTable(p),
           <.div(
             ^.cls := "row computer only",
             <.div(
@@ -156,20 +162,20 @@ object SequenceTabs {
     )
     .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(p: InstrumentPage): Unmounted[InstrumentPage, Unit, Unit] = component(p)
 }
 
 object SequenceArea {
 
-  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
+  private val component = ScalaComponent.builder[InstrumentPage]("QueueTableSection")
     .stateless
-    .render( _ =>
+    .render_P( p =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences", "key.sequences.menu"),
-        SequenceTabs()
+        SequenceTabs(p)
       )
     ).build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(page: InstrumentPage): Unmounted[InstrumentPage, Unit, Unit] = component(page)
 }
