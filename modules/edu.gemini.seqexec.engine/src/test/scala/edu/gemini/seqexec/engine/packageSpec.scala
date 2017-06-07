@@ -199,7 +199,7 @@ class packageSpec extends FlatSpec {
 
     val result = Nondeterminism[Task].both(
         q.enqueueOne(start(seqId)) *> Task.apply(startedFlag.acquire) *>
-          q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release}}),
+          q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release} *> Task.delay(None)}),
         process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
       ).timed(5.seconds).unsafePerformSyncAttempt
     assert(result.isRight)

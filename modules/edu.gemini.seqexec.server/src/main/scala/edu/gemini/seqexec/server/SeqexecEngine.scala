@@ -16,7 +16,6 @@ import scala.concurrent.duration._
 import scalaz.stream.{DefaultScheduler, Process, wye}
 import scalaz.stream.wye._
 import scalaz.stream.time._
-import scalaz.stream.async.mutable.Queue
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
 import edu.gemini.spModel.core.Peer
@@ -58,6 +57,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     gmosKeywords = settings.gmosKeywords)
 
   val translator = SeqTranslate(settings.site, systems, translatorSettings)
+
+  def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.right)).run
 
   def start(q: EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.start(id.stringValue())).map(_.right)
@@ -130,28 +131,22 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }).run.map(_ => i)
   }
 
-  def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
+  private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
     val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action]])] = for {
-      odbSeq       <- EitherT(Task(odbProxy.read(seqId)))
+      odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
       progIdString <- EitherT(Task.delay(odbSeq.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
       progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
       name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
     } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
 
-    val u = t.flatMapF{
-      case (err :: _, None)  => q.enqueueOne(Event.logMsg(SeqexecFailure.explain(err))).map(_.right)
-      case (errs, Some(seq)) =>
-        (if(errs.isEmpty) Task(()) else q.enqueueAll(errs.map(e => Event.logMsg(SeqexecFailure.explain(e))))) *> Task.delay {
-          q.enqueueOne(Event.load(seqId.stringValue(), seq)).unsafePerformAsync(x => ()).right[SeqexecFailure]
-        }
-      case _                 => Task(().right)
+    t.map{
+      case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
+      case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logMsg(SeqexecFailure.explain(e)))
+      case _                 => List()
     }
-    u.run
   }
 
-  def unload(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = {
-    q.enqueueOne(Event.unload(seqId.stringValue)).map(_.right)
-  }
+  private def unloadEvent(seqId: SPObservationID): Event = Event.unload(seqId.stringValue)
 
   private def toSeqexecEvent(ev: engine.Event)(svs: SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
@@ -228,17 +223,18 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
   }
 
-  private def refreshSequenceList(q: EventQueue): Engine.State => Task[Unit] = (st: Engine.State) => {
+  private def refreshSequenceList(q: EventQueue): Engine.State => Task[Option[Process[Task, Event]]] = (st: Engine.State) => {
 
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
-    def loads(odbList: Seq[SPObservationID]): Seq[Task[SeqexecFailure \/ Unit]] = odbList.diff(seqexecList).map(id => load(q, id))
+    def loads(odbList: Seq[SPObservationID]): Task[List[Event]] = odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logMsg(SeqexecFailure.explain(r)))))
 
-    def unloads(odbList: Seq[SPObservationID]): Seq[Task[SeqexecFailure \/ Unit]] = seqexecList.diff(odbList).map(id => unload(q, id))
+    def unloads(odbList: Seq[SPObservationID]): Seq[Event] = seqexecList.diff(odbList).map(id => unloadEvent(id))
 
-    odbProxy.queuedSequences().flatMap(seqs => EitherT(Nondeterminism[Task].gatherUnordered(loads(seqs) ++
-      unloads(seqs)).map(_.sequenceU))
-    ).run.map(_ => ())
+    val x = odbProxy.queuedSequences().flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
+    val y = x.map(_.valueOr(r => List(Event.logMsg(SeqexecFailure.explain(r)))))
+    y.map{ee => !ee.isEmpty option Process.emitAll(ee).evalMap(Task.delay(_))
+    }
   }
 
 }
