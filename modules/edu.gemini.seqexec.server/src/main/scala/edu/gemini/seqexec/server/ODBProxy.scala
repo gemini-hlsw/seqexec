@@ -13,7 +13,7 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 
 import scalaz.{Kleisli, EitherT, \/}
 import scalaz.concurrent.Task
-import scala.xml.Elem
+import scala.xml.{Elem, XML}
 import org.http4s.client.blaze._
 import org.http4s.{Uri, scalaxml}
 import knobs.Config
@@ -135,7 +135,9 @@ case class ODBClient(config: ODBClientConfig) {
   def observationTitle(id: SPProgramID, obsId: SequenceId): Task[ExtractFailure \/ String] = {
     val baseUri = s"http://${config.odbHost}:${config.port}/odbbrowser/observations"
     val target = Uri.fromString(baseUri).toOption.get +?("programReference", id.stringValue)
-    httpClient.expect[Elem](target).map { xml =>
+    httpClient.expect[String](target).map { xmlString =>
+      // Parse the xml explicitly
+      val xml = XML.loadString(xmlString)
       for {
         x <- xml \\ "observations" \ "observation"
         if (x \ "id").text == obsId
