@@ -49,6 +49,7 @@ object Model {
     // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
     // has to be embedded in a `Task`
     case class NewLogMessage(msg: String) extends SeqexecEvent
+    case object NullEvent extends SeqexecEvent
 
     // Some useful Monocle lenses
     val obsNameL = GenLens[SequenceView](_.metadata.name)

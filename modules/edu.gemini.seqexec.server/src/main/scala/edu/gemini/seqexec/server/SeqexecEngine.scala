@@ -30,7 +30,7 @@ import scala.collection.mutable
   * Created by jluhrs on 10/7/16.
   */
 class SeqexecEngine(settings: SeqexecEngine.Settings) {
-  
+
   val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
@@ -163,7 +163,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetSkyBackground(_) => ConditionsUpdated(svs)
       case engine.SetCloudCover(_)    => ConditionsUpdated(svs)
       case engine.Poll                => SequenceRefreshed(svs)
-      case engine.GetState(_)         => NewLogMessage("Internal state request")
+      case engine.GetState(_)         => NullEvent
       case engine.Log(msg)            => NewLogMessage(msg)
     }
     case engine.EventSystem(se) => se match {
@@ -227,14 +227,15 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
-    def loads(odbList: Seq[SPObservationID]): Task[List[Event]] = odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logMsg(SeqexecFailure.explain(r)))))
+    def loads(odbList: Seq[SPObservationID]): Task[List[Event]] =
+      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logMsg(SeqexecFailure.explain(r)))))
 
-    def unloads(odbList: Seq[SPObservationID]): Seq[Event] = seqexecList.diff(odbList).map(id => unloadEvent(id))
+    def unloads(odbList: Seq[SPObservationID]): Seq[Event] =
+      seqexecList.diff(odbList).map(id => unloadEvent(id))
 
     val x = odbProxy.queuedSequences().flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
     val y = x.map(_.valueOr(r => List(Event.logMsg(SeqexecFailure.explain(r)))))
-    y.map{ee => !ee.isEmpty option Process.emitAll(ee).evalMap(Task.delay(_))
-    }
+    y.map { ee => !ee.isEmpty option Process.emitAll(ee).evalMap(Task.delay(_)) }
   }
 
 }
