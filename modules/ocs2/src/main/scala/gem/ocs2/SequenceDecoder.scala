@@ -31,7 +31,20 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
           w <- WindowCover.cparseOrElse(cm, F2WindowCover.Close)
         } yield F2Config(d, e, f, u, l, r, w)
 
-      case _ => sys.error(s"Can't decode config $i, $cm")
+      case Instrument.AcqCam   => AcqCamDynamicConfig()  .right
+      case Instrument.Bhros    => BhrosDynamicConfig()   .right
+      case Instrument.GmosN    => GmosNDynamicConfig()   .right
+      case Instrument.GmosS    => GmosSDynamicConfig()   .right
+      case Instrument.Gnirs    => GnirsDynamicConfig()   .right
+      case Instrument.Gpi      => GpiDynamicConfig()     .right
+      case Instrument.Gsaoi    => GsaoiDynamicConfig()   .right
+      case Instrument.Michelle => MichelleDynamicConfig().right
+      case Instrument.Nici     => NiciDynamicConfig()    .right
+      case Instrument.Nifs     => NifsDynamicConfig()    .right
+      case Instrument.Niri     => NiriDynamicConfig()    .right
+      case Instrument.Phoenix  => PhoenixDynamicConfig() .right
+      case Instrument.Trecs    => TrecsDynamicConfig()   .right
+      case Instrument.Visitor  => VisitorDynamicConfig() .right
     }
 
   def parseStep(cm: ConfigMap): PioError \/ Step[DynamicConfig] = {
