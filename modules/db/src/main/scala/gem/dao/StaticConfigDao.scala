@@ -12,30 +12,6 @@ import Scalaz._
 
 object StaticConfigDao {
 
-  /*
-  // this is just a 0.point[ConnectionIO] … right now the obs table just contains an instrument tag which we
-  // use to construct an empty static config
-
-  def forInstrument(i: Instrument): StaticConfig.Aux[i.type] =
-    (i match {
-      case Instrument.Phoenix    => PhoenixStaticConfig()
-      case Instrument.Michelle   => MichelleStaticConfig()
-      case Instrument.Gnirs      => GnirsStaticConfig()
-      case Instrument.Niri       => NiriStaticConfig()
-      case Instrument.Trecs      => TrecsStaticConfig()
-      case Instrument.Nici       => NiciStaticConfig()
-      case Instrument.Nifs       => NifsStaticConfig()
-      case Instrument.Gpi        => GpiStaticConfig()
-      case Instrument.Gsaoi      => GsaoiStaticConfig()
-      case Instrument.GmosS      => GmosSStaticConfig()
-      case Instrument.AcqCam     => AcqCamStaticConfig()
-      case Instrument.GmosN      => GmosNStaticConfig()
-      case Instrument.Bhros      => BhrosStaticConfig()
-      case Instrument.Visitor    => VisitorStaticConfig()
-      case Instrument.Flamingos2 => Flamingos2StaticConfig(false) // TODO
-    }).asInstanceOf[StaticConfig.Aux[i.type]] // Scala isn't smart enough to know this
-    */
-
   def insert(s: StaticConfig): ConnectionIO[Int] =
     for {
       id <- Statements.insertBaseSlice(s.instrument).withUniqueGeneratedKeys[Int]("static_id")
@@ -44,23 +20,21 @@ object StaticConfigDao {
 
   private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Int] =
     s match {
-      case _: AcqCamStaticConfig      => 0.point[ConnectionIO]
-      case _: BhrosStaticConfig       => 0.point[ConnectionIO]
-
-      case f2: F2StaticConfig => Statements.insertF2(id, f2).run
-
-      case _: GmosNStaticConfig       => 0.point[ConnectionIO]
-      case _: GmosSStaticConfig       => 0.point[ConnectionIO]
-      case _: GnirsStaticConfig       => 0.point[ConnectionIO]
-      case _: GpiStaticConfig         => 0.point[ConnectionIO]
-      case _: GsaoiStaticConfig       => 0.point[ConnectionIO]
-      case _: MichelleStaticConfig    => 0.point[ConnectionIO]
-      case _: NiciStaticConfig        => 0.point[ConnectionIO]
-      case _: NifsStaticConfig        => 0.point[ConnectionIO]
-      case _: NiriStaticConfig        => 0.point[ConnectionIO]
-      case _: PhoenixStaticConfig     => 0.point[ConnectionIO]
-      case _: TrecsStaticConfig       => 0.point[ConnectionIO]
-      case _: VisitorStaticConfig     => 0.point[ConnectionIO]
+      case _: AcqCamStaticConfig   => 0.point[ConnectionIO]
+      case _: BhrosStaticConfig    => 0.point[ConnectionIO]
+      case f2: F2StaticConfig      => Statements.insertF2(id, f2).run
+      case _: GmosNStaticConfig    => 0.point[ConnectionIO]
+      case _: GmosSStaticConfig    => 0.point[ConnectionIO]
+      case _: GnirsStaticConfig    => 0.point[ConnectionIO]
+      case _: GpiStaticConfig      => 0.point[ConnectionIO]
+      case _: GsaoiStaticConfig    => 0.point[ConnectionIO]
+      case _: MichelleStaticConfig => 0.point[ConnectionIO]
+      case _: NiciStaticConfig     => 0.point[ConnectionIO]
+      case _: NifsStaticConfig     => 0.point[ConnectionIO]
+      case _: NiriStaticConfig     => 0.point[ConnectionIO]
+      case _: PhoenixStaticConfig  => 0.point[ConnectionIO]
+      case _: TrecsStaticConfig    => 0.point[ConnectionIO]
+      case _: VisitorStaticConfig  => 0.point[ConnectionIO]
     }
 
   def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
@@ -96,16 +70,6 @@ object StaticConfigDao {
           FROM static_f2
          WHERE static_id = $sid AND instrument = ${Instrument.Flamingos2: Instrument}
       """.query[F2StaticConfig]
-
-//    def selectF2(oid: Observation.Id): Query0[Flamingos2StaticConfig] =
-//      sql"""
-//        SELECT i.mos_preimaging
-//          FROM static_f2 i
-//               INNER JOIN observation o
-//                  ON o.static_id  = i.static_id AND
-//                     o.instrument = i.instrument
-//         WHERE o.observation_id = ${oid}
-//      """.query[Flamingos2StaticConfig]
 
     def insertBaseSlice(i: Instrument): Update0 =
       sql"""

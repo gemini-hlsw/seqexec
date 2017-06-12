@@ -112,7 +112,6 @@ object SmartGcalSpec {
       /* Filter                */ F2Filter.JH,
       /* FPU                   */ F2FpUnit.LongSlit1,
       F2LyotWheel.F16,
-      /* mosPreimaging = true, */
       F2ReadMode.Bright,
       F2WindowCover.Open)
 
