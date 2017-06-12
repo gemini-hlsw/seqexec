@@ -14,8 +14,8 @@ sealed abstract class DynamicConfig extends Product with Serializable {
 
   def smartGcalKey: Option[SmartGcalKey] =
     this match {
-      case f2: F2Config     => Some(f2.key)
-      case _ => None
+      case f2: F2DynamicConfig => Some(f2.key)
+      case _                   => None
     }
 
 }
@@ -48,7 +48,7 @@ final case class F2SmartGcalKey(
   fpu:       F2FpUnit
 ) extends SmartGcalKey
 
-final case class F2Config(
+final case class F2DynamicConfig(
   disperser:     F2Disperser,
   exposureTime:  Duration,
   filter:        F2Filter,

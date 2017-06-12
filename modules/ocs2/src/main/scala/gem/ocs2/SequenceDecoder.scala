@@ -29,7 +29,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
           l <- LyotWheel.parse(cm)
           r <- ReadMode.parse(cm)
           w <- WindowCover.cparseOrElse(cm, F2WindowCover.Close)
-        } yield F2Config(d, e, f, u, l, r, w)
+        } yield F2DynamicConfig(d, e, f, u, l, r, w)
 
       case Instrument.AcqCam   => AcqCamDynamicConfig()  .right
       case Instrument.Bhros    => BhrosDynamicConfig()   .right

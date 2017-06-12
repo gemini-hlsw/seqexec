@@ -53,7 +53,7 @@ object StepDao {
     *
     * @param oid F2 observation whose steps are sought
     */
-  def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2Config]] =
+  def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2DynamicConfig]] =
     selectAll(oid, allF2Only)
 
   /** Selects the step at the indicated location in the sequence associated with
@@ -145,7 +145,7 @@ object StepDao {
     i match {
       case _: AcqCamDynamicConfig   => 0.point[ConnectionIO]
       case _: BhrosDynamicConfig    => 0.point[ConnectionIO]
-      case f2: F2Config             => Statements.insertF2Config(id, f2).run
+      case f2: F2DynamicConfig      => Statements.insertF2Config(id, f2).run
       case _: GmosNDynamicConfig    => 0.point[ConnectionIO]
       case _: GmosSDynamicConfig    => 0.point[ConnectionIO]
       case _: GnirsDynamicConfig    => 0.point[ConnectionIO]
@@ -201,10 +201,10 @@ object StepDao {
       }
   }
 
-  private def oneF2Only(oid: Observation.Id, loc: Loc): MaybeConnectionIO[F2Config] =
+  private def oneF2Only(oid: Observation.Id, loc: Loc): MaybeConnectionIO[F2DynamicConfig] =
     Statements.oneF2Only(oid, loc).maybe
 
-  private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2Config] =
+  private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2DynamicConfig] =
     Statements.allF2Only(oid).list.map(==>>.fromList(_))
 
   private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[Loc ==>> I]): ConnectionIO[Loc ==>> Step[I]] =
@@ -228,7 +228,7 @@ object StepDao {
               WHERE observation_id = $oid
       """.update
 
-    def allF2Only(oid: Observation.Id): Query0[(Loc, F2Config)] =
+    def allF2Only(oid: Observation.Id): Query0[(Loc, F2DynamicConfig)] =
       sql"""
         SELECT s.location,
                i.disperser,
@@ -242,9 +242,9 @@ object StepDao {
                LEFT OUTER JOIN step_f2 i
                  ON i.step_f2_id = s.step_id
          WHERE s.observation_id = $oid
-      """.query[(Loc, F2Config)]
+      """.query[(Loc, F2DynamicConfig)]
 
-    def oneF2Only(oid: Observation.Id, loc: Loc): Query0[F2Config] =
+    def oneF2Only(oid: Observation.Id, loc: Loc): Query0[F2DynamicConfig] =
       sql"""
         SELECT i.disperser,
                i.exposure_time,
@@ -257,7 +257,7 @@ object StepDao {
                LEFT OUTER JOIN step_f2 i
                  ON i.step_f2_id = s.step_id
          WHERE s.observation_id = $oid AND s.location = $loc
-      """.query[F2Config]
+      """.query[F2DynamicConfig]
 
     def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
       sql"""
@@ -318,7 +318,7 @@ object StepDao {
          WHERE s.observation_id = $oid AND s.location = $loc
       """.query[StepKernel].map(_.toStep)
 
-    def insertF2Config(id: Int, f2: F2Config): Update0 =
+    def insertF2Config(id: Int, f2: F2DynamicConfig): Update0 =
       sql"""
         INSERT INTO step_f2 (
           step_f2_id,

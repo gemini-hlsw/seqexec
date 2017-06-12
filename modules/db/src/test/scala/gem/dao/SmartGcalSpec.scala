@@ -105,8 +105,8 @@ object SmartGcalSpec {
   private val loc2: Location.Middle = Location.unsafeMiddle(2)
   private val loc9: Location.Middle = Location.unsafeMiddle(9)
 
-  private val f2: F2Config =
-    F2Config(
+  private val f2: F2DynamicConfig =
+    F2DynamicConfig(
       /* Disperser             */ F2Disperser.R1200JH,
       Duration.ofMillis(1000),
       /* Filter                */ F2Filter.JH,
@@ -156,7 +156,7 @@ object SmartGcalSpec {
   private def doTest[A](test: ConnectionIO[A]): A =
     (for {
       _ <- ProgramDao.insert(Program(pid, "SmartGcalSpec Prog", List.empty[Step[Nothing]]))
-      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", Flamingos2StaticConfig(mosPreImaging = false), List.empty[Step[Nothing]]))
+      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[Nothing]]))
       a <- test
       _ <- sql"""DELETE FROM observation WHERE observation_id = $oid""".update.run
       _ <- sql"""DELETE FROM program     WHERE program_id     = $pid""".update.run

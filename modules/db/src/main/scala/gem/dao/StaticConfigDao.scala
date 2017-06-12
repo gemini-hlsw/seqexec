@@ -47,7 +47,7 @@ object StaticConfigDao {
       case _: AcqCamStaticConfig      => 0.point[ConnectionIO]
       case _: BhrosStaticConfig       => 0.point[ConnectionIO]
 
-      case f2: Flamingos2StaticConfig => Statements.insertF2(id, f2).run
+      case f2: F2StaticConfig => Statements.insertF2(id, f2).run
 
       case _: GmosNStaticConfig       => 0.point[ConnectionIO]
       case _: GmosSStaticConfig       => 0.point[ConnectionIO]
@@ -90,12 +90,12 @@ object StaticConfigDao {
 
 
   object Statements {
-    def selectF2(sid: Int): Query0[Flamingos2StaticConfig] =
+    def selectF2(sid: Int): Query0[F2StaticConfig] =
       sql"""
         SELECT mos_preimaging
           FROM static_f2
          WHERE static_id = $sid AND instrument = ${Instrument.Flamingos2: Instrument}
-      """.query[Flamingos2StaticConfig]
+      """.query[F2StaticConfig]
 
 //    def selectF2(oid: Observation.Id): Query0[Flamingos2StaticConfig] =
 //      sql"""
@@ -113,7 +113,7 @@ object StaticConfigDao {
         VALUES ($i)
       """.update
 
-    def insertF2(id: Int, f2: Flamingos2StaticConfig): Update0 =
+    def insertF2(id: Int, f2: F2StaticConfig): Update0 =
       sql"""
         INSERT INTO static_f2 (static_id, instrument, mos_preimaging)
         VALUES (

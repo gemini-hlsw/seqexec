@@ -30,7 +30,7 @@ final case class GmosNStaticConfig()      extends StaticConfig.Impl(Instrument.G
 final case class BhrosStaticConfig()      extends StaticConfig.Impl(Instrument.Bhros)
 final case class VisitorStaticConfig()    extends StaticConfig.Impl(Instrument.Visitor)
 
-final case class Flamingos2StaticConfig(mosPreImaging: Boolean) extends StaticConfig {
+final case class F2StaticConfig(mosPreImaging: Boolean) extends StaticConfig {
   type I = Instrument.Flamingos2.type
 
   def instrument: I = Instrument.Flamingos2

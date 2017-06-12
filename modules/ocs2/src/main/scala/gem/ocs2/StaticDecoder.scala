@@ -20,7 +20,7 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Bhros      => BhrosStaticConfig().right
 
       case Instrument.Flamingos2 =>
-        Legacy.Instrument.MosPreImaging.parse(cm).map(Flamingos2StaticConfig(_))
+        Legacy.Instrument.MosPreImaging.parse(cm).map(F2StaticConfig(_))
 
       case Instrument.GmosN      => GmosNStaticConfig().right
       case Instrument.GmosS      => GmosSStaticConfig().right
