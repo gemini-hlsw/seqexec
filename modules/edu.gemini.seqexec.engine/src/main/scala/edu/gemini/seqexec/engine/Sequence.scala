@@ -27,7 +27,7 @@ object Sequence {
 
   def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None, ""), Nil)
 
-  implicit val SequenceFunctor = new Functor[Sequence] {
+  implicit val sequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
       Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
   }
@@ -122,15 +122,15 @@ object Sequence {
       separate(seq).flatMap {
         case (pending, done)   => pending match {
           case Nil             => None
-          case stepP :: stepPs =>
-            Step.Zipper.currentify(stepP).map(
-              Zipper(seq.id, seq.metadata, stepPs, _, done)
+          case s :: ss =>
+            Step.Zipper.currentify(s).map(
+              Zipper(seq.id, seq.metadata, ss, _, done)
             )
         }
       }
 
-    // MonadPlus' `separate` would be good if we wanted to separate Actions or Results,
-    // but here we want only Steps.
+    // We would use MonadPlus' `separate` if we wanted to separate Actions or
+    // Results, but here we want only Steps.
     private def separate(seq: Sequence[Action \/ Result]): Option[(List[Step[Action]], List[Step[Result]])] = {
 
       seq.steps.foldLeftM[Option, (List[Step[Action]], List[Step[Result]])]((Nil, Nil))(

@@ -137,7 +137,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
     } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
 
-    t.map{
+    t.map {
       case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
       case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logMsg(SeqexecFailure.explain(e)))
       case _                 => List()
@@ -259,7 +259,7 @@ object SeqexecEngine {
                       odbQueuePollingInterval: Duration)
   val defaultSettings = Settings(Site.GS,
     "localhost",
-    LocalDate.of(2017, 1,1),
+    LocalDate.of(2017, 1, 1),
     "http://localhost/",
     dhsSim = true,
     tcsSim = true,

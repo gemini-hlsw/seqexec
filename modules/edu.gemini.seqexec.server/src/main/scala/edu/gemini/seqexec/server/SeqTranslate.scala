@@ -87,8 +87,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
             else List())
           ).map(_.left)
-        // Strictly this should pattern match "complete" only, but for now it
-        // catches everything until more statuses are properly handled.
+        // Strictly speaking this should pattern match on "complete" only, but
+        // for now it catches everything. New statuses that need to be handled
+        // should be added as another case pattern.
         case _ =>
           Step(
             i,
@@ -197,7 +198,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[List[Header]] = stepType match {
     case CelestialObject(inst) => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(f => f :: gcalHeaders :: commonHeaders(config)) //TODO: Add GCAL keywords here
+    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(f => f :: gcalHeaders :: commonHeaders(config)) // TODO: Add GCAL keywords here
     case DarkOrBias(inst)      => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
     case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
   }
@@ -230,7 +231,7 @@ object SeqTranslate {
   }
 
   private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
-    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap{
+    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
       case Flamingos2.name => TrySeq(Resource.F2)
       case GmosSouth.name  => TrySeq(Resource.GMOS)
       case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
