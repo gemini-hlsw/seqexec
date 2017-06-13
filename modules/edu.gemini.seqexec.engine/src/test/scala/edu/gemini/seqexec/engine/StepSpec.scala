@@ -301,11 +301,8 @@ class StepSpec extends FlatSpec {
     assert(Step.Zipper.currentify(step2).nonEmpty)
   }
 
-  "status" should "be Error when empty" in {
-    assert(Step.status(stepz0.toStep) === StepState.Error(
-             "This should never happen, please submit a bug report"
-           )
-    )
+  "status" should "be completed when it doesn't have any executions" in {
+    assert(Step.status(stepz0.toStep) === StepState.Completed)
   }
 
   "status" should "be Error when at least one Action failed" in {

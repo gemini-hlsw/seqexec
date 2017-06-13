@@ -47,19 +47,17 @@ object Step {
       // Get the message if there is one
       _.fold(_ => None, _.errMsg)
       // Return error or continue with the rest of the checks
-    ).map(StepState.Error).getOrElse {
-      // At least an Action in this Step errored.
-      // TODO: These errors for empty cases should be enforced at the type level
-      if (step.executions.isEmpty
-            || step.executions.all(_.isEmpty)
-      ) StepState.Error("This should never happen, please submit a bug report")
+    ).map(StepState.Error).getOrElse(
+      // It's possible to have a Step with empty executions when a completed
+      // Step is loaded from the ODB.
+      if (step.executions.isEmpty || step.executions.all(_.isEmpty)) StepState.Completed
       // All actions in this Step are pending.
       else if (step.all(_.isLeft)) StepState.Pending
       // All actions in this Step were completed successfully.
       else if (step.all(_.isRight)) StepState.Completed
       // Not all actions are completed or pending.
       else StepState.Running
-    }
+    )
 
   }
 
