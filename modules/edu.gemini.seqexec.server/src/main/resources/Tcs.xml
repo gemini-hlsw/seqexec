@@ -2383,8 +2383,7 @@
         <top>oiwfs</top>
         <attribute name="intTime">
             <channel>dc:intTime.VAL</channel>
-            <!--Should be changed to DOUBLE when the EPICS DB is corrected-->
-            <type>STRING</type>
+            <type>DOUBLE</type>
             <description>Integration time</description>
         </attribute>
     </Status>
