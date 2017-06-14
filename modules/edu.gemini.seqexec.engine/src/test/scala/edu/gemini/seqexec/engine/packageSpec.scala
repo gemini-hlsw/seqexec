@@ -3,8 +3,7 @@ package edu.gemini.seqexec.engine
 import java.util.concurrent.Semaphore
 
 import Event._
-import org.scalatest.FlatSpec
-import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
+import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
 import scala.concurrent.duration._
@@ -14,7 +13,7 @@ import scalaz.Nondeterminism
 import scalaz.concurrent.Task
 import scalaz.stream.{Cause, Process, async}
 
-class packageSpec extends FlatSpec {
+class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   /**
     * Emulates TCS configuration in the real world.
@@ -113,8 +112,12 @@ class packageSpec extends FlatSpec {
   val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
   val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
 
-  def isFinished(status: SequenceState): Boolean =
-    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean = status match {
+    case SequenceState.Idle      => true
+    case SequenceState.Completed => true
+    case SequenceState.Error(_)  => true
+    case _                       => false
+  }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
     process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
@@ -125,7 +128,7 @@ class packageSpec extends FlatSpec {
   it should "be in Running status after starting" in {
     val p = Process.eval(Task.now(start(seqId)))
     val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.get._2
-    assert(qs.sequences(seqId).status == SequenceState.Running)
+    assert(qs.sequences(seqId).status === SequenceState.Running)
   }
 
   it should "be 0 pending executions after execution" in {
@@ -155,7 +158,7 @@ class packageSpec extends FlatSpec {
   it should "not run 2nd sequence because it's using the same resource" in {
     val p = Process.emitAll(List(start(seqId1), start(seqId2))).evalMap(Task.now(_))
     assert(
-      process(p)(qs2).take(6).runLast.unsafePerformSync.get._2.sequences(seqId2).status == SequenceState.Idle
+      process(p)(qs2).take(6).runLast.unsafePerformSync.get._2.sequences(seqId2).status === SequenceState.Idle
     )
   }
 
@@ -163,7 +166,7 @@ class packageSpec extends FlatSpec {
     val p = Process.emitAll(List(start(seqId1), start(seqId3))).evalMap(Task.now(_))
 
     assert(
-      process(p)(qs3).take(6).runLast.unsafePerformSync.get._2.sequences(seqId3).status == SequenceState.Running
+      process(p)(qs3).take(6).runLast.unsafePerformSync.get._2.sequences(seqId3).status === SequenceState.Running
     )
   }
 

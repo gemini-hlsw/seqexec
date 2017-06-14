@@ -59,8 +59,12 @@ class StepSpec extends FlatSpec {
     // input event is enough.
   } yield Result.OK(Result.Observed("DummyFileId"))
 
-  def isFinished(status: SequenceState): Boolean =
-    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean = status match {
+    case SequenceState.Idle      => true
+    case SequenceState.Completed => true
+    case SequenceState.Error(_)  => true
+    case _                       => false
+  }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
     process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
@@ -119,7 +123,7 @@ class StepSpec extends FlatSpec {
 
      inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
-        status should be (Idle)
+        status should be (SequenceState.Idle)
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
@@ -154,7 +158,7 @@ class StepSpec extends FlatSpec {
                  (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
                Nil
              ),
-             Idle
+             SequenceState.Idle
            )
           )
         )

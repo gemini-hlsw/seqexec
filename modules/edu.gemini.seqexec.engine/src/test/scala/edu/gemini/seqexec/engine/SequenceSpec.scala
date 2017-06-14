@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.engine.Event.start
-import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
 import scala.Function.const
@@ -67,8 +66,12 @@ class SequenceSpec extends FlatSpec {
       )
     )
 
-  def isFinished(status: SequenceState): Boolean =
-    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean = status match {
+    case SequenceState.Idle      => true
+    case SequenceState.Completed => true
+    case SequenceState.Error(_)  => true
+    case _                       => false
+  }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
     process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
@@ -99,7 +102,7 @@ class SequenceSpec extends FlatSpec {
 
     inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
-        status should be (Idle)
+        status should be (SequenceState.Idle)
         assert(zipper.done.length == 1 && zipper.pending.isEmpty)
     }
 
