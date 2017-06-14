@@ -56,6 +56,7 @@ trait ModelBooPicklers {
     .addConcreteType[SequenceUpdated]
     .addConcreteType[SequenceRefreshed]
     .addConcreteType[NewLogMessage]
+    .addConcreteType[NullEvent.type]
     .addConcreteType[ObserverUpdated]
     .addConcreteType[OperatorUpdated]
     .addConcreteType[ConditionsUpdated]

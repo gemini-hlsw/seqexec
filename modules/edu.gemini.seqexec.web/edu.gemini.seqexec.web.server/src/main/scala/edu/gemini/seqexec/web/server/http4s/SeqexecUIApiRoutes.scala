@@ -92,12 +92,16 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
             // Hide the name for anonymous users
             sequenceNameL.set("")(e)
         }
+        def filterOutNull = (e: SeqexecEvent) => e match {
+          case NullEvent => false
+          case _         => true
+        }
         // If the user didn't login, anonymize
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
         WS(
           Exchange(
             Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption)))) ++
-              (pingProcess merge engineOutput.subscribe.map(anonymizeF).map(v => Binary(trimmedArray(v)))),
+              (pingProcess merge engineOutput.subscribe.map(anonymizeF).filter(filterOutNull).map(v => Binary(trimmedArray(v)))),
             scalaz.stream.Process.empty
           )
         )
