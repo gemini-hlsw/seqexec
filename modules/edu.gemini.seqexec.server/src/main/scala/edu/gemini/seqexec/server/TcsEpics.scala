@@ -524,12 +524,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
 
   // Attribute must be changed back to Double after EPICS channel is fixed.
-  def oiwfsIntegrationTime: Option[Double]  = Option(oiwfsStatus.getStringAttribute("intTime").value).flatMap{ v =>
-    try { v.toDouble.some }
-    catch {
-      case _: Throwable => None
-    }
-  }
+  def oiwfsIntegrationTime: Option[Double]  = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
   private def instPort(name: String): Option[Int] = Option(tcsState.getIntegerAttribute(s"${name}Port").value).map(_.intValue)
   def gsaoiPort = instPort("gsaoi")
