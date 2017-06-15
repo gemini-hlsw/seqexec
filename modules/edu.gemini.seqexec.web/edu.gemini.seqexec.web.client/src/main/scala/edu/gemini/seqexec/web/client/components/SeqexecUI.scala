@@ -40,7 +40,7 @@ object SeqexecUI {
     <.div(
       NavBar(),
       wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
-      QueueArea(),
+      QueueArea(c.narrow[InstrumentPage]),
       r.render(),
       lbConnect(LoginBox.apply)
     )
