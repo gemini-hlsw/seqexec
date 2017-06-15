@@ -52,3 +52,17 @@ ALTER TABLE observation
 ALTER TABLE observation
   ADD CONSTRAINT unique_static_per_obs UNIQUE (static_id);
 
+-- Observation has a foreign key pointing to static_config, but if an
+-- observation is deleted the corresponding static_config stays around.  This
+-- trigger takes care of deleting the matching static_config when an observation
+-- is deleted.  (Note the converse -- deleting a row in static_config -- will
+-- cascade to observation and the static_f2 table.)
+CREATE FUNCTION delete_static_config() RETURNS trigger AS $delete_static_config$
+  BEGIN
+    DELETE FROM static_config WHERE static_id = OLD.static_id;
+    RETURN OLD;
+  END;
+$delete_static_config$ LANGUAGE plpgsql;
+
+CREATE TRIGGER delete_static_config AFTER DELETE ON observation
+  FOR EACH ROW EXECUTE PROCEDURE delete_static_config();
