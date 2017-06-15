@@ -23,10 +23,10 @@ object SeqexecUI {
     import dsl._
 
     (emptyRule
-    | staticRoute(root, Root)  ~> render(SequenceArea(InstrumentPage("Flamingos2")))
+    | staticRoute(root, Root) ~> renderR(r => SequenceArea(r.narrow))
     | dynamicRoute("/" ~ string("[a-zA-Z0-9-]+").caseClass[InstrumentPage]) {
         case x @ InstrumentPage(i) if InstrumentNames.instruments.list.toList.contains(i) => x
-      } ~> dynRender(SequenceArea(_))
+      } ~> dynRenderR((p, r) => SequenceArea(r.narrow[InstrumentPage]))
     )
       .notFound({println("redirec");redirectToPage(Root)(Redirect.Push)}).logToConsole
       // Runtime verification that all pages are routed

@@ -15,6 +15,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.equal._
@@ -97,10 +98,10 @@ object SequenceTabContent {
   * Contains the area with tabs and the sequence body
   */
 object SequenceTabsBody {
-  case class Props(p: InstrumentPage, s: ClientStatus, d: SequencesOnDisplay)
+  case class Props(p: RouterCtl[InstrumentPage], s: ClientStatus, d: SequencesOnDisplay)
   def tabContents(p: Props): Stream[SequenceTabContent.Props] =
     p.d.instrumentSequences.map { a =>
-      SequenceTabContent.Props(isActive = p.p.i === a.instrument, p.s, a)}.toStream
+      SequenceTabContent.Props(isActive = false, p.s, a)}.toStream
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
     .stateless
@@ -113,13 +114,13 @@ object SequenceTabsBody {
     )
     .build
 
-  def apply(page: InstrumentPage, p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(page, p()._1, p()._2))
+  def apply(page: RouterCtl[InstrumentPage], p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(page, p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
   val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-  private val component = ScalaComponent.builder[InstrumentPage]("SequenceHeadersAndTable")
+  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
@@ -132,7 +133,7 @@ object SequenceHeadersAndTable {
       )
     ) .build
 
-  def apply(p: InstrumentPage): Unmounted[InstrumentPage, Unit, Unit] = component(p)
+  def apply(p: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(p)
 }
 
 /**
@@ -142,7 +143,7 @@ object SequenceHeadersAndTable {
 object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
 
-  private val component = ScalaComponent.builder[InstrumentPage]("SequenceTabs")
+  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("SequenceTabs")
     .stateless
     .render_P( p =>
       <.div(
@@ -162,12 +163,12 @@ object SequenceTabs {
     )
     .build
 
-  def apply(p: InstrumentPage): Unmounted[InstrumentPage, Unit, Unit] = component(p)
+  def apply(p: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(p)
 }
 
 object SequenceArea {
 
-  private val component = ScalaComponent.builder[InstrumentPage]("QueueTableSection")
+  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("QueueTableSection")
     .stateless
     .render_P( p =>
       <.div(
@@ -177,5 +178,5 @@ object SequenceArea {
       )
     ).build
 
-  def apply(page: InstrumentPage): Unmounted[InstrumentPage, Unit, Unit] = component(page)
+  def apply(page: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(page)
 }
