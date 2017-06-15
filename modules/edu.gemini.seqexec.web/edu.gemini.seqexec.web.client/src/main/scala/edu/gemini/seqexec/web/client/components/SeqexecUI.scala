@@ -22,14 +22,15 @@ object SeqexecUI {
   val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
     import dsl._
 
-    (trimSlashes
-    | staticRoute(root,     Root)  ~> render(SequenceArea(InstrumentPage("Flamingos2")))
-    | dynamicRoute(string("[a-zA-Z0-9]+").caseClass[InstrumentPage]) {
-      case x @ InstrumentPage(i) if InstrumentNames.instruments.list.toList.contains(i) => x
-    } ~> dynRender(SequenceArea(_))
-
+    (emptyRule
+    | staticRoute(root, Root)  ~> render(SequenceArea(InstrumentPage("Flamingos2")))
+    | dynamicRoute("/" ~ string("[a-zA-Z0-9-]+").caseClass[InstrumentPage]) {
+        case x @ InstrumentPage(i) if InstrumentNames.instruments.list.toList.contains(i) => x
+      } ~> dynRender(SequenceArea(_))
     )
-      .notFound(redirectToPage(Root)(Redirect.Replace)).logToConsole
+      .notFound({println("redirec");redirectToPage(Root)(Redirect.Push)}).logToConsole
+      // Runtime verification that all pages are routed
+      .verify(Root, InstrumentNames.instruments.list.toList.map(InstrumentPage): _*)
       .renderWith(layout)
   }
 

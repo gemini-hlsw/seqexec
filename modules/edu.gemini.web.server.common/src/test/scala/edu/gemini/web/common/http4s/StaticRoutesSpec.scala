@@ -67,9 +67,9 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
       service.apply(Request(uri = uri("/css/test.css"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
       service.apply(Request(uri = uri("/css/test.css"))).unsafePerformSync.orNotFound.headers should contain (`Content-Type`(`text/css`))
     }
-    it should "return a 404 for an unknown file" in {
+    it should "return the index for an unknown file" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = uri("/unknown"))).unsafePerformSync.orNotFound.status should equal (Status.NotFound)
+      service.apply(Request(uri = uri("/unknown"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
     }
     it should "not leak the application configuration file" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service

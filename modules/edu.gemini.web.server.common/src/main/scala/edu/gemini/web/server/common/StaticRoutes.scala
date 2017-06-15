@@ -59,6 +59,6 @@ class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
     case req if req.pathInfo == "/"                  => indexResponse
     case req if req.endsWith(supportedExtension: _*) => req.serve()
     // This maybe not desired in all cases but it helps to keep client side routing cleaner
-    case req                                         => indexResponse
+    case req if !req.pathInfo.contains(".")          => indexResponse
   }}
 }
