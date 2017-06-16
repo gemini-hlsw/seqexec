@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
-import edu.gemini.seqexec.web.client.components.SeqexecUI.InstrumentPage
+import edu.gemini.seqexec.web.client.components.SeqexecUI.{InstrumentPage, RouterProps}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
@@ -98,29 +98,29 @@ object SequenceTabContent {
   * Contains the area with tabs and the sequence body
   */
 object SequenceTabsBody {
-  case class Props(p: RouterCtl[InstrumentPage], s: ClientStatus, d: SequencesOnDisplay)
+  case class Props(p: RouterProps, s: ClientStatus, d: SequencesOnDisplay)
   def tabContents(p: Props): Stream[SequenceTabContent.Props] =
     p.d.instrumentSequences.map { a =>
-      SequenceTabContent.Props(isActive = false, p.s, a)}.toStream
+      SequenceTabContent.Props(isActive = a.instrument === p.p.page.i, p.s, a)}.toStream
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-        TabularMenu(p.d),
+        TabularMenu(p.p, p.d),
         tabContents(p).map(SequenceTabContent.apply).toTagMod
       )
     )
     .build
 
-  def apply(page: RouterCtl[InstrumentPage], p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(page, p()._1, p()._2))
+  def apply(page: RouterProps, p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(page, p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
   val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("SequenceHeadersAndTable")
+  private val component = ScalaComponent.builder[RouterProps]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
@@ -133,7 +133,7 @@ object SequenceHeadersAndTable {
       )
     ) .build
 
-  def apply(p: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(p)
+  def apply(p: RouterProps): Unmounted[RouterProps, Unit, Unit] = component(p)
 }
 
 /**
@@ -143,7 +143,7 @@ object SequenceHeadersAndTable {
 object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
 
-  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("SequenceTabs")
+  private val component = ScalaComponent.builder[RouterProps]("SequenceTabs")
     .stateless
     .render_P( p =>
       <.div(
@@ -163,12 +163,12 @@ object SequenceTabs {
     )
     .build
 
-  def apply(p: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(p)
+  def apply(p: RouterProps): Unmounted[RouterProps, Unit, Unit] = component(p)
 }
 
 object SequenceArea {
 
-  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("QueueTableSection")
+  private val component = ScalaComponent.builder[RouterProps]("QueueTableSection")
     .stateless
     .render_P( p =>
       <.div(
@@ -178,5 +178,5 @@ object SequenceArea {
       )
     ).build
 
-  def apply(page: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(page)
+  def apply(props: RouterProps): Unmounted[RouterProps, Unit, Unit] = component(props)
 }

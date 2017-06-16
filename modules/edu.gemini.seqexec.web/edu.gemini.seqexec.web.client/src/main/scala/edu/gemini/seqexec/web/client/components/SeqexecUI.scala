@@ -19,14 +19,16 @@ object SeqexecUI {
   case object Root extends SeqexecPages
   case class InstrumentPage(i: Instrument) extends SeqexecPages
 
+  case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
+
   val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
     import dsl._
 
     (emptyRule
-    | staticRoute(root, Root) ~> renderR(r => SequenceArea(r.narrow))
+    | staticRoute(root, Root) ~> renderR(r => SequenceArea(RouterProps(InstrumentPage("Flamingos2"), r.narrow)))
     | dynamicRoute("/" ~ string("[a-zA-Z0-9-]+").caseClass[InstrumentPage]) {
         case x @ InstrumentPage(i) if InstrumentNames.instruments.list.toList.contains(i) => x
-      } ~> dynRenderR((p, r) => SequenceArea(r.narrow[InstrumentPage]))
+      } ~> dynRenderR((p, r) => SequenceArea(RouterProps(p, r.narrow[InstrumentPage])))
     )
       .notFound({println("redirec");redirectToPage(Root)(Redirect.Push)}).logToConsole
       // Runtime verification that all pages are routed

@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.model.SequencesOnDisplay
+import edu.gemini.seqexec.web.client.components.SeqexecUI.RouterProps
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -10,15 +11,17 @@ import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import scalacss.ScalaCssReact._
 import scalaz.Zipper
+import scalaz.syntax.equal._
+import scalaz.std.string._
 
 /**
   * Menu with tabs
   */
 object TabularMenu {
   case class TabItem(title: String, isActive: Boolean, dataItem: String, hasError: Boolean)
-  case class Props(tabs: List[TabItem])
+  case class Props(router: RouterProps, tabs: List[TabItem])
 
-  def sequencesTabs(d: SequencesOnDisplay): Zipper[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a == d.instrumentSequences.focus, a.instrument, a.sequence().map(_.hasError).getOrElse(false)))
+  def sequencesTabs(router: RouterProps, d: SequencesOnDisplay): Zipper[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, isActive = a.instrument === router.page.i, a.instrument, a.sequence().map(_.hasError).getOrElse(false)))
 
   private val component = ScalaComponent.builder[Props]("TabularMenu")
     .stateless
@@ -50,5 +53,5 @@ object TabularMenu {
       }
     ).build
 
-  def apply(p: SequencesOnDisplay): Unmounted[Props, Unit, Unit] = component(Props(sequencesTabs(p).toStream.toList))
+  def apply(r: RouterProps, p: SequencesOnDisplay): Unmounted[Props, Unit, Unit] = component(Props(r, sequencesTabs(r, p).toStream.toList))
 }
