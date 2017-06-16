@@ -1,7 +1,8 @@
 package edu.gemini.seqexec.web.client.components
 
+import edu.gemini.seqexec.model.Model.Instrument
 import edu.gemini.seqexec.web.client.model.SequencesOnDisplay
-import edu.gemini.seqexec.web.client.components.SeqexecUI.RouterProps
+import edu.gemini.seqexec.web.client.components.SeqexecUI.{InstrumentPage, RouterProps}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -49,7 +50,11 @@ object TabularMenu {
         import org.querki.jquery.$
         import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 
-        $(ctx.getDOMNode).find(".item").tab()
+        $(ctx.getDOMNode).find(".item").tab(
+          JsTabOptions
+            // runNow as we are outside react loop
+            .onVisible((x: Instrument) => ctx.props.router.router.set(InstrumentPage(x)).runNow())
+        )
       }
     ).build
 
