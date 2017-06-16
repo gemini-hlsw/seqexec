@@ -4,7 +4,7 @@ import doobie.imports._
 
 import gem.dao._
 
-import gem.{Dataset, Location, Log, Observation, Program, Step, User}
+import gem.{Dataset, Log, Observation, Program, Step, User}
 import gem.config.{ StaticConfig, DynamicConfig }
 
 import scalaz.Scalaz._
@@ -18,11 +18,6 @@ object Importer extends DoobieClient {
 
     val rmObservation: ConnectionIO[Unit] =
       sql"DELETE FROM observation WHERE observation_id = ${o.id}".update.run.void
-
-    val writeSteps: ConnectionIO[Unit] =
-      o.steps.zipWithIndex.traverseU { case (s, i) =>
-        StepDao.insert(o.id, Location.unsafeMiddle((i + 1) * 100), s)
-      }.void
 
     val lookupStepIds: ConnectionIO[List[Int]] =
       sql"SELECT step_id FROM step WHERE observation_id = ${o.id} ORDER BY location".query[Int].list
@@ -43,7 +38,6 @@ object Importer extends DoobieClient {
         _ <- ignoreUniqueViolation(ProgramDao.insert(Program[Nothing](o.id.pid, "", Nil)))
         _ <- l.log(u, s"remove observation ${o.id}"   )(rmObservation           )
         _ <- l.log(u, s"insert new version of ${o.id}")(ObservationDao.insert(o))
-        _ <- l.log(u, s"insert steps for ${o.id}"     )(writeSteps              )
         _ <- l.log(u, s"write datasets for ${o.id}"   )(writeDatasets           )
       } yield ()
   }

@@ -1,7 +1,7 @@
 package gem
 package dao
 
-import gem.config.StaticConfig
+import gem.config.{DynamicConfig, StaticConfig}
 
 import edu.gemini.spModel.core._
 import edu.gemini.spModel.core.ProgramId._
@@ -43,7 +43,7 @@ object ProgramDao {
     Statements.selectFlat(pid).option
 
   /** Select a program by id, with full Observation information. */
-  def selectFull(pid: Program.Id): ConnectionIO[Option[Program[Observation[StaticConfig, Step[_]]]]] =
+  def selectFull(pid: Program.Id): ConnectionIO[Option[Program[Observation[StaticConfig, Step[DynamicConfig]]]]] =
     for {
       opn <- selectFlat(pid)
       os  <- ObservationDao.selectAll(pid)

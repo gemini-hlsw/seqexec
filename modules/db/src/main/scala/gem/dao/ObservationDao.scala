@@ -1,7 +1,7 @@
 package gem
 package dao
 
-import gem.config.StaticConfig
+import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum.Instrument
 
 import doobie.imports._
@@ -10,10 +10,13 @@ import scalaz._, Scalaz._
 
 object ObservationDao {
 
-  def insert(o: Observation[StaticConfig, _]): ConnectionIO[Int] =
+  def insert(o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Int] =
     for {
       id <- StaticConfigDao.insert(o.staticConfig)
       _  <- Statements.insert(o, id).run
+      _  <- o.steps.zipWithIndex.traverseU { case (s, i) =>
+              StepDao.insert(o.id, Location.unsafeMiddle((i + 1) * 100), s)
+            }.void
     } yield id
 
   /** Select all the observation ids associated with the given program. */
@@ -30,10 +33,10 @@ object ObservationDao {
       sc  <- StaticConfigDao.select(tup._1, tup._2)
     } yield obs.leftMap(_ => sc)
 
-  def select(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Step[_]]] =
+  def select(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
       on <- selectStatic(id)
-      ss <- StepDao.selectAllEmpty(id)
+      ss <- StepDao.selectAll(id)
     } yield on.copy(steps = ss.values)
 
   def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[Instrument, Nothing]]] =
@@ -45,7 +48,7 @@ object ObservationDao {
       oss <- ids.traverseU(selectStatic)
     } yield oss
 
-  def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[_]]]] =
+  def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverseU(select)

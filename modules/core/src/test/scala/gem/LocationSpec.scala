@@ -55,7 +55,7 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  it should "find an arbitrary numer of Locations between unequal positions" in {
+  it should "find an arbitrary number of Locations between unequal positions" in {
     forAll { (i: Int, l0: Location, l1: Location) =>
       val count = (i % 10000).abs + 1
       Order[Location].order(l0, l1) match {

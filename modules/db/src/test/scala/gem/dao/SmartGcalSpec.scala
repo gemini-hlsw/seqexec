@@ -155,7 +155,7 @@ object SmartGcalSpec {
   private def doTest[A](test: ConnectionIO[A]): A =
     (for {
       _ <- ProgramDao.insert(Program(pid, "SmartGcalSpec Prog", List.empty[Step[Nothing]]))
-      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[Nothing]]))
+      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[DynamicConfig]]))
       a <- test
       _ <- sql"""DELETE FROM observation WHERE observation_id = $oid""".update.run
       _ <- sql"""DELETE FROM program     WHERE program_id     = $pid""".update.run
