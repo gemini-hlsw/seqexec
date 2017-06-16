@@ -30,10 +30,11 @@ object SeqexecUI {
         case x @ InstrumentPage(i) if InstrumentNames.instruments.list.toList.contains(i) => x
       } ~> dynRenderR((p, r) => SequenceArea(RouterProps(p, r.narrow[InstrumentPage])))
     )
-      .notFound({println("redirec");redirectToPage(Root)(Redirect.Push)}).logToConsole
+      .notFound(redirectToPage(Root)(Redirect.Push))
       // Runtime verification that all pages are routed
       .verify(Root, InstrumentNames.instruments.list.toList.map(InstrumentPage): _*)
       .renderWith(layout)
+      .logToConsole
   }
 
   val router = Router(BaseUrl.fromWindowOrigin, routerConfig)

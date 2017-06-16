@@ -40,9 +40,9 @@ object QueueTableBody {
     )
   }
 
-  def showSequence(p: Props,s: SequenceView): Callback =
+  def showSequence(p: Props, s: SequenceView): Callback =
     // Request to display the selected sequence
-    p.sequences.dispatchCB(SelectToDisplay(s))
+    p.router.set(InstrumentPage(s.metadata.instrument)) >> p.sequences.dispatchCB(SelectToDisplay(s))
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P { p =>
