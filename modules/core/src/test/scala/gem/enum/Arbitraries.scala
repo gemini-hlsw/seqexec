@@ -2,7 +2,6 @@ package gem.enum
 
 import org.scalacheck._
 import org.scalacheck.Gen._
-import org.scalacheck.Arbitrary._
 
 //import scalaz._, Scalaz._
 

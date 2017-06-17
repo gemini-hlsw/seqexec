@@ -74,7 +74,7 @@ trait Arbitraries extends gem.config.Arbitraries {
   def arbSequenceOf(i: Instrument): Arbitrary[List[Step[DynamicConfig]]] =
     Arbitrary {
       for {
-        n <- Gen.choose(0, 10)
+        n <- Gen.choose(0, 50)
         s <- Gen.listOfN(n, arbStepOf(i).arbitrary)
       } yield s
     }

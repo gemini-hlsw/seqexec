@@ -117,8 +117,8 @@ trait Arbitraries extends gem.enum.Arbitraries {
     Arbitrary {
       for {
         a  <- arbitrary[GcalArc]
-        as <- Gen.someOf(GcalArc.all).map(s => ISet.fromList(s.toList).delete(a))
-      } yield OneAnd(a, as)
+        as <- Gen.someOf(GcalArc.all)
+      } yield GcalArcs(a, as.toList)
     }
 
   implicit val arbGcalLamp: Arbitrary[GcalLamp] =

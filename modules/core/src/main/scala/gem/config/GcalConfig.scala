@@ -15,11 +15,26 @@ case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser
     lamp.swap.toOption
 
   def arcs: ISet[GcalArc] =
-    lamp.fold(_ => ISet.empty[GcalArc], as => as.tail.insert(as.head))
+    lamp.fold(_ => ISet.empty[GcalArc], _.toISet)
 }
 
 object GcalConfig {
-  type GcalArcs = OneAnd[ISet, GcalArc]
+  sealed abstract case class GcalArcs(as: OneAnd[ISet, GcalArc]) {
+    def toList: List[GcalArc] =
+      as.head :: as.tail.toList
+
+    def toISet: ISet[GcalArc] =
+      as.tail.insert(as.head)
+  }
+
+  object GcalArcs {
+    def apply(arc0: GcalArc, arcs: List[GcalArc]): GcalArcs = {
+      val all = ISet.fromList(arc0 :: arcs)
+      new GcalArcs(OneAnd(all.elemAt(0).get, all.deleteAt(0))) {}
+    }
+  }
+
+//  type GcalArcs = OneAnd[ISet, GcalArc]
   type GcalLamp = GcalContinuum \/ GcalArcs
 
   object GcalLamp {
@@ -32,7 +47,7 @@ object GcalConfig {
 
       // Prepare the arc lamps, assuming there is no continuum.
       val ao = as match {
-        case h :: t if continuum.isEmpty => Some(OneAnd(h, ISet.fromList(t)).right[GcalContinuum])
+        case h :: t if continuum.isEmpty => Some(GcalArcs(h, t).right[GcalContinuum])
         case _                           => None
       }
 
@@ -43,7 +58,7 @@ object GcalConfig {
       continuum.left
 
     def fromArcs(arc0: GcalArc, arcs: GcalArc*): GcalLamp =
-      OneAnd(arc0, ISet.fromList(arcs.toList)).right
+      GcalArcs(arc0, arcs.toList).right
 
     def unsafeFromConfig(continuum: Option[GcalContinuum], arcs: (GcalArc, Boolean)*): GcalLamp =
       fromConfig(continuum, arcs: _*).getOrElse {
