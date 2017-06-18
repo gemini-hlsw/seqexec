@@ -19,12 +19,12 @@ case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser
 }
 
 object GcalConfig {
-  sealed abstract case class GcalArcs(as: OneAnd[ISet, GcalArc]) {
+  sealed abstract case class GcalArcs(arcs: OneAnd[ISet, GcalArc]) {
     def toList: List[GcalArc] =
-      as.head :: as.tail.toList
+      arcs.head :: arcs.tail.toList
 
     def toISet: ISet[GcalArc] =
-      as.tail.insert(as.head)
+      arcs.tail.insert(arcs.head)
   }
 
   object GcalArcs {

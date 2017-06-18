@@ -1,5 +1,8 @@
 package gem
 
+import gem.enum.GcalArc
+import gem.config.GcalConfig.GcalArcs
+
 import edu.gemini.spModel.core._
 import java.time.Duration
 import argonaut._, Argonaut._, ArgonautShapeless._
@@ -50,4 +53,7 @@ package object json {
   implicit def oneAndCodec[F[_], A: CodecJson](implicit ev: CodecJson[F[A]]): CodecJson[OneAnd[F, A]] =
     CodecJson.derived[(A, F[A])].xmap { case (a, fa) => OneAnd(a, fa) } { oa => (oa.head, oa.tail) }
 
+  // Codec for GcalArcs
+  implicit def gcalArcsCodec: CodecJson[GcalArcs] =
+    CodecJson.derived[OneAnd[ISet, GcalArc]].xmap(oa => GcalArcs(oa.head, oa.tail.toList))(_.arcs)
 }
