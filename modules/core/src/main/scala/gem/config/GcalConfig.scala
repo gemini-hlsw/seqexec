@@ -19,6 +19,9 @@ case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser
 }
 
 object GcalConfig {
+  // We make this a sealed abstract case class in order to force usage of the
+  // companion object constructor.  The OneAnd haed is guaranteed to always be
+  // the minimum GcalArc in the group.
   sealed abstract case class GcalArcs(arcs: OneAnd[ISet, GcalArc]) {
     def toList: List[GcalArc] =
       arcs.head :: arcs.tail.toList
@@ -28,6 +31,8 @@ object GcalConfig {
   }
 
   object GcalArcs {
+    /** Constructs GcalArcs such that the GcalArc instances are always in order.
+      */
     def apply(arc0: GcalArc, arcs: List[GcalArc]): GcalArcs = {
       val all = ISet.fromList(arc0 :: arcs)
       new GcalArcs(OneAnd(all.elemAt(0).get, all.deleteAt(0))) {}
