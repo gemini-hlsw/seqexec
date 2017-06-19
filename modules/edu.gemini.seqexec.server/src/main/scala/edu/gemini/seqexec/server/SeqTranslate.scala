@@ -99,7 +99,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             // No resources when done
             Set.empty,
             false,
-            false,
+            extractSkipped(config),
             // TODO: Is it possible to reconstruct done executions from the ODB?
             List(Nil)
             )
@@ -120,11 +120,17 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
-  private def extractStatus(config: Config): StepState=
+  private def extractStatus(config: Config): StepState =
     config.getItemValue(new ItemKey("observe:status")).toString match {
       case "ready"    => StepState.Pending
       case "complete" => StepState.Completed
       case kw         => StepState.Error("Unexpected status keyword: " ++ kw)
+    }
+
+  private def extractSkipped(config: Config): Boolean =
+    config.getItemValue(new ItemKey("observe:status")).toString match {
+      case "skipped" => true
+      case _         => false
     }
 
   def sequence(settings: Settings)
