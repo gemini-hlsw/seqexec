@@ -1391,12 +1391,6 @@
             <type>DOUBLE</type>
             <description>A&amp;G in position</description>
         </attribute>
-        <attribute name="aoName">
-            <channel>aoName</channel>
-            <type>STRING</type>
-            <description>AO fold position</description>
-            <top>ag</top>
-        </attribute>
         <attribute name="port3Label">
             <channel>port:port3</channel>
             <type>STRING</type>
