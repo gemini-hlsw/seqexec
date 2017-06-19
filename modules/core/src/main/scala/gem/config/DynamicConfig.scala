@@ -59,7 +59,7 @@ final case class F2DynamicConfig(
 ) extends DynamicConfig {
 
   type I = Instrument.Flamingos2.type
-  def instrument = valueOf[I]
+  def instrument: I = valueOf[I]
 
   def key: F2SmartGcalKey =
     F2SmartGcalKey(disperser, filter, fpu)

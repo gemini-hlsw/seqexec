@@ -29,7 +29,5 @@ trait Obsoletable[A] {
 trait Display[A] {
   def name(a:A): String         // short name, for labels
   def elaboration(a:A): Option[String]  // an elaboration on the name, used for computing longname
-  def longName(a: A) = name(a) + elaboration(a).fold("")(n => s" ($n)")
+  def longName(a: A): String = name(a) + elaboration(a).fold("")(n => s" ($n)")
 }
-
-

@@ -24,7 +24,7 @@ trait UserProgramRoleOps extends Ops[User[ProgramRole]] {
   def programRoles(pid: Program.Id): Set[ProgramRole] =
     self.allProgramRoles.get(pid).orZero
 
-  def hasProgramRole(pid: Program.Id, role: ProgramRole) =
+  def hasProgramRole(pid: Program.Id, role: ProgramRole): Boolean =
     programRoles(pid).contains(role)
 
 }

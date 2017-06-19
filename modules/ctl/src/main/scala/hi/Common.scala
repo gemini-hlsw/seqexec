@@ -39,7 +39,7 @@ object common {
     }
 
   case class DeployCommit(commit: Commit, uncommitted: Boolean) {
-    def imageVersion = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash
+    def imageVersion: String = if (uncommitted) s"${commit.hash}-UNCOMMITTED" else commit.hash
   }
 
 }
