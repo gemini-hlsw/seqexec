@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine.{Action, Resource, Result, Sequence, Step}
-import edu.gemini.seqexec.model.Model.SequenceMetadata
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
@@ -69,7 +69,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       }
 
       extractStatus(config) match {
-        case "ready" =>
+        case StepState.Pending =>
           Step(
             i,
             None,
@@ -87,9 +87,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
             else List())
           ).map(_.left)
-        // Strictly speaking this should pattern match on "complete" only, but
-        // for now it catches everything. New statuses that need to be handled
-        // should be added as another case pattern.
+        // TODO: This case should be for completed Steps only. Fail when step
+        // status is unknown.
         case _ =>
           Step(
             i,
@@ -119,8 +118,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
-  private def extractStatus(config: Config): String =
-    config.getItemValue(new ItemKey("observe:status")).toString
+  private def extractStatus(config: Config): StepState=
+    config.getItemValue(new ItemKey("observe:status")).toString match {
+      case "ready"    => StepState.Pending
+      case "complete" => StepState.Completed
+      case kw         => StepState.Error("Unexpected status keyword: " ++ kw)
+    }
 
   def sequence(settings: Settings)
               (obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String):
