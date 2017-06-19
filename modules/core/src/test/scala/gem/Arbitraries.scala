@@ -29,6 +29,11 @@ trait Arbitraries extends gem.config.Arbitraries {
       )
     }
 
+  // Generator of valid observation/program titles.  The schema doesn't support
+  // titles longer than 255 characters and postgres doesn't want to see char 0.
+  val genTitle: Gen[String] =
+    arbitrary[String].map(_.take(255).filter(_ != 0))
+
 
   // Step and Sequence
 
@@ -73,7 +78,7 @@ trait Arbitraries extends gem.config.Arbitraries {
 
   def genObservationOf(i: Instrument, id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
-      t <- arbitrary[String].map(_.take(255)) // probably there should be no limit?
+      t <- genTitle
       s <- genStaticConfigOf(i)
       d <- genSequenceOf(i)
     } yield Observation(id, t, s, d)
