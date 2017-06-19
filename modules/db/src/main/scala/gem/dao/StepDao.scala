@@ -53,7 +53,7 @@ object StepDao {
     *
     * @param oid F2 observation whose steps are sought
     */
-  def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2Config]] =
+  def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2DynamicConfig]] =
     selectAll(oid, allF2Only)
 
   /** Selects the step at the indicated location in the sequence associated with
@@ -63,9 +63,26 @@ object StepDao {
     * @param loc location within the sequence to find
     */
   def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[DynamicConfig]] = {
+    def point(dc: DynamicConfig): MaybeConnectionIO[DynamicConfig] =
+      dc.point[MaybeConnectionIO]
+
     def instrumentConfig(s: Step[Instrument]): MaybeConnectionIO[DynamicConfig] =
       s.dynamicConfig match {
+        case Instrument.AcqCam     => point(AcqCamDynamicConfig())
+        case Instrument.Bhros      => point(BhrosDynamicConfig())
         case Instrument.Flamingos2 => oneF2Only(oid, loc).widen[DynamicConfig]
+        case Instrument.GmosN      => point(GmosNDynamicConfig())
+        case Instrument.GmosS      => point(GmosSDynamicConfig())
+        case Instrument.Gnirs      => point(GnirsDynamicConfig())
+        case Instrument.Gpi        => point(GpiDynamicConfig())
+        case Instrument.Gsaoi      => point(GsaoiDynamicConfig())
+        case Instrument.Michelle   => point(MichelleDynamicConfig())
+        case Instrument.Nici       => point(NiciDynamicConfig())
+        case Instrument.Nifs       => point(NifsDynamicConfig())
+        case Instrument.Niri       => point(NiriDynamicConfig())
+        case Instrument.Phoenix    => point(PhoenixDynamicConfig())
+        case Instrument.Trecs      => point(TrecsDynamicConfig())
+        case Instrument.Visitor    => point(VisitorDynamicConfig())
       }
 
     for {
@@ -79,9 +96,26 @@ object StepDao {
     * @param oid observation whose step configurations are sought
     */
   def selectAll(oid: Observation.Id): ConnectionIO[Loc ==>> Step[DynamicConfig]] = {
+    def point(dc: DynamicConfig): ConnectionIO[Loc ==>> DynamicConfig] =
+      ==>>(Location.unsafeMiddle(0) -> dc).point[ConnectionIO]
+
     def instrumentConfig(ss: Loc ==>> Step[Instrument]): ConnectionIO[Loc ==>> DynamicConfig] =
       ss.findMin.map(_._2.dynamicConfig).fold(==>>.empty[Loc, DynamicConfig].point[ConnectionIO]) {
-        case Instrument.Flamingos2 => allF2Only(oid)     .map(_.widen[DynamicConfig])
+        case Instrument.AcqCam     => point(AcqCamDynamicConfig())
+        case Instrument.Bhros      => point(BhrosDynamicConfig())
+        case Instrument.Flamingos2 => allF2Only(oid).map(_.widen[DynamicConfig])
+        case Instrument.GmosN      => point(GmosNDynamicConfig())
+        case Instrument.GmosS      => point(GmosSDynamicConfig())
+        case Instrument.Gnirs      => point(GnirsDynamicConfig())
+        case Instrument.Gpi        => point(GpiDynamicConfig())
+        case Instrument.Gsaoi      => point(GsaoiDynamicConfig())
+        case Instrument.Michelle   => point(MichelleDynamicConfig())
+        case Instrument.Nici       => point(NiciDynamicConfig())
+        case Instrument.Nifs       => point(NifsDynamicConfig())
+        case Instrument.Niri       => point(NiriDynamicConfig())
+        case Instrument.Phoenix    => point(PhoenixDynamicConfig())
+        case Instrument.Trecs      => point(TrecsDynamicConfig())
+        case Instrument.Visitor    => point(VisitorDynamicConfig())
       }
 
     for {
@@ -109,7 +143,21 @@ object StepDao {
 
   private def insertConfigSlice(id: Int, i: DynamicConfig): ConnectionIO[Int] =
     i match {
-      case f2: F2Config      => Statements.insertF2Config(id, f2).run
+      case _: AcqCamDynamicConfig   => 0.point[ConnectionIO]
+      case _: BhrosDynamicConfig    => 0.point[ConnectionIO]
+      case f2: F2DynamicConfig      => Statements.insertF2Config(id, f2).run
+      case _: GmosNDynamicConfig    => 0.point[ConnectionIO]
+      case _: GmosSDynamicConfig    => 0.point[ConnectionIO]
+      case _: GnirsDynamicConfig    => 0.point[ConnectionIO]
+      case _: GpiDynamicConfig      => 0.point[ConnectionIO]
+      case _: GsaoiDynamicConfig    => 0.point[ConnectionIO]
+      case _: MichelleDynamicConfig => 0.point[ConnectionIO]
+      case _: NiciDynamicConfig     => 0.point[ConnectionIO]
+      case _: NifsDynamicConfig     => 0.point[ConnectionIO]
+      case _: NiriDynamicConfig     => 0.point[ConnectionIO]
+      case _: PhoenixDynamicConfig  => 0.point[ConnectionIO]
+      case _: TrecsDynamicConfig    => 0.point[ConnectionIO]
+      case _: VisitorDynamicConfig  => 0.point[ConnectionIO]
     }
 
   // The type we get when we select the fully joined step
@@ -153,10 +201,10 @@ object StepDao {
       }
   }
 
-  private def oneF2Only(oid: Observation.Id, loc: Loc): MaybeConnectionIO[F2Config] =
+  private def oneF2Only(oid: Observation.Id, loc: Loc): MaybeConnectionIO[F2DynamicConfig] =
     Statements.oneF2Only(oid, loc).maybe
 
-  private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2Config] =
+  private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2DynamicConfig] =
     Statements.allF2Only(oid).list.map(==>>.fromList(_))
 
   private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[Loc ==>> I]): ConnectionIO[Loc ==>> Step[I]] =
@@ -180,7 +228,7 @@ object StepDao {
               WHERE observation_id = $oid
       """.update
 
-    def allF2Only(oid: Observation.Id): Query0[(Loc, F2Config)] =
+    def allF2Only(oid: Observation.Id): Query0[(Loc, F2DynamicConfig)] =
       sql"""
         SELECT s.location,
                i.disperser,
@@ -188,30 +236,28 @@ object StepDao {
                i.filter,
                i.fpu,
                i.lyot_wheel,
-               i.mos_preimaging,
                i.read_mode,
                i.window_cover
           FROM step s
                LEFT OUTER JOIN step_f2 i
                  ON i.step_f2_id = s.step_id
          WHERE s.observation_id = $oid
-      """.query[(Loc, F2Config)]
+      """.query[(Loc, F2DynamicConfig)]
 
-    def oneF2Only(oid: Observation.Id, loc: Loc): Query0[F2Config] =
+    def oneF2Only(oid: Observation.Id, loc: Loc): Query0[F2DynamicConfig] =
       sql"""
         SELECT i.disperser,
                i.exposure_time,
                i.filter,
                i.fpu,
                i.lyot_wheel,
-               i.mos_preimaging,
                i.read_mode,
                i.window_cover
           FROM step s
                LEFT OUTER JOIN step_f2 i
                  ON i.step_f2_id = s.step_id
          WHERE s.observation_id = $oid AND s.location = $loc
-      """.query[F2Config]
+      """.query[F2DynamicConfig]
 
     def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
       sql"""
@@ -272,11 +318,11 @@ object StepDao {
          WHERE s.observation_id = $oid AND s.location = $loc
       """.query[StepKernel].map(_.toStep)
 
-    def insertF2Config(id: Int, f2: F2Config): Update0 =
+    def insertF2Config(id: Int, f2: F2DynamicConfig): Update0 =
       sql"""
         INSERT INTO step_f2 (
           step_f2_id,
-          disperser, exposure_time, filter, fpu, lyot_wheel, mos_preimaging, read_mode, window_cover
+          disperser, exposure_time, filter, fpu, lyot_wheel, read_mode, window_cover
         )
         VALUES (
           $id,
@@ -285,7 +331,6 @@ object StepDao {
           ${f2.filter},
           ${f2.fpu},
           ${f2.lyotWheel},
-          ${f2.mosPreimaging},
           ${f2.readMode},
           ${f2.windowCover})
       """.update

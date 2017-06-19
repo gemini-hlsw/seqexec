@@ -28,6 +28,17 @@ object Observation {
     def unsafeFromString(s: String): Observation.Id =
       fromString(s).getOrElse(sys.error("Malformed Observation.Id: " + s))
 
+    implicit val OrderingId: scala.math.Ordering[Id] =
+      new scala.math.Ordering[Id] {
+        def compare(x: Id, y: Id): Int =
+          Program.OrderingProgramId.compare(x.pid, y.pid) match {
+            case 0 => x.index compareTo y.index
+            case i => i
+          }
+      }
+
+    implicit val OrderId: Order[Id] =
+      Order.fromScalaOrdering[Id]
   }
 
   implicit val ObservationBitraverse: Bitraverse[Observation] =

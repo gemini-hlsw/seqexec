@@ -141,7 +141,7 @@ lazy val core = project
 
 lazy val db = project
   .in(file("modules/db"))
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
