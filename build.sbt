@@ -43,6 +43,7 @@ shellPrompt in ThisBuild := { state =>
   "> "
 }
 
+// sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
 startYear        in ThisBuild := Some(2017)
 licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
@@ -53,6 +54,15 @@ lazy val testLibs = Seq(
 )
 
 lazy val commonSettings = Seq(
+
+  // These sbt-header settings can't be set in ThisBuild for some reason
+  headerMappings := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.CppStyleLineComment),
+  headerLicense  := Some(HeaderLicense.Custom(
+    """|Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
+       |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+       |""".stripMargin
+  )),
+
   scalaOrganization := "org.typelevel",
   scalaVersion := "2.12.2-bin-typelevel-4",
   scalacOptions ++= Seq(
