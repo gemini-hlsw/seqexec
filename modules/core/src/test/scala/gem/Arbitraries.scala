@@ -98,4 +98,11 @@ trait Arbitraries extends gem.config.Arbitraries {
         o <- arbObservationOf(i, id).arbitrary
       } yield o
     }
+
+  def genObsList(pid: Program.Id, limit: Int): Gen[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
+    for {
+      count   <- Gen.choose(0, limit)
+      obsIds  <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(i => Observation.Id(pid, i)))
+      obsList <- obsIds.traverseU(oid => arbObservation(oid).arbitrary)
+    } yield obsList
 }

@@ -15,9 +15,20 @@ import scalaz._, Scalaz._
 trait Arbitraries extends gem.enum.Arbitraries {
 
   // Surely this is already defined somewhere?
-  implicit val genFunctor = new Functor[Gen] {
+  implicit val functorGen = new Functor[Gen] {
     def map[A, B](fa: Gen[A])(f: A => B): Gen[B] =
       fa.map(f)
+  }
+
+  implicit val applicativeGen = new Applicative[Gen] {
+    def ap[A, B](ga: => Gen[A])(gf: => Gen[(A) => B]): Gen[B] =
+      for {
+        f <- gf
+        a <- ga
+      } yield f(a)
+
+    def point[A](a: => A): Gen[A] =
+      Gen.const(a)
   }
 
   implicit val arbDuration: Arbitrary[Duration] =
