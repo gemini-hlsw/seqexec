@@ -32,77 +32,62 @@ trait Arbitraries extends gem.config.Arbitraries {
 
   // Step and Sequence
 
-  private def genDynConfigOf(i: Instrument): Gen[DynamicConfig] =
-    arbDynamicConfigOf(i).arbitrary
+  def genBiasStepOf(i: Instrument): Gen[BiasStep[DynamicConfig]] =
+    genDynamicConfigOf(i).map(BiasStep(_))
 
-  def arbBiasStepOf(i: Instrument): Arbitrary[BiasStep[DynamicConfig]] =
-    Arbitrary(genDynConfigOf(i).map(BiasStep(_)))
+  def genDarkStepOf(i: Instrument): Gen[DarkStep[DynamicConfig]] =
+    genDynamicConfigOf(i).map(DarkStep(_))
 
-  def arbDarkStepOf(i: Instrument): Arbitrary[DarkStep[DynamicConfig]] =
-    Arbitrary(genDynConfigOf(i).map(DarkStep(_)))
+  def genGcalStepOf(i: Instrument): Gen[GcalStep[DynamicConfig]] =
+    for {
+      d <- genDynamicConfigOf(i)
+      g <- arbitrary[GcalConfig]
+    } yield GcalStep(d, g)
 
-  def arbGcalStepOf(i: Instrument): Arbitrary[GcalStep[DynamicConfig]] =
-    Arbitrary {
-      for {
-        d <- genDynConfigOf(i)
-        g <- arbitrary[GcalConfig]
-      } yield GcalStep(d, g)
-    }
+  def genScienceStepOf(i: Instrument): Gen[ScienceStep[DynamicConfig]] =
+    genDynamicConfigOf(i).map(ScienceStep(_, TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)))
 
-  def arbScienceStepOf(i: Instrument): Arbitrary[ScienceStep[DynamicConfig]] =
-    Arbitrary(genDynConfigOf(i).map(ScienceStep(_, TelescopeConfig(OffsetP.Zero, OffsetQ.Zero))))
+  def genSmartGcalStepOf(i: Instrument): Gen[SmartGcalStep[DynamicConfig]] =
+    for {
+      d <- genDynamicConfigOf(i)
+      s <- arbitrary[SmartGcalType]
+    } yield SmartGcalStep(d, s)
 
-  def arbSmartGcalStepOf(i: Instrument): Arbitrary[SmartGcalStep[DynamicConfig]] =
-    Arbitrary {
-      for {
-        d <- genDynConfigOf(i)
-        s <- arbitrary[SmartGcalType]
-      } yield SmartGcalStep(d, s)
-    }
-
-  def arbStepOf(i: Instrument): Arbitrary[Step[DynamicConfig]] =
-    Arbitrary(
-      Gen.oneOf(
-        arbBiasStepOf(i)     .arbitrary.widen[Step[DynamicConfig]],
-        arbDarkStepOf(i)     .arbitrary.widen[Step[DynamicConfig]],
-        arbGcalStepOf(i)     .arbitrary.widen[Step[DynamicConfig]],
-        arbScienceStepOf(i)  .arbitrary.widen[Step[DynamicConfig]],
-        arbSmartGcalStepOf(i).arbitrary.widen[Step[DynamicConfig]]
-      )
+  def genStepOf(i: Instrument): Gen[Step[DynamicConfig]] =
+    Gen.oneOf(
+      genBiasStepOf(i)     .widen[Step[DynamicConfig]],
+      genDarkStepOf(i)     .widen[Step[DynamicConfig]],
+      genGcalStepOf(i)     .widen[Step[DynamicConfig]],
+      genScienceStepOf(i)  .widen[Step[DynamicConfig]],
+      genSmartGcalStepOf(i).widen[Step[DynamicConfig]]
     )
 
-  def arbSequenceOf(i: Instrument): Arbitrary[List[Step[DynamicConfig]]] =
-    Arbitrary {
-      for {
-        n <- Gen.choose(0, 50)
-        s <- Gen.listOfN(n, arbStepOf(i).arbitrary)
-      } yield s
-    }
+  def genSequenceOf(i: Instrument): Gen[List[Step[DynamicConfig]]] =
+    for {
+      n <- Gen.choose(0, 50)
+      s <- Gen.listOfN(n, genStepOf(i))
+    } yield s
 
 
   // Observation
 
-  def arbObservationOf(i: Instrument, id: Observation.Id): Arbitrary[Observation[StaticConfig, Step[DynamicConfig]]] =
-    Arbitrary {
-      for {
-        t <- arbitrary[String].map(_.take(255)) // probably there should be no limit?
-        s <- arbStaticConfigOf(i).arbitrary
-        d <- arbSequenceOf(i).arbitrary
-      } yield Observation(id, t, s, d)
-    }
+  def genObservationOf(i: Instrument, id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
+    for {
+      t <- arbitrary[String].map(_.take(255)) // probably there should be no limit?
+      s <- genStaticConfigOf(i)
+      d <- genSequenceOf(i)
+    } yield Observation(id, t, s, d)
 
-  def arbObservation(id: Observation.Id): Arbitrary[Observation[StaticConfig, Step[DynamicConfig]]] =
-    Arbitrary {
-      for {
-        i <- Gen.const(Instrument.Flamingos2) // Add more as they become available
-        o <- arbObservationOf(i, id).arbitrary
-      } yield o
-    }
+  def genObservation(id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
+    for {
+      i <- Gen.const(Instrument.Flamingos2) // Add more as they become available
+      o <- genObservationOf(i, id)
+    } yield o
 
   def genObsList(pid: Program.Id, limit: Int): Gen[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       count   <- Gen.choose(0, limit)
       obsIds  <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(i => Observation.Id(pid, i)))
-      obsList <- obsIds.traverseU(oid => arbObservation(oid).arbitrary)
+      obsList <- obsIds.traverseU(genObservation)
     } yield obsList
 }

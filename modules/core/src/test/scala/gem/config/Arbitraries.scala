@@ -55,8 +55,8 @@ trait Arbitraries extends gem.enum.Arbitraries {
   implicit val arbF2Static       =
     Arbitrary(arbitrary(arbBool).map(F2StaticConfig(_)))
 
-  def arbStaticConfigOf(i: Instrument): Arbitrary[StaticConfig] =
-    Arbitrary(i match {
+  def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
+    i match {
       case AcqCam     => arbitrary[AcqCamStaticConfig  ].widen[StaticConfig]
       case Bhros      => arbitrary[BhrosStaticConfig   ].widen[StaticConfig]
       case Flamingos2 => arbitrary[F2StaticConfig      ].widen[StaticConfig]
@@ -72,7 +72,7 @@ trait Arbitraries extends gem.enum.Arbitraries {
       case Phoenix    => arbitrary[PhoenixStaticConfig ].widen[StaticConfig]
       case Trecs      => arbitrary[TrecsStaticConfig   ].widen[StaticConfig]
       case Visitor    => arbitrary[VisitorStaticConfig ].widen[StaticConfig]
-    })
+    }
 
   implicit val arbAcqCamDynamic   = const(AcqCamDynamicConfig()  )
   implicit val arbBhrosDynamic    = const(BhrosDynamicConfig()   )
@@ -102,8 +102,8 @@ trait Arbitraries extends gem.enum.Arbitraries {
       } yield F2DynamicConfig(d, e, f, u, l, r, w)
     }
 
-  def arbDynamicConfigOf(i: Instrument): Arbitrary[DynamicConfig] =
-    Arbitrary(i match {
+  def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] =
+    i match {
       case AcqCam     => arbitrary[AcqCamDynamicConfig  ].widen[DynamicConfig]
       case Bhros      => arbitrary[BhrosDynamicConfig   ].widen[DynamicConfig]
       case Flamingos2 => arbitrary[F2DynamicConfig      ].widen[DynamicConfig]
@@ -119,7 +119,7 @@ trait Arbitraries extends gem.enum.Arbitraries {
       case Phoenix    => arbitrary[PhoenixDynamicConfig ].widen[DynamicConfig]
       case Trecs      => arbitrary[TrecsDynamicConfig   ].widen[DynamicConfig]
       case Visitor    => arbitrary[VisitorDynamicConfig ].widen[DynamicConfig]
-    })
+    }
 
 
   // GcalConfig
