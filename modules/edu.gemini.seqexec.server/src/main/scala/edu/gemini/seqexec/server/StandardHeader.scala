@@ -381,6 +381,12 @@ class StandardHeader(
       val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
       sendKeywords(id, inst, hs, windowsCount :: windows)
     }
+    
+    def decodeGuide(v: StandardGuideOptions.Value): String = v match {
+      case StandardGuideOptions.Value.park   => "parked"
+      case StandardGuideOptions.Value.guide  => "guiding"
+      case StandardGuideOptions.Value.freeze => "frozen"
+    }
 
     sendKeywords(id, inst, hs, List(
       buildString(obsReader.getObsType, "OBSTYPE"),
@@ -438,10 +444,10 @@ class StandardHeader(
       buildDouble(tcsReader.getTrackingDecOffset.orDefault, "DECTRGOF"),
       buildString(tcsReader.getAOFoldName.orDefault, "AOFOLD"),
       buildString(tcsReader.getCarouselMode.orDefault, "CGUIDMOD"),
-      buildString(obsReader.getPwfs1Guide.map(_.toString), "PWFS1_ST"),
-      buildString(obsReader.getPwfs2Guide.map(_.toString), "PWFS2_ST"),
-      buildString(obsReader.getOiwfsGuide.map(_.toString), "OIWFS_ST"),
-      buildString(obsReader.getAowfsGuide.map(_.toString), "AOWFS_ST"),
+      buildString(obsReader.getPwfs1Guide.map(decodeGuide), "PWFS1_ST"),
+      buildString(obsReader.getPwfs2Guide.map(decodeGuide), "PWFS2_ST"),
+      buildString(obsReader.getOiwfsGuide.map(decodeGuide), "OIWFS_ST"),
+      buildString(obsReader.getAowfsGuide.map(decodeGuide), "AOWFS_ST"),
       buildString(stateReader.getObserverName, "OBSERVER"),
       buildString(stateReader.getOperatorName, "SSA"),
       buildString(stateReader.getRawImageQuality, "RAWIQ"),
