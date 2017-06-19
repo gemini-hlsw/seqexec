@@ -13,7 +13,7 @@ import org.scalatest._
 import scalaz._, Scalaz._
 
 /** Trait for tests that check statement syntax and mappings. */
-trait Check extends FlatSpec with Matchers with QueryChecker {
+trait Check extends FlatSpec with Matchers with IOLiteChecker {
 
   def transactor = DriverManagerTransactor[IOLite](
     "org.postgresql.Driver",
