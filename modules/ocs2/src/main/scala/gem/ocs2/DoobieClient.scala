@@ -36,5 +36,5 @@ trait DoobieClient {
       s <- HC.setSavepoint
       n <- fa.onUniqueViolation(HC.rollback(s).as(0)) ensuring HC.releaseSavepoint(s)
     } yield n
-    
+
 }
