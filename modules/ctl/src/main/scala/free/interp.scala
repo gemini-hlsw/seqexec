@@ -17,8 +17,8 @@ object interpreter {
   }
 
   case class InterpreterState(indentation: Int, machineHostCache: Map[Host.Machine, String]) {
-    def indent  = copy(indentation = indentation + 1)
-    def outdent = copy(indentation = indentation - 1)
+    def indent: InterpreterState = copy(indentation = indentation + 1)
+    def outdent:InterpreterState = copy(indentation = indentation - 1)
   }
   object InterpreterState {
     val initial = InterpreterState(0, Map.empty)
@@ -28,7 +28,7 @@ object interpreter {
    * Construct an interpreter of `CtlIO` given a `Config` and an `IORef` for the initial state. We
    * carry our state in an `IORef` because it needs to be visible from multiple threads.
    */
-  def interpreter(c: Config, state: IORef[InterpreterState]) = λ[CtlOp ~> EitherT[IO, Int, ?]] {
+  def interpreter(c: Config, state: IORef[InterpreterState]): CtlOp ~> EitherT[IO, Int, ?] = λ[CtlOp ~> EitherT[IO, Int, ?]] {
     case CtlOp.Shell(false, cmd) => doShell(cmd, c.verbose, state)
     case CtlOp.Shell(true,  cmd) =>
       c.server match {
