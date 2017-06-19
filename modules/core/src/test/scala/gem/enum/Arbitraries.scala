@@ -3,8 +3,6 @@ package gem.enum
 import org.scalacheck._
 import org.scalacheck.Gen._
 
-//import scalaz._, Scalaz._
-
 
 trait Arbitraries {
 
@@ -41,7 +39,5 @@ trait Arbitraries {
   implicit val arbSite          = pick(Site.all         )
   implicit val arbSmartGcalType = pick(SmartGcalType.all)
   implicit val arbStepType      = pick(StepType.all     )
-
-
 
 }

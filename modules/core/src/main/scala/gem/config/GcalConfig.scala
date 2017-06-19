@@ -20,7 +20,7 @@ case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser
 
 object GcalConfig {
   // We make this a sealed abstract case class in order to force usage of the
-  // companion object constructor.  The OneAnd haed is guaranteed to always be
+  // companion object constructor.  The OneAnd head is guaranteed to always be
   // the minimum GcalArc in the group.
   sealed abstract case class GcalArcs(arcs: OneAnd[ISet, GcalArc]) {
     def toList: List[GcalArc] =
@@ -39,7 +39,6 @@ object GcalConfig {
     }
   }
 
-//  type GcalArcs = OneAnd[ISet, GcalArc]
   type GcalLamp = GcalContinuum \/ GcalArcs
 
   object GcalLamp {

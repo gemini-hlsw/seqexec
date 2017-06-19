@@ -13,11 +13,9 @@ import org.scalatest.{Assertion, FlatSpec, Matchers}
 
 import java.time.Duration
 
-import scalaz.effect.IO
-
 import scalaz._, Scalaz._
 
-class SmartGcalSpec extends FlatSpec with Matchers {
+class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
 
   import SmartGcalSpec._
 
@@ -88,19 +86,35 @@ class SmartGcalSpec extends FlatSpec with Matchers {
 
     ss.values shouldEqual lookup(m).map(GcalStep(f2, _))
   }
+
+  private val oid = Observation.Id(pid, 1)
+
+  private def doTest[A](test: ConnectionIO[A]): A =
+    withProgram {
+      for {
+        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[DynamicConfig]]))
+        a <- test
+      } yield a
+    }
+
+  private def runF2Expansion(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion =
+    runF2Expansion(t, loc1, loc1)(verify)
+
+  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion = {
+    val (expansion, steps) = doTest {
+      for {
+        _  <- StepDao.insert(oid, insertionLoc, SmartGcalStep(f2, t))
+        ex <- SmartGcalDao.expand(oid, searchLoc).run
+        ss <- StepDao.selectAll(oid)
+        _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
+      } yield (ex, ss)
+    }
+
+    verify(expansion, steps)
+  }
 }
 
 object SmartGcalSpec {
-  private val pid = Program.Id.parse("GS-2345A-Q-1")
-  private val oid = Observation.Id(pid, 1)
-
-  private val xa  = DriverManagerTransactor[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
-  )
-
   private val loc1: Location.Middle = Location.unsafeMiddle(1)
   private val loc2: Location.Middle = Location.unsafeMiddle(2)
   private val loc9: Location.Middle = Location.unsafeMiddle(9)
@@ -135,30 +149,4 @@ object SmartGcalSpec {
         1
       ))
     )
-
-  private def runF2Expansion(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion =
-    runF2Expansion(t, loc1, loc1)(verify)
-
-  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion = {
-    val (expansion, steps) = doTest {
-      for {
-        _  <- StepDao.insert(oid, insertionLoc, SmartGcalStep(f2, t))
-        ex <- SmartGcalDao.expand(oid, searchLoc).run
-        ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
-      } yield (ex, ss)
-    }
-
-    verify(expansion, steps)
-  }
-
-  private def doTest[A](test: ConnectionIO[A]): A =
-    (for {
-      _ <- ProgramDao.insert(Program(pid, "SmartGcalSpec Prog", List.empty[Step[Nothing]]))
-      _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[DynamicConfig]]))
-      a <- test
-      _ <- sql"""DELETE FROM observation WHERE observation_id = $oid""".update.run
-      _ <- sql"""DELETE FROM program     WHERE program_id     = $pid""".update.run
-    } yield a).transact(xa).unsafePerformIO()
-
 }
