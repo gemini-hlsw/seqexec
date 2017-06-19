@@ -177,7 +177,7 @@ object Location {
     case (l0,         l1        )                =>
       l0.positions.zip(l1.positions)
         .find { case (a, b) => a =/= b }
-        .fold[Ordering](EQ) { case (a, b) => (a < b) ?[Ordering] LT | GT }
+        .fold[Ordering](EQ) { case (a, b) => if (a < b) LT else GT }
   })
 
   implicit val OrderMiddle: Order[Location.Middle] =

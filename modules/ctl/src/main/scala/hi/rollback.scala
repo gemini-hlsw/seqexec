@@ -23,7 +23,7 @@ object rollback {
       ks.toList.traverse_(stopContainer)
     }
 
-  def rollback =
+  val rollback: CtlIO[Unit] =
     gosub("Attempting rollback to previous version.") {
       for {
         kGemC <- getRunningGemContainer

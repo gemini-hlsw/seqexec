@@ -169,7 +169,7 @@ object deploy {
       } yield kDb
     }
 
-  def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, kPrev: Option[Container]) =
+  def createGemContainer(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, kPrev: Option[Container]): CtlIO[Container] =
     gosub(s"Creating Gem container from image ${iDeploy.hash}") {
       for {
         k  <- docker("run",
@@ -203,7 +203,7 @@ object deploy {
       }
     }
 
-  def deployGem(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, kPrev: Option[Container]) =
+  def deployGem(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, kPrev: Option[Container]): CtlIO[Container] =
     gosub("Deploying Gem.") {
       for {
         kGem <- createGemContainer(nDeploy, cDeploy, iDeploy, kPrev)
@@ -225,7 +225,7 @@ object deploy {
       }
     }
 
-  def deployStandalone(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image) =
+  def deployStandalone(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image): CtlIO[Unit] =
     gosub("Performing STANDALONE deployment") {
       for {
         _   <- ensureNoRunningDeployments
@@ -234,7 +234,7 @@ object deploy {
       } yield ()
     }
 
-  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image, force: Boolean) =
+  def deployUpgrade(nDeploy: Int, cDeploy: DeployCommit, iDeploy: Image, iPg: Image, force: Boolean): CtlIO[Unit] =
     gosub("Performing UPGRADE deployment") {
       for {
         kGem  <- getRunningGemContainer
@@ -253,7 +253,7 @@ object deploy {
       } yield ()
     }
 
-  def deploy(deploy: String, standalone: Boolean, force: Boolean) =
+  def deploy(deploy: String, standalone: Boolean, force: Boolean): CtlIO[Unit] =
     for {
       nDeploy  <- getDeployNumber
       cDeploy  <- getDeployCommit(deploy)
