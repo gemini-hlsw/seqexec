@@ -219,9 +219,63 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("GmosAdc") {
+        type GmosAdcRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_adc""".query[(String, GmosAdcRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosAmpCount") {
+        type GmosAmpCountRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_amp_count""".query[(String, GmosAmpCountRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosAmpGain") {
+        type GmosAmpGainRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_amp_gain""".query[(String, GmosAmpGainRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosAmpReadMode") {
+        type GmosAmpReadModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_amp_read_mode""".query[(String, GmosAmpReadModeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosBinning") {
+        type GmosBinningRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_binning""".query[(String, GmosBinningRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosBuiltinRoi") {
+        type GmosBuiltinRoiRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'xStart -> Int, 'yStart -> Int, 'xSize -> Int, 'ySize -> Int, 'obsolete -> Boolean`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, x_start, y_start, x_size, y_size, obsolete FROM e_gmos_builtin_roi""".query[(String, GmosBuiltinRoiRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosCustomSlitWidth") {
+        type GmosCustomSlitWidthRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'width -> Angle`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, width FROM e_gmos_custom_slit_width""".query[(String, GmosCustomSlitWidthRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("GmosDetector") {
         type GmosDetectorRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Angle, 'southPixelSize -> Angle, 'suffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, north_pixel_size, south_pixel_size, shuffle_offset, x_size, y_size, max_rois FROM e_gmos_detector""".query[(String, GmosDetectorRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosDetectorOrder") {
+        type GmosDetectorOrderRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_detector_order""".query[(String, GmosDetectorOrderRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosDtax") {
+        type GmosDtaxRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'dtax -> Int`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, dtax FROM e_gmos_dtax""".query[(String, GmosDtaxRec)].list
         io.transact(xa).unsafePerformIO
       },
 
@@ -243,6 +297,12 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("GmosNorthStageMode") {
+        type GmosNorthStageModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, obsolete FROM e_gmos_north_stage_mode""".query[(String, GmosNorthStageModeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("GmosSouthDisperser") {
         type GmosSouthDisperserRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'rulingDensity -> Int, 'obsolete -> Boolean`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, ruling_density, obsolete FROM e_gmos_south_disperser""".query[(String, GmosSouthDisperserRec)].list
@@ -258,6 +318,12 @@ object gen2 {
       enum("GmosSouthFpu") {
         type GmosSouthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Angle]`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, slit_width FROM e_gmos_south_fpu""".query[(String, GmosSouthFpuRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosSouthStageMode") {
+        type GmosSouthStageModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, obsolete FROM e_gmos_south_stage_mode""".query[(String, GmosSouthStageModeRec)].list
         io.transact(xa).unsafePerformIO
       },
 
