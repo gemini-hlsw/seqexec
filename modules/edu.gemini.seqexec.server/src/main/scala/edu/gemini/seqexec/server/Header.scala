@@ -45,7 +45,7 @@ object Header {
       def default: A
     }
     implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultValue[A]) {
-      def orDefault: A = d.default
+      def orDefault: A = a.getOrElse(d.default)
     }
     implicit val IntDefaultValue = new DefaultValue[Int] {
       val default = IntDefault
