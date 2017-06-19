@@ -43,6 +43,10 @@ shellPrompt in ThisBuild := { state =>
   "> "
 }
 
+organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
+startYear        in ThisBuild := Some(2017)
+licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
+
 lazy val testLibs = Seq(
   "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
   "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test"
@@ -129,6 +133,7 @@ lazy val gem = project
 
 lazy val core = project
   .in(file("modules/core"))
+  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -141,6 +146,7 @@ lazy val core = project
 
 lazy val db = project
   .in(file("modules/db"))
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core % "compile->compile;test->test")
   .settings(commonSettings)
   .settings(
@@ -165,6 +171,7 @@ lazy val db = project
 
 lazy val json = project
   .in(file("modules/json"))
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core)
   .settings(commonSettings)
   .settings(
@@ -177,6 +184,7 @@ lazy val json = project
 
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core, db)
   .settings(commonSettings)
   .settings(
@@ -192,11 +200,13 @@ lazy val ocs2 = project
 
 lazy val service = project
   .in(file("modules/service"))
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core, db)
   .settings(commonSettings)
 
 lazy val sql = project
   .in(file("modules/sql"))
+  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings ++ flywaySettings)
   .settings(
     libraryDependencies += "org.flywaydb" % "flyway-core" % "4.0.3"
@@ -204,6 +214,7 @@ lazy val sql = project
 
 lazy val telnetd = project
   .in(file("modules/telnetd"))
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(service, sql)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
@@ -217,6 +228,7 @@ lazy val telnetd = project
 
 lazy val ctl = project
   .in(file("modules/ctl"))
+  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
   .settings (
     resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven",
