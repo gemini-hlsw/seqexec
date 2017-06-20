@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
-import edu.gemini.seqexec.web.client.components.SeqexecUI.{InstrumentPage, RouterProps}
+import edu.gemini.seqexec.web.client.components.SeqexecUI.RouterProps
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
@@ -15,7 +15,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.router.RouterCtl
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.equal._

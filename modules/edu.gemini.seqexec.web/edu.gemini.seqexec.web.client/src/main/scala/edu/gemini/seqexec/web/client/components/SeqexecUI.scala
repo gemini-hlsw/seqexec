@@ -4,7 +4,6 @@ import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.model.InstrumentNames
 import edu.gemini.seqexec.model.Model.Instrument
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 
