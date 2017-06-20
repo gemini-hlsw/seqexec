@@ -32,7 +32,7 @@ object UserDao {
       }
 
   def changePassword(uid: User.Id, oldPassword: String, newPassword: String): ConnectionIO[Boolean] =
-    Statements.changePassword(uid, oldPassword, newPassword).run.map(_ == 1)
+    Statements.changePassword(uid, oldPassword, newPassword).run.map(_ === 1)
 
   object Statements {
 

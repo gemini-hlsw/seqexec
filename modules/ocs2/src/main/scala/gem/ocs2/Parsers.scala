@@ -129,12 +129,13 @@ object Parsers {
 
     import F2Disperser._
 
-    val disperserTable = List(
-      ("NONE",    "None",                       NoDisperser),
-      ("R1200HK", "R=1200 (H + K) grism",       R1200HK    ),
-      ("R1200JH", "R=1200 (J + H) grism",       R1200JH    ),
-      ("R3000",   "R=3000 (J or H or K) grism", R3000      )
-    )
+    val disperserTable: List[(String, String, F2Disperser)] =
+      List(
+        ("NONE",    "None",                       NoDisperser),
+        ("R1200HK", "R=1200 (H + K) grism",       R1200HK    ),
+        ("R1200JH", "R=1200 (J + H) grism",       R1200JH    ),
+        ("R3000",   "R=3000 (J or H or K) grism", R3000      )
+      )
 
     val disperser: PioParse[F2Disperser] =
       fstParser(disperserTable)
@@ -144,22 +145,23 @@ object Parsers {
 
     import F2Filter._
 
-    val filterTable = List(
-      ("OPEN",    "Open",               Open  ),
-      ("DARK",    "Dark",               Dark  ),
-      ("F1056",   "F1056 (1.056 um)",   F1056 ),
-      ("F1063",   "F1063 (1.063 um)",   F1063 ),
-      ("H",       "H (1.65 um)",        H     ),
-      ("HK",      "HK (spectroscopic)", HK    ),
-      ("J",       "J (1.25 um)",        J     ),
-      ("J_LOW",   "J-low (1.15 um)",    JLow  ),
-      ("JH",      "JH (spectroscopic)", JH    ),
-      ("K_LONG",  "K-long (2.20 um)",   KLong ),
-      ("K_SHORT", "K-short (2.15 um)",  KShort),
-      ("K_BLUE",  "K-blue (2.06 um)",   KBlue ),
-      ("K_RED",   "K-red (2.31 um)",    KRed  ),
-      ("Y",       "Y (1.02 um)",        Y     )
-    )
+    val filterTable: List[(String, String, F2Filter)] =
+      List(
+        ("OPEN",    "Open",               Open  ),
+        ("DARK",    "Dark",               Dark  ),
+        ("F1056",   "F1056 (1.056 um)",   F1056 ),
+        ("F1063",   "F1063 (1.063 um)",   F1063 ),
+        ("H",       "H (1.65 um)",        H     ),
+        ("HK",      "HK (spectroscopic)", HK    ),
+        ("J",       "J (1.25 um)",        J     ),
+        ("J_LOW",   "J-low (1.15 um)",    JLow  ),
+        ("JH",      "JH (spectroscopic)", JH    ),
+        ("K_LONG",  "K-long (2.20 um)",   KLong ),
+        ("K_SHORT", "K-short (2.15 um)",  KShort),
+        ("K_BLUE",  "K-blue (2.06 um)",   KBlue ),
+        ("K_RED",   "K-red (2.31 um)",    KRed  ),
+        ("Y",       "Y (1.02 um)",        Y     )
+      )
 
     val filter: PioParse[F2Filter] =
       fstParser(filterTable)
@@ -169,18 +171,19 @@ object Parsers {
 
     import F2FpUnit._
 
-    val fpuTable = List(
-      ("PINHOLE",        "2-pix pinhole grid",  Pinhole      ),
-      ("SUBPIX_PINHOLE", "subpix pinhole grid", SubPixPinhole),
-      ("FPU_NONE",       "Imaging (none)",      None         ),
-      ("CUSTOM_MASK",    "Custom Mask",         Custom       ),
-      ("LONGSLIT_1",     "1-pix longslit",      LongSlit1    ),
-      ("LONGSLIT_2",     "2-pix longslit",      LongSlit2    ),
-      ("LONGSLIT_3",     "3-pix longslit",      LongSlit3    ),
-      ("LONGSLIT_4",     "4-pix longslit",      LongSlit4    ),
-      ("LONGSLIT_6",     "6-pix longslit",      LongSlit6    ),
-      ("LONGSLIT_8",     "8-pix longslit",      LongSlit8    )
-    )
+    val fpuTable: List[(String, String, F2FpUnit)] =
+      List(
+        ("PINHOLE",        "2-pix pinhole grid",  Pinhole      ),
+        ("SUBPIX_PINHOLE", "subpix pinhole grid", SubPixPinhole),
+        ("FPU_NONE",       "Imaging (none)",      None         ),
+        ("CUSTOM_MASK",    "Custom Mask",         Custom       ),
+        ("LONGSLIT_1",     "1-pix longslit",      LongSlit1    ),
+        ("LONGSLIT_2",     "2-pix longslit",      LongSlit2    ),
+        ("LONGSLIT_3",     "3-pix longslit",      LongSlit3    ),
+        ("LONGSLIT_4",     "4-pix longslit",      LongSlit4    ),
+        ("LONGSLIT_6",     "6-pix longslit",      LongSlit6    ),
+        ("LONGSLIT_8",     "8-pix longslit",      LongSlit8    )
+      )
 
     val fpu: PioParse[F2FpUnit] =
       fstParser(fpuTable)

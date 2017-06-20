@@ -13,6 +13,8 @@ import scalaz._, Scalaz._
 /** Constructors for `CtlIO` operations related to the `rollback` command. */
 object rollback {
 
+  val awaitNetRetries: Int = 9
+
   def getPreviousContainer(name: String, k: Container): CtlIO[Container] =
     gosub(s"Finding previous $name.") {
       for {
@@ -41,7 +43,7 @@ object rollback {
                    for {
                      _     <- startContainer(kGem)
                      h     <- serverHostName
-                     _     <- awaitNet(h, Port)
+                     _     <- awaitNet(h, Port, awaitNetRetries)
                    } yield ()
                  }
       } yield ()

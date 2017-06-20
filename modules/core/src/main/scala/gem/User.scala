@@ -34,5 +34,7 @@ trait UserProgramRoleOps extends Ops[User[ProgramRole]] {
 
 trait ToUserProgramRoleOps {
   implicit def toUserProgramRoleOps(self0: User[ProgramRole]): UserProgramRoleOps =
-    new UserProgramRoleOps { val self = self0 }
+    new UserProgramRoleOps {
+      val self: User[ProgramRole] = self0
+    }
 }

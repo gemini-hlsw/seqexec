@@ -16,9 +16,9 @@ import scalaz._, scalaz.effect._, scalaz.concurrent.Task
 object Main extends SafeApp {
 
   /** When we start the app with docker we pass arguments as environment variables. */
-  val ENV_GEM_DB_URL  = "GEM_DB_URL"
-  val ENV_GEM_DB_USER = "GEM_DB_USER"
-  val ENV_GEM_DB_PASS = "GEM_DB_PASS"
+  val ENV_GEM_DB_URL : String = "GEM_DB_URL"
+  val ENV_GEM_DB_USER: String = "GEM_DB_USER"
+  val ENV_GEM_DB_PASS: String = "GEM_DB_PASS"
 
   /** Get an environment variable. */
   def getEnv(key: String, default: String): IO[String] =

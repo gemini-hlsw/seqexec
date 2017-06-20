@@ -22,7 +22,7 @@ object SmartGcalDao {
       ids <- k match {
                case f2: F2SmartGcalKey => selectF2(f2, t)
              }
-      gcs <- ids.traverseU { GcalDao.select }.map(_.flatten)
+      gcs <- ids.traverseU { GcalDao.select }.map(_.collect { case Some(a) => a })
     } yield gcs
 
   def insert(l: GcalLampType, b: GcalBaselineType, k: SmartGcalKey, g: GcalConfig): ConnectionIO[Int] =
@@ -36,7 +36,7 @@ object SmartGcalDao {
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
 
-  private def lookup(step: MaybeConnectionIO[Step[DynamicConfig]], loc: Location.Middle): ExpansionResult[ExpandedSteps] = {
+  private def lookupʹ(step: MaybeConnectionIO[Step[DynamicConfig]], loc: Location.Middle): ExpansionResult[ExpandedSteps] = {
     // Information we need to extract from a smart gcal step in order to expand
     // it into manual gcal steps.  The key is used to look up the gcal config
     // from the instrument's smart table (e.g., smart_f2).  The type is used to
@@ -83,7 +83,7 @@ object SmartGcalDao {
     *         its instrument configuration
     */
   def lookup(oid: Observation.Id, loc: Location.Middle): ExpansionResult[ExpandedSteps] =
-    lookup(StepDao.selectOne(oid, loc), loc)
+    lookupʹ(StepDao.selectOne(oid, loc), loc)
 
   /** Expands a smart gcal step into the corresponding gcal steps so that they
     * may be executed. Updates the sequence to replace a smart gcal step with
@@ -115,9 +115,9 @@ object SmartGcalDao {
     for {
       steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
-      gcal  <- lookup(MaybeConnectionIO.fromOption(steps.lookup(loc)), loc)
+      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.lookup(loc)), loc)
       // replaces the smart gcal step with the expanded manual gcal steps
-      _     <- StepDao.delete(oid, loc).injectRight
+      _     <- StepDao.deleteAtLocation(oid, loc).injectRight
       _     <- insert(locBefore, gcal, locAfter).injectRight
     } yield gcal
   }

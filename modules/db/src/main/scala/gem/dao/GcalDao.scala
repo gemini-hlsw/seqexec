@@ -23,7 +23,7 @@ object GcalDao {
 
     // CoAdds has a DISTINCT type due to its check constraint so we need a fine-grained mapping
     // here to satisfy the query checker.
-    private case class CoAdds(toShort: Short)
+    private final case class CoAdds(toShort: Short)
     private object CoAdds {
       implicit val StepIdMeta: Meta[CoAdds] =
         Distinct.short("coadds").xmap(CoAdds(_), _.toShort)
@@ -52,7 +52,7 @@ object GcalDao {
          WHERE gcal_id =$id
       """.query[GcalKernel].map(_.toGcalConfig)
 
-      private case class GcalKernel(
+      private final case class GcalKernel(
         continuum: Option[GcalContinuum],
         ar_arc:    Boolean,
         cuar_arc:  Boolean,

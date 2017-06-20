@@ -13,12 +13,12 @@ import io._
 /** Low-level constructors for `CtlIO` operations related to git. */
 object git {
 
-  case class Commit(hash: String)
+  final case class Commit(hash: String)
   object Commit {
     implicit val OrderCommit: Order[Commit] = Order.orderBy(_.hash)
   }
 
-  case class Tag(tag: String)
+  final case class Tag(tag: String)
 
   // Yields most recent tag matching the given pattern, if any
   def mostRecentTag(pattern: Regex): CtlIO[Option[Tag]] =
@@ -37,7 +37,7 @@ object git {
     }
 
   val uncommittedChanges: CtlIO[Boolean] =
-    shell("git status -s").require {
+    shell("git", "status", "-s").require {
       case Output(0, deltas) => deltas.nonEmpty
     }
 

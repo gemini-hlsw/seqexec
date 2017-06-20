@@ -53,6 +53,7 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task, _]
       a       <- disj.fold(t => fail(user, msg, elapsed, t), a => success(user, msg, elapsed, a))
     } yield a
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def shutdown(ms: Long): M[Unit] =
     delay {
       jdkLogger.info("Log shutdown requested.")

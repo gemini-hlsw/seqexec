@@ -57,7 +57,7 @@ object StepDao {
     * @param oid F2 observation whose steps are sought
     */
   def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[F2DynamicConfig]] =
-    selectAll(oid, allF2Only)
+    selectAllʹ(oid, allF2Only)
 
   /** Selects the step at the indicated location in the sequence associated with
     * the indicated observation.
@@ -132,8 +132,8 @@ object StepDao {
     * @param oid observation whose step should be deleted
     * @param loc location of the step to delete
     */
-  def delete(oid: Observation.Id, loc: Loc): ConnectionIO[Int] =
-    Statements.delete(oid, loc).run
+  def deleteAtLocation(oid: Observation.Id, loc: Loc): ConnectionIO[Int] =
+    Statements.deleteAtLocation(oid, loc).run
 
   /** Deletes all steps for the given observation, if any.
     *
@@ -164,7 +164,7 @@ object StepDao {
     }
 
   // The type we get when we select the fully joined step
-  private case class StepKernel(
+  private final case class StepKernel(
     i: Instrument,
     stepType: StepType, // todo: make an enum
     gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalFilter], Option[GcalDiffuser], Option[GcalShutter], Option[Duration], Option[Short]),
@@ -191,7 +191,7 @@ object StepDao {
             s    <- shutterOpt
             e    <- exposureOpt
             c    <- coaddsOpt
-          } yield GcalStep(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error("missing gcal information: " + gcal))
+          } yield GcalStep(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error(s"missing gcal information: $gcal"))
 
         case StepType.SmartGcal =>
           smartGcalType.map(t => SmartGcalStep(i, t)).getOrElse(sys.error("missing smart gcal type"))
@@ -199,7 +199,7 @@ object StepDao {
         case StepType.Science =>
           telescope.apply2(TelescopeConfig(_, _))
             .map(ScienceStep(i, _))
-            .getOrElse(sys.error("missing telescope information: " + telescope))
+            .getOrElse(sys.error(s"missing telescope information: $telescope"))
 
       }
   }
@@ -210,7 +210,7 @@ object StepDao {
   private def allF2Only(oid: Observation.Id): ConnectionIO[Loc ==>> F2DynamicConfig] =
     Statements.allF2Only(oid).list.map(==>>.fromList(_))
 
-  private def selectAll[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[Loc ==>> I]): ConnectionIO[Loc ==>> Step[I]] =
+  private def selectAllʹ[I](oid: Observation.Id, f: Observation.Id => ConnectionIO[Loc ==>> I]): ConnectionIO[Loc ==>> Step[I]] =
     for {
       ss <- selectAllEmpty(oid)
       is <- f(oid)
@@ -218,7 +218,7 @@ object StepDao {
 
   object Statements {
 
-    def delete(oid: Observation.Id, loc: Loc): Update0 =
+    def deleteAtLocation(oid: Observation.Id, loc: Loc): Update0 =
       sql"""
         DELETE FROM step
               WHERE observation_id = $oid

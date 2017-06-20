@@ -13,7 +13,7 @@ import Scalaz._
 trait Enumerated[A] extends Order[A] {
   def all: List[A]
   def tag(a: A): String
-  def fromTag(s: String): Option[A] = all.find(tag(_) == s)
+  def fromTag(s: String): Option[A] = all.find(tag(_) === s)
   def unsafeFromTag(tag: String): A = fromTag(tag).getOrElse(sys.error("Invalid tag: " + tag))
   def order(a: A, b: A): Ordering = Order[String].order(tag(a), tag(b))
 }

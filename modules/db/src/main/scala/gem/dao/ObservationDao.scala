@@ -61,7 +61,7 @@ object ObservationDao {
 
     // ObservationIndex has a DISTINCT type due to its check constraint so we need a fine-grained mapping
     // here to satisfy the query checker.
-    private case class ObservationIndex(toInt: Int)
+    private final case class ObservationIndex(toInt: Int)
     private object ObservationIndex {
       implicit val ObservationIndexMeta: Meta[ObservationIndex] =
         Distinct.integer("id_index").xmap(ObservationIndex(_), _.toInt)

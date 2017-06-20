@@ -17,7 +17,7 @@ trait Arbitraries extends gem.config.Arbitraries {
       for {
         i  <- choose(Int.MinValue + 1, Int.MaxValue)
         is <- arbitrary[List[Int]]
-      } yield Location.unsafeMiddle(i +: is)
+      } yield Location.unsafeMiddleFromFoldable(i +: is)
     }
 
   implicit val arbLocation: Arbitrary[Location] =

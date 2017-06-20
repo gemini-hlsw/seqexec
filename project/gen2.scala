@@ -95,6 +95,7 @@ object gen2 {
       |  def fromTag(s: String): Option[$name] =
       |    all.find(_.tag === s)
       |
+      |  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
       |  def unsafeFromTag(s: String): $name =
       |    fromTag(s).getOrElse(throw new NoSuchElementException(s))
       |

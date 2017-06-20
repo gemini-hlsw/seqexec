@@ -49,9 +49,10 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
   // -------------------------------------------------------------------------
   // Add your smartgcal tables here.
   // -------------------------------------------------------------------------
-  val smartTables = List(
-    SmartDef("smart_f2", "Flamingos2", parseF2)
-  )
+  val smartTables: List[SmartDef] =
+    List(
+      SmartDef("smart_f2", "Flamingos2", parseF2)
+    )
 
   def parseF2(input: List[String]): (SmartGcalKey, List[String]) = {
     import Parsers.Flamingos2._
@@ -69,7 +70,7 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
   // Implementation Details
   // -------------------------------------------------------------------------
 
-  val dir = new File("smartgcal")
+  val dir: File = new File("smartgcal")
 
   val checkSmartDir: IO[Unit] =
     IO(dir.isDirectory).flatMap { b =>

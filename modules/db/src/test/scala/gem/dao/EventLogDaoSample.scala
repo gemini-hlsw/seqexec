@@ -9,14 +9,16 @@ import java.time.Instant
 import scalaz.effect.{IO, SafeApp}
 
 object EventLogDaoSample extends SafeApp {
-  val xa = DriverManagerTransactor[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
-  )
 
-  val oid = Observation.Id.unsafeFromString("GS-2017A-Q-1-2")
+  val xa: Transactor[IO, Unit] =
+    DriverManagerTransactor[IO](
+      "org.postgresql.Driver",
+      "jdbc:postgresql:gem",
+      "postgres",
+      ""
+    )
+
+  val oid: Observation.Id = Observation.Id.unsafeFromString("GS-2017A-Q-1-2")
 
   def insertEvents: ConnectionIO[List[Event]] =
     for {

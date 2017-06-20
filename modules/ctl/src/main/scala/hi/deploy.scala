@@ -10,16 +10,18 @@ import gem.ctl.low.docker._
 import gem.ctl.hi.common._
 
 import scalaz._, Scalaz._
+import scala.util.matching.Regex
 
 /** Constructors for `CtlIO` operations related to the `deploy` command. */
 object deploy {
 
-  val PrivateNetwork = "gem-net"
-  val GemOrg         = "geminihlsw"
-  val GemImage       = "gem-telnetd"
-  val GemProject     = "telnetd"
-  val DeployTagRegex = "^deploy-\\d+$".r
-  val Port           = 1234
+  val PrivateNetwork: String  = "gem-net"
+  val GemOrg: String          = "geminihlsw"
+  val GemImage: String        = "gem-telnetd"
+  val GemProject: String      = "telnetd"
+  val DeployTagRegex: Regex   = "^deploy-\\d+$".r
+  val Port: Int               = 1234
+  val awaitNetRetries: Int    = 9
 
   def getNetwork: CtlIO[Network] =
     gosub(s"Verifying $PrivateNetwork network.") {
@@ -34,7 +36,7 @@ object deploy {
       for {
         c <- info(s"Using $rev.") *> commitForRevision(rev)
         _ <- info(s"Commit is ${c.hash}")
-        u <- uncommittedChanges.map(_ && rev == "HEAD")
+        u <- uncommittedChanges.map(_ && rev === "HEAD")
         _ <- u.whenM(warn("There are uncommitted changes. This is a UNCOMMITTED deployment."))
       } yield DeployCommit(c, u)
     }
@@ -151,14 +153,14 @@ object deploy {
       _ <- if (b) info("Created database.")
            else {
              info(s"Waiting for Postgres to start up.") *>
-             shell("sleep 2") *>
+             shell("sleep", "2") *>
              createDatabase(nDeploy, kPg)
            }
     } yield ()
 
   def awaitHealthy(k: Container): CtlIO[Unit] =
     containerHealth(k) >>= {
-      case "starting" => info( s"Waiting for health check.") *> shell("sleep 2") *> awaitHealthy(k)
+      case "starting" => info( s"Waiting for health check.") *> shell("sleep", "2") *> awaitHealthy(k)
       case "healthy"  => info( s"Container is healthy.")
       case s          => error(s"Health check failed: $s") *> exit(-1)
     }
@@ -192,7 +194,7 @@ object deploy {
       } yield k
     }
 
-  def awaitNet(host: String, port: Int, retries: Int = 9): CtlIO[Unit] =
+  def awaitNet(host: String, port: Int, retries: Int): CtlIO[Unit] =
     retries match {
       case 0 => error("Remote port is unavailable. Hm.") *> exit(-1)
       case n => shell("nc", "-z", host, port.toString).require {
@@ -202,7 +204,7 @@ object deploy {
         case true  => info(s"Service is available at $host:$port.")
         case false =>
           info(s"Awaiting port availability (remaining retries: $n)") *>
-          shell("sleep 2") *> awaitNet(host, port, n - 1)
+          shell("sleep", "2") *> awaitNet(host, port, n - 1)
       }
     }
 
@@ -211,7 +213,7 @@ object deploy {
       for {
         kGem <- createGemContainer(nDeploy, cDeploy, iDeploy, kPrev)
         h    <- serverHostName
-        _    <- awaitNet(h, Port)
+        _    <- awaitNet(h, Port, awaitNetRetries)
       } yield kGem
     }
 

@@ -19,12 +19,12 @@ object interpreter {
     def server:  Server
   }
 
-  case class InterpreterState(indentation: Int, machineHostCache: Map[Host.Machine, String]) {
+  final case class InterpreterState(indentation: Int, machineHostCache: Map[Host.Machine, String]) {
     def indent: InterpreterState = copy(indentation = indentation + 1)
     def outdent:InterpreterState = copy(indentation = indentation - 1)
   }
   object InterpreterState {
-    val initial = InterpreterState(0, Map.empty)
+    val initial: InterpreterState = InterpreterState(0, Map.empty)
   }
 
   /**
@@ -63,6 +63,7 @@ object interpreter {
    * Construct a program to log a message to the console at the given log level and indentation.
    * This is where all the colorizing happens.
    */
+  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   private def doLog(level: Level, msg: String, state: IORef[InterpreterState]): EitherT[IO, Int, Unit] = {
     val color = level match {
       case Level.Error => Console.RED
@@ -107,7 +108,7 @@ object interpreter {
   private def doShell(cmd: String \/ List[String], verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, Output] = {
 
     def handler(s: String): IO[Unit] =
-      if (verbose) doLog(Level.Shell, s, state).run.map(_.toOption.get) // shh
+      if (verbose) doLog(Level.Shell, s, state).run.void
       else IO.putStr(".")
 
     for {
