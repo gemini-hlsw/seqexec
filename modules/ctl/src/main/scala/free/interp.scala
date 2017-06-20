@@ -64,22 +64,27 @@ object interpreter {
    * This is where all the colorizing happens.
    */
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-  private def doLog(level: Level, msg: String, state: IORef[InterpreterState]): EitherT[IO, Int, Unit] = {
+  private def doLogʹ(level: Level, msg: String, state: IORef[InterpreterState]): IO[Unit] = {
     val color = level match {
       case Level.Error => Console.RED
       case Level.Warn  => Console.YELLOW
       case Level.Info  => Console.GREEN
       case Level.Shell => "\u001B[0;37m" // gray
     }
-    EitherT.right {
-      val pre = s"[${level.toString.take(4).toLowerCase}]"
-      val messageColor = color // if (level == Shell) color else Console.BLUE
-      for {
-        i <- state.read.map(_.indentation).map("  " * _)
-        _ <- IO.putStrLn(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")
-      } yield ()
-    }
+    val pre = s"[${level.toString.take(4).toLowerCase}]"
+    val messageColor = color // if (level == Shell) color else Console.BLUE
+    for {
+      i <- state.read.map(_.indentation).map("  " * _)
+      _ <- IO.putStrLn(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")
+    } yield ()
   }
+
+  /**
+   * Construct a program to log a message to the console at the given log level and indentation.
+   * Convenience for `doLogʹ` lifted into `EitherT`.
+   */
+  private def doLog(level: Level, msg: String, state: IORef[InterpreterState]): EitherT[IO, Int, Unit] =
+    EitherT.right(doLogʹ(level, msg, state))
 
   /** Machine name to IP-address. */
   private def machineHost(machine: Host.Machine, verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, String] =
@@ -108,7 +113,7 @@ object interpreter {
   private def doShell(cmd: String \/ List[String], verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, Output] = {
 
     def handler(s: String): IO[Unit] =
-      if (verbose) doLog(Level.Shell, s, state).run.void
+      if (verbose) doLogʹ(Level.Shell, s, state)
       else IO.putStr(".")
 
     for {
