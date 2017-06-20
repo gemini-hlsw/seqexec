@@ -82,7 +82,7 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildString(gmosReader.dcName, "GMOSDC"),
       buildString(gmosReader.detectorType, "DETTYPE"),
       buildString(gmosReader.detectorId, "DETID"),
-      buildInt32(gmosReader.exposureTime, "EXPOSURE"),
+      buildDouble(gmosReader.exposureTime, "EXPOSURE"),
       buildInt32(gmosReader.adcUsed, "ADCUSED"),
       buildInt32(gmosReader.detNRoi, "DETNROI")
       // TODO These are enabled on N&S only
@@ -141,7 +141,7 @@ object GmosHeader {
     def dcName: SeqAction[String]
     def detectorType: SeqAction[String]
     def detectorId: SeqAction[String]
-    def exposureTime: SeqAction[Int]
+    def exposureTime: SeqAction[Double]
     def adcUsed: SeqAction[Int]
     def adcPrismEntSt: SeqAction[Double]
     def adcPrismEntEnd: SeqAction[Double]
@@ -186,7 +186,7 @@ object GmosHeader {
     override def dcName: SeqAction[String] = SeqAction(Header.StrDefault)
     override def detectorType: SeqAction[String] = SeqAction(Header.StrDefault)
     override def detectorId: SeqAction[String] = SeqAction(Header.StrDefault)
-    override def exposureTime: SeqAction[Int] = SeqAction(Header.IntDefault)
+    override def exposureTime: SeqAction[Double] = SeqAction(Header.IntDefault)
     override def adcUsed: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def adcPrismEntSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def adcPrismEntEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)
@@ -235,7 +235,7 @@ object GmosHeader {
     override def detectorType: SeqAction[String] = GmosEpics.instance.detectorType.toSeqAction
     override def detectorId: SeqAction[String] = GmosEpics.instance.detectorId.toSeqAction
     // TODO Exposure changes with N&S
-    override def exposureTime: SeqAction[Int] = GmosEpics.instance.reqExposureTime.toSeqAction
+    override def exposureTime: SeqAction[Double] = GmosEpics.instance.reqExposureTime.map(_.toDouble).toSeqAction
     override def adcUsed: SeqAction[Int] = GmosEpics.instance.adcUsed.toSeqAction
     override def adcPrismEntSt: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleStart.toSeqAction
     override def adcPrismEntEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqAction
