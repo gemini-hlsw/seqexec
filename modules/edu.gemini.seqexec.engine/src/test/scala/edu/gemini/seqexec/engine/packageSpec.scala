@@ -9,9 +9,7 @@ import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceSta
 
 import scala.concurrent.duration._
 import scalaz.syntax.apply._
-import scalaz.syntax.foldable._
 import scalaz.Nondeterminism
-import scalaz.std.AllInstances._
 import scalaz.concurrent.Task
 import scalaz.stream.{Cause, Process, async}
 

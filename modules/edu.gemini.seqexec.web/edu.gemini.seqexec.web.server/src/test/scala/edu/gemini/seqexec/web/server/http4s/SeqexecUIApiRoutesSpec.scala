@@ -11,7 +11,6 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecEngine
-import edu.gemini.seqexec.server.SeqexecEngine.Settings
 import org.http4s._
 import org.http4s.headers.`Set-Cookie`
 import org.http4s.syntax.StringSyntax
@@ -19,7 +18,6 @@ import org.http4s.websocket.WebsocketBits
 import scodec.bits.ByteVector
 import squants.time._
 import boopickle.Default._
-import edu.gemini.model.p1.immutable.Site
 
 import scalaz.stream.Process.emit
 import scalaz.stream.Process
