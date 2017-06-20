@@ -4,10 +4,8 @@ import java.util.logging.Logger
 
 import com.unboundid.ldap.sdk._
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.seqexec.model.UserDetails._
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
-import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
 import scalaz.effect.IO

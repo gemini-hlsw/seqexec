@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.dropdown
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.{Callback, ReactDOM, ScalaComponent}
+import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
 import scalaz.Show

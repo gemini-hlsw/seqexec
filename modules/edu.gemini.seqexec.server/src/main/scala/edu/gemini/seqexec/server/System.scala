@@ -2,8 +2,6 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.config2.Config
 
-import scalaz.concurrent.Task
-
 trait System {
   val name: String
 

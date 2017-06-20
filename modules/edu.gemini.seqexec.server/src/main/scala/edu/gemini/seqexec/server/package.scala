@@ -3,7 +3,6 @@ package edu.gemini.seqexec
 import edu.gemini.seqexec.engine.Event
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 
-import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task

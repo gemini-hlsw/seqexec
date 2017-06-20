@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
-import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.Flamingos2Controller._
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.config2.Config
@@ -16,10 +15,8 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
 import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
-import scala.PartialFunction._
 import scalaz.concurrent.Task
 import scalaz._
-import Scalaz._
 
 final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrument {
 

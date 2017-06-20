@@ -8,12 +8,11 @@ import edu.gemini.seqexec.odb.SeqExecService
 import edu.gemini.seqexec.model.Model.SequenceId
 import edu.gemini.seqexec.server.ConfigUtilOps.ExtractFailure
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
-import edu.gemini.seqexec.engine.Action
 import edu.gemini.seqexec.model.dhs.ImageFileId
 
 import scalaz.{Kleisli, EitherT, \/}
 import scalaz.concurrent.Task
-import scala.xml.{Elem, XML}
+import scala.xml.XML
 import org.http4s.client.blaze._
 import org.http4s.{Uri, scalaxml}
 import knobs.Config

@@ -78,20 +78,20 @@ object TcsController {
     case object C extends Beam
   }
 
-  /** 
-   * Data type for combined configuration of nod position (telescope orientation) and chop position 
+  /**
+   * Data type for combined configuration of nod position (telescope orientation) and chop position
    * (M2 orientation)
    */
   final case class NodChop(nod: Beam, chop: Beam)
   object NodChop {
-    implicit def EqualNodChop: Equal[NodChop] = 
+    implicit def EqualNodChop: Equal[NodChop] =
       Equal.equalA
   }
 
   /** Enumerated type for nod/chop tracking. */
   sealed trait NodChopTrackingOption
   object NodChopTrackingOption {
-    
+
     case object NodChopTrackingOn  extends NodChopTrackingOption
     case object NodChopTrackingOff extends NodChopTrackingOption
 
@@ -106,7 +106,7 @@ object TcsController {
     def get(nodchop: NodChop): NodChopTrackingOption
   }
   sealed trait ActiveNodChopTracking extends NodChopTrackingConfig {
-  
+
     // If x is of type ActiveNodChopTracking then ∃ a:NodChop ∍ x.get(a) == NodChopTrackingOn
     // How could I reflect that in the code?
 
@@ -114,7 +114,7 @@ object TcsController {
   object NodChopTrackingConfig {
 
     object None extends NodChopTrackingConfig {
-      def get(nodchop: NodChop): NodChopTrackingOption = 
+      def get(nodchop: NodChop): NodChopTrackingOption =
         NodChopTrackingOff
     }
 
@@ -183,7 +183,6 @@ object TcsController {
     case object MountGuideOff extends MountGuideOption
     case object MountGuideOn  extends MountGuideOption
   }
-  import MountGuideOption._
 
   /** Data type for guide config. */
   final case class GuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig) {
@@ -257,9 +256,9 @@ object TcsController {
   final case class ProbeTrackingConfigAO(self: ProbeTrackingConfig) extends AnyVal
 
   final case class GuidersTrackingConfig(
-    pwfs1: ProbeTrackingConfigP1, 
+    pwfs1: ProbeTrackingConfigP1,
     pwfs2: ProbeTrackingConfigP2,
-    oiwfs: ProbeTrackingConfigOI, 
+    oiwfs: ProbeTrackingConfigOI,
     aowfs: ProbeTrackingConfigAO
   ) {
     def setPwfs1TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(ProbeTrackingConfigP1(v), pwfs2, oiwfs, aowfs)
@@ -279,7 +278,7 @@ object TcsController {
 
   // A enabled guider means it is taking images and producing optical error measurements.
   final case class GuidersEnabled(
-    pwfs1: GuiderSensorOptionP1, 
+    pwfs1: GuiderSensorOptionP1,
     pwfs2: GuiderSensorOptionP2,
     oiwfs: GuiderSensorOptionOI
   ) {
@@ -293,11 +292,11 @@ object TcsController {
   final case class InstrumentAlignAngle(self: Angle) extends AnyVal
 
   final case class TcsConfig(
-    gc:  GuideConfig, 
-    tc:  TelescopeConfig, 
-    gtc: GuidersTrackingConfig, 
+    gc:  GuideConfig,
+    tc:  TelescopeConfig,
+    gtc: GuidersTrackingConfig,
     ge:  GuidersEnabled,
-    agc: AGConfig, 
+    agc: AGConfig,
     iaa: InstrumentAlignAngle
   ) {
     def setGuideConfig(v: GuideConfig) = TcsConfig(v, tc, gtc, ge, agc, iaa)

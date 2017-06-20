@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import edu.gemini.spModel.core.Wavelength
-import squants.space.{Angstroms, Meters, Microns, Nanometers}
+import squants.space.{Angstroms, Meters}
 
 import scalaz._
 import Scalaz._

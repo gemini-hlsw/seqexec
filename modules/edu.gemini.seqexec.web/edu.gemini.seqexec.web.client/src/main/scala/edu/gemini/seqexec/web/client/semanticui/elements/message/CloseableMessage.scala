@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.message
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconClose
-import japgolly.scalajs.react.{Callback, ReactDOM, ScalaComponent}
+import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
 /**

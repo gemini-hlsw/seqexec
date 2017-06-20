@@ -2,10 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import scalaz._
-import Scalaz._
-
-import edu.gemini.epics.acm.{XMLBuilder, CaService}
+import edu.gemini.epics.acm.CaService
 
 final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) {
 

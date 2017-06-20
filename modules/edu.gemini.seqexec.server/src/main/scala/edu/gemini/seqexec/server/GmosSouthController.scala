@@ -2,10 +2,9 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqexecFailure._
-import edu.gemini.seqexec.odb.SeqFailure
 import squants.Length
 import scala.concurrent.duration.Duration
-import scalaz.{\/, -\/, \/-}
+import scalaz.\/
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 
 trait GmosSouthController {

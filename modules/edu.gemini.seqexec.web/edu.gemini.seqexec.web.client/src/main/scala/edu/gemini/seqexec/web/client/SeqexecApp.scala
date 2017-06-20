@@ -1,12 +1,8 @@
 package edu.gemini.seqexec.web.client
 
-import java.time.{Instant, LocalDate}
-
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
-import japgolly.scalajs.react.ReactDOM
 
 import scala.scalajs.js.JSApp
-import scalacss.ScalaCssReact._
 import org.scalajs.dom.document
 import java.util.logging.{Level, Logger}
 

@@ -3,9 +3,6 @@ package edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient._
 
-import scalaz._
-import Scalaz._
-
 trait Header {
   def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit]
   def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit]

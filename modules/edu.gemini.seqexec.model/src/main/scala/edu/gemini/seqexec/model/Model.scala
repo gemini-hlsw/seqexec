@@ -3,9 +3,8 @@ package edu.gemini.seqexec.model
 import scalaz._
 import Scalaz._
 
-import monocle.{Getter, Lens, Optional, Prism}
+import monocle.{Lens, Prism}
 import monocle.macros.GenLens
-import monocle.macros.GenPrism
 import monocle.Traversal
 
 object Model {

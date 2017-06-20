@@ -8,7 +8,6 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-import edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}

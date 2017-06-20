@@ -14,11 +14,9 @@ import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import squants.motion.Pressure
 
 import scalaz._
 import Scalaz._
-import scalaz.concurrent.Task
 import scala.collection.breakOut
 
 /**
@@ -213,7 +211,6 @@ class StandardHeader(
 
   import Header._
   import Header.Implicits._
-  import KeywordsReader._
 
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
 
@@ -381,7 +378,7 @@ class StandardHeader(
       val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
       sendKeywords(id, inst, hs, windowsCount :: windows)
     }
-    
+
     def decodeGuide(v: StandardGuideOptions.Value): String = v match {
       case StandardGuideOptions.Value.park   => "parked"
       case StandardGuideOptions.Value.guide  => "guiding"
