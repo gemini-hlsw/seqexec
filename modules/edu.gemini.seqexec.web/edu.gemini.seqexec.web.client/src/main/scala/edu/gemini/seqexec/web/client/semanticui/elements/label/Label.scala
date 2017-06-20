@@ -5,12 +5,20 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object Label {
-  case class Props(text: String, htmlFor: Option[String] = None)
+  case class Props(text: String,
+    htmlFor: Option[String] = None,
+    color  : Option[String] = None,
+    basic  : Boolean = false)
 
   private val component = ScalaComponent.builder[Props]("Label")
     .stateless
     .renderPC((_, p, c) =>
       <.label(
+        ^.cls := "ui label",
+        ^.classSet(
+          "basic"     -> p.basic
+        ),
+        p.color.map(u => ^.cls := u).whenDefined,
         ^.htmlFor :=? p.htmlFor,
         p.text,
         c

@@ -44,19 +44,27 @@ object SequenceObserverField {
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val observerEV = StateSnapshot(~s.currentText)(updateState)
+      val idObserverText = p.isLogged ? "Observer" | s"Id: ${p.s.id}, Observer: ${~s.currentText}"
       <.div(
         ^.cls := "ui form",
-        <.div(
-          ^.cls := "required field",
-          Label(Label.Props("Observer")),
-          InputEV(InputEV.Props(
-            p.s.metadata.instrument + ".observer",
-            p.s.metadata.instrument + ".observer",
-            observerEV,
-            placeholder = "Observer...",
-            disabled = !p.isLogged,
-            onBlur = _ => submitIfChanged))
-        )
+          Label(Label.Props("Id:", basic = true, color = "red".some)),
+          Label(Label.Props(p.s.id, basic = true)),
+          Label(Label.Props("Observer:", basic = true, color = "red".some)),
+          Label(Label.Props(~s.currentText, basic = true)),
+          <.div(
+            ^.cls := "field",
+            ^.classSet(
+              "required" -> p.isLogged
+            ),
+            Label(Label.Props(idObserverText, basic = true)),
+            InputEV(InputEV.Props(
+              p.s.metadata.instrument + ".observer",
+              p.s.metadata.instrument + ".observer",
+              observerEV,
+              placeholder = "Observer...",
+              disabled = !p.isLogged,
+              onBlur = _ => submitIfChanged))
+          ).when(p.isLogged)
       )
     }
   }
@@ -103,6 +111,10 @@ object SequenceDefaultToolbar {
             ^.cls := "left column bottom aligned eight wide computer ten wide tablet only",
             <.div(
               ^.cls := "ui form",
+              <.div(
+                ^.cls := "field",
+                Label(Label.Props(s"Obs. Id: ${p.s.id}"))
+              ).when(isLogged),
               <.div(
                 ^.cls := "field",
                 Label(Label.Props(s"Name: ${p.s.metadata.name}")).when(isLogged)
