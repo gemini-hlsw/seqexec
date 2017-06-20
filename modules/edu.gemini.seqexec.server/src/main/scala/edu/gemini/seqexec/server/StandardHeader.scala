@@ -179,9 +179,11 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 
+  val manualDarkValue = "Manual Dark"
+  val manualDarkOverride = "Dark"
   override def getObsObject: SeqAction[String] =
     SeqAction.either(config.extract(OBSERVE_KEY / OBJECT_PROP).as[String]
-      .leftMap(explainExtractError))
+      .map(v => if(v == manualDarkValue) manualDarkOverride else v).leftMap(explainExtractError))
 
   override def getGeminiQA: SeqAction[String] = SeqAction("UNKNOWN")
 
