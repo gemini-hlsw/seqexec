@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -72,7 +72,7 @@ object HeadersSideBar {
           ^.cls := "ui form",
           <.div(
             ^.cls := "required field",
-            Label(Label.Props("Operator", Some("operator"))),
+            FormLabel(FormLabel.Props("Operator", Some("operator"))),
             InputEV(InputEV.Props("operator", "operator",
               operatorEV,
               placeholder = "Operator...",

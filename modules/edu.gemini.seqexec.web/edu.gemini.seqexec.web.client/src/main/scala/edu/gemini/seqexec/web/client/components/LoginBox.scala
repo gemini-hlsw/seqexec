@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.TagOf
@@ -74,7 +74,7 @@ object LoginBox {
             ^.action := "#",
             <.div(
               ^.cls :="required field",
-              Label(Label.Props("Username", Some("username"))),
+              FormLabel(FormLabel.Props("Username", Some("username"))),
               <.div(
                 ^.cls :="ui icon input",
                 <.input(
@@ -90,7 +90,7 @@ object LoginBox {
             ),
             <.div(
               ^.cls :="required field",
-              Label(Label.Props("Password", Some("password"))),
+              FormLabel(FormLabel.Props("Password", Some("password"))),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
