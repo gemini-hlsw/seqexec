@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.server
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.server.GcalController.{ArLampState, GcalConfig, LampState}
+import edu.gemini.seqexec.server.GcalController.GcalConfig
 
 /**
   * Created by jluhrs on 3/15/17.

@@ -2,21 +2,18 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.seqexec.engine.Resource
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.spModel.config2.{Config, ItemKey}
-import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ}
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{TELESCOPE_CONFIG_NAME, TELESCOPE_KEY}
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scalaz.concurrent.Task
 import scalaz._
 import Scalaz._
-import squants.space.{LengthConversions, Millimeters}
+import squants.space.Millimeters
 
 /**
  * Created by jluhrs on 4/23/15.

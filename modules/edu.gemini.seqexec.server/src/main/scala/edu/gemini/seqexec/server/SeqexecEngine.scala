@@ -24,8 +24,6 @@ import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.core.SPProgramID
 import knobs.Config
 
-import scala.collection.mutable
-
 /**
   * Created by jluhrs on 10/7/16.
   */

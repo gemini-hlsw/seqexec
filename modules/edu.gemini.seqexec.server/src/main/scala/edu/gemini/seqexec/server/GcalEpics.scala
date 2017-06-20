@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.epics.acm.{CaAttribute, CaService, CaStatusAcceptor, XMLBuilder}
+import edu.gemini.epics.acm.{CaAttribute, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 
 /**

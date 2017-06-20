@@ -3,10 +3,8 @@ package edu.gemini.seqexec.model
 import Model._
 import Model.SeqexecEvent._
 import Model.SeqexecModelUpdate
-import boopickle.Default._
-import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary._
-import org.scalatest.{Assertion, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 
 /**

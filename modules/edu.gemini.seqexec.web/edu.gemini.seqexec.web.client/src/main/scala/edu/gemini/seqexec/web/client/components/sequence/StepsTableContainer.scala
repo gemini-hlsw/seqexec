@@ -20,11 +20,7 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
-import org.scalajs.dom.raw.{Element, HTMLElement, Node}
-import org.scalajs.dom.document
 import org.scalajs.dom.html.Div
-
-import scala.annotation.tailrec
 
 /**
   * Container for a table with the steps

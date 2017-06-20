@@ -7,7 +7,7 @@ import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 
-import scalaz.{-\/, \/-}
+import scalaz.\/-
 
 object ConfigArbitraries {
 

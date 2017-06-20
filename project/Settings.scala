@@ -20,7 +20,8 @@ object Settings {
       "-target:jvm-1.8",
       "-Xlint",
       "-Xlint:-stars-align",
-      "-Xfatal-warnings"
+      "-Xfatal-warnings",
+      "-Ywarn-unused-import"
     )
   }
 

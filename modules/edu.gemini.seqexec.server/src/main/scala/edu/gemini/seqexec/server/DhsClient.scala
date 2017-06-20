@@ -15,7 +15,6 @@ import scala.io.Source
 import scalaz.concurrent.Task
 import scalaz.EitherT
 import scalaz._
-import Scalaz._
 
 /**
   * Defines the interface for dhs client, with methods, e.g. to request image creation

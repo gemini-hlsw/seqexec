@@ -1,18 +1,14 @@
 package edu.gemini.seqexec.server
 
-import java.util
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import squants.time.Seconds
 
-import collection.JavaConversions._
 import edu.gemini.seqexec.server.TcsController._
-import edu.gemini.epics.acm.{CaAttributeListener, CaService, XMLBuilder}
 import edu.gemini.seqexec.engine.Resource
 import edu.gemini.spModel.core.Wavelength
-import squants.Length
-import squants.space.{Angstroms, Degrees, Microns, Millimeters}
+import squants.space.{Angstroms, Degrees, Millimeters}
 
 import scalaz._
 import Scalaz._

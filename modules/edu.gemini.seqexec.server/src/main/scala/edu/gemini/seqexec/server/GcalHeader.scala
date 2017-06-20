@@ -3,7 +3,6 @@ package edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import Header._
 import Header.Implicits._
-import KeywordsReader._
 
 class GcalHeader(hs: DhsClient, gcalReader: GcalKeywordReader) extends Header {
   val gcalKeywords = List(

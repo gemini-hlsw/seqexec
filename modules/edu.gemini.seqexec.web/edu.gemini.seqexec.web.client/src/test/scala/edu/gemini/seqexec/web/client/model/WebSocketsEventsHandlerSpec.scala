@@ -4,9 +4,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, Sequenc
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceView, SequencesQueue}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.zoomRW
-import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
 import org.scalatest.{FlatSpec, Matchers}
-import org.scalatest.prop.PropertyChecks
 
 import scalaz._
 import Scalaz._

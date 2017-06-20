@@ -9,12 +9,9 @@ import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
-import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 import org.http4s._
 import org.http4s.dsl._
-import org.http4s.server.syntax._
 import org.http4s.server.middleware.GZip
-import org.http4s.server.AuthMiddleware
 
 import scalaz._
 import Scalaz._

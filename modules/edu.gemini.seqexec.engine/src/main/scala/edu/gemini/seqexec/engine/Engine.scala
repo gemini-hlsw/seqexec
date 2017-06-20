@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.engine
 
 import scalaz._
-import Scalaz._
 
 import edu.gemini.seqexec.model.Model.{Conditions, Operator}
 
