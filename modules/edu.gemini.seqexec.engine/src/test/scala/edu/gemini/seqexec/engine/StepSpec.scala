@@ -10,7 +10,7 @@ import Inside._
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
 import edu.gemini.seqexec.engine.Event.{pause, start}
-import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle, Running}
+import edu.gemini.seqexec.model.Model.SequenceState.Running
 
 import scala.Function.const
 import scalaz.\/-
