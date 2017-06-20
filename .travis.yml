@@ -15,7 +15,7 @@ before_script:
   - psql -c 'create database gem' -U postgres
 
 script:
-  - sbt headerCheck scalastyle sql/flywayMigrate compile test
+  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test
 
 cache:
   directories:
