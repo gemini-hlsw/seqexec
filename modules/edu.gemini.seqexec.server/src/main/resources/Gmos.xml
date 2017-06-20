@@ -596,6 +596,11 @@
             <type>DOUBLE</type>
             <description>Requested grating motor step position</description>
         </attribute>
+        <attribute name="dtax">
+            <channel>sad:cc:dtaX</channel>
+            <type>DOUBLE</type>
+            <description>Detector translation X pos (microns)</description>
+        </attribute>
         <attribute name="dtay">
             <channel>sad:cc:dtaY</channel>
             <type>DOUBLE</type>

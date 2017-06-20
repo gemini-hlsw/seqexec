@@ -126,31 +126,31 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   // DC status values
 
-  def roiNumUsed: Option[Int] = Option(dcState.getDoubleAttribute("detnroi").value.toInt)
+  def roiNumUsed: Option[Int] = Option(dcState.getIntegerAttribute("detnroi").value).map(_.toInt)
 
   val rois: Map[Int, RoiStatus] = (1 to 5).map(i => i -> RoiStatus(dcState, i))(breakOut)
 
-  def ccdXBinning: Option[Int] = Option(dcState.getDoubleAttribute("ccdXBinning").value.toInt)
+  def ccdXBinning: Option[Int] = Option(dcState.getDoubleAttribute("ccdXBinning").value).map(_.toInt)
 
-  def ccdYBinning: Option[Int] = Option(dcState.getDoubleAttribute("ccdYBinning").value.toInt)
+  def ccdYBinning: Option[Int] = Option(dcState.getDoubleAttribute("ccdYBinning").value).map(_.toInt)
 
-  def currentCycle: Option[Int] = Option(dcState.getIntegerAttribute("currentCycle").value.toInt)
+  def currentCycle: Option[Int] = Option(dcState.getIntegerAttribute("currentCycle").value).map(_.toInt)
 
-  def nsRows: Option[Int] = Option(dcState.getIntegerAttribute("nsRows").value.toInt)
+  def nsRows: Option[Int] = Option(dcState.getIntegerAttribute("nsRows").value).map(_.toInt)
 
-  def nsPairs: Option[Int] = Option(dcState.getIntegerAttribute("nsPairs").value.toInt)
+  def nsPairs: Option[Int] = Option(dcState.getIntegerAttribute("nsPairs").value).map(_.toInt)
 
   def dhsConnected: Option[String] = Option(dcState.getStringAttribute("dhsConnected").value)
 
-  def countdown: Option[Double] = Option(dcState.getStringAttribute("countdown").value.toDouble)
+  def countdown: Option[Double] = Option(dcState.getStringAttribute("countdown").value).map(_.toDouble)
 
-  def gainSetting: Option[Int] = Option(dcState.getIntegerAttribute("gainSetting").value.toInt)
+  def gainSetting: Option[Int] = Option(dcState.getIntegerAttribute("gainSetting").value).map(_.toInt)
 
-  def aExpCount: Option[Int] = Option(dcState.getIntegerAttribute("aexpcnt").value.toInt)
+  def aExpCount: Option[Int] = Option(dcState.getIntegerAttribute("aexpcnt").value).map(_.toInt)
 
-  def bExpCount: Option[Int] = Option(dcState.getIntegerAttribute("bexpcnt").value.toInt)
+  def bExpCount: Option[Int] = Option(dcState.getIntegerAttribute("bexpcnt").value).map(_.toInt)
 
-  def ampCount: Option[Int] = Option(dcState.getIntegerAttribute("ampCount").value.toInt)
+  def ampCount: Option[Int] = Option(dcState.getIntegerAttribute("ampCount").value).map(_.toInt)
 
   def shutterState: Option[String] = Option(dcState.getStringAttribute("shutterState").value)
 
@@ -158,9 +158,9 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def nsState: Option[String] = Option(dcState.getStringAttribute("ns_state").value)
 
-  def exposureTime: Option[Int] = Option(dcState.getIntegerAttribute("exposureTime").value.toInt)
+  def exposureTime: Option[Int] = Option(dcState.getIntegerAttribute("exposureTime").value).map(_.toInt)
 
-  def reqExposureTime: Option[Int] = Option(dcState.getIntegerAttribute("exposure").value.toInt)
+  def reqExposureTime: Option[Int] = Option(dcState.getIntegerAttribute("exposure").value).map(_.toInt)
 
   def detectorId: Option[String] = Option(dcState.getStringAttribute("detid").value)
 
@@ -172,31 +172,31 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def ccName: Option[String] = Option(state.getStringAttribute("gmoscc").value)
 
-  def adcPrismExitAngleStart: Option[Double] = Option(state.getDoubleAttribute("adcexpst").value.toDouble)
+  def adcPrismExitAngleStart: Option[Double] = Option(state.getDoubleAttribute("adcexpst").value).map(_.toDouble)
 
-  def adcPrismExitAngleEnd: Option[Double] = Option(state.getDoubleAttribute("adcexpen").value.toDouble)
+  def adcPrismExitAngleEnd: Option[Double] = Option(state.getDoubleAttribute("adcexpen").value).map(_.toDouble)
 
-  def adcExitUpperWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen2").value.toDouble)
+  def adcExitUpperWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen2").value).map(_.toDouble)
 
-  def adcUsed: Option[Int] = Option(state.getIntegerAttribute("adcused").value.toInt)
+  def adcUsed: Option[Int] = Option(state.getIntegerAttribute("adcused").value).map(_.toInt)
 
-  def adcExitLowerWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen1").value.toDouble)
+  def adcExitLowerWavel: Option[Double] = Option(state.getDoubleAttribute("adcwlen1").value).map(_.toDouble)
 
-  def inBeam: Option[Int] = Option(state.getIntegerAttribute("inbeam").value.toInt)
+  def inBeam: Option[Int] = Option(state.getIntegerAttribute("inbeam").value).map(_.toInt)
 
-  def filter1Id: Option[Int] = Option(dcState.getIntegerAttribute("filterID1").value.toInt)
+  def filter1Id: Option[Int] = Option(state.getIntegerAttribute("filterID1").value).map(_.toInt)
 
-  def filter2Id: Option[Int] = Option(dcState.getIntegerAttribute("filterID2").value.toInt)
+  def filter2Id: Option[Int] = Option(state.getIntegerAttribute("filterID2").value).map(_.toInt)
 
   def fpu: Option[String] = Option(state.getStringAttribute("fpu").value)
 
-  def disperserInBeam: Option[Int] = Option(dcState.getIntegerAttribute("disperserInBeam").value.toInt)
+  def disperserInBeam: Option[Int] = Option(state.getIntegerAttribute("disperserInBeam").value).map(_.toInt)
 
-  def disperserOrder: Option[Int] = Option(dcState.getIntegerAttribute("disperserOrder").value.toInt)
+  def disperserOrder: Option[Int] = Option(state.getIntegerAttribute("disperserOrder").value).map(_.toInt)
 
-  def disperserParked: Option[Int] = Option(dcState.getIntegerAttribute("disperserParked").value.toInt)
+  def disperserParked: Option[Int] = Option(state.getIntegerAttribute("disperserParked").value).map(_.toInt)
 
-  def disperserId: Option[Int] = Option(state.getIntegerAttribute("disperserID").value.toInt)
+  def disperserId: Option[Int] = Option(state.getIntegerAttribute("disperserID").value).map(_.toInt)
 
   def filter1: Option[String] = Option(state.getStringAttribute("filter1").value)
 
@@ -208,37 +208,37 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def useElectronicOffsetting: Option[Boolean] = Option(state.getIntegerAttribute("useElectronicOffsetting").value).map(_!=0)
 
-  def disperserWavel: Option[Double] = Option(state.getDoubleAttribute("disperserLambda").value.toDouble)
+  def disperserWavel: Option[Double] = Option(state.getDoubleAttribute("disperserLambda").value).map(_.toDouble)
 
   def adcMode: Option[String] = Option(state.getStringAttribute("adcmode").value)
 
-  def reqGratingMotorSteps: Option[Double] = Option(state.getDoubleAttribute("grstep").value.toDouble)
+  def reqGratingMotorSteps: Option[Double] = Option(state.getDoubleAttribute("grstep").value).map(_.toDouble)
 
-  def dtaZStart: Option[Double] = Option(state.getDoubleAttribute("dtazst").value.toDouble)
+  def dtaZStart: Option[Double] = Option(state.getDoubleAttribute("dtazst").value).map(_.toDouble)
 
-  def dtaZMean: Option[Double] = Option(state.getDoubleAttribute("dtazme").value.toDouble)
+  def dtaZMean: Option[Double] = Option(state.getDoubleAttribute("dtazme").value).map(_.toDouble)
 
-  def dtaZEnd: Option[Double] = Option(state.getDoubleAttribute("dtazen").value.toDouble)
+  def dtaZEnd: Option[Double] = Option(state.getDoubleAttribute("dtazen").value).map(_.toDouble)
 
-  def dtaZ: Option[Double] = Option(state.getDoubleAttribute("dtaz").value.toDouble)
+  def dtaZ: Option[Double] = Option(state.getDoubleAttribute("dtaz").value).map(_.toDouble)
 
-  def dtaY: Option[Double] = Option(state.getDoubleAttribute("dtay").value.toDouble)
+  def dtaY: Option[Double] = Option(state.getDoubleAttribute("dtay").value).map(_.toDouble)
 
-  def dtaX: Option[Double] = Option(state.getDoubleAttribute("dtax").value.toDouble)
+  def dtaX: Option[Double] = Option(state.getDoubleAttribute("dtax").value).map(_.toDouble)
 
-  def gratingWavel: Option[Double] = Option(state.getDoubleAttribute("adjgrwlen").value.toDouble)
+  def gratingWavel: Option[Double] = Option(state.getDoubleAttribute("adjgrwlen").value).map(_.toDouble)
 
-  def adcPrismEntryAngleEnd: Option[Double] = Option(state.getDoubleAttribute("adcenpen").value.toDouble)
+  def adcPrismEntryAngleEnd: Option[Double] = Option(state.getDoubleAttribute("adcenpen").value).map(_.toDouble)
 
-  def adcPrismEntryAngleMean: Option[Double] = Option(state.getDoubleAttribute("adcenpme").value.toDouble)
+  def adcPrismEntryAngleMean: Option[Double] = Option(state.getDoubleAttribute("adcenpme").value).map(_.toDouble)
 
-  def adcPrismEntryAngleStart: Option[Double] = Option(state.getDoubleAttribute("adcenpst").value.toDouble)
+  def adcPrismEntryAngleStart: Option[Double] = Option(state.getDoubleAttribute("adcenpst").value).map(_.toDouble)
 
-  def maskType: Option[Int] = Option(dcState.getIntegerAttribute("masktyp").value.toInt)
+  def maskType: Option[Int] = Option(state.getIntegerAttribute("masktyp").value).map(_.toInt)
 
-  def maskId: Option[Int] = Option(dcState.getIntegerAttribute("maskid").value.toInt)
+  def maskId: Option[Int] = Option(state.getIntegerAttribute("maskid").value).map(_.toInt)
 
-  def gratingTilt: Option[Double] = Option(state.getDoubleAttribute("grtilt").value.toDouble)
+  def gratingTilt: Option[Double] = Option(state.getDoubleAttribute("grtilt").value).map(_.toDouble)
 }
 
 object GmosEpics extends EpicsSystem[GmosEpics] {
@@ -264,10 +264,10 @@ object GmosEpics extends EpicsSystem[GmosEpics] {
   }
 
   case class RoiStatus(sa: CaStatusAcceptor, i: Int) {
-    def ccdXstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXstart$i").value.toInt)
-    def ccdYstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYstart$i").value.toInt)
-    def ccdXsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXsize$i").value.toInt)
-    def ccdYsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYsize$i").value.toInt)
+    def ccdXstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXstart$i").value).map(_.toInt)
+    def ccdYstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYstart$i").value).map(_.toInt)
+    def ccdXsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXsize$i").value).map(_.toInt)
+    def ccdYsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYsize$i").value).map(_.toInt)
   }
 
 }
