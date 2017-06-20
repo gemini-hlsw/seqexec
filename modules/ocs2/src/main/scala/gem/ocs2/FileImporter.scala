@@ -28,7 +28,7 @@ object FileImporter extends SafeApp with DoobieClient {
   type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
   type Prog = Program[Obs]
 
-  val dir = new File("archive")
+  val dir: File = new File("archive")
 
   val checkArchive: IO[Unit] =
     IO(dir.isDirectory).flatMap { b =>
@@ -55,7 +55,7 @@ object FileImporter extends SafeApp with DoobieClient {
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =
     read(f).flatMap { elem =>
       PioDecoder[(Prog, List[Dataset])].decode(elem) match {
-        case -\/(err)     => sys.error(s"Problem parsing ${f.getName}: " + err)
+        case -\/(err)     => sys.error(s"Problem parsing ${f.getName}: $err")
         case \/-((p, ds)) => log.log(u, s"insert ${p.id}")(insert(u, p, ds, log)).transact(xa)
       }
     }.except(e => IO(e.printStackTrace))

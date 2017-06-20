@@ -10,6 +10,7 @@ import scalaz._, Scalaz._
 
 // Sample code that exercises SmartGcalDao.select.
 object SmartGcalSample extends TimedSample {
+
   type Result = List[(SmartGcalKey, SmartGcalType, List[GcalConfig])]
 
   val allF2: Vector[SmartGcalKey] =
@@ -19,8 +20,7 @@ object SmartGcalSample extends TimedSample {
       u <- F2FpUnit.all
     } yield F2SmartGcalKey(d, f, u)).toVector
 
-
-  val rand = new Random(0)
+  val rand: Random = new Random(0)
 
   def nextType(): SmartGcalType =
     SmartGcalType.all(rand.nextInt(4))

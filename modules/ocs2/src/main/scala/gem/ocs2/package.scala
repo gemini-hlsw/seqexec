@@ -10,7 +10,8 @@ import Scalaz._
 package object ocs2 {
   type ConfigMap = String ==>> String
 
-  val EmptyConfigMap = ==>>.empty[String, String]
+  val EmptyConfigMap: String ==>> String =
+    ==>>.empty
 
   /** Adds support for parsing steps into ConfigMap.  This is required by the
     * SequenceDecoder and the StaticDecoder.

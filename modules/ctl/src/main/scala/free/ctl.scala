@@ -16,8 +16,8 @@ object ctl {
     def name: String
   }
   object Host {
-    case class Machine(name: String) extends Host
-    case class Network(name: String) extends Host
+    final case class Machine(name: String) extends Host
+    final case class Network(name: String) extends Host
   }
 
   sealed trait Server {
@@ -30,7 +30,7 @@ object ctl {
   }
   object Server {
     case object Local extends Server
-    case class  Remote(host: Host, user: Option[String]) extends Server
+    final case class  Remote(host: Host, user: Option[String]) extends Server
   }
 
 
@@ -46,10 +46,10 @@ object ctl {
   /** ADT of low-level control operations. */
   sealed trait CtlOp[A]
   object CtlOp {
-    case class  Exit[A](exitCode: Int)                              extends CtlOp[A]
-    case object GetConfig                                           extends CtlOp[Config]
-    case class  Gosub[A](level: Level, msg: String, fa: CtlIO[A])   extends CtlOp[A]
-    case class  Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]
+    final case class  Exit[A](exitCode: Int)                              extends CtlOp[A]
+          case object GetConfig                                           extends CtlOp[Config]
+    final case class  Gosub[A](level: Level, msg: String, fa: CtlIO[A])   extends CtlOp[A]
+    final case class  Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]
   }
 
   /** Combinator that applies a check to command output. */
@@ -85,14 +85,8 @@ object ctl {
         }
     }
 
-  def shell(c: String): CtlIO[Output] =
-    Free.liftF(CtlOp.Shell(false, c.left))
-
   def shell(c: String, cs: String*): CtlIO[Output] =
     Free.liftF(CtlOp.Shell(false, (c :: cs.toList).right))
-
-  def remote(c: String): CtlIO[Output] =
-    Free.liftF(CtlOp.Shell(true, c.left))
 
   def remote(c: String, cs: String*): CtlIO[Output] =
     Free.liftF(CtlOp.Shell(true, (c :: cs.toList).right))

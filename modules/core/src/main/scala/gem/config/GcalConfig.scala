@@ -13,7 +13,7 @@ import Scalaz._
 
 import GcalConfig.GcalLamp
 
-case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Short) {
+final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Short) {
   def continuum: Option[GcalContinuum] =
     lamp.swap.toOption
 
@@ -36,6 +36,7 @@ object GcalConfig {
   object GcalArcs {
     /** Constructs GcalArcs such that the GcalArc instances are always in order.
       */
+    @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
     def apply(arc0: GcalArc, arcs: List[GcalArc]): GcalArcs = {
       val all = ISet.fromList(arc0 :: arcs)
       new GcalArcs(OneAnd(all.elemAt(0).get, all.deleteAt(0))) {}

@@ -34,6 +34,7 @@ package object json {
   implicit def enumeratedCodec[A](implicit ev: Enumerated[A]): CodecJson[A] =
     CodecJson.derived[String].xmap(ev.unsafeFromTag)(ev.tag)
 
+  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   implicit val programIdCodec: CodecJson[Program.Id] =
     CodecJson.derived[String].xmap(Program.Id.parse)(_.toString)
 

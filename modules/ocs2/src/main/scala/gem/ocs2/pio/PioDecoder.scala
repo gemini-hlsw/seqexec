@@ -36,10 +36,11 @@ object PioDecoder {
         parse(n.text) \/> ParseError(n.text, ev.describe)
     }
 
-  implicit val FunctorPioDecoder = new Functor[PioDecoder] {
-    def map[A, B](da: PioDecoder[A])(f: A => B): PioDecoder[B] =
-      PioDecoder(n => da.decode(n).map(f))
-  }
+  implicit val FunctorPioDecoder: Functor[PioDecoder] =
+    new Functor[PioDecoder] {
+      def map[A, B](da: PioDecoder[A])(f: A => B): PioDecoder[B] =
+        PioDecoder(n => da.decode(n).map(f))
+    }
 
   implicit def decode2[A, B](implicit da: PioDecoder[A], db: PioDecoder[B]): PioDecoder[(A, B)] =
     PioDecoder { n =>

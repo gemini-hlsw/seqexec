@@ -6,7 +6,7 @@ package gem
 import doobie.postgres.imports._
 import doobie.imports._
 import doobie.util.invariant._
-import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, _ }
+import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
 import edu.gemini.spModel.core._
 
 import java.sql.Timestamp
@@ -90,6 +90,7 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
     AngleMetaAsSignedArcseconds.xmap(OffsetQ(_), _.toAngle)
 
   // Program.Id as string
+  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   implicit val ProgramIdMeta: Meta[Program.Id] =
     Meta[String].xmap(Program.Id.parse, _.toString)
 
@@ -110,6 +111,7 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
     Distinct.string("identifier").xmap(Site.parse, _.abbreviation)
 
   // ProgramType by tag as DISTINCT (identifier)
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   implicit val ProgramTypeMeta: Meta[ProgramType] =
     Distinct.string("identifier").xmap(s => ProgramType.read(s).getOrElse(throw InvalidEnum[ProgramType](s)), _.abbreviation)
 
@@ -121,7 +123,7 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
     Meta[Timestamp].xmap(_.toInstant, Timestamp.from)
 
   implicit val LocationMeta: Meta[Location.Middle] =
-    Meta[List[Int]].xmap(Location.unsafeMiddle(_), _.toList)
+    Meta[List[Int]].xmap(Location.unsafeMiddleFromFoldable(_), _.toList)
 
   implicit val DurationMeta: Meta[Duration] =
     Distinct.long("milliseconds").xmap(Duration.ofMillis, _.toMillis)

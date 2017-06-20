@@ -4,8 +4,8 @@ package check
 class StepCheck extends Check {
   import StepDao.Statements._
   "StepDao.Statements" should
-            "delete (1)"           in check(delete(Dummy.observationId, Dummy.locationMiddle))
-  it should "delete (2)"           in check(delete(Dummy.observationId))
+            "deleteAtLocation"     in check(deleteAtLocation(Dummy.observationId, Dummy.locationMiddle))
+  it should "delete"               in check(delete(Dummy.observationId))
   it should "allF2Only"            in check(allF2Only(Dummy.observationId))
   it should "selectAllEmpty"       in check(selectAllEmpty(Dummy.observationId))
   it should "selectOneEmpty"       in check(selectOneEmpty(Dummy.observationId, Dummy.locationMiddle))

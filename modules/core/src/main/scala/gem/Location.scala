@@ -26,6 +26,14 @@ sealed trait Location extends Product with Serializable {
     * if any.  Beginning and End Locations have no fixed elements.
     */
   protected def minPrefixLength: Int
+
+  final override def toString: String =
+    this match {
+      case Location.Beginning  => "{α}"
+      case Location.Middle(ps) => "{" + ps.map(_.toString).intercalate(",") + "}"
+      case Location.End        => "{ω}"
+    }
+
 }
 
 object Location {
@@ -43,8 +51,6 @@ object Location {
     protected def minPrefixLength: Int =
       0
 
-    override def toString: String =
-      "{α}"
   }
 
   /** A Location that falls somewhere between the Beginning and End.
@@ -62,8 +68,6 @@ object Location {
     protected def minPrefixLength: Int =
       posList.size
 
-    override def toString =
-      toList.mkString("{", ",", "}")
   }
 
   /** A marker for the last Location.  No other Location comes after the End.
@@ -78,8 +82,6 @@ object Location {
     protected def minPrefixLength: Int =
       0
 
-    override def toString: String =
-      "{ω}"
   }
 
   val beginning: Location = Beginning
@@ -87,13 +89,8 @@ object Location {
 
   // Constructors
 
-  private implicit object FoldableSeq extends Foldable[Seq] with Foldable.FromFoldr[Seq] {
-    def foldRight[A, B](fa: Seq[A], z: => B)(f: (A, => B) => B): B =
-      fa.foldRight(z) { (a, b) => f(a, b) }
-  }
-
   def apply(is: Int*): Location =
-    fromFoldable(is)
+    fromFoldable(is.toList)
 
   def fromFoldable[F[_]: Foldable](fi: F[Int]): Location =
     fi.foldRight(IList.empty[Int]) { (i, lst) =>
@@ -107,12 +104,12 @@ object Location {
     * `Location`.
     */
   def unsafeMiddle(is: Int*): Middle =
-    unsafeMiddle(is)
+    unsafeMiddleFromFoldable(is.toList)
 
   /** Assuming not all provided Ints are `Int.MinValue`, produces a `Middle`
     * `Location`.
     */
-  def unsafeMiddle[F[_]: Foldable](fi: F[Int]): Middle =
+  def unsafeMiddleFromFoldable[F[_]: Foldable](fi: F[Int]): Middle =
     fromFoldable(fi) match {
       case m: Middle => m
       case _         => sys.error("Location arguments do not form a Middle position: " + fi.toList.mkString(", "))

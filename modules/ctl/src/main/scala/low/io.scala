@@ -10,9 +10,10 @@ import scalaz.effect._
 /** Low-level constructors for `CtlIO` operations related to system I/O. */
 object io {
 
-  case class Output(exitCode: Int, lines: List[String])
+  final case class Output(exitCode: Int, lines: List[String])
 
-  def exec(cmd: String \/ List[String], f: String => IO[Unit] = (_ => IO.ioUnit)): IO[Output] =
+  @SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures"))
+  def exec(cmd: String \/ List[String], f: String => IO[Unit]): IO[Output] =
     IO {
       import scala.sys.process._
       import collection.mutable.ListBuffer

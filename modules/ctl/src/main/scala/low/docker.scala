@@ -12,9 +12,9 @@ import scalaz._, Scalaz._
 /** Low-level constructors for `CtlIO` operations related to docker. */
 object docker {
 
-  case class Network(hash: String)
-  case class Image(hash: String)
-  case class Container(hash: String)
+  final case class Network(hash: String)
+  final case class Image(hash: String)
+  final case class Container(hash: String)
 
   def docker(args: String*): CtlIO[Output] =
     remote("/usr/local/bin/docker", args : _*)
@@ -39,6 +39,7 @@ object docker {
       case Output(0, List(h)) => Network(h)
     }
 
+  @SuppressWarnings(Array("org.wartremover.warts.TraversableOps")) // .last below
   def pullImage(nameAndVersion: String): CtlIO[Option[Image]] =
     docker("pull", nameAndVersion).require {
       case Output(0, s :: ss) if (s :: ss).last.contains("not found") => None

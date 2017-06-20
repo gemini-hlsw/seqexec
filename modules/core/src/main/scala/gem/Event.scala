@@ -12,22 +12,22 @@ sealed trait Event {
 
 object Event {
 
-  case class StartSlew(       timestamp: Instant, oid: Observation.Id) extends Event
-  case class EndSlew(         timestamp: Instant, oid: Observation.Id) extends Event
+  final case class StartSlew(       timestamp: Instant, oid: Observation.Id) extends Event
+  final case class EndSlew(         timestamp: Instant, oid: Observation.Id) extends Event
 
-  case class StartVisit(      timestamp: Instant, oid: Observation.Id) extends Event
-  case class EndVisit(        timestamp: Instant, oid: Observation.Id) extends Event
+  final case class StartVisit(      timestamp: Instant, oid: Observation.Id) extends Event
+  final case class EndVisit(        timestamp: Instant, oid: Observation.Id) extends Event
 
-  case class StartSequence(   timestamp: Instant, oid: Observation.Id) extends Event
-  case class EndSequence(     timestamp: Instant, oid: Observation.Id) extends Event
+  final case class StartSequence(   timestamp: Instant, oid: Observation.Id) extends Event
+  final case class EndSequence(     timestamp: Instant, oid: Observation.Id) extends Event
 
-  case class PauseObserve(    timestamp: Instant, oid: Observation.Id) extends Event
-  case class ContinueObserve( timestamp: Instant, oid: Observation.Id) extends Event
-  case class AbortObserve(    timestamp: Instant, oid: Observation.Id) extends Event
-  case class StopObserve(     timestamp: Instant, oid: Observation.Id) extends Event
+  final case class PauseObserve(    timestamp: Instant, oid: Observation.Id) extends Event
+  final case class ContinueObserve( timestamp: Instant, oid: Observation.Id) extends Event
+  final case class AbortObserve(    timestamp: Instant, oid: Observation.Id) extends Event
+  final case class StopObserve(     timestamp: Instant, oid: Observation.Id) extends Event
 
-  case class StartIntegration(timestamp: Instant, oid: Observation.Id, step: Int) extends Event
-  case class EndIntegration(  timestamp: Instant, oid: Observation.Id, step: Int) extends Event
+  final case class StartIntegration(timestamp: Instant, oid: Observation.Id, step: Int) extends Event
+  final case class EndIntegration(  timestamp: Instant, oid: Observation.Id, step: Int) extends Event
 
 
   def startSlew(t: Instant, o: Observation.Id): Event       = StartSlew(t, o)

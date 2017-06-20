@@ -11,6 +11,5 @@ final case class TelescopeConfig(p: OffsetP, q: OffsetQ) {
 }
 
 object TelescopeConfig extends ((OffsetP, OffsetQ) => TelescopeConfig) {
-  val Zero = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
+  val Zero: TelescopeConfig = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
 }
-

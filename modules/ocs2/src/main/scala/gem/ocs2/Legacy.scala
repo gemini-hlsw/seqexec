@@ -15,12 +15,16 @@ import Scalaz._
 /** Legacy system (telescope, instrument, observe, calibration) key and parser
   * definitions.
   */
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Legacy {
   sealed abstract class System(val system: String) {
 
     final class Key[A](val name: String, val p: PioParse[A])(implicit ev: TypeTag[A]) {
-      val path = s"$system:$name"
-      val tpe  = Key.clean(ev.tpe.toString)
+
+      val path: String = s"$system:$name"
+
+      @SuppressWarnings(Array("org.wartremover.warts.ToString"))
+      val tpe:  String = Key.clean(ev.tpe.toString)
 
       def rawValue(cm: ConfigMap): PioError \/ String =
         cm.lookup(path) \/> missingKey(name)
@@ -40,6 +44,7 @@ object Legacy {
 
       override def toString: String =
         s"Key[$tpe]($path)"
+
     }
 
     protected object Key {

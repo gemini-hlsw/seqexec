@@ -10,7 +10,7 @@ import scalaz.==>>
 object StepDaoSample extends TimedSample {
   type Result = Location.Middle ==>> Step[DynamicConfig]
 
-  val oid = Observation.Id.unsafeFromString("GS-2016A-Q-102-108")
+  val oid: Observation.Id = Observation.Id.unsafeFromString("GS-2016A-Q-102-108")
 
   override def runl(args: List[String]): ConnectionIO[Result] =
     StepDao.selectAll(oid)

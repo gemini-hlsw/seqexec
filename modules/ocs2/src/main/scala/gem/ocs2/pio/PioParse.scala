@@ -13,10 +13,12 @@ final case class PioParse[A](run: String => Option[A]) {
 }
 
 object PioParse {
-  implicit val FunctorPioParse = new Functor[PioParse] {
-    def map[A, B](pa: PioParse[A])(f: A => B): PioParse[B] =
-      PioParse(pa.run andThen (_.map(f)))
-  }
+
+  implicit val FunctorPioParse: Functor[PioParse] =
+    new Functor[PioParse] {
+      def map[A, B](pa: PioParse[A])(f: A => B): PioParse[B] =
+        PioParse(pa.run andThen (_.map(f)))
+    }
 
   def enum[A](dictionary: (String, A)*): PioParse[A] =
     PioParse(dictionary.toMap.lift)

@@ -18,7 +18,7 @@ sealed trait Command extends Config
 /** Module of constructors of `Command`, and a parser too. */
 object Command {
 
-  case class Deploy(
+  final case class Deploy(
     server: Server,
     deployRev:   String,
     standalone:  Boolean,
@@ -26,10 +26,10 @@ object Command {
     force:       Boolean
   ) extends Command
 
-  case class Ps  (    server: Server, verbose: Boolean) extends Command
-  case class Stop(    server: Server, verbose: Boolean) extends Command
-  case class Log (    server: Server, verbose: Boolean, count: Int) extends Command
-  case class Rollback(server: Server, verbose: Boolean) extends Command
+  final case class Ps  (    server: Server, verbose: Boolean) extends Command
+  final case class Stop(    server: Server, verbose: Boolean) extends Command
+  final case class Log (    server: Server, verbose: Boolean, count: Int) extends Command
+  final case class Rollback(server: Server, verbose: Boolean) extends Command
 
   /**
    * Construct a program to parse commandline `args` into a `Command`, or show help information if

@@ -4,13 +4,14 @@
 package gem
 
 import scalaz._, Scalaz._
+import edu.gemini.spModel.core.ProgramId
 
-case class Program[A](id: Program.Id, title: String, observations: List[A])
+final case class Program[A](id: Program.Id, title: String, observations: List[A])
 
 object Program {
 
-  type Id = edu.gemini.spModel.core.ProgramId
-  val  Id = edu.gemini.spModel.core.ProgramId
+  type Id                 = ProgramId
+  val  Id: ProgramId.type = ProgramId
 
   implicit val ProgramTraverse: Traverse[Program] =
     new Traverse[Program] {
@@ -18,6 +19,7 @@ object Program {
         fa.observations.traverse(f).map(os => fa.copy(observations = os))
     }
 
+  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   implicit val OrderingProgramId: scala.math.Ordering[Id] =
     new scala.math.Ordering[Id] {
       def compare(x: Id, y: Id): Int = {

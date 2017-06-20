@@ -15,30 +15,31 @@ import java.time.Duration
 
 import scalaz._, Scalaz._
 
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
 
   import SmartGcalSpec._
 
   "SmartGcalDao" should "expand smart gcal arc steps" in {
-    runF2Expansion(SmartGcalType.Arc) { (_, steps) =>
+    runF2Expansionʹ(SmartGcalType.Arc) { (_, steps) =>
       verifySteps(GcalLampType.Arc.left, steps)
     }
   }
 
   it should "expand smart gcal flat steps" in {
-    runF2Expansion(SmartGcalType.Flat) { (_, steps) =>
+    runF2Expansionʹ(SmartGcalType.Flat) { (_, steps) =>
       verifySteps(GcalLampType.Flat.left, steps)
     }
   }
 
   it should "expand smart gcal baseline steps" in {
-    runF2Expansion(SmartGcalType.NightBaseline) { (_, steps) =>
+    runF2Expansionʹ(SmartGcalType.NightBaseline) { (_, steps) =>
       verifySteps(GcalBaselineType.Night.right, steps)
     }
   }
 
   it should "fail when there is no corresponding mapping" in {
-    runF2Expansion(SmartGcalType.DayBaseline) { (expansion, steps) =>
+    runF2Expansionʹ(SmartGcalType.DayBaseline) { (expansion, steps) =>
       expansion    shouldEqual noMappingDefined.left[ExpandedSteps]
       steps.values shouldEqual List(SmartGcalStep(f2, SmartGcalType.DayBaseline))
     }
@@ -57,7 +58,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
         _  <- StepDao.insert(oid, loc1, BiasStep(f2))
         ex <- SmartGcalDao.expand(oid, loc1).run
         ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
+        _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
       } yield ex
     }
 
@@ -72,7 +73,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
         _  <- StepDao.insert(oid, loc9, DarkStep(f2))
         _  <- SmartGcalDao.expand(oid, loc2).run
         ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
+        _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
       } yield ss
     }
 
@@ -97,7 +98,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
       } yield a
     }
 
-  private def runF2Expansion(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion =
+  private def runF2Expansionʹ(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion =
     runF2Expansion(t, loc1, loc1)(verify)
 
   private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion = {
@@ -106,7 +107,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
         _  <- StepDao.insert(oid, insertionLoc, SmartGcalStep(f2, t))
         ex <- SmartGcalDao.expand(oid, searchLoc).run
         ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.delete(oid, _) }
+        _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
       } yield (ex, ss)
     }
 

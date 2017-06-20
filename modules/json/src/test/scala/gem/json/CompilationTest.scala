@@ -1,10 +1,11 @@
 package gem
 package json
 
-import gem.config.{ StaticConfig, DynamicConfig } 
+import gem.config.{ StaticConfig, DynamicConfig }
 
 import argonaut._, Argonaut._, ArgonautShapeless._
 
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Null"))
 trait CompilatonTests {
 
   def enumeratedEncode[E: Enumerated]: EncodeJson[E] = implicitly

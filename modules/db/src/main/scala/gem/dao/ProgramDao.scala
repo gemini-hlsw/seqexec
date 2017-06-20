@@ -56,7 +56,7 @@ object ProgramDao {
 
     // StepId has a DISTINCT type due to its check constraint so we need a fine-grained mapping
     // here to satisfy the query checker.
-    private case class Index(toInt: Int)
+    private final case class Index(toInt: Int)
     private object Index {
       implicit val IndexMeta: Meta[Index] =
         Distinct.integer("id_index").xmap(Index(_), _.toInt)
@@ -125,7 +125,7 @@ object ProgramDao {
       sql"""
         UPDATE program
            SET title = ${p.title}
-         WHERE program_id = ${p.id.toString}
+         WHERE program_id = ${p.id}
       """.update
 
   }

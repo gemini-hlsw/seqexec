@@ -27,7 +27,7 @@ object Importer extends DoobieClient {
 
     def datasetTuples(sids: List[Int]): List[(Int, Dataset)] = {
       val sidMap = sids.zipWithIndex.map(_.swap).toMap
-      ds.flatMap { d => sidMap.get(d.label.index - 1).map(_ -> d) }
+      ds.flatMap { d => sidMap.get(d.label.index - 1).map(_ -> d).toList }
     }
 
     val writeDatasets: ConnectionIO[Unit] =

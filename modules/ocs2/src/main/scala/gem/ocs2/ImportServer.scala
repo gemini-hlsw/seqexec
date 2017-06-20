@@ -74,10 +74,10 @@ final class ImportServer(ocsHost: String) {
 }
 
 object ImportServer extends ServerApp {
-  val Log = Logger.getLogger(ImportServer.getClass.getName)
+  private val Log = Logger.getLogger(ImportServer.getClass.getName)
 
   // Port where our http service will run.
-  val port              = 8989
+  val port: Int = 8989
 
   // How long to wait for the import to complete before giving up.
   val timeout: Duration = 30 seconds
@@ -88,9 +88,10 @@ object ImportServer extends ServerApp {
   type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
   type Prog = Program[Obs]
 
-  case class ServerResponse(status: Status, msg: String) {
+  final case class ServerResponse(status: Status, msg: String) {
 
     // Convert to Task[Response] as required by http4s.
+    @SuppressWarnings(Array("org.wartremover.warts.Var"))
     def send: Task[Response] = {
       val enc = EntityEncoder[String]
       var h = enc.headers

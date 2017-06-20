@@ -76,7 +76,7 @@ object PioPath {
     private def lookupParamValues(ns: NodeSeq, name: String): List[Node] =
       for {
         p <- filterByName(ns, name)
-        v <- p.value
+        v <- p.value.toList
       } yield v
 
     def param(name: String): Option[Node] =
@@ -105,25 +105,30 @@ object PioPath {
     def \\* (matchString: String): Listing   = root \\* matchString
   }
 
-  trait SearchPath {
+  sealed trait SearchPath {
     protected def append(symbol: String, matchString: String): SearchPath
 
     def \!  (matchString: String): SearchPath = append("\\!",   matchString)
     def \?  (matchString: String): SearchPath = append("\\?",   matchString)
     def \*  (matchString: String): SearchPath = append("\\*",   matchString)
     def \\* (matchString: String): SearchPath = append("\\\\*", matchString)
+
+    final override def toString: String =
+      this match {
+        case EmptySearchPath          => ""
+        case NonEmptySearchPath(path) => path
+      }
+
   }
 
   final case object EmptySearchPath extends SearchPath {
-    override def toString: String = ""
-
     protected def append(symbol: String, matchString: String): SearchPath =
       NonEmptySearchPath(s"$symbol $matchString")
   }
 
-  final case class NonEmptySearchPath(override val toString: String) extends SearchPath {
+  final case class NonEmptySearchPath(path: String) extends SearchPath {
     protected def append(symbol: String, matchString: String): SearchPath =
-      NonEmptySearchPath(s"$toString $symbol $matchString")
+      NonEmptySearchPath(s"$path $symbol $matchString")
   }
 
   trait Lookup {
@@ -144,8 +149,8 @@ object PioPath {
 
   final case class Attr(name: String) extends Lookup {
     def optional: Node => Option[Node] = _.attr(name)
-    def list:     Node => List[Node]   = _.child.toList.flatMap(_.attr(name))
-    def deepList: Node => List[Node]   = _.descendant.toList.flatMap(_.attr(name))
+    def list:     Node => List[Node]   = _.child.toList.flatMap(_.attr(name).toList)
+    def deepList: Node => List[Node]   = _.descendant.toList.flatMap(_.attr(name).toList)
   }
 
   final case class Param(name: String) extends Lookup {

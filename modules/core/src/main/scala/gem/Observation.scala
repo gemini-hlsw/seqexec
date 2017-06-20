@@ -5,7 +5,7 @@ package gem
 
 import scalaz._, Scalaz._
 
-case class Observation[S, D](
+final case class Observation[S, D](
   id: Observation.Id,
   title: String,
   staticConfig: S,
@@ -13,7 +13,7 @@ case class Observation[S, D](
 
 object Observation {
 
-  case class Id(pid: Program.Id, index: Int) {
+  final case class Id(pid: Program.Id, index: Int) {
     override def toString = s"$pid-$index"
   }
   object Id {

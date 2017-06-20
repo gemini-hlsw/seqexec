@@ -53,6 +53,16 @@ lazy val testLibs = Seq(
   "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test"
 )
 
+lazy val gemWarts =
+  Warts.allBut(
+    Wart.Any,                // false positives
+    Wart.Nothing,            // false positives
+    Wart.Product,            // false positives
+    Wart.Serializable,       // false positives
+    Wart.Recursion,          // false positives
+    Wart.ImplicitConversion  // we know what we're doing
+  )
+
 lazy val commonSettings = Seq(
 
   // These sbt-header settings can't be set in ThisBuild for some reason
@@ -62,6 +72,10 @@ lazy val commonSettings = Seq(
        |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
        |""".stripMargin
   )),
+
+  // Wartremover in compile and test (not in Console)
+  wartremoverErrors in (Compile, compile) := gemWarts,
+  wartremoverErrors in (Test,    compile) := gemWarts,
 
   scalaOrganization := "org.typelevel",
   scalaVersion := "2.12.2-bin-typelevel-4",

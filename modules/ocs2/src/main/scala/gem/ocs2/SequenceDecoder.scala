@@ -93,5 +93,5 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
   def decode(n: Node): PioError \/ List[Step[DynamicConfig]] =
     (n \ "step").toList.scanLeft(EmptyConfigMap) { (m, stepNode) =>
       stepNode.addStepConfig(m)
-    }.tail.traverseU(parseStep)
+    }.drop(1).traverseU(parseStep)
 }

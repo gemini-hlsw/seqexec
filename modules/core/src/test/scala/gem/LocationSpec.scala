@@ -6,6 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import scalaz._, Scalaz._
 import scalaz.Ordering._
 
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
   "Construction" should "trim trailing min values from Middle" in {
     forAll { (l: Location.Middle) =>
