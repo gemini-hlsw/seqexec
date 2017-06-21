@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.model.InstrumentNames
-import edu.gemini.seqexec.model.Model.Instrument
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 
@@ -16,7 +16,7 @@ object SeqexecUI {
   sealed trait SeqexecPages
 
   case object Root extends SeqexecPages
-  case class InstrumentPage(i: Instrument) extends SeqexecPages
+  case class InstrumentPage(i: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
 
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
@@ -24,14 +24,14 @@ object SeqexecUI {
     import dsl._
 
     (emptyRule
-    | staticRoute(root, Root) ~> renderR(r => SequenceArea(RouterProps(InstrumentPage("Flamingos2"), r.narrow)))
-    | dynamicRoute("/" ~ string("[a-zA-Z0-9-]+").caseClass[InstrumentPage]) {
-        case x @ InstrumentPage(i) if InstrumentNames.instruments.list.toList.contains(i) => x
+    | staticRoute(root, Root) ~> renderR(r => SequenceArea(RouterProps(InstrumentPage("Flamingos2", None), r.narrow)))
+    | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option).caseClass[InstrumentPage]) {
+        case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
       } ~> dynRenderR((p, r) => SequenceArea(RouterProps(p, r.narrow[InstrumentPage])))
     )
       .notFound(redirectToPage(Root)(Redirect.Push))
       // Runtime verification that all pages are routed
-      .verify(Root, InstrumentNames.instruments.list.toList.map(InstrumentPage): _*)
+      .verify(Root, InstrumentNames.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
       .renderWith(layout)
       .logToConsole
   }

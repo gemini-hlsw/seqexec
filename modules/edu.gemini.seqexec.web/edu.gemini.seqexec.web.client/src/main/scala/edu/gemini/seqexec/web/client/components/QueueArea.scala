@@ -18,6 +18,7 @@ import org.scalajs.dom.html.TableRow
 import scala.scalajs.js
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
+import scalaz.syntax.std.option._
 
 object QueueTableBody {
   case class Props(router: RouterCtl[InstrumentPage], sequences: ModelProxy[(ClientStatus, LoadedSequences)])
@@ -42,7 +43,7 @@ object QueueTableBody {
 
   def showSequence(p: Props, s: SequenceView): Callback =
     // Request to display the selected sequence
-    p.router.set(InstrumentPage(s.metadata.instrument)) >> p.sequences.dispatchCB(SelectToDisplay(s))
+    p.router.set(InstrumentPage(s.metadata.instrument, s.id.some)) >> p.sequences.dispatchCB(SelectToDisplay(s))
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P { p =>
