@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components
 
-import edu.gemini.seqexec.model.Model.{SequenceId, Instrument}
-import edu.gemini.seqexec.web.client.model.SequencesOnDisplay
+import edu.gemini.seqexec.model.Model.{SequenceId, SequenceView, Instrument}
+import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SelectToDisplay, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.components.SeqexecUI.{InstrumentPage, RouterProps}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -11,18 +11,18 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import scalacss.ScalaCssReact._
-import scalaz.Zipper
 import scalaz.syntax.equal._
 import scalaz.std.string._
+import scalaz.std.option._
 
 /**
   * Menu with tabs
   */
 object TabularMenu {
   case class TabItem(instrument: Instrument, id: Option[SequenceId], isActive: Boolean, dataItem: String, hasError: Boolean)
-  case class Props(router: RouterProps, tabs: List[TabItem])
-
-  def sequencesTabs(router: RouterProps, d: SequencesOnDisplay): Zipper[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, a.sequence().map(_.id), isActive = a.instrument === router.page.i, a.instrument, a.sequence().map(_.hasError).getOrElse(false)))
+  case class Props(router: RouterProps, d: SequencesOnDisplay) {
+    val tabs: List[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, a.sequence().map(_.id), isActive = a.instrument === router.page.i, a.instrument, a.sequence().map(_.hasError).getOrElse(false))).toStream.toList
+  }
 
   private val component = ScalaComponent.builder[Props]("TabularMenu")
     .stateless
@@ -52,14 +52,17 @@ object TabularMenu {
 
         $(ctx.getDOMNode).find(".item").tab(
           JsTabOptions
-            // runNow as we are outside react loop
             .onVisible { (x: Instrument) =>
               val id = ctx.props.tabs.find(_.instrument === x).flatMap(_.id)
-              ctx.props.router.router.set(InstrumentPage(x, id)).runNow()
+              val s: Option[SequenceView] = ctx.props.d.instrumentSequences.toStream.toList.find(_.sequence().map(_.id) === id).flatMap(_.sequence())
+              val updateModelCB = s.map(seq => Callback(SeqexecCircuit.dispatch(SelectToDisplay(seq)))).getOrEmpty
+              val updateRouteCB = ctx.props.router.router.set(InstrumentPage(x, id))
+              // runNow as we are outside react loop
+              (updateModelCB >> updateRouteCB).runNow()
             }
         )
       }
     ).build
 
-  def apply(r: RouterProps, p: SequencesOnDisplay): Unmounted[Props, Unit, Unit] = component(Props(r, sequencesTabs(r, p).toStream.toList))
+  def apply(r: RouterProps, d: SequencesOnDisplay): Unmounted[Props, Unit, Unit] = component(Props(r, d))
 }

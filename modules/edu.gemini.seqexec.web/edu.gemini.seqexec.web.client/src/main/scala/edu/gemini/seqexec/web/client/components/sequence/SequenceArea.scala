@@ -74,6 +74,7 @@ object SequenceTabContent {
   */
 object SequenceTabsBody {
   case class Props(p: RouterProps, s: ClientStatus, d: SequencesOnDisplay)
+
   def tabContents(p: Props): Stream[SequenceTabContent.Props] =
     p.d.instrumentSequences.map { a =>
       SequenceTabContent.Props(isActive = a.instrument === p.p.page.i, p.s, a)}.toStream
@@ -86,15 +87,16 @@ object SequenceTabsBody {
         TabularMenu(p.p, p.d),
         tabContents(p).map(SequenceTabContent.apply).toTagMod
       )
-    )
-    .build
+    ).build
 
-  def apply(page: RouterProps, p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] = component(Props(page, p()._1, p()._2))
+  def apply(page: RouterProps, p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] =
+    component(Props(page, p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
   val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
+
   private val component = ScalaComponent.builder[RouterProps]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
