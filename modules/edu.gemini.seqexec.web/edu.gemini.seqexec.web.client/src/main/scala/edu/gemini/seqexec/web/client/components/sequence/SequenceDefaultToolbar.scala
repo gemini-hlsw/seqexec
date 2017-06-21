@@ -4,6 +4,7 @@ import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.{FormLabel, Label}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -20,6 +21,8 @@ import scalaz.syntax.std.option._
 import scalaz.std.string._
 import scalaz.std.option._
 import scala.concurrent.duration._
+
+import scalacss.ScalaCssReact._
 
 object SequenceObserverField {
   case class Props(s: SequenceView, isLogged: Boolean)
@@ -225,6 +228,62 @@ object SequenceAnonymousToolbar {
               ^.cls := "ui green header",
               "Sequence complete"
             ).when(p.s.status === SequenceState.Completed)
+          )
+        )
+      )
+    ).build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+object StepConfigToolbar {
+  case class Props(s: SequenceView, step: Int)
+
+  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
+
+  private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
+    .stateless
+    .render_P( p =>
+      <.div(
+        <.div(
+          ^.cls := "ui row",
+          <.div(
+            ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
+            <.div(
+              ^.cls := "ui form",
+              <.div(
+                ^.cls := "fields",
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props("Id:", basic = true, color = "red".some))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props(p.s.id, basic = true))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props("Observer:", basic = true, color = "red".some))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props(p.s.metadata.observer.getOrElse("Unknown."), basic = true))
+                )
+              )
+            ),
+            <.h3(
+              ^.cls := "ui green header",
+              "Sequence complete"
+            ).when(p.s.status === SequenceState.Completed)
+          )
+        ),
+        <.div(
+          ^.cls := "row",
+          Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+          <.h5(
+            ^.cls := "ui header",
+            SeqexecStyles.inline,
+            s" Configuration for step ${p.step + 1}"
           )
         )
       )

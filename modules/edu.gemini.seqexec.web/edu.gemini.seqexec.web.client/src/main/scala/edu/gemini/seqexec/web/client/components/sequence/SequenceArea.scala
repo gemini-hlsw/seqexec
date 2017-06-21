@@ -2,44 +2,20 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.web.client.components.{SeqexecStyles, TabularMenu, TextMenuSegment}
+import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
 import edu.gemini.seqexec.web.client.components.SeqexecUI.RouterProps
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
-import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
-import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.ScalazReact._
 
-import scalacss.ScalaCssReact._
 import scalaz.syntax.equal._
 import scalaz.std.string._
-
-object StepConfigToolbar {
-  case class Props(s: SequenceView, step: Int)
-
-  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
-
-  private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
-    .stateless
-    .render_P( p =>
-      <.div(
-        ^.cls := "row",
-        Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
-        <.h5(
-          ^.cls := "ui header",
-          SeqexecStyles.inline,
-          s" Configuration for step ${p.step + 1}"
-        )
-      )
-    ).build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
-}
 
 object SequenceStepsTableContainer {
   case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int])
