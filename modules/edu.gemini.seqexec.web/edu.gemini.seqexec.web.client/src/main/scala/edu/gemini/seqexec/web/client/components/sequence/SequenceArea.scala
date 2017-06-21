@@ -8,7 +8,6 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.divider.Divider
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import japgolly.scalajs.react.vdom.html_<^._
@@ -56,8 +55,8 @@ object SequenceStepsTableContainer {
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)): VdomNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): VdomNode),
-        Divider(),
+        p.stepConfigDisplayed.fold(
+          (if (p.status.isLogged) SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)) else SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.s))): VdomNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): VdomNode),
         StepsTableContainer(StepsTableContainer.Props(p.s, p.status, p.stepConfigDisplayed, s.nextStepToRun, x => $.runState(updateStepToRun(x))))
       )
     }.componentWillMount { f =>

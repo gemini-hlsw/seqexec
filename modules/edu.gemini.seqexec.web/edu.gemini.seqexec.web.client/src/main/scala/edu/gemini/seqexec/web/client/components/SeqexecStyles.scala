@@ -53,9 +53,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     maxHeight(10.3.em)
   }
 
-  val stepsListPane: StyleA = style {
-    maxHeight(24.3.em)
-  }
+  val stepsListPane: StyleA = style (
+    maxHeight(24.3.em),
+    paddingTop(1.em)
+  )
 
   val stepsListBody: StyleA = style() // Marker css
   val stepRunning: StyleA = style() // Marker css

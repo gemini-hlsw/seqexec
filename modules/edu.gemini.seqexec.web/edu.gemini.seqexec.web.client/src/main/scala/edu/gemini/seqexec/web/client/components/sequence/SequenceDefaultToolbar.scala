@@ -5,7 +5,7 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.label.{FormLabel, Label}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -35,7 +35,7 @@ object SequenceObserverField {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(s.currentText =/= p.s.metadata.observer)(updateObserver(p.s, s.currentText.getOrElse("")))
+        case (s, p) => Callback.when(p.isLogged && s.currentText =/= p.s.metadata.observer)(updateObserver(p.s, s.currentText.getOrElse("")))
       }
 
     def setupTimer: Callback =
@@ -44,27 +44,21 @@ object SequenceObserverField {
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val observerEV = StateSnapshot(~s.currentText)(updateState)
-      val idObserverText = p.isLogged ? "Observer" | s"Id: ${p.s.id}, Observer: ${~s.currentText}"
       <.div(
         ^.cls := "ui form",
-          Label(Label.Props("Id:", basic = true, color = "red".some)),
-          Label(Label.Props(p.s.id, basic = true)),
-          Label(Label.Props("Observer:", basic = true, color = "red".some)),
-          Label(Label.Props(~s.currentText, basic = true)),
-          <.div(
-            ^.cls := "field",
-            ^.classSet(
-              "required" -> p.isLogged
-            ),
-            Label(Label.Props(idObserverText, basic = true)),
-            InputEV(InputEV.Props(
-              p.s.metadata.instrument + ".observer",
-              p.s.metadata.instrument + ".observer",
-              observerEV,
-              placeholder = "Observer...",
-              disabled = !p.isLogged,
-              onBlur = _ => submitIfChanged))
-          ).when(p.isLogged)
+        <.div(
+          ^.cls := "field required",
+          FormLabel(FormLabel.Props("Observer"))
+        ),
+        <.div(
+          ^.cls := "field",
+          InputEV(InputEV.Props(
+            p.s.metadata.instrument + ".observer",
+            p.s.metadata.instrument + ".observer",
+            observerEV,
+            placeholder = "Observer...",
+            onBlur = _ => submitIfChanged))
+        )
       )
     }
   }
@@ -104,26 +98,29 @@ object SequenceDefaultToolbar {
     .renderPS{ ($, p, s) =>
       val isLogged = p.status.isLogged
       <.div(
-        ^.cls := "ui column grid",
+        ^.cls := "ui row",
         <.div(
-          ^.cls := "ui row",
+          ^.cls := "ui two column divided grid",
           <.div(
-            ^.cls := "left column bottom aligned eight wide computer ten wide tablet only",
+            ^.cls := "ui left column bottom aligned six wide computer ten wide tablet only",
             <.div(
               ^.cls := "ui form",
               <.div(
-                ^.cls := "field",
-                Label(Label.Props(s"Obs. Id: ${p.s.id}"))
-              ).when(isLogged),
-              <.div(
-                ^.cls := "field",
-                Label(Label.Props(s"Name: ${p.s.metadata.name}")).when(isLogged)
+                ^.cls := "fields",
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props("Id:", basic = true, color = "red".some))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props(p.s.id, basic = true))
+                )
               )
             ),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
-            ).when(isLogged && p.s.status === SequenceState.Completed),
+            ).when(p.s.status === SequenceState.Completed),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
@@ -133,7 +130,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-            ).when(isLogged && p.s.hasError),
+            ).when(p.s.hasError),
             Button(
               Button.Props(
                 icon = Some(IconRefresh),
@@ -142,7 +139,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(s"Sync sequence"),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               s" Sync"
-            ).when(isLogged && p.s.status === SequenceState.Idle),
+            ).when(p.s.status === SequenceState.Idle),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
@@ -152,7 +149,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
-            ).when(isLogged && p.s.status === SequenceState.Idle),
+            ).when(p.s.status === SequenceState.Idle),
             Button(
               Button.Props(
                 icon = Some(IconPause),
@@ -162,7 +159,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some("Pause the sequence after the current step completes"),
                 disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested),
               "Pause"
-            ).when(isLogged && p.s.status === SequenceState.Running),
+            ).when(p.s.status === SequenceState.Running),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
@@ -171,22 +168,67 @@ object SequenceDefaultToolbar {
                 color = Some("teal"),
                 disabled = !p.status.isConnected || s.syncRequested),
               "Continue from step 1"
-            ).when(isLogged && p.s.status === SequenceState.Paused)
+            ).when(p.s.status === SequenceState.Paused)
           ),
           <.div(
-            ^.cls := "right column",
+            ^.cls := "ui right column",
             ^.classSet(
-              "eight wide computer six wide tablet sixteen wide mobile" -> isLogged,
-              "sixteen wide" -> !isLogged
-            ),
+              "ten wide computer eight wide tablet sixteen wide mobile" -> isLogged,
+              "sixteen wide" -> !isLogged),
             SequenceObserverField(SequenceObserverField.Props(p.s, isLogged))
           )
         )
-    )
+      )
     }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
       Callback.when(f.nextProps.s.status === SequenceState.Running && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
+}
+
+object SequenceAnonymousToolbar {
+  case class Props(s: SequenceView)
+
+  private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
+    .stateless
+    .render_P ( p =>
+      <.div(
+        ^.cls := "ui column",
+        <.div(
+          ^.cls := "ui row",
+          <.div(
+            ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
+            <.div(
+              ^.cls := "ui form",
+              <.div(
+                ^.cls := "fields",
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props("Id:", basic = true, color = "red".some))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props(p.s.id, basic = true))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props("Observer:", basic = true, color = "red".some))
+                ),
+                <.div(
+                  ^.cls := "field",
+                  Label(Label.Props(p.s.metadata.observer.getOrElse("Unknown."), basic = true))
+                )
+              )
+            ),
+            <.h3(
+              ^.cls := "ui green header",
+              "Sequence complete"
+            ).when(p.s.status === SequenceState.Completed)
+          )
+        )
+      )
+    ).build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
