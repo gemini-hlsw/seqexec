@@ -174,24 +174,24 @@ BottomSpectrum	bspec	Bottom Spectrum	1	256	6144	1024	t
 
 
 --
--- Name: e_gmos_detector_order; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_gmos_disperser_order; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE e_gmos_detector_order (
+CREATE TABLE e_gmos_disperser_order (
     id               identifier            PRIMARY KEY,
     short_name       character varying(10) NOT NULL,
     long_name        character varying(10) NOT NULL,
     count            smallint              NOT NULL
 );
 
-ALTER TABLE e_gmos_detector_order OWNER TO postgres;
+ALTER TABLE e_gmos_disperser_order OWNER TO postgres;
 
 
 --
 -- Data for Name: e_gmos_detector_order; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_gmos_detector_order (id, short_name, long_name, count) FROM stdin;
+COPY e_gmos_disperser_order (id, short_name, long_name, count) FROM stdin;
 Zero	0	Zero	0
 One	1	One	1
 Two	2	Two	2
