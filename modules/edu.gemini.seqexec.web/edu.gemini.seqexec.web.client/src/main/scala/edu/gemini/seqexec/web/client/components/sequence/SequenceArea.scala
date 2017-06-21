@@ -31,8 +31,9 @@ object SequenceStepsTableContainer {
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui raised secondary segment",
-        p.stepConfigDisplayed.fold(
-          (if (p.status.isLogged) SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)) else SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.s))): VdomNode)(step => StepConfigToolbar(StepConfigToolbar.Props(p.s, step)): VdomNode),
+        p.stepConfigDisplayed.fold{
+          (if (p.status.isLogged) SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.s, p.status, s.nextStepToRun)) else SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.s))): VdomNode}
+          (step => StepConfigToolbar(StepConfigToolbar.Props(p.s, p.status.isLogged,step)): VdomNode),
         StepsTableContainer(StepsTableContainer.Props(p.s, p.status, p.stepConfigDisplayed, s.nextStepToRun, x => $.runState(updateStepToRun(x))))
       )
     }.componentWillMount { f =>

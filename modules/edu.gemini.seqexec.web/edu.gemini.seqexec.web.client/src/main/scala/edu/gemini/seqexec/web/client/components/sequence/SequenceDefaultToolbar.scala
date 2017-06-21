@@ -24,6 +24,39 @@ import scala.concurrent.duration._
 
 import scalacss.ScalaCssReact._
 
+object SequenceInfo {
+  case class Props(s: SequenceView, isLogged: Boolean)
+
+  private def component = ScalaComponent.builder[Props]("SequenceInfo")
+    .stateless
+    .render_P ( p =>
+      <.div(
+        ^.cls := "ui form",
+        <.div(
+          ^.cls := "fields",
+          <.div(
+            ^.cls := "field",
+            Label(Label.Props("Id:", basic = true, color = "red".some))
+          ),
+          <.div(
+            ^.cls := "field",
+            Label(Label.Props(p.s.id, basic = true))
+          ),
+          <.div(
+            ^.cls := "field",
+            Label(Label.Props("Observer:", basic = true, color = "red".some))
+          ).unless(p.isLogged),
+          <.div(
+            ^.cls := "field",
+            Label(Label.Props(p.s.metadata.observer.getOrElse("Unknown."), basic = true))
+          ).unless(p.isLogged)
+        )
+      )
+    ).build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
 object SequenceObserverField {
   case class Props(s: SequenceView, isLogged: Boolean)
 
@@ -106,20 +139,7 @@ object SequenceDefaultToolbar {
           ^.cls := "ui two column divided grid",
           <.div(
             ^.cls := "ui left column bottom aligned six wide computer ten wide tablet only",
-            <.div(
-              ^.cls := "ui form",
-              <.div(
-                ^.cls := "fields",
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props("Id:", basic = true, color = "red".some))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props(p.s.id, basic = true))
-                )
-              )
-            ),
+            SequenceInfo(SequenceInfo.Props(p.s, isLogged)),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
@@ -202,28 +222,7 @@ object SequenceAnonymousToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            <.div(
-              ^.cls := "ui form",
-              <.div(
-                ^.cls := "fields",
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props("Id:", basic = true, color = "red".some))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props(p.s.id, basic = true))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props("Observer:", basic = true, color = "red".some))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props(p.s.metadata.observer.getOrElse("Unknown."), basic = true))
-                )
-              )
-            ),
+            SequenceInfo(SequenceInfo.Props(p.s, false)),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
@@ -237,7 +236,7 @@ object SequenceAnonymousToolbar {
 }
 
 object StepConfigToolbar {
-  case class Props(s: SequenceView, step: Int)
+  case class Props(s: SequenceView, isLogged: Boolean, step: Int)
 
   def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
 
@@ -249,28 +248,7 @@ object StepConfigToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            <.div(
-              ^.cls := "ui form",
-              <.div(
-                ^.cls := "fields",
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props("Id:", basic = true, color = "red".some))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props(p.s.id, basic = true))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props("Observer:", basic = true, color = "red".some))
-                ),
-                <.div(
-                  ^.cls := "field",
-                  Label(Label.Props(p.s.metadata.observer.getOrElse("Unknown."), basic = true))
-                )
-              )
-            ),
+            SequenceInfo(SequenceInfo.Props(p.s, p.isLogged)),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
