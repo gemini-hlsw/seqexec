@@ -7,7 +7,9 @@ import sbt.Keys._
 
 name := Settings.Definitions.name
 
-scalaVersion in ThisBuild := Settings.LibraryVersions.scala
+scalaOrganization in ThisBuild := "org.typelevel"
+
+scalaVersion in ThisBuild := Settings.LibraryVersions.scalaVersion
 
 scalacOptions in ThisBuild ++= Settings.Definitions.scalacOptions
 

@@ -27,7 +27,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scala        = "2.11.11"
+    val scalaVersion = "2.11.11-bin-typelevel-4"
 
     // ScalaJS libraries
     val scalaDom     = "0.9.2"
