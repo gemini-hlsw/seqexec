@@ -216,6 +216,124 @@ object Parsers {
     )
   }
 
+
+  object Gmos {
+    import GmosAdc._
+
+    val adc: PioParse[Option[GmosAdc]] = enum(
+      "NONE"        -> Option.empty[GmosAdc],
+      "BEST_STATIC" -> Some(BestStatic),
+      "FOLLOW"      -> Some(Follow)
+    )
+
+
+    import GmosAmpCount._
+
+    val ampCount: PioParse[GmosAmpCount] = enum(
+      "THREE"  -> Three,
+      "SIX"    -> Six,
+      "TWELVE" -> Twelve
+    )
+
+
+    import GmosAmpGain._
+
+    val ampGainTable: List[(String, String, GmosAmpGain)] =
+      List(
+        ("LOW",  "Low",  Low ),
+        ("HIGH", "High", High)
+      )
+
+    val ampGain: PioParse[GmosAmpGain] =
+      fstParser(ampGainTable)
+
+    val ampGainDisplayValue: PioParse[GmosAmpGain] =
+      sndParser(ampGainTable)
+
+
+    import GmosAmpReadMode._
+
+    val ampReadMode: PioParse[GmosAmpReadMode] = enum(
+      "SLOW" -> Slow,
+      "FAST" -> Fast
+    )
+
+
+    import GmosBinning._
+
+    val binningTable: List[(String, String, GmosBinning)] =
+      List(
+        ("One",  "1", One ),
+        ("Two",  "2", Two ),
+        ("Four", "4", Four)
+      )
+
+    val binning: PioParse[GmosBinning] =
+      fstParser(binningTable)
+
+    val binningDisplayValue: PioParse[GmosBinning] =
+      sndParser(binningTable)
+
+
+    import GmosBuiltinRoi._
+
+    val builtinRoi: PioParse[Option[GmosBuiltinRoi]] = enum(
+      "CUSTOM"           -> Option.empty[GmosBuiltinRoi],
+      "FULL_FRAME"       -> Some(FullFrame      ),
+      "CCD2"             -> Some(Ccd2           ),
+      "CENTRAL_SPECTRUM" -> Some(CentralSpectrum),
+      "CENTRAL_STAMP"    -> Some(CentralStamp   ),
+      "TOP_SPECTRUM"     -> Some(TopSpectrum    ),
+      "BOTTOM_SPECTRUM"  -> Some(BottomSpectrum ),
+    )
+
+
+    import GmosCustomSlitWidth._
+
+    val customSlitWidth: PioParse[Option[GmosCustomSlitWidth]] = enum(
+      "OTHER"             -> Option.empty[GmosCustomSlitWidth],
+      "CUSTOM_WIDTH_0_25" -> Some(CustomWidth_0_25),
+      "CUSTOM_WIDTH_0_50" -> Some(CustomWidth_0_50),
+      "CUSTOM_WIDTH_0_75" -> Some(CustomWidth_0_75),
+      "CUSTOM_WIDTH_1_00" -> Some(CustomWidth_1_00),
+      "CUSTOM_WIDTH_1_50" -> Some(CustomWidth_1_50),
+      "CUSTOM_WIDTH_2_00" -> Some(CustomWidth_2_00),
+      "CUSTOM_WIDTH_5_00" -> Some(CustomWidth_5_00)
+    )
+
+
+    import GmosDetector._
+
+    val detector: PioParse[GmosDetector] = enum(
+      "E2V"       -> E2V,
+      "HAMAMATSU" -> HAMAMATSU
+    )
+
+
+    val disperserOrder: PioParse[GmosDisperserOrder] = enum(
+      "ZERO" -> GmosDisperserOrder.Zero,
+      "ONE"  -> GmosDisperserOrder.One,
+      "TWO"  -> GmosDisperserOrder.Two
+    )
+
+
+    val dtax: PioParse[GmosDtax] = enum(
+      "MSIX"   -> GmosDtax.MinusSix,
+      "MFIVE"  -> GmosDtax.MinusFive,
+      "MFOUR"  -> GmosDtax.MinusFour,
+      "MTHREE" -> GmosDtax.MinusThree,
+      "MTWO"   -> GmosDtax.MinusTwo,
+      "MONE"   -> GmosDtax.MinusOne,
+      "ZERO"   -> GmosDtax.Zero,
+      "ONE"    -> GmosDtax.One,
+      "TWO"    -> GmosDtax.Two,
+      "THREE"  -> GmosDtax.Three,
+      "FOUR"   -> GmosDtax.Four,
+      "FIVE"   -> GmosDtax.Five,
+      "SIX"    -> GmosDtax.Six
+    )
+  }
+
   object GmosNorth {
     import GmosNorthDisperser._
 

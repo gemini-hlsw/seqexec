@@ -15,7 +15,6 @@ ALTER TABLE e_gmos_adc OWNER TO postgres;
 --
 
 COPY e_gmos_adc (id, short_name, long_name) FROM stdin;
-None	None	No Correction
 BestStatic	Best Static	Best Static Correction
 Follow	Follow	Follow During Exposure
 \.
