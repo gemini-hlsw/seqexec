@@ -21,17 +21,17 @@ package object http4s {
         <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
         <meta name="description" content="Seqexec"/>
         <meta name="author" content="Gemini Software Group"/>
-        <link rel="icon" href={s"images/launcher.${builtAtMillis}.ico"}/>
+        <link rel="icon" href={s"/images/launcher.${builtAtMillis}.ico"}/>
 
         <!-- Add to homescreen for Safari on iOS -->
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
         <meta name="apple-mobile-web-app-title" content="Seqexec"/>
-        <link rel="apple-touch-icon-precomposed" href={s"images/launcher.${builtAtMillis}.png"}/>
+        <link rel="apple-touch-icon-precomposed" href={s"/images/launcher.${builtAtMillis}.png"}/>
 
         <title>Seqexec</title>
 
-        <link rel="stylesheet" href={s"css/semantic.${builtAtMillis}.css"}/>
+        <link rel="stylesheet" href={s"/css/semantic.${builtAtMillis}.css"}/>
         <style>{style.stripMargin}</style>
       </head>
 
@@ -40,8 +40,8 @@ package object http4s {
         <div id="content">
         </div>
 
-        <script src={deps}></script>
-        <script src={seqexecScript}></script>
+        <script src={s"/$deps"}></script>
+        <script src={s"/$seqexecScript"}></script>
         <script type="text/javascript">
           edu.gemini.seqexec.web.client.SeqexecApp().main();
         </script>
