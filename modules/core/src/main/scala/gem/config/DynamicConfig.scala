@@ -8,6 +8,8 @@ import gem.enum._
 
 import java.time.Duration
 
+import scalaz._
+
 sealed trait SmartGcalKey
 
 sealed abstract class DynamicConfig extends Product with Serializable {
@@ -32,8 +34,6 @@ object DynamicConfig {
 
 final case class AcqCamDynamicConfig()   extends DynamicConfig.Impl(Instrument.AcqCam)
 final case class BhrosDynamicConfig()    extends DynamicConfig.Impl(Instrument.Bhros)
-final case class GmosNDynamicConfig()    extends DynamicConfig.Impl(Instrument.GmosN)
-final case class GmosSDynamicConfig()    extends DynamicConfig.Impl(Instrument.GmosS)
 final case class GnirsDynamicConfig()    extends DynamicConfig.Impl(Instrument.Gnirs)
 final case class GpiDynamicConfig()      extends DynamicConfig.Impl(Instrument.Gpi)
 final case class GsaoiDynamicConfig()    extends DynamicConfig.Impl(Instrument.Gsaoi)
@@ -67,3 +67,39 @@ final case class F2DynamicConfig(
   def key: F2SmartGcalKey =
     F2SmartGcalKey(disperser, filter, fpu)
 }
+
+import Gmos._
+
+final case class GmosNorthDynamicConfig(
+  common:  GmosCommonDynamicConfig,
+  grating: Option[GmosNorthGrating],
+  filter:  Option[GmosNorthFilter],
+  fpu:     Option[GmosCustomMask \/ GmosNorthFpu],
+) extends DynamicConfig {
+
+  type I = Instrument.GmosN.type
+  def instrument: I = valueOf[I]
+}
+
+object GmosNorthDynamicConfig {
+  val Default: GmosNorthDynamicConfig =
+    GmosNorthDynamicConfig(GmosCommonDynamicConfig.Default, None, None, None)
+}
+
+
+final case class GmosSouthDynamicConfig(
+  common:  GmosCommonDynamicConfig,
+  grating: Option[GmosSouthGrating],
+  filter:  Option[GmosSouthFilter],
+  fpu:     Option[GmosCustomMask \/ GmosSouthFpu],
+) extends DynamicConfig {
+
+  type I = Instrument.GmosS.type
+  def instrument: I = valueOf[I]
+}
+
+object GmosSouthDynamicConfig {
+  val Default: GmosSouthDynamicConfig =
+    GmosSouthDynamicConfig(GmosCommonDynamicConfig.Default, None, None, None)
+}
+

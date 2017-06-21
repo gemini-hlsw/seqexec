@@ -25,18 +25,18 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Flamingos2 =>
         Legacy.Instrument.MosPreImaging.parse(cm).map(F2StaticConfig(_))
 
-      case Instrument.GmosN      => GmosNStaticConfig().right
-      case Instrument.GmosS      => GmosSStaticConfig().right
-      case Instrument.Gnirs      => GnirsStaticConfig().right
-      case Instrument.Gpi        => GpiStaticConfig().right
-      case Instrument.Gsaoi      => GsaoiStaticConfig().right
-      case Instrument.Michelle   => MichelleStaticConfig().right
-      case Instrument.Nici       => NiciStaticConfig().right
-      case Instrument.Nifs       => NifsStaticConfig().right
-      case Instrument.Niri       => NiriStaticConfig().right
-      case Instrument.Phoenix    => PhoenixStaticConfig().right
-      case Instrument.Trecs      => TrecsStaticConfig().right
-      case Instrument.Visitor    => VisitorStaticConfig().right
+      case Instrument.GmosN      => GmosNorthStaticConfig.Default.right
+      case Instrument.GmosS      => GmosSouthStaticConfig.Default.right
+      case Instrument.Gnirs      => GnirsStaticConfig()          .right
+      case Instrument.Gpi        => GpiStaticConfig()            .right
+      case Instrument.Gsaoi      => GsaoiStaticConfig()          .right
+      case Instrument.Michelle   => MichelleStaticConfig()       .right
+      case Instrument.Nici       => NiciStaticConfig()           .right
+      case Instrument.Nifs       => NifsStaticConfig()           .right
+      case Instrument.Niri       => NiriStaticConfig()           .right
+      case Instrument.Phoenix    => PhoenixStaticConfig()        .right
+      case Instrument.Trecs      => TrecsStaticConfig()          .right
+      case Instrument.Visitor    => VisitorStaticConfig()        .right
     }
 
   def decode(n: Node): PioError \/ StaticConfig =

@@ -74,8 +74,8 @@ object StepDao {
         case Instrument.AcqCam     => point(AcqCamDynamicConfig())
         case Instrument.Bhros      => point(BhrosDynamicConfig())
         case Instrument.Flamingos2 => oneF2Only(oid, loc).widen[DynamicConfig]
-        case Instrument.GmosN      => point(GmosNDynamicConfig())
-        case Instrument.GmosS      => point(GmosSDynamicConfig())
+        case Instrument.GmosN      => point(GmosNorthDynamicConfig.Default)
+        case Instrument.GmosS      => point(GmosSouthDynamicConfig.Default)
         case Instrument.Gnirs      => point(GnirsDynamicConfig())
         case Instrument.Gpi        => point(GpiDynamicConfig())
         case Instrument.Gsaoi      => point(GsaoiDynamicConfig())
@@ -107,8 +107,8 @@ object StepDao {
         case Instrument.AcqCam     => point(AcqCamDynamicConfig())
         case Instrument.Bhros      => point(BhrosDynamicConfig())
         case Instrument.Flamingos2 => allF2Only(oid).map(_.widen[DynamicConfig])
-        case Instrument.GmosN      => point(GmosNDynamicConfig())
-        case Instrument.GmosS      => point(GmosSDynamicConfig())
+        case Instrument.GmosN      => point(GmosNorthDynamicConfig.Default)
+        case Instrument.GmosS      => point(GmosSouthDynamicConfig.Default)
         case Instrument.Gnirs      => point(GnirsDynamicConfig())
         case Instrument.Gpi        => point(GpiDynamicConfig())
         case Instrument.Gsaoi      => point(GsaoiDynamicConfig())
@@ -146,21 +146,21 @@ object StepDao {
 
   private def insertConfigSlice(id: Int, i: DynamicConfig): ConnectionIO[Int] =
     i match {
-      case _: AcqCamDynamicConfig   => 0.point[ConnectionIO]
-      case _: BhrosDynamicConfig    => 0.point[ConnectionIO]
-      case f2: F2DynamicConfig      => Statements.insertF2Config(id, f2).run
-      case _: GmosNDynamicConfig    => 0.point[ConnectionIO]
-      case _: GmosSDynamicConfig    => 0.point[ConnectionIO]
-      case _: GnirsDynamicConfig    => 0.point[ConnectionIO]
-      case _: GpiDynamicConfig      => 0.point[ConnectionIO]
-      case _: GsaoiDynamicConfig    => 0.point[ConnectionIO]
-      case _: MichelleDynamicConfig => 0.point[ConnectionIO]
-      case _: NiciDynamicConfig     => 0.point[ConnectionIO]
-      case _: NifsDynamicConfig     => 0.point[ConnectionIO]
-      case _: NiriDynamicConfig     => 0.point[ConnectionIO]
-      case _: PhoenixDynamicConfig  => 0.point[ConnectionIO]
-      case _: TrecsDynamicConfig    => 0.point[ConnectionIO]
-      case _: VisitorDynamicConfig  => 0.point[ConnectionIO]
+      case _: AcqCamDynamicConfig    => 0.point[ConnectionIO]
+      case _: BhrosDynamicConfig     => 0.point[ConnectionIO]
+      case f2: F2DynamicConfig       => Statements.insertF2Config(id, f2).run
+      case _: GmosNorthDynamicConfig => 0.point[ConnectionIO]
+      case _: GmosSouthDynamicConfig => 0.point[ConnectionIO]
+      case _: GnirsDynamicConfig     => 0.point[ConnectionIO]
+      case _: GpiDynamicConfig       => 0.point[ConnectionIO]
+      case _: GsaoiDynamicConfig     => 0.point[ConnectionIO]
+      case _: MichelleDynamicConfig  => 0.point[ConnectionIO]
+      case _: NiciDynamicConfig      => 0.point[ConnectionIO]
+      case _: NifsDynamicConfig      => 0.point[ConnectionIO]
+      case _: NiriDynamicConfig      => 0.point[ConnectionIO]
+      case _: PhoenixDynamicConfig   => 0.point[ConnectionIO]
+      case _: TrecsDynamicConfig     => 0.point[ConnectionIO]
+      case _: VisitorDynamicConfig   => 0.point[ConnectionIO]
     }
 
   // The type we get when we select the fully joined step

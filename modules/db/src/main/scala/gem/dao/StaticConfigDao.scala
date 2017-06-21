@@ -23,21 +23,21 @@ object StaticConfigDao {
 
   private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Int] =
     s match {
-      case _: AcqCamStaticConfig   => 0.point[ConnectionIO]
-      case _: BhrosStaticConfig    => 0.point[ConnectionIO]
-      case f2: F2StaticConfig      => Statements.insertF2(id, f2).run
-      case _: GmosNStaticConfig    => 0.point[ConnectionIO]
-      case _: GmosSStaticConfig    => 0.point[ConnectionIO]
-      case _: GnirsStaticConfig    => 0.point[ConnectionIO]
-      case _: GpiStaticConfig      => 0.point[ConnectionIO]
-      case _: GsaoiStaticConfig    => 0.point[ConnectionIO]
-      case _: MichelleStaticConfig => 0.point[ConnectionIO]
-      case _: NiciStaticConfig     => 0.point[ConnectionIO]
-      case _: NifsStaticConfig     => 0.point[ConnectionIO]
-      case _: NiriStaticConfig     => 0.point[ConnectionIO]
-      case _: PhoenixStaticConfig  => 0.point[ConnectionIO]
-      case _: TrecsStaticConfig    => 0.point[ConnectionIO]
-      case _: VisitorStaticConfig  => 0.point[ConnectionIO]
+      case _: AcqCamStaticConfig    => 0.point[ConnectionIO]
+      case _: BhrosStaticConfig     => 0.point[ConnectionIO]
+      case f2: F2StaticConfig       => Statements.insertF2(id, f2).run
+      case _: GmosNorthStaticConfig => 0.point[ConnectionIO]
+      case _: GmosSouthStaticConfig => 0.point[ConnectionIO]
+      case _: GnirsStaticConfig     => 0.point[ConnectionIO]
+      case _: GpiStaticConfig       => 0.point[ConnectionIO]
+      case _: GsaoiStaticConfig     => 0.point[ConnectionIO]
+      case _: MichelleStaticConfig  => 0.point[ConnectionIO]
+      case _: NiciStaticConfig      => 0.point[ConnectionIO]
+      case _: NifsStaticConfig      => 0.point[ConnectionIO]
+      case _: NiriStaticConfig      => 0.point[ConnectionIO]
+      case _: PhoenixStaticConfig   => 0.point[ConnectionIO]
+      case _: TrecsStaticConfig     => 0.point[ConnectionIO]
+      case _: VisitorStaticConfig   => 0.point[ConnectionIO]
     }
 
   def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
@@ -50,8 +50,8 @@ object StaticConfigDao {
 
       case Instrument.Flamingos2 => Statements.selectF2(sid).unique.widen[StaticConfig]
 
-      case Instrument.GmosN      => point(GmosNStaticConfig())
-      case Instrument.GmosS      => point(GmosSStaticConfig())
+      case Instrument.GmosN      => point(GmosNorthStaticConfig.Default)
+      case Instrument.GmosS      => point(GmosSouthStaticConfig.Default)
       case Instrument.Gnirs      => point(GnirsStaticConfig())
       case Instrument.Gpi        => point(GpiStaticConfig())
       case Instrument.Gsaoi      => point(GsaoiStaticConfig())
