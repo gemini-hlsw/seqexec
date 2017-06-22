@@ -87,6 +87,34 @@ object Legacy {
       val ReadMode    = Key("readMode"   )(Parsers.Flamingos2.readMode   )
       val WindowCover = Key("windowCover")(Parsers.Flamingos2.windowCover)
     }
+
+    object Gmos {
+      val Adc             = Key("adc"                 )(Parsers.Gmos.adc            )
+      val AmpCount        = Key("ampCount"            )(Parsers.Gmos.ampCount       )
+      val AmpGain         = Key("gainChoice"          )(Parsers.Gmos.ampGain        )
+      val AmpReadMode     = Key("ampReadMode"         )(Parsers.Gmos.ampReadMode    )
+      val BuiltinRoi      = Key("builtinROI"          )(Parsers.Gmos.builtinRoi     )
+      val CustomSlitWidth = Key("customSlitWidth"     )(Parsers.Gmos.customSlitWidth)
+      val Detector        = Key("detectorManufacturer")(Parsers.Gmos.detector       )
+      val DisperserOrder  = Key("disperserOrder"      )(Parsers.Gmos.disperserOrder )
+      val Dtax            = Key("dtaXOffset"          )(Parsers.Gmos.dtax           )
+      val XBinning        = Key("ccdXBinning"         )(Parsers.Gmos.binning        )
+      val YBinning        = Key("ccdYBinning"         )(Parsers.Gmos.binning        )
+    }
+
+    object GmosNorth {
+      val Disperser       = Key("disperser")(Parsers.GmosNorth.disperser )
+      val Filter          = Key("filter"   )(Parsers.GmosNorth.filter    )
+      val Fpu             = Key("fpu"      )(Parsers.GmosNorth.fpu       )
+      val StageMode       = Key("stageMode")(Parsers.GmosNorth.stageMode )
+    }
+
+    object GmosSouth {
+      val Disperser       = Key("disperser")(Parsers.GmosSouth.disperser )
+      val Filter          = Key("filter"   )(Parsers.GmosSouth.filter    )
+      val Fpu             = Key("fpu"      )(Parsers.GmosSouth.fpu       )
+      val StageMode       = Key("stageMode")(Parsers.GmosSouth.stageMode )
+    }
   }
 
   object Calibration extends System("calibration") {
