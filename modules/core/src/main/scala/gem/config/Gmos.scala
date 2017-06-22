@@ -32,11 +32,11 @@ object Gmos {
   }
 
   final case class GmosCcdReadout(
-    xBin:     GmosBinning,
-    yBin:     GmosBinning,
-    count:    GmosAmpCount,
-    gain:     GmosAmpGain,
-    readMode: GmosAmpReadMode
+    xBinning:    GmosBinning,
+    yBinning:    GmosBinning,
+    ampCount:    GmosAmpCount,
+    ampGain:     GmosAmpGain,
+    ampReadMode: GmosAmpReadMode
   )
 
   object GmosCcdReadout {
@@ -75,7 +75,7 @@ object Gmos {
   /** GMOS grating central wavelength.  For now, just a value class wrapper
     * around a Double.  This should be switched to Fixed / squants?
     */
-  final class GmosCentralWavelength(val nm: Double) extends AnyVal
+  final case class GmosCentralWavelength(val nm: Double) extends AnyVal
 
   /** GMOS-N grating configuration.  These are grouped because they only apply
     * using a grating.
@@ -90,7 +90,7 @@ object Gmos {
     * using a grating.
     */
   final case class GmosSouthGrating(
-    disperser:  GmosNorthDisperser,
+    disperser:  GmosSouthDisperser,
     order:      GmosDisperserOrder,
     wavelength: GmosCentralWavelength
   )

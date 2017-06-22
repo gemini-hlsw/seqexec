@@ -323,11 +323,46 @@ CREATE TABLE static_gmos_south (
 ALTER TABLE static_gmos_south OWNER TO postgres;
 
 
+--
+-- Name: step_gmos_common; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE step_gmos_common (
+    step_id       integer      PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    x_binning     identifier   NOT NULL    REFERENCES e_gmos_binning,
+    y_binning     identifier   NOT NULL    REFERENCES e_gmos_binning,
+    amp_count     identifier   NOT NULL    REFERENCES e_gmos_amp_count,
+    amp_gain      identifier   NOT NULL    REFERENCES e_gmos_amp_gain,
+    amp_read_mode identifier   NOT NULL    REFERENCES e_gmos_amp_read_mode,
+    dtax          identifier   NOT NULL    REFERENCES e_gmos_dtax,
+    exposure_time milliseconds NOT NULL
+);
+
+ALTER TABLE step_gmos_common OWNER TO postgres;
 
 --
+-- Name: step_gmos_north; Type: TABLE; Schema: public; Owner: postgres
 --
---
---
+
+CREATE TABLE step_gmos_north (
+    step_id           integer      PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    disperser         identifier               REFERENCES e_gmos_north_disperser,
+    disperser_order   identifier               REFERENCES e_gmos_disperser_order,
+    wavelength        numeric(6,2),
+    filter            identifier               REFERENCES e_gmos_north_filter,
+    mdf_file_name     character varying(32),
+    custom_slit_width identifier               REFERENCES e_gmos_custom_slit_width,
+    fpu               identifier               REFERENCES e_gmos_north_fpu,
+    CONSTRAINT grating_all_or_none
+      CHECK ((disperser IS     NULL AND disperser_order IS     NULL AND wavelength IS     NULL) OR
+             (disperser IS NOT NULL AND disperser_order IS NOT NULL AND wavelength IS NOT NULL)),
+    CONSTRAINT custom_mask_all_or_none
+      CHECK ((mdf_file_name IS     NULL AND custom_slit_width IS     NULL) OR
+             (mdf_file_name IS NOT NULL AND custom_slit_width IS NOT NULL))
+);
+
+ALTER TABLE step_gmos_north OWNER TO postgres;
+
 ----
 ---- Name: step_gmos_north; Type: TABLE; Schema: public; Owner: postgres
 ----

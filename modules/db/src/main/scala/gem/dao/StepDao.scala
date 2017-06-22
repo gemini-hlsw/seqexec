@@ -262,6 +262,63 @@ object StepDao {
          WHERE s.observation_id = $oid AND s.location = $loc
       """.query[F2DynamicConfig]
 
+    final case class GmosNorthDynamicCrutch(
+      disperser:       Option[GmosNorthDisperser],
+      disperserOrder:  Option[GmosDisperserOrder],
+      wavelength:      Option[Double],
+      filter:          Option[GmosNorthFilter],
+      mdfFileName:     Option[String],
+      customSlitWidth: Option[GmosCustomSlitWidth],
+      builtin:         Option[GmosNorthFpu]
+    ) {
+      import Gmos._
+
+      def toDynamicConfig(common: GmosCommonDynamicConfig): GmosNorthDynamicConfig = {
+        val grating: Option[GmosNorthGrating] =
+          for {
+            d <- disperser
+            o <- disperserOrder
+            w <- wavelength
+          } yield GmosNorthGrating(d, o, GmosCentralWavelength(w))
+
+        val customMask: Option[GmosCustomMask] =
+          for {
+            m <- mdfFileName
+            w <- customSlitWidth
+          } yield GmosCustomMask(m, w)
+
+        val fpu = customMask.map(_.left[GmosNorthFpu]) orElse builtin.map(_.right[GmosCustomMask])
+
+        GmosNorthDynamicConfig(common, grating, filter, fpu)
+      }
+    }
+
+    def oneGmosNorthOnly(oid: Observation.Id, loc: Loc): Query0[GmosNorthDynamicConfig] =
+      sql"""
+        SELECT c.x_binning,
+               c.y_binning,
+               c.amp_count,
+               c.amp_gain,
+               c.amp_read_mode,
+               c.dtax,
+               c.exposure_time,
+               i.disperser,
+               i.disperser_order,
+               i.wavelength,
+               i.filter,
+               i.mdf_file_name,
+               i.custom_slit_width,
+               i.fpu
+          FROM step s
+               LEFT OUTER JOIN step_gmos_common c
+                 ON c.step_id = s.step_id
+               LEFT OUTER JOIN step_gmos_north i
+                 ON i.step_id = s.step_id
+         WHERE s.observation_id = $oid AND s.location = $loc
+      """.query[(Gmos.GmosCommonDynamicConfig, GmosNorthDynamicCrutch)].map {
+        case (common, crutch) => crutch.toDynamicConfig(common)
+      }
+
     def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
       sql"""
         SELECT s.location,
