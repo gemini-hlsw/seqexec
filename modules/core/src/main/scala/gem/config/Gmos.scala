@@ -7,7 +7,7 @@ import gem.enum._
 
 import java.time.Duration
 
-/** Additional hierarchy over the low-level GMOS enums. */
+/** Additional type hierarchy over the low-level GMOS enums. */
 object Gmos {
 
   final case class GmosNodAndShuffle(
