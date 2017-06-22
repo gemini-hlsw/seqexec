@@ -39,7 +39,7 @@
             </parameter>
             <parameter name="dtaXOffset">
                 <channel>dtaTrack.B</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Translation Stage X Offset</description>
             </parameter>
             <parameter name="inbeam">
@@ -164,7 +164,7 @@
             </parameter>
             <parameter name="ampCount">
                 <channel>dc:dcSetup.E</channel>
-                <type>INTEGER</type>
+                <type>STRING</type>
                 <description>Detector Readout Amplifier Count</description>
             </parameter>
             <parameter name="nsPairs">
