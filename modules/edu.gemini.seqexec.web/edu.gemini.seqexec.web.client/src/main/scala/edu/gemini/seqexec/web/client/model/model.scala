@@ -20,6 +20,8 @@ object Pages {
 }
 
 // Actions
+case class NavigateTo(page: Pages.SeqexecPages) extends Action
+case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
 
 // Actions to close and/open the dev console area
 case object ToggleDevConsole extends Action
@@ -142,6 +144,7 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
   * Root of the UI Model of the application
   */
 case class SeqexecAppRootModel(ws: WebSocketConnection,
+                               navLocation: Pages.SeqexecPages,
                                user: Option[UserDetails],
                                sequences: SeqexecAppRootModel.LoadedSequences,
                                devConsoleState: SectionVisibilityState,
@@ -155,6 +158,6 @@ object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, Pages.Root, None, noSequencesLoaded,
     SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
 }

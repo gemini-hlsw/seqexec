@@ -24,6 +24,19 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz._
 import Scalaz._
 
+class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  def handle: PartialFunction[Any, ActionResult[M]] = {
+    case NavigateTo(page) =>
+      updated(page)
+    case NavigateSilentTo(page) =>
+      updatedSilent(page)
+    case _ =>
+      noChange
+  }
+}
+
 /**
   * Handles sequence execution actions
   */
@@ -369,6 +382,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
+  val navigationHandler      = new NavigationHandler(zoomTo(_.navLocation))
   val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
@@ -417,6 +431,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     globalLogHandler,
     conditionsHandler,
     operatorHandler,
+    navigationHandler,
     sequenceExecHandler)
 
   /**

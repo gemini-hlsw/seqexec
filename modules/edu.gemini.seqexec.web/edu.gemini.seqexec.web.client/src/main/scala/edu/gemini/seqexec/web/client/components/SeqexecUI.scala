@@ -4,8 +4,10 @@ import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.model.InstrumentNames
 import edu.gemini.seqexec.web.client.model.Pages._
+import edu.gemini.seqexec.web.client.model.NavigateSilentTo
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
+import japgolly.scalajs.react.Callback
 
 /**
   * Top level UI component
@@ -28,6 +30,8 @@ object SeqexecUI {
       .notFound(redirectToPage(Root)(Redirect.Push))
       // Runtime verification that all pages are routed
       .verify(Root, InstrumentNames.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
+      .onPostRender((prev, next) =>
+        Callback.when(next != SeqexecCircuit.zoom(_.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
       .renderWith(layout)
       .logToConsole
   }
