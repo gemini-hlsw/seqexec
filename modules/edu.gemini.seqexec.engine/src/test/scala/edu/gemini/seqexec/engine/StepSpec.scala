@@ -10,7 +10,7 @@ import Inside._
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
 import edu.gemini.seqexec.engine.Event.{pause, start}
-import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle, Running}
+import edu.gemini.seqexec.model.Model.SequenceState.Running
 
 import scala.Function.const
 import scalaz.\/-
@@ -59,8 +59,12 @@ class StepSpec extends FlatSpec {
     // input event is enough.
   } yield Result.OK(Result.Observed("DummyFileId"))
 
-  def isFinished(status: SequenceState): Boolean =
-    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean = status match {
+    case SequenceState.Idle      => true
+    case SequenceState.Completed => true
+    case SequenceState.Error(_)  => true
+    case _                       => false
+  }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
     process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
@@ -100,9 +104,10 @@ class StepSpec extends FlatSpec {
                    config,
                    Set.empty,
                    false,
+                   false,
                    List(
-                     List(configureTcs, configureInst, triggerPause(q)), // Execution
-                     List(observe) // Execution
+                     List(configureTcs, configureInst, triggerPause(q)).map(_.left), // Execution
+                     List(observe.left) // Execution
                    )
                  )
                )
@@ -119,9 +124,9 @@ class StepSpec extends FlatSpec {
 
      inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
-        status should be (Idle)
+        status should be (SequenceState.Idle)
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
 
         }
@@ -148,13 +153,14 @@ class StepSpec extends FlatSpec {
                  config,
                  Set.empty,
                  false,
+                 false,
                  Nil,
                  Execution(List(observe.left)),
                  List(List(result, result)),
                  (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
                Nil
              ),
-             Idle
+             SequenceState.Idle
            )
           )
         )
@@ -166,7 +172,7 @@ class StepSpec extends FlatSpec {
       case Sequence.State.Zipper(zipper, status) =>
         status should be (Running)
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
     }
@@ -210,6 +216,7 @@ class StepSpec extends FlatSpec {
                    config,
                    Set.empty,
                    false,
+                   false,
                    List(
                      List(
                        Task(
@@ -218,7 +225,7 @@ class StepSpec extends FlatSpec {
                            Task(Result.OK(RetValDouble(1.0))
                            )
                          )
-                       )
+                       ).left
                      )
                    )
                  )
@@ -256,7 +263,7 @@ class StepSpec extends FlatSpec {
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, false, false, pending, focus, done, rollback)
   }
 
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
@@ -290,22 +297,19 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step[Action] = Step(1, None, config, Set.empty, false, List(Nil))
-  val step1: Step[Action] = Step(1, None, config, Set.empty, false, List(List(action)))
-  val step2: Step[Action] = Step(2, None, config, Set.empty, false, List(List(action, action), List(action)))
+  val step0: Step[Action] = Step(1, None, config, Set.empty, false, false, List(Nil))
+  val step1: Step[Action] = Step(1, None, config, Set.empty, false, false, List(List(action)))
+  val step2: Step[Action] = Step(2, None, config, Set.empty, false, false, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, false, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, false, false, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
   }
 
-  "status" should "be Error when empty" in {
-    assert(Step.status(stepz0.toStep) === StepState.Error(
-             "This should never happen, please submit a bug report"
-           )
-    )
+  "status" should "be completed when it doesn't have any executions" in {
+    assert(Step.status(stepz0.toStep) === StepState.Completed)
   }
 
   "status" should "be Error when at least one Action failed" in {
@@ -316,6 +320,7 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
+          false,
           false,
           Nil,
           Execution(List(action.left, failure.right, result.right)),
@@ -335,6 +340,7 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Set.empty,
           false,
+          false,
           Nil,
           Execution(List(result.right, result.right, result.right)),
           Nil,
@@ -353,6 +359,7 @@ class StepSpec extends FlatSpec {
           Map.empty,
           Set.empty,
           false,
+          false,
           Nil,
           Execution(List(result.right, action.left, result.right)),
           Nil,
@@ -370,6 +377,7 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
+          false,
           false,
           Nil,
           Execution(List(action.left, action.left, action.left)),

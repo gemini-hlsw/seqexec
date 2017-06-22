@@ -3,7 +3,7 @@ package edu.gemini.seqexec.server
 import edu.gemini.model.p1.immutable.Site
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine.{Action, Resource, Result, Sequence, Step}
-import edu.gemini.seqexec.model.Model.SequenceMetadata
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
@@ -32,9 +32,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case \/-(r) => Result.OK(r)
   }
 
-  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean): TrySeq[Step[Action]] = {
+  private def step(
+    obsId: SPObservationID,
+    i: Int,
+    config: Config,
+    last: Boolean
+  ): TrySeq[Step[Action \/ Result]] = {
 
-    def buildStep(inst: Instrument, sys: List[System], headers: List[Header], resources: Set[Resource]): Step[Action] = {
+    def buildStep(inst: Instrument, sys: List[System], headers: List[Header], resources: Set[Resource]): Step[Action \/ Result] = {
 
       def observe(config: Config): SeqAction[ObserveResult] = {
         val dataId: SeqAction[String] = EitherT(Task(config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
@@ -63,23 +68,42 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         } yield ObserveResult(id)
       }
 
-      Step[Action](
-        i,
-        None,
-        config.toStepConfig,
-        resources,
-        false,
-        (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
-        else List())
-        ++
-        List(
-          sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-          List(toAction(observe(config).map(x => Result.Observed(x.dataId))))
-        )
-        ++
-        (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
-        else List())
-      )
+      extractStatus(config) match {
+        case StepState.Pending =>
+          Step(
+            i,
+            None,
+            config.toStepConfig,
+            resources,
+            false,
+            false,
+            (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
+            else List())
+            ++
+            List(
+              sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
+              List(toAction(observe(config).map(x => Result.Observed(x.dataId))))
+            )
+            ++
+            (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
+            else List())
+          ).map(_.left)
+        // TODO: This case should be for completed Steps only. Fail when step
+        // status is unknown.
+        case _ =>
+          Step(
+            i,
+            // TODO: Get image fileId?
+            None,
+            config.toStepConfig,
+            // No resources when done
+            Set.empty,
+            false,
+            extractSkipped(config),
+            // TODO: Is it possible to reconstruct done executions from the ODB?
+            List(Nil)
+            )
+      }
     }
 
     for {
@@ -96,7 +120,23 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
 
-  def sequence(settings: Settings)(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String): (List[SeqexecFailure], Option[Sequence[Action]]) = {
+  private def extractStatus(config: Config): StepState =
+    config.getItemValue(new ItemKey("observe:status")).toString match {
+      case "ready"    => StepState.Pending
+      case "complete" => StepState.Completed
+      case kw         => StepState.Error("Unexpected status keyword: " ++ kw)
+    }
+
+  private def extractSkipped(config: Config): Boolean =
+    config.getItemValue(new ItemKey("observe:status")).toString match {
+      case "skipped" => true
+      case _         => false
+    }
+
+  def sequence(settings: Settings)
+              (obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String):
+      (List[SeqexecFailure], Option[Sequence[Action \/ Result]]) = {
+
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {
@@ -106,7 +146,19 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
 
     steps match {
-      case (errs, ss) => (errs, if(ss.isEmpty) None else Some(Sequence[Action](obsId.stringValue(), SequenceMetadata(instName, None, name), ss)))
+      case (errs, ss) => (
+        errs,
+        if (ss.isEmpty)
+          None
+        else
+          Some(
+            Sequence[Action \/ Result](
+              obsId.stringValue(),
+              SequenceMetadata(instName, None, name),
+              ss
+            )
+          )
+      )
     }
   }
 
@@ -157,7 +209,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[List[Header]] = stepType match {
     case CelestialObject(inst) => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(f => f :: gcalHeaders :: commonHeaders(config)) //TODO: Add GCAL keywords here
+    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(f => f :: gcalHeaders :: commonHeaders(config)) // TODO: Add GCAL keywords here
     case DarkOrBias(inst)      => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
     case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
   }
@@ -190,7 +242,7 @@ object SeqTranslate {
   }
 
   private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
-    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap{
+    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
       case Flamingos2.name => TrySeq(Resource.F2)
       case GmosSouth.name  => TrySeq(Resource.GMOS)
       case ins             => TrySeq.fail(UnrecognizedInstrument(ins))

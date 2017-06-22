@@ -140,9 +140,9 @@ package object engine {
 
 
   /**
-    * Loads a sequence
+    * Load a Sequence
     */
-  def load(id: Sequence.Id, seq: Sequence[Action]): HandleP[Unit] =
+  def load(id: Sequence.Id, seq: Sequence[Action \/ Result]): HandleP[Unit] =
     modify(
       st => Engine.State(
         st.conditions,
@@ -157,6 +157,7 @@ package object engine {
         )
       )
     )
+
   def unload(id: Sequence.Id): HandleP[Unit] =
     modify(
       st => Engine.State(
@@ -304,8 +305,7 @@ package object engine {
       case Pause(id)               => Logger.info("Engine: Paused") *> switch(id)(SequenceState.Stopping)
       case Load(id, seq)           => Logger.info("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)              => Logger.info("Engine: Sequence unloaded") *> unload(id)
-      case Breakpoint(id, step, v) => Logger.info("Engine: breakpoint changed") *>
-        modifyS(id)(_.setBreakpoint(step, v))
+      case Breakpoint(id, step, v) => Logger.info("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
       case SetOperator(name)       => Logger.info("Engine: Setting Operator name") *> setOperator(name)
       case SetObserver(id, name)   => Logger.info("Engine: Setting Observer name") *> setObserver(id)(name)
       case SetConditions(conds)    => Logger.info("Engine: Setting conditions") *> setConditions(conds)
@@ -322,7 +322,7 @@ package object engine {
       case Completed(id, i, r)     => Logger.info("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.info("Engine: Partial result") *> partialResult(id, i, r)
       case Failed(id, i, e)        => Logger.info("Engine: Action failed") *> fail(id)(i, e)
-      case Busy(id)                => Logger.info("Engine: Resources needed this sequence are busy")
+      case Busy(id)                => Logger.info("Engine: Resources needed for this sequence are in use")
       case Executed(id)            => Logger.info("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.info("Engine: Executing") *> execute(id)
       case Finished(id)            => Logger.info("Engine: Finished") *> switch(id)(SequenceState.Completed)
@@ -393,7 +393,7 @@ package object engine {
   private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
     modify(st => Engine.State(st.conditions, st.operator, st.sequences.updated(id, s)))
 
-  // For introspection
+  // For debugging
   def printSequenceState(id: Sequence.Id): HandleP[Option[Unit]] = getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT])
 
   // The `Catchable` instance of `Handle`` needs to be manually written.

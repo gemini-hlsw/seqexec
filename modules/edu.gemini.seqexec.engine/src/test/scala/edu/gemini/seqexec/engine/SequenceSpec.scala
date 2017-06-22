@@ -1,7 +1,6 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.engine.Event.start
-import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
 import scala.Function.const
@@ -54,21 +53,26 @@ class SequenceSpec extends FlatSpec {
 
   val metadata = SequenceMetadata("F2", None, "")
 
-  def simpleStep(id: Int, breakpoint: Boolean): Step[Action] =
+  def simpleStep(id: Int, breakpoint: Boolean): Step[Action \/ Result] =
     Step(
       id,
       None,
       config,
       Set.empty,
       breakpoint,
+      false,
       List(
-        List(action, action), // Execution
-        List(action) // Execution
+        List(action.left, action.left), // Execution
+        List(action.left) // Execution
       )
     )
 
-  def isFinished(status: SequenceState): Boolean =
-    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean = status match {
+    case SequenceState.Idle      => true
+    case SequenceState.Completed => true
+    case SequenceState.Error(_)  => true
+    case _                       => false
+  }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
     process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
@@ -99,7 +103,7 @@ class SequenceSpec extends FlatSpec {
 
     inside (qs1.sequences(seqId)) {
       case Sequence.State.Zipper(zipper, status) =>
-        status should be (Idle)
+        status should be (SequenceState.Idle)
         assert(zipper.done.length == 1 && zipper.pending.isEmpty)
     }
 
@@ -152,7 +156,7 @@ class SequenceSpec extends FlatSpec {
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, breakpoint = false, false, pending, focus, done, rollback)
   }
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)

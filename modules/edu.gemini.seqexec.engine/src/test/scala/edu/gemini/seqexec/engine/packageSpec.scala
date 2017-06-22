@@ -3,17 +3,17 @@ package edu.gemini.seqexec.engine
 import java.util.concurrent.Semaphore
 
 import Event._
-import org.scalatest.FlatSpec
-import edu.gemini.seqexec.model.Model.SequenceState.{Error, Idle}
+import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 
 import scala.concurrent.duration._
-import scalaz.syntax.apply._
+import scalaz._
+import Scalaz._
 import scalaz.Nondeterminism
 import scalaz.concurrent.Task
 import scalaz.stream.{Cause, Process, async}
 
-class packageSpec extends FlatSpec {
+class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   /**
     * Emulates TCS configuration in the real world.
@@ -37,7 +37,7 @@ class packageSpec extends FlatSpec {
     */
   val observe: Action  = for {
     _ <- Task(Thread.sleep(200))
-} yield Result.OK(Result.Observed("DummyFileId"))
+  } yield Result.OK(Result.Observed("DummyFileId"))
 
   val faulty: Action  = for {
     _ <- Task(Thread.sleep(100))
@@ -62,9 +62,10 @@ class packageSpec extends FlatSpec {
                  config,
                  Set(Resource.TCS, Resource.F2),
                  breakpoint = false,
+                 skip = false,
                  List(
-                   List(configureTcs, configureInst), // Execution
-                   List(observe) // Execution
+                   List(configureTcs.left, configureInst.left), // Execution
+                   List(observe.left) // Execution
                  )
                ),
                Step(
@@ -73,9 +74,10 @@ class packageSpec extends FlatSpec {
                  config,
                  Set(Resource.TCS, Resource.OI, Resource.F2),
                  breakpoint = false,
+                 skip = false,
                  List(
-                   List(configureTcs, configureInst), // Execution
-                   List(observe) // Execution
+                   List(configureTcs.left, configureInst.left), // Execution
+                   List(observe.left) // Execution
                  )
                )
              )
@@ -97,9 +99,10 @@ class packageSpec extends FlatSpec {
             config,
             Set(Resource.GMOS),
             breakpoint = false,
+            skip = false,
             List(
-              List(configureTcs, configureInst), // Execution
-              List(observe) // Execution
+              List(configureTcs.left, configureInst.left), // Execution
+              List(observe.left) // Execution
             )
           )
         )
@@ -112,8 +115,12 @@ class packageSpec extends FlatSpec {
   val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
   val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
 
-  def isFinished(status: SequenceState): Boolean =
-    status == Idle || status == edu.gemini.seqexec.model.Model.SequenceState.Completed || status === Error
+  def isFinished(status: SequenceState): Boolean = status match {
+    case SequenceState.Idle      => true
+    case SequenceState.Completed => true
+    case SequenceState.Error(_)  => true
+    case _                       => false
+  }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
     process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
@@ -183,12 +190,13 @@ class packageSpec extends FlatSpec {
             config,
             Set(Resource.GMOS),
             breakpoint = false,
+            skip = false,
             List(
               List(Task.apply{
                 startedFlag.release
                 finishFlag.acquire
                 Result.OK(Result.Configured("TCS"))
-              } )
+              }.left )
             )
           )
         )
@@ -196,8 +204,11 @@ class packageSpec extends FlatSpec {
     )
 
     val result = Nondeterminism[Task].both(
-        q.enqueueOne(start(seqId)) *> Task.apply(startedFlag.acquire) *>
-          q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release} *> Task.delay(None)}),
+      List(
+        q.enqueueOne(start(seqId)),
+        Task.apply(startedFlag.acquire),
+        q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release} *> Task.delay(None)})
+      ).sequenceU,
         process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
       ).timed(5.seconds).unsafePerformSyncAttempt
     assert(result.isRight)

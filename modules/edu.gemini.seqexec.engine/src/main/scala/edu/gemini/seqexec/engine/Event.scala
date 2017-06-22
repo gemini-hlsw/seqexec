@@ -1,5 +1,7 @@
 package edu.gemini.seqexec.engine
 
+import scalaz._
+
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
 import Result.{OK, Partial, PartialVal, RetVal}
 import scalaz.concurrent.Task
@@ -18,7 +20,7 @@ case class EventSystem(se: SystemEvent) extends Event
 sealed trait UserEvent
 case class Start(id: Sequence.Id) extends UserEvent
 case class Pause(id: Sequence.Id) extends UserEvent
-case class Load(id: Sequence.Id, sequence: Sequence[Action]) extends UserEvent
+case class Load(id: Sequence.Id, sequence: Sequence[Action \/ Result]) extends UserEvent
 case class Unload(id: Sequence.Id) extends UserEvent
 case class Breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean) extends UserEvent
 case class SetOperator(name: String) extends UserEvent
@@ -48,7 +50,7 @@ object Event {
 
   def start(id: Sequence.Id): Event = EventUser(Start(id))
   def pause(id: Sequence.Id): Event = EventUser(Pause(id))
-  def load(id: Sequence.Id, sequence: Sequence[Action]): Event = EventUser(Load(id, sequence))
+  def load(id: Sequence.Id, sequence: Sequence[Action \/ Result]): Event = EventUser(Load(id, sequence))
   def unload(id: Sequence.Id): Event = EventUser(Unload(id))
   def breakpoint(id: Sequence.Id, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, step, v))
   def setOperator(name: String): Event = EventUser(SetOperator(name))

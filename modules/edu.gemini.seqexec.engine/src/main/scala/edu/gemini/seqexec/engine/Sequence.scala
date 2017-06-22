@@ -1,9 +1,11 @@
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepState}
+import edu.gemini.seqexec.engine.Step._
 
 import scalaz._
 import Scalaz._
+import scalaz.concurrent.Task
 
 /**
   * A list of `Step`s grouped by target and instrument.
@@ -25,7 +27,7 @@ object Sequence {
 
   def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None, ""), Nil)
 
-  implicit val SequenceFunctor = new Functor[Sequence] {
+  implicit val sequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
       Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
   }
@@ -116,6 +118,52 @@ object Sequence {
           )
       }
 
+    def zipper(seq: Sequence[Action \/ Result]): Option[Zipper] =
+      separate(seq).flatMap {
+        case (pending, done)   => pending match {
+          case Nil             => None
+          case s :: ss =>
+            Step.Zipper.currentify(s).map(
+              Zipper(seq.id, seq.metadata, ss, _, done)
+            )
+        }
+      }
+
+    // We would use MonadPlus' `separate` if we wanted to separate Actions or
+    // Results, but here we want only Steps.
+    private def separate(seq: Sequence[Action \/ Result]): Option[(List[Step[Action]], List[Step[Result]])] = {
+
+      seq.steps.foldLeftM[Option, (List[Step[Action]], List[Step[Result]])]((Nil, Nil))(
+        (acc, step) =>
+        if (Step.status(step) === StepState.Pending)
+          Some(
+            acc.leftMap(
+              _ :+ step.map(
+                _.fold(
+                  identity,
+                  // It should never happen
+                  _ => Task(Result.Error("Inconsistent status"))
+                )
+              )
+            )
+          )
+        else if (Step.status(step) === StepState.Completed)
+          Some(
+            acc.rightMap(
+              _ :+ step.map(
+                _.fold(
+                  // It should never happen
+                  _ => Result.Error("Inconsistent status"),
+                  identity
+                )
+              )
+            )
+          )
+        else None
+      )
+
+    }
+
     val focus: Zipper @> Step.Zipper =
       Lens.lensu((s, f) => s.copy(focus = f), _.focus)
 
@@ -178,8 +226,8 @@ object Sequence {
         (qs, s) => (
           qs match {
             // TODO: Isn't there a better way to write this?
-            case Zipper(st, _)  => Zipper(st, s)
-            case Final(st, _)   => Final(st, s)
+            case Zipper(st, _) => Zipper(st, s)
+            case Final(st, _)  => Final(st, s)
           }
           ),
         _.status
@@ -189,7 +237,7 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action]): State = Sequence.Zipper.currentify(q).map(Zipper(_, SequenceState.Idle))
+    def init(q: Sequence[Action \/ Result]): State = Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
       .getOrElse(Final(Sequence.empty(q.id), SequenceState.Idle))
 
     /**

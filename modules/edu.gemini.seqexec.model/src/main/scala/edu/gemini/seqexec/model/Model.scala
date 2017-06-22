@@ -42,7 +42,7 @@ object Model {
 
     case class ResourcesBusy(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    //Generic update. It will probably become useless if we have a special Event for every case.
+    // Generic update. It will probably become useless if we have a special Event for every case.
     case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
