@@ -34,7 +34,7 @@ object NavBar {
               ^.cls := "ui header item",
               <.img(
                 ^.cls := "logo",
-                ^.src :="images/launcher.png"
+                ^.src :="/images/launcher.png"
               ),
               "Seqexec"
             ),

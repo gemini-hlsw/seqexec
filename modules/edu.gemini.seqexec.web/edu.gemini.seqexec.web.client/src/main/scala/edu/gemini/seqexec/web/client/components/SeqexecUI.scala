@@ -8,6 +8,7 @@ import edu.gemini.seqexec.web.client.model.NavigateSilentTo
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.Callback
+import diode.ModelRO
 
 /**
   * Top level UI component
@@ -36,13 +37,20 @@ object SeqexecUI {
       .logToConsole
   }
 
-  val router = Router(BaseUrl.fromWindowOrigin, routerConfig)
+  val (router, routerLogic) = Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig)
+
+  def navigated(page: ModelRO[SeqexecPages]): Unit = {
+    scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
+  }
+
+  // subscribe to navigation changes
+  SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.navLocation))(navigated _)
 
   def layout(c: RouterCtl[SeqexecPages], r: Resolution[SeqexecPages]) =
     <.div(
       NavBar(),
       wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
-      QueueArea(c.narrow[InstrumentPage]),
+      QueueArea(),
       r.render(),
       lbConnect(LoginBox.apply)
     )

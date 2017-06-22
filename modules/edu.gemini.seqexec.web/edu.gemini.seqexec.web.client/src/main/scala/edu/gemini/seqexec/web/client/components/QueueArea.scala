@@ -12,7 +12,6 @@ import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.router.RouterCtl
 import org.scalajs.dom.html.TableRow
 
 import scala.scalajs.js
@@ -21,7 +20,7 @@ import scalaz.syntax.show._
 import scalaz.syntax.std.option._
 
 object QueueTableBody {
-  case class Props(router: RouterCtl[InstrumentPage], sequences: ModelProxy[(ClientStatus, LoadedSequences)])
+  case class Props(sequences: ModelProxy[(ClientStatus, LoadedSequences)])
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
@@ -43,7 +42,7 @@ object QueueTableBody {
 
   def showSequence(p: Props, s: SequenceView): Callback =
     // Request to display the selected sequence
-    p.router.set(InstrumentPage(s.metadata.instrument, s.id.some)) >> p.sequences.dispatchCB(SelectToDisplay(s))
+    p.sequences.dispatchCB(NavigateTo(InstrumentPage(s.metadata.instrument, s.id.some))) >> p.sequences.dispatchCB(SelectToDisplay(s))
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P { p =>
@@ -103,7 +102,7 @@ object QueueTableBody {
     }
     .build
 
-  def apply(router: RouterCtl[InstrumentPage], p: ModelProxy[(ClientStatus, LoadedSequences)]): Unmounted[Props, Unit, Unit] = component(Props(router, p))
+  def apply(p: ModelProxy[(ClientStatus, LoadedSequences)]): Unmounted[Props, Unit, Unit] = component(Props(p))
 
 }
 
@@ -113,17 +112,17 @@ object QueueTableBody {
 object QueueTableSection {
   private val queueConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequences, "key.queue": js.Any)
 
-  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("QueueTableSection")
+  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui segment scroll pane",
         SeqexecStyles.queueListPane,
-        queueConnect(r => QueueTableBody(p, r))
+        queueConnect(QueueTableBody(_))
       )
     ).build
 
-  def apply(router: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(router)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 
 }
 
@@ -131,9 +130,9 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  private val component = ScalaComponent.builder[RouterCtl[InstrumentPage]]("QueueArea")
+  private val component = ScalaComponent.builder[Unit]("QueueArea")
     .stateless
-    .render_P(p =>
+    .render(_ =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Night Queue", "key.queue.menu"),
@@ -145,7 +144,7 @@ object QueueArea {
               ^.cls := "stretched row",
               <.div(
                 ^.cls := "sixteen wide column",
-                QueueTableSection(p)
+                QueueTableSection()
               )
             )
           )
@@ -154,6 +153,6 @@ object QueueArea {
     )
     .build
 
-  def apply(router: RouterCtl[InstrumentPage]): Unmounted[RouterCtl[InstrumentPage], Unit, Unit] = component(router)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 
 }
