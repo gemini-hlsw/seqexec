@@ -30,8 +30,10 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
   def handle: PartialFunction[Any, ActionResult[M]] = {
     case NavigateTo(page) =>
       updated(page)
+
     case NavigateSilentTo(page) =>
       updatedSilent(page)
+
     case _ =>
       noChange
   }
