@@ -115,16 +115,16 @@ class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthServ
       runIO(authenticationAndName(usernameWithDomain, password), c)
         .ensuring(IO(c.close())).unsafePerformIO()
     }.leftMap {
-      case e:LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
+      case e: LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
         Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         BadCredentials(username)
-      case e:LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
+      case e: LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
         Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         UserNotFound(username)
-      case e:LDAPException =>
+      case e: LDAPException =>
         Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         GenericFailure("LDAP Authentication error")
-      case e:Exception =>
+      case e: Throwable =>
         GenericFailure(e.getMessage)
     }
   }

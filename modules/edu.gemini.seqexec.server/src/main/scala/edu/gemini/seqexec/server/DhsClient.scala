@@ -116,10 +116,15 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
   implicit def obsIdDecode: DecodeJson[TrySeq[ImageFileId]] = DecodeJson[TrySeq[ImageFileId]](c => {
     val r = c --\ "response"
     val s = (r --\ "status").as[String]
-    s flatMap {
-      case "success" => (r --\ "result").as[String].map(TrySeq(_))
-      case "error"   => (r --\ "errors").as[List[Error]].map(
-        l => TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", "))))
+    s.flatMap {
+      case "success" =>
+        (r --\ "result").as[String].map(TrySeq(_))
+      case "error"   =>
+        (r --\ "errors").as[List[Error]].map(l =>
+          TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", ")))
+        )
+      case r         =>
+        DecodeResult.fail(s"Unknown response: $r", s.history.getOrElse(CursorHistory.empty))
     }
   } )
 
@@ -127,9 +132,13 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
     val r = c --\ "response"
     val s = (r --\ "status").as[String]
     s flatMap {
-      case "success" => DecodeResult.ok(TrySeq(()))
-      case "error"   => (r --\ "errors").as[List[Error]].map(
-        l => TrySeq.fail[Unit](SeqexecFailure.Unexpected(l.mkString(", "))))
+      case "success" =>
+        DecodeResult.ok(TrySeq(()))
+      case "error"   =>
+        (r --\ "errors").as[List[Error]].map(
+          l => TrySeq.fail[Unit](SeqexecFailure.Unexpected(l.mkString(", "))))
+      case r         =>
+        DecodeResult.fail(s"Unknown response: $r", s.history.getOrElse(CursorHistory.empty))
     }
   } )
 
@@ -183,6 +192,7 @@ object DhsClientHttp {
       case BadRequest.str          => BadRequest
       case DhsError.str            => DhsError
       case InternalServerError.str => InternalServerError
+      case _                       => InternalServerError
     }
   )
 

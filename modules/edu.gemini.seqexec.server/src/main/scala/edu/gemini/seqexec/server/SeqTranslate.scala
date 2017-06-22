@@ -269,6 +269,7 @@ object SeqTranslate {
         gaos match {
           case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
           case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
+          case _                                               => TrySeq.fail(Unexpected("Logical error reading AO system name"))
         }
     }
 

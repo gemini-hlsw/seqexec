@@ -22,6 +22,7 @@ object GcalControllerEpics extends GcalController {
       v match {
         case BinaryOnOff.OFF => LampState.Off
         case BinaryOnOff.ON  => LampState.On
+        case _               => sys.error("Cannot happen")
       }
   }
 
@@ -30,6 +31,7 @@ object GcalControllerEpics extends GcalController {
       v match {
         case LampState.Off => BinaryOnOff.OFF
         case LampState.On  => BinaryOnOff.ON
+        case _             => sys.error("Cannot happen")
       }
   }
 
@@ -38,7 +40,7 @@ object GcalControllerEpics extends GcalController {
       v match {
         case "OPEN"  => Some(Shutter.OPEN)
         case "CLOSE" => Some(Shutter.CLOSED)
-        case _ => None
+        case _       => None
       }
   }
 
