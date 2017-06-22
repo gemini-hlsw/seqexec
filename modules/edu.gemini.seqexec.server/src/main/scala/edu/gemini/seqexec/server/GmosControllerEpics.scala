@@ -281,7 +281,6 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- setDisperser(cc.disperser)
     _ <- setFPU(cc.fpu)
     _ <- CC.setStageMode(encode(cc.stage))
-    // TODO Is DTaX channel a double?
     _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble*PixelsToMicrons)
     _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
   } yield ()
