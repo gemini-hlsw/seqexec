@@ -7,12 +7,6 @@ import sbt.Keys._
 
 name := Settings.Definitions.name
 
-scalaOrganization in ThisBuild := "org.typelevel"
-
-scalaVersion in ThisBuild := Settings.LibraryVersions.scalaVersion
-
-scalacOptions in ThisBuild ++= Settings.Definitions.scalacOptions
-
 organization in Global := "edu.gemini.ocs"
 
 // Gemini repository
@@ -32,7 +26,6 @@ lazy val edu_gemini_web_server_common = project
   .settings(
     libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s
   )
-
 
 // Root web project
 lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
@@ -182,6 +175,7 @@ lazy val edu_gemini_seqexec_web_client_cli = project.in(file("modules/edu.gemini
 lazy val edu_gemini_seqexec_server = project
   .in(file("modules/edu.gemini.seqexec.server"))
   .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM)
+  .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++=
       Seq(ScalaZStream,
@@ -197,21 +191,23 @@ lazy val edu_gemini_seqexec_server = project
       ) ++ WDBAClient ++ Http4sClient ++ TestLibs.value
   )
 
-// This should eventually replaced by seqexec_server
-lazy val edu_gemini_seqexec_engine = project
-  .in(file("modules/edu.gemini.seqexec.engine"))
-  .dependsOn(edu_gemini_seqexec_model_JVM)
-  .settings(libraryDependencies ++= Seq(ScalaZStream) ++ TestLibs.value)
-
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
 lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .in(file("modules/edu.gemini.seqexec.model"))
-  .settings(libraryDependencies ++= Seq(BooPickle.value, ScalaZCore.value) ++ TestLibs.value ++ Monocle.value)
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= BooPickle.value +: Monocle.value)
 
 lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
 
 lazy val edu_gemini_seqexec_model_JS:Project = edu_gemini_seqexec_model.js
+
+// This should eventually replaced by seqexec_server
+lazy val edu_gemini_seqexec_engine = project
+  .in(file("modules/edu.gemini.seqexec.engine"))
+  .dependsOn(edu_gemini_seqexec_model_JVM)
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies += ScalaZStream)
 
 /**
   * Common settings for the Seqexec instances
@@ -241,7 +237,7 @@ lazy val seqexecCommonSettings = Seq(
     "-J-Xmx512m",
     "-J-Xms256m"
   )
-)
+) ++ commonSettings
 
 /**
   * Settings for Seqexec RPMs
@@ -419,7 +415,11 @@ lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1bac
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       JQuery.value
-    ) ++ ReactScalaJS.value ++ Diode.value
+    ) ++ ReactScalaJS.value ++ Diode.value,
+    // This is needed to support the TLS compiler and scala.js at the same time
+    libraryDependencies ~= { (libDeps: Seq[ModuleID]) =>
+      libDeps.filterNot(dep => dep.name == "scalajs-compiler")
+    }
   )
   .settings(
     buildInfoUsePackageAsPath := true,
