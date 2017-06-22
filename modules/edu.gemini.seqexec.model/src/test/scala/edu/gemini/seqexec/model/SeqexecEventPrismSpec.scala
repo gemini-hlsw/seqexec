@@ -10,12 +10,12 @@ import org.scalatest.prop.PropertyChecks
 /**
   * Tests the Monocle Lenses for Seqexec Events
   */
-class LensSpec extends FlatSpec with Matchers with PropertyChecks with ModelBooPicklers {
+class SeqexecEventPrismSpec extends FlatSpec with Matchers  {
   import SharedModelArbitraries._
 
   "Model lenses" should
     "be defined for all types with a queue" in {
-      forAll { (e: SeqexecEvent) =>
+      forAll { (e: Int) =>
         // This test should fail if we forget to update the prism when adding new events
         sePrism.set((e, SequencesQueue(Conditions.default, Some("Operator name"), Nil)))(e) should matchPattern {
           case e: SeqexecModelUpdate if e.view.queue.isEmpty =>
