@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.model.InstrumentNames
-import edu.gemini.seqexec.model.Model.{Instrument, SequenceId}
+import edu.gemini.seqexec.web.client.model.Pages._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 
@@ -13,10 +13,6 @@ import japgolly.scalajs.react.extra.router._
 object SeqexecUI {
   private val lbConnect = SeqexecCircuit.connect(_.loginBox)
   private val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
-  sealed trait SeqexecPages
-
-  case object Root extends SeqexecPages
-  case class InstrumentPage(i: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
 
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 

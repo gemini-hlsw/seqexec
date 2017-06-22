@@ -2,7 +2,8 @@ package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.model.Model.{SequenceId, SequenceView, Instrument}
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SelectToDisplay, SequencesOnDisplay}
-import edu.gemini.seqexec.web.client.components.SeqexecUI.{InstrumentPage, RouterProps}
+import edu.gemini.seqexec.web.client.model.Pages._
+import edu.gemini.seqexec.web.client.components.SeqexecUI.RouterProps
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model.ModelOps._

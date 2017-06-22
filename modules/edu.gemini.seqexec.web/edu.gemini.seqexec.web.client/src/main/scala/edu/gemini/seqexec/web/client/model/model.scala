@@ -11,6 +11,14 @@ import org.scalajs.dom.WebSocket
 import scalaz._
 import Scalaz._
 
+// Pages
+object Pages {
+  sealed trait SeqexecPages
+
+  case object Root extends SeqexecPages
+  case class InstrumentPage(i: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
+}
+
 // Actions
 
 // Actions to close and/open the dev console area

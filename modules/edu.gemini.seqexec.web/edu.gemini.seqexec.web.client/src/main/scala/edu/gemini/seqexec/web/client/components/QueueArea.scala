@@ -3,7 +3,7 @@ package edu.gemini.seqexec.web.client.components
 import diode.react._
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.components.SeqexecUI._
+import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
