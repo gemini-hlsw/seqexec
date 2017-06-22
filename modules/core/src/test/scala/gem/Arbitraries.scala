@@ -88,7 +88,7 @@ trait Arbitraries extends gem.config.Arbitraries {
 
   def genObservation(id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
-      i <- Gen.const(Instrument.Flamingos2) // Add more as they become available
+      i <- Gen.oneOf(Instrument.Flamingos2, Instrument.GmosN, Instrument.GmosS) // Add more as they become available
       o <- genObservationOf(i, id)
     } yield o
 

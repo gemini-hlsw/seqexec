@@ -42,8 +42,6 @@ trait Arbitraries extends gem.enum.Arbitraries {
 
   implicit val arbAcqCamStatic    = const(AcqCamStaticConfig()         )
   implicit val arbBhrosStatic     = const(BhrosStaticConfig()          )
-  implicit val arbGmosNorthStatic = const(GmosNorthStaticConfig.Default)
-  implicit val arbGmosSouthStatic = const(GmosSouthStaticConfig.Default)
   implicit val arbGnirsStatic     = const(GnirsStaticConfig()          )
   implicit val arbGpiStatic       = const(GpiStaticConfig()            )
   implicit val arbGsaoiStatic     = const(GsaoiStaticConfig()          )
@@ -55,8 +53,26 @@ trait Arbitraries extends gem.enum.Arbitraries {
   implicit val arbTrecsStatic     = const(TrecsStaticConfig()          )
   implicit val arbVisitorStatic   = const(VisitorStaticConfig()        )
 
-  implicit val arbF2Static       =
-    Arbitrary(arbitrary(arbBool).map(F2StaticConfig(_)))
+  implicit val arbF2Static        =
+    Arbitrary(arbitrary[Boolean].map(F2StaticConfig(_)))
+
+  implicit val arbGmosNorthStatic =
+    Arbitrary(
+      for {
+        d <- arbitrary[GmosDetector]
+        p <- arbitrary[Boolean]
+        s <- arbitrary[GmosNorthStageMode]
+      } yield GmosNorthStaticConfig(Gmos.GmosCommonStaticConfig(d, p, None), s)
+    )
+
+  implicit val arbGmosSouthStatic =
+    Arbitrary(
+      for {
+        d <- arbitrary[GmosDetector]
+        p <- arbitrary[Boolean]
+        s <- arbitrary[GmosSouthStageMode]
+      } yield GmosSouthStaticConfig(Gmos.GmosCommonStaticConfig(d, p, None), s)
+    )
 
   def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
     i match {
