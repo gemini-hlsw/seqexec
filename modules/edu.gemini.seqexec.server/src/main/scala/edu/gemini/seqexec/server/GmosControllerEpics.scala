@@ -274,13 +274,15 @@ object GmosControllerEpics extends GmosSouthController {
     }
   }
 
+  val PixelsToMicrons = 15.0
+
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)
     _ <- setDisperser(cc.disperser)
     _ <- setFPU(cc.fpu)
     _ <- CC.setStageMode(encode(cc.stage))
     // TODO Is DTaX channel a double?
-    _ <- CC.setDtaXOffset(cc.dtaX.toString)
+    _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble*PixelsToMicrons)
     _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
   } yield ()
 

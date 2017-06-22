@@ -17,7 +17,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   def post: SeqAction[Unit] = configCmd.post
 
   object configCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::apply"))
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))
 
     val disperserMode: Option[CaParameter[String]] = cs.map(_.getString("disperserMode"))
     def setDisperserMode(v: String): SeqAction[Unit] = setParameter(disperserMode, v)
@@ -37,8 +37,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val filter2: Option[CaParameter[String]] = cs.map(_.getString("filter2"))
     def setFilter2(v: String): SeqAction[Unit] = setParameter(filter2, v)
 
-    val dtaXOffset: Option[CaParameter[String]] = cs.map(_.getString("dtaXOffset"))
-    def setDtaXOffset(v: String): SeqAction[Unit] = setParameter(dtaXOffset, v)
+    val dtaXOffset: Option[CaParameter[JDouble]] = cs.map(_.getDouble("dtaXOffset"))
+    def setDtaXOffset(v: Double): SeqAction[Unit] = setParameter(dtaXOffset, JDouble.valueOf(v))
 
     val inBeam: Option[CaParameter[String]] = cs.map(_.getString("inbeam"))
     def setInBeam(v: String): SeqAction[Unit] = setParameter(inBeam, v)
