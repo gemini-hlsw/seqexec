@@ -95,8 +95,6 @@ trait Arbitraries extends gem.enum.Arbitraries {
 
   implicit val arbAcqCamDynamic    = const(AcqCamDynamicConfig()         )
   implicit val arbBhrosDynamic     = const(BhrosDynamicConfig()          )
-  implicit val arbGmosNorthDynamic = const(GmosNorthDynamicConfig.Default)
-  implicit val arbGmosSouthDynamic = const(GmosSouthDynamicConfig.Default)
   implicit val arbGnirsDynamic     = const(GnirsDynamicConfig()          )
   implicit val arbGpiDynamic       = const(GpiDynamicConfig()            )
   implicit val arbGsaoiDynamic     = const(GsaoiDynamicConfig()          )
@@ -119,6 +117,77 @@ trait Arbitraries extends gem.enum.Arbitraries {
         r <- arbitrary[F2ReadMode   ]
         w <- arbitrary[F2WindowCover]
       } yield F2DynamicConfig(d, e, f, u, l, r, w)
+    }
+
+  implicit val arbGmosCcdReadout =
+    Arbitrary {
+      for {
+        x <- arbitrary[GmosBinning]
+        y <- arbitrary[GmosBinning]
+        c <- arbitrary[GmosAmpCount]
+        g <- arbitrary[GmosAmpGain]
+        r <- arbitrary[GmosAmpReadMode]
+      } yield Gmos.GmosCcdReadout(x, y, c, g, r)
+    }
+
+  implicit val arbGmosCommonDynamic =
+    Arbitrary {
+      for {
+        c <- arbitrary[Gmos.GmosCcdReadout]
+        d <- arbitrary[GmosDtax]
+        e <- arbitrary[Duration]
+      } yield Gmos.GmosCommonDynamicConfig(c, d, e)
+    }
+
+  implicit val arbGmosCustomMask =
+    Arbitrary {
+      for {
+        m <- Gen.alphaStr.map(_.take(32))
+        w <- arbitrary[GmosCustomSlitWidth]
+      } yield Gmos.GmosCustomMask(m, w)
+    }
+
+  implicit val arbGmosCentralWavelength =
+    Arbitrary {
+      Gen.const(Gmos.GmosCentralWavelength(0.0)) // for now ...
+    }
+
+  implicit val arbGmosNorthGrating =
+    Arbitrary {
+      for {
+        d <- arbitrary[GmosNorthDisperser]
+        o <- arbitrary[GmosDisperserOrder]
+        w <- arbitrary[Gmos.GmosCentralWavelength]
+      } yield Gmos.GmosNorthGrating(d, o, w)
+    }
+
+  implicit val arbGmosSouthGrating =
+    Arbitrary {
+      for {
+        d <- arbitrary[GmosSouthDisperser]
+        o <- arbitrary[GmosDisperserOrder]
+        w <- arbitrary[Gmos.GmosCentralWavelength]
+      } yield Gmos.GmosSouthGrating(d, o, w)
+    }
+
+  implicit val arbGmosNorthDynamic =
+    Arbitrary {
+      for {
+        c <- arbitrary[Gmos.GmosCommonDynamicConfig]
+        g <- arbitrary[Option[Gmos.GmosNorthGrating]]
+        f <- arbitrary[Option[GmosNorthFilter]]
+        u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosNorthFpu]]
+      } yield GmosNorthDynamicConfig(c, g, f, u)
+    }
+
+  implicit val arbGmosSouthDynamic =
+    Arbitrary {
+      for {
+        c <- arbitrary[Gmos.GmosCommonDynamicConfig]
+        g <- arbitrary[Option[Gmos.GmosSouthGrating]]
+        f <- arbitrary[Option[GmosSouthFilter]]
+        u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosSouthFpu]]
+      } yield GmosSouthDynamicConfig(c, g, f, u)
     }
 
   def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] =
