@@ -363,63 +363,25 @@ CREATE TABLE step_gmos_north (
 
 ALTER TABLE step_gmos_north OWNER TO postgres;
 
-----
----- Name: step_gmos_north; Type: TABLE; Schema: public; Owner: postgres
-----
 --
---CREATE TABLE step_gmos_north (
---    step_gmos_north_id integer       PRIMARY KEY REFERENCES step                      ON DELETE CASCADE,
---    disperser          identifier                REFERENCES e_gmos_north_disperser    ON DELETE CASCADE,
---    filter             identifier                REFERENCES e_gmos_north_filter       ON DELETE CASCADE,
---    fpu                identifier                REFERENCES e_gmos_north_fpu          ON DELETE CASCADE,
---    stage_mode         identifier    NOT NULL    REFERENCES e_gmos_north_stage_mode   ON DELETE CASCADE
---);
+-- Name: step_gmos_south; Type: TABLE; Schema: public; Owner: postgres
 --
---
---ALTER TABLE step_gmos_north OWNER TO postgres;
---
---
-----
----- Name: step_gmos_south; Type: TABLE; Schema: public; Owner: postgres
-----
---
---CREATE TABLE step_gmos_south (
---    step_gmos_south_id integer       PRIMARY KEY REFERENCES step                      ON DELETE CASCADE,
---    disperser          identifier                REFERENCES e_gmos_south_disperser    ON DELETE CASCADE,
---    filter             identifier                REFERENCES e_gmos_south_filter       ON DELETE CASCADE,
---    fpu                identifier                REFERENCES e_gmos_south_fpu          ON DELETE CASCADE,
---    stage_mode         identifier    NOT NULL    REFERENCES e_gmos_south_stage_mode   ON DELETE CASCADE
---);
---
---
---ALTER TABLE step_gmos_south OWNER TO postgres;
---
---
-----
----- Name: smart_gmos_north; Type: TABLE; Schema: public; Owner: postgres
-----
---
---CREATE TABLE smart_gmos_north (
---    lamp      gcal_lamp_type     NOT NULL,
---    baseline  gcal_baseline_type NOT NULL,
---    disperser identifier                  REFERENCES e_gmos_north_disperser ON DELETE CASCADE,
---    gcal_id   integer            NOT NULL REFERENCES gcal                   ON DELETE CASCADE
---);
---
---ALTER TABLE smart_gmos_north OWNER TO postgres;
---
-----
----- Name: smart_gmos_south; Type: TABLE; Schema: public; Owner: postgres
-----
---
---CREATE TABLE smart_gmos_south (
---    lamp      gcal_lamp_type     NOT NULL,
---    baseline  gcal_baseline_type NOT NULL,
---    disperser identifier                  REFERENCES e_gmos_south_disperser ON DELETE CASCADE,
---    gcal_id   integer            NOT NULL REFERENCES gcal                   ON DELETE CASCADE
---);
---
---ALTER TABLE smart_gmos_south OWNER TO postgres;
---
---
---
+
+CREATE TABLE step_gmos_south (
+    step_id           integer      PRIMARY KEY REFERENCES step ON DELETE CASCADE,
+    disperser         identifier               REFERENCES e_gmos_south_disperser,
+    disperser_order   identifier               REFERENCES e_gmos_disperser_order,
+    wavelength        numeric(6,2),
+    filter            identifier               REFERENCES e_gmos_south_filter,
+    mdf_file_name     character varying(32),
+    custom_slit_width identifier               REFERENCES e_gmos_custom_slit_width,
+    fpu               identifier               REFERENCES e_gmos_south_fpu,
+    CONSTRAINT grating_all_or_none
+      CHECK ((disperser IS     NULL AND disperser_order IS     NULL AND wavelength IS     NULL) OR
+             (disperser IS NOT NULL AND disperser_order IS NOT NULL AND wavelength IS NOT NULL)),
+    CONSTRAINT custom_mask_all_or_none
+      CHECK ((mdf_file_name IS     NULL AND custom_slit_width IS     NULL) OR
+             (mdf_file_name IS NOT NULL AND custom_slit_width IS NOT NULL))
+);
+
+ALTER TABLE step_gmos_south OWNER TO postgres;
