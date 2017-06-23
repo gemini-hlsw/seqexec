@@ -3,8 +3,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.{ModelProxy, ReactConnectProxy}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
-import edu.gemini.seqexec.web.client.components.{TabularMenu, TextMenuSegment}
-import edu.gemini.seqexec.web.client.components.SeqexecUI.RouterProps
+import edu.gemini.seqexec.web.client.components.TextMenuSegment
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
@@ -73,31 +72,31 @@ object SequenceTabContent {
   * Contains the area with tabs and the sequence body
   */
 object SequenceTabsBody {
-  case class Props(p: RouterProps, s: ClientStatus, d: SequencesOnDisplay)
+  case class Props(s: ClientStatus, d: SequencesOnDisplay)
 
   def tabContents(p: Props): Stream[SequenceTabContent.Props] =
     p.d.instrumentSequences.map { a =>
-      SequenceTabContent.Props(isActive = a.instrument === p.p.page.i, p.s, a)}.toStream
+      SequenceTabContent.Props(isActive = a.instrument === p.d.instrumentSequences.focus.instrument, p.s, a)}.toStream
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-        TabularMenu(p.p, p.d),
+        TabularMenu(p.d),
         tabContents(p).map(SequenceTabContent.apply).toTagMod
       )
     ).build
 
-  def apply(page: RouterProps, p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] =
-    component(Props(page, p()._1, p()._2))
+  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] =
+    component(Props(p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
   val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
   val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
 
-  private val component = ScalaComponent.builder[RouterProps]("SequenceHeadersAndTable")
+  private val component = ScalaComponent.builder[Unit]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
@@ -106,11 +105,11 @@ object SequenceHeadersAndTable {
           ^.cls := "four wide column computer tablet only",
           headerSideBarConnect(HeadersSideBar.apply)
         ),
-        sequencesDisplayConnect(proxy => SequenceTabsBody(p, proxy))
+        sequencesDisplayConnect(SequenceTabsBody(_))
       )
     ) .build
 
-  def apply(p: RouterProps): Unmounted[RouterProps, Unit, Unit] = component(p)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 /**
@@ -120,14 +119,14 @@ object SequenceHeadersAndTable {
 object SequenceTabs {
   val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
 
-  private val component = ScalaComponent.builder[RouterProps]("SequenceTabs")
+  private val component = ScalaComponent.builder[Unit]("SequenceTabs")
     .stateless
-    .render_P( p =>
+    .render( _ =>
       <.div(
         ^.cls := "ui bottom attached segment",
         <.div(
           ^.cls := "ui two column vertically divided grid",
-          SequenceHeadersAndTable(p),
+          SequenceHeadersAndTable(),
           <.div(
             ^.cls := "row computer only",
             <.div(
@@ -140,20 +139,20 @@ object SequenceTabs {
     )
     .build
 
-  def apply(p: RouterProps): Unmounted[RouterProps, Unit, Unit] = component(p)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 object SequenceArea {
 
-  private val component = ScalaComponent.builder[RouterProps]("QueueTableSection")
+  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences", "key.sequences.menu"),
-        SequenceTabs(p)
+        SequenceTabs()
       )
     ).build
 
-  def apply(props: RouterProps): Unmounted[RouterProps, Unit, Unit] = component(props)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }

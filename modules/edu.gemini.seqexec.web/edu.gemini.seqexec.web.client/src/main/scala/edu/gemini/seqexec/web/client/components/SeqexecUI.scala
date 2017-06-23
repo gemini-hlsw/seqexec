@@ -31,12 +31,12 @@ object SeqexecUI {
           r.render(),
           lbConnect(LoginBox.apply)
         )
-        
+
       (emptyRule
-      | staticRoute(root, Root) ~> renderR(r => SequenceArea(RouterProps(InstrumentPage("Flamingos2", None), r.narrow)))
+      | staticRoute(root, Root) ~> renderR(r => SequenceArea())
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option).caseClass[InstrumentPage]) {
           case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SequenceArea(RouterProps(p, r.narrow[InstrumentPage])))
+        } ~> dynRenderR((p, r) => SequenceArea())
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
