@@ -75,7 +75,7 @@ object Gmos {
   /** GMOS grating central wavelength.  For now, just a value class wrapper
     * around a Double.  This should be switched to Fixed / squants?
     */
-  final case class GmosCentralWavelength(val nm: Double) extends AnyVal
+  final case class GmosCentralWavelength(val nm: BigDecimal) extends AnyVal
 
   /** GMOS-N grating configuration.  These are grouped because they only apply
     * using a grating.

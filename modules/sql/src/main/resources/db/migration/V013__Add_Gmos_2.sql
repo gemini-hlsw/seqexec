@@ -335,7 +335,7 @@ CREATE TABLE step_gmos_common (
     amp_gain      identifier   NOT NULL    REFERENCES e_gmos_amp_gain,
     amp_read_mode identifier   NOT NULL    REFERENCES e_gmos_amp_read_mode,
     dtax          identifier   NOT NULL    REFERENCES e_gmos_dtax,
-    exposure_time milliseconds NOT NULL
+    exposure_time bigint       NOT NULL
 );
 
 ALTER TABLE step_gmos_common OWNER TO postgres;
