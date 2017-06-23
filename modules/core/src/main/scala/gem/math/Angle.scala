@@ -35,7 +35,7 @@ sealed class Angle (val toMilliarcseconds: Int) {
     toDoubleDegrees.toRadians
 
   /**
-   * Convert to the closest hour angle by roundinng down to the closest 15 milliarcseconds.
+   * Convert to the closest hour angle by rounding down to the closest 15 milliarcseconds.
    * Exact, non-invertible.
    */
   def toHourAngle: HourAngle =
@@ -171,14 +171,14 @@ final class HourAngle private (mas: Int) extends Angle(mas) {
     this
 
   /**
-   * Flip this hour angle by 12h. This is logically identical to the superclass implementation
+   * Flip this HourAngle by 12h. This is logically identical to the superclass implementation
    * and serves only to refine the return type. Exact, invertible.
    */
   override def flip: HourAngle =
     this + HourAngle.HourAngle12
 
   /**
-   * Additive inverse of this hour angle (by mirroring around the 0-12h axis). This is logically
+   * Additive inverse of this HourAngle (by mirroring around the 0-12h axis). This is logically
    * identical to the superclass implementation and serves only to refine the return type. Exact,
    * invertible.
    */
@@ -196,12 +196,12 @@ final class HourAngle private (mas: Int) extends Angle(mas) {
   def toHMS: HourAngle.HMS =
     HourAngle.HMS(this)
 
-  /** Sum of this angle and `ha`. Exact, commutative, invertible. */
+  /** Sum of this HourAngle and `ha`. Exact, commutative, invertible. */
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def +(ha: HourAngle): HourAngle =
     HourAngle.fromMilliseconds(toMilliseconds.toLong + ha.toMilliseconds.toLong)
 
-  /** Difference of this angle and `ha`. Exact, invertible. */
+  /** Difference of this HourAngle and `ha`. Exact, invertible. */
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def -(ha: HourAngle): HourAngle =
     HourAngle.fromMilliseconds(toMilliseconds.toLong - ha.toMilliseconds.toLong)
@@ -224,19 +224,19 @@ object HourAngle {
     new HourAngle(msʹ.toInt * 15)
   }
 
-  /** Construct a new Angle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
   def fromSeconds(seconds: Long): HourAngle =
     fromMilliseconds(seconds * 1000L)
 
-  /** Construct a new Angle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
   def fromMinutes(minutes: Long): HourAngle =
     fromSeconds(minutes * 60L)
 
-  /** Construct a new Angle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
   def fromHours(hours: Long):     HourAngle =
     fromMinutes(hours * 60L)
 
-  def fromDoubleHours(hs: Double): Angle =
+  def fromDoubleHours(hs: Double): HourAngle =
     fromMilliseconds((hs * 60 * 60 * 1000).toLong)
 
   /** HourAngle is an Abelian group (a subgroup of Angle), but monoid is the best we can do for now. */
