@@ -2,13 +2,15 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import diode.react.ReactPot._
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
+import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
+import edu.gemini.seqexec.web.client.model.Pages.Root
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.OcsBuildInfo
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.elements.menu.HeaderItem
 import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
@@ -20,6 +22,11 @@ object NavBar {
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
+  private def goHome(e: ReactEvent): Callback = {
+    e.preventDefault
+    Callback(SeqexecCircuit.dispatch(NavigateTo(Root)))
+  }
+
   private val component = ScalaComponent.builder[Unit]("SeqexecAppBar")
     .stateless
     .render(_ =>
@@ -29,24 +36,23 @@ object NavBar {
           ^.cls := "ui container five column stackable grid",
           <.div(
             ^.cls := "ui row",
-            <.div(
-              ^.href :="#",
-              ^.cls := "ui header item",
-              <.img(
-                ^.cls := "logo",
-                ^.src :="/images/launcher.png"
+            HeaderItem(HeaderItem.Props(name = ""),
+              <.a(
+                ^.href := "/#",
+                <.img(
+                  ^.cls := "ui mini image logo",
+                  SeqexecStyles.logo,
+                  ^.src :="/images/launcher.png"
+                ),
+                ^.onClick ==> goHome
               ),
               "Seqexec"
             ),
-            <.div(
-              ^.cls := "header item",
-              OcsBuildInfo.version
-            ),
+            HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
             TagMod.devOnly(
-              <.div(
-                ^.cls := "header item",
-                SeqexecStyles.notInMobile,
-                IconTerminal.copy(p = IconTerminal.p.copy(link = true, circular = true, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
+              HeaderItem(HeaderItem.Props(name = "", sub = true, extraStyles = List(SeqexecStyles.notInMobile)),
+                IconTerminal.copy(p =
+                  IconTerminal.p.copy(link = true, circular = true, size = Size.Mini, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
               )
             ),
             wsConnect(ConnectionState.apply),

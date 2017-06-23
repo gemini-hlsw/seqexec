@@ -31,6 +31,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginRight(1.5.em)
   )
 
+  val logo: StyleA = style(
+    height(45.px),
+    width(45.px)
+  )
+
   // Media query to adjust the width of containers on mobile to the max allowed width
   val deviceContainer: StyleA = style("ui.container")(
     media.only.screen.maxWidth(767.px)(

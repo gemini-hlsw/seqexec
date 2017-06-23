@@ -16,6 +16,7 @@ import diode.ModelRO
 object SeqexecUI {
   private val lbConnect = SeqexecCircuit.connect(_.loginBox)
   private val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
+  private val navLocationConnect = SeqexecCircuit.connect(_.navLocation)
 
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
@@ -27,7 +28,7 @@ object SeqexecUI {
         <.div(
           NavBar(),
           wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
-          QueueArea(),
+          navLocationConnect(_ => QueueArea()),
           r.render(),
           lbConnect(LoginBox.apply)
         )
@@ -42,7 +43,7 @@ object SeqexecUI {
         // Runtime verification that all pages are routed
         .verify(Root, InstrumentNames.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
-          Callback.when(next != SeqexecCircuit.zoom(_.navLocation).value)(Callback.log(next.toString) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
+          Callback.when(next != SeqexecCircuit.zoom(_.navLocation).value)(Callback.log("post render" + next.toString) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith(layout)
         .logToConsole
     }
@@ -50,6 +51,7 @@ object SeqexecUI {
     val (router, routerLogic) = Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig)
 
     def navigated(page: ModelRO[SeqexecPages]): Unit = {
+      println("navigated " + page)
       scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
     }
 
