@@ -287,6 +287,16 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   object oiwfsProbeGuideConfig extends ProbeGuideConfig("oi", tcsState)
 
+  //`locked` gets a piece of code and runs it protected by `lock`
+  private def locked[A](lock: ReentrantLock)(f: => A): A = {
+    lock.lock()
+    try {
+      f
+    } finally {
+      lock.unlock()
+    }
+  }
+
   // This functions returns a Task that, when run, will wait up to `timeout` seconds for the TCS in-position flag to
   // set to TRUE
   def waitInPosition(timeout: Time): SeqAction[Unit] =
@@ -298,31 +308,19 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
       val resultGuard = new AtomicInteger(1)
       val lock = new ReentrantLock()
 
-      //`locked` gets a piece of code and runs it protected by `lock`
-      def locked(f: => Unit): Unit = {
-        lock.lock()
-        try {
-          f
-        } finally {
-          lock.unlock()
-        }
-      }
-
       // First we verify that the in-position flag is not already active.
       if (!inPositionAttr.values().isEmpty && inPositionAttr.value == "TRUE") {
         f(TrySeq(()).right)
       } else {
-
         // If not, we set a timer for the timeout, and a listener for the EPICS channel corresponding to the TCS
         // in-position flag.
         // The timer and the listener can both complete the Task. The first one to do it cancels the other. The use of
         // `resultGuard` guarantees that only one of them will complete the Task.
         val timer = new Timer
         val statusListener = new CaAttributeListener[String] {
-
           override def onValueChange(newVals: util.List[String]): Unit = {
             if (!newVals.isEmpty && newVals.get(0) == "TRUE" && resultGuard.getAndDecrement() == 1) {
-              locked {
+              locked(lock) {
                 inPositionAttr.removeListener(this)
                 timer.cancel()
               }
@@ -335,11 +333,11 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
           override def onValidityChange(newValidity: Boolean): Unit = {}
         }
 
-        locked {
+        locked(lock) {
           if (timeout.toMilliseconds.toLong > 0) {
             timer.schedule(new TimerTask {
               override def run(): Unit = if (resultGuard.getAndDecrement() == 1) {
-                locked {
+                locked(lock) {
                   inPositionAttr.removeListener(statusListener)
                 }
 
@@ -356,17 +354,8 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
   def waitAGInPosition(timeout: Time): SeqAction[Unit] =
     EpicsCommand.safe(EitherT(Task.async[TrySeq[Unit]]((f) => {
-
       val resultGuard = new AtomicInteger(1)
       val lock = new ReentrantLock()
-      def locked(f: => Unit): Unit = {
-        lock.lock()
-        try {
-          f
-        } finally {
-          lock.unlock()
-        }
-      }
 
       if (!agInPositionAttr.values.isEmpty && agInPositionAttr.value == 1.0) {
         f(TrySeq(()).right)
@@ -377,7 +366,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
           override def onValueChange(newVals: util.List[java.lang.Double]): Unit = {
             if (!newVals.isEmpty && newVals.get(0) == 1.0 && resultGuard.getAndDecrement() == 1) {
-              locked {
+              locked(lock) {
                 agInPositionAttr.removeListener(this)
                 timer.cancel()
               }
@@ -389,11 +378,11 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
           override def onValidityChange(newValidity: Boolean): Unit = {}
         }
 
-        locked {
+        locked(lock) {
           if (timeout.toMilliseconds.toLong > 0) {
             timer.schedule(new TimerTask {
               override def run(): Unit = if (resultGuard.getAndDecrement() == 1) {
-                locked {
+                locked(lock) {
                   agInPositionAttr.removeListener(statusListener)
                 }
 
@@ -511,15 +500,15 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def gwfs4Target: Target = target("g4")
 
-  def m2UserFocusOffset = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
+  def m2UserFocusOffset: Option[Double] = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
 
   val pwfs1Status = epicsService.getStatusAcceptor("pwfs1state")
 
-  def pwfs1IntegrationTime = Option(pwfs1Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
+  def pwfs1IntegrationTime: Option[Double] = Option(pwfs1Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
   val pwfs2Status = epicsService.getStatusAcceptor("pwfs2state")
 
-  def pwfs2IntegrationTime = Option(pwfs2Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
+  def pwfs2IntegrationTime: Option[Double] = Option(pwfs2Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
   val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
 
@@ -527,13 +516,14 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def oiwfsIntegrationTime: Option[Double]  = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
   private def instPort(name: String): Option[Int] = Option(tcsState.getIntegerAttribute(s"${name}Port").value).map(_.intValue)
-  def gsaoiPort = instPort("gsaoi")
-  def gpiPort = instPort("gpi")
-  def f2Port = instPort("f2")
-  def niriPort = instPort("niri")
-  def gnirsPort = instPort("nirs")
-  def nifsPort = instPort("nifs")
-  def gmosPort = instPort("gmos")
+
+  def gsaoiPort: Option[Int] = instPort("gsaoi")
+  def gpiPort: Option[Int]= instPort("gpi")
+  def f2Port: Option[Int] = instPort("f2")
+  def niriPort: Option[Int] = instPort("niri")
+  def gnirsPort: Option[Int] = instPort("nirs")
+  def nifsPort: Option[Int] = instPort("nifs")
+  def gmosPort: Option[Int] = instPort("gmos")
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics] {

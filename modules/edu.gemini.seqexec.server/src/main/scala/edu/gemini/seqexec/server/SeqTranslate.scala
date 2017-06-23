@@ -51,6 +51,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           d <- dataId
           _ <- systems.odb.datasetStart(obsId, d, imageFileId)
         } yield ()
+
         def sendDataEnd(imageFileId: ImageFileId): SeqAction[Unit] = for {
           d <- dataId
           _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
@@ -238,7 +239,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: Settings) = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   case class Systems(
                       odb: ODBProxy,

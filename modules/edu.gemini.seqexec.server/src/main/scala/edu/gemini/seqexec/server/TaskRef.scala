@@ -7,12 +7,12 @@ sealed trait TaskRef[A] {
 
   /** Atomic modification. */
   def modify(f: A => A): Task[Unit]
-  
+
   /** Return the current value. */
   def get: Task[A]
 
   /** Replace the current value. */
-  def put(a: A): Task[Unit] = 
+  def put(a: A): Task[Unit] =
     modify(_ => a)
 
 }

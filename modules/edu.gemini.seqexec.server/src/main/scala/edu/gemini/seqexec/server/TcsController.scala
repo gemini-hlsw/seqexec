@@ -58,8 +58,8 @@ object TcsController {
   sealed trait M2GuideConfig
   case object M2GuideOff extends M2GuideConfig
   final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig {
-    def setComa(v: ComaOption) = M2GuideOn(v, source)
-    def setSource(v: Set[TipTiltSource]) = M2GuideOn(coma, v)
+    def setComa(v: ComaOption): M2GuideConfig = M2GuideOn(v, source)
+    def setSource(v: Set[TipTiltSource]): M2GuideConfig = M2GuideOn(coma, v)
   }
 
   /** Data type for M2 guide config. */
@@ -183,9 +183,9 @@ object TcsController {
 
   /** Data type for guide config. */
   final case class GuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig) {
-    def setMountGuide(v: MountGuideOption) = GuideConfig(v, m1Guide, m2Guide)
-    def setM1Guide(v: M1GuideConfig) = GuideConfig(mountGuide, v, m2Guide)
-    def setM2Guide(v: M2GuideConfig) = GuideConfig(mountGuide, m1Guide, v)
+    def setMountGuide(v: MountGuideOption): GuideConfig = GuideConfig(v, m1Guide, m2Guide)
+    def setM1Guide(v: M1GuideConfig): GuideConfig = GuideConfig(mountGuide, v, m2Guide)
+    def setM2Guide(v: M2GuideConfig): GuideConfig = GuideConfig(mountGuide, m1Guide, v)
   }
 
   // TCS expects offsets as two length quantities (in millimeters) in the focal plane
@@ -238,13 +238,13 @@ object TcsController {
   ) {
 
     // TODO: these in terms of .copy
-    def setOffsetA(v: FocalPlaneOffset) = TelescopeConfig(OffsetA(v), offsetB, offsetC, wavelA, wavelB, wavelC, m2beam)
-    def setOffsetB(v: FocalPlaneOffset) = TelescopeConfig(offsetA, OffsetB(v), offsetC, wavelA, wavelB, wavelC, m2beam)
-    def setOffsetC(v: FocalPlaneOffset) = TelescopeConfig(offsetA, offsetB, OffsetC(v), wavelA, wavelB, wavelC, m2beam)
-    def setWavelengthA(v: Wavelength) = TelescopeConfig(offsetA, offsetB, offsetC, WavelengthA(v), wavelB, wavelC, m2beam)
-    def setWavelengthB(v: Wavelength) = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, WavelengthB(v), wavelC, m2beam)
-    def setWavelengthC(v: Wavelength) = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, WavelengthC(v), m2beam)
-    def setBeam(v: Beam) = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, wavelC, v)
+    def setOffsetA(v: FocalPlaneOffset): TelescopeConfig = TelescopeConfig(OffsetA(v), offsetB, offsetC, wavelA, wavelB, wavelC, m2beam)
+    def setOffsetB(v: FocalPlaneOffset): TelescopeConfig = TelescopeConfig(offsetA, OffsetB(v), offsetC, wavelA, wavelB, wavelC, m2beam)
+    def setOffsetC(v: FocalPlaneOffset): TelescopeConfig = TelescopeConfig(offsetA, offsetB, OffsetC(v), wavelA, wavelB, wavelC, m2beam)
+    def setWavelengthA(v: Wavelength): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, WavelengthA(v), wavelB, wavelC, m2beam)
+    def setWavelengthB(v: Wavelength): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, WavelengthB(v), wavelC, m2beam)
+    def setWavelengthC(v: Wavelength): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, WavelengthC(v), m2beam)
+    def setBeam(v: Beam): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, wavelC, v)
   }
 
   final case class ProbeTrackingConfigP1(self: ProbeTrackingConfig) extends AnyVal
@@ -258,10 +258,10 @@ object TcsController {
     oiwfs: ProbeTrackingConfigOI,
     aowfs: ProbeTrackingConfigAO
   ) {
-    def setPwfs1TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(ProbeTrackingConfigP1(v), pwfs2, oiwfs, aowfs)
-    def setPwfs2TrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, ProbeTrackingConfigP2(v), oiwfs, aowfs)
-    def setOiwfsTrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, pwfs2, ProbeTrackingConfigOI(v), aowfs)
-    def setAowfsTrackingConfig(v: ProbeTrackingConfig) = GuidersTrackingConfig(pwfs1, pwfs2, oiwfs, ProbeTrackingConfigAO(v))
+    def setPwfs1TrackingConfig(v: ProbeTrackingConfig): GuidersTrackingConfig = GuidersTrackingConfig(ProbeTrackingConfigP1(v), pwfs2, oiwfs, aowfs)
+    def setPwfs2TrackingConfig(v: ProbeTrackingConfig): GuidersTrackingConfig = GuidersTrackingConfig(pwfs1, ProbeTrackingConfigP2(v), oiwfs, aowfs)
+    def setOiwfsTrackingConfig(v: ProbeTrackingConfig): GuidersTrackingConfig = GuidersTrackingConfig(pwfs1, pwfs2, ProbeTrackingConfigOI(v), aowfs)
+    def setAowfsTrackingConfig(v: ProbeTrackingConfig): GuidersTrackingConfig = GuidersTrackingConfig(pwfs1, pwfs2, oiwfs, ProbeTrackingConfigAO(v))
   }
 
   sealed trait GuiderSensorOption
@@ -279,9 +279,9 @@ object TcsController {
     pwfs2: GuiderSensorOptionP2,
     oiwfs: GuiderSensorOptionOI
   ) {
-    def setPwfs1GuiderSensorOption(v: GuiderSensorOption) = this.copy(pwfs1 = GuiderSensorOptionP1(v))
-    def setPwfs2GuiderSensorOption(v: GuiderSensorOption) = this.copy(pwfs2 = GuiderSensorOptionP2(v))
-    def setOiwfsGuiderSensorOption(v: GuiderSensorOption) = this.copy(oiwfs = GuiderSensorOptionOI(v))
+    def setPwfs1GuiderSensorOption(v: GuiderSensorOption): GuidersEnabled = this.copy(pwfs1 = GuiderSensorOptionP1(v))
+    def setPwfs2GuiderSensorOption(v: GuiderSensorOption): GuidersEnabled = this.copy(pwfs2 = GuiderSensorOptionP2(v))
+    def setOiwfsGuiderSensorOption(v: GuiderSensorOption): GuidersEnabled = this.copy(oiwfs = GuiderSensorOptionOI(v))
   }
 
   final case class AGConfig(sfPos: Option[ScienceFoldPosition], hrwfsPos: Option[HrwfsPickupPosition])
@@ -296,12 +296,12 @@ object TcsController {
     agc: AGConfig,
     iaa: InstrumentAlignAngle
   ) {
-    def setGuideConfig(v: GuideConfig) = TcsConfig(v, tc, gtc, ge, agc, iaa)
-    def setTelescopeConfig(v: TelescopeConfig) = TcsConfig(gc, v, gtc, ge, agc, iaa)
-    def setGuidersTrackingConfig(v: GuidersTrackingConfig) = TcsConfig(gc, tc, v, ge, agc, iaa)
-    def setGuidersEnabled(v: GuidersEnabled) = TcsConfig(gc, tc, gtc, v, agc, iaa)
-    def setAGConfig(v: AGConfig) = TcsConfig(gc, tc, gtc, ge, v, iaa)
-    def setIAA(v: InstrumentAlignAngle) = TcsConfig(gc, tc, gtc, ge, agc, v)
+    def setGuideConfig(v: GuideConfig): TcsConfig = TcsConfig(v, tc, gtc, ge, agc, iaa)
+    def setTelescopeConfig(v: TelescopeConfig): TcsConfig = TcsConfig(gc, v, gtc, ge, agc, iaa)
+    def setGuidersTrackingConfig(v: GuidersTrackingConfig): TcsConfig = TcsConfig(gc, tc, v, ge, agc, iaa)
+    def setGuidersEnabled(v: GuidersEnabled): TcsConfig = TcsConfig(gc, tc, gtc, v, agc, iaa)
+    def setAGConfig(v: AGConfig): TcsConfig = TcsConfig(gc, tc, gtc, ge, v, iaa)
+    def setIAA(v: InstrumentAlignAngle): TcsConfig = TcsConfig(gc, tc, gtc, ge, agc, v)
   }
 
   sealed trait Subsystem
