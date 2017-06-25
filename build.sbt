@@ -33,7 +33,6 @@ lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.we
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
-  .settings(commonSettings: _*)
   .dependsOn(edu_gemini_seqexec_model)
   .jvmSettings(
   )
@@ -42,8 +41,10 @@ lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure)
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
+  .settings(commonSettings: _*)
 
 lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
+  .settings(commonJSSettings: _*)
 
 // Project for the server side application
 lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
@@ -92,7 +93,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
 lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(BuildInfoPlugin)
-  .settings(commonSettings: _*)
+  .settings(commonJSSettings: _*)
   .settings(
     // This is a not very nice trick to remove js files that exist on the scala tools
     // library and that conflict with the requested on jsDependencies, in particular
@@ -140,7 +141,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
 lazy val edu_gemini_seqexec_web_client_cli = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client.cli"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(BuildInfoPlugin)
-  .settings(commonSettings: _*)
+  .settings(commonJSSettings: _*)
   .settings(
     // Write the generated js to the filename seqexec-cli.js
     artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec-cli.js",
@@ -195,14 +196,14 @@ lazy val edu_gemini_seqexec_server = project
 // We have to define the project properties at this level
 lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .in(file("modules/edu.gemini.seqexec.model"))
-  .settings(commonSettings: _*)
   .settings(libraryDependencies ++= BooPickle.value +: Monocle.value)
 
 lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
+  .settings(commonSettings: _*)
 
 lazy val edu_gemini_seqexec_model_JS:Project = edu_gemini_seqexec_model.js
+  .settings(commonJSSettings: _*)
 
-// This should eventually replaced by seqexec_server
 lazy val edu_gemini_seqexec_engine = project
   .in(file("modules/edu.gemini.seqexec.engine"))
   .dependsOn(edu_gemini_seqexec_model_JVM)
@@ -385,7 +386,7 @@ lazy val edu_gemini_p1backend_server = project.in(file("modules/edu.gemini.p1bac
 lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1backend/edu.gemini.p1backend.client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(BuildInfoPlugin)
-  .settings(commonSettings: _*)
+  .settings(commonJSSettings: _*)
   .settings(
     // This is a not very nice trick to remove js files that exist on the scala tools
     // library and that conflict with the requested on jsDependencies, in particular
@@ -415,11 +416,7 @@ lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1bac
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       JQuery.value
-    ) ++ ReactScalaJS.value ++ Diode.value,
-    // This is needed to support the TLS compiler and scala.js at the same time
-    libraryDependencies ~= { (libDeps: Seq[ModuleID]) =>
-      libDeps.filterNot(dep => dep.name == "scalajs-compiler")
-    }
+    ) ++ ReactScalaJS.value ++ Diode.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
