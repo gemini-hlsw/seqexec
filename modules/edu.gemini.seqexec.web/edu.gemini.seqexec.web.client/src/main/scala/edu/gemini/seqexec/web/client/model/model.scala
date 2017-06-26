@@ -151,7 +151,6 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
                                loginBox: SectionVisibilityState,
                                webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
-                               searchResults: Pot[SequencesQueue[SequenceId]],
                                sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecAppRootModel {
@@ -159,5 +158,5 @@ object SeqexecAppRootModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
   val initial = SeqexecAppRootModel(WebSocketConnection.empty, Pages.Root, None, noSequencesLoaded,
-    SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+    SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), SequencesOnDisplay.empty)
 }
