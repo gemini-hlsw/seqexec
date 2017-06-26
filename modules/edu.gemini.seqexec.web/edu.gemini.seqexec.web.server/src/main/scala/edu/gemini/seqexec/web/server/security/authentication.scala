@@ -50,7 +50,7 @@ case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Time, cookieNa
 
 // Intermediate class to decode the claim stored in the JWT token
 case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
-  def toUserDetails = UserDetails(username, displayName)
+  def toUserDetails: UserDetails = UserDetails(username, displayName)
 }
 
 case class AuthenticationService(config: AuthenticationConfig) extends AuthService {
