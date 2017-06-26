@@ -23,9 +23,6 @@ object Pages {
 case class NavigateTo(page: Pages.SeqexecPages) extends Action
 case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
 
-// Actions to close and/open the dev console area
-case object ToggleDevConsole extends Action
-
 // Actions to close and/open the login box
 case object OpenLoginBox extends Action
 case object CloseLoginBox extends Action
@@ -122,12 +119,6 @@ object WebSocketConnection {
   val empty = WebSocketConnection(Empty, 0)
 }
 
-case class WebSocketsLog(log: List[SeqexecEvent]) {
-  // Upper bound of accepted events or we may run out of memory
-  val maxLength = 100
-  def append(e: SeqexecEvent):WebSocketsLog = copy((log :+ e).take(maxLength - 1))
-}
-
 case class GlobalLogEntry(timestamp: LocalTime, s: String)
 
 /**
@@ -147,9 +138,7 @@ case class SeqexecAppRootModel(ws: WebSocketConnection,
                                navLocation: Pages.SeqexecPages,
                                user: Option[UserDetails],
                                sequences: SeqexecAppRootModel.LoadedSequences,
-                               devConsoleState: SectionVisibilityState,
                                loginBox: SectionVisibilityState,
-                               webSocketLog: WebSocketsLog,
                                globalLog: GlobalLog,
                                sequencesOnDisplay: SequencesOnDisplay)
 
@@ -158,5 +147,5 @@ object SeqexecAppRootModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
   val initial = SeqexecAppRootModel(WebSocketConnection.empty, Pages.Root, None, noSequencesLoaded,
-    SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), SequencesOnDisplay.empty)
+    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
 }

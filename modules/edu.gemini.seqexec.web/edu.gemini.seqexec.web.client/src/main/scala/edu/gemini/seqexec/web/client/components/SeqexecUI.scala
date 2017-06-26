@@ -15,7 +15,6 @@ import diode.ModelRO
   */
 object SeqexecUI {
   private val lbConnect = SeqexecCircuit.connect(_.loginBox)
-  private val wsConsoleConnect = SeqexecCircuit.connect(m => (m.devConsoleState, m.webSocketLog))
   private val navLocationConnect = SeqexecCircuit.connect(_.navLocation)
 
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
@@ -27,7 +26,6 @@ object SeqexecUI {
       def layout(c: RouterCtl[SeqexecPages], r: Resolution[SeqexecPages]) =
         <.div(
           NavBar(),
-          wsConsoleConnect(u => WebSocketsConsole(u()._1, u()._2)),
           navLocationConnect(_ => QueueArea()),
           r.render(),
           lbConnect(LoginBox.apply)

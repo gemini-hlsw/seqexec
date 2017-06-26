@@ -94,21 +94,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
 }
 
 /**
-  * Handles actions related to the development console
-  */
-class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case ToggleDevConsole if value == SectionOpen   =>
-      updated(SectionClosed)
-
-    case ToggleDevConsole if value == SectionClosed =>
-      updated(SectionOpen)
-  }
-}
-
-/**
   * Handles actions related to opening/closing the login box
   */
 class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
@@ -312,12 +297,12 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
-      updated(value.copy(_3 = u))
+      updated(value.copy(_2 = u))
 
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
@@ -326,7 +311,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, WebSockets
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
-      val observer = value._3.map(_.displayName)
+      val observer = value._2.map(_.displayName)
       val (sequencesWithObserver, effects) =
         s.view.queue.foldLeft(
           (List.empty[SequenceView],
@@ -385,10 +370,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
   val navigationHandler      = new NavigationHandler(zoomTo(_.navLocation))
-  val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
   val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
   val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
@@ -425,10 +408,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    devConsoleHandler,
     loginBoxHandler,
     userLoginHandler,
-    wsLogHandler,
     sequenceDisplayHandler,
     globalLogHandler,
     conditionsHandler,

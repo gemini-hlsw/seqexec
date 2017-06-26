@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import diode.react.ReactPot._
-import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, ToggleDevConsole, WebSocketConnection}
+import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, WebSocketConnection}
 import edu.gemini.seqexec.web.client.model.Pages.Root
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -49,12 +49,6 @@ object NavBar {
               "Seqexec"
             ),
             HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
-            TagMod.devOnly(
-              HeaderItem(HeaderItem.Props(name = "", sub = true, extraStyles = List(SeqexecStyles.notInMobile)),
-                IconTerminal.copy(p =
-                  IconTerminal.p.copy(link = true, circular = true, size = Size.Mini, onClick = Callback {SeqexecCircuit.dispatch(ToggleDevConsole)}))
-              )
-            ),
             wsConnect(ConnectionState.apply),
             userConnect(TopMenu.apply)
           )
