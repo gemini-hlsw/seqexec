@@ -117,7 +117,7 @@ object SequenceHeadersAndTable {
   * All connects at this level, be careful about adding connects below here
   */
 object SequenceTabs {
-  val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
+  // val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
 
   private val component = ScalaComponent.builder[Unit]("SequenceTabs")
     .stateless
@@ -130,8 +130,8 @@ object SequenceTabs {
           <.div(
             ^.cls := "row computer only",
             <.div(
-              ^.cls := "sixteen wide column",
-              logConnect(LogArea.apply)
+              ^.cls := "sixteen wide column"
+              // logConnect(LogArea.apply)
             )
           )
         )

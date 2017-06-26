@@ -132,20 +132,30 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 }
 
 /**
+ * UI model, changes here will update the UI
+ */
+case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
+                          user: Option[UserDetails],
+                          sequences: SeqexecAppRootModel.LoadedSequences,
+                          loginBox: SectionVisibilityState,
+                          globalLog: GlobalLog,
+                          sequencesOnDisplay: SequencesOnDisplay)
+
+object SeqexecUIModel {
+  private val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
+  val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
+    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
+}
+
+
+
+/**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(ws: WebSocketConnection,
-                               navLocation: Pages.SeqexecPages,
-                               user: Option[UserDetails],
-                               sequences: SeqexecAppRootModel.LoadedSequences,
-                               loginBox: SectionVisibilityState,
-                               globalLog: GlobalLog,
-                               sequencesOnDisplay: SequencesOnDisplay)
+case class SeqexecAppRootModel(ws: WebSocketConnection, uiModel: SeqexecUIModel)
 
 object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
-  val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, Pages.Root, None, noSequencesLoaded,
-    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, SeqexecUIModel.initial)
 }

@@ -369,35 +369,34 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  val navigationHandler      = new NavigationHandler(zoomTo(_.navLocation))
-  val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
-  val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
-  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
-  val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
-  val conditionsHandler      = new ConditionsHandler(zoomTo(_.sequences.conditions))
-  val operatorHandler        = new OperatorHandler(zoomTo(_.sequences.operator))
+  val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
+  val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
+  val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
+  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.uiModel.sequencesOnDisplay))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
+  val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
+  val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
+  val operatorHandler        = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
   // Some useful readers
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] = {
-    zoom(_.sequences.queue.find(_.id == id))
-  }
+  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
+    zoom(_.uiModel.sequences.queue.find(_.id == id))
 
   // Reader to indicate the allowed interactions
-  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws, m.sequencesOnDisplay.currentSequences))
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.currentSequences))
 
   // Reader for sequences on display
-  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
+  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
 
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
-  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)] = SeqexecCircuit.status.zip(zoom(_.sequences))
-  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
+  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences))
+  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences.conditions))
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
-    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.user, c.ws, c.sequencesOnDisplay.currentSequences), c.sequences.conditions, c.sequences.operator))
+    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
   /**
     * Makes a reference to a sequence on the queue.
