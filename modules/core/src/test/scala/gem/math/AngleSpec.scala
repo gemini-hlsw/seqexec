@@ -4,9 +4,15 @@
 package gem.math
 
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
+
+import scalaz.{ Monoid, Show }
 
 class AngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+
+  // Compilation test
+  protected val a0 = implicitly[Monoid[Angle]]
+  protected val a1 = implicitly[Show[Angle]]
 
   "Conversion to DMS" must "be invertable" in {
     forAll { (a: Angle) =>
@@ -17,6 +23,21 @@ class AngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitrar
         dms.arcseconds,
         dms.milliarcseconds
       ) shouldEqual a
+    }
+  }
+
+  "Narrowing to HourAngle" must "be invertable where defined" in {
+    forAll { (a: Angle) =>
+      a.toHourAngleExact match {
+        case Some(b) => a shouldEqual b
+        case None    => succeed
+      }
+    }
+  }
+
+  "Flipping" must "be invertable" in {
+    forAll { (a: Angle) =>
+      a.flip.flip shouldEqual a
     }
   }
 

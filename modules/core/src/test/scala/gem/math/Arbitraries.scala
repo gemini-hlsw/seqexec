@@ -8,7 +8,10 @@ import org.scalacheck.Arbitrary._
 
 trait Arbitraries {
 
-  implicit def getAngle: Arbitrary[Angle] =
+  implicit def arbAngle: Arbitrary[Angle] =
     Arbitrary(arbitrary[Double].map(Angle.fromDoubleDegrees))
+
+  implicit def arbHourAngle: Arbitrary[HourAngle] =
+    Arbitrary(arbitrary[Double].map(HourAngle.fromDoubleHours))
 
 }

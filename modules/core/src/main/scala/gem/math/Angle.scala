@@ -3,7 +3,9 @@
 
 package gem.math
 
-import scalaz.Monoid
+import scalaz.{ Monoid, Show }
+import scalaz.std.anyVal.intInstance
+import scalaz.syntax.equal._
 
 /**
  * Exact angles represented as integral milliarcseconds. These values form an Abelian group over
@@ -12,7 +14,7 @@ import scalaz.Monoid
  * divisible by 15 milliarcseconds) is represented by the HourAgle subtype.
  * @param toMilliarcseconds This angle in milliarcseconds. Exact.
  */
-sealed class Angle (val toMilliarcseconds: Int) {
+sealed class Angle protected (val toMilliarcseconds: Int) {
 
   // Sanity checks … should be correct via the companion constructor.
   assert(toMilliarcseconds >= 0, s"Invariant violated. $toMilliarcseconds is negative.")
@@ -45,9 +47,8 @@ sealed class Angle (val toMilliarcseconds: Int) {
    * Convert to the closest hour angle iff its magnitide is an even multiple of 15 milliarcseconds.
    * Exact and invertible where defined.
    */
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def toHourAngleExact: Option[HourAngle] =
-    if (toMilliarcseconds % 15 == 0) Some(toHourAngle) else None
+    if (toMilliarcseconds % 15 === 0) Some(toHourAngle) else None
 
   /**
    * Destructure this value into a sum of degrees, arcminutes, arcseconds, and milliarcseconds.
@@ -69,10 +70,9 @@ sealed class Angle (val toMilliarcseconds: Int) {
     f"Angle($toDMS, $toDoubleDegrees°)"
 
   /** Angles are equal if their magnitudes are equal. Exact. */
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   override final def equals(a: Any) =
     a match {
-      case a: Angle => a.toMilliarcseconds == toMilliarcseconds
+      case a: Angle => a.toMilliarcseconds === toMilliarcseconds
       case _        => false
     }
 
@@ -114,6 +114,9 @@ object Angle {
   /** Angle is an Abelian group, but monoid is the best we can do for now. */
   implicit val AngleMonoid: Monoid[Angle] =
     Monoid.instance(_ + _, Angle.Angle0)
+
+  implicit val AngleShow: Show[Angle] =
+    Show.showA
 
   // This works for both DMS and HMS so let's just do it once.
   protected[math] def toMillisexigesimal(millis: Int): (Int, Int, Int, Int) = {
@@ -160,11 +163,10 @@ object Angle {
  * addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
  * integral Angles where milliarcseconds are evenly divisible by 15.
  */
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final class HourAngle private (mas: Int) extends Angle(mas) {
 
   // Sanity checks … should be correct via the companion constructor.
-  assert(toMilliarcseconds %  15 == 0, s"Invariant violated. $mas isn't divisible by 15.")
+  assert(toMilliarcseconds %  15 === 0, s"Invariant violated. $mas isn't divisible by 15.")
 
   /** Forget this is an HourAngle. */
   def toAngle: Angle =
@@ -239,9 +241,24 @@ object HourAngle {
   def fromDoubleHours(hs: Double): HourAngle =
     fromMilliseconds((hs * 60 * 60 * 1000).toLong)
 
+  /**
+   * Construct a new HourAngle of the given magnitide as a sum of hours, minutes, seconds, and
+   * milliseconds. Exact modulo 24h.
+   */
+  def fromHMS(hours: Int, minutes: Int, seconds: Int, milliseconds: Int): HourAngle =
+    fromMilliseconds(
+      milliseconds.toLong +
+      seconds.toLong * 1000 +
+      minutes.toLong * 1000 * 60 +
+      hours.toLong   * 1000 * 60 * 60
+    )
+
   /** HourAngle is an Abelian group (a subgroup of Angle), but monoid is the best we can do for now. */
   implicit val HourAngleMonoid: Monoid[HourAngle] =
     Monoid.instance(_ + _, HourAngle.HourAngle0)
+
+  implicit val HourAngleShow: Show[HourAngle] =
+    Show.showA
 
   /**
    * Integral hour angle represented as a sum of hours, minutes, seconds, and milliseconds. This
@@ -254,7 +271,7 @@ object HourAngle {
       minutes: Int,
       seconds: Int,
       milliseconds: Int
-    ) = Angle.toMillisexigesimal(toHourAngle.toMilliarcseconds)
+    ) = Angle.toMillisexigesimal(toHourAngle.toMilliseconds)
     override final def toString =
       f"$hours:$minutes%02d:$seconds%02d.$milliseconds%03d"
   }
