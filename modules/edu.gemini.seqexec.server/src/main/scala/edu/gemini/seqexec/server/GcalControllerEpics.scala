@@ -1,7 +1,5 @@
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
-
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 
@@ -12,8 +10,6 @@ import Scalaz._
   * Created by jluhrs on 3/16/17.
   */
 object GcalControllerEpics extends GcalController {
-  private val Log = Logger.getLogger(getClass.getName)
-
   import EpicsCodex._
   import GcalController._
 

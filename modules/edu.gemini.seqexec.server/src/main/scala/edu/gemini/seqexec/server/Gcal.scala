@@ -7,7 +7,7 @@ import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{CALIBRATION_CONFIG_NAME, CALIBRATION_KEY}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.Function.const
 import scalaz.Scalaz._
 import scalaz.\/
@@ -60,7 +60,7 @@ object Gcal {
   }
 
   def fromSequenceConfig(config: Config, isCP: Boolean): SeqAction[GcalConfig] = {
-    val lamps = config.extract(CALIBRATION_KEY / LAMP_PROP).as[java.util.Set[Lamp]].map(_.toList).recoverWithDefault(List.empty)
+    val lamps = config.extract(CALIBRATION_KEY / LAMP_PROP).as[java.util.Set[Lamp]].map(_.asScala.toList).recoverWithDefault(List.empty)
 
     val arLamp = lamps.map(v => if (v.contains(Lamp.AR_ARC)) Some(LampState.On) else Some(LampState.Off))
     val cuarLamp = lamps.map(v => if (v.contains(Lamp.CUAR_ARC)) Some(LampState.On) else Some(LampState.Off))

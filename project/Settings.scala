@@ -27,7 +27,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaCommonVersion = "2.11.11"
+    val scalaCommonVersion = "2.12.2"
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
     val scalaJSVersion     = scalaCommonVersion
 
@@ -66,7 +66,7 @@ object Settings {
     val jQuery         = "3.2.1"
     val semanticUI     = "2.2.7"
     val jQueryTerminal = "0.11.2"
-    val ocsVersion     = "2017101.1.1"
+    val ocsVersion     = "2017101.1.2"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"

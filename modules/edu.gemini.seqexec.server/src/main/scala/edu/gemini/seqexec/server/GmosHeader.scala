@@ -258,6 +258,6 @@ object GmosHeader {
     override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     override def isADCInUse: Boolean =
-      GmosEpics.instance.adcUsed.forall(_ == true)
+      GmosEpics.instance.adcUsed.forall(_ === 1)
   }
 }

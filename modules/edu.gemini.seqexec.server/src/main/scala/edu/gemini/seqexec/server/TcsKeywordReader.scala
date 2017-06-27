@@ -185,7 +185,6 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getXOffset: SeqAction[Option[Double]] = TcsEpics.instance.targetA.flatMap(v => v.lift(xoffIndex).map(_*focalPlaneScale))
   override def getYOffset: SeqAction[Option[Double]] = TcsEpics.instance.targetA.flatMap(v => v.lift(yoffIndex).map(_*focalPlaneScale))
 
-  private val decIndex = 1
   private val raoffIndex = 2
   private val decoffIndex = 3
   private val degreeToArcsec = 3600.0

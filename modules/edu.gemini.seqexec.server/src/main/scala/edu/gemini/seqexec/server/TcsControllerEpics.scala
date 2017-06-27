@@ -159,9 +159,6 @@ object TcsControllerEpics extends TcsController {
   implicit private val decodeGuideSensorOption: DecodeEpicsValue[BinaryYesNo, GuiderSensorOption] =
     DecodeEpicsValue((s: BinaryYesNo) => if (s == BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn)
 
-  implicit private val decodeAltairSensorOption: DecodeEpicsValue[Double, GuiderSensorOption] =
-    DecodeEpicsValue((s: Double) => if (s == 0.0) GuiderSensorOff else GuiderSensorOn)
-
   private def getGuidersEnabled: TrySeq[GuidersEnabled] = {
     for {
       p1On <- TcsEpics.instance.pwfs1On.map(decode[BinaryYesNo, GuiderSensorOption])
@@ -380,8 +377,6 @@ object TcsControllerEpics extends TcsController {
     })
 
   private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.instance.m2GuideCmd.setState(encode(c))
-
-  implicit private val decodeInPosition: DecodeEpicsValue[String, Boolean] = DecodeEpicsValue(x => x.trim == "TRUE")
 
   override def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit] =
     for {

@@ -29,6 +29,7 @@ lazy val edu_gemini_web_server_common = project
 
 // Root web project
 lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
+  .settings(commonSettings: _*)
   .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -292,6 +293,7 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
 
 // Root web project
 lazy val edu_gemini_p1backend = project.in(file("modules/edu.gemini.p1backend"))
+  .settings(commonSettings: _*)
   .aggregate(edu_gemini_p1backend_server, edu_gemini_p1backend_client, edu_gemini_p1backend_shared_JS, edu_gemini_p1backend_shared_JVM)
 
 // a special crossProject for configuring a JS/JVM/shared structure
