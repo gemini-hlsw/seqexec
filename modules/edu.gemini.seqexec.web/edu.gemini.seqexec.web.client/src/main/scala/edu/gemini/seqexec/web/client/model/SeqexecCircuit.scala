@@ -381,6 +381,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   override protected def initialModel = SeqexecAppRootModel.initial
 
   // Some useful readers
+  val loginBox = zoom(_.uiModel.loginBox)
 
   // Reader for a specific sequence if available
   def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =

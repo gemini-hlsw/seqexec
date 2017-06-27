@@ -14,12 +14,12 @@ import diode.react.ModelProxy
 object SeqexecMain {
   private val component = ScalaComponent.builder[ModelProxy[SeqexecUIModel]]("SeqexecUI")
     .stateless
-    .render(_ =>
+    .render_P(p =>
       <.div(
-        NavBar()
+        NavBar(),
         // navLocationConnect(_ => QueueArea()),
         // r.render(),
-        //lbConnect(LoginBox.apply)
+        LoginBox(SeqexecCircuit.loginBox)
       )
     ).build
 
@@ -30,7 +30,7 @@ object SeqexecMain {
   * Top level UI component
   */
 object SeqexecUI {
-  // private val lbConnect = SeqexecCircuit.connect(_.loginBox)
+  // private val lConnect = SeqexecCircuit.connect(_.loginBox)
   // private val navLocationConnect = SeqexecCircuit.connect(_.navLocation)
   private val uiConnect = SeqexecCircuit.connect(_.uiModel)
 
