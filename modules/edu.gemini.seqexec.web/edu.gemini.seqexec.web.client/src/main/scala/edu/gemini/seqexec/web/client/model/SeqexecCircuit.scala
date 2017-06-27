@@ -369,6 +369,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
+  val wsEventsHandler        = new WebSocketEventsHandler(zoomRW(m => (m.uiModel.sequences, m.uiModel.user))((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v._1, user = v._2))))
   val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
@@ -408,6 +409,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
+    wsEventsHandler,
     loginBoxHandler,
     userLoginHandler,
     sequenceDisplayHandler,
