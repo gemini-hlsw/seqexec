@@ -5,6 +5,7 @@ import edu.gemini.seqexec.web.client.model.InstrumentNames
 import edu.gemini.seqexec.web.client.model.SeqexecUIModel
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.model.NavigateSilentTo
+import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
@@ -18,8 +19,7 @@ object SeqexecMain {
       <.div(
         NavBar(),
         QueueArea(SeqexecCircuit.statusAndLoadedSequences),
-        // navLocationConnect(_ => QueueArea()),
-        // r.render(),
+        SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),
         LoginBox(SeqexecCircuit.loginBox)
       )
     ).build

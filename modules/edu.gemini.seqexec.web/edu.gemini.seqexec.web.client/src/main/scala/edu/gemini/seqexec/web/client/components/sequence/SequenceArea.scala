@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import diode.react.{ModelProxy, ReactConnectProxy}
+import diode.ModelR
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.TextMenuSegment
@@ -88,28 +88,25 @@ object SequenceTabsBody {
       )
     ).build
 
-  def apply(p: ModelProxy[(ClientStatus, SequencesOnDisplay)]): Unmounted[Props, Unit, Unit] =
+  def apply(p: SequenceArea.SequencesModel): Unmounted[Props, Unit, Unit] =
     component(Props(p()._1, p()._2))
 }
 
 object SequenceHeadersAndTable {
-  val sequencesDisplayConnect: ReactConnectProxy[(ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.connect(SeqexecCircuit.statusAndSequences)
-  val headerSideBarConnect: ReactConnectProxy[HeaderSideBarReader] = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-
-  private val component = ScalaComponent.builder[Unit]("SequenceHeadersAndTable")
+  private val component = ScalaComponent.builder[SequenceArea.SequencesAreaModel]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "row",
         <.div(
           ^.cls := "four wide column computer tablet only",
-          headerSideBarConnect(HeadersSideBar.apply)
+          HeadersSideBar(p.sideBar)
         ),
-        sequencesDisplayConnect(SequenceTabsBody(_))
+        SequenceTabsBody(p.sequences)
       )
     ) .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(p: SequenceArea.SequencesAreaModel): Unmounted[SequenceArea.SequencesAreaModel, Unit, Unit] = component(p)
 }
 
 /**
@@ -117,42 +114,36 @@ object SequenceHeadersAndTable {
   * All connects at this level, be careful about adding connects below here
   */
 object SequenceTabs {
-  // val logConnect: ReactConnectProxy[GlobalLog] = SeqexecCircuit.connect(_.globalLog)
-
-  private val component = ScalaComponent.builder[Unit]("SequenceTabs")
+  private val component = ScalaComponent.builder[SequenceArea.SequencesAreaModel]("SequenceTabs")
     .stateless
-    .render( _ =>
+    .render_P( p =>
       <.div(
         ^.cls := "ui bottom attached segment",
         <.div(
           ^.cls := "ui two column vertically divided grid",
-          SequenceHeadersAndTable(),
-          <.div(
-            ^.cls := "row computer only",
-            <.div(
-              ^.cls := "sixteen wide column"
-              // logConnect(LogArea.apply)
-            )
-          )
+          SequenceHeadersAndTable(p)
         )
       )
     )
     .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(p: SequenceArea.SequencesAreaModel): Unmounted[SequenceArea.SequencesAreaModel, Unit, Unit] = component(p)
 }
 
 object SequenceArea {
+  type SequencesModel = ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)]
+  type HeadersSideBarModel = ModelR[SeqexecAppRootModel, HeaderSideBarReader]
+  case class SequencesAreaModel(sequences: SequencesModel, sideBar: HeadersSideBarModel)
 
-  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
+  private val component = ScalaComponent.builder[SequencesAreaModel]("QueueTableSection")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences", "key.sequences.menu"),
-        SequenceTabs()
+        SequenceTabs(p)
       )
     ).build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(m: SequencesModel, h: HeadersSideBarModel): Unmounted[SequencesAreaModel, Unit, Unit] = component(SequencesAreaModel(m, h))
 }

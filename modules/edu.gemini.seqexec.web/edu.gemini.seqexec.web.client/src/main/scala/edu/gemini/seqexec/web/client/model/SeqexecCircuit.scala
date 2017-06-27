@@ -384,6 +384,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Some useful readers
   val loginBox = zoom(_.uiModel.loginBox)
   val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences))
+  // Reader for sequences on display
+  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
+  val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
+  def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
+    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
   // Reader for a specific sequence if available
   def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
@@ -392,13 +397,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Reader to indicate the allowed interactions
   def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.currentSequences))
 
-  // Reader for sequences on display
-  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
-
-  val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences.conditions))
-  def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
-    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
   /**
     * Makes a reference to a sequence on the queue.
