@@ -25,6 +25,9 @@ object PioParse {
 
   // ********  Primitives
 
+  val bigDecimal: PioParse[BigDecimal] =
+    PioParse(_.parseBigDecimal.toOption)
+
   val boolean: PioParse[Boolean] =
     PioParse(_.parseBoolean.toOption)
 

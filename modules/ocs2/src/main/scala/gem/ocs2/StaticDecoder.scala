@@ -43,19 +43,23 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Visitor    => VisitorStaticConfig()        .right
     }
 
-  private def parseGmosNorthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
+  private def parseGmosCommonStatic(cm: ConfigMap): PioError \/ Gmos.GmosCommonStaticConfig =
     for {
       d <- Legacy.Instrument.Gmos.Detector.parse(cm)
       m <- Legacy.Instrument.MosPreImaging.parse(cm)
+    } yield Gmos.GmosCommonStaticConfig(d, m, None)
+
+  private def parseGmosNorthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
+    for {
+      c <- parseGmosCommonStatic(cm)
       s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
-    } yield GmosNorthStaticConfig(Gmos.GmosCommonStaticConfig(d, m, None), s)
+    } yield GmosNorthStaticConfig(c, s)
 
   private def parseGmosSouthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
     for {
-      d <- Legacy.Instrument.Gmos.Detector.parse(cm)
-      m <- Legacy.Instrument.MosPreImaging.parse(cm)
+      c <- parseGmosCommonStatic(cm)
       s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
-    } yield GmosSouthStaticConfig(Gmos.GmosCommonStaticConfig(d, m, None), s)
+    } yield GmosSouthStaticConfig(c, s)
 
   def decode(n: Node): PioError \/ StaticConfig =
     for {

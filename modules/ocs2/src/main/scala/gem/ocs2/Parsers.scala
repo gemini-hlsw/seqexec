@@ -230,9 +230,9 @@ object Parsers {
     import GmosAmpCount._
 
     val ampCount: PioParse[GmosAmpCount] = enum(
-      "3"  -> Three,
-      "6"  -> Six,
-      "12" -> Twelve
+      "Three"  -> Three,
+      "Six"    -> Six,
+      "Twelve" -> Twelve
     )
 
 
@@ -301,6 +301,10 @@ object Parsers {
     )
 
 
+    val disperserLambda: PioParse[BigDecimal] =
+      bigDecimal
+
+
     val dtax: PioParse[GmosDtax] = enum(
       "-6" -> GmosDtax.MinusSix,
       "-5" -> GmosDtax.MinusFive,
@@ -363,7 +367,7 @@ object Parsers {
       "i_G0302 + CaT_G0309"       -> Some(IPrime_CaT),
       "z_G0304 + CaT_G0309"       -> Some(ZPrime_CaT),
       "u_G0308"                   -> Some(UPrime)
-    )                                        
+    )
 
 
     import GmosNorthFpu._
@@ -385,7 +389,8 @@ object Parsers {
       "N and S 0.75 arcsec"  -> Some(Ns2),
       "N and S 1.00 arcsec"  -> Some(Ns3),
       "N and S 1.50 arcsec"  -> Some(Ns4),
-      "N and S 2.00 arcsec"  -> Some(Ns5)
+      "N and S 2.00 arcsec"  -> Some(Ns5),
+      "Custom Mask"          -> Option.empty[GmosNorthFpu]
     )
 
 
@@ -409,7 +414,7 @@ object Parsers {
       "B600_G5323"  -> Some(B600_G5323 ),
       "R600_G5324"  -> Some(R600_G5324 ),
       "R400_G5325"  -> Some(R400_G5325 ),
-      "R150_G5326"  -> Some(R150_G5326 ) 
+      "R150_G5326"  -> Some(R150_G5326 )
     )
 
     import GmosSouthFilter._
@@ -469,7 +474,8 @@ object Parsers {
       "N and S 0.75 arcsec"          -> Some(Ns2),
       "N and S 1.00 arcsec"          -> Some(Ns3),
       "N and S 1.50 arcsec"          -> Some(Ns4),
-      "N and S 2.00 arcsec"          -> Some(Ns5)
+      "N and S 2.00 arcsec"          -> Some(Ns5),
+      "Custom Mask"                  -> Option.empty[GmosSouthFpu]
     )
 
 
