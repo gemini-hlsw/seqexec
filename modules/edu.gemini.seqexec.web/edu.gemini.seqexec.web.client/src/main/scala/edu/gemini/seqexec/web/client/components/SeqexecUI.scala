@@ -17,6 +17,7 @@ object SeqexecMain {
     .render_P(p =>
       <.div(
         NavBar(),
+        QueueArea(SeqexecCircuit.statusAndLoadedSequences),
         // navLocationConnect(_ => QueueArea()),
         // r.render(),
         LoginBox(SeqexecCircuit.loginBox)
