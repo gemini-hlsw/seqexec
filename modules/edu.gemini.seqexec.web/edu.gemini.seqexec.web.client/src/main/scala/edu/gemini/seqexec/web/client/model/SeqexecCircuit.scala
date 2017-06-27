@@ -389,6 +389,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
     SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+  val log = zoom(_.uiModel.globalLog)
 
   // Reader for a specific sequence if available
   def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =

@@ -20,6 +20,7 @@ object SeqexecMain {
         NavBar(),
         QueueArea(SeqexecCircuit.statusAndLoadedSequences),
         SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),
+        LogArea(SeqexecCircuit.log),
         LoginBox(SeqexecCircuit.loginBox)
       )
     ).build
