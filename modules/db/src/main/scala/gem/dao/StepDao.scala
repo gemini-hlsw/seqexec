@@ -284,177 +284,103 @@ object StepDao {
          WHERE s.observation_id = $oid AND s.location = $loc
       """.query[F2DynamicConfig]
 
-    final case class GmosNorthIntermediary(
-      disperser:       Option[GmosNorthDisperser],
-      disperserOrder:  Option[GmosDisperserOrder],
-      wavelength:      Option[BigDecimal],
-      filter:          Option[GmosNorthFilter],
-      mdfFileName:     Option[String],
-      customSlitWidth: Option[GmosCustomSlitWidth],
-      builtin:         Option[GmosNorthFpu]
+    final case class GmosGratingBuilder[D](
+      disperser:      Option[D],
+      disperserOrder: Option[GmosDisperserOrder],
+      wavelength:     Option[BigDecimal]
     ) {
       import Gmos._
 
-      def toDynamicConfig(common: GmosCommonDynamicConfig): GmosNorthDynamicConfig = {
-        val grating: Option[GmosNorthGrating] =
-          for {
-            d <- disperser
-            o <- disperserOrder
-            w <- wavelength
-          } yield GmosNorthGrating(d, o, GmosCentralWavelength(w.toDouble))
+      def toGrating[G](f: (D, GmosDisperserOrder, GmosCentralWavelength) => G): Option[G] =
+        for {
+          d <- disperser
+          o <- disperserOrder
+          w <- wavelength
+        } yield f(d, o, GmosCentralWavelength(w.toDouble))
+    }
 
+    final case class GmosFpuBuilder[U](
+      mdfFileName:     Option[String],
+      customSlitWidth: Option[GmosCustomSlitWidth],
+      builtin:         Option[U]
+    ) {
+      import Gmos._
+
+      val toFpu: Option[Gmos.GmosCustomMask \/ U] = {
         val customMask: Option[GmosCustomMask] =
           for {
             m <- mdfFileName
             w <- customSlitWidth
           } yield GmosCustomMask(m, w)
 
-        val fpu = customMask.map(_.left[GmosNorthFpu]) orElse
-                  builtin.map(_.right[GmosCustomMask])
-
-        GmosNorthDynamicConfig(common, grating, filter, fpu)
+        customMask.map(_.left[U]) orElse
+          builtin.map(_.right[GmosCustomMask])
       }
     }
+
+    final case class GmosNorthBuilder(
+      c: Gmos.GmosCommonDynamicConfig,
+      g: GmosGratingBuilder[GmosNorthDisperser],
+      f: Option[GmosNorthFilter],
+      u: GmosFpuBuilder[GmosNorthFpu],
+    ) {
+      val toDynamicConfig: GmosNorthDynamicConfig =
+        GmosNorthDynamicConfig(c, g.toGrating(Gmos.GmosNorthGrating), f, u.toFpu)
+    }
+
+    final case class GmosSouthBuilder(
+      c: Gmos.GmosCommonDynamicConfig,
+      g: GmosGratingBuilder[GmosSouthDisperser],
+      f: Option[GmosSouthFilter],
+      u: GmosFpuBuilder[GmosSouthFpu],
+    ) {
+      val toDynamicConfig: GmosSouthDynamicConfig =
+        GmosSouthDynamicConfig(c, g.toGrating(Gmos.GmosSouthGrating), f, u.toFpu)
+    }
+
+    private def gmosSelectFragment(withLocation: Boolean, table: String, oid: Observation.Id): Fragment =
+      Fragment.const(
+        s"""SELECT ${if (withLocation) "s.location," else ""}
+                   c.x_binning,
+                   c.y_binning,
+                   c.amp_count,
+                   c.amp_gain,
+                   c.amp_read_mode,
+                   c.dtax,
+                   c.exposure_time,
+                   i.disperser,
+                   i.disperser_order,
+                   i.wavelength,
+                   i.filter,
+                   i.mdf_file_name,
+                   i.custom_slit_width,
+                   i.fpu
+              FROM step s
+                   LEFT OUTER JOIN step_gmos_common c
+                     ON c.step_id = s.step_id
+                   LEFT OUTER JOIN $table i
+                     ON i.step_id = s.step_id
+          """) ++
+        fr"""WHERE s.observation_id = $oid"""
 
     def allGmosNorthOnly(oid: Observation.Id): Query0[(Loc, GmosNorthDynamicConfig)] =
-      sql"""
-        SELECT s.location,
-               i.disperser,
-               i.disperser_order,
-               i.wavelength,
-               i.filter,
-               i.mdf_file_name,
-               i.custom_slit_width,
-               i.fpu,
-               c.x_binning,
-               c.y_binning,
-               c.amp_count,
-               c.amp_gain,
-               c.amp_read_mode,
-               c.dtax,
-               c.exposure_time
-          FROM step s
-               LEFT OUTER JOIN step_gmos_common c
-                 ON c.step_id = s.step_id
-               LEFT OUTER JOIN step_gmos_north i
-                 ON i.step_id = s.step_id
-         WHERE s.observation_id = $oid
-      """.query[(Loc, GmosNorthIntermediary, Gmos.GmosCommonDynamicConfig)].map {
-        case (l, i, c) => (l, i.toDynamicConfig(c))
-      }
-
+      gmosSelectFragment(withLocation = true, "step_gmos_north", oid)
+        .query[(Loc, GmosNorthBuilder)].map(_.map(_.toDynamicConfig))
 
     def oneGmosNorthOnly(oid: Observation.Id, loc: Loc): Query0[GmosNorthDynamicConfig] =
-      sql"""
-        SELECT i.disperser,
-               i.disperser_order,
-               i.wavelength,
-               i.filter,
-               i.mdf_file_name,
-               i.custom_slit_width,
-               i.fpu,
-               c.x_binning,
-               c.y_binning,
-               c.amp_count,
-               c.amp_gain,
-               c.amp_read_mode,
-               c.dtax,
-               c.exposure_time
-          FROM step s
-               LEFT OUTER JOIN step_gmos_common c
-                 ON c.step_id = s.step_id
-               LEFT OUTER JOIN step_gmos_north i
-                 ON i.step_id = s.step_id
-         WHERE s.observation_id = $oid AND s.location = $loc
-      """.query[(GmosNorthIntermediary, Gmos.GmosCommonDynamicConfig)].map {
-        case (i, c) => i.toDynamicConfig(c)
-      }
-
-    final case class GmosSouthIntermediary(
-      disperser:       Option[GmosSouthDisperser],
-      disperserOrder:  Option[GmosDisperserOrder],
-      wavelength:      Option[BigDecimal],
-      filter:          Option[GmosSouthFilter],
-      mdfFileName:     Option[String],
-      customSlitWidth: Option[GmosCustomSlitWidth],
-      builtin:         Option[GmosSouthFpu]
-    ) {
-      import Gmos._
-
-      def toDynamicConfig(common: GmosCommonDynamicConfig): GmosSouthDynamicConfig = {
-        val grating: Option[GmosSouthGrating] =
-          for {
-            d <- disperser
-            o <- disperserOrder
-            w <- wavelength
-          } yield GmosSouthGrating(d, o, GmosCentralWavelength(w.toDouble))
-
-        val customMask: Option[GmosCustomMask] =
-          for {
-            m <- mdfFileName
-            w <- customSlitWidth
-          } yield GmosCustomMask(m, w)
-
-        val fpu = customMask.map(_.left[GmosSouthFpu]) orElse
-                  builtin.map(_.right[GmosCustomMask])
-
-        GmosSouthDynamicConfig(common, grating, filter, fpu)
-      }
-    }
+      (gmosSelectFragment(withLocation = false, "step_gmos_north", oid) ++
+        fr"""AND s.location = $loc"""
+      ).query[GmosNorthBuilder].map(_.toDynamicConfig)
 
     def allGmosSouthOnly(oid: Observation.Id): Query0[(Loc, GmosSouthDynamicConfig)] =
-      sql"""
-        SELECT s.location,
-               i.disperser,
-               i.disperser_order,
-               i.wavelength,
-               i.filter,
-               i.mdf_file_name,
-               i.custom_slit_width,
-               i.fpu,
-               c.x_binning,
-               c.y_binning,
-               c.amp_count,
-               c.amp_gain,
-               c.amp_read_mode,
-               c.dtax,
-               c.exposure_time
-          FROM step s
-               LEFT OUTER JOIN step_gmos_common c
-                 ON c.step_id = s.step_id
-               LEFT OUTER JOIN step_gmos_south i
-                 ON i.step_id = s.step_id
-         WHERE s.observation_id = $oid
-      """.query[(Loc, GmosSouthIntermediary, Gmos.GmosCommonDynamicConfig)].map {
-        case (l, i, c) => (l, i.toDynamicConfig(c))
-      }
-
+      gmosSelectFragment(withLocation = true, "step_gmos_south", oid)
+        .query[(Loc, GmosSouthBuilder)].map(_.map(_.toDynamicConfig))
 
     def oneGmosSouthOnly(oid: Observation.Id, loc: Loc): Query0[GmosSouthDynamicConfig] =
-      sql"""
-        SELECT i.disperser,
-               i.disperser_order,
-               i.wavelength,
-               i.filter,
-               i.mdf_file_name,
-               i.custom_slit_width,
-               i.fpu,
-               c.x_binning,
-               c.y_binning,
-               c.amp_count,
-               c.amp_gain,
-               c.amp_read_mode,
-               c.dtax,
-               c.exposure_time
-          FROM step s
-               LEFT OUTER JOIN step_gmos_common c
-                 ON c.step_id = s.step_id
-               LEFT OUTER JOIN step_gmos_south i
-                 ON i.step_id = s.step_id
-         WHERE s.observation_id = $oid AND s.location = $loc
-      """.query[(GmosSouthIntermediary, Gmos.GmosCommonDynamicConfig)].map {
-        case (i, c) => i.toDynamicConfig(c)
-      }
+      (gmosSelectFragment(withLocation = false, "step_gmos_south", oid) ++
+        fr"""AND s.location = $loc"""
+      ).query[GmosSouthBuilder].map(_.toDynamicConfig)
+
 
     def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
       sql"""
