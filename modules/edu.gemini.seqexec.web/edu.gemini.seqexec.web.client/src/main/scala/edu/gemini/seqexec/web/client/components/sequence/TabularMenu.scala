@@ -7,6 +7,7 @@ import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
@@ -37,10 +38,11 @@ object TabularMenu {
               "active" -> t.isActive,
               "error"  -> t.hasError
             ),
+            SeqexecStyles.activeInstrumentContent.when(t.id.isDefined),
             SeqexecStyles.errorTab.when(t.hasError),
             dataTab := t.dataItem,
             IconAttention.copyIcon(color = Some("red")).when(t.hasError),
-            t.instrument
+            t.id.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, t.instrument), Label(Label.Props(id, tag = true)))).getOrElse(t.instrument)
           )
         ).toTagMod
       )

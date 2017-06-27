@@ -36,6 +36,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(45.px)
   )
 
+  val activeInstrumentLabel = style(
+    paddingBottom(0.2.em),
+    textAlign.center
+  )
+
+  val activeInstrumentContent = style(
+    padding(0.6.em, 0.9.em)
+  )
+
   // Media query to adjust the width of containers on mobile to the max allowed width
   val deviceContainer: StyleA = style("ui.container")(
     media.only.screen.maxWidth(767.px)(

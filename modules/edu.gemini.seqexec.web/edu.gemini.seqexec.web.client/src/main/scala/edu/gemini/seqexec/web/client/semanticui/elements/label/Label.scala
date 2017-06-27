@@ -8,6 +8,7 @@ object Label {
   case class Props(text: String,
     htmlFor: Option[String] = None,
     color  : Option[String] = None,
+    tag    : Boolean = false,
     basic  : Boolean = false)
 
   private val component = ScalaComponent.builder[Props]("Label")
@@ -16,7 +17,8 @@ object Label {
       <.label(
         ^.cls := "ui label",
         ^.classSet(
-          "basic"     -> p.basic
+          "basic" -> p.basic,
+          "tag"   -> p.tag
         ),
         p.color.map(u => ^.cls := u).whenDefined,
         ^.htmlFor :=? p.htmlFor,
