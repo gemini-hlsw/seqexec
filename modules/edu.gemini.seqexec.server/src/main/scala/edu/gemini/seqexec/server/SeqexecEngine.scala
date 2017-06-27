@@ -283,6 +283,7 @@ object SeqexecEngine {
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
       case "GN" => Site.GN
+      case _    => Site.GS // Let's default to GS
     }
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")

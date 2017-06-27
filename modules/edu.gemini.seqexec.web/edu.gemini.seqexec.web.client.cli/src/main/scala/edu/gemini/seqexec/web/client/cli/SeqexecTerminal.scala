@@ -193,6 +193,8 @@ object SeqexecTerminal extends js.JSApp {
         // Ignore
       case cmd :: _                                             =>
         terminal.error(s"Command '$command' unknown")
+      case cmd                                                  =>
+        terminal.error(s"Command '$command' unknown")
     }
   }
 

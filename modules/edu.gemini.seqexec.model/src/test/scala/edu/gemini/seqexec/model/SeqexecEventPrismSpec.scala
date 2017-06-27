@@ -10,7 +10,7 @@ import org.scalatest.prop.PropertyChecks
 /**
   * Tests the Monocle Lenses for Seqexec Events
   */
-class LensSpec extends FlatSpec with Matchers with PropertyChecks with ModelBooPicklers {
+class SeqexecEventPrismSpec extends FlatSpec with Matchers with PropertyChecks {
   import SharedModelArbitraries._
 
   "Model lenses" should
