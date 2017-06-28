@@ -1,5 +1,6 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.label
 
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -9,7 +10,8 @@ object Label {
     htmlFor: Option[String] = None,
     color  : Option[String] = None,
     tag    : Boolean = false,
-    basic  : Boolean = false)
+    basic  : Boolean = false,
+    icon   : Option[Icon] = None)
 
   private val component = ScalaComponent.builder[Props]("Label")
     .stateless
@@ -22,6 +24,7 @@ object Label {
         ),
         p.color.map(u => ^.cls := u).whenDefined,
         ^.htmlFor :=? p.htmlFor,
+        p.icon.whenDefined,
         p.text,
         c
       )

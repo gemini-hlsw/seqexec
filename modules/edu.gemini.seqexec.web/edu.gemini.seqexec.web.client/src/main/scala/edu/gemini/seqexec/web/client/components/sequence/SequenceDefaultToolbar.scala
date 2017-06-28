@@ -29,19 +29,21 @@ object SequenceInfo {
 
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
-    .render_P ( p =>
+    .render_P { p =>
+      val name = p.s.metadata.name.isEmpty ? "Unknown." | p.s.metadata.name
       <.div(
         ^.cls := "ui form",
         <.div(
           ^.cls := "fields",
+          SeqexecStyles.fieldsNoBottom.unless(p.isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props("Id:", basic = true, color = "red".some))
-          ),
+            Label(Label.Props("Name:", basic = true, color = "red".some))
+          ).when(p.isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props(p.s.id, basic = true))
-          ),
+            Label(Label.Props(name, basic = true))
+          ).when(p.isLogged),
           <.div(
             ^.cls := "field",
             Label(Label.Props("Observer:", basic = true, color = "red".some))
@@ -52,7 +54,7 @@ object SequenceInfo {
           ).unless(p.isLogged)
         )
       )
-    ).build
+    }.build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
@@ -83,17 +85,20 @@ object SequenceObserverField {
       <.div(
         ^.cls := "ui form",
         <.div(
-          ^.cls := "field required",
-          FormLabel(FormLabel.Props("Observer"))
-        ),
-        <.div(
-          ^.cls := "field",
-          InputEV(InputEV.Props(
-            p.s.metadata.instrument + ".observer",
-            p.s.metadata.instrument + ".observer",
-            observerEV,
-            placeholder = "Observer...",
-            onBlur = _ => submitIfChanged))
+          ^.cls := "ui inline fields",
+          <.div(
+            ^.cls := "field four wide required",
+            FormLabel(FormLabel.Props("Observer"))
+          ),
+          <.div(
+            ^.cls := "field fourteen wide",
+            InputEV(InputEV.Props(
+              p.s.metadata.instrument + ".observer",
+              p.s.metadata.instrument + ".observer",
+              observerEV,
+              placeholder = "Observer...",
+              onBlur = _ => submitIfChanged))
+          )
         )
       )
     }
@@ -121,25 +126,29 @@ object SequenceDefaultToolbar {
   private val ST = ReactS.Fix[State]
 
   def requestRun(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestRun(s)) }) >> ST.mod(_.copy(runRequested = true, pauseRequested = false, syncRequested = false)).liftCB
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestRun(s)))) >> ST.mod(_.copy(runRequested = true, pauseRequested = false, syncRequested = false)).liftCB
 
   def requestSync(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestSync(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestSync(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
 
   def requestPause(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback { SeqexecCircuit.dispatch(RequestPause(s)) }) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS{ ($, p, s) =>
       val isLogged = p.status.isLogged
+      val runContinueTooltip = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"
+      val runContinueButton = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
       <.div(
         ^.cls := "ui row",
         <.div(
-          ^.cls := "ui two column divided grid",
+          SequenceInfo(SequenceInfo.Props(p.s, isLogged))
+        ),
+        <.div(
+          ^.cls := "ui two column grid",
           <.div(
-            ^.cls := "ui left column bottom aligned six wide computer ten wide tablet only",
-            SequenceInfo(SequenceInfo.Props(p.s, isLogged)),
+            ^.cls := "ui left column eight wide computer sixteen wide tablet only",
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"
@@ -150,13 +159,14 @@ object SequenceDefaultToolbar {
                 labeled = true,
                 onClick = $.runState(requestRun(p.s)),
                 color = Some("blue"),
-                dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                dataTooltip = Some(runContinueTooltip),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-              s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+              runContinueButton
             ).when(p.s.hasError),
             Button(
               Button.Props(
                 icon = Some(IconRefresh),
+                labeled = true,
                 onClick = $.runState(requestSync(p.s)),
                 color = Some("purple"),
                 dataTooltip = Some(s"Sync sequence"),
@@ -169,9 +179,9 @@ object SequenceDefaultToolbar {
                 labeled = true,
                 onClick = $.runState(requestRun(p.s)),
                 color = Some("blue"),
-                dataTooltip = Some(s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"),
+                dataTooltip = Some(runContinueTooltip),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-              s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+              runContinueButton
             ).when(p.s.status === SequenceState.Idle),
             Button(
               Button.Props(
@@ -194,10 +204,7 @@ object SequenceDefaultToolbar {
             ).when(p.s.status === SequenceState.Paused)
           ),
           <.div(
-            ^.cls := "ui right column",
-            ^.classSet(
-              "ten wide computer eight wide tablet sixteen wide mobile" -> isLogged,
-              "sixteen wide" -> !isLogged),
+            ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
             SequenceObserverField(SequenceObserverField.Props(p.s, isLogged))
           )
         )

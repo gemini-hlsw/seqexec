@@ -410,14 +410,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   override protected def actionHandler = composeHandlers(
     wsHandler,
     wsEventsHandler,
+    sequenceExecHandler,
     loginBoxHandler,
     userLoginHandler,
     sequenceDisplayHandler,
     globalLogHandler,
     conditionsHandler,
     operatorHandler,
-    navigationHandler,
-    sequenceExecHandler)
+    navigationHandler)
 
   /**
     * Handles a fatal error most likely during action processing

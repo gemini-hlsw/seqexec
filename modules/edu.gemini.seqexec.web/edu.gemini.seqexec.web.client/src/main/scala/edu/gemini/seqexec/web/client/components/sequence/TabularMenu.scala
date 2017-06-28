@@ -16,6 +16,7 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.equal._
 import scalaz.std.string._
 import scalaz.std.option._
+import scalaz.syntax.std.option._
 
 /**
   * Menu with tabs
@@ -42,7 +43,7 @@ object TabularMenu {
             SeqexecStyles.errorTab.when(t.hasError),
             dataTab := t.dataItem,
             IconAttention.copyIcon(color = Some("red")).when(t.hasError),
-            t.id.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, t.instrument), Label(Label.Props(id, tag = true)))).getOrElse(t.instrument)
+            t.id.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, t.instrument), Label(Label.Props(id, icon = IconSelectedRadio.some)))).getOrElse(t.instrument)
           )
         ).toTagMod
       )
