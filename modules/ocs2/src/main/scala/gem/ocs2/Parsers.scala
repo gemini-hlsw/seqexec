@@ -268,7 +268,7 @@ object Parsers {
       "Central Spectrum"   -> Some(CentralSpectrum),
       "Central Stamp"      -> Some(CentralStamp   ),
       "Top Spectrum"       -> Some(TopSpectrum    ),
-      "Bottom Spectrum"    -> Some(BottomSpectrum ),
+      "Bottom Spectrum"    -> Some(BottomSpectrum )
     )
 
 

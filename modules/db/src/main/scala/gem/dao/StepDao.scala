@@ -322,7 +322,7 @@ object StepDao {
       c: Gmos.GmosCommonDynamicConfig,
       g: GmosGratingBuilder[GmosNorthDisperser],
       f: Option[GmosNorthFilter],
-      u: GmosFpuBuilder[GmosNorthFpu],
+      u: GmosFpuBuilder[GmosNorthFpu]
     ) {
       val toDynamicConfig: GmosNorthDynamicConfig =
         GmosNorthDynamicConfig(c, g.toGrating, f, u.toFpu)
@@ -332,7 +332,7 @@ object StepDao {
       c: Gmos.GmosCommonDynamicConfig,
       g: GmosGratingBuilder[GmosSouthDisperser],
       f: Option[GmosSouthFilter],
-      u: GmosFpuBuilder[GmosSouthFpu],
+      u: GmosFpuBuilder[GmosSouthFpu]
     ) {
       val toDynamicConfig: GmosSouthDynamicConfig =
         GmosSouthDynamicConfig(c, g.toGrating, f, u.toFpu)

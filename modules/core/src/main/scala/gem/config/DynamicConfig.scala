@@ -74,7 +74,7 @@ final case class GmosNorthDynamicConfig(
   common:  GmosCommonDynamicConfig,
   grating: Option[GmosGrating[GmosNorthDisperser]],
   filter:  Option[GmosNorthFilter],
-  fpu:     Option[GmosCustomMask \/ GmosNorthFpu],
+  fpu:     Option[GmosCustomMask \/ GmosNorthFpu]
 ) extends DynamicConfig {
 
   type I = Instrument.GmosN.type
@@ -91,7 +91,7 @@ final case class GmosSouthDynamicConfig(
   common:  GmosCommonDynamicConfig,
   grating: Option[GmosGrating[GmosSouthDisperser]],
   filter:  Option[GmosSouthFilter],
-  fpu:     Option[GmosCustomMask \/ GmosSouthFpu],
+  fpu:     Option[GmosCustomMask \/ GmosSouthFpu]
 ) extends DynamicConfig {
 
   type I = Instrument.GmosS.type
