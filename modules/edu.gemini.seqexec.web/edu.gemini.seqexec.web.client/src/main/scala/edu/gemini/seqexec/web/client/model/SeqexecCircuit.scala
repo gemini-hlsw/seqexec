@@ -9,6 +9,7 @@ import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
+import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -32,7 +33,13 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
       updated(page)
 
     case NavigateSilentTo(page) =>
-      updatedSilent(page)
+      println("silent " + page)
+      val effect = page match {
+        case InstrumentPage(i, None)     => Effect(Future(SelectInstrumentToDisplay(i)))
+        case InstrumentPage(i, Some(id)) => Effect(Future(SelectIdToDisplay(i, id)))
+        case _                           => Effect(Future(NoAction: Action))
+      }
+      updatedSilent(page, effect)
 
     case _ =>
       noChange
@@ -142,6 +149,9 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SelectInstrumentToDisplay(i) =>
       updated(value.focusOnInstrument(i))
+
+    case SelectIdToDisplay(i, id) =>
+      updated(value.focusOnId(i, id))
 
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
@@ -323,7 +333,8 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
         ) { case ((seq, eff), q) =>
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
-               Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) :: eff)
+               Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) ::
+               Some(Effect(Future(SyncToPage(q): Action))) :: eff)
         } else {
           (q :: seq, eff)
         }

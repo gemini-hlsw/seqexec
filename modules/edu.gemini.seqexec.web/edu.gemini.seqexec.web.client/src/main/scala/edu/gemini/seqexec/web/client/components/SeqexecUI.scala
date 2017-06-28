@@ -50,12 +50,15 @@ object SeqexecUI {
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option).caseClass[InstrumentPage]) {
           case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => uiConnect(SeqexecMain.apply))
+      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => Some(InstrumentPage(i, None)))(i => i.i)) {
+          case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
+        } ~> dynRenderR((p, r) => uiConnect(SeqexecMain.apply))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
         .verify(Root, InstrumentNames.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
-          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
+          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback.log("silent " + next) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith(layout)
         .logToConsole
     }

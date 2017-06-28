@@ -25,7 +25,9 @@ import scalaz.syntax.std.option._
 object TabularMenu {
   case class TabItem(instrument: Instrument, id: Option[SequenceId], status: Option[SequenceState], isActive: Boolean, dataItem: String, hasError: Boolean)
   case class Props(d: SequencesOnDisplay) {
-    val tabs: List[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, a.sequence().map(_.id), a.sequence().map(_.status), isActive = a.instrument === d.instrumentSequences.focus.instrument, a.instrument, a.sequence().map(_.hasError).getOrElse(false))).toStream.toList
+    val tabs: List[TabItem] = d.instrumentSequences.map { a =>
+      val isActive = a.instrument === d.instrumentSequences.focus.instrument
+      TabItem(a.instrument, a.sequence().map(_.id), a.sequence().map(_.status), isActive = isActive, a.instrument, a.sequence().map(_.hasError).getOrElse(false))}.toStream.toList
   }
 
   private val component = ScalaComponent.builder[Props]("TabularMenu")

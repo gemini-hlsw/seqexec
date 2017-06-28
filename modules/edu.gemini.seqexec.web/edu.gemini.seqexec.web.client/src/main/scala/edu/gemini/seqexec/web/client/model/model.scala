@@ -22,6 +22,7 @@ object Pages {
 // Actions
 case class NavigateTo(page: Pages.SeqexecPages) extends Action
 case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
+case class SyncToPage(view: SequenceView) extends Action
 
 // Actions to close and/open the login box
 case object OpenLoginBox extends Action
@@ -32,6 +33,7 @@ case object Logout extends Action
 
 // Action to select a sequence for display
 case class SelectToDisplay(s: SequenceView) extends Action
+case class SelectIdToDisplay(i: Instrument, id: SequenceId) extends Action
 case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
 // Actions related to executing sequences
@@ -101,8 +103,14 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = q | instrumentSequences)
   }
 
+  def focusOnId(i: Instrument, id: SequenceId): SequencesOnDisplay = {
+    // Focus on the instrument and id
+    val q = instrumentSequences.findZ(s => s.instrument === i && s.sequence().exists(_.id === id))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
+
   def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
-    // Replace the sequence for the instrument and focus
+    // Focus on the instrument
     val q = instrumentSequences.findZ(s => s.instrument === i)
     copy(instrumentSequences = q | instrumentSequences)
   }
