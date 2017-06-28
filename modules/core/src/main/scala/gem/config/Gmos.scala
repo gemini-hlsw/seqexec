@@ -34,8 +34,8 @@ object Gmos {
   /** Parameters that determine GMOS CCD readout.
     */
   final case class GmosCcdReadout(
-    xBinning:    GmosBinning,
-    yBinning:    GmosBinning,
+    xBinning:    GmosXBinning,
+    yBinning:    GmosYBinning,
     ampCount:    GmosAmpCount,
     ampGain:     GmosAmpGain,
     ampReadMode: GmosAmpReadMode
@@ -44,8 +44,8 @@ object Gmos {
   object GmosCcdReadout {
     val Default: GmosCcdReadout =
       GmosCcdReadout(
-        GmosBinning.One,
-        GmosBinning.One,
+        GmosXBinning.One,
+        GmosYBinning.One,
         GmosAmpCount.Twelve,
         GmosAmpGain.Low,
         GmosAmpReadMode.Slow

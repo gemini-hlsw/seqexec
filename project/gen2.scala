@@ -249,12 +249,6 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
-      enum("GmosBinning") {
-        type GmosBinningRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
-        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_binning""".query[(String, GmosBinningRec)].list
-        io.transact(xa).unsafePerformIO
-      },
-
       enum("GmosBuiltinRoi") {
         type GmosBuiltinRoiRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'xStart -> Int, 'yStart -> Int, 'xSize -> Int, 'ySize -> Int, 'obsolete -> Boolean`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, x_start, y_start, x_size, y_size, obsolete FROM e_gmos_builtin_roi""".query[(String, GmosBuiltinRoiRec)].list
@@ -330,6 +324,18 @@ object gen2 {
       enum("GmosSouthStageMode") {
         type GmosSouthStageModeRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, obsolete FROM e_gmos_south_stage_mode""".query[(String, GmosSouthStageModeRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosXBinning") {
+        type GmosXBinningRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_x_binning""".query[(String, GmosXBinningRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosYBinning") {
+        type GmosYBinningRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
+        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_y_binning""".query[(String, GmosYBinningRec)].list
         io.transact(xa).unsafePerformIO
       },
 

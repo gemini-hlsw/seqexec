@@ -100,8 +100,8 @@ object Legacy {
       val DisperserOrder  = Key("disperserOrder"      )(Parsers.Gmos.disperserOrder )
       val DisperserLambda = Key("disperserLambda"     )(Parsers.Gmos.disperserLambda)
       val Dtax            = Key("dtaXOffset"          )(Parsers.Gmos.dtax           )
-      val XBinning        = Key("ccdXBinning"         )(Parsers.Gmos.binning        )
-      val YBinning        = Key("ccdYBinning"         )(Parsers.Gmos.binning        )
+      val XBinning        = Key("ccdXBinning"         )(Parsers.Gmos.xBinning       )
+      val YBinning        = Key("ccdYBinning"         )(Parsers.Gmos.yBinning       )
     }
 
     object GmosNorth {

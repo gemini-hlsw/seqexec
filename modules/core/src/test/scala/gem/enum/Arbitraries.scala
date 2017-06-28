@@ -29,7 +29,6 @@ trait Arbitraries {
   implicit val arbGmosAmpCount        = pick(GmosAmpCount.all       )
   implicit val arbGmosAmpGain         = pick(GmosAmpGain.all        )
   implicit val arbGmosAmpReadMode     = pick(GmosAmpReadMode.all    )
-  implicit val arbGmosBinning         = pick(GmosBinning.all        )
   implicit val arbGmosBuiltinRoi      = pick(GmosBuiltinRoi.all     )
   implicit val arbGmosCustomSlitWidth = pick(GmosCustomSlitWidth.all)
   implicit val arbGmosDetector        = pick(GmosDetector.all       )
@@ -43,6 +42,8 @@ trait Arbitraries {
   implicit val arbGmosSouthFilter     = pick(GmosSouthFilter.all    )
   implicit val arbGmosSouthFpu        = pick(GmosSouthFpu.all       )
   implicit val arbGmosSouthStageMode  = pick(GmosSouthStageMode.all )
+  implicit val arbGmosXBinning        = pick(GmosXBinning.all       )
+  implicit val arbGmosYBinning        = pick(GmosYBinning.all       )
 
 
   // Gcal

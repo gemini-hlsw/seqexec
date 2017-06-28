@@ -128,8 +128,8 @@ trait Arbitraries extends gem.enum.Arbitraries {
   implicit val arbGmosCcdReadout =
     Arbitrary {
       for {
-        x <- arbitrary[GmosBinning]
-        y <- arbitrary[GmosBinning]
+        x <- arbitrary[GmosXBinning]
+        y <- arbitrary[GmosYBinning]
         c <- arbitrary[GmosAmpCount]
         g <- arbitrary[GmosAmpGain]
         r <- arbitrary[GmosAmpReadMode]

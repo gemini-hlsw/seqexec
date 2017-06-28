@@ -257,13 +257,6 @@ object Parsers {
     )
 
 
-    val binning: PioParse[GmosBinning] = enum(
-      "1" -> GmosBinning.One,
-      "2" -> GmosBinning.Two,
-      "4" -> GmosBinning.Four
-    )
-
-
     import GmosBuiltinRoi._
 
     val builtinRoi: PioParse[Option[GmosBuiltinRoi]] = enum(
@@ -324,6 +317,20 @@ object Parsers {
       "4"  -> GmosDtax.Four,
       "5"  -> GmosDtax.Five,
       "6"  -> GmosDtax.Six
+    )
+
+
+    val xBinning: PioParse[GmosXBinning] = enum(
+      "1" -> GmosXBinning.One,
+      "2" -> GmosXBinning.Two,
+      "4" -> GmosXBinning.Four
+    )
+
+
+    val yBinning: PioParse[GmosYBinning] = enum(
+      "1" -> GmosYBinning.One,
+      "2" -> GmosYBinning.Two,
+      "4" -> GmosYBinning.Four
     )
   }
 
