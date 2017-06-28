@@ -55,7 +55,7 @@ object SeqexecUI {
         // Runtime verification that all pages are routed
         .verify(Root, InstrumentNames.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
-          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback.log("post render" + next.toString) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
+          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith(layout)
         .logToConsole
     }

@@ -1,7 +1,8 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceId, SequenceView, Instrument}
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SelectToDisplay, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, SelectToDisplay, SelectInstrumentToDisplay, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -67,7 +68,8 @@ object TabularMenu {
             .onVisible { (x: Instrument) =>
               val id = ctx.props.tabs.find(_.instrument === x).flatMap(_.id)
               val s: Option[SequenceView] = ctx.props.d.instrumentSequences.toStream.toList.find(_.sequence().map(_.id) === id).flatMap(_.sequence())
-              val updateModelCB = s.map(seq => Callback(SeqexecCircuit.dispatch(SelectToDisplay(seq)))).getOrEmpty
+              val updateModelCB = s.map(seq => Callback(SeqexecCircuit.dispatch(NavigateTo(InstrumentPage(x, seq.id.some)))) >> Callback(SeqexecCircuit.dispatch(SelectToDisplay(seq))))
+                .getOrElse(Callback(SeqexecCircuit.dispatch(NavigateTo(InstrumentPage(x, none)))) >> Callback(SeqexecCircuit.dispatch(SelectInstrumentToDisplay(x))))
               // runNow as we are outside react loop
               updateModelCB.runNow()
             }

@@ -32,6 +32,7 @@ case object Logout extends Action
 
 // Action to select a sequence for display
 case class SelectToDisplay(s: SequenceView) extends Action
+case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
 // Actions related to executing sequences
 case class RequestRun(s: SequenceView) extends Action
@@ -97,6 +98,12 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
     // Replace the sequence for the instrument and focus
     val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
+
+  def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
+    // Replace the sequence for the instrument and focus
+    val q = instrumentSequences.findZ(s => s.instrument === i)
     copy(instrumentSequences = q | instrumentSequences)
   }
 

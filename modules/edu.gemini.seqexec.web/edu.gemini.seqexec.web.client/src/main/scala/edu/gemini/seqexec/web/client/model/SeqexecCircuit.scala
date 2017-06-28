@@ -140,6 +140,9 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case SelectInstrumentToDisplay(i) =>
+      updated(value.focusOnInstrument(i))
+
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
       updated(value.focusOnSequence(ref))
