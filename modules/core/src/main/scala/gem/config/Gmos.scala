@@ -86,6 +86,9 @@ object Gmos {
   /** GMOS grating configuration, parameterized on the disperser type.  These
     * are grouped because they only apply when using a grating.  That is, all
     * are defined or none or defined in the dynamic config.
+    *
+    * @tparam D disperser type, expected to be `GmosNorthDisperser` or
+    *           `GmosSouthDisperser`
     */
   final case class GmosGrating[D](
     disperser:  D,
