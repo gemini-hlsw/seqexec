@@ -261,7 +261,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 
     val ws = new WebSocket(url)
 
-    def onOpen(e: Event): Unit = {
+    def onOpen: Unit = {
       logger.info(s"Connected to $url")
       SeqexecCircuit.dispatch(Connected(ws, 0))
     }
@@ -274,19 +274,19 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       }
     }
 
-    def onError(e: ErrorEvent): Unit =
+    def onError: Unit =
       // Unfortunately reading the event is not cross-browser safe
       logger.severe("Error on websocket")
 
-    def onClose(e: CloseEvent): Unit =
+    def onClose: Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
       SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, nextDelay * 2))))
 
     ws.binaryType = "arraybuffer"
-    ws.onopen = onOpen _
+    ws.onopen = _ => onOpen
     ws.onmessage = onMessage _
-    ws.onerror = onError _
-    ws.onclose = onClose _
+    ws.onerror = _ => onError
+    ws.onclose = _ => onClose
     Connecting
   }.recover {
     case _: Throwable => NoAction

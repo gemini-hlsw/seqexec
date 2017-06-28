@@ -27,6 +27,7 @@ object log {
 
     override def publish(record: LogRecord): Unit = {
       SeqexecWebClient.log(record)
+      ()
     }
 
     override def flush(): Unit = {}

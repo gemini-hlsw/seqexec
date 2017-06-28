@@ -60,7 +60,7 @@ object LoginBox {
       )
     }
 
-    def render(p: Props, s: State): TagOf[Div] =
+    def render(s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
         <.div(

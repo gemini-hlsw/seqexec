@@ -76,7 +76,7 @@ object ConnectionState {
 
   case class Props(u: WebSocketConnection)
 
-  def formatTime(delay: Long): String = if (delay < 1000) {
+  def formatTime(delay: Int): String = if (delay < 1000) {
     f"${delay / 1000.0}%.1f"
   } else {
     f"${delay / 1000}%d"
