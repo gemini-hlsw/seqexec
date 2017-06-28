@@ -31,22 +31,16 @@ final case class AcqCamStaticConfig()     extends StaticConfig.Impl(Instrument.A
 final case class BhrosStaticConfig()      extends StaticConfig.Impl(Instrument.Bhros)
 final case class VisitorStaticConfig()    extends StaticConfig.Impl(Instrument.Visitor)
 
-final case class F2StaticConfig(mosPreImaging: Boolean) extends StaticConfig {
-  type I = Instrument.Flamingos2.type
-
-  def instrument: I = valueOf[I]
-}
+final case class F2StaticConfig(
+  mosPreImaging: Boolean
+) extends StaticConfig.Impl(Instrument.Flamingos2)
 
 import Gmos._
 
 final case class GmosNorthStaticConfig(
   common:    GmosCommonStaticConfig,
   stageMode: GmosNorthStageMode
-) extends StaticConfig {
-
-  type I = Instrument.GmosN.type
-  def instrument: I = valueOf[I]
-}
+) extends StaticConfig.Impl(Instrument.GmosN)
 
 object GmosNorthStaticConfig {
   val Default: GmosNorthStaticConfig =
@@ -59,11 +53,7 @@ object GmosNorthStaticConfig {
 final case class GmosSouthStaticConfig(
   common:    GmosCommonStaticConfig,
   stageMode: GmosSouthStageMode
-) extends StaticConfig {
-
-  type I = Instrument.GmosS.type
-  def instrument: I = valueOf[I]
-}
+) extends StaticConfig.Impl(Instrument.GmosS)
 
 object GmosSouthStaticConfig {
   val Default: GmosSouthStaticConfig =
