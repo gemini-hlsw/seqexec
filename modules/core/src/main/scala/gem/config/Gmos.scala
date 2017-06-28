@@ -79,7 +79,7 @@ object Gmos {
   )
 
   /** GMOS grating central wavelength.  For now, just a value class wrapper
-    * around a Double.  This should be switched to Fixed / squants?
+    * around a BigDecimal.  This should be switched to Fixed / squants?
     */
   final case class GmosCentralWavelength(val nm: BigDecimal) extends AnyVal
 
