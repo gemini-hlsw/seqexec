@@ -4,7 +4,7 @@
 package gem
 package config
 
-import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument}
+import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
 
 sealed abstract class StaticConfig {
   type I <: Instrument with Singleton
@@ -32,8 +32,13 @@ final case class BhrosStaticConfig()      extends StaticConfig.Impl(Instrument.B
 final case class VisitorStaticConfig()    extends StaticConfig.Impl(Instrument.Visitor)
 
 final case class F2StaticConfig(
-  mosPreImaging: Boolean
+  mosPreImaging: MosPreImaging
 ) extends StaticConfig.Impl(Instrument.Flamingos2)
+
+object F2StaticConfig {
+  val Default: F2StaticConfig =
+    F2StaticConfig(MosPreImaging.IsNotMosPreImaging)
+}
 
 import Gmos._
 

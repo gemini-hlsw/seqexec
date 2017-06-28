@@ -24,6 +24,11 @@ object Parsers {
     "Yes" -> true
   )
 
+  val mosPreImaging: PioParse[MosPreImaging] = enum(
+    "No"  -> MosPreImaging.IsNotMosPreImaging,
+    "Yes" -> MosPreImaging.IsMosPreImaging
+  )
+
   val arcsec: PioParse[Angle] =
     double.map(Angle.fromArcsecs)
 

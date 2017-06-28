@@ -40,6 +40,12 @@ trait Arbitraries extends gem.enum.Arbitraries {
   private def const[A](a: A): Arbitrary[A] =
     Arbitrary(Gen.const(a))
 
+  implicit val arbMosPreImaging: Arbitrary[MosPreImaging] =
+    Arbitrary(
+      Gen.oneOf(MosPreImaging.IsMosPreImaging,
+                MosPreImaging.IsNotMosPreImaging)
+    )
+
   implicit val arbAcqCamStatic    = const(AcqCamStaticConfig()         )
   implicit val arbBhrosStatic     = const(BhrosStaticConfig()          )
   implicit val arbGnirsStatic     = const(GnirsStaticConfig()          )
@@ -54,13 +60,13 @@ trait Arbitraries extends gem.enum.Arbitraries {
   implicit val arbVisitorStatic   = const(VisitorStaticConfig()        )
 
   implicit val arbF2Static        =
-    Arbitrary(arbitrary[Boolean].map(F2StaticConfig(_)))
+    Arbitrary(arbitrary[MosPreImaging].map(F2StaticConfig(_)))
 
   implicit val arbGmosNorthStatic =
     Arbitrary(
       for {
         d <- arbitrary[GmosDetector]
-        p <- arbitrary[Boolean]
+        p <- arbitrary[MosPreImaging]
         s <- arbitrary[GmosNorthStageMode]
       } yield GmosNorthStaticConfig(Gmos.GmosCommonStaticConfig(d, p, None), s)
     )
@@ -69,7 +75,7 @@ trait Arbitraries extends gem.enum.Arbitraries {
     Arbitrary(
       for {
         d <- arbitrary[GmosDetector]
-        p <- arbitrary[Boolean]
+        p <- arbitrary[MosPreImaging]
         s <- arbitrary[GmosSouthStageMode]
       } yield GmosSouthStaticConfig(Gmos.GmosCommonStaticConfig(d, p, None), s)
     )

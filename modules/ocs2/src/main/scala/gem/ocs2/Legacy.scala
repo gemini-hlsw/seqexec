@@ -76,8 +76,8 @@ object Legacy {
   }
 
   case object Instrument extends System("instrument") {
-    val Instrument    = Key("instrument"   )(Parsers.instrument)
-    val MosPreImaging = Key("mosPreimaging")(Parsers.yesNo     )
+    val Instrument    = Key("instrument"   )(Parsers.instrument   )
+    val MosPreImaging = Key("mosPreimaging")(Parsers.mosPreImaging)
 
     object Flamingos2 {
       val Disperser   = Key("disperser"  )(Parsers.Flamingos2.disperser  )

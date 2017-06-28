@@ -18,7 +18,7 @@ object Gmos {
     */
   final case class GmosCommonStaticConfig(
     detector:      GmosDetector,
-    mosPreImaging: Boolean,
+    mosPreImaging: MosPreImaging,
     nodAndShuffle: Option[GmosNodAndShuffle]
   )
 
@@ -26,7 +26,7 @@ object Gmos {
     val Default: GmosCommonStaticConfig =
       GmosCommonStaticConfig(
         GmosDetector.HAMAMATSU,
-        false,
+        MosPreImaging.IsNotMosPreImaging,
         None
       )
   }

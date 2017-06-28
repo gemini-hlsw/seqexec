@@ -96,7 +96,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   private def doTest[A](test: ConnectionIO[A]): A =
     withProgram {
       for {
-        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[DynamicConfig]]))
+        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig.Default, List.empty[Step[DynamicConfig]]))
         a <- test
       } yield a
     }

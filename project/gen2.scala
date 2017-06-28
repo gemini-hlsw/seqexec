@@ -179,6 +179,12 @@ object gen2 {
         io.transact(xa).unsafePerformIO
       },
 
+      enum("MosPreImaging") {
+        type MosPreImagingRec = Record.`'tag -> String, 'description -> String, 'toBoolean -> Boolean`.T
+        val io = sql"select id, id tag, description, to_boolean from e_mos_preimaging".query[(String, MosPreImagingRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
       enum("StepType") {
         type StepTypeRec = Record.`'tag -> String`.T
         val io = sql"""

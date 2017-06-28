@@ -6,7 +6,7 @@ package dao
 
 import doobie.imports._
 
-import gem.enum.{GmosDetector, Instrument}
+import gem.enum.{GmosDetector, Instrument, MosPreImaging}
 import gem.config._
 
 import Gmos.{GmosCommonStaticConfig => GmosCommonSC}
@@ -79,9 +79,9 @@ object StaticConfigDao {
     // We need to define this explicitly because we're ignoring the nod and
     // shuffle bit for now.
     implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
-      Composite[(GmosDetector, Boolean)].xmap(
-        (t: (GmosDetector, Boolean)) => GmosCommonSC(t._1, t._2, None),
-        (s: GmosCommonSC)            => (s.detector, s.mosPreImaging)
+      Composite[(GmosDetector, MosPreImaging)].xmap(
+        (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None),
+        (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
       )
 
     def selectGmosNorth(sid: Int): Query0[GmosNorthStaticConfig] =
