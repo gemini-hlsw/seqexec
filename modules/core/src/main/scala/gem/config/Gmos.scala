@@ -31,6 +31,8 @@ object Gmos {
       )
   }
 
+  /** Parameters that determine GMOS CCD readout.
+    */
   final case class GmosCcdReadout(
     xBinning:    GmosBinning,
     yBinning:    GmosBinning,
@@ -67,6 +69,10 @@ object Gmos {
       )
   }
 
+  /** Custom mask definition, which is available as an alternative to using a
+    * builtin FPU.  Either both these parameters are set or neither are set in a
+    * GMOS observation
+    */
   final case class GmosCustomMask(
     maskDefinitionFilename: String,
     slitWidth:              GmosCustomSlitWidth
@@ -77,20 +83,12 @@ object Gmos {
     */
   final case class GmosCentralWavelength(val nm: BigDecimal) extends AnyVal
 
-  /** GMOS-N grating configuration.  These are grouped because they only apply
-    * using a grating.
+  /** GMOS grating configuration, parameterized on the disperser type.  These
+    * are grouped because they only apply when using a grating.  That is, all
+    * are defined or none or defined in the dynamic config.
     */
-  final case class GmosNorthGrating(
-    disperser:  GmosNorthDisperser,
-    order:      GmosDisperserOrder,
-    wavelength: GmosCentralWavelength
-  )
-
-  /** GMOS-S grating configuration.  These are grouped because they only apply
-    * using a grating.
-    */
-  final case class GmosSouthGrating(
-    disperser:  GmosSouthDisperser,
+  final case class GmosGrating[D](
+    disperser:  D,
     order:      GmosDisperserOrder,
     wavelength: GmosCentralWavelength
   )

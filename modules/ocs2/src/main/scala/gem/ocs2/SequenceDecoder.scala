@@ -80,12 +80,12 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     import Legacy.Instrument.Gmos._
     import Legacy.Instrument.GmosNorth._
 
-    val grating: PioError \/ Option[Gmos.GmosNorthGrating] =
+    val grating: PioError \/ Option[Gmos.GmosGrating[GmosNorthDisperser]] =
       (for {
         d <- PioOptional(Disperser.parse(cm))
         o <- PioOptional(DisperserOrder.cparse(cm))
         w <- PioOptional(DisperserLambda.cparse(cm)).map(Gmos.GmosCentralWavelength)
-      } yield Gmos.GmosNorthGrating(d, o, w)).run
+      } yield Gmos.GmosGrating(d, o, w)).run
 
     for {
       c <- gmosCommonDynamic(cm)
@@ -101,12 +101,12 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     import Legacy.Instrument.Gmos._
     import Legacy.Instrument.GmosSouth._
 
-    val grating: PioError \/ Option[Gmos.GmosSouthGrating] =
+    val grating: PioError \/ Option[Gmos.GmosGrating[GmosSouthDisperser]] =
       (for {
         d <- PioOptional(Disperser.parse(cm))
         o <- PioOptional(DisperserOrder.cparse(cm))
         w <- PioOptional(DisperserLambda.cparse(cm)).map(Gmos.GmosCentralWavelength)
-      } yield Gmos.GmosSouthGrating(d, o, w)).run
+      } yield Gmos.GmosGrating(d, o, w)).run
 
     for {
       c <- gmosCommonDynamic(cm)

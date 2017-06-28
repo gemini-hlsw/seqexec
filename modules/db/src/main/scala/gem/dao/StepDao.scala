@@ -291,12 +291,12 @@ object StepDao {
     ) {
       import Gmos._
 
-      def toGrating[G](f: (D, GmosDisperserOrder, GmosCentralWavelength) => G): Option[G] =
+      def toGrating: Option[Gmos.GmosGrating[D]] =
         for {
           d <- disperser
           o <- disperserOrder
           w <- wavelength
-        } yield f(d, o, GmosCentralWavelength(w.toDouble))
+        } yield GmosGrating(d, o, GmosCentralWavelength(w.toDouble))
     }
 
     final case class GmosFpuBuilder[U](
@@ -325,7 +325,7 @@ object StepDao {
       u: GmosFpuBuilder[GmosNorthFpu],
     ) {
       val toDynamicConfig: GmosNorthDynamicConfig =
-        GmosNorthDynamicConfig(c, g.toGrating(Gmos.GmosNorthGrating), f, u.toFpu)
+        GmosNorthDynamicConfig(c, g.toGrating, f, u.toFpu)
     }
 
     final case class GmosSouthBuilder(
@@ -335,7 +335,7 @@ object StepDao {
       u: GmosFpuBuilder[GmosSouthFpu],
     ) {
       val toDynamicConfig: GmosSouthDynamicConfig =
-        GmosSouthDynamicConfig(c, g.toGrating(Gmos.GmosSouthGrating), f, u.toFpu)
+        GmosSouthDynamicConfig(c, g.toGrating, f, u.toFpu)
     }
 
     private def gmosSelectFragment(withLocation: Boolean, table: String, oid: Observation.Id): Fragment =

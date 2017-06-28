@@ -72,7 +72,7 @@ import Gmos._
 
 final case class GmosNorthDynamicConfig(
   common:  GmosCommonDynamicConfig,
-  grating: Option[GmosNorthGrating],
+  grating: Option[GmosGrating[GmosNorthDisperser]],
   filter:  Option[GmosNorthFilter],
   fpu:     Option[GmosCustomMask \/ GmosNorthFpu],
 ) extends DynamicConfig {
@@ -89,7 +89,7 @@ object GmosNorthDynamicConfig {
 
 final case class GmosSouthDynamicConfig(
   common:  GmosCommonDynamicConfig,
-  grating: Option[GmosSouthGrating],
+  grating: Option[GmosGrating[GmosSouthDisperser]],
   filter:  Option[GmosSouthFilter],
   fpu:     Option[GmosCustomMask \/ GmosSouthFpu],
 ) extends DynamicConfig {

@@ -158,7 +158,7 @@ trait Arbitraries extends gem.enum.Arbitraries {
         d <- arbitrary[GmosNorthDisperser]
         o <- arbitrary[GmosDisperserOrder]
         w <- arbitrary[Gmos.GmosCentralWavelength]
-      } yield Gmos.GmosNorthGrating(d, o, w)
+      } yield Gmos.GmosGrating(d, o, w)
     }
 
   implicit val arbGmosSouthGrating =
@@ -167,14 +167,14 @@ trait Arbitraries extends gem.enum.Arbitraries {
         d <- arbitrary[GmosSouthDisperser]
         o <- arbitrary[GmosDisperserOrder]
         w <- arbitrary[Gmos.GmosCentralWavelength]
-      } yield Gmos.GmosSouthGrating(d, o, w)
+      } yield Gmos.GmosGrating(d, o, w)
     }
 
   implicit val arbGmosNorthDynamic =
     Arbitrary {
       for {
         c <- arbitrary[Gmos.GmosCommonDynamicConfig]
-        g <- arbitrary[Option[Gmos.GmosNorthGrating]]
+        g <- arbitrary[Option[Gmos.GmosGrating[GmosNorthDisperser]]]
         f <- arbitrary[Option[GmosNorthFilter]]
         u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosNorthFpu]]
       } yield GmosNorthDynamicConfig(c, g, f, u)
@@ -184,7 +184,7 @@ trait Arbitraries extends gem.enum.Arbitraries {
     Arbitrary {
       for {
         c <- arbitrary[Gmos.GmosCommonDynamicConfig]
-        g <- arbitrary[Option[Gmos.GmosSouthGrating]]
+        g <- arbitrary[Option[Gmos.GmosGrating[GmosSouthDisperser]]]
         f <- arbitrary[Option[GmosSouthFilter]]
         u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosSouthFpu]]
       } yield GmosSouthDynamicConfig(c, g, f, u)
