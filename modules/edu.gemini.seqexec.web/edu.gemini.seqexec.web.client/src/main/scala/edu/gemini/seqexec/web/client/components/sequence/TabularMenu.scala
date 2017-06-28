@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import edu.gemini.seqexec.model.Model.{SequenceId, SequenceView, Instrument}
+import edu.gemini.seqexec.model.Model.{SequenceState, SequenceId, SequenceView, Instrument}
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, SelectToDisplay, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
@@ -22,9 +22,9 @@ import scalaz.syntax.std.option._
   * Menu with tabs
   */
 object TabularMenu {
-  case class TabItem(instrument: Instrument, id: Option[SequenceId], isActive: Boolean, dataItem: String, hasError: Boolean)
+  case class TabItem(instrument: Instrument, id: Option[SequenceId], status: Option[SequenceState], isActive: Boolean, dataItem: String, hasError: Boolean)
   case class Props(d: SequencesOnDisplay) {
-    val tabs: List[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, a.sequence().map(_.id), isActive = a.instrument === d.instrumentSequences.focus.instrument, a.instrument, a.sequence().map(_.hasError).getOrElse(false))).toStream.toList
+    val tabs: List[TabItem] = d.instrumentSequences.map(a => TabItem(a.instrument, a.sequence().map(_.id), a.sequence().map(_.status), isActive = a.instrument === d.instrumentSequences.focus.instrument, a.instrument, a.sequence().map(_.hasError).getOrElse(false))).toStream.toList
   }
 
   private val component = ScalaComponent.builder[Props]("TabularMenu")
@@ -32,7 +32,17 @@ object TabularMenu {
     .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        p.tabs.map(t =>
+        p.tabs.map { t =>
+          val icon = t.status.flatMap {
+            case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
+            case SequenceState.Completed => IconCheckmark.some
+            case _                       => IconSelectedRadio.some
+          }
+          val color = t.status.flatMap {
+            case SequenceState.Running   => "green".some
+            case SequenceState.Completed => "green".some
+            case _                       => none[String]
+          }
           <.a(
             ^.cls := "item",
             ^.classSet(
@@ -43,11 +53,10 @@ object TabularMenu {
             SeqexecStyles.errorTab.when(t.hasError),
             dataTab := t.dataItem,
             IconAttention.copyIcon(color = Some("red")).when(t.hasError),
-            t.id.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, t.instrument), Label(Label.Props(id, icon = IconSelectedRadio.some)))).getOrElse(t.instrument)
+            t.id.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, t.instrument), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(t.instrument)
           )
-        ).toTagMod
+        }.toTagMod
       )
-
     ).componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
