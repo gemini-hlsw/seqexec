@@ -57,8 +57,6 @@ class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
 
   val service = GZip { HttpService {
     case req if req.pathInfo == "/"                  => indexResponse
-    case req if req.pathInfo == "/cli" && devMode    => req.serve("/cli-dev.html")
-    case req if req.pathInfo == "/cli"               => req.serve("/cli.html")
     case req if req.endsWith(supportedExtension: _*) => req.serve()
   }}
 }
