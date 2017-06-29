@@ -33,13 +33,21 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
       updated(page)
 
     case NavigateSilentTo(page) =>
-      println("silent " + page)
       val effect = page match {
         case InstrumentPage(i, None)     => Effect(Future(SelectInstrumentToDisplay(i)))
         case InstrumentPage(i, Some(id)) => Effect(Future(SelectIdToDisplay(i, id)))
         case _                           => Effect(Future(NoAction: Action))
       }
       updatedSilent(page, effect)
+
+    case SyncToPage(s) =>
+      // the page maybe not in sync with the tabs. Let's fix that
+      value match {
+        case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
+          effectOnly(Effect(Future(SelectToDisplay(s))))
+        case _ =>
+          noChange
+      }
 
     case _ =>
       noChange
@@ -335,10 +343,10 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
                Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) ::
                Some(Effect(Future(SyncToPage(q): Action))) :: eff)
-        } else {
-          (q :: seq, eff)
-        }
-      }
+            } else {
+              (q :: seq, Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+            }
+          }
       updated(value.copy(_1 = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
