@@ -88,47 +88,23 @@ Fast	fast	Fast
 
 
 --
--- Name: e_gmos_x_binning; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_gmos_binning; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE e_gmos_x_binning (
+CREATE TABLE e_gmos_binning (
     id               identifier           PRIMARY KEY,
     short_name       character varying(4) NOT NULL,
     long_name        character varying(4) NOT NULL,
     count            smallint             NOT NULL
 );
 
-ALTER TABLE e_gmos_x_binning OWNER TO postgres;
+ALTER TABLE e_gmos_binning OWNER TO postgres;
 
 --
--- Data for Name: e_gmos_x_binning ; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_gmos_binning ; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_gmos_x_binning (id, short_name, long_name, count) FROM stdin;
-One	1	One	1
-Two	2	Two	2
-Four	4	Four	4
-\.
-
-
---
--- Name: e_gmos_y_binning; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE e_gmos_y_binning (
-    id               identifier           PRIMARY KEY,
-    short_name       character varying(4) NOT NULL,
-    long_name        character varying(4) NOT NULL,
-    count            smallint             NOT NULL
-);
-
-ALTER TABLE e_gmos_y_binning OWNER TO postgres;
-
---
--- Data for Name: e_gmos_y_binning ; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY e_gmos_y_binning (id, short_name, long_name, count) FROM stdin;
+COPY e_gmos_binning (id, short_name, long_name, count) FROM stdin;
 One	1	One	1
 Two	2	Two	2
 Four	4	Four	4
@@ -353,8 +329,8 @@ ALTER TABLE static_gmos_south OWNER TO postgres;
 
 CREATE TABLE step_gmos_common (
     step_id       integer      PRIMARY KEY REFERENCES step ON DELETE CASCADE,
-    x_binning     identifier   NOT NULL    REFERENCES e_gmos_x_binning,
-    y_binning     identifier   NOT NULL    REFERENCES e_gmos_y_binning,
+    x_binning     identifier   NOT NULL    REFERENCES e_gmos_binning,
+    y_binning     identifier   NOT NULL    REFERENCES e_gmos_binning,
     amp_count     identifier   NOT NULL    REFERENCES e_gmos_amp_count,
     amp_gain      identifier   NOT NULL    REFERENCES e_gmos_amp_gain,
     amp_read_mode identifier   NOT NULL    REFERENCES e_gmos_amp_read_mode,

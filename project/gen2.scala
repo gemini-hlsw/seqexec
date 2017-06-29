@@ -329,13 +329,13 @@ object gen2 {
 
       enum("GmosXBinning") {
         type GmosXBinningRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
-        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_x_binning""".query[(String, GmosXBinningRec)].list
+        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_binning""".query[(String, GmosXBinningRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("GmosYBinning") {
         type GmosYBinningRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'count -> Int`.T
-        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_y_binning""".query[(String, GmosYBinningRec)].list
+        val io = sql"""SELECT id, id tag, short_name, long_name, count FROM e_gmos_binning""".query[(String, GmosYBinningRec)].list
         io.transact(xa).unsafePerformIO
       },
 

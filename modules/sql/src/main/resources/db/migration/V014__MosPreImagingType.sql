@@ -6,15 +6,15 @@
 
 CREATE TABLE e_mos_preimaging (
     id          identifier            PRIMARY KEY,
-    description character varying(20) NOT NULL,
-    to_boolean boolean                NOT NULL UNIQUE
+    description character varying(22) NOT NULL,
+    to_boolean  boolean               NOT NULL UNIQUE
 );
 
 ALTER TABLE e_mos_preimaging OWNER TO postgres;
 
 COPY e_mos_preimaging (id, description, to_boolean) FROM stdin;
 IsMosPreImaging	Is MOS Pre-imaging	true
-IsNotMosPreImaging	Not MOS Pre-Imaging	false
+IsNotMosPreImaging	Is Not MOS Pre-Imaging	false
 \.
 
 CREATE OR REPLACE FUNCTION toMosPreImaging (
