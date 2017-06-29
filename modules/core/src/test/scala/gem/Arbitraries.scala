@@ -63,11 +63,11 @@ trait Arbitraries extends gem.config.Arbitraries {
 
   def genStepOf(i: Instrument): Gen[Step[DynamicConfig]] =
     Gen.oneOf(
-      genBiasStepOf(i)     .widen[Step[DynamicConfig]],
-      genDarkStepOf(i)     .widen[Step[DynamicConfig]],
-      genGcalStepOf(i)     .widen[Step[DynamicConfig]],
-      genScienceStepOf(i)  .widen[Step[DynamicConfig]],
-      genSmartGcalStepOf(i).widen[Step[DynamicConfig]]
+      genBiasStepOf(i),
+      genDarkStepOf(i),
+      genGcalStepOf(i),
+      genScienceStepOf(i),
+      genSmartGcalStepOf(i)
     )
 
   def genSequenceOf(i: Instrument): Gen[List[Step[DynamicConfig]]] =
@@ -88,7 +88,11 @@ trait Arbitraries extends gem.config.Arbitraries {
 
   def genObservation(id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
-      i <- Gen.const(Instrument.Flamingos2) // Add more as they become available
+      i <- Gen.oneOf(
+             Instrument.Flamingos2,
+             Instrument.GmosN,
+             Instrument.GmosS
+           ) // Add more as they become available
       o <- genObservationOf(i, id)
     } yield o
 

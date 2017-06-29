@@ -50,10 +50,10 @@ object Decoders {
   implicit val ObservationDecoder: PioDecoder[Observation[StaticConfig, Step[DynamicConfig]]] =
     PioDecoder { n =>
       for {
-        id <- (n \! "@name"                ).decode[Observation.Id]
-        t  <- (n \! "data" \? "#title"     ).decodeOrZero[String]
-        st <- (n \! "sequence"             ).decode[StaticConfig](StaticDecoder)
-        sq <- (n \! "sequence"             ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
+        id <- (n \! "@name"           ).decode[Observation.Id]
+        t  <- (n \! "data" \? "#title").decodeOrZero[String]
+        st <- (n \! "sequence"        ).decode[StaticConfig](StaticDecoder)
+        sq <- (n \! "sequence"        ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
       } yield Observation(id, t, st, sq)
     }
 

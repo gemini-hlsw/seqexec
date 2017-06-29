@@ -4,7 +4,7 @@
 package gem
 package config
 
-import gem.enum.Instrument
+import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
 
 sealed abstract class StaticConfig {
   type I <: Instrument with Singleton
@@ -27,15 +27,43 @@ final case class NiciStaticConfig()       extends StaticConfig.Impl(Instrument.N
 final case class NifsStaticConfig()       extends StaticConfig.Impl(Instrument.Nifs)
 final case class GpiStaticConfig()        extends StaticConfig.Impl(Instrument.Gpi)
 final case class GsaoiStaticConfig()      extends StaticConfig.Impl(Instrument.Gsaoi)
-final case class GmosSStaticConfig()      extends StaticConfig.Impl(Instrument.GmosS)
 final case class AcqCamStaticConfig()     extends StaticConfig.Impl(Instrument.AcqCam)
-final case class GmosNStaticConfig()      extends StaticConfig.Impl(Instrument.GmosN)
 final case class BhrosStaticConfig()      extends StaticConfig.Impl(Instrument.Bhros)
 final case class VisitorStaticConfig()    extends StaticConfig.Impl(Instrument.Visitor)
 
-final case class F2StaticConfig(mosPreImaging: Boolean) extends StaticConfig {
-  type I = Instrument.Flamingos2.type
+final case class F2StaticConfig(
+  mosPreImaging: MosPreImaging
+) extends StaticConfig.Impl(Instrument.Flamingos2)
 
-  def instrument: I = Instrument.Flamingos2
+object F2StaticConfig {
+  val Default: F2StaticConfig =
+    F2StaticConfig(MosPreImaging.IsNotMosPreImaging)
+}
 
+import Gmos._
+
+final case class GmosNorthStaticConfig(
+  common:    GmosCommonStaticConfig,
+  stageMode: GmosNorthStageMode
+) extends StaticConfig.Impl(Instrument.GmosN)
+
+object GmosNorthStaticConfig {
+  val Default: GmosNorthStaticConfig =
+    GmosNorthStaticConfig(
+      GmosCommonStaticConfig.Default,
+      GmosNorthStageMode.FollowXy
+    )
+}
+
+final case class GmosSouthStaticConfig(
+  common:    GmosCommonStaticConfig,
+  stageMode: GmosSouthStageMode
+) extends StaticConfig.Impl(Instrument.GmosS)
+
+object GmosSouthStaticConfig {
+  val Default: GmosSouthStaticConfig =
+    GmosSouthStaticConfig(
+      GmosCommonStaticConfig.Default,
+      GmosSouthStageMode.FollowXyz
+    )
 }
