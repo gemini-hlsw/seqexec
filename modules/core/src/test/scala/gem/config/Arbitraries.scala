@@ -82,21 +82,21 @@ trait Arbitraries extends gem.enum.Arbitraries {
 
   def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
     i match {
-      case AcqCam     => arbitrary[AcqCamStaticConfig   ].widen[StaticConfig]
-      case Bhros      => arbitrary[BhrosStaticConfig    ].widen[StaticConfig]
-      case Flamingos2 => arbitrary[F2StaticConfig       ].widen[StaticConfig]
-      case GmosN      => arbitrary[GmosNorthStaticConfig].widen[StaticConfig]
-      case GmosS      => arbitrary[GmosSouthStaticConfig].widen[StaticConfig]
-      case Gnirs      => arbitrary[GnirsStaticConfig    ].widen[StaticConfig]
-      case Gpi        => arbitrary[GpiStaticConfig      ].widen[StaticConfig]
-      case Gsaoi      => arbitrary[GsaoiStaticConfig    ].widen[StaticConfig]
-      case Michelle   => arbitrary[MichelleStaticConfig ].widen[StaticConfig]
-      case Nici       => arbitrary[NiciStaticConfig     ].widen[StaticConfig]
-      case Nifs       => arbitrary[NifsStaticConfig     ].widen[StaticConfig]
-      case Niri       => arbitrary[NiriStaticConfig     ].widen[StaticConfig]
-      case Phoenix    => arbitrary[PhoenixStaticConfig  ].widen[StaticConfig]
-      case Trecs      => arbitrary[TrecsStaticConfig    ].widen[StaticConfig]
-      case Visitor    => arbitrary[VisitorStaticConfig  ].widen[StaticConfig]
+      case AcqCam     => arbitrary[AcqCamStaticConfig   ]
+      case Bhros      => arbitrary[BhrosStaticConfig    ]
+      case Flamingos2 => arbitrary[F2StaticConfig       ]
+      case GmosN      => arbitrary[GmosNorthStaticConfig]
+      case GmosS      => arbitrary[GmosSouthStaticConfig]
+      case Gnirs      => arbitrary[GnirsStaticConfig    ]
+      case Gpi        => arbitrary[GpiStaticConfig      ]
+      case Gsaoi      => arbitrary[GsaoiStaticConfig    ]
+      case Michelle   => arbitrary[MichelleStaticConfig ]
+      case Nici       => arbitrary[NiciStaticConfig     ]
+      case Nifs       => arbitrary[NifsStaticConfig     ]
+      case Niri       => arbitrary[NiriStaticConfig     ]
+      case Phoenix    => arbitrary[PhoenixStaticConfig  ]
+      case Trecs      => arbitrary[TrecsStaticConfig    ]
+      case Visitor    => arbitrary[VisitorStaticConfig  ]
     }
 
   implicit val arbAcqCamDynamic    = const(AcqCamDynamicConfig()         )
@@ -198,21 +198,21 @@ trait Arbitraries extends gem.enum.Arbitraries {
 
   def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] =
     i match {
-      case AcqCam     => arbitrary[AcqCamDynamicConfig   ].widen[DynamicConfig]
-      case Bhros      => arbitrary[BhrosDynamicConfig    ].widen[DynamicConfig]
-      case Flamingos2 => arbitrary[F2DynamicConfig       ].widen[DynamicConfig]
-      case GmosN      => arbitrary[GmosNorthDynamicConfig].widen[DynamicConfig]
-      case GmosS      => arbitrary[GmosSouthDynamicConfig].widen[DynamicConfig]
-      case Gnirs      => arbitrary[GnirsDynamicConfig    ].widen[DynamicConfig]
-      case Gpi        => arbitrary[GpiDynamicConfig      ].widen[DynamicConfig]
-      case Gsaoi      => arbitrary[GsaoiDynamicConfig    ].widen[DynamicConfig]
-      case Michelle   => arbitrary[MichelleDynamicConfig ].widen[DynamicConfig]
-      case Nici       => arbitrary[NiciDynamicConfig     ].widen[DynamicConfig]
-      case Nifs       => arbitrary[NifsDynamicConfig     ].widen[DynamicConfig]
-      case Niri       => arbitrary[NiriDynamicConfig     ].widen[DynamicConfig]
-      case Phoenix    => arbitrary[PhoenixDynamicConfig  ].widen[DynamicConfig]
-      case Trecs      => arbitrary[TrecsDynamicConfig    ].widen[DynamicConfig]
-      case Visitor    => arbitrary[VisitorDynamicConfig  ].widen[DynamicConfig]
+      case AcqCam     => arbitrary[AcqCamDynamicConfig   ]
+      case Bhros      => arbitrary[BhrosDynamicConfig    ]
+      case Flamingos2 => arbitrary[F2DynamicConfig       ]
+      case GmosN      => arbitrary[GmosNorthDynamicConfig]
+      case GmosS      => arbitrary[GmosSouthDynamicConfig]
+      case Gnirs      => arbitrary[GnirsDynamicConfig    ]
+      case Gpi        => arbitrary[GpiDynamicConfig      ]
+      case Gsaoi      => arbitrary[GsaoiDynamicConfig    ]
+      case Michelle   => arbitrary[MichelleDynamicConfig ]
+      case Nici       => arbitrary[NiciDynamicConfig     ]
+      case Nifs       => arbitrary[NifsDynamicConfig     ]
+      case Niri       => arbitrary[NiriDynamicConfig     ]
+      case Phoenix    => arbitrary[PhoenixDynamicConfig  ]
+      case Trecs      => arbitrary[TrecsDynamicConfig    ]
+      case Visitor    => arbitrary[VisitorDynamicConfig  ]
     }
 
 
