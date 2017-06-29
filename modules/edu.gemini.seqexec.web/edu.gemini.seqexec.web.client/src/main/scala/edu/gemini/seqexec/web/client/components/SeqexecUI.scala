@@ -66,7 +66,6 @@ object SeqexecUI {
     val (router, routerLogic) = Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig)
 
     def navigated(page: ModelRO[SeqexecPages]): Unit = {
-      println("navigated " + page)
       scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
     }
 

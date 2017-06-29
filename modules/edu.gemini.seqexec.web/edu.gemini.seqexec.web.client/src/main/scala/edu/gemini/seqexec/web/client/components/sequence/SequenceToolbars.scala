@@ -38,10 +38,6 @@ object SequenceInfo {
           SeqexecStyles.fieldsNoBottom.unless(p.isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props("Name:", basic = true, color = "red".some))
-          ).when(p.isLogged),
-          <.div(
-            ^.cls := "field",
             Label(Label.Props(name, basic = true))
           ).when(p.isLogged),
           <.div(
