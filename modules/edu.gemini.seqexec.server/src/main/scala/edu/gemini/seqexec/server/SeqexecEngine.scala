@@ -231,7 +231,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     def unloads(odbList: Seq[SPObservationID]): Seq[Event] =
       seqexecList.diff(odbList).map(id => unloadEvent(id))
 
-    val x = odbProxy.queuedSequences().flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
+    val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
     val y = x.map(_.valueOr(r => List(Event.logMsg(SeqexecFailure.explain(r)))))
     y.map { ee => !ee.isEmpty option Process.emitAll(ee).evalMap(Task.delay(_)) }
   }

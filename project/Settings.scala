@@ -27,7 +27,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaCommonVersion = "2.11.11"
+    val scalaCommonVersion = "2.12.2"
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
     val scalaJSVersion     = scalaCommonVersion
 
@@ -66,7 +66,7 @@ object Settings {
     val jQuery         = "3.2.1"
     val semanticUI     = "2.2.7"
     val jQueryTerminal = "0.11.2"
-    val ocsVersion     = "2017101.1.1"
+    val ocsVersion     = "2017101.1.2"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"
@@ -132,7 +132,17 @@ object Settings {
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion
-    val SeqexecOdb  = "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion
+    val SeqexecOdb  = Seq(
+                      "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion,
+                      "dom4j"            %  "dom4j"                          % "1.5.1"
+                        exclude("jaxen", "jaxen")
+                        exclude("jaxme", "jaxme-api")
+                        exclude("msv", "xsdlib")
+                        exclude("msv", "relaxngDatatype")
+                        exclude("pull-parser", "pull-parser")
+                        exclude("stax", "stax")
+                        exclude("xml-apis", "xml-apis")
+                        exclude("xpp3", "xpp3"))
     val POT         = "edu.gemini.ocs"    %% "edu-gemini-pot"                 % LibraryVersions.ocsVersion
     val EpicsACM    = "edu.gemini.ocs"    %% "edu-gemini-epics-acm"           % LibraryVersions.ocsVersion
     val TRPC        = "edu.gemini.ocs"    %% "edu-gemini-util-trpc"           % LibraryVersions.ocsVersion

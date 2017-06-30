@@ -372,9 +372,6 @@ package object engine {
   private def modify(f: (Engine.State) => Engine.State): HandleP[Unit] =
     MonadState[Handle, Engine.State].modify(f).toHandleP
 
-  private def put(qs: Engine.State): HandleP[Unit] =
-    MonadState[Handle, Engine.State].put(qs).toHandleP
-
   private def getS(id: Sequence.Id): HandleP[Option[Sequence.State]] = get.map(_.sequences.get(id))
 
   private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): HandleP[Option[A]] =
