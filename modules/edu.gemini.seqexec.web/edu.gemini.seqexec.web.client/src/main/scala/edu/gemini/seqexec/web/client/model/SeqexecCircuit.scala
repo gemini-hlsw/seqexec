@@ -380,6 +380,9 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selected
 }
 
 case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
+
+case class StatusAndLoadedSequences(isLogged: Boolean, sequences: LoadedSequences) extends UseValueEq
+
 /**
   * Contains the model for Diode
   */
@@ -404,13 +407,13 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   override protected def initialModel = SeqexecAppRootModel.initial
 
   // Some useful readers
-  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences))
+  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, StatusAndLoadedSequences] =
+    SeqexecCircuit.zoom(c => StatusAndLoadedSequences(c.uiModel.user.isDefined, c.uiModel.sequences))
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
     SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
-  val log = zoom(_.uiModel.globalLog)
 
   // Reader for a specific sequence if available
   def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =

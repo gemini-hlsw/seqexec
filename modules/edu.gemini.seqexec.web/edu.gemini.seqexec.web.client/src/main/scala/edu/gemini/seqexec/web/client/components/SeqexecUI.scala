@@ -19,8 +19,8 @@ object SeqexecMain {
     .render_P(p =>
       <.div(
         NavBar(),
-        /*QueueArea(SeqexecCircuit.statusAndLoadedSequences),
-        SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),*/
+        QueueArea(),
+        /*SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),*/
         logConnect(LogArea.apply),
         lbConnect(LoginBox.apply)
       )
