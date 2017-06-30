@@ -1,8 +1,7 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.ModelR
+import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.model.GlobalLog
-import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -36,5 +35,5 @@ object LogArea {
     )
     .build
 
-  def apply(p: ModelR[SeqexecAppRootModel, GlobalLog]): Unmounted[Props, Unit, Unit] = component(Props(p()))
+  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, Unit, Unit] = component(Props(p()))
 }

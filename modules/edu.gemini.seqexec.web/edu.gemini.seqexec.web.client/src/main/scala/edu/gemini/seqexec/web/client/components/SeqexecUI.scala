@@ -11,7 +11,8 @@ import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
 
 object SeqexecMain {
-  private val lbConnect = SeqexecCircuit.connect(SeqexecCircuit.loginBox)
+  private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
+  private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
 
   private val component = ScalaComponent.builder[Unit]("SeqexecUI")
     .stateless
@@ -19,8 +20,8 @@ object SeqexecMain {
       <.div(
         NavBar(),
         /*QueueArea(SeqexecCircuit.statusAndLoadedSequences),
-        SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),
-        LogArea(SeqexecCircuit.log),*/
+        SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),*/
+        logConnect(LogArea.apply),
         lbConnect(LoginBox.apply)
       )
     ).build
