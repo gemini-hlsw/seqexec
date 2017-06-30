@@ -435,7 +435,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def m2Baffle: Option[String] = Option(tcsState.getStringAttribute("m2baffle").value)
 
-  def m2CentralBaffle: Option[String] = Option(tcsState.getStringAttribute("m2baffle").value)
+  def m2CentralBaffle: Option[String] = Option(tcsState.getStringAttribute("m2cenbaff").value)
 
   def st: Option[String] = Option(tcsState.getStringAttribute("st").value)
 
