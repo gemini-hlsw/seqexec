@@ -372,7 +372,7 @@ object PotEq {
 /**
   * Utility class to let components more easily switch parts of the UI depending on the context
   */
-case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selectedSequence: Map[Instrument, Option[SequenceView]]) {
+case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selectedSequence: Map[Instrument, Option[SequenceView]]) extends UseValueEq {
   def isLogged: Boolean = u.isDefined
   def isConnected: Boolean = w.ws.isReady
   // Indicates if any sequence is being displayed

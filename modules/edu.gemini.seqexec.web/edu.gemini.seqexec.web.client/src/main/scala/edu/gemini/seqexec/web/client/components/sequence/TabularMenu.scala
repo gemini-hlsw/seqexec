@@ -1,7 +1,8 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
+import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceId, SequenceView, Instrument}
-import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, SelectToDisplay, SelectInstrumentToDisplay, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model.{NavigateTo, SelectToDisplay, SelectInstrumentToDisplay, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
@@ -24,9 +25,9 @@ import scalaz.syntax.std.option._
   */
 object TabularMenu {
   case class TabItem(instrument: Instrument, id: Option[SequenceId], status: Option[SequenceState], isActive: Boolean, dataItem: String, hasError: Boolean)
-  case class Props(d: SequencesOnDisplay) {
-    val tabs: List[TabItem] = d.instrumentSequences.map { a =>
-      val isActive = a.instrument === d.instrumentSequences.focus.instrument
+  case class Props(d: ModelProxy[SequencesOnDisplay]) {
+    val tabs: List[TabItem] = d().instrumentSequences.map { a =>
+      val isActive = a.instrument === d().instrumentSequences.focus.instrument
       TabItem(a.instrument, a.sequence().map(_.id), a.sequence().map(_.status), isActive = isActive, a.instrument, a.sequence().map(_.hasError).getOrElse(false))}.toStream.toList
   }
 
@@ -62,22 +63,24 @@ object TabularMenu {
       )
     ).componentDidMount(ctx =>
       Callback {
+        println("component mount")
         // Enable menu on Semantic UI
         import org.querki.jquery.$
 
+        println($(ctx.getDOMNode).find(".item"))
         $(ctx.getDOMNode).find(".item").tab(
           JsTabOptions
             .onVisible { (x: Instrument) =>
               val id = ctx.props.tabs.find(_.instrument === x).flatMap(_.id)
-              val s: Option[SequenceView] = ctx.props.d.instrumentSequences.toStream.toList.find(_.sequence().map(_.id) === id).flatMap(_.sequence())
-              val updateModelCB = s.map(seq => Callback(SeqexecCircuit.dispatch(NavigateTo(InstrumentPage(x, seq.id.some)))) >> Callback(SeqexecCircuit.dispatch(SelectToDisplay(seq))))
-                .getOrElse(Callback(SeqexecCircuit.dispatch(NavigateTo(InstrumentPage(x, none)))) >> Callback(SeqexecCircuit.dispatch(SelectInstrumentToDisplay(x))))
+              val s: Option[SequenceView] = ctx.props.d().instrumentSequences.toStream.toList.find(_.sequence().map(_.id) === id).flatMap(_.sequence())
+              val updateModelCB = s.map(seq => ctx.props.d.dispatchCB(NavigateTo(InstrumentPage(x, seq.id.some))) >> ctx.props.d.dispatchCB(SelectToDisplay(seq)))
+                .getOrElse(ctx.props.d.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.d.dispatchCB(SelectInstrumentToDisplay(x)))
               // runNow as we are outside react loop
-              updateModelCB.runNow()
+              (Callback.log("clicx") >> updateModelCB).runNow()
             }
         )
       }
     ).build
 
-  def apply(d: SequencesOnDisplay): Unmounted[Props, Unit, Unit] = component(Props(d))
+  def apply(d: ModelProxy[SequencesOnDisplay]): Unmounted[Props, Unit, Unit] = component(Props(d))
 }

@@ -78,35 +78,39 @@ object SequenceTabsBody {
     p.d.instrumentSequences.map { a =>
       SequenceTabContent.Props(isActive = a.instrument === p.d.instrumentSequences.focus.instrument, p.s, a)}.toStream
 
-  private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
+  val sequencesConnect = SeqexecCircuit.connect(SeqexecCircuit.sequencesOnDisplay)
+
+  private val component = ScalaComponent.builder[Unit]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-        TabularMenu(p.d),
-        tabContents(p).map(SequenceTabContent.apply).toTagMod
+        sequencesConnect(TabularMenu.apply)
+        // tabContents(p).map(SequenceTabContent.apply).toTagMod
       )
     ).build
 
-  def apply(p: SequenceArea.SequencesModel): Unmounted[Props, Unit, Unit] =
-    component(Props(p()._1, p()._2))
+  def apply(): Unmounted[Unit, Unit, Unit] =
+    component()
 }
 
 object SequenceHeadersAndTable {
-  private val component = ScalaComponent.builder[SequenceArea.SequencesAreaModel]("SequenceHeadersAndTable")
+  private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
+
+  private val component = ScalaComponent.builder[Unit]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "row",
         <.div(
           ^.cls := "four wide column computer tablet only",
-          HeadersSideBar(p.sideBar)
+          headerSideBarConnect(HeadersSideBar.apply)
         ),
-        SequenceTabsBody(p.sequences)
+        SequenceTabsBody()
       )
     ) .build
 
-  def apply(p: SequenceArea.SequencesAreaModel): Unmounted[SequenceArea.SequencesAreaModel, Unit, Unit] = component(p)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 /**
@@ -114,36 +118,35 @@ object SequenceHeadersAndTable {
   * All connects at this level, be careful about adding connects below here
   */
 object SequenceTabs {
-  private val component = ScalaComponent.builder[SequenceArea.SequencesAreaModel]("SequenceTabs")
+  private val component = ScalaComponent.builder[Unit]("SequenceTabs")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui bottom attached segment",
         <.div(
           ^.cls := "ui two column vertically divided grid",
-          SequenceHeadersAndTable(p)
+          SequenceHeadersAndTable()
         )
       )
     )
     .build
 
-  def apply(p: SequenceArea.SequencesAreaModel): Unmounted[SequenceArea.SequencesAreaModel, Unit, Unit] = component(p)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }
 
 object SequenceArea {
   type SequencesModel = ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)]
   type HeadersSideBarModel = ModelR[SeqexecAppRootModel, HeaderSideBarReader]
-  case class SequencesAreaModel(sequences: SequencesModel, sideBar: HeadersSideBarModel)
 
-  private val component = ScalaComponent.builder[SequencesAreaModel]("QueueTableSection")
+  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences", "key.sequences.menu"),
-        SequenceTabs(p)
+        SequenceTabs()
       )
     ).build
 
-  def apply(m: SequencesModel, h: HeadersSideBarModel): Unmounted[SequencesAreaModel, Unit, Unit] = component(SequencesAreaModel(m, h))
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 }

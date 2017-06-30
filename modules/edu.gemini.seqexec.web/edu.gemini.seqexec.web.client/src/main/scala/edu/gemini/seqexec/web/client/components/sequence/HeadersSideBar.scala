@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import diode.ModelR
+import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
@@ -23,7 +23,7 @@ import scala.concurrent.duration._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(model: ModelR[SeqexecAppRootModel, HeaderSideBarReader]) {
+  case class Props(model: ModelProxy[HeaderSideBarReader]) {
     def isLogged: Boolean = model().status.isLogged
   }
 
@@ -103,6 +103,6 @@ object HeadersSideBar {
     }
     .build
 
-  def apply(model: ModelR[SeqexecAppRootModel, HeaderSideBarReader]): Unmounted[Props, State, Backend] =
+  def apply(model: ModelProxy[HeaderSideBarReader]): Unmounted[Props, State, Backend] =
     component(Props(model))
 }
