@@ -142,11 +142,10 @@ lazy val edu_gemini_seqexec_server = project
           Squants.value,
           // OCS bundles
           SpModelCore,
-          SeqexecOdb,
           POT,
           EpicsACM,
           Knobs
-      ) ++ WDBAClient ++ Http4sClient ++ TestLibs.value
+      ) ++ SeqexecOdb ++ WDBAClient ++ Http4sClient ++ TestLibs.value
   )
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level

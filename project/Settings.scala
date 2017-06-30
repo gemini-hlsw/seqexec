@@ -132,7 +132,17 @@ object Settings {
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion
-    val SeqexecOdb  = "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion
+    val SeqexecOdb  = Seq(
+                      "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion,
+                      "dom4j"            %  "dom4j"                          % "1.5.1"
+                        exclude("jaxen", "jaxen")
+                        exclude("jaxme", "jaxme-api")
+                        exclude("msv", "xsdlib")
+                        exclude("msv", "relaxngDatatype")
+                        exclude("pull-parser", "pull-parser")
+                        exclude("stax", "stax")
+                        exclude("xml-apis", "xml-apis")
+                        exclude("xpp3", "xpp3"))
     val POT         = "edu.gemini.ocs"    %% "edu-gemini-pot"                 % LibraryVersions.ocsVersion
     val EpicsACM    = "edu.gemini.ocs"    %% "edu-gemini-epics-acm"           % LibraryVersions.ocsVersion
     val TRPC        = "edu.gemini.ocs"    %% "edu-gemini-util-trpc"           % LibraryVersions.ocsVersion
