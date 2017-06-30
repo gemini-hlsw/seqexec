@@ -78,14 +78,12 @@ object SequenceTabsBody {
     p.d.instrumentSequences.map { a =>
       SequenceTabContent.Props(isActive = a.instrument === p.d.instrumentSequences.focus.instrument, p.s, a)}.toStream
 
-  val sequencesConnect = SeqexecCircuit.connect(SeqexecCircuit.sequencesOnDisplay)
-
   private val component = ScalaComponent.builder[Unit]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-        sequencesConnect(TabularMenu.apply)
+        InstrumentsTabs()
         // tabContents(p).map(SequenceTabContent.apply).toTagMod
       )
     ).build

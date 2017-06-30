@@ -121,6 +121,9 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
 
   def currentSequences: Map[Instrument, Option[SequenceView]] =
     instrumentSequences.map(tab => tab.instrument -> tab.sequence()).toStream.toMap
+
+  def instrument(i: Instrument): Option[(SequenceTab, Boolean)] =
+    instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
 }
 
 /**
