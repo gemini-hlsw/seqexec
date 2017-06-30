@@ -2,40 +2,36 @@ package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
 import edu.gemini.seqexec.web.client.model.InstrumentNames
-import edu.gemini.seqexec.web.client.model.SeqexecUIModel
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.model.NavigateSilentTo
-import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
+// import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
-import diode.react.ModelProxy
 
 object SeqexecMain {
-  private val component = ScalaComponent.builder[ModelProxy[SeqexecUIModel]]("SeqexecUI")
+  private val lbConnect = SeqexecCircuit.connect(SeqexecCircuit.loginBox)
+
+  private val component = ScalaComponent.builder[Unit]("SeqexecUI")
     .stateless
     .render_P(p =>
       <.div(
         NavBar(),
-        QueueArea(SeqexecCircuit.statusAndLoadedSequences),
+        /*QueueArea(SeqexecCircuit.statusAndLoadedSequences),
         SequenceArea(SeqexecCircuit.statusAndSequences, SeqexecCircuit.headerSideBarReader),
-        LogArea(SeqexecCircuit.log),
-        LoginBox(SeqexecCircuit.loginBox)
+        LogArea(SeqexecCircuit.log),*/
+        lbConnect(LoginBox.apply)
       )
     ).build
 
-  def apply(s: ModelProxy[SeqexecUIModel]) = component(s)
+  def apply() = component()
 }
 
 /**
   * Top level UI component
   */
 object SeqexecUI {
-  // private val lConnect = SeqexecCircuit.connect(_.loginBox)
-  // private val navLocationConnect = SeqexecCircuit.connect(_.navLocation)
-  private val uiConnect = SeqexecCircuit.connect(_.uiModel)
-
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
   def router: Router[SeqexecPages] = {
@@ -46,13 +42,13 @@ object SeqexecUI {
         <.div(r.render()).render
 
       (emptyRule
-      | staticRoute(root, Root) ~> renderR(r => uiConnect(SeqexecMain.apply))
+      | staticRoute(root, Root) ~> renderR(r => SeqexecMain())
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option).caseClass[InstrumentPage]) {
           case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => uiConnect(SeqexecMain.apply))
+        } ~> dynRenderR((p, r) => SeqexecMain())
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => Some(InstrumentPage(i, None)))(i => i.i)) {
           case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => uiConnect(SeqexecMain.apply))
+        } ~> dynRenderR((p, r) => SeqexecMain())
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed

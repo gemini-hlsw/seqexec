@@ -77,6 +77,10 @@ sealed trait SectionVisibilityState
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
+object SectionVisibilityState {
+  implicit val eq = Equal.equalA[SectionVisibilityState]
+}
+
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 /**

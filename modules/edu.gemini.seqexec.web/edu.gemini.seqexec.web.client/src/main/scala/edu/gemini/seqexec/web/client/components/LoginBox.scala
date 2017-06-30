@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.ModelR
+import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -16,12 +16,14 @@ import org.scalajs.dom.html.Div
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import scalaz.syntax.equal._
+
 /**
   * UI for the login box
   */
 object LoginBox {
 
-  case class Props(visible: ModelR[SeqexecAppRootModel, SectionVisibilityState])
+  case class Props(visible: ModelProxy[SectionVisibilityState])
 
   case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
@@ -41,12 +43,12 @@ object LoginBox {
       $.modState(_.copy(username = v))
     }
 
-    def loggedInEvent(u: UserDetails):Callback = Callback { SeqexecCircuit.dispatch(LoggedIn(u)) } >> updateProgressMsg("")
-    def updateProgressMsg(m: String):Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
-    def updateErrorMsg(m: String):Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
-    def closeBox:Callback = $.modState(_ => empty) >> Callback {SeqexecCircuit.dispatch(CloseLoginBox)}
+    def loggedInEvent(u: UserDetails): Callback = updateProgressMsg("") >> $.props >>= {_.visible.dispatchCB(LoggedIn(u))}
+    def updateProgressMsg(m: String): Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
+    def updateErrorMsg(m: String): Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
+    def closeBox: Callback = $.modState(_ => empty) >> $.props >>= {_.visible.dispatchCB(CloseLoginBox)}
 
-    def attemptLogin:Callback = $.state >>= { s =>
+    def attemptLogin: Callback = $.state >>= { s =>
       // Change the UI and call login on the remote backend
       updateProgressMsg("Authenticating...") >>
       Callback.future(
@@ -148,10 +150,10 @@ object LoginBox {
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
-        if (ctx.currentProps.visible === SectionClosed) {
+        if (ctx.currentProps.visible() === SectionClosed) {
           $(ctx.getDOMNode).modal("hide")
         }
-        if (ctx.currentProps.visible === SectionOpen) {
+        if (ctx.currentProps.visible() === SectionOpen) {
           // Configure the modal to autofoucs and to act properly on closing
           $(ctx.getDOMNode).modal(
             JsModalOptions
@@ -159,7 +161,7 @@ object LoginBox {
               .onHidden { () =>
                 // Need to call direct access as this is outside the event loop
                 ctx.setState(empty)
-                SeqexecCircuit.dispatch(CloseLoginBox)
+                ctx.currentProps.visible.dispatchCB(CloseLoginBox)
               }
           )
           // Show the modal box
@@ -168,5 +170,5 @@ object LoginBox {
       }
     ).build
 
-  def apply(v: ModelR[SeqexecAppRootModel, SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(v))
+  def apply(v: ModelProxy[SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(v))
 }
