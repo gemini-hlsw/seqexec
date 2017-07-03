@@ -206,10 +206,18 @@ lazy val json = project
     )
   )
 
+lazy val sql = project
+  .in(file("modules/sql"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(commonSettings ++ flywaySettings)
+  .settings(
+    libraryDependencies += "org.flywaydb" % "flyway-core" % "4.0.3"
+  )
+
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core, db)
+  .dependsOn(core, db, sql)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -227,14 +235,6 @@ lazy val service = project
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core, db)
   .settings(commonSettings)
-
-lazy val sql = project
-  .in(file("modules/sql"))
-  .enablePlugins(AutomateHeaderPlugin)
-  .settings(commonSettings ++ flywaySettings)
-  .settings(
-    libraryDependencies += "org.flywaydb" % "flyway-core" % "4.0.3"
-  )
 
 lazy val telnetd = project
   .in(file("modules/telnetd"))
