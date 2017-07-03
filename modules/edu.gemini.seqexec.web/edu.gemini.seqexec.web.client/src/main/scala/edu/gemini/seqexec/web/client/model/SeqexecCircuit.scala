@@ -379,6 +379,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelec
 
 case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: LoadedSequences) extends UseValueEq
+case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
 case class InstrumentSequence(tab: SequenceTab, active: Boolean) extends UseValueEq
 case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentSequence]) extends UseValueEq
 
@@ -414,6 +415,16 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
     SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
+  def instrumentStatusTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[InstrumentStatus]] =
+    zoom(_.uiModel.sequencesOnDisplay.instrument(i).map {
+      case (tab, active) => InstrumentStatus(tab.instrument, active, tab.sequence().map(s => (s.id, s.status)))
+    })(new FastEq[Option[InstrumentStatus]] {
+      def eqv(a: Option[InstrumentStatus], b: Option[InstrumentStatus]): Boolean =
+        (a, b) match {
+          case (Some(v1), Some(v2)) => v1 == v2
+          case _                    => false
+        }
+    })
   def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[(SequenceTab, Boolean)]] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
   def instrumentTabAndStatus(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabAndStatus] =
     status.zip(instrumentTab(i)).zoom {

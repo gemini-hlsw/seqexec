@@ -2,14 +2,12 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, Instrument}
-import edu.gemini.seqexec.web.client.model.{InstrumentNames, NavigateTo, SequenceTab, SelectToDisplay, SelectInstrumentToDisplay}
-import edu.gemini.seqexec.web.client.model.{InstrumentNames, SequenceTab}
+import edu.gemini.seqexec.web.client.model.{InstrumentNames, InstrumentStatus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -21,16 +19,16 @@ import scalaz.std.option._
 import scalaz.syntax.std.option._
 
 object InstrumentTab {
-  case class Props(t: ModelProxy[Option[(SequenceTab, Boolean)]])
+  case class Props(t: ModelProxy[Option[InstrumentStatus]])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
     .render_P { q =>
-      q.t().fold(<.div(): VdomElement) { case (tab, active) =>
-        val sequence = tab.sequence()
-        val status = sequence.map(_.status)
-        val hasError = sequence.exists(_.hasError)
-        val sequenceId = sequence.map(_.id)
+      q.t().fold(<.div(): VdomElement) { case tab =>
+        val active = tab.active
+        val status = tab.idState.map(_._2)
+        val hasError = status.map(SequenceState.isError).getOrElse(false)
+        val sequenceId = tab.idState.map(_._1)
         val instrument = tab.instrument
         val icon = status.flatMap {
           case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
@@ -63,8 +61,8 @@ object InstrumentTab {
         $(ctx.getDOMNode).tab(
           JsTabOptions
             .onVisible { (x: Instrument) =>
-              ctx.props.t().map(_._1.sequence()).foreach { sequence =>
-                val updateModelCB = sequence.map(seq => ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, seq.id.some))) >> ctx.props.t.dispatchCB(SelectToDisplay(seq)))
+              ctx.props.t().map(_.idState).foreach { sequence =>
+                val updateModelCB = sequence.map(seq => ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, seq._1.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(x, seq._1)))
                   .getOrElse(ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(x)))
                 // runNow as we are outside react loop
                 updateModelCB.runNow()
@@ -74,14 +72,14 @@ object InstrumentTab {
       }
     ).build
 
-  def apply(p: ModelProxy[Option[(SequenceTab, Boolean)]]) = component(Props(p))
+  def apply(p: ModelProxy[Option[InstrumentStatus]]) = component(Props(p))
 }
 /**
   * Menu with tabs
   */
 object InstrumentsTabs {
   // TODO Consider GN/GS
-  val instrumentConnects = InstrumentNames.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTab(i)))
+  val instrumentConnects = InstrumentNames.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusTab(i)))
 
   private val component = ScalaComponent.builder[Unit]("InstrumentsMenu")
     .stateless
