@@ -30,7 +30,7 @@ object SequenceInfo {
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val name = p.s.metadata.name.isEmpty ? "Unknown." | p.s.metadata.name
+      val name = Option(p.s.metadata.name).filter(_.nonEmpty).getOrElse("Unknown.")
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -117,7 +117,7 @@ object SequenceObserverField {
 }
 
 object SequenceDefaultToolbar {
-  case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Int)
+  case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Option[Int])
   case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
   private val ST = ReactS.Fix[State]
 
@@ -134,8 +134,9 @@ object SequenceDefaultToolbar {
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS{ ($, p, s) =>
       val isLogged = p.status.isLogged
-      val runContinueTooltip = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step ${p.nextStepToRun + 1}"
-      val runContinueButton = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step ${p.nextStepToRun + 1}"
+      val nextStepToRun = p.nextStepToRun.getOrElse(0) + 1
+      val runContinueTooltip = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
+      val runContinueButton = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
       <.div(
         ^.cls := "ui row",
         <.div(

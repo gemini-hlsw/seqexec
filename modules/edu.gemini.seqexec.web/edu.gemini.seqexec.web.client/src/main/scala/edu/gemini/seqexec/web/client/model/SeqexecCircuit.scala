@@ -382,6 +382,8 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selected
 case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: LoadedSequences) extends UseValueEq
+case class InstrumentSequence(tab: SequenceTab, active: Boolean) extends UseValueEq
+case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentSequence]) extends UseValueEq
 
 /**
   * Contains the model for Diode
@@ -416,6 +418,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
   def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[(SequenceTab, Boolean)]] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
+  def instrumentTabAndStatus(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabAndStatus] =
+    status.zip(instrumentTab(i)).zoom {
+      case (status, Some((tab, active))) => InstrumentTabAndStatus(status, InstrumentSequence(tab, active).some)
+      case (status, _)                   => InstrumentTabAndStatus(status, none)
+    }
 
   // Reader for a specific sequence if available
   def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
