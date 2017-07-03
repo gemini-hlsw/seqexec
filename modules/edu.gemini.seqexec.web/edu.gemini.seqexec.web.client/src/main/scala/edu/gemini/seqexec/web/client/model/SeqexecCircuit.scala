@@ -372,15 +372,12 @@ object PotEq {
 /**
   * Utility class to let components more easily switch parts of the UI depending on the context
   */
-case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, selectedSequence: Map[Instrument, Option[SequenceView]]) extends UseValueEq {
+case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean) extends UseValueEq {
   def isLogged: Boolean = u.isDefined
   def isConnected: Boolean = w.ws.isReady
-  // Indicates if any sequence is being displayed
-  def anySelected: Boolean = selectedSequence.exists(_._2.isDefined)
 }
 
 case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: LoadedSequences) extends UseValueEq
 case class InstrumentSequence(tab: SequenceTab, active: Boolean) extends UseValueEq
 case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentSequence]) extends UseValueEq
@@ -415,7 +412,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
-    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
   def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[(SequenceTab, Boolean)]] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
   def instrumentTabAndStatus(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabAndStatus] =
@@ -429,7 +426,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoom(_.uiModel.sequences.queue.find(_.id == id))
 
   // Reader to indicate the allowed interactions
-  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.currentSequences))
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
 
   val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences.conditions))
 
