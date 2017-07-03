@@ -1,11 +1,10 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-// import edu.gemini.seqexec.model.Model.{SequenceState, SequenceId, SequenceView, Instrument}
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceId, Instrument}
-// import edu.gemini.seqexec.web.client.model.{InstrumentNames, NavigateTo, SequenceTab, SelectToDisplay, SelectInstrumentToDisplay, SequencesOnDisplay}
+import edu.gemini.seqexec.model.Model.{SequenceState, Instrument}
+import edu.gemini.seqexec.web.client.model.{InstrumentNames, NavigateTo, SequenceTab, SelectToDisplay, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.{InstrumentNames, SequenceTab}
-// import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
+import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
@@ -18,15 +17,11 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import scalacss.ScalaCssReact._
-// import scalaz.syntax.equal._
-// import scalaz.std.string._
 import scalaz.std.option._
 import scalaz.syntax.std.option._
 
 object InstrumentTab {
   case class Props(t: ModelProxy[Option[(SequenceTab, Boolean)]])
-
-  case class TabItem(instrument: Instrument, id: Option[SequenceId], status: Option[SequenceState], isActive: Boolean, dataItem: String, hasError: Boolean)
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
@@ -60,7 +55,24 @@ object InstrumentTab {
           sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument)
         )
       }
-    }.build
+    }.componentDidMount(ctx =>
+      Callback {
+        // Enable menu on Semantic UI
+        import org.querki.jquery.$
+
+        $(ctx.getDOMNode).tab(
+          JsTabOptions
+            .onVisible { (x: Instrument) =>
+              ctx.props.t().map(_._1.sequence()).foreach { sequence =>
+                val updateModelCB = sequence.map(seq => ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, seq.id.some))) >> ctx.props.t.dispatchCB(SelectToDisplay(seq)))
+                  .getOrElse(ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(x)))
+                // runNow as we are outside react loop
+                updateModelCB.runNow()
+              }
+            }
+        )
+      }
+    ).build
 
   def apply(p: ModelProxy[Option[(SequenceTab, Boolean)]]) = component(Props(p))
 }
@@ -73,30 +85,11 @@ object InstrumentsTabs {
 
   private val component = ScalaComponent.builder[Unit]("InstrumentsMenu")
     .stateless
-    .render_P(p =>
+    .render(_ =>
       <.div(
         ^.cls := "ui attached tabular menu",
         instrumentConnects.map(c => c(InstrumentTab.apply)).toTagMod
       )
-    ).componentDidMount(ctx =>
-      Callback {
-        println("component mount")
-        // Enable menu on Semantic UI
-        import org.querki.jquery.$
-
-        println($(ctx.getDOMNode).find(".item"))
-        $(ctx.getDOMNode).find(".item").tab(
-          JsTabOptions
-            .onVisible { (x: Instrument) =>
-              /*val id = ctx.props.tabs.find(_.instrument === x).flatMap(_.id)
-              val s: Option[SequenceView] = ctx.props.d().instrumentSequences.toStream.toList.find(_.sequence().map(_.id) === id).flatMap(_.sequence())
-              val updateModelCB = s.map(seq => ctx.props.d.dispatchCB(NavigateTo(InstrumentPage(x, seq.id.some))) >> ctx.props.d.dispatchCB(SelectToDisplay(seq)))
-                .getOrElse(ctx.props.d.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.d.dispatchCB(SelectInstrumentToDisplay(x)))
-              // runNow as we are outside react loop
-              (Callback.log("clicx") >> updateModelCB).runNow()*/
-            }
-        )
-      }
     ).build
 
   def apply(): Unmounted[Unit, Unit, Unit] = component()
