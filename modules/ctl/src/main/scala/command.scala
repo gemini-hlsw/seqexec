@@ -37,7 +37,7 @@ object Command {
   def parse[A](progName: String, args: List[String]): IO[Option[Command]] =
     mainParser(progName).parse(args) match {
       case Right(c) => c.some.pure[IO]
-      case Left(h) => IO(Console.println(Console.BLUE + h.toString + Console.RESET)).as(none[Command])
+      case Left(h) => IO(Console.println(Console.BLUE + h.toString + Console.RESET)).as(none[Command]) // scalastyle:ignore
     }
 
   // Opts implementation below

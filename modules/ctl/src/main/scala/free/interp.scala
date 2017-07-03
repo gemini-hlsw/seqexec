@@ -75,7 +75,7 @@ object interpreter {
     val messageColor = color // if (level == Shell) color else Console.BLUE
     for {
       i <- state.read.map(_.indentation).map("  " * _)
-      _ <- IO(Console.println(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}"))
+      _ <- IO(Console.println(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")) // scalastyle:ignore
     } yield ()
   }
 

@@ -30,14 +30,14 @@ object main {
   /** Entry point. Parse the commandline args and do what's asked, if possible. */
   def mainʹ(args: List[String]): IO[Unit] =
     for {
-      _  <- IO(Console.println)
+      _  <- IO(Console.println) // scalastyle:ignore
       c  <- Command.parse("gemctl", args)
       _  <- c.traverse { c =>
               IORef(InterpreterState.initial)
                 .map(interpreter(c, _))
                 .flatMap(command(c).foldMap(_).value)
             }
-      _  <- IO(Console.println)
+      _  <- IO(Console.println) // scalastyle:ignore
     } yield ()
 
   def main(args: Array[String]): Unit =
