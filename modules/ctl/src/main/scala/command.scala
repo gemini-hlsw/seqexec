@@ -39,21 +39,6 @@ object Command {
       case Right(c) => c.some.pure[IO]
       case Left(h) => IO(Console.println(Console.BLUE + h.toString + Console.RESET)).as(none[Command])
     }
-    // execParserPure(prefs(idm[PrefsMod]), mainParser, args) match {
-    //   case Success(c) => IO(Some(c))
-    //   case Failure(f) =>
-    //     import Predef._
-    //     val (msg, exit) = renderFailure(f, progName)
-    //     IO.putStr(Console.BLUE) *>
-    //     IO.putStrLn(msg) *>
-    //     IO.putStrLn("")  *>
-    //     IO.putStrLn(s"""
-    //       |Hints:
-    //       |  $progName --help            To see available commands.
-    //       |  $progNage COMMAND --help    To see help on a specific command.
-    //      """.trim.stripMargin) *>
-    //      IO.putStr(Console.RESET) as None
-    // }
 
   // Opts implementation below
 
