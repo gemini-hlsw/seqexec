@@ -10,6 +10,8 @@ import gem.dao.UserDao
 import gem.ocs2.Decoders._
 import gem.ocs2.pio.PioDecoder
 
+import org.flywaydb.core.Flyway
+
 import java.io.File
 
 import scala.xml.{XML, Elem}
@@ -39,12 +41,13 @@ object FileImporter extends SafeApp with DoobieClient {
         |""".stripMargin)))
     }
 
-  val clean: ConnectionIO[Unit] =
-    for {
-      _ <- sql"truncate program cascade".update.run
-      _ <- sql"truncate log".update.run
-      _ <- sql"delete from semester".update.run
-    } yield ()
+  val clean: IO[Int] =
+    IO {
+      val flyway = new Flyway()
+      flyway.setDataSource(Url, User, Pass)
+      flyway.clean()
+      flyway.migrate()
+    }
 
   def read(f: File): IO[Elem] =
     IO(XML.loadFile(f))
@@ -73,7 +76,7 @@ object FileImporter extends SafeApp with DoobieClient {
       n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
       _ <- checkArchive
       _ <- IO(configureLogging)
-      _ <- clean.transact(xa)
+      _ <- clean
       _ <- readAndInsertAll(u, n, l)
       _ <- l.shutdown(5 * 1000).transact(xa) // if we're not done soon something is wrong
       _ <- IO.putStrLn("Done.")
