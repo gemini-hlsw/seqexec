@@ -7,7 +7,7 @@ package free
 import interpreter.Config
 import gem.ctl.low.io._
 
-import scalaz._, Scalaz._
+import cats.free.Free, cats.implicits._
 
 /** Module of constructors for the control language. */
 object ctl {
@@ -24,8 +24,8 @@ object ctl {
     def userAndHost: String =
       this match {
         case Server.Local                       => "localhost"
-        case Server.Remote(Host.Machine(h), u)  => u.foldRight(h)(_ + "@" + _) + " (docker machine)"
-        case Server.Remote(Host.Network(h), u)  => u.foldRight(h)(_ + "@" + _)
+        case Server.Remote(Host.Machine(h), u)  => u.map(_ + "@" + h).getOrElse(h) + " (docker machine)"
+        case Server.Remote(Host.Network(h), u)  => u.map(_ + "@" + h).getOrElse(h)
       }
   }
   object Server {
@@ -46,10 +46,10 @@ object ctl {
   /** ADT of low-level control operations. */
   sealed trait CtlOp[A]
   object CtlOp {
-    final case class  Exit[A](exitCode: Int)                              extends CtlOp[A]
-          case object GetConfig                                           extends CtlOp[Config]
-    final case class  Gosub[A](level: Level, msg: String, fa: CtlIO[A])   extends CtlOp[A]
-    final case class  Shell(remote: Boolean, cmd: String \/ List[String]) extends CtlOp[Output]
+    final case class  Exit[A](exitCode: Int)                                    extends CtlOp[A]
+          case object GetConfig                                                 extends CtlOp[Config]
+    final case class  Gosub[A](level: Level, msg: String, fa: CtlIO[A])         extends CtlOp[A]
+    final case class  Shell(remote: Boolean, cmd: Either[String, List[String]]) extends CtlOp[Output]
   }
 
   /** Combinator that applies a check to command output. */
@@ -60,7 +60,7 @@ object ctl {
           o.lines.traverse(error(_))      *>
           error(s"exited (${o.exitCode})") *>
           exit[A](o.exitCode)
-        case Some(a) => a.point[CtlIO]
+        case Some(a) => a.pure[CtlIO]
       }
     }
 
@@ -77,8 +77,8 @@ object ctl {
 
   def serverHostName: CtlIO[String] =
     server.flatMap {
-      case Server.Local => "localhost".point[CtlIO]
-      case Server.Remote(Host.Network(name), _) => name.point[CtlIO]
+      case Server.Local => "localhost".pure[CtlIO]
+      case Server.Remote(Host.Network(name), _) => name.pure[CtlIO]
       case Server.Remote(Host.Machine(name), _) =>
         shell("docker-machine", "ip", name).require {
           case Output(0, s :: Nil) => s
@@ -86,10 +86,10 @@ object ctl {
     }
 
   def shell(c: String, cs: String*): CtlIO[Output] =
-    Free.liftF(CtlOp.Shell(false, (c :: cs.toList).right))
+    Free.liftF(CtlOp.Shell(false, Right(c :: cs.toList)))
 
   def remote(c: String, cs: String*): CtlIO[Output] =
-    Free.liftF(CtlOp.Shell(true, (c :: cs.toList).right))
+    Free.liftF(CtlOp.Shell(true, Right(c :: cs.toList)))
 
   def exit[A](exitCode: Int): CtlIO[A] =
     Free.liftF(CtlOp.Exit[A](exitCode))
@@ -110,7 +110,7 @@ object ctl {
     Free.liftF(CtlOp.Gosub(Level.Info, msg, fa))
 
   def logMessage(level: Level, msg: String): CtlIO[Unit] =
-    Free.liftF(CtlOp.Gosub(level, msg, ().point[CtlIO]))
+    Free.liftF(CtlOp.Gosub(level, msg, ().pure[CtlIO]))
 
   def info (msg: String): CtlIO[Unit] = logMessage(Level.Info,  msg)
   def warn (msg: String): CtlIO[Unit] = logMessage(Level.Warn,  msg)

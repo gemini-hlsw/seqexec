@@ -4,7 +4,7 @@
 package gem.ctl
 package low
 
-import scalaz._, Scalaz._
+import cats._, cats.implicits._
 import scala.util.matching.Regex
 
 import gem.ctl.free.ctl._
@@ -15,7 +15,7 @@ object git {
 
   final case class Commit(hash: String)
   object Commit {
-    implicit val OrderCommit: Order[Commit] = Order.orderBy(_.hash)
+    implicit val OrderCommit: Order[Commit] = Order.by(_.hash)
   }
 
   final case class Tag(tag: String)
@@ -32,7 +32,7 @@ object git {
       case Output(0, List(s)) => Some(Commit(s))
       case Output(128, _)     => None
     } .flatMap {
-      case Some(c) => c.point[CtlIO]
+      case Some(c) => c.pure[CtlIO]
       case None    => error(s"No such revsion: $rev") *> exit[Commit](128)
     }
 

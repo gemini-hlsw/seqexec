@@ -6,7 +6,7 @@ package gem.ctl.hi
 import gem.ctl.free.ctl._
 import gem.ctl.low.docker._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Constructors for `CtlIO` operations related to the `stop` command. */
 object stop {

@@ -7,14 +7,14 @@ import gem.ctl.free.ctl._
 import gem.ctl.low.git._
 import gem.ctl.low.docker._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Constructors for some common `CtlIO` operations that are shared by other commands. */
 object common {
 
   def getUniqueRunningContainerWithLabel(label: String): CtlIO[Container] =
     findRunningContainersWithLabel(label) flatMap {
-      case c :: Nil => c.point[CtlIO]
+      case c :: Nil => c.pure[CtlIO]
       case Nil      => error("No running container found.")       *> exit(-1)
       case _        => error("Multiple running container found.") *> exit(-1)
     }

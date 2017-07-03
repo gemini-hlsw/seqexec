@@ -7,7 +7,7 @@ import gem.ctl.free.ctl._
 import gem.ctl.low.io._
 import gem.ctl.low.docker._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Constructors for `CtlIO` operations related to the `ps` command. */
 object ps {

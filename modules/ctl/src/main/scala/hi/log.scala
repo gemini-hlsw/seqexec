@@ -8,7 +8,7 @@ import gem.ctl.low.io.Output
 import gem.ctl.low.docker.docker
 import gem.ctl.hi.common.getRunningGemContainer
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Constructors for `CtlIO` operations related to the `log` command. */
 object log {

@@ -7,7 +7,7 @@ package low
 import gem.ctl.free.ctl._
 import io._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Low-level constructors for `CtlIO` operations related to docker. */
 object docker {
@@ -45,7 +45,7 @@ object docker {
       case Output(0, s :: ss) if (s :: ss).last.contains("not found") => None
       case Output(0, _) => Some(nameAndVersion)
     } .flatMap {
-      case None                 => none[Image].point[CtlIO]
+      case None                 => none[Image].pure[CtlIO]
       case Some(nameAndVersion) => findImage(nameAndVersion)
     }
 
