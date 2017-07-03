@@ -31,6 +31,24 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginRight(1.5.em)
   )
 
+  val logo: StyleA = style(
+    height(45.px),
+    width(45.px)
+  )
+
+  val activeInstrumentLabel = style(
+    paddingBottom(0.2.em),
+    textAlign.center
+  )
+
+  val activeInstrumentContent = style(
+    padding(0.6.em, 0.9.em)
+  )
+
+  val fieldsNoBottom = style(
+    marginBottom(0.px).important
+  )
+
   // Media query to adjust the width of containers on mobile to the max allowed width
   val deviceContainer: StyleA = style("ui.container")(
     media.only.screen.maxWidth(767.px)(
@@ -53,9 +71,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     maxHeight(10.3.em)
   }
 
-  val stepsListPane: StyleA = style {
+  val stepsListPane: StyleA = style (
     maxHeight(24.3.em)
-  }
+  )
 
   val stepsListBody: StyleA = style() // Marker css
   val stepRunning: StyleA = style() // Marker css

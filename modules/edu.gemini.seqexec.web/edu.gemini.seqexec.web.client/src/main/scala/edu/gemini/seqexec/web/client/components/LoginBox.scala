@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.react.ModelProxy
+import diode.ModelR
 import edu.gemini.seqexec.model.UserDetails
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.TagOf
@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   */
 object LoginBox {
 
-  case class Props(open: ModelProxy[SectionVisibilityState])
+  case class Props(visible: ModelR[SeqexecAppRootModel, SectionVisibilityState])
 
   case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
@@ -74,7 +74,7 @@ object LoginBox {
             ^.action := "#",
             <.div(
               ^.cls :="required field",
-              Label(Label.Props("Username", Some("username"))),
+              FormLabel(FormLabel.Props("Username", Some("username"))),
               <.div(
                 ^.cls :="ui icon input",
                 <.input(
@@ -90,7 +90,7 @@ object LoginBox {
             ),
             <.div(
               ^.cls :="required field",
-              Label(Label.Props("Password", Some("password"))),
+              FormLabel(FormLabel.Props("Password", Some("password"))),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
@@ -148,10 +148,10 @@ object LoginBox {
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
-        if (ctx.currentProps.open() == SectionClosed) {
+        if (ctx.currentProps.visible === SectionClosed) {
           $(ctx.getDOMNode).modal("hide")
         }
-        if (ctx.currentProps.open() == SectionOpen) {
+        if (ctx.currentProps.visible === SectionOpen) {
           // Configure the modal to autofoucs and to act properly on closing
           $(ctx.getDOMNode).modal(
             JsModalOptions
@@ -168,5 +168,5 @@ object LoginBox {
       }
     ).build
 
-  def apply(s: ModelProxy[SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(s))
+  def apply(v: ModelR[SeqexecAppRootModel, SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(v))
 }

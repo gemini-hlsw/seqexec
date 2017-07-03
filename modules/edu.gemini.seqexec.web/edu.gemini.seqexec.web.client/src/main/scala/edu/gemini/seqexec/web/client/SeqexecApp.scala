@@ -6,7 +6,6 @@ import scala.scalajs.js.JSApp
 import org.scalajs.dom.document
 import java.util.logging.{Level, Logger}
 
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
 import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
 
 /**
@@ -33,10 +32,7 @@ object SeqexecApp extends JSApp {
     // Register CSS styles
     SeqexecStyles.addToDocument()
 
-    // Initiate the WebSocket connection
-    SeqexecCircuit.dispatch(WSConnect(0))
-
     // Render the UI using React
-    SeqexecUI().renderIntoDOM(document.getElementById("content"))
+    SeqexecUI.router().renderIntoDOM(document.getElementById("content"))
   }
 }

@@ -11,10 +11,18 @@ import org.scalajs.dom.WebSocket
 import scalaz._
 import Scalaz._
 
-// Actions
+// Pages
+object Pages {
+  sealed trait SeqexecPages
 
-// Actions to close and/open the dev console area
-case object ToggleDevConsole extends Action
+  case object Root extends SeqexecPages
+  case class InstrumentPage(i: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
+}
+
+// Actions
+case class NavigateTo(page: Pages.SeqexecPages) extends Action
+case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
+case class SyncToPage(view: SequenceView) extends Action
 
 // Actions to close and/open the login box
 case object OpenLoginBox extends Action
@@ -25,6 +33,8 @@ case object Logout extends Action
 
 // Action to select a sequence for display
 case class SelectToDisplay(s: SequenceView) extends Action
+case class SelectIdToDisplay(i: Instrument, id: SequenceId) extends Action
+case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
 // Actions related to executing sequences
 case class RequestRun(s: SequenceView) extends Action
@@ -93,6 +103,18 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = q | instrumentSequences)
   }
 
+  def focusOnId(i: Instrument, id: SequenceId): SequencesOnDisplay = {
+    // Focus on the instrument and id
+    val q = instrumentSequences.findZ(s => s.instrument === i && s.sequence().exists(_.id === id))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
+
+  def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
+    // Focus on the instrument
+    val q = instrumentSequences.findZ(s => s.instrument === i)
+    copy(instrumentSequences = q | instrumentSequences)
+  }
+
   def currentSequences: Map[Instrument, Option[SequenceView]] =
     instrumentSequences.map(tab => tab.instrument -> tab.sequence()).toStream.toMap
 }
@@ -112,12 +134,6 @@ object WebSocketConnection {
   val empty = WebSocketConnection(Empty, 0)
 }
 
-case class WebSocketsLog(log: List[SeqexecEvent]) {
-  // Upper bound of accepted events or we may run out of memory
-  val maxLength = 100
-  def append(e: SeqexecEvent):WebSocketsLog = copy((log :+ e).take(maxLength - 1))
-}
-
 case class GlobalLogEntry(timestamp: LocalTime, s: String)
 
 /**
@@ -131,22 +147,30 @@ case class GlobalLog(log: List[GlobalLogEntry]) {
 }
 
 /**
+ * UI model, changes here will update the UI
+ */
+case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
+                          user: Option[UserDetails],
+                          sequences: SeqexecAppRootModel.LoadedSequences,
+                          loginBox: SectionVisibilityState,
+                          globalLog: GlobalLog,
+                          sequencesOnDisplay: SequencesOnDisplay)
+
+object SeqexecUIModel {
+  private val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
+  val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
+    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
+}
+
+
+
+/**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(ws: WebSocketConnection,
-                               user: Option[UserDetails],
-                               sequences: SeqexecAppRootModel.LoadedSequences,
-                               devConsoleState: SectionVisibilityState,
-                               loginBox: SectionVisibilityState,
-                               webSocketLog: WebSocketsLog,
-                               globalLog: GlobalLog,
-                               searchResults: Pot[SequencesQueue[SequenceId]],
-                               sequencesOnDisplay: SequencesOnDisplay)
+case class SeqexecAppRootModel(ws: WebSocketConnection, uiModel: SeqexecUIModel)
 
 object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
-  val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
 
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, None, noSequencesLoaded,
-    SectionClosed, SectionClosed, WebSocketsLog(Nil), GlobalLog(Nil), Empty, SequencesOnDisplay.empty)
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, SeqexecUIModel.initial)
 }

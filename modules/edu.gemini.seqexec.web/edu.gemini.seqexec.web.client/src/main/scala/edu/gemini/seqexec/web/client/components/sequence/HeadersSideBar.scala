@@ -1,9 +1,9 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import diode.react.ModelProxy
+import diode.ModelR
 import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.model._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -23,7 +23,7 @@ import scala.concurrent.duration._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(model: ModelProxy[HeaderSideBarReader]) {
+  case class Props(model: ModelR[SeqexecAppRootModel, HeaderSideBarReader]) {
     def isLogged: Boolean = model().status.isLogged
   }
 
@@ -50,16 +50,16 @@ object HeadersSideBar {
       }
 
     def iqChanged(iq: ImageQuality): Callback =
-      $.props >>= {_.model.dispatchCB(UpdateImageQuality(iq))}
+      Callback(SeqexecCircuit.dispatch(UpdateImageQuality(iq)))
 
     def ccChanged(i: CloudCover): Callback =
-      $.props >>= {_.model.dispatchCB(UpdateCloudCover(i))}
+      Callback(SeqexecCircuit.dispatch(UpdateCloudCover(i)))
 
     def sbChanged(sb: SkyBackground): Callback =
-      $.props >>= {_.model.dispatchCB(UpdateSkyBackground(sb))}
+      Callback(SeqexecCircuit.dispatch(UpdateSkyBackground(sb)))
 
     def wvChanged(wv: WaterVapor): Callback =
-      $.props >>= {_.model.dispatchCB(UpdateWaterVapor(wv))}
+      Callback(SeqexecCircuit.dispatch(UpdateWaterVapor(wv)))
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.isLogged && p.model().status.anySelected
@@ -72,7 +72,7 @@ object HeadersSideBar {
           ^.cls := "ui form",
           <.div(
             ^.cls := "required field",
-            Label(Label.Props("Operator", Some("operator"))),
+            FormLabel(FormLabel.Props("Operator", Some("operator"))),
             InputEV(InputEV.Props("operator", "operator",
               operatorEV,
               placeholder = "Operator...",
@@ -103,6 +103,6 @@ object HeadersSideBar {
     }
     .build
 
-  def apply(model: ModelProxy[HeaderSideBarReader]): Unmounted[Props, State, Backend] =
+  def apply(model: ModelR[SeqexecAppRootModel, HeaderSideBarReader]): Unmounted[Props, State, Backend] =
     component(Props(model))
 }

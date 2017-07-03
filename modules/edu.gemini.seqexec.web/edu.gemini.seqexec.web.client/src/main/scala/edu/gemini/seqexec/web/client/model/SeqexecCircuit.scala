@@ -9,6 +9,7 @@ import diode._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
+import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
@@ -23,6 +24,35 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz._
 import Scalaz._
+
+class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) {
+  implicit val runner = new RunAfterJS
+
+  def handle: PartialFunction[Any, ActionResult[M]] = {
+    case NavigateTo(page) =>
+      updated(page)
+
+    case NavigateSilentTo(page) =>
+      val effect = page match {
+        case InstrumentPage(i, None)     => Effect(Future(SelectInstrumentToDisplay(i)))
+        case InstrumentPage(i, Some(id)) => Effect(Future(SelectIdToDisplay(i, id)))
+        case _                           => Effect(Future(NoAction: Action))
+      }
+      updatedSilent(page, effect)
+
+    case SyncToPage(s) =>
+      // the page maybe not in sync with the tabs. Let's fix that
+      value match {
+        case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
+          effectOnly(Effect(Future(SelectToDisplay(s))))
+        case _ =>
+          noChange
+      }
+
+    case _ =>
+      noChange
+  }
+}
 
 /**
   * Handles sequence execution actions
@@ -79,21 +109,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
 }
 
 /**
-  * Handles actions related to the development console
-  */
-class DevConsoleHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case ToggleDevConsole if value == SectionOpen   =>
-      updated(SectionClosed)
-
-    case ToggleDevConsole if value == SectionClosed =>
-      updated(SectionOpen)
-  }
-}
-
-/**
   * Handles actions related to opening/closing the login box
   */
 class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
@@ -140,6 +155,12 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case SelectInstrumentToDisplay(i) =>
+      updated(value.focusOnInstrument(i))
+
+    case SelectIdToDisplay(i, id) =>
+      updated(value.focusOnId(i, id))
+
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
       updated(value.focusOnSequence(ref))
@@ -297,12 +318,12 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, WebSocketsLog, Option[UserDetails])]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[UserDetails])]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
-      updated(value.copy(_3 = u))
+      updated(value.copy(_2 = u))
 
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
@@ -311,7 +332,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, WebSockets
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
-      val observer = value._3.map(_.displayName)
+      val observer = value._2.map(_.displayName)
       val (sequencesWithObserver, effects) =
         s.view.queue.foldLeft(
           (List.empty[SequenceView],
@@ -320,11 +341,12 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, WebSockets
         ) { case ((seq, eff), q) =>
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
-               Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) :: eff)
-        } else {
-          (q :: seq, eff)
-        }
-      }
+               Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) ::
+               Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+            } else {
+              (q :: seq, Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+            }
+          }
       updated(value.copy(_1 = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver)),
               effects.flatten.reduce(_ + _): Effect)
 
@@ -369,36 +391,36 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     Effect(Future(AppendToLog(s)))
 
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  val devConsoleHandler      = new DevConsoleHandler(zoomTo(_.devConsoleState))
-  val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.loginBox))
-  val userLoginHandler       = new UserLoginHandler(zoomTo(_.user))
-  val wsLogHandler           = new WebSocketEventsHandler(zoomRW(m => (m.sequences, m.webSocketLog, m.user))((m, v) => m.copy(sequences = v._1, webSocketLog = v._2, user = v._3)))
-  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.sequencesOnDisplay))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.sequences))
-  val globalLogHandler       = new GlobalLogHandler(zoomTo(_.globalLog))
-  val conditionsHandler      = new ConditionsHandler(zoomTo(_.sequences.conditions))
-  val operatorHandler        = new OperatorHandler(zoomTo(_.sequences.operator))
+  val wsEventsHandler        = new WebSocketEventsHandler(zoomRW(m => (m.uiModel.sequences, m.uiModel.user))((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v._1, user = v._2))))
+  val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
+  val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
+  val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
+  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.uiModel.sequencesOnDisplay))
+  val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
+  val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
+  val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
+  val operatorHandler        = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
   // Some useful readers
+  val loginBox = zoom(_.uiModel.loginBox)
+  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences))
+  // Reader for sequences on display
+  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
+  val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
+  def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
+    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.currentSequences), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+  val log = zoom(_.uiModel.globalLog)
 
   // Reader for a specific sequence if available
-  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] = {
-    zoom(_.sequences.queue.find(_.id == id))
-  }
+  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
+    zoom(_.uiModel.sequences.queue.find(_.id == id))
 
   // Reader to indicate the allowed interactions
-  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.user, m.ws, m.sequencesOnDisplay.currentSequences))
+  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.currentSequences))
 
-  // Reader for sequences on display
-  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.sequencesOnDisplay)
-
-  val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
-  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)] = SeqexecCircuit.status.zip(zoom(_.sequences))
-  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.sequences.conditions))
-  def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
-    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.user, c.ws, c.sequencesOnDisplay.currentSequences), c.sequences.conditions, c.sequences.operator))
+  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences.conditions))
 
   /**
     * Makes a reference to a sequence on the queue.
@@ -409,15 +431,15 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    devConsoleHandler,
+    wsEventsHandler,
+    sequenceExecHandler,
     loginBoxHandler,
     userLoginHandler,
-    wsLogHandler,
     sequenceDisplayHandler,
     globalLogHandler,
     conditionsHandler,
     operatorHandler,
-    sequenceExecHandler)
+    navigationHandler)
 
   /**
     * Handles a fatal error most likely during action processing
