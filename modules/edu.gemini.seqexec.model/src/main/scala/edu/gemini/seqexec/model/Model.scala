@@ -168,6 +168,11 @@ object Model {
     case object Paused            extends SequenceState
     case class Error(msg: String) extends SequenceState
 
+    def isError(state: SequenceState): Boolean = state match {
+      case Error(_) => true
+      case _        => false
+    }
+
     implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
   }
 

@@ -77,6 +77,10 @@ sealed trait SectionVisibilityState
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
+object SectionVisibilityState {
+  implicit val eq = Equal.equalA[SectionVisibilityState]
+}
+
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
 /**
@@ -115,8 +119,10 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = q | instrumentSequences)
   }
 
-  def currentSequences: Map[Instrument, Option[SequenceView]] =
-    instrumentSequences.map(tab => tab.instrument -> tab.sequence()).toStream.toMap
+  def isAnySelected: Boolean = instrumentSequences.toStream.exists(_.sequence().isDefined)
+
+  def instrument(i: Instrument): Option[(SequenceTab, Boolean)] =
+    instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
 }
 
 /**

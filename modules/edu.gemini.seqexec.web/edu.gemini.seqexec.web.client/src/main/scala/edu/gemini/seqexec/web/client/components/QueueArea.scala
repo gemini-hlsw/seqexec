@@ -1,10 +1,9 @@
 package edu.gemini.seqexec.web.client.components
 
-import diode.ModelR
+import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
@@ -19,7 +18,9 @@ import scalaz.syntax.show._
 import scalaz.syntax.std.option._
 
 object QueueTableBody {
-  case class Props(sequences: QueueArea.SequencesModel)
+  type SequencesModel = ModelProxy[StatusAndLoadedSequences]
+
+  case class Props(sequences: SequencesModel)
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
@@ -41,11 +42,11 @@ object QueueTableBody {
 
   def showSequence(p: Props, s: SequenceView): Callback =
     // Request to display the selected sequence
-    Callback(SeqexecCircuit.dispatch(NavigateTo(InstrumentPage(s.metadata.instrument, s.id.some)))) >> Callback(SeqexecCircuit.dispatch(SelectToDisplay(s)))
+    p.sequences.dispatchCB(NavigateTo(InstrumentPage(s.metadata.instrument, s.id.some))) >> p.sequences.dispatchCB(SelectToDisplay(s))
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P { p =>
-      val (status, sequences) = p.sequences()
+      val (isLogged, sequences) = (p.sequences().isLogged, p.sequences().sequences)
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
@@ -55,7 +56,7 @@ object QueueTableBody {
             TableHeader("Obs ID"),
             TableHeader("State"),
             TableHeader("Instrument"),
-            TableHeader("Obs. Name").when(status.isLogged)
+            TableHeader("Obs. Name").when(isLogged)
           )
         ),
         <.tbody(
@@ -91,17 +92,17 @@ object QueueTableBody {
                 <.td(
                   SeqexecStyles.notInMobile,
                   s.metadata.name
-                ).when(status.isLogged)
+                ).when(isLogged)
               )
             case (_, i) =>
-              emptyRow(s"item.queue.$i", status.isLogged)
+              emptyRow(s"item.queue.$i", isLogged)
           }.toTagMod
         )
       )
     }
     .build
 
-  def apply(p: QueueArea.SequencesModel): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(p: SequencesModel): Unmounted[Props, Unit, Unit] = component(Props(p))
 
 }
 
@@ -109,17 +110,19 @@ object QueueTableBody {
   * Container for the queue table
   */
 object QueueTableSection {
-  private val component = ScalaComponent.builder[QueueArea.SequencesModel]("QueueTableSection")
+  private val sequencesConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequences)
+
+  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui segment scroll pane",
         SeqexecStyles.queueListPane,
-        QueueTableBody(p)
+        sequencesConnect(QueueTableBody.apply)
       )
     ).build
 
-  def apply(p: QueueArea.SequencesModel): Unmounted[QueueArea.SequencesModel, Unit, Unit] = component(p)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 
 }
 
@@ -127,9 +130,8 @@ object QueueTableSection {
   * Displays the elements on the queue
   */
 object QueueArea {
-  type SequencesModel = ModelR[SeqexecAppRootModel, (ClientStatus, LoadedSequences)]
 
-  private val component = ScalaComponent.builder[QueueArea.SequencesModel]("QueueArea")
+  private val component = ScalaComponent.builder[Unit]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -143,7 +145,7 @@ object QueueArea {
               ^.cls := "stretched row",
               <.div(
                 ^.cls := "sixteen wide column",
-                QueueTableSection(p)
+                QueueTableSection()
               )
             )
           )
@@ -152,6 +154,6 @@ object QueueArea {
     )
     .build
 
-  def apply(p: QueueArea.SequencesModel): Unmounted[QueueArea.SequencesModel, Unit, Unit] = component(p)
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
 
 }

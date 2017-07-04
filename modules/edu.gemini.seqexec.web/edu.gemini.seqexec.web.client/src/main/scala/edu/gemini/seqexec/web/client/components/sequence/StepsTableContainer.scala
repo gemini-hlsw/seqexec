@@ -30,7 +30,7 @@ object StepsTableContainer {
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Int, onStepToRun: Int => Callback)
+  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
 
   class Backend($: BackendScope[Props, State]) {
 
