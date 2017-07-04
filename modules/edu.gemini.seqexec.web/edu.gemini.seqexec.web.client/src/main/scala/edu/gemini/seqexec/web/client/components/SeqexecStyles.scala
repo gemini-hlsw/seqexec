@@ -31,6 +31,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginRight(1.5.em)
   )
 
+  val linkeableRows: StyleA = style(
+    unsafeRoot(".ui.table tbody tr td.selectable > a:not(.ui)")(
+      paddingTop(0.5.em),
+      paddingBottom(0.5.em)
+    )
+  )
+
   val logo: StyleA = style(
     height(45.px),
     width(45.px)

@@ -14,19 +14,19 @@ object SeqexecMain {
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
 
-  private val component = ScalaComponent.builder[Unit]("SeqexecUI")
+  private val component = ScalaComponent.builder[RouterCtl[SeqexecPages]]("SeqexecUI")
     .stateless
     .render_P(p =>
       <.div(
         NavBar(),
-        QueueArea(),
+        QueueArea(p),
         SequenceArea(),
         logConnect(LogArea.apply),
         lbConnect(LoginBox.apply)
       )
     ).build
 
-  def apply() = component()
+  def apply(ctl: RouterCtl[SeqexecPages]) = component(ctl)
 }
 
 /**
@@ -43,13 +43,13 @@ object SeqexecUI {
         <.div(r.render()).render
 
       (emptyRule
-      | staticRoute(root, Root) ~> renderR(r => SeqexecMain())
+      | staticRoute(root, Root) ~> renderR(r => SeqexecMain(r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option).caseClass[InstrumentPage]) {
           case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain())
+        } ~> dynRenderR((p, r) => SeqexecMain(r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => Some(InstrumentPage(i, None)))(i => i.i)) {
           case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain())
+        } ~> dynRenderR((p, r) => SeqexecMain(r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed

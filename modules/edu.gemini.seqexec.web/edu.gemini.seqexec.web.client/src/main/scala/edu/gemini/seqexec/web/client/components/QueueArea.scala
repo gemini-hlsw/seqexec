@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
 import org.scalajs.dom.html.TableRow
 
 import scalacss.ScalaCssReact._
@@ -21,7 +22,7 @@ import scalaz.syntax.std.option._
 object QueueTableBody {
   type SequencesModel = ModelProxy[StatusAndLoadedSequences]
 
-  case class Props(sequences: SequencesModel)
+  case class Props(ctl: RouterCtl[SeqexecPages], sequences: SequencesModel)
 
   // Minimum rows to display, pad with empty rows if needed
   val minRows = 5
@@ -63,37 +64,67 @@ object QueueTableBody {
         <.tbody(
           sequences.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
             case (Some(s), i) =>
+              val leftColumnIcon: TagMod =
+                s.status match {
+                  case SequenceState.Completed => IconCheckmark
+                  case SequenceState.Running   => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                  case SequenceState.Error(_)  => IconAttention
+                  case _                       => if (s.active) IconSelectedRadio else iconEmpty
+                }
+              val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
+              val inProcess = s.status.isInProcess
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status === SequenceState.Completed),
                   "warning"  -> (s.status === SequenceState.Running),
                   "negative" -> s.status.hasError,
-                  "active"   -> s.active
+                  "active"   -> (s.active && !inProcess)
                 ),
                 ^.key := s"item.queue.$i",
                 ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
-                  s.status match {
-                    case SequenceState.Completed                   => IconCheckmark
-                    case SequenceState.Running                     => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                    case SequenceState.Error(_)                    => IconAttention
-                    case _                                         => if (s.active) IconSelectedRadio else iconEmpty
-                  }
+                  ^.classSet(
+                    "selectable" -> !inProcess
+                  ),
+                  SeqexecStyles.linkeableRows.when(inProcess),
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(leftColumnIcon).unless(inProcess),
+                  leftColumnIcon.when(inProcess)
                 ),
                 <.td(
                   ^.cls := "collapsing",
-                  s.id
+                  ^.classSet(
+                    "selectable" -> !inProcess
+                  ),
+                  SeqexecStyles.linkeableRows.when(inProcess),
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.id).unless(inProcess),
+                  (s.id).when(inProcess)
                 ),
                 <.td(
-                  s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
+                  ^.cls := "collapsing",
+                  ^.classSet(
+                    "selectable" -> !inProcess
+                  ),
+                  SeqexecStyles.linkeableRows.when(inProcess),
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(stepAtText).unless(inProcess),
+                  stepAtText.when(inProcess)
                 ),
                 <.td(
-                  s.instrument
+                  ^.classSet(
+                    "selectable" -> !inProcess
+                  ),
+                  SeqexecStyles.linkeableRows.when(inProcess),
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.instrument).unless(inProcess),
+                  s.instrument.when(inProcess)
                 ),
                 <.td(
+                  ^.classSet(
+                    "selectable" -> !inProcess
+                  ),
+                  SeqexecStyles.linkeableRows.when(inProcess),
                   SeqexecStyles.notInMobile,
-                  s.name
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.name).unless(inProcess),
+                  s.name.when(inProcess)
                 ).when(isLogged)
               )
             case (_, i) =>
@@ -104,7 +135,7 @@ object QueueTableBody {
     }
     .build
 
-  def apply(p: SequencesModel): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(ctl: RouterCtl[SeqexecPages], p: SequencesModel): Unmounted[Props, Unit, Unit] = component(Props(ctl, p))
 
 }
 
@@ -114,17 +145,17 @@ object QueueTableBody {
 object QueueTableSection {
   private val sequencesConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequences)
 
-  private val component = ScalaComponent.builder[Unit]("QueueTableSection")
+  private val component = ScalaComponent.builder[RouterCtl[SeqexecPages]]("QueueTableSection")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui segment scroll pane",
         SeqexecStyles.queueListPane,
-        sequencesConnect(QueueTableBody.apply)
+        sequencesConnect(c => QueueTableBody(p, c))
       )
     ).build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(ctl: RouterCtl[SeqexecPages]): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] = component(ctl)
 
 }
 
@@ -133,7 +164,7 @@ object QueueTableSection {
   */
 object QueueArea {
 
-  private val component = ScalaComponent.builder[Unit]("QueueArea")
+  private val component = ScalaComponent.builder[RouterCtl[SeqexecPages]]("QueueArea")
     .stateless
     .render_P(p =>
       <.div(
@@ -147,7 +178,7 @@ object QueueArea {
               ^.cls := "stretched row",
               <.div(
                 ^.cls := "sixteen wide column",
-                QueueTableSection()
+                QueueTableSection(p)
               )
             )
           )
@@ -156,6 +187,6 @@ object QueueArea {
     )
     .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(ctl: RouterCtl[SeqexecPages]): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] = component(ctl)
 
 }
