@@ -1,0 +1,5 @@
+target
+.ensime_cache
+project/.ensime
+.ensime
+.DS_Store
