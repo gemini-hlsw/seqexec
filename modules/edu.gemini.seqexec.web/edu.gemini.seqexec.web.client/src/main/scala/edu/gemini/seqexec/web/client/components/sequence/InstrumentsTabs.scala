@@ -15,6 +15,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import scalacss.ScalaCssReact._
+
 import scalaz.std.option._
 import scalaz.syntax.std.option._
 
@@ -62,7 +63,7 @@ object InstrumentTab {
           JsTabOptions
             .onVisible { (x: Instrument) =>
               ctx.props.t().map(_.idState).foreach { sequence =>
-                val updateModelCB = sequence.map(seq => ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, seq._1.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(x, seq._1)))
+                val updateModelCB = sequence.map(seq => ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, seq._1.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(seq._1)))
                   .getOrElse(ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(x)))
                 // runNow as we are outside react loop
                 updateModelCB.runNow()

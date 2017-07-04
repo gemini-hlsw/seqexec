@@ -20,13 +20,20 @@ object ModelOps {
     case SequenceState.Error(_)  => s"Error at step "
   }
 
-  implicit val steStateShow: Show[StepState] = Show.shows[StepState] {
+  implicit val stepStateShow: Show[StepState] = Show.shows[StepState] {
     case StepState.Pending    => "Pending"
     case StepState.Completed  => "Done"
     case StepState.Skipped    => "Skipped"
     case StepState.Error(msg) => s"Error $msg"
     case StepState.Running    => "Running"
     case StepState.Paused     => "Paused"
+  }
+
+  implicit class SequenceStateOps(val s: SequenceState) extends AnyVal {
+    def hasError: Boolean = s match {
+      case SequenceState.Error(_) => true
+      case _                      => false
+    }
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
