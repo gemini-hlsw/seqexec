@@ -84,7 +84,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       (for {
         d <- PioOptional(Disperser.parse(cm))
         o <- PioOptional(DisperserOrder.cparse(cm))
-        w <- PioOptional(DisperserLambda.cparse(cm)).map(Gmos.GmosCentralWavelength)
+        w <- PioOptional(DisperserLambda.cparse(cm)).map(Gmos.GmosCentralWavelength(_))
       } yield Gmos.GmosGrating(d, o, w)).run
 
     for {
@@ -105,7 +105,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       (for {
         d <- PioOptional(Disperser.parse(cm))
         o <- PioOptional(DisperserOrder.cparse(cm))
-        w <- PioOptional(DisperserLambda.cparse(cm)).map(Gmos.GmosCentralWavelength)
+        w <- PioOptional(DisperserLambda.cparse(cm)).map(Gmos.GmosCentralWavelength(_))
       } yield Gmos.GmosGrating(d, o, w)).run
 
     for {

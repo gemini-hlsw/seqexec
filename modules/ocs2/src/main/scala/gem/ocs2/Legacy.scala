@@ -19,7 +19,7 @@ import Scalaz._
 object Legacy {
   sealed abstract class System(val system: String) {
 
-    final class Key[A](val name: String, val p: PioParse[A])(implicit ev: TypeTag[A]) {
+    final class Key[A](val name: String, val parseString: PioParse[A])(implicit ev: TypeTag[A]) {
 
       val path: String = s"$system:$name"
 
@@ -30,7 +30,7 @@ object Legacy {
         cm.lookup(path) \/> missingKey(name)
 
       def parse(cm: ConfigMap): PioError \/ A =
-        rawValue(cm).flatMap { s => p(s) \/> parseError(s, tpe) }
+        rawValue(cm).flatMap { s => parseString(s) \/> parseError(s, tpe) }
 
       def cparse(cm: ConfigMap): PioError \/ Option[A] =
         parse(cm) match {
@@ -80,51 +80,56 @@ object Legacy {
     val MosPreImaging = Key("mosPreimaging")(Parsers.mosPreImaging)
 
     object Flamingos2 {
-      val Disperser   = Key("disperser"  )(Parsers.Flamingos2.disperser  )
-      val Filter      = Key("filter"     )(Parsers.Flamingos2.filter     )
-      val Fpu         = Key("fpu"        )(Parsers.Flamingos2.fpu        )
-      val LyotWheel   = Key("lyotWheel"  )(Parsers.Flamingos2.lyotWheel  )
-      val ReadMode    = Key("readMode"   )(Parsers.Flamingos2.readMode   )
-      val WindowCover = Key("windowCover")(Parsers.Flamingos2.windowCover)
+      import Parsers.Flamingos2._
+      val Disperser   = Key("disperser"  )(disperser  )
+      val Filter      = Key("filter"     )(filter     )
+      val Fpu         = Key("fpu"        )(fpu        )
+      val LyotWheel   = Key("lyotWheel"  )(lyotWheel  )
+      val ReadMode    = Key("readMode"   )(readMode   )
+      val WindowCover = Key("windowCover")(windowCover)
     }
 
     object Gmos {
-      val Adc             = Key("adc"                 )(Parsers.Gmos.adc            )
-      val AmpCount        = Key("ampCount"            )(Parsers.Gmos.ampCount       )
-      val AmpGain         = Key("gainChoice"          )(Parsers.Gmos.ampGain        )
-      val AmpReadMode     = Key("ampReadMode"         )(Parsers.Gmos.ampReadMode    )
-      val BuiltinRoi      = Key("builtinROI"          )(Parsers.Gmos.builtinRoi     )
-      val CustomMaskMdf   = Key("fpuCustomMask"       )(PioParse.string             )
-      val CustomSlitWidth = Key("customSlitWidth"     )(Parsers.Gmos.customSlitWidth)
-      val Detector        = Key("detectorManufacturer")(Parsers.Gmos.detector       )
-      val DisperserOrder  = Key("disperserOrder"      )(Parsers.Gmos.disperserOrder )
-      val DisperserLambda = Key("disperserLambda"     )(Parsers.Gmos.disperserLambda)
-      val Dtax            = Key("dtaXOffset"          )(Parsers.Gmos.dtax           )
-      val XBinning        = Key("ccdXBinning"         )(Parsers.Gmos.xBinning       )
-      val YBinning        = Key("ccdYBinning"         )(Parsers.Gmos.yBinning       )
+      import Parsers.Gmos._
+      val Adc             = Key("adc"                 )(adc            )
+      val AmpCount        = Key("ampCount"            )(ampCount       )
+      val AmpGain         = Key("gainChoice"          )(ampGain        )
+      val AmpReadMode     = Key("ampReadMode"         )(ampReadMode    )
+      val BuiltinRoi      = Key("builtinROI"          )(builtinRoi     )
+      val CustomMaskMdf   = Key("fpuCustomMask"       )(PioParse.string)
+      val CustomSlitWidth = Key("customSlitWidth"     )(customSlitWidth)
+      val Detector        = Key("detectorManufacturer")(detector       )
+      val DisperserOrder  = Key("disperserOrder"      )(disperserOrder )
+      val DisperserLambda = Key("disperserLambda"     )(disperserLambda)
+      val Dtax            = Key("dtaXOffset"          )(dtax           )
+      val XBinning        = Key("ccdXBinning"         )(xBinning       )
+      val YBinning        = Key("ccdYBinning"         )(yBinning       )
     }
 
     object GmosNorth {
-      val Disperser       = Key("disperser")(Parsers.GmosNorth.disperser )
-      val Filter          = Key("filter"   )(Parsers.GmosNorth.filter    )
-      val Fpu             = Key("fpu"      )(Parsers.GmosNorth.fpu       )
-      val StageMode       = Key("stageMode")(Parsers.GmosNorth.stageMode )
+      import Parsers.GmosNorth._
+      val Disperser       = Key("disperser")(disperser)
+      val Filter          = Key("filter"   )(filter   )
+      val Fpu             = Key("fpu"      )(fpu      )
+      val StageMode       = Key("stageMode")(stageMode)
     }
 
     object GmosSouth {
-      val Disperser       = Key("disperser")(Parsers.GmosSouth.disperser )
-      val Filter          = Key("filter"   )(Parsers.GmosSouth.filter    )
-      val Fpu             = Key("fpu"      )(Parsers.GmosSouth.fpu       )
-      val StageMode       = Key("stageMode")(Parsers.GmosSouth.stageMode )
+      import Parsers.GmosSouth._
+      val Disperser       = Key("disperser")(disperser)
+      val Filter          = Key("filter"   )(filter   )
+      val Fpu             = Key("fpu"      )(fpu      )
+      val StageMode       = Key("stageMode")(stageMode)
     }
   }
 
   object Calibration extends System("calibration") {
-    val Lamp         = Key("lamp"        )(Parsers.Calibration.lamp    )
-    val Filter       = Key("filter"      )(Parsers.Calibration.filter  )
-    val Diffuser     = Key("diffuser"    )(Parsers.Calibration.diffuser)
-    val Shutter      = Key("shutter"     )(Parsers.Calibration.shutter )
-    val ExposureTime = Key("exposureTime")(PioParse.seconds            )
-    val Coadds       = Key("coadds"      )(PioParse.int                )
+    import Parsers.Calibration._
+    val Lamp         = Key("lamp"        )(lamp            )
+    val Filter       = Key("filter"      )(filter          )
+    val Diffuser     = Key("diffuser"    )(diffuser        )
+    val Shutter      = Key("shutter"     )(shutter         )
+    val ExposureTime = Key("exposureTime")(PioParse.seconds)
+    val Coadds       = Key("coadds"      )(PioParse.int    )
   }
 }

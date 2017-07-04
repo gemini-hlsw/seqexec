@@ -36,7 +36,7 @@ object StepDao {
               case Step.Dark(_)         => Statements.insertDarkSlice(id).run
               case Step.Science(_, t)   => Statements.insertScienceSlice(id, t).run
               case Step.SmartGcal(_, t) => Statements.insertSmartGcalSlice(id, t).run
-              case Step.Gcal(_, g)      => GcalDao.insert(g, Some(id)) >>= (Statements.insertGcalStep(id, _).run)
+              case Step.Gcal(_, g)      => GcalDao.insertGcal(id, g) >>= (Statements.insertGcalStep(id, _).run)
             }
       _  <- insertConfigSlice(id, s.dynamicConfig)
     } yield id
@@ -287,7 +287,7 @@ object StepDao {
     final case class GmosGratingBuilder[D](
       disperser:      Option[D],
       disperserOrder: Option[GmosDisperserOrder],
-      wavelength:     Option[BigDecimal]
+      wavelength:     Option[Int]
     ) {
       import Gmos._
 
@@ -296,7 +296,7 @@ object StepDao {
           d <- disperser
           o <- disperserOrder
           w <- wavelength
-        } yield GmosGrating(d, o, GmosCentralWavelength(w.toDouble))
+        } yield GmosGrating(d, o, GmosCentralWavelength(w))
     }
 
     final case class GmosFpuBuilder[U](
@@ -485,7 +485,7 @@ object StepDao {
           $id,
           ${g.grating.map(_.disperser)},
           ${g.grating.map(_.order)},
-          ${g.grating.map(_.wavelength.nm)},
+          ${g.grating.map(_.wavelength.toAngstroms)},
           ${g.filter},
           ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
           ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
@@ -502,7 +502,7 @@ object StepDao {
           $id,
           ${g.grating.map(_.disperser)},
           ${g.grating.map(_.order)},
-          ${g.grating.map(_.wavelength.nm)},
+          ${g.grating.map(_.wavelength.toAngstroms)},
           ${g.filter},
           ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
           ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},

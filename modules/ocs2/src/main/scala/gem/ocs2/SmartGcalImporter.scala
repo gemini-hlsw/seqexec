@@ -6,6 +6,7 @@ package gem.ocs2
 import gem.Log
 import gem.config.GcalConfig
 import gem.config.DynamicConfig.SmartGcalKey
+import gem.config.Gmos.GmosCentralWavelength
 import gem.dao.{ SmartGcalDao, UserDao }
 import gem.enum.{ GcalBaselineType, GcalLampType }
 import gem.ocs2.pio.PioParse
@@ -14,68 +15,100 @@ import java.io.File
 import java.time.Duration
 import doobie.imports._
 
-import scala.io.Source
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 import scalaz._
 import Scalaz._
-import scalaz.effect._
+import scalaz.concurrent.{Task, TaskApp}
+import scalaz.stream.Process
 
 
 /** Importer for SmartGcal CSV files.  Note, these files use display values in
   * some cases instead of the seqexec values since they were meant to be edited
   * by science staff.
   */
-object SmartGcalImporter extends SafeApp with DoobieClient {
+object SmartGcalImporter extends TaskApp with DoobieClient {
 
   implicit class ParseOps(s: String) {
-    def parseAs[A](parse: PioParse[A])(implicit ev: ClassTag[A]): A =
-      parse(s).getOrElse { sys.error(s"Could not parse '$s' as ${ev.runtimeClass.getName}") }
+    def parseAs[A: TypeTag](parse: PioParse[A]): A =
+      parse(s).getOrElse {
+        sys.error(s"Could not parse '$s' as ${typeOf[A]}")
+      }
   }
 
   // KeyParser accepts a list of String entries, parses the first n entries
-  // into a SmartGcalKey and returns it along with the remaining entries.
-  type KeyParser = (List[String]) => (SmartGcalKey, List[String])
+  // into a SmartGcalDefinitionKey and returns it along with the remaining
+  // entries.
+  type KeyParser[K]       = (List[String]) => (K, List[String])
+  type SmartGcalLine[K]   = (GcalLampType, GcalBaselineType, K, GcalConfig)
+  type SmartGcalWriter[K] = (Vector[SmartGcalLine[K]]) => Process[ConnectionIO, Int]
 
-  /** Instrument specific information needed to parse its smart gcal
-    * configuration.
-    *
-    * @param tableName name of table where the data is written
-    * @param filePrefix file name prefix, which is extended with "_ARC.csv" and
-    *                   "_FLAT.csv" to create the full file names.
-    * @param parser reads the first part of a line of entries into a
-    *               SmartGcalKey appropriate for the instrument
-    */
-  final case class SmartDef(tableName: String, filePrefix: String, parser: KeyParser)
+  // --------------------------------------------------------------------------
+  // Add your instruments here.
+  // --------------------------------------------------------------------------
 
-  // -------------------------------------------------------------------------
-  // Add your smartgcal tables here.
-  // -------------------------------------------------------------------------
-  val smartTables: List[SmartDef] =
-    List(
-      SmartDef("smart_f2", "Flamingos2", parseF2)
-    )
+  def importAllInst: Task[Unit] = {
+    import SmartGcalDao._
 
-  def parseF2(input: List[String]): (SmartGcalKey, List[String]) = {
+    for {
+      _ <- importInst("Flamingos2", parseF2,        dropIndexF2,        bulkInsertF2,        createIndexF2       )
+      _ <- importInst("GMOS-N",     parseGmosNorth, dropIndexGmosNorth, bulkInsertGmosNorth, createIndexGmosNorth)
+    } yield ()
+  }
+
+  def parseF2(input: List[String]): (SmartGcalKey.F2, List[String]) = {
     import Parsers.Flamingos2._
 
     val disperserS :: filterS :: fpuS :: gcal = input
 
-    val d = disperserS.parseAs(disperserDisplayValue)
-    val f = filterS   .parseAs(filterDisplayValue   )
-    val u = fpuS      .parseAs(fpuDisplayValue      )
+    val d = disperserS.parseAs(disperser)
+    val f = filterS   .parseAs(filter   )
+    val u = fpuS      .parseAs(fpu      )
 
     (SmartGcalKey.F2(d, f, u), gcal)
+  }
+
+  def parseGmosNorth(input: List[String]): (SmartGcalKey.GmosNorthDefinition, List[String]) = {
+    import Parsers.Gmos._
+    import Parsers.GmosNorth._
+
+    val disperserS :: filterS :: fpuS :: xBinS :: yBinS :: _ :: ampGainS :: wavelengthMinS :: wavelengthMaxS :: gcal = input
+
+    val d = disperserS.parseAs(disperser)
+    val f = filterS   .parseAs(filter   )
+    val u = fpuS      .parseAs(fpu)
+    val x = xBinS     .parseAs(xBinning)
+    val y = yBinS     .parseAs(yBinning)
+    val a = ampGainS  .parseAs(ampGain)
+
+    val c = SmartGcalKey.GmosNorthCommon(d, f, u, x, y, a)
+
+    // TODO: wavelength.  Replace with generic Wavelength storing integral angstrom
+    val wmin = GmosCentralWavelength(wavelengthMinS.parseAs(PioParse.int))
+    val wmax = GmosCentralWavelength(parseMaxWavelength(wavelengthMaxS))
+
+    (SmartGcalKey.GmosNorthDefinition(c, (wmin, wmax)), gcal)
   }
 
   // -------------------------------------------------------------------------
   // Implementation Details
   // -------------------------------------------------------------------------
 
+  // Where to look for smart gcal csv files.
   val dir: File = new File("smartgcal")
 
-  val checkSmartDir: IO[Unit] =
-    IO(dir.isDirectory).flatMap { b =>
-      b.unlessM(IO(sys.error(
+  /** Obtains the file name to use for the given instrument name and lamp type.
+    *
+    * @param prefix file name prefix, which is extended with "_ARC.csv" and
+    *               "_FLAT.csv" to create the full file names.
+    * @param lampType flat or arc
+    * @return corresponding .csv file
+    */
+  def fileName(prefix: String, lampType: GcalLampType): String =
+    s"${prefix}_${lampType.tag.toUpperCase}.csv"
+
+  val checkSmartDir: Task[Unit] =
+    Task.delay(dir.isDirectory).flatMap { b =>
+      b.unlessM(Task.delay(sys.error(
         """
           |** Root of project needs a "smartgcal/" dir with smart gcal config files in it.
           |** Try ln -s /path/to/some/smart/gcal smartgcal
@@ -85,95 +118,71 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
 
   /** Truncates all the smart gcal tables. */
   val clean: ConnectionIO[Unit] =
-    for {
-      _ <- smartTables.map(_.tableName).traverseU(t => Update0(s"TRUNCATE $t CASCADE", None).run)
-      _ <- sql"DELETE FROM gcal WHERE step_id IS NULL".update.run
-    } yield ()
+    sql"TRUNCATE smartgcal CASCADE".update.run.void
 
-  /** Reads a smart gcal csv file into a List of lines where each line is a
-    * list of String entries.  This relies on the fact that all the smart gcal
-    * configuration files have the same format.  A header line with a timestamp,
-    * a header line describing the fields, and then the csv data.  Comments are
-    * interspersed but always start the line with a #.  Various empty columns
-    * separate the instrument specific part from the common gcal config part in
-    * each line of input.
-    */
-  def readSmartGcalFile(f: File): IO[List[List[String]]] = {
-    def toLines(f: File): IO[List[String]] =
-      IO {
-        val src = Source.fromFile(f, "UTF-8")
-        try { src.getLines.toList } finally { src.close }
-      }
-
-    toLines(f).map { lines =>
-      lines.filterNot(_.startsWith("#")).drop(2).map { line =>
-        line.split(',').filterNot(_.isEmpty).toList
-      }
+  def parseMaxWavelength(s: String): Int =
+    s match {
+      case "MAX" => Int.MaxValue
+      case _     => s.parseAs(PioParse.int)
     }
-  }
 
   def parseGcal(input: List[String]): (GcalBaselineType, GcalConfig) = {
     import Parsers.Calibration._
 
     val _ :: filterS :: diffuserS :: lampS :: shutterS :: expS :: coaddsS :: baselineS :: Nil = input
 
-    val l = lampS    .parseAs(lamp    )
+    val l = lampS.replaceAll(";", ",").parseAs(lamp)
     val f = filterS  .parseAs(filter  )
     val d = diffuserS.parseAs(diffuser)
     val s = shutterS .parseAs(shutter )
-    val e = Duration.ofMillis(expS.toLong * 1000)
-    val c = coaddsS.toShort
+    val e = Duration.ofMillis(expS.parseAs(PioParse.long))
+    val c = coaddsS  .parseAs(PioParse.short)
 
-    val b = GcalBaselineType.unsafeFromTag(baselineS)
+    val b = baselineS.parseAs(baseline)
 
     (b, GcalConfig(l, f, d, s, e, c))
   }
 
-  def parseFile(input: List[String], l: GcalLampType, parser: KeyParser): (GcalLampType, GcalBaselineType, SmartGcalKey, GcalConfig) = {
+
+  def parseLine[K](input: List[String], l: GcalLampType, parser: KeyParser[K]): SmartGcalLine[K] = {
     val (k, r) = parser(input)
     val (b, g) = parseGcal(r)
     (l, b, k, g)
   }
 
-  type SmartGcalLine = (GcalLampType, GcalBaselineType, SmartGcalKey, GcalConfig)
+  def importInst[K](instFilePrefix: String,
+                    parser:         KeyParser[K],
+                    unindexer:      ConnectionIO[Int],
+                    writer:         SmartGcalWriter[K],
+                    indexer:        ConnectionIO[Int]): Task[Unit] = {
 
-  /** A program that will read all SmartGcal config .csv files into a list of
-    * parsed lines.
-    */
-  val readConfig: IO[List[SmartGcalLine]] = {
-    // Creates a program that will read a single .csv file into a parsed list of
-    // smart gcal configuration.  There is a file per FLAT/ARC per instrument.
-    def readCsv(fileNamePrefix: String, lampType: GcalLampType, parser: KeyParser): IO[List[SmartGcalLine]] =
-      readSmartGcalFile(new File(dir, s"${fileNamePrefix}_${lampType.tag.toUpperCase}.csv")).map {
-        _.map(parseFile(_, lampType, parser))
-      }
+    def lines(l: GcalLampType): Process[Task, SmartGcalLine[K]] =
+      scalaz.stream.io
+          .linesR(new File(dir, fileName(instFilePrefix, l)).getPath)
+          .map(_.split(',').map(_.trim).toList)
+          .map(parseLine(_, l, parser))
 
-    // Creates a program that will reads the FLAT/ARC files for a single
-    // instrument with the given file name prefix.
-    def readInstrument(fileNamePrefix: String, parser: KeyParser): IO[List[SmartGcalLine]] =
-      GcalLampType.all.traverseU(t => readCsv(fileNamePrefix, t, parser)).map(_.flatten)
+    val prog = (lines(GcalLampType.Arc) ++ lines(GcalLampType.Flat))
+      .chunk(4096)
+      .flatMap { v => writer(v).void.transact(lxa) }
 
-    // A program that will read all smart gcal config files for all instruments
-    smartTables.traverseU(d => readInstrument(d.filePrefix, d.parser)).map(_.flatten)
+    for {
+      _ <- Task.delay(println(s"Importing $instFilePrefix ..."))
+      _ <- unindexer.transact(lxa)
+      _ <- prog.run
+      _ <- indexer.transact(lxa)
+    } yield ()
   }
 
-  /** Creates a program that will clean all smart gcal config information in
-    * the database and then import the given configuration.
-    */
-  def cleanAndImport(lines: List[SmartGcalLine]): IO[Unit] =
-    (clean *> lines.traverseU { case (l, b, k, g) =>
-      SmartGcalDao.insert(l, b, k, g)
-    }).void.transact(xa)
-
-  override def runl(args: List[String]): IO[Unit] =
+  override def runl(args: List[String]): Task[Unit] =
     for {
-      u <- UserDao.selectRoot.transact(xa)
-      l <- Log.newLog[IO]("smartgcal importer", lxa)
+      u <- UserDao.selectRoot.transact(lxa)
+      l <- Log.newLog[Task]("smartgcal importer", lxa)
       _ <- checkSmartDir
-      _ <- IO(configureLogging)
-      c <- readConfig
-      _ <- cleanAndImport(c)
+      _ <- Task.delay(configureLogging)
+      _ <- clean.transact(lxa)
+      _ <- importAllInst
       _ <- l.shutdown(5 * 1000)
-      _ <- IO.putStrLn("Done.")
+      _ <- Task.delay(println("Done."))
     } yield ()
 }

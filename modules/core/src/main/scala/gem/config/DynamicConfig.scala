@@ -5,7 +5,9 @@ package gem
 package config
 
 import gem.enum._
+
 import java.time.Duration
+
 import scalaz._
 
 /**
@@ -17,26 +19,65 @@ sealed abstract class DynamicConfig extends Product with Serializable {
   type I <: Instrument with Singleton
   def instrument: I
 
-  def smartGcalKey: Option[DynamicConfig.SmartGcalKey] =
+  /** Obtains the smart gcal search key that corresponds to the instrument
+    * configuration, if any. This key can be used to find the matching gcal
+    * configuration.
+    *
+    * @see [[gem.dao.SmartGcalDao]]
+    *
+    * @return corresponding smart gcal search key, if any
+    */
+  def smartGcalKey: Option[DynamicConfig.SmartGcalSearchKey] =
     this match {
-      case f2: DynamicConfig.F2 => Some(f2.key)
-      case _                   => None
+      case f2: DynamicConfig.F2        => Some(f2.key)
+      case gn: DynamicConfig.GmosNorth => Some(gn.key)
+      case _                           => None
     }
-
 }
+
 object DynamicConfig {
 
   type Aux[I0] = DynamicConfig { type I = I0 }
 
-  sealed trait SmartGcalKey
+  /** Marker trait for smart gcal search keys used to lookup corresponding gcal
+    * configurations.
+    */
+  sealed trait SmartGcalSearchKey
+
+  /** Marker trait for smart gcal definition keys used to register entries in
+    * a smart gcal lookup table.
+    */
+  sealed trait SmartGcalDefinitionKey
+
   object SmartGcalKey {
 
     final case class F2(
       disperser: F2Disperser,
       filter:    F2Filter,
       fpu:       F2FpUnit
-    ) extends SmartGcalKey
+    ) extends SmartGcalSearchKey with SmartGcalDefinitionKey
 
+
+    final case class GmosNorthCommon(
+      disperser: Option[GmosNorthDisperser],
+      filter:    Option[GmosNorthFilter],
+      fpu:       Option[GmosNorthFpu],
+      xBinning:  GmosXBinning,
+      yBinning:  GmosYBinning,
+      ampGain:   GmosAmpGain
+    )
+
+    import gem.config.Gmos.GmosCentralWavelength
+
+    final case class GmosNorthSearch(
+      gmos:       GmosNorthCommon,
+      wavelength: Option[GmosCentralWavelength]
+    ) extends SmartGcalSearchKey
+
+    final case class GmosNorthDefinition(
+      gmos:            GmosNorthCommon,
+      wavelengthRange: (GmosCentralWavelength, GmosCentralWavelength)
+    ) extends SmartGcalDefinitionKey
   }
 
   sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: I0) extends DynamicConfig {
@@ -68,8 +109,15 @@ object DynamicConfig {
     windowCover:   F2WindowCover
   ) extends DynamicConfig.Impl(Instrument.Flamingos2) {
 
+    /** Returns the smart gcal search key for this F2 configuration. */
     def key: SmartGcalKey.F2 =
       SmartGcalKey.F2(disperser, filter, fpu)
+  }
+
+  object F2 {
+    val Default: F2 =
+      F2(F2Disperser.NoDisperser, java.time.Duration.ZERO, F2Filter.Open,
+         F2FpUnit.None, F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
   }
 
   import Gmos._
@@ -80,7 +128,22 @@ object DynamicConfig {
     grating: Option[GmosGrating[GmosNorthDisperser]],
     filter:  Option[GmosNorthFilter],
     fpu:     Option[GmosCustomMask \/ GmosNorthFpu]
-  ) extends DynamicConfig.Impl(Instrument.GmosN)
+  ) extends DynamicConfig.Impl(Instrument.GmosN) {
+
+    /** Returns the smart gcal search key for this GMOS-N configuration. */
+    def key: SmartGcalKey.GmosNorthSearch =
+      SmartGcalKey.GmosNorthSearch(
+        SmartGcalKey.GmosNorthCommon(
+          grating.map(_.disperser),
+          filter,
+          fpu.flatMap(_.toOption),
+          common.ccdReadout.xBinning,
+          common.ccdReadout.yBinning,
+          common.ccdReadout.ampGain
+        ),
+        grating.map(_.wavelength)
+      )
+  }
 
   object GmosNorth {
     val Default: GmosNorth =

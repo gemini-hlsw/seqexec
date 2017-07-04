@@ -121,81 +121,61 @@ object Parsers {
       "Closed" -> GcalShutter.Closed,
       "Open"   -> GcalShutter.Open
     )
+
+    val baseline: PioParse[GcalBaselineType] = enum(
+      "DAY"   -> GcalBaselineType.Day,
+      "NIGHT" -> GcalBaselineType.Night
+    )
   }
-
-  private def fstParser[A](table: List[(String, String, A)]): PioParse[A] =
-    enum(table.map { case (a, _, b) => (a, b) }:_*)
-
-  private def sndParser[A](table: List[(String, String, A)]): PioParse[A] =
-    enum(table.map { case (_, a, b) => (a, b) }:_*)
 
   object Flamingos2 {
 
     import F2Disperser._
 
-    val disperserTable: List[(String, String, F2Disperser)] =
-      List(
-        ("NONE",    "None",                       NoDisperser),
-        ("R1200HK", "R=1200 (H + K) grism",       R1200HK    ),
-        ("R1200JH", "R=1200 (J + H) grism",       R1200JH    ),
-        ("R3000",   "R=3000 (J or H or K) grism", R3000      )
-      )
+    val disperser: PioParse[F2Disperser] = enum(
+      "NONE"    -> NoDisperser,
+      "R1200HK" -> R1200HK,
+      "R1200JH" -> R1200JH,
+      "R3000"   -> R3000
+    )
 
-    val disperser: PioParse[F2Disperser] =
-      fstParser(disperserTable)
-
-    val disperserDisplayValue: PioParse[F2Disperser] =
-      sndParser(disperserTable)
 
     import F2Filter._
 
-    val filterTable: List[(String, String, F2Filter)] =
-      List(
-        ("OPEN",    "Open",               Open  ),
-        ("DARK",    "Dark",               Dark  ),
-        ("F1056",   "F1056 (1.056 um)",   F1056 ),
-        ("F1063",   "F1063 (1.063 um)",   F1063 ),
-        ("H",       "H (1.65 um)",        H     ),
-        ("HK",      "HK (spectroscopic)", HK    ),
-        ("J",       "J (1.25 um)",        J     ),
-        ("J_LOW",   "J-low (1.15 um)",    JLow  ),
-        ("JH",      "JH (spectroscopic)", JH    ),
-        ("K_LONG",  "K-long (2.20 um)",   KLong ),
-        ("K_SHORT", "K-short (2.15 um)",  KShort),
-        ("K_BLUE",  "K-blue (2.06 um)",   KBlue ),
-        ("K_RED",   "K-red (2.31 um)",    KRed  ),
-        ("Y",       "Y (1.02 um)",        Y     )
-      )
-
-    val filter: PioParse[F2Filter] =
-      fstParser(filterTable)
-
-    val filterDisplayValue: PioParse[F2Filter] =
-      sndParser(filterTable)
+    val filter: PioParse[F2Filter] = enum(
+      "OPEN"    -> Open,
+      "DARK"    -> Dark,
+      "F1056"   -> F1056,
+      "F1063"   -> F1063,
+      "H"       -> H,
+      "HK"      -> HK,
+      "J"       -> J,
+      "J_LOW"   -> JLow,
+      "JH"      -> JH,
+      "K_LONG"  -> KLong,
+      "K_SHORT" -> KShort,
+      "K_BLUE"  -> KBlue,
+      "K_RED"   -> KRed,
+      "Y"       -> Y
+    )
 
     import F2FpUnit._
 
-    val fpuTable: List[(String, String, F2FpUnit)] =
-      List(
-        ("PINHOLE",        "2-pix pinhole grid",  Pinhole      ),
-        ("SUBPIX_PINHOLE", "subpix pinhole grid", SubPixPinhole),
-        ("FPU_NONE",       "Imaging (none)",      None         ),
-        ("CUSTOM_MASK",    "Custom Mask",         Custom       ),
-        ("LONGSLIT_1",     "1-pix longslit",      LongSlit1    ),
-        ("LONGSLIT_2",     "2-pix longslit",      LongSlit2    ),
-        ("LONGSLIT_3",     "3-pix longslit",      LongSlit3    ),
-        ("LONGSLIT_4",     "4-pix longslit",      LongSlit4    ),
-        ("LONGSLIT_6",     "6-pix longslit",      LongSlit6    ),
-        ("LONGSLIT_8",     "8-pix longslit",      LongSlit8    )
-      )
-
-    val fpu: PioParse[F2FpUnit] =
-      fstParser(fpuTable)
-
-    val fpuDisplayValue: PioParse[F2FpUnit] =
-      sndParser(fpuTable)
+    val fpu: PioParse[F2FpUnit] = enum(
+      "PINHOLE"         -> Pinhole,
+      "SUBPIX_PINHOLE"  -> SubPixPinhole,
+      "FPU_NONE"        -> None,
+      "CUSTOM_MASK"     -> Custom,
+      "LONGSLIT_1"      -> LongSlit1,
+      "LONGSLIT_2"      -> LongSlit2,
+      "LONGSLIT_3"      -> LongSlit3,
+      "LONGSLIT_4"      -> LongSlit4,
+      "LONGSLIT_6"      -> LongSlit6,
+      "LONGSLIT_8"      -> LongSlit8
+    )
 
     import F2LyotWheel._
+
     val lyotWheel: PioParse[F2LyotWheel] = enum(
       "GEMS"       -> F33Gems,
       "GEMS_OVER"  -> GemsUnder,
@@ -230,7 +210,6 @@ object Parsers {
       "Follow During Exposure" -> Some(Follow)
     )
 
-
     import GmosAmpCount._
 
     val ampCount: PioParse[GmosAmpCount] = enum(
@@ -239,7 +218,6 @@ object Parsers {
       "Twelve" -> Twelve
     )
 
-
     import GmosAmpGain._
 
     val ampGain: PioParse[GmosAmpGain] = enum(
@@ -247,14 +225,12 @@ object Parsers {
       "High" -> High
     )
 
-
     import GmosAmpReadMode._
 
     val ampReadMode: PioParse[GmosAmpReadMode] = enum(
       "Slow" -> Slow,
       "Fast" -> Fast
     )
-
 
     import GmosBuiltinRoi._
 
@@ -267,7 +243,6 @@ object Parsers {
       "Top Spectrum"       -> Some(TopSpectrum    ),
       "Bottom Spectrum"    -> Some(BottomSpectrum )
     )
-
 
     import GmosCustomSlitWidth._
 
@@ -282,7 +257,6 @@ object Parsers {
       "CUSTOM_WIDTH_5_00" -> Some(CustomWidth_5_00)
     )
 
-
     import GmosDetector._
 
     val detector: PioParse[GmosDetector] = enum(
@@ -290,17 +264,15 @@ object Parsers {
       "HAMAMATSU" -> HAMAMATSU
     )
 
-
     val disperserOrder: PioParse[GmosDisperserOrder] = enum(
       "0" -> GmosDisperserOrder.Zero,
       "1" -> GmosDisperserOrder.One,
       "2" -> GmosDisperserOrder.Two
     )
 
-
-    val disperserLambda: PioParse[BigDecimal] =
-      bigDecimal
-
+    // TODO: wavelength - parse into generic Wavelength type directly
+    val disperserLambda: PioParse[Int] =
+      double.map(d => (d * 10.0).round.toInt)
 
     val dtax: PioParse[GmosDtax] = enum(
       "-6" -> GmosDtax.MinusSix,
@@ -318,13 +290,11 @@ object Parsers {
       "6"  -> GmosDtax.Six
     )
 
-
     val xBinning: PioParse[GmosXBinning] = enum(
       "1" -> GmosXBinning.One,
       "2" -> GmosXBinning.Two,
       "4" -> GmosXBinning.Four
     )
-
 
     val yBinning: PioParse[GmosYBinning] = enum(
       "1" -> GmosYBinning.One,
@@ -380,7 +350,6 @@ object Parsers {
       "u_G0308"                   -> Some(UPrime)
     )
 
-
     import GmosNorthFpu._
 
     val fpu: PioParse[Option[GmosNorthFpu]] = enum(
@@ -403,7 +372,6 @@ object Parsers {
       "N and S 2.00 arcsec"  -> Some(Ns5),
       "Custom Mask"          -> Option.empty[GmosNorthFpu]
     )
-
 
     import GmosNorthStageMode._
 
@@ -462,7 +430,6 @@ object Parsers {
       "Lya395_G0342"              -> Some(Lya395)
     )
 
-
     import GmosSouthFpu._
 
     val fpu: PioParse[Option[GmosSouthFpu]] = enum(
@@ -488,7 +455,6 @@ object Parsers {
       "N and S 2.00 arcsec"          -> Some(Ns5),
       "Custom Mask"                  -> Option.empty[GmosSouthFpu]
     )
-
 
     import GmosSouthStageMode._
 
