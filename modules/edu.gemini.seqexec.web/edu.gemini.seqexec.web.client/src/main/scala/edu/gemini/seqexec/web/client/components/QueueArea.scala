@@ -73,6 +73,12 @@ object QueueTableBody {
                 }
               val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
               val inProcess = s.status.isInProcess
+              val selectableRowCls = List(
+                  ^.classSet(
+                    "selectable" -> !inProcess
+                  ),
+                  SeqexecStyles.linkeableRows.when(inProcess)
+                )
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status === SequenceState.Completed),
@@ -84,44 +90,29 @@ object QueueTableBody {
                 ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
-                  ^.classSet(
-                    "selectable" -> !inProcess
-                  ),
-                  SeqexecStyles.linkeableRows.when(inProcess),
+                  selectableRowCls.toTagMod,
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(leftColumnIcon).unless(inProcess),
                   leftColumnIcon.when(inProcess)
                 ),
                 <.td(
                   ^.cls := "collapsing",
-                  ^.classSet(
-                    "selectable" -> !inProcess
-                  ),
-                  SeqexecStyles.linkeableRows.when(inProcess),
+                  selectableRowCls.toTagMod,
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.id).unless(inProcess),
                   (s.id).when(inProcess)
                 ),
                 <.td(
                   ^.cls := "collapsing",
-                  ^.classSet(
-                    "selectable" -> !inProcess
-                  ),
-                  SeqexecStyles.linkeableRows.when(inProcess),
+                  selectableRowCls.toTagMod,
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(stepAtText).unless(inProcess),
                   stepAtText.when(inProcess)
                 ),
                 <.td(
-                  ^.classSet(
-                    "selectable" -> !inProcess
-                  ),
-                  SeqexecStyles.linkeableRows.when(inProcess),
+                  selectableRowCls.toTagMod,
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.instrument).unless(inProcess),
                   s.instrument.when(inProcess)
                 ),
                 <.td(
-                  ^.classSet(
-                    "selectable" -> !inProcess
-                  ),
-                  SeqexecStyles.linkeableRows.when(inProcess),
+                  selectableRowCls.toTagMod,
                   SeqexecStyles.notInMobile,
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.name).unless(inProcess),
                   s.name.when(inProcess)
