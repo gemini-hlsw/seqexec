@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package gem.dao
 package check
 
@@ -46,7 +49,7 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val gcalShutter      = GcalShutter.Open
     val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
-    val observation      = Observation[StaticConfig, Nothing](observationId, "", F2StaticConfig(mosPreImaging = false), Nil)
+    val observation      = Observation[StaticConfig, Nothing](observationId, "", F2StaticConfig.Default, Nil)
     val program          = Program(programId, "", Nil)
     val f2SmartGcalKey   = F2SmartGcalKey(F2Disperser.NoDisperser, F2Filter.Dark, F2FpUnit.LongSlit1)
     val gcalLampType     = GcalLampType.Arc
@@ -58,7 +61,6 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val smartGcalType    = SmartGcalType.Arc
     val instrumentConfig = f2Config
     val stepType         = StepType.Science
-    val f2Static         = F2StaticConfig(mosPreImaging = false)
   }
 
 

@@ -16,18 +16,16 @@ import scalaz.effect.IO
 /** Shared support for import applications using Doobie. */
 trait DoobieClient {
 
+  val Url  = "jdbc:postgresql:gem"
+  val User = "postgres"
+  val Pass = ""
+
   val xa = DriverManagerTransactor[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
+    "org.postgresql.Driver", Url, User, Pass
   )
 
   val lxa = DriverManagerTransactor[Task](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
+    "org.postgresql.Driver", Url, User, Pass
   )
 
   def configureLogging(): Unit = List(

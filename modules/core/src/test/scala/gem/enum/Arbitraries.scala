@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package gem.enum
 
 import org.scalacheck._
@@ -18,6 +21,29 @@ trait Arbitraries {
   implicit val arbF2LyotWheel   = pick(F2LyotWheel.all  )
   implicit val arbF2ReadMode    = pick(F2ReadMode.all   )
   implicit val arbF2WindowCover = pick(F2WindowCover.all)
+
+
+  // Gmos
+
+  implicit val arbGmosAdc             = pick(GmosAdc.all            )
+  implicit val arbGmosAmpCount        = pick(GmosAmpCount.all       )
+  implicit val arbGmosAmpGain         = pick(GmosAmpGain.all        )
+  implicit val arbGmosAmpReadMode     = pick(GmosAmpReadMode.all    )
+  implicit val arbGmosBuiltinRoi      = pick(GmosBuiltinRoi.all     )
+  implicit val arbGmosCustomSlitWidth = pick(GmosCustomSlitWidth.all)
+  implicit val arbGmosDetector        = pick(GmosDetector.all       )
+  implicit val arbGmosDisperserOrder  = pick(GmosDisperserOrder.all )
+  implicit val arbGmosDtax            = pick(GmosDtax.all           )
+  implicit val arbGmosNorthDisperser  = pick(GmosNorthDisperser.all )
+  implicit val arbGmosNorthFilter     = pick(GmosNorthFilter.all    )
+  implicit val arbGmosNorthFpu        = pick(GmosNorthFpu.all       )
+  implicit val arbGmosNorthStageMode  = pick(GmosNorthStageMode.all )
+  implicit val arbGmosSouthDisperser  = pick(GmosSouthDisperser.all )
+  implicit val arbGmosSouthFilter     = pick(GmosSouthFilter.all    )
+  implicit val arbGmosSouthFpu        = pick(GmosSouthFpu.all       )
+  implicit val arbGmosSouthStageMode  = pick(GmosSouthStageMode.all )
+  implicit val arbGmosXBinning        = pick(GmosXBinning.all       )
+  implicit val arbGmosYBinning        = pick(GmosYBinning.all       )
 
 
   // Gcal

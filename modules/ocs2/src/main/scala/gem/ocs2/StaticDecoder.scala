@@ -25,19 +25,41 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Flamingos2 =>
         Legacy.Instrument.MosPreImaging.parse(cm).map(F2StaticConfig(_))
 
-      case Instrument.GmosN      => GmosNStaticConfig().right
-      case Instrument.GmosS      => GmosSStaticConfig().right
-      case Instrument.Gnirs      => GnirsStaticConfig().right
-      case Instrument.Gpi        => GpiStaticConfig().right
-      case Instrument.Gsaoi      => GsaoiStaticConfig().right
-      case Instrument.Michelle   => MichelleStaticConfig().right
-      case Instrument.Nici       => NiciStaticConfig().right
-      case Instrument.Nifs       => NifsStaticConfig().right
-      case Instrument.Niri       => NiriStaticConfig().right
-      case Instrument.Phoenix    => PhoenixStaticConfig().right
-      case Instrument.Trecs      => TrecsStaticConfig().right
-      case Instrument.Visitor    => VisitorStaticConfig().right
+      case Instrument.GmosN      =>
+        parseGmosNorthStaticConfig(cm)
+
+      case Instrument.GmosS      =>
+        parseGmosSouthStaticConfig(cm)
+
+      case Instrument.Gnirs      => GnirsStaticConfig()          .right
+      case Instrument.Gpi        => GpiStaticConfig()            .right
+      case Instrument.Gsaoi      => GsaoiStaticConfig()          .right
+      case Instrument.Michelle   => MichelleStaticConfig()       .right
+      case Instrument.Nici       => NiciStaticConfig()           .right
+      case Instrument.Nifs       => NifsStaticConfig()           .right
+      case Instrument.Niri       => NiriStaticConfig()           .right
+      case Instrument.Phoenix    => PhoenixStaticConfig()        .right
+      case Instrument.Trecs      => TrecsStaticConfig()          .right
+      case Instrument.Visitor    => VisitorStaticConfig()        .right
     }
+
+  private def parseGmosCommonStatic(cm: ConfigMap): PioError \/ Gmos.GmosCommonStaticConfig =
+    for {
+      d <- Legacy.Instrument.Gmos.Detector.parse(cm)
+      m <- Legacy.Instrument.MosPreImaging.parse(cm)
+    } yield Gmos.GmosCommonStaticConfig(d, m, None)
+
+  private def parseGmosNorthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
+    for {
+      c <- parseGmosCommonStatic(cm)
+      s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
+    } yield GmosNorthStaticConfig(c, s)
+
+  private def parseGmosSouthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
+    for {
+      c <- parseGmosCommonStatic(cm)
+      s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
+    } yield GmosSouthStaticConfig(c, s)
 
   def decode(n: Node): PioError \/ StaticConfig =
     for {

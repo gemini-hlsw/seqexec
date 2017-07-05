@@ -40,23 +40,6 @@ import scalaz._
   */
 object PioPath {
 
-  type PioOptional[A] = OptionT[PioError \/ ?, A]
-
-  object PioOptional {
-    def apply[A](a: PioError \/ Option[A]): PioOptional[A] =
-      OptionT[PioError \/ ?, A](a)
-
-    def fromOption[A](oa: Option[A]): PioOptional[A] =
-      OptionT[PioError \/ ?, A](oa.right)
-
-    def none[A]: PioOptional[A] =
-      OptionT.none[PioError \/ ?, A]
-
-    def some[A](a: A): PioOptional[A] =
-      OptionT.some[PioError \/ ?, A](a)
-  }
-
-
   implicit class NodeOps(n: Node) {
     def decode[A](implicit ev: PioDecoder[A]): PioError \/ A =
       ev.decode(n)

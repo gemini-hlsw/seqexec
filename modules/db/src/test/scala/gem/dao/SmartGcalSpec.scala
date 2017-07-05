@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package gem.dao
 
 import gem._
@@ -93,7 +96,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   private def doTest[A](test: ConnectionIO[A]): A =
     withProgram {
       for {
-        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig(mosPreImaging = false), List.empty[Step[DynamicConfig]]))
+        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig.Default, List.empty[Step[DynamicConfig]]))
         a <- test
       } yield a
     }
