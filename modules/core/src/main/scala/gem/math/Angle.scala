@@ -4,7 +4,7 @@
 package gem.math
 
 import scalaz.{ Monoid, Show }
-import scalaz.std.anyVal.intInstance
+import scalaz.std.anyVal.longInstance
 import scalaz.syntax.equal._
 
 /**
@@ -14,7 +14,7 @@ import scalaz.syntax.equal._
  * divisible by 15 milliarcseconds) is represented by the HourAgle subtype.
  * @param toMilliarcseconds This angle in milliarcseconds. Exact.
  */
-sealed class Angle protected (val toMilliarcseconds: Int) {
+sealed class Angle protected (val toMilliarcseconds: Long) {
 
   // Sanity checks … should be correct via the companion constructor.
   assert(toMilliarcseconds >= 0, s"Invariant violated. $toMilliarcseconds is negative.")
@@ -77,7 +77,7 @@ sealed class Angle protected (val toMilliarcseconds: Int) {
     }
 
   override final def hashCode =
-    toMilliarcseconds
+    toMilliarcseconds.toInt
 
 }
 
@@ -91,7 +91,7 @@ object Angle {
   def fromMilliarcseconds(mas: Long): Angle = {
     val masPer360 = 360 * 60 * 60 * 1000
     val masʹ = (((mas % masPer360) + masPer360) % masPer360)
-    new Angle(masʹ.toInt)
+    new Angle(masʹ)
   }
 
   /** Construct a new Angle of the given magnitide in integral arcseconds, modulo 360. Exact. */
@@ -137,7 +137,7 @@ object Angle {
       arcminutes: Int,
       arcseconds: Int,
       milliarcseconds: Int
-    ) = Angle.toMillisexigesimal(toAngle.toMilliarcseconds)
+    ) = Angle.toMillisexigesimal(toAngle.toMilliarcseconds.toInt)
     override final def toString =
       f"$degrees:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d"
   }
@@ -163,7 +163,7 @@ object Angle {
  * addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
  * integral Angles where milliarcseconds are evenly divisible by 15.
  */
-final class HourAngle private (mas: Int) extends Angle(mas) {
+final class HourAngle private (mas: Long) extends Angle(mas) {
 
   // Sanity checks … should be correct via the companion constructor.
   assert(toMilliarcseconds %  15 === 0, s"Invariant violated. $mas isn't divisible by 15.")
@@ -193,7 +193,7 @@ final class HourAngle private (mas: Int) extends Angle(mas) {
 
   // Define in terms of toMilliarcseconds to avoid a second member
   def toMilliseconds: Int =
-    toMilliarcseconds / 15
+    (toMilliarcseconds / 15).toInt
 
   def toHMS: HourAngle.HMS =
     HourAngle.HMS(this)
@@ -223,7 +223,7 @@ object HourAngle {
   def fromMilliseconds(ms: Long): HourAngle = {
     val msPer24 = 24 * 60 * 60 * 1000
     val msʹ = (((ms % msPer24) + msPer24) % msPer24)
-    new HourAngle(msʹ.toInt * 15)
+    new HourAngle(msʹ * 15)
   }
 
   /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
