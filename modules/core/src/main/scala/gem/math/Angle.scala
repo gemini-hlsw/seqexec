@@ -4,21 +4,21 @@
 package gem.math
 
 import scalaz.{ Monoid, Show }
-import scalaz.std.anyVal.intInstance
+import scalaz.std.anyVal.longInstance
 import scalaz.syntax.equal._
 
 /**
- * Exact angles represented as integral milliarcseconds. These values form an Abelian group over
+ * Exact angles represented as integral microarcseconds. These values form an Abelian group over
  * addition, where the inverse is reflection around the 0-180° axis. The subgroup of angles where
- * integral milliarcseconds correspond with clock milliseconds (i.e., where they are evenly
- * divisible by 15 milliarcseconds) is represented by the HourAgle subtype.
- * @param toMilliarcseconds This angle in milliarcseconds. Exact.
+ * integral microarcseconds correspond with clock microseconds (i.e., where they are evenly
+ * divisible by 15 microarcseconds) is represented by the HourAgle subtype.
+ * @param toMicroarcseconds This angle in microarcseconds. Exact.
  */
-sealed class Angle protected (val toMilliarcseconds: Int) {
+sealed class Angle protected (val toMicroarcseconds: Long) {
 
   // Sanity checks … should be correct via the companion constructor.
-  assert(toMilliarcseconds >= 0, s"Invariant violated. $toMilliarcseconds is negative.")
-  assert(toMilliarcseconds < 360 * 60 * 60 * 1000, s"Invariant violated. $toMilliarcseconds is >= 360°.")
+  assert(toMicroarcseconds >= 0, s"Invariant violated. $toMicroarcseconds is negative.")
+  assert(toMicroarcseconds < 360L * 60L * 60L * 1000L * 1000L, s"Invariant violated. $toMicroarcseconds is >= 360°.")
 
   /** Flip this angle 180°. Exact, invertible. */
   def flip: Angle =
@@ -26,11 +26,11 @@ sealed class Angle protected (val toMilliarcseconds: Int) {
 
   /** Additive inverse of this angle (by mirroring around the 0-180 axis). Exact, invertible. */
   def unary_- : Angle =
-    Angle.fromMilliarcseconds(-toMilliarcseconds.toLong)
+    Angle.fromMicroarcseconds(-toMicroarcseconds.toLong)
 
   /** This angle in decimal degrees. Approximate, non-invertible */
   def toDoubleDegrees: Double =
-    toMilliarcseconds.toDouble / (60.0 * 60.0 * 1000.0)
+    toMicroarcseconds.toDouble / (60.0 * 60.0 * 1000.0 * 1000.0)
 
   /** This angle in decimal radisns. Approximate, non-invertible */
   def toDoubleRadians: Double =
@@ -41,71 +41,79 @@ sealed class Angle protected (val toMilliarcseconds: Int) {
    * Exact, non-invertible.
    */
   def toHourAngle: HourAngle =
-    HourAngle.fromMilliseconds(toMilliarcseconds.toLong / 15L)
+    HourAngle.fromMicroseconds(toMicroarcseconds.toLong / 15L)
 
   /**
    * Convert to the closest hour angle iff its magnitide is an even multiple of 15 milliarcseconds.
    * Exact and invertible where defined.
    */
   def toHourAngleExact: Option[HourAngle] =
-    if (toMilliarcseconds % 15 === 0) Some(toHourAngle) else None
+    if (toMicroarcseconds % 15L === 0L) Some(toHourAngle) else None
 
   /**
-   * Destructure this value into a sum of degrees, arcminutes, arcseconds, and milliarcseconds.
-   * Exact, invertible via `Angle.fromDMS`.
+   * Destructure this value into a sum of degrees, arcminutes, arcseconds, milliarcseconds, and
+   * microseconds. Exact, invertible via `Angle.fromDMS`.
    */
   def toDMS: Angle.DMS =
     Angle.DMS(this)
 
   /** Sum of this angle and `a`. Exact, commutative, invertible. */
   def +(a: Angle): Angle =
-    Angle.fromMilliarcseconds(toMilliarcseconds.toLong + a.toMilliarcseconds.toLong)
+    Angle.fromMicroarcseconds(toMicroarcseconds + a.toMicroarcseconds)
 
   /** Difference of this angle and `a`. Exact, invertible. */
   def -(a: Angle): Angle =
-    Angle.fromMilliarcseconds(toMilliarcseconds.toLong - a.toMilliarcseconds.toLong)
+    Angle.fromMicroarcseconds(toMicroarcseconds - a.toMicroarcseconds)
 
   /** String representation of this Angle, for debugging purposes only. */
   override def toString =
-    f"Angle($toDMS, $toDoubleDegrees°)"
+    f"Angle($toDMS, $toDoubleDegrees%1.10f°)"
 
   /** Angles are equal if their magnitudes are equal. Exact. */
   override final def equals(a: Any) =
     a match {
-      case a: Angle => a.toMilliarcseconds === toMilliarcseconds
+      case a: Angle => a.toMicroarcseconds === toMicroarcseconds
       case _        => false
     }
 
   override final def hashCode =
-    toMilliarcseconds
+    toMicroarcseconds.toInt
 
 }
 
 object Angle {
 
-  val Angle0:   Angle = fromDegrees(0L)
-  val Angle90:  Angle = fromDegrees(90L)
-  val Angle180: Angle = fromDegrees(180L)
+  val Angle0:   Angle = fromDegrees(0)
+  val Angle90:  Angle = fromDegrees(90)
+  val Angle180: Angle = fromDegrees(180)
+  val Angle270: Angle = fromDegrees(270)
 
-  /** Construct a new Angle of the given magnitide in integral milliarcseconds, modulo 360°. Exact. */
-  def fromMilliarcseconds(mas: Long): Angle = {
-    val masPer360 = 360 * 60 * 60 * 1000
-    val masʹ = (((mas % masPer360) + masPer360) % masPer360)
-    new Angle(masʹ.toInt)
+  /** Construct a new Angle of the given magnitide in integral microarcseconds, modulo 360°. Exact. */
+  def fromMicroarcseconds(µas: Long): Angle = {
+    val µasPer360 = 360L * 60L * 60L * 1000L * 1000L
+    val µasʹ = (((µas % µasPer360) + µasPer360) % µasPer360)
+    new Angle(µasʹ)
   }
 
-  /** Construct a new Angle of the given magnitide in integral arcseconds, modulo 360. Exact. */
-  def fromArcseconds(as: Long): Angle = fromMilliarcseconds(as * 1000)
+  /** Construct a new Angle of the given magnitide in integral arcseconds, modulo 360°. Exact. */
+  def fromMilliarcseconds(as: Int): Angle =
+    fromMicroarcseconds(as.toLong * 1000L)
 
-  /** Construct a new Angle of the given magnitide in integral arcminutes, modulo 360. Exact. */
-  def fromArcminutes(ms: Long): Angle = fromArcseconds(ms * 60)
+  /** Construct a new Angle of the given magnitide in integral arcseconds, modulo 360°. Exact. */
+  def fromArcseconds(as: Int): Angle =
+    fromMilliarcseconds(as * 1000)
 
-  /** Construct a new Angle of the given magnitide in integral degrees, modulo 360. Exact. */
-  def fromDegrees(ms: Long):    Angle = fromArcminutes(ms * 60)
+  /** Construct a new Angle of the given magnitide in integral arcminutes, modulo 360°. Exact. */
+  def fromArcminutes(ms: Int): Angle =
+    fromArcseconds(ms * 60)
+
+  /** Construct a new Angle of the given magnitide in integral degrees, modulo 360°. Exact. */
+  def fromDegrees(ms: Int): Angle =
+    fromArcminutes(ms * 60)
 
   /** Construct a new Angle of the given magnitide in integral degrees, modulo 360°. Approximate. */
   def fromDoubleDegrees(ds: Double): Angle =
-    fromMilliarcseconds((ds * 60 * 60 * 1000).toLong)
+    fromMicroarcseconds((ds * 60 * 60 * 1000 * 1000).toLong)
 
   /** Construct a new Angle of the given magnitide in radians, modulo 2π. Approximate. */
   def fromDoubleRadians(rad: Double): Angle =
@@ -119,39 +127,48 @@ object Angle {
     Show.showA
 
   // This works for both DMS and HMS so let's just do it once.
-  protected[math] def toMillisexigesimal(millis: Int): (Int, Int, Int, Int) = {
-    val ms =  millis                     % 1000
-    val s  = (millis / (1000))           % 60
-    val m  = (millis / (1000 * 60))      % 60
-    val d  = (millis / (1000 * 60 * 60))
-    (d, m, s, ms)
+  protected[math] def toMicrosexigesimal(micros: Long): (Int, Int, Int, Int, Int) = {
+    val µs =  micros                               % 1000L
+    val ms = (micros / (1000L))                    % 1000L
+    val s  = (micros / (1000L * 1000L))            % 60L
+    val m  = (micros / (1000L * 1000L * 60L))      % 60L
+    val d  = (micros / (1000L * 1000L * 60L * 60L))
+    (d.toInt, m.toInt, s.toInt, ms.toInt, µs.toInt)
   }
 
   /**
-   * Integral angle represented as a sum of degrees, arcminutes, arcseconds, and milliarcseconds.
-   * This type is exact and isomorphic to Angle.
+   * Integral angle represented as a sum of degrees, arcminutes, arcseconds, milliarcseconds and
+   * microarcseconds. This type is exact and isomorphic to Angle.
    */
   final case class DMS(toAngle: Angle) {
     val (
       degrees: Int,
       arcminutes: Int,
       arcseconds: Int,
-      milliarcseconds: Int
-    ) = Angle.toMillisexigesimal(toAngle.toMilliarcseconds)
+      milliarcseconds: Int,
+      microarcseconds: Int
+    ) = Angle.toMicrosexigesimal(toAngle.toMicroarcseconds)
     override final def toString =
-      f"$degrees:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d"
+      f"$degrees:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d"
   }
 
   /**
-   * Construct a new Angle of the given magnitide as a sum of degrees, arcminutes, arcseconds, and
-   * milliarcseconds. Exact modulo 360°.
+   * Construct a new Angle of the given magnitide as a sum of degrees, arcminutes, arcseconds,
+   * milliarcseconds, and microarcseconds. Exact modulo 360°.
    */
-  def fromDMS(degrees: Int, arcminutes: Int, arcseconds: Int, milliarcseconds: Int): Angle =
-    fromMilliarcseconds(
-      milliarcseconds.toLong +
-      arcseconds.toLong * 1000 +
-      arcminutes.toLong * 1000 * 60 +
-      degrees.toLong    * 1000 * 60 * 60
+  def fromDMS(
+    degrees:         Int,
+    arcminutes:      Int,
+    arcseconds:      Int,
+    milliarcseconds: Int,
+    microarcseconds: Int
+  ): Angle =
+    fromMicroarcseconds(
+      microarcseconds.toLong +
+      milliarcseconds.toLong * 1000 +
+      arcseconds.toLong      * 1000 * 1000 +
+      arcminutes.toLong      * 1000 * 1000 * 60 +
+      degrees.toLong         * 1000 * 1000 * 60 * 60
     )
 
 }
@@ -159,14 +176,14 @@ object Angle {
 
 
 /**
- * Exact hour angles represented as integral milliseconds. These values form an Abelian group over
+ * Exact hour angles represented as integral microseconds. These values form an Abelian group over
  * addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
- * integral Angles where milliarcseconds are evenly divisible by 15.
+ * integral Angles where microarcseconds are evenly divisible by 15.
  */
-final class HourAngle private (mas: Int) extends Angle(mas) {
+final class HourAngle private (µas: Long) extends Angle(µas) {
 
   // Sanity checks … should be correct via the companion constructor.
-  assert(toMilliarcseconds %  15 === 0, s"Invariant violated. $mas isn't divisible by 15.")
+  assert(toMicroarcseconds %  15 === 0, s"Invariant violated. $µas isn't divisible by 15.")
 
   /** Forget this is an HourAngle. */
   def toAngle: Angle =
@@ -185,15 +202,15 @@ final class HourAngle private (mas: Int) extends Angle(mas) {
    * invertible.
    */
   override def unary_- : HourAngle =
-    HourAngle.fromMilliseconds(-toMilliseconds.toLong)
+    HourAngle.fromMicroseconds(-toMicroseconds.toLong)
 
   // Overridden for efficiency
   override def toHourAngle = this
   override def toHourAngleExact = Some(this)
 
-  // Define in terms of toMilliarcseconds to avoid a second member
-  def toMilliseconds: Int =
-    toMilliarcseconds / 15
+  // Define in terms of toMicroarcseconds to avoid a second member
+  def toMicroseconds: Long =
+    toMicroarcseconds / 15
 
   def toHMS: HourAngle.HMS =
     HourAngle.HMS(this)
@@ -201,56 +218,61 @@ final class HourAngle private (mas: Int) extends Angle(mas) {
   /** Sum of this HourAngle and `ha`. Exact, commutative, invertible. */
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def +(ha: HourAngle): HourAngle =
-    HourAngle.fromMilliseconds(toMilliseconds.toLong + ha.toMilliseconds.toLong)
+    HourAngle.fromMicroseconds(toMicroseconds.toLong + ha.toMicroseconds.toLong)
 
   /** Difference of this HourAngle and `ha`. Exact, invertible. */
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def -(ha: HourAngle): HourAngle =
-    HourAngle.fromMilliseconds(toMilliseconds.toLong - ha.toMilliseconds.toLong)
+    HourAngle.fromMicroseconds(toMicroseconds.toLong - ha.toMicroseconds.toLong)
 
   /** String representation of this HourAngle, for debugging purposes only. */
   override def toString =
-    f"HourAngle($toDMS, $toHMS, $toDoubleDegrees°)"
+    f"HourAngle($toDMS, $toHMS, $toDoubleDegrees%1.9f°)"
 
 }
 
 object HourAngle {
 
-  val HourAngle0 : HourAngle = fromMilliseconds(0)
+  val HourAngle0 : HourAngle = fromMicroseconds(0)
   val HourAngle12: HourAngle = fromHours(12)
 
-  /** Construct a new Angle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
-  def fromMilliseconds(ms: Long): HourAngle = {
-    val msPer24 = 24 * 60 * 60 * 1000
-    val msʹ = (((ms % msPer24) + msPer24) % msPer24)
-    new HourAngle(msʹ.toInt * 15)
+  /** Construct a new Angle of the given magnitide in integral microseconds, modulo 24h. Exact. */
+  def fromMicroseconds(µs: Long): HourAngle = {
+    val µsPer24 = 24L * 60L * 60L * 1000L * 1000L
+    val µsʹ = (((µs % µsPer24) + µsPer24) % µsPer24)
+    new HourAngle(µsʹ * 15L)
   }
 
   /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
-  def fromSeconds(seconds: Long): HourAngle =
-    fromMilliseconds(seconds * 1000L)
+  def fromMilliseconds(milliseconds: Int): HourAngle =
+    fromMicroseconds(milliseconds.toLong * 1000L)
 
-  /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
-  def fromMinutes(minutes: Long): HourAngle =
-    fromSeconds(minutes * 60L)
+  /** Construct a new HourAngle of the given magnitide in integral seconds, modulo 24h. Exact. */
+  def fromSeconds(seconds: Int): HourAngle =
+    fromMilliseconds(seconds * 1000)
 
-  /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
-  def fromHours(hours: Long):     HourAngle =
-    fromMinutes(hours * 60L)
+  /** Construct a new HourAngle of the given magnitide in integral minutes, modulo 24h. Exact. */
+  def fromMinutes(minutes: Int): HourAngle =
+    fromSeconds(minutes * 60)
+
+  /** Construct a new HourAngle of the given magnitide in integral hours, modulo 24h. Exact. */
+  def fromHours(hours: Int):     HourAngle =
+    fromMinutes(hours * 60)
 
   def fromDoubleHours(hs: Double): HourAngle =
-    fromMilliseconds((hs * 60 * 60 * 1000).toLong)
+    fromMicroseconds((hs * 60.0 * 60.0 * 1000.0).toLong)
 
   /**
-   * Construct a new HourAngle of the given magnitide as a sum of hours, minutes, seconds, and
-   * milliseconds. Exact modulo 24h.
+   * Construct a new HourAngle of the given magnitide as a sum of hours, minutes, seconds,
+   * milliseconds, and microseconds. Exact modulo 24h.
    */
-  def fromHMS(hours: Int, minutes: Int, seconds: Int, milliseconds: Int): HourAngle =
-    fromMilliseconds(
-      milliseconds.toLong +
-      seconds.toLong * 1000 +
-      minutes.toLong * 1000 * 60 +
-      hours.toLong   * 1000 * 60 * 60
+  def fromHMS(hours: Int, minutes: Int, seconds: Int, milliseconds: Int, microseconds: Int): HourAngle =
+    fromMicroseconds(
+      microseconds.toLong +
+      milliseconds.toLong * 1000L +
+      seconds.toLong      * 1000L * 1000L +
+      minutes.toLong      * 1000L * 1000L * 60L +
+      hours.toLong        * 1000L * 1000L * 60L * 60L
     )
 
   /** HourAngle is an Abelian group (a subgroup of Angle), but monoid is the best we can do for now. */
@@ -261,8 +283,8 @@ object HourAngle {
     Show.showA
 
   /**
-   * Integral hour angle represented as a sum of hours, minutes, seconds, and milliseconds. This
-   * type is exact and isomorphic to HourAngle.
+   * Integral hour angle represented as a sum of hours, minutes, seconds, milliseconds, and
+   * microseconds. This type is exact and isomorphic to HourAngle.
    */
   final case class HMS(toHourAngle: HourAngle) {
     def toAngle: Angle = toHourAngle // forget it's an hour angle
@@ -270,10 +292,11 @@ object HourAngle {
       hours: Int,
       minutes: Int,
       seconds: Int,
-      milliseconds: Int
-    ) = Angle.toMillisexigesimal(toHourAngle.toMilliseconds)
+      milliseconds: Int,
+      microseconds: Int
+    ) = Angle.toMicrosexigesimal(toHourAngle.toMicroseconds)
     override final def toString =
-      f"$hours:$minutes%02d:$seconds%02d.$milliseconds%03d"
+      f"$hours:$minutes%02d:$seconds%02d.$milliseconds%03d$microseconds%03d"
   }
 
 }
