@@ -21,7 +21,8 @@ class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbi
         hms.hours,
         hms.minutes,
         hms.seconds,
-        hms.milliseconds
+        hms.milliseconds,
+        hms.microseconds
       ) shouldEqual a
     }
   }
@@ -77,9 +78,9 @@ class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbi
   "Construction" must "normalize [non-pathological] angles" in {
     forAll { (a: HourAngle, n: Int) =>
       val factor   = n % 10
-      val msIn24 = 24L * 60L * 60L * 1000L
+      val msIn24 = 24L * 60L * 60L * 1000L * 1000L
       val offset   = msIn24 * factor
-      val b = HourAngle.fromMilliseconds(a.toMilliseconds + offset)
+      val b = HourAngle.fromMicroseconds(a.toMicroseconds + offset)
       a shouldEqual b
     }
   }

@@ -21,7 +21,8 @@ class AngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitrar
         dms.degrees,
         dms.arcminutes,
         dms.arcseconds,
-        dms.milliarcseconds
+        dms.milliarcseconds,
+        dms.microarcseconds
       ) shouldEqual a
     }
   }
@@ -74,9 +75,9 @@ class AngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitrar
   "Construction" must "normalize [non-pathological] angles" in {
     forAll { (a: Angle, n: Int) =>
       val factor   = n % 10
-      val masIn360 = 360L * 60L * 60L * 1000L
+      val masIn360 = 360L * 60L * 60L * 1000L * 1000L
       val offset   = masIn360 * factor
-      val b = Angle.fromMilliarcseconds(a.toMilliarcseconds + offset)
+      val b = Angle.fromMicroarcseconds(a.toMicroarcseconds + offset)
       a shouldEqual b
     }
   }
