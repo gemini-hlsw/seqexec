@@ -40,7 +40,7 @@ object Main extends SafeApp {
     for {
       url  <- getEnv(ENV_GEM_DB_URL,  "jdbc:postgresql:gem")
       user <- getEnv(ENV_GEM_DB_USER, "postgres")
-      pass <- getEnv(ENV_GEM_DB_URL,  "")
+      pass <- getEnv(ENV_GEM_DB_PASS,  "")
       _    <- IO.putStrLn(s"Connecting with URL $url, user $user, pass «hidden»")
       _    <- migrate(url, user, pass)
       sxa  = xa[SessionIO](url, user, pass)
