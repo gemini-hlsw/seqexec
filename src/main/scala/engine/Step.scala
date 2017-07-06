@@ -18,9 +18,11 @@ object Step {
       def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]]
     }
     object Pending {
+
       case class Flat() extends Pending {
+
         override def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = {
-          // TODO: Alternative:
+          // Alternative:
           // async.parallelSequence(List(Execution.configureTCS, Execution.configureInst("F2"))).flatMap(...)
           (for {
              t1 <- async.start(
@@ -55,4 +57,5 @@ object Step {
 
   sealed trait GMOS extends Step
   case object GMOS
+
 }

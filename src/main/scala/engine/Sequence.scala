@@ -59,7 +59,7 @@ object Sequence {
 
     val status: Lens[State, Status] = GenLens[State](_.status)
 
-    // TODO: Make this affine traversal or Prism
+    // TODO: Make this an affine traversal or a Prism
     val current: Lens[State, Option[Either[Step.F2.Failed, Step.F2.Ongoing]]] = ???
 
   }
