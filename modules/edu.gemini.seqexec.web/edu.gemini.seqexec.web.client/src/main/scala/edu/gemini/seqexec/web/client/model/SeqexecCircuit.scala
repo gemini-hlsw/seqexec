@@ -35,7 +35,7 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
     case NavigateSilentTo(page) =>
       val effect = page match {
         case InstrumentPage(i, None)     => Effect(Future(SelectInstrumentToDisplay(i)))
-        case InstrumentPage(i, Some(id)) => Effect(Future(SelectIdToDisplay(i, id)))
+        case InstrumentPage(_, Some(id)) => Effect(Future(SelectIdToDisplay(id)))
         case _                           => Effect(Future(NoAction: Action))
       }
       updatedSilent(page, effect)
@@ -151,30 +151,32 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) {
+class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences)]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SelectInstrumentToDisplay(i) =>
-      updated(value.focusOnInstrument(i))
+      updated(value.copy(_1 = value._1.focusOnInstrument(i)))
 
-    case SelectIdToDisplay(i, id) =>
-      updated(value.focusOnId(i, id))
+    case SelectIdToDisplay(id) =>
+      println("to disp " + " " +id)
+      val seq = SeqexecCircuit.sequenceRef(id)
+      updated(value.copy(_1 = value._1.focusOnSequence(seq)))
 
     case SelectToDisplay(s) =>
       val ref = SeqexecCircuit.sequenceRef(s.id)
-      updated(value.focusOnSequence(ref))
+      updated(value.copy(_1 = value._1.focusOnSequence(ref)))
 
     case ShowStep(s, i) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
-        updated(value.showStep(i))
+      if (value._1.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+        updated(value.copy(_1 = value._1.showStep(i)))
       } else {
         noChange
       }
 
     case UnShowStep(s) =>
-      if (value.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
-        updated(value.unshowStep)
+      if (value._1.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+        updated(value.copy(_1 = value._1.unshowStep))
       } else {
         noChange
       }
@@ -378,7 +380,8 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelec
 }
 
 case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-case class StatusAndLoadedSequences(isLogged: Boolean, sequences: LoadedSequences) extends UseValueEq
+case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
+case class StatusAndLoadedSequences(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
 case class InstrumentSequence(tab: SequenceTab, active: Boolean) extends UseValueEq
 case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentSequence]) extends UseValueEq
@@ -398,7 +401,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
-  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomTo(_.uiModel.sequencesOnDisplay))
+  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2))))
   val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
   val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
@@ -408,7 +411,13 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Some useful readers
   val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, StatusAndLoadedSequences] =
-    SeqexecCircuit.zoom(c => StatusAndLoadedSequences(c.uiModel.user.isDefined, c.uiModel.sequences))
+    SeqexecCircuit.zoom { c =>
+      val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
+        val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
+        SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, s.runningStep)
+      }
+      StatusAndLoadedSequences(c.uiModel.user.isDefined, sequencesInQueue)
+    }
   // Reader for sequences on display
   val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
   val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)

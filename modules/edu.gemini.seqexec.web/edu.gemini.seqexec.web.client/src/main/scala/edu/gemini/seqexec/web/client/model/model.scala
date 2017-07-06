@@ -33,7 +33,7 @@ case object Logout extends Action
 
 // Action to select a sequence for display
 case class SelectToDisplay(s: SequenceView) extends Action
-case class SelectIdToDisplay(i: Instrument, id: SequenceId) extends Action
+case class SelectIdToDisplay(id: SequenceId) extends Action
 case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
 // Actions related to executing sequences
@@ -107,12 +107,6 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = q | instrumentSequences)
   }
 
-  def focusOnId(i: Instrument, id: SequenceId): SequencesOnDisplay = {
-    // Focus on the instrument and id
-    val q = instrumentSequences.findZ(s => s.instrument === i && s.sequence().exists(_.id === id))
-    copy(instrumentSequences = q | instrumentSequences)
-  }
-
   def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
     // Focus on the instrument
     val q = instrumentSequences.findZ(s => s.instrument === i)
@@ -120,6 +114,10 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   }
 
   def isAnySelected: Boolean = instrumentSequences.toStream.exists(_.sequence().isDefined)
+
+  // Is the id on the sequences area?
+  def idDisplayed(id: SequenceId): Boolean =
+    instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence().exists(_.id === id)}.isDefined
 
   def instrument(i: Instrument): Option[(SequenceTab, Boolean)] =
     instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
@@ -163,7 +161,7 @@ case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           sequencesOnDisplay: SequencesOnDisplay)
 
 object SeqexecUIModel {
-  private val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
+  val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
   val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
     SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
 }

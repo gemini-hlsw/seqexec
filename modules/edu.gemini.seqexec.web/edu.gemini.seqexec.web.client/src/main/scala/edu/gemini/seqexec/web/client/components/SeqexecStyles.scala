@@ -31,6 +31,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginRight(1.5.em)
   )
 
+  val linkeableRows: StyleA = style(
+    unsafeRoot(".ui.table tbody tr td.selectable > a:not(.ui)")(
+      paddingTop(0.5.em),
+      paddingBottom(0.5.em)
+    )
+  )
+
   val logo: StyleA = style(
     height(45.px),
     width(45.px)
@@ -62,10 +69,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     overflow.auto
   )
 
-  val queueListPane: StyleA = style {
-    maxHeight(13.1.em)
+  val queueListPane: StyleA = style (
+    maxHeight(13.5.em),
+    minHeight(13.5.em),
     marginTop(0.px).important
-  }
+  )
 
   val searchResultListPane: StyleA = style {
     maxHeight(10.3.em)
