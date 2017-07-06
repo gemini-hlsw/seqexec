@@ -4,7 +4,7 @@ import edu.gemini.spModel.core.Angle
 
 import java.io.File
 
-import java.time.Duration
+import java.time.{ Duration, ZoneId }
 
 import scalaz._, Scalaz._
 import scalaz.effect._
@@ -32,6 +32,9 @@ object gen2 {
   implicit val AngleMeta: Meta[Angle] =
     Meta[Double].xmap(Angle.fromArcsecs, _.toArcsecs)
 
+  implicit val ZoneIdMeta: Meta[ZoneId] =
+    Meta[String].xmap(ZoneId.of, _.toString)
+
   object ToDeclaration extends Poly1 {
     implicit def caseString  [S <: Symbol] = at[(S, String)  ] { case (s, _) => "  val " + s.name + ": String" }
     implicit def caseInt     [S <: Symbol] = at[(S, Int)     ] { case (s, _) => "  val " + s.name + ": Int" }
@@ -39,6 +42,7 @@ object gen2 {
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
     implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": java.time.Duration" }
     implicit def caseAngle   [S <: Symbol] = at[(S, Angle)   ] { case (s, _) => "  val " + s.name + ": edu.gemini.spModel.core.Angle"}
+    implicit def caseZoneId  [S <: Symbol] = at[(S, ZoneId)  ] { case (s, _) => "  val " + s.name + ": java.time.ZoneId"}
 
     implicit def caseOptionAngle [S <: Symbol] = at[(S, Option[Angle] ) ] { case (s, _) => "  val " + s.name + ": Option[edu.gemini.spModel.core.Angle]" }
     implicit def caseOptionDouble[S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
@@ -51,6 +55,7 @@ object gen2 {
     implicit val caseDouble       = at[Double  ](a => a.toString)
     implicit val caseDuration     = at[Duration](a => s"java.time.Duration.ofMillis(${a.toMillis})")
     implicit val caseAngle        = at[Angle   ](a => s"edu.gemini.spModel.core.Angle.fromArcsecs(${a.toArcsecs})")
+    implicit val caseZoneId       = at[ZoneId  ](a => s"""java.time.ZoneId.of("${a.toString}")""")
 
     implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[edu.gemini.spModel.core.Angle]")(a0 => s"Some(edu.gemini.spModel.core.Angle.fromArcsecs(${a0.toArcsecs}))"))
     implicit val caseOptionDouble = at[Option[Double]](a => a.toString)
@@ -362,14 +367,24 @@ object gen2 {
       },
 
       enum("Site") {
-        type SiteRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
-        val io = sql"select id, id tag, short_name, long_name from e_site".query[(String, SiteRec)].list
+        type SiteRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'timezone -> ZoneId`.T
+        val io = sql"select id, id tag, short_name, long_name, timezone from e_site".query[(String, SiteRec)].list
         io.transact(xa).unsafePerformIO
       },
 
       enum("ProgramRole") {
         type ProgramRole = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
         val io = sql"select id, id tag, short_name, long_name from e_program_role".query[(String, ProgramRole)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("Half") {
+        type HalfRec = Record.`'tag -> String, 'toInt -> Int`.T
+        val io = sql"""
+          SELECT enumlabel x, enumlabel y, enumsortorder - 1
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'half'
+         """.query[(String, HalfRec)].list
         io.transact(xa).unsafePerformIO
       }
 

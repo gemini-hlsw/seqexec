@@ -3,6 +3,10 @@
 
 package gem
 
+import java.time.Month
+import java.time.Month._
+import scalaz.Scalaz._
+
 // The members of this package are generated from database tables, which are the source of truth.
 // See project/gen2.scala for details. Associations with other model types, as needed, are provided
 // here as implicit classes wrapping the generated companion objects.
@@ -30,4 +34,38 @@ package object enum {
         case SmartGcalType.NightBaseline => baseline(GcalBaselineType.Night)
       }
   }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  implicit class HalfCompanionOps(companion: Half.type) {
+
+    def unsafeFromInt(n: Int): Half =
+      fromInt(n).getOrElse(throw new NoSuchElementException(n.toString))
+
+    def fromInt(n: Int): Option[Half] =
+      companion.all.find(_.toInt === n)
+
+    def fromMonth(m: Month): Half =
+      m match {
+        case FEBRUARY | MARCH     | APRIL   | MAY      | JUNE     | JULY    => Half.A
+        case AUGUST   | SEPTEMBER | OCTOBER | NOVEMBER | DECEMBER | JANUARY => Half.B
+      }
+
+  }
+
+  implicit class HalfOps(h: Half) {
+
+    def startMonth: Month =
+      h match {
+        case Half.A => FEBRUARY
+        case Half.B => AUGUST
+      }
+
+    def endMonth: Month =
+      h match {
+        case Half.A => JULY
+        case Half.B => JANUARY
+      }
+
+  }
+
 }
