@@ -3,6 +3,7 @@
 
 package gem
 
+import atto._, Atto._
 import gem.enum.{ Half, Site }
 import java.time._
 import java.time.Month._
@@ -95,5 +96,13 @@ object Semester {
   /** Semester for the zoned date and time of the given Site and Instant. */
   def fromSiteAndInstant(s: Site, i: Instant): Semester =
     fromZonedDateTime(ZonedDateTime.ofInstant(i, s.timezone))
+
+  /** Parse a full-year Semester like `2009A` from a String, if possible. */
+  def fromString(s: String): Option[Semester] =
+    (Parsers.semester <~ endOfInput).parseOnly(s).option
+
+  /** Parse a full-year Semester like `2009A` from a String, throwing on failure. */
+  def unsafeFromString(s: String): Semester =
+    fromString(s).getOrElse(sys.error(s"Invalid semester: $s"))
 
 }
