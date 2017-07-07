@@ -45,7 +45,7 @@ object ProgramId {
       Science.unsafeApply(site, semester, programType, index)
 
     def format: String =
-      s"${site.shortName}-${semester.toString}-${programType.shortName}-$index"
+      s"${site.shortName}-${semester.format}-${programType.shortName}-$index"
 
   }
   object Science {
