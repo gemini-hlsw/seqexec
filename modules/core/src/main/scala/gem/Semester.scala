@@ -7,6 +7,7 @@ import atto._, Atto._
 import gem.enum.{ Half, Site }
 import java.time._
 import java.time.Month._
+import scalaz.Order, scalaz.syntax.semigroup._
 
 /** A (Year, Half) pair. */
 final case class Semester(year: Year, half: Half) {
@@ -104,5 +105,10 @@ object Semester {
   /** Parse a full-year Semester like `2009A` from a String, throwing on failure. */
   def unsafeFromString(s: String): Semester =
     fromString(s).getOrElse(sys.error(s"Invalid semester: $s"))
+
+  /** `Semester` is ordered pairwise by its data members. */
+  implicit val SemesterOrder: Order[Semester] =
+    Order[Year].contramap[Semester](_.year) |+|
+    Order[Half].contramap[Semester](_.half)
 
 }

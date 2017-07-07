@@ -42,9 +42,7 @@ object Parsers {
   val month2: Parser[Month] =
     intN(2).flatMap(catchDTE(Month.of)) namedOpaque "Month"
 
-  /**
-   * Parser for a `LocalDate` in the form `20151107`.
-   */
+  /** Parser for a `LocalDate` in the form `20151107`. */
   def yyyymmdd: Parser[LocalDate] =
     for {
       y <- year4
@@ -75,10 +73,7 @@ object Parsers {
 
   /** Parser for a full-year `Semester` like `2015A`. */
   val semester: Parser[Semester] =
-    for {
-      y <- year4
-      h <- half
-    } yield Semester(y, h)
+    (year4 |@| half)(Semester.apply)
 
   /** Module of ProgramId parsers. */
   object programId {
@@ -91,7 +86,7 @@ object Parsers {
         m <- semester    <~ hyphen
         t <- programType <~ hyphen
         n <- positiveInt
-      } yield Science(s, m, t, n)
+      } yield Science.unsafeApply(s, m, t, n) // we know n is positive
 
     /** Parser for a daily program id like `GS-ENG20120102`. */
     val daily: Parser[Daily] =

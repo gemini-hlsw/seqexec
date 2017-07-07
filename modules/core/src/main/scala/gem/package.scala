@@ -3,17 +3,24 @@
 
 import scalaz.{ Order, Ordering }
 import scalaz.Ordering._
-import java.time.Instant
+import java.time.{ Instant, Year, LocalDate }
 
 package object gem {
 
+  // The java.time types all follow this pattern.
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  implicit val InstantOrd: Order[Instant] =
-    new Order[Instant] {
-      def order(a: Instant, b: Instant): Ordering =
+  private def naturalOrder[A](before: (A, A) => Boolean): Order[A] =
+    new Order[A] {
+      def order(a: A, b: A): Ordering =
              if (a == b)       EQ
-        else if (a isBefore b) LT
+        else if (before(a, b)) LT
         else                   GT
     }
+
+  // This looks like repetition but it's not. The isBefore methods have the same name but are
+  // unrelated by any common supertype.
+  implicit val InstantOrder:   Order[Instant]   = naturalOrder(_ isBefore _)
+  implicit val YearOrder:      Order[Year]      = naturalOrder(_ isBefore _)
+  implicit val LocalDateOrder: Order[LocalDate] = naturalOrder(_ isBefore _)
 
 }
