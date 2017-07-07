@@ -19,6 +19,10 @@ object Sequence {
   final case class F2(
     done: List[Step.F2.Done],
     pending: List[Step.F2.Pending],
+    // Better?: Either[Step.F2.Failed, Option[Step.F2.Ongoing]]
+    // None: No ongoing step
+    // Some/Left: current step failed
+    // Some/Right: current steop ongoing
     current: Option[Either[Step.F2.Failed, Step.F2.Ongoing]]
   ) extends Sequence {
 
@@ -49,6 +53,7 @@ object Sequence {
   }
 
   final case class GMOS()
+
 
   final case class State(sequence: Sequence, status: Status)
 

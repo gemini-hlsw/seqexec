@@ -25,7 +25,7 @@ package object engine {
           case Status.Waiting =>
             sig.set(Sequence.State.status.set(Status.Running)(st)) *>
               async.fork(st.sequence.execute(sig))
-          case _ => F.pure(Unit) // Event: Status is not waiting, dont't execute
+          case _ => F.pure(Unit) // Event: Status not Waiting, dont't execute
         }
       )
 
