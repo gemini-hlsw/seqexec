@@ -57,7 +57,6 @@ object Sequence {
 
   final case class State(sequence: Sequence, status: Status)
 
-
   object State {
 
     val sequence: Lens[State, Sequence] = GenLens[State](_.sequence)
@@ -66,6 +65,11 @@ object Sequence {
 
     // TODO: Make this an affine traversal or a Prism
     val current: Lens[State, Option[Either[Step.F2.Failed, Step.F2.Ongoing]]] = ???
+
+  }
+
+  object Signal {
+    type Signal[F[_]] = Signal[F, Sequence.State]
 
   }
 

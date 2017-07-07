@@ -23,25 +23,26 @@ object Step {
       case class Standard(core: Core, breakpoint: Boolean) extends Pending {
 
         override def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = {
-          // Alternative:
-          // async.parallelSequence(List(Execution.configureTCS, Execution.configureInst("F2"))).flatMap(...)
-          (for {
-             t1 <- async.start(
-               Execution.configureTCS
-                 //.flatMap(// x => sig.modify(Sequence.State.current.set(Some(Right(Ongoing())))) *> F.pure(x))
-             )
-             t2 <- async.start(Execution.configureInst("F2"))
-             r1 <- t1
-             r2 <- t2
-           } yield (r1, r2)).flatMap {
-            case (Right(_), Right(_)) =>
-                Execution.observe.map {
-                  case Right(_) => ??? // Right(Done())
-                  case Left(_) => ??? // Left(Failed())
-                }
-            case _ => ??? // F.pure(Left(Failed()))
-          }
-        }
+        ???
+        //   // Alternative:
+        //   // async.parallelSequence(List(Execution.configureTCS, Execution.configureInst("F2"))).flatMap(...)
+        //   (for {
+        //      t1 <- async.start(
+        //        Execution.configureTCS
+        //          //.flatMap(// x => sig.modify(Sequence.State.current.set(Some(Right(Ongoing())))) *> F.pure(x))
+        //      )
+        //      t2 <- async.start(Execution.configureInst("F2"))
+        //      r1 <- t1
+        //      r2 <- t2
+        //    } yield (r1, r2)).flatMap {
+        //     case (Right(_), Right(_)) =>
+        //         Execution.observe.map {
+        //           case Right(_) => ??? // Right(Done())
+        //           case Left(_) => ??? // Left(Failed())
+        //         }
+        //     case _ => ??? // F.pure(Left(Failed()))
+        //   }
+        // }
       }
 
       case class Flat(core: Core) extends Pending {
