@@ -2,6 +2,8 @@ package engine
 
 import cats.effect.Effect
 
+import fs2.async.mutable.Signal
+
 object Execution {
 
   def configureTCS[F[_]](implicit F: Effect[F]): F[Either[Failure, OK]]  = ???

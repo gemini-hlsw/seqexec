@@ -6,7 +6,6 @@ import cats.implicits._
 import cats.effect.Effect
 
 import fs2.async
-import fs2.async.mutable.Signal
 
 sealed trait Step
 object Step {
@@ -15,15 +14,14 @@ object Step {
   object F2 {
 
     sealed trait Pending extends F2 {
-      def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]]
+      def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]]
     }
 
     object Pending {
 
       case class Standard(core: Core, breakpoint: Boolean) extends Pending {
 
-        override def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = {
-        ???
+        override def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = ???
         //   // Alternative:
         //   // async.parallelSequence(List(Execution.configureTCS, Execution.configureInst("F2"))).flatMap(...)
         //   (for {
@@ -46,11 +44,11 @@ object Step {
       }
 
       case class Flat(core: Core) extends Pending {
-        override def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = ???
+        override def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = ???
       }
 
       case class Dark(core: Core) extends Pending {
-        override def execute[F[_]](sig: Signal[F, Sequence.State])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = ???
+        override def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Either[Failed, Done]] = ???
       }
 
     }

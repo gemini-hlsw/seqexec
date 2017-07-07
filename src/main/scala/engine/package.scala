@@ -3,39 +3,35 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.implicits._
 import cats.effect.Effect
-// import cats.effect.implicits._
 
 import fs2.Stream
 import fs2.async
-import fs2.async.mutable.{Signal, Queue}
+import fs2.async.mutable.Queue
 
 package object engine {
 
   def run[F[_]](in: Queue[F, Event])(st0: Sequence.State)(implicit F: Effect[F], ec: ExecutionContext): Stream[F, Sequence.State] =
-    Stream.force(
-      async.signalOf[F, Sequence.State](st0).flatMap(sig =>
-        async.fork(forever(reader(sig)(in))) *> sig.discrete.pure[F]
-      )
-    )
+    Sequence.State.Mutable.stream[F](st0: Sequence.State)(m => forever(reader(in)(m)))
 
-  def reader[F[_]](sig: Signal[F, Sequence.State])(in: Queue[F, Event])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] =
+  def reader[F[_]](in: Queue[F, Event])(m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] =
     in.dequeue1.flatMap {
-      case Event.Start => sig.get.flatMap(st =>
-        st.status match {
-          case Status.Waiting =>
-            sig.set(Sequence.State.status.set(Status.Running)(st)) *>
-              async.fork(st.sequence.execute(sig))
-          case _ => F.pure(Unit) // Event: Status not Waiting, dont't execute
+      case Event.Start => m.withState(st0 =>
+        st0.status match {
+          case Status.Waiting => {
+            val st1 = Sequence.State.status.set(Status.Running)(st0)
+            async.fork(st1.sequence.execute(m)) *> F.pure(st1)
+          }
+          case _ => F.pure(st0) // Event: Status not Waiting, dont't execute
         }
-      )
+      ).void
 
-    case Event.Stop  => sig.get.flatMap { st =>
+    case Event.Stop  => m.modify(st =>
       st.status match {
-        case Status.Running => sig.set(Sequence.State.status.set(Status.Waiting)(st))
+        case Status.Running => Sequence.State.status.set(Status.Waiting)(st)
         // Leave status as it is
-        case _ => F.pure(Unit) // Event: Status not Running, no need to stop
+        case _ => st // Event: Status not Running, no need to stop
       }
-    }
+    ).void
   }
 
   // This won't be accepted upstream because it would have to be Lazy (ApplyLazy
