@@ -2,37 +2,18 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package gem
+package arb
 
-import gem.enum._
-import java.time. { Year, LocalDate }
+import gem.enum. { Site, ProgramType }
+import java.time.LocalDate
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
-trait ProgramIdArbitraries extends gem.enum.Arbitraries {
+trait ArbProgramId {
   import ProgramId._
-
-  implicit val arbYear: Arbitrary[Year] =
-    Arbitrary {
-      arbitrary[Int].map { n =>
-        Year.of(2010 + (n % 10).abs) // 2001-2019
-      }
-    }
-
-  implicit val arbLocalDate: Arbitrary[LocalDate] =
-    Arbitrary {
-      for {
-        y <- arbitrary[Year]
-        d <- arbitrary[Int].map(n => (n % 364).abs + 1)
-      } yield LocalDate.ofYearDay(y.getValue, d)
-    }
-
-  implicit val arbSemester: Arbitrary[Semester] =
-    Arbitrary {
-      for {
-        year <- arbitrary[Year]
-        half <- arbitrary[Half]
-      } yield Semester(year, half)
-    }
+  import ArbEnumerated._
+  import ArbSemester._
+  import ArbLocalDate._
 
   implicit val arbScience: Arbitrary[Science] =
     Arbitrary {
@@ -54,3 +35,4 @@ trait ProgramIdArbitraries extends gem.enum.Arbitraries {
     }
 
 }
+object ArbProgramId extends ArbProgramId

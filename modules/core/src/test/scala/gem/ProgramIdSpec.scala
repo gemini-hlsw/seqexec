@@ -3,11 +3,13 @@
 
 package gem
 
+import gem.arb._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 
-class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
   import ProgramId._
+  import ArbProgramId._
 
   "Science" should "reparse" in {
     forAll { (s: Science) =>

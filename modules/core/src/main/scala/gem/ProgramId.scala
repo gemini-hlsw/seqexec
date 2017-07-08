@@ -44,7 +44,7 @@ object ProgramId {
     ): Science =
       Science.unsafeApply(site, semester, programType, index)
 
-    def format: String =
+    def format =
       s"${site.shortName}-${semester.format}-${programType.shortName}-$index"
 
   }
@@ -93,7 +93,7 @@ object ProgramId {
     def includes(i: Instant): Boolean =
       start.toInstant <= i && i < end.toInstant
 
-    def format: String = {
+    def format = {
       val (yyyy, mm, dd) = (localDate.getYear, localDate.getMonth.getValue, localDate.getDayOfMonth)
       f"${site.shortName}-${programType.shortName}$yyyy%04d$mm%02d$dd%02d"
     }
@@ -123,7 +123,7 @@ object ProgramId {
     semesterOption,
     programTypeOption
   ) {
-    def format: String =
+    def format =
       List(
         siteOption       .map(_.shortName).toList,
         semesterOption   .map(_.format)   .toList,

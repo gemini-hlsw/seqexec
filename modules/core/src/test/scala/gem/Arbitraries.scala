@@ -13,7 +13,8 @@ import org.scalacheck.Arbitrary._
 import scalaz._
 import Scalaz._
 
-trait Arbitraries extends ProgramIdArbitraries with gem.config.Arbitraries  {
+trait Arbitraries extends gem.config.Arbitraries  {
+  import gem.arb.ArbEnumerated._
 
   implicit val arbLocationMiddle: Arbitrary[Location.Middle] =
     Arbitrary {

@@ -12,15 +12,20 @@ import scalaz.Order, scalaz.syntax.semigroup._
 /** A (Year, Half) pair. */
 final case class Semester(year: Year, half: Half) {
 
-  /** This Semester plus the given number of years. */
+  /**
+   * This Semester plus the given number of years.
+   * @throws DateTimeException for final year out of range -999999999 - 999999999
+   */
   def plusYears(n: Int): Semester =
     copy(year = year.plusYears(n.toLong))
 
-  /** This Semester plus the given number of half-years. */
+  /**
+   * This Semester plus the given number of half-years.
+   */
   def plusSemesters(n: Int): Semester = {
     val yy = year.getValue
     val hs = yy * 2 + half.toInt * yy.signum + n
-    Semester(Year.of(hs / 2), Half.unsafeFromInt(hs % 2))
+    Semester(Year.of(hs / 2), Half.unsafeFromInt(hs.abs % 2))
   }
 
   /** The semester immediately following this one. */
