@@ -26,7 +26,6 @@ object Step {
     case class Configuration()
   }
 
-
   sealed trait F2 extends Step
   object F2 {
 
@@ -73,6 +72,44 @@ object Step {
     case class Done(core: Core, fileId: String) extends F2
     case class Ongoing(core: Core, progress: Int) extends F2
     case class Failed(core: Core, message: String) extends F2
+
+    sealed trait Current extends F2 { self =>
+      def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] = self match {
+        case Current.Pending(pending) =>
+          pending.execute(m) match {
+            case _ => ???
+          }
+        case Current.Ongoing(ongoing) =>
+          F.pure(Unit) // Already executing Step don't do anything
+        case Current.Failed(failed) => ??? // Leave it as failed and stop
+      }
+      // current match {
+      //   // No current Step
+      //   case None => pending match {
+      //     // No pending steps, done
+      //     case Nil => m.setStatus(Status.Finished).void
+      //     // More pending steps
+      //     case (next :: remainder) => next.execute(m).flatMap {
+      //       case Left(e) => m.setState(
+      //         Sequence.State(
+      //           F2(done, remainder, Some(Left(e))),
+      //           Status.Failed
+      //         )
+      //       )
+      //       case Right(d) => m.setSequence(
+      //         F2((d :: done), remainder, None)
+      //       ).flatMap(_.sequence.execute(m))
+      //     }
+      //   }
+      //   case Some(_) => F.pure(Unit) // Event: Tried execute Sequence with an already ongoing step.
+      // }
+    }
+
+    object Current {
+      case class Pending(step: F2.Pending) extends Current
+      case class Ongoing(current: F2.Ongoing) extends Current
+      case class Failed(current: F2.Failed) extends Current
+    }
 
   }
 

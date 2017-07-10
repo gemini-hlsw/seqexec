@@ -19,7 +19,7 @@ package object engine {
         st0.status match {
           case Status.Waiting => {
             val st1 = Sequence.State.status.set(Status.Running)(st0)
-            async.fork(st1.sequence.execute(m)) *> F.pure(st1)
+            async.fork(st1.execute(m)) *> F.pure(st1)
           }
           case _ => F.pure(st0) // Event: Status not Waiting, dont't execute
         }
