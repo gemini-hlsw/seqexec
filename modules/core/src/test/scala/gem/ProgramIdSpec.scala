@@ -4,12 +4,16 @@
 package gem
 
 import gem.arb._
+import gem.enum.{ Site, DailyProgramType }
+import java.time._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
 
 class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
   import ProgramId._
+  import ArbEnumerated._
   import ArbProgramId._
+  import ArbTime._
 
   "Science" should "reparse" in {
     forAll { (sid: Science) =>
@@ -32,6 +36,28 @@ class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
   it should "never reparse into a Nonstandard, even if we try" in {
     forAll { (did: Science) =>
       Daily.fromString(did.format) shouldEqual None
+    }
+  }
+
+  it should "find the correct observing day given a site and instant" in {
+    forAll { (site: Site, ldt: LocalDateTime, dpt: DailyProgramType) =>
+      val zdt = ZonedDateTime.of(ldt, site.timezone)
+      val did = Daily.fromSiteAndInstant(site, zdt.toInstant, dpt)
+      val end = zdt.`with`(LocalTime.of(14, 0, 0, 0))
+      val exp = if (zdt isBefore end) ldt.toLocalDate else ldt.plusDays(1).toLocalDate
+      did.localDate shouldEqual exp
+    }
+  }
+
+  it should "be consistent re: .start and .fromSiteAndInstant" in {
+    forAll { (did: Daily) =>
+      Daily.fromSiteAndInstant(did.site, did.start.toInstant, did.dailyProgramType) shouldEqual did
+    }
+  }
+
+  it should "be consistent re: .end and .fromSiteAndInstant" in {
+    forAll { (did: Daily) =>
+      Daily.fromSiteAndInstant(did.site, did.end.toInstant, did.dailyProgramType) shouldEqual did
     }
   }
 

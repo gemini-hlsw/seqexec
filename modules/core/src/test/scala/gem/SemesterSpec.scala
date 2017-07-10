@@ -13,8 +13,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class SemesterSpec extends FlatSpec with Matchers with PropertyChecks {
   import ArbEnumerated._
   import ArbSemester._
-  import ArbYear._
-  import ArbZoneId._
+  import ArbTime._
 
   ".fromString" should "be invertible via .format" in {
     forAll { (y: Year, h: Half) =>

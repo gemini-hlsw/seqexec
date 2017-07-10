@@ -13,7 +13,7 @@ trait ArbProgramId {
   import ProgramId._
   import ArbEnumerated._
   import ArbSemester._
-  import ArbLocalDate._
+  import ArbTime._
 
   implicit val arbScience: Arbitrary[Science] =
     Arbitrary {

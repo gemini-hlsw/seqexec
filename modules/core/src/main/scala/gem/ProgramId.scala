@@ -113,8 +113,8 @@ object ProgramId {
     /** Daily program id for the zoned date and time of the given Site and Instant. */
     def fromSiteAndInstant(site: Site, instant: Instant, programType: DailyProgramType): Daily = {
       val zdt  = ZonedDateTime.ofInstant(instant, site.timezone)
-      val end  = zdt.withHour(14)
-      val zdtʹ = if (zdt.toInstant > end.toInstant) zdt.plusDays(1) else zdt
+      val end  = zdt.`with`(LocalTime.of(14, 0, 0, 0))
+      val zdtʹ = if (zdt.toInstant < end.toInstant) zdt else zdt.plusDays(1)
       apply(site, programType, zdtʹ.toLocalDate)
     }
 

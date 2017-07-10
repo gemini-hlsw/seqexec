@@ -10,7 +10,7 @@ import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
 trait ArbSemester {
-  import ArbYear._
+  import ArbTime._
   import ArbEnumerated._
 
   implicit val arbSemester: Arbitrary[Semester] =
