@@ -36,7 +36,7 @@ final case class Semester(year: Year, half: Half) {
   def prev: Semester =
     plusSemesters(-1)
 
-  /** Module of various representations of the semester start. */
+  /** Module of various representations of the first instant of the semester, *inclusive*. */
   object start {
     lazy val yearMonth: YearMonth = YearMonth.of(year.getValue, half.startMonth)
     lazy val localDate: LocalDate = LocalDate.of(year.getValue, half.startMonth, 1)
@@ -45,11 +45,12 @@ final case class Semester(year: Year, half: Half) {
     def atSite(site: Site): ZonedDateTime = zonedDateTime(site.timezone)
   }
 
-  /** Module of various representations of the semester end. */
+  /** Module of various representations of the last instant of the semester, *inclusive*. */
   object end {
-    lazy val yearMonth: YearMonth = YearMonth.of(year.getValue, half.endMonth)
-    lazy val localDate: LocalDate = LocalDate.of(year.getValue, half.endMonth, half.endMonth.maxLength)
-    lazy val localDateTime: LocalDateTime = LocalDateTime.of(localDate, LocalTime.MIDNIGHT).plusHours(14) // 2pm today
+    private def nextYear = (half match { case Half.A => year; case Half.B => year.plusYears(1) }).getValue
+    lazy val yearMonth: YearMonth = YearMonth.of(nextYear, half.endMonth)
+    lazy val localDate: LocalDate = LocalDate.of(nextYear, half.endMonth, half.endMonth.maxLength)
+    lazy val localDateTime: LocalDateTime = LocalDateTime.of(localDate.minusDays(1), LocalTime.MAX).plusHours(14) // 2pm today
     def zonedDateTime(zoneId: ZoneId): ZonedDateTime = ZonedDateTime.of(localDateTime, zoneId)
     def atSite(site: Site): ZonedDateTime = zonedDateTime(site.timezone)
   }
