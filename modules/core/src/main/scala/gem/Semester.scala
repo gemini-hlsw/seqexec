@@ -19,9 +19,7 @@ final case class Semester(year: Year, half: Half) {
   def plusYears(n: Int): Semester =
     copy(year = year.plusYears(n.toLong))
 
-  /**
-   * This Semester plus the given number of half-years.
-   */
+  /** This Semester plus the given number of half-years. */
   def plusSemesters(n: Int): Semester = {
     val yy = year.getValue
     val hs = yy * 2 + half.toInt * yy.signum + n
@@ -80,7 +78,13 @@ object Semester {
     Semester(Year.of(y), Half.fromMonth(m))
   }
 
-  /** Semester for the specified year and month. The day of month is ignored. */
+  /**
+   * Semester for the specified year and month, exclusive of semester start and inclusive of
+   * semester end. The semester actually starts at 2pm on the 31st of the January/August, but
+   * this method gives the entire switchover day to the previous semester. A simpler way of saying
+   * this is that this method ignores the day of the month. If you need more precision you must
+   * use a conversion method that includes the time of day.
+   */
   def fromLocalDate(d: LocalDate): Semester =
     fromYearMonth(YearMonth.of(d.getYear, d.getMonth))
 
