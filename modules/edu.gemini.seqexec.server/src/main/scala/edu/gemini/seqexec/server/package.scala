@@ -1,7 +1,6 @@
 package edu.gemini.seqexec
 
 import edu.gemini.seqexec.engine.Event
-import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 
 import scalaz._
 import Scalaz._
@@ -28,12 +27,6 @@ package object server {
     def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(Task.delay(a))
     def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(Task.delay(TrySeq.fail(p)))
     def void = SeqAction.apply(())
-  }
-
-  implicit class SeqActionOps[A](a: SeqAction[A]) {
-    def runSeqAction: TrySeq[A] = a.run.handle{
-      case e: Exception => SeqexecException(e).left
-    }.unsafePerformSync
   }
 
   implicit class MoreDisjunctionOps[A,B](ab: A \/ B) {
