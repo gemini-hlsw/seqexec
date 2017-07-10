@@ -50,7 +50,7 @@ object ProgramId {
     ): Science =
       Science.unsafeApply(site, semester, programType, index)
 
-    def format =
+    override def format =
       s"${site.shortName}-${semester.format}-${programType.shortName}-$index"
 
   }
@@ -103,7 +103,7 @@ object ProgramId {
     def includes(i: Instant): Boolean =
       start.toInstant <= i && i <= end.toInstant
 
-    def format =
+    override def format =
       f"${site.shortName}-${dailyProgramType.shortName}${Daily.ymd.format(localDate)}"
 
   }
@@ -150,7 +150,7 @@ object ProgramId {
     semesterOption,
     programTypeOption
   ) {
-    def format =
+    override def format =
       List(
         siteOption       .map(_.shortName).toList,
         semesterOption   .map(_.format)   .toList,
@@ -182,7 +182,7 @@ object ProgramId {
   /** Parse a `ProgramId` from string, if possible. */
   def fromString(s: String): Option[ProgramId] =
     Science.fromString(s) orElse
-    Daily  .fromString(s)   orElse
+    Daily  .fromString(s) orElse
     Parsers.parseExact(Parsers.programId.nonstandard)(s).map {
       case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
     }
