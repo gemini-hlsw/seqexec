@@ -26,7 +26,7 @@ object SemesterDao {
     def canonicalize(s: Semester): Update0 =
       sql"""
         INSERT INTO semester (semester_id, year, half)
-        VALUES (${s.toString}, ${s.getYear.toShort}, ${s.getHalf})
+        VALUES (${s.toString}, ${s.getYear.toShort}, ${s.getHalf}::half)
         ON CONFLICT DO NOTHING
       """.update
 

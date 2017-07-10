@@ -4,6 +4,7 @@
 package gem
 
 import java.time._
+import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import scalaz._, scalaz.Scalaz.{ char => _, _ }
 
@@ -102,13 +103,14 @@ object ProgramId {
     def includes(i: Instant): Boolean =
       start.toInstant <= i && i <= end.toInstant
 
-    def format = {
-      val (yyyy, mm, dd) = (localDate.getYear, localDate.getMonth.getValue, localDate.getDayOfMonth)
-      f"${site.shortName}-${dailyProgramType.shortName}$yyyy%04d$mm%02d$dd%02d"
-    }
+    def format =
+      f"${site.shortName}-${dailyProgramType.shortName}${Daily.ymd.format(localDate)}"
 
   }
   object Daily {
+
+    // shared by all instances
+    private val ymd = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     /** Daily program id for the zoned date and time of the given Site and Instant. */
     def fromSiteAndInstant(site: Site, instant: Instant, programType: DailyProgramType): Daily = {
@@ -148,7 +150,14 @@ object ProgramId {
     semesterOption,
     programTypeOption
   ) {
-    def format = Nonstandard.format(siteOption, semesterOption, programTypeOption, tail)
+    def format =
+      List(
+        siteOption       .map(_.shortName).toList,
+        semesterOption   .map(_.format)   .toList,
+        programTypeOption.map(_.shortName).toList,
+        List(tail)
+      ).flatten.intercalate("-")
+
   }
   object Nonstandard {
 
@@ -160,20 +169,6 @@ object ProgramId {
       ProgramId.fromString(s) collect {
         case id: Nonstandard => id
       }
-
-    /** Format the components of a nonstandard id. */
-    def format(
-      siteOption:        Option[Site],
-      semesterOption:    Option[Semester],
-      programTypeOption: Option[ProgramType],
-      tail:              String
-    ): String =
-      List(
-        siteOption       .map(_.shortName).toList,
-        semesterOption   .map(_.format)   .toList,
-        programTypeOption.map(_.shortName).toList,
-        List(tail)
-      ).flatten.intercalate("-")
 
     /** `Nonstandard` program ids are ordered pairwise by their data members. */
     implicit val NonStandardOrder: Order[Nonstandard] =
