@@ -151,15 +151,24 @@ object ProgramId {
     programTypeOption
   ) {
     override def format =
+      Nonstandard.format(siteOption, semesterOption, programTypeOption, tail)
+
+  }
+  object Nonstandard {
+
+    /** Format the components of a `Nonstandard`. */
+    def format(
+      siteOption:        Option[Site],
+      semesterOption:    Option[Semester],
+      programTypeOption: Option[ProgramType],
+      tail:              String
+    ): String =
       List(
         siteOption       .map(_.shortName).toList,
         semesterOption   .map(_.format)   .toList,
         programTypeOption.map(_.shortName).toList,
         List(tail)
       ).flatten.intercalate("-")
-
-  }
-  object Nonstandard {
 
     /**
      * Parse a `Nonstandard` program id from a string, if possible. Note that this will fail if

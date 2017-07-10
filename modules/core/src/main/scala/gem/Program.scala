@@ -4,14 +4,14 @@
 package gem
 
 import scalaz._, Scalaz._
-import edu.gemini.spModel.core.ProgramId
+import edu.gemini.spModel.core.{ ProgramId => OcsProgramId }
 
 final case class Program[A](id: Program.Id, title: String, observations: List[A])
 
 object Program {
 
-  type Id                 = ProgramId
-  val  Id: ProgramId.type = ProgramId
+  type Id                    = OcsProgramId
+  val  Id: OcsProgramId.type = OcsProgramId
 
   implicit val ProgramTraverse: Traverse[Program] =
     new Traverse[Program] {
