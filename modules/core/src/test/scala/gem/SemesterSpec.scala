@@ -172,8 +172,6 @@ class SemesterSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  // .end.*
-
   ".end round-tripping" should "be consistent for .yearMonth     ~ .fromYearMonth" in {
     forAll { (s: Semester) =>
       Semester.fromYearMonth(s.end.yearMonth) shouldEqual s

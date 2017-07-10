@@ -4,7 +4,7 @@
 package gem
 
 import atto._, Atto._, atto.compat.scalaz._
-import gem.enum.{ Half, Site, ProgramType }
+import gem.enum.{ Half, Site, ProgramType, DailyProgramType }
 import java.time.{ DateTimeException, Year, Month, LocalDate }
 import scalaz._, Scalaz.{ char => _, _ }
 
@@ -13,6 +13,10 @@ object Parsers {
   /** Convenience method for client code. Parse entire input into an Option. */
   def parseExact[A](p: Parser[A])(s: String): Option[A] =
     (p <~ endOfInput).parseOnly(s).option
+
+  /** Convenience method for client code. Parse into an Option, discarding unused input. */
+  def parse[A](p: Parser[A])(s: String): Option[A] =
+    p.parseOnly(s).option
 
   /** Parser for a hyphen. */
   val hyphen: Parser[Unit] =
@@ -67,6 +71,10 @@ object Parsers {
   val programType: Parser[ProgramType] =
     enumParser[ProgramType](_.shortName) namedOpaque "ProgramType"
 
+  /** Parser for `DailyProgramType` based on `shortName` like `CAL`. */
+  val dailyProgramType: Parser[DailyProgramType] =
+    enumParser[DailyProgramType](_.shortName) namedOpaque "DailyProgramType"
+
   /** Parser for `Half` based on `tag` like `A`. */
   val half: Parser[Half] =
     enumParser[Half](_.tag) namedOpaque "Half"
@@ -91,49 +99,23 @@ object Parsers {
     /** Parser for a daily program id like `GS-ENG20120102`. */
     val daily: Parser[Daily] =
       for {
-        s <- site        <~ hyphen
-        t <- programType
+        s <- site <~ hyphen
+        t <- dailyProgramType
         d <- yyyymmdd
       } yield Daily(s, t, d)
 
-    /** Parser for a nonstandard program id, possibly prefixed standard structured data. */
-    def nonstandard: Parser[Nonstandard] = {
-
-      // We need a few helpers for this. First, a combinator that tries (p <~ hyphen) and falls
-      // back to an arbitrary string, mapped to a `Nonstandard` with the given function, all lifted
-      // into EitherT. So what this does is either parse a structured value or punt and construct a
-      // Nonstandard with whatever we have so far.
-      def segmentOrElse[A](p: Parser[A])(f: String => Nonstandard): EitherT[Parser, Nonstandard, A] =
-        EitherT(((p <~ hyphen) || nonWhitespace.map(f)).map(_.swap))
-
-      // The nonWhitespace combinator lifted into the same type.
-      def nonWhitespaceT: EitherT[Parser, Nonstandard, String] =
-        EitherT(nonWhitespace.map(_.right))
-
-      // Ok here's our parse that tries to read site, semester, programType, and some tail string,
-      // falling back at each step to a Nonstandard constructed with whatever we have so far.
-      // Hooray monad transformers!
-      val parserT: EitherT[Parser, Nonstandard, Nonstandard] =
-        for {
-          s <- segmentOrElse(site)       (Nonstandard(None,    None,    None,    _))
-          m <- segmentOrElse(semester)   (Nonstandard(Some(s), None,    None,    _))
-          p <- segmentOrElse(programType)(Nonstandard(Some(s), Some(m), None,    _))
-          n <- nonWhitespaceT.map        (Nonstandard(Some(s), Some(m), Some(p), _))
-        } yield n
-
-      // Our final parser
-      parserT.run.map(_.merge)
-
-    }
-
     /**
-     * Parser for any kind of program id. It will try science first, then daily, then fall back to
-     * nonstandard with as much structured information as can be found.
+     * Parser for the components of a nonstandard program id (which has no public constructor).
+     * This parser is greedy and will read as much structured information as possible rather than
+     * leaving it in the tail.
      */
-    val any: Parser[ProgramId] =
-      science    .widen[ProgramId] |
-      daily      .widen[ProgramId] |
-      nonstandard.widen[ProgramId]
+    def nonstandard: Parser[(Option[Site], Option[Semester], Option[ProgramType], String)] =
+      for {
+        os <- opt(site        <~ hyphen)
+        om <- opt(semester    <~ hyphen)
+        op <- opt(programType <~ hyphen)
+        t  <- nonWhitespace
+      } yield (os, om, op, t)
 
   }
 

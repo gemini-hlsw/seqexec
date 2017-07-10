@@ -4,9 +4,13 @@
 package gem
 
 import java.time._
-import gem.enum.{ Site, ProgramType }
+import gem.enum.{ Site, ProgramType, DailyProgramType }
 import scalaz._, scalaz.Scalaz.{ char => _, _ }
 
+/**
+ * A science program id, which has three constructors. `Science` for standard programs; `Daily` for
+ * standard daily engineering and calibration programs; and `Nonstandard` for all others.
+ */
 sealed abstract class ProgramId(
   val siteOption:        Option[Site],
   val semesterOption:    Option[Semester],
@@ -23,6 +27,7 @@ sealed abstract class ProgramId(
 
 object ProgramId {
 
+  /** A standard science program id with a site, semester, program type, and positive index. */
   sealed abstract case class Science private (
     site:        Site,
     semester:    Semester,
@@ -74,32 +79,44 @@ object ProgramId {
 
   }
 
+  /** A standard daily program id with a site, program type, and local date. */
   final case class Daily(
-    site:        Site,
-    programType: ProgramType,
-    localDate:   LocalDate
+    site:             Site,
+    dailyProgramType: DailyProgramType,
+    localDate:        LocalDate
   ) extends ProgramId(
     Some(site),
     None,
-    Some(programType)
+    Some(dailyProgramType.toProgramType)
   ) {
 
+    /** The first moment of this observing day, 2pm the day before `localDate`. */
     lazy val start: ZonedDateTime =
-      ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, site.timezone).minusHours(10) // 2pm the day before
+      ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, site.timezone).minusHours(10)
 
+    /** The last moment of this observing day, just before 2pm on 'localDate'. */
     lazy val end: ZonedDateTime =
-      start.plusDays(1)
+      ZonedDateTime.of(localDate.minusDays(1), LocalTime.MAX, site.timezone).plusHours(14)
 
+    /** True if the given instant falls within the observing day defined by `start` and `end`. */
     def includes(i: Instant): Boolean =
-      start.toInstant <= i && i < end.toInstant
+      start.toInstant <= i && i <= end.toInstant
 
     def format = {
       val (yyyy, mm, dd) = (localDate.getYear, localDate.getMonth.getValue, localDate.getDayOfMonth)
-      f"${site.shortName}-${programType.shortName}$yyyy%04d$mm%02d$dd%02d"
+      f"${site.shortName}-${dailyProgramType.shortName}$yyyy%04d$mm%02d$dd%02d"
     }
 
   }
   object Daily {
+
+    /** Daily program id for the zoned date and time of the given Site and Instant. */
+    def fromSiteAndInstant(site: Site, instant: Instant, programType: DailyProgramType): Daily = {
+      val zdt  = ZonedDateTime.ofInstant(instant, site.timezone)
+      val end  = zdt.withHour(14)
+      val zdtʹ = if (zdt.toInstant > end.toInstant) zdt.plusDays(1) else zdt
+      apply(site, programType, zdtʹ.toLocalDate)
+    }
 
     /** Parse a `Daily` program id from a string, if possible. */
     def fromString(s: String): Option[Daily] =
@@ -107,13 +124,21 @@ object ProgramId {
 
     /** `Daily` program ids are ordered pairwise by their data members. */
     implicit val DailyOrder: Order[Daily] =
-      Order[Site]       .contramap[Daily](_.site)        |+|
-      Order[ProgramType].contramap[Daily](_.programType) |+|
-      Order[LocalDate]  .contramap[Daily](_.localDate)
+      Order[Site]            .contramap[Daily](_.site)                           |+|
+      Order[DailyProgramType].contramap[Daily](_.dailyProgramType) |+|
+      Order[LocalDate]       .contramap[Daily](_.localDate)
 
   }
 
-  final case class Nonstandard(
+  /**
+   * Parser for a non-standard program id of the general form `site-semester-type-tail` where
+   * any subset of the structured portion is permitted as long as it appears in the proper order.
+   * This is the catch-all type for otherwise unparseable ids, so it is guaranteed that the string
+   * representation of a `Nonstandard` via `.format` is *not* parseable in to a standard science or
+   * daily program id. This data type has no public constructor and no `.copy` method, as these
+   * could violate the above invariant. The only way to get an instance is via `.fromString`.
+   */
+  sealed abstract case class Nonstandard(
     override val siteOption:        Option[Site],
     override val semesterOption:    Option[Semester],
     override val programTypeOption: Option[ProgramType],
@@ -123,19 +148,32 @@ object ProgramId {
     semesterOption,
     programTypeOption
   ) {
-    def format =
+    def format = Nonstandard.format(siteOption, semesterOption, programTypeOption, tail)
+  }
+  object Nonstandard {
+
+    /**
+     * Parse a `Nonstandard` program id from a string, if possible. Note that this will fail if
+     * the the `s` represents a valid science or daily program id.
+     */
+    def fromString(s: String): Option[Nonstandard] =
+      ProgramId.fromString(s) collect {
+        case id: Nonstandard => id
+      }
+
+    /** Format the components of a nonstandard id. */
+    def format(
+      siteOption:        Option[Site],
+      semesterOption:    Option[Semester],
+      programTypeOption: Option[ProgramType],
+      tail:              String
+    ): String =
       List(
         siteOption       .map(_.shortName).toList,
         semesterOption   .map(_.format)   .toList,
         programTypeOption.map(_.shortName).toList,
         List(tail)
       ).flatten.intercalate("-")
-  }
-  object Nonstandard {
-
-    /** Parse a `Nonstandard` program id from a string, if possible. */
-    def fromString(s: String): Option[Nonstandard] =
-      Parsers.parseExact(Parsers.programId.nonstandard)(s)
 
     /** `Nonstandard` program ids are ordered pairwise by their data members. */
     implicit val NonStandardOrder: Order[Nonstandard] =
@@ -148,7 +186,11 @@ object ProgramId {
 
   /** Parse a `ProgramId` from string, if possible. */
   def fromString(s: String): Option[ProgramId] =
-    Parsers.parseExact(Parsers.programId.any)(s)
+    Science.fromString(s) orElse
+    Daily  .fromString(s)   orElse
+    Parsers.parseExact(Parsers.programId.nonstandard)(s).map {
+      case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
+    }
 
   /**
    * Programs are ordered lexically by prodict prefix (Daily, Nonstandard, then Science) and then
