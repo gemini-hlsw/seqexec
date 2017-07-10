@@ -1,7 +1,5 @@
 package edu.gemini.seqexec
 
-import java.io.{PrintWriter, StringWriter}
-
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor}
@@ -217,21 +215,15 @@ package object engine {
     */
   private def execute(id: Sequence.Id): HandleP[Unit] = {
 
-    def stackToString(e: Throwable): String = {
-      val sw = new StringWriter
-      e.printStackTrace(new PrintWriter(sw))
-      sw.toString
-    }
-
     // Send the expected event when the `Action` is executed
+    // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
     def act(t: (Action, Int)): Process[Task, Event] = t match {
       case (action, i) =>
-        Process.eval(action.attempt).flatMap(_.valueOr(e =>
-          Result.Error(if (e.getMessage == null || e.getMessage.isEmpty) stackToString(e) else e.getMessage)) match {
+        Process.eval(action).flatMap {
           case r@Result.OK(_)         => Process(completed(id, i, r))
           case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i))
           case e@Result.Error(_)      => Process(failed(id, i, e))
-        })
+        }
     }
 
     getS(id).flatMap(

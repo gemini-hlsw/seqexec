@@ -65,9 +65,8 @@ trait EpicsSystem[T] {
 }
 
 object EpicsCommand {
-  def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.run.attempt.map {
-    case -\/(t) => SeqexecException(t).left
-    case \/-(e) => e
+  def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.run.handle {
+    case e: Exception => SeqexecException(e).left
   })
 
   def setParameter[A,T](p: Option[CaParameter[T]], v: A, f: A => T): SeqAction[Unit] =
