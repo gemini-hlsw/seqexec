@@ -10,6 +10,23 @@ import fs2.async
 sealed trait Step
 object Step {
 
+  // Whatever is shared among all Steps. Notice it doesn't // extend Step
+  // because it's meant to be used only internally
+  case class Core(
+    id: String,
+    config: Core.Configuration
+  ) {
+
+    // Shared Resources, static
+    val resources: Set[Resource] = ???
+
+  }
+
+  object Core {
+    case class Configuration()
+  }
+
+
   sealed trait F2 extends Step
   object F2 {
 
@@ -56,21 +73,6 @@ object Step {
     case class Done(core: Core, fileId: String) extends F2
     case class Ongoing(core: Core, progress: Int) extends F2
     case class Failed(core: Core, message: String) extends F2
-
-    // Whatever is shared among all Step.F2 case classes. Notice it deoesn't extend F2 because it's menat to be used only internally
-    case class Core(
-      id: String,
-      config: Core.Configuration
-      ) {
-
-      // Shared Resources, static
-      val resources: Set[Resource] = ???
-
-    }
-
-    object Core {
-      case class Configuration()
-    }
 
   }
 
