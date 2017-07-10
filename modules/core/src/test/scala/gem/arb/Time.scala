@@ -27,7 +27,7 @@ trait ArbTime {
     Arbitrary {
       for {
         y <- arbitrary[Year]
-        d <- choose(1, 365)
+        d <- choose(1, y.length)
       } yield LocalDate.ofYearDay(y.getValue, d)
     }
 
