@@ -19,9 +19,15 @@ package object engine {
         st0.status match {
           case Status.Waiting => {
             val st1 = Sequence.State.status.set(Status.Running)(st0)
-            async.fork(st1.execute(m)) *> F.pure(st1)
+            st1 match {
+              // Execute only when the State is in ready position. If it's not
+              // it's either already executing or it doesn't make sense to execute,
+              // like when it's done.
+              case Sequence.State.ready(p) => async.fork(p.execute(m)) *> F.pure(st1)
+              case _ => F.pure(st1)
+            }
           }
-          case _ => F.pure(st0) // Event: Status not Waiting, dont't execute
+          case _ => F.pure(st0) // Event: Status not Waiting, dont't change Status
         }
       ).void
 

@@ -12,12 +12,10 @@ import fs2.Stream
 import fs2.async
 import fs2.async.mutable.Signal
 
-import monocle.Lens
+import monocle.{Lens, Prism}
 import monocle.macros.GenLens
 
-sealed trait Sequence {
-  def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit]
-}
+sealed trait Sequence
 object Sequence {
 
   sealed trait F2 extends Sequence
@@ -27,22 +25,13 @@ object Sequence {
       done: List[Step.F2.Done],
       pending: List[Step.F2.Pending],
       current: Step.F2.Current
-    ) extends F2 {
-      def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] = current.execute(m)
-    }
+    ) extends F2
 
-    final case class Done(done: NonEmptyList[Step.F2.Done]) extends F2 {
-      def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] = F.pure(Unit)
-    }
+    final case class Done(done: NonEmptyList[Step.F2.Done]) extends F2
 
   }
 
-  // final case class GMOS()
-
-  final case class State(sequence: Sequence, status: Status) {
-
-    def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] = sequence.execute(m)
-  }
+  final case class State(sequence: Sequence, status: Status)
 
   object State {
 
@@ -50,8 +39,9 @@ object Sequence {
 
     val status: Lens[State, Status] = GenLens[State](_.status)
 
-    // TODO: Make this an affine traversal or a Prism
-    val current: Lens[State, Option[Either[Step.F2.Failed, Step.F2.Ongoing]]] = ???
+    val current: Prism[State, Step.F2.Current] = ???
+
+    val ready: Prism[State, Step.F2.Current.Pending] = ???
 
     // Thread safe mutable but careful need to be careful not to block for very long.
     case class Mutable[F[_]](signal: Signal[F, Sequence.State]) {
