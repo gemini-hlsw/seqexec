@@ -114,7 +114,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
-    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e))))
+    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).map(_.right).handle{
+      case e: Exception => SeqexecFailure.SeqexecException(e).left
+    })
 
     (i match {
       case (EventSystem(Failed(id, _, e)), _) => for {

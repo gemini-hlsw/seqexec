@@ -213,4 +213,37 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       ).timed(5.seconds).unsafePerformSyncAttempt
     assert(result.isRight)
   }
+
+  "engine" should "not capture fatal errors." in {
+    def s0(e: Error) = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata("GMOS", None, ""),
+        List(
+          Step(
+            1,
+            None,
+            config,
+            Set(Resource.GMOS),
+            breakpoint = false,
+            skip = false,
+            List(
+              List(Task.apply{
+                throw e
+              }.left )
+            )
+          )
+        )
+      ) ) ) )
+    )
+
+    intercept[OutOfMemoryError](
+      runToCompletion(s0(new OutOfMemoryError))
+    )
+    intercept[StackOverflowError](
+      runToCompletion(s0(new StackOverflowError))
+    )
+  }
+
 }

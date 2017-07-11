@@ -10,7 +10,8 @@ import edu.gemini.seqexec.server.ConfigUtilOps.ExtractFailure
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import edu.gemini.seqexec.model.dhs.ImageFileId
 
-import scalaz.{Kleisli, EitherT, \/}
+import scalaz.{EitherT, Kleisli, \/}
+import scalaz.syntax.either._
 import scalaz.concurrent.Task
 import scala.xml.XML
 import org.http4s.client.blaze._
@@ -67,58 +68,64 @@ object ODBProxy {
     val xmlrpcClient = new WDBA_XmlRpc_SessionClient(host.host, host.port.toString)
     val sessionName = "sessionQueue"
 
+    implicit class TaskRecover[A](t: Task[A]) {
+      def recover: Task[SeqexecFailure\/A] = t.map(_.right).handle{
+        case e: Exception => SeqexecFailure.SeqexecException(e).left
+      }
+    }
+
     override def datasetStart(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.datasetStart(sessionName, obsId.stringValue, dataId, fileId.toString)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def datasetComplete(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.datasetComplete(sessionName, obsId.stringValue, dataId, fileId.toString)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def obsAbort(obsId: SPObservationID, reason: String): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.observationAbort(sessionName, obsId.stringValue, reason)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def sequenceEnd(obsId: SPObservationID): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.sequenceEnd(sessionName, obsId.stringValue)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def sequenceStart(obsId: SPObservationID, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.sequenceStart(sessionName, obsId.stringValue, fileId.toString)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def obsContinue(obsId: SPObservationID): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.observationContinue(sessionName, obsId.stringValue)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def obsPause(obsId: SPObservationID, reason: String): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.observationPause(sessionName, obsId.stringValue, reason)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def obsStop(obsId: SPObservationID, reason: String): SeqAction[Boolean] = EitherT(
       Task.delay(
         xmlrpcClient.observationStop(sessionName, obsId.stringValue, reason)
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
 
     override def queuedSequences(): SeqAction[Seq[SPObservationID]] = EitherT(
       Task.delay(
         xmlrpcClient.getObservations(sessionName).toList.map(new SPObservationID(_))
-      ).attempt.map(_.leftMap(e => SeqexecFailure.SeqexecException(e)))
+      ).recover
     )
   }
 
