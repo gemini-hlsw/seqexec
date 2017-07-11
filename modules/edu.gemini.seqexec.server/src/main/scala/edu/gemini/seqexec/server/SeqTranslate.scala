@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.model.p1.immutable.Site
+import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine.{Action, Resource, Result, Sequence, Step}
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepState}

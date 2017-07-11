@@ -144,7 +144,8 @@ lazy val edu_gemini_seqexec_server = project
           SpModelCore,
           POT,
           EpicsACM,
-          Knobs
+          Knobs,
+          OpenCSV
       ) ++ SeqexecOdb ++ WDBAClient ++ Http4sClient ++ TestLibs.value
   )
 
