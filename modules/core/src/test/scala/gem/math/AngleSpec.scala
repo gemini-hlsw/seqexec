@@ -3,12 +3,14 @@
 
 package gem.math
 
+import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
 
 import scalaz.{ Monoid, Show }
 
-class AngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+class AngleSpec extends FlatSpec with Matchers with PropertyChecks {
+  import ArbAngle._
 
   // Compilation test
   protected val a0 = implicitly[Monoid[Angle]]
@@ -24,6 +26,12 @@ class AngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitrar
         dms.milliarcseconds,
         dms.microarcseconds
       ) shouldEqual a
+    }
+  }
+
+  "Conversion to signed microarcseconds" must "be invertable" in {
+    forAll { (a: Angle) =>
+      Angle.fromMicroarcseconds(a.toSignedMicroarcseconds) shouldEqual a
     }
   }
 

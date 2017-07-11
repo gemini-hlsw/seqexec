@@ -28,6 +28,13 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
   def unary_- : Angle =
     Angle.fromMicroarcseconds(-toMicroarcseconds.toLong)
 
+  /** Signed microarcseconds, in [-180°, 180°). */
+  def toSignedMicroarcseconds: Long = {
+    val µas360 = Angle.Angle180.toMicroarcseconds * 2L
+    if (toMicroarcseconds >= Angle.Angle180.toMicroarcseconds) toMicroarcseconds - µas360
+    else toMicroarcseconds
+  }
+
   /** This angle in decimal degrees. Approximate, non-invertible */
   def toDoubleDegrees: Double =
     toMicroarcseconds.toDouble / (60.0 * 60.0 * 1000.0 * 1000.0)
@@ -111,9 +118,13 @@ object Angle {
   def fromDegrees(ms: Int): Angle =
     fromArcminutes(ms * 60)
 
-  /** Construct a new Angle of the given magnitide in integral degrees, modulo 360°. Approximate. */
+  /** Construct a new Angle of the given magnitide in double degrees, modulo 360°. Approximate. */
   def fromDoubleDegrees(ds: Double): Angle =
     fromMicroarcseconds((ds * 60 * 60 * 1000 * 1000).toLong)
+
+  /** Construct a new Angle of the given magnitide in double arcseconds, modulo 360°. Approximate. */
+  def fromDoubleArcseconds(as: Double): Angle =
+    fromMicroarcseconds((as * 1000 * 1000).toLong)
 
   /** Construct a new Angle of the given magnitide in radians, modulo 2π. Approximate. */
   def fromDoubleRadians(rad: Double): Angle =

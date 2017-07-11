@@ -5,9 +5,9 @@ package gem
 
 import doobie.postgres.imports._
 import doobie.imports._
-import doobie.util.invariant._
 import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
-import edu.gemini.spModel.core._
+
+import gem.math.{ Angle, Offset }
 
 import java.sql.Timestamp
 import java.time.{Duration, Instant}
@@ -75,19 +75,23 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
       EitherConnectionIO.right[A, T](c)
   }
 
-  // Angle mapping to signed arcseconds via NUMERIC. NOT implicit.
+  // Angle mapping to signed arcseconds via NUMERIC. NOT implicit. We're mapping a type that
+  // is six orders of magnitude more precise than the database column, so we will shift
+  // the decimal point back and forth.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
-    Meta[BigDecimal]
-      .xmap[Double](_.toDouble, BigDecimal(_))
-      .xmap[Angle](Angle.fromArcsecs, _.toSignedDegrees * 3600)
+    Meta[java.math.BigDecimal]
+      .xmap[Angle](
+        b => Angle.fromMicroarcseconds(b.movePointLeft(6).longValue),
+        a => new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(6)
+      )
 
   // OffsetP maps to a signed angle in arcseconds
-  implicit val OffsetPMeta: Meta[OffsetP] =
-    AngleMetaAsSignedArcseconds.xmap(OffsetP(_), _.toAngle)
+  implicit val OffsetPMeta: Meta[Offset.P] =
+    AngleMetaAsSignedArcseconds.xmap(Offset.P(_), _.toAngle)
 
   // OffsetQ maps to a signed angle in arcseconds
-  implicit val OffsetQMeta: Meta[OffsetQ] =
-    AngleMetaAsSignedArcseconds.xmap(OffsetQ(_), _.toAngle)
+  implicit val OffsetQMeta: Meta[Offset.Q] =
+    AngleMetaAsSignedArcseconds.xmap(Offset.Q(_), _.toAngle)
 
   // Program.Id as string
   implicit val ProgramIdMeta: Meta[Program.Id] =
@@ -104,15 +108,6 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
   // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
     Distinct.string("identifier").xmap[A](ev.unsafeFromTag(_), ev.tag(_))
-
-  // Site by tag as DISTINCT (identifier)
-  implicit val SiteMeta: Meta[Site] =
-    Distinct.string("identifier").xmap(Site.parse, _.abbreviation)
-
-  // ProgramType by tag as DISTINCT (identifier)
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  implicit val ProgramTypeMeta: Meta[ProgramType] =
-    Distinct.string("identifier").xmap(s => ProgramType.read(s).getOrElse(throw InvalidEnum[ProgramType](s)), _.abbreviation)
 
   // Java Log Levels (not nullable)
   implicit def levelMeta: Meta[Level] =

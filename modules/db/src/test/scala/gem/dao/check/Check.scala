@@ -7,10 +7,10 @@ package check
 import gem._
 import gem.enum._
 import gem.config._
+import gem.math.Offset
 
 import doobie.imports._
 import doobie.scalatest.imports._
-import edu.gemini.spModel.core.{ OffsetP, OffsetQ }
 import java.time.LocalDate
 import org.scalatest._
 
@@ -58,7 +58,7 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val locationMiddle   = Location.unsafeMiddle(1)
     val f2Config         = F2DynamicConfig(F2Disperser.NoDisperser, duration, F2Filter.Dark, F2FpUnit.LongSlit1,
       F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
-    val telescopeConfig  = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
+    val telescopeConfig  = TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)
     val smartGcalType    = SmartGcalType.Arc
     val instrumentConfig = f2Config
     val stepType         = StepType.Science

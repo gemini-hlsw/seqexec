@@ -4,12 +4,12 @@
 package gem
 package config
 
-import edu.gemini.spModel.core.{OffsetQ, OffsetP, Offset}
+import gem.math.Offset
 
-final case class TelescopeConfig(p: OffsetP, q: OffsetQ) {
+final case class TelescopeConfig(p: Offset.P, q: Offset.Q) {
   def offset: Offset = Offset(p, q)
 }
 
-object TelescopeConfig extends ((OffsetP, OffsetQ) => TelescopeConfig) {
-  val Zero: TelescopeConfig = TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)
+object TelescopeConfig extends ((Offset.P, Offset.Q) => TelescopeConfig) {
+  val Zero: TelescopeConfig = TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)
 }

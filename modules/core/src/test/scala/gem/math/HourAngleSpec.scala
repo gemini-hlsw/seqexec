@@ -3,12 +3,14 @@
 
 package gem.math
 
+import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
 import scalaz.{ Monoid, Show }
 
-class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
+class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks {
+  import ArbAngle._
 
   // Compilation test
   protected val a0 = implicitly[Monoid[HourAngle]]
