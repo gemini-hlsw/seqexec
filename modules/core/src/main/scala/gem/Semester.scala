@@ -121,4 +121,11 @@ object Semester {
     Order[Year].contramap[Semester](_.year) |+|
     Order[Half].contramap[Semester](_.half)
 
+  /**
+   * `Ordering` instance for Scala standard library.
+   * @see SemesterOrder
+   */
+  implicit val SemesterOrding: scala.math.Ordering[Semester] =
+    SemesterOrder.toScalaOrdering
+
 }

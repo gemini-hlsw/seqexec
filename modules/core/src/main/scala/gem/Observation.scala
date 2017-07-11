@@ -14,7 +14,8 @@ final case class Observation[S, D](
 object Observation {
 
   final case class Id(pid: Program.Id, index: Int) {
-    override def toString = s"$pid-$index"
+    def format: String =
+      s"${pid.format}-$index"
   }
   object Id {
 
@@ -23,25 +24,21 @@ object Observation {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          b.drop(1).parseInt.toOption.map { n =>
-            Observation.Id(Program.Id.parse(a), n)
+          b.drop(1).parseInt.toOption.flatMap { n =>
+            Program.Id.fromString(a).map(Observation.Id(_, n))
           }
       }
 
     def unsafeFromString(s: String): Observation.Id =
       fromString(s).getOrElse(sys.error("Malformed Observation.Id: " + s))
 
-    implicit val OrderingId: scala.math.Ordering[Id] =
-      new scala.math.Ordering[Id] {
-        def compare(x: Id, y: Id): Int =
-          Program.OrderingProgramId.compare(x.pid, y.pid) match {
-            case 0 => x.index compareTo y.index
-            case i => i
-          }
-      }
-
     implicit val OrderId: Order[Id] =
-      Order.fromScalaOrdering[Id]
+      Order[Program.Id].contramap[Id](_.pid)   |+|
+      Order[Int]       .contramap[Id](_.index)
+
+    implicit val OrderingId: scala.math.Ordering[Id] =
+      OrderId.toScalaOrdering
+
   }
 
   implicit val ObservationBitraverse: Bitraverse[Observation] =

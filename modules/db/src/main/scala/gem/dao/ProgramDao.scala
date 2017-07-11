@@ -6,9 +6,6 @@ package dao
 
 import gem.config.{DynamicConfig, StaticConfig}
 
-import edu.gemini.spModel.core._
-import edu.gemini.spModel.core.ProgramId._
-
 import doobie.imports._
 
 import scalaz._, Scalaz._
@@ -20,23 +17,23 @@ object ProgramDao {
     insertProgramIdSlice(p.id) *>
     Statements.insert(p).run
 
-  private def insertProgramIdSlice(pid: ProgramId): ConnectionIO[Int] =
+  private def insertProgramIdSlice(pid: Program.Id): ConnectionIO[Int] =
     pid match {
-      case id @ Science  (_, _, _, _) => insertScienceProgramIdSlice(id)
-      case id @ Daily (_, _, _, _, _) => insertDailyProgramIdSlice(id)
-      case id @ Arbitrary(_, _, _, _) => insertArbitraryProgramIdSlice(id)
+      case id: Program.Id.Science     => insertScienceProgramIdSlice(id)
+      case id: Program.Id.Daily       => insertDailyProgramIdSlice(id)
+      case id: Program.Id.Nonstandard => insertNonstandardProgramIdSlice(id)
     }
 
-  private def insertScienceProgramIdSlice(pid: ProgramId.Science): ConnectionIO[Int] =
-    SemesterDao.canonicalize(pid.semesterVal) *>
+  private def insertScienceProgramIdSlice(pid: Program.Id.Science): ConnectionIO[Int] =
+    SemesterDao.canonicalize(pid.semester) *>
     Statements.insertScienceProgramIdSlice(pid).run
 
-  private def insertDailyProgramIdSlice(pid: ProgramId.Daily): ConnectionIO[Int] =
+  private def insertDailyProgramIdSlice(pid: Program.Id.Daily): ConnectionIO[Int] =
     Statements.insertDailyProgramIdSlice(pid).run
 
-  private def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): ConnectionIO[Int] =
-    pid.semester.traverse(SemesterDao.canonicalize) *>
-    Statements.insertArbitraryProgramIdSlice(pid).run
+  private def insertNonstandardProgramIdSlice(pid: Program.Id.Nonstandard): ConnectionIO[Int] =
+    pid.semesterOption.traverse(SemesterDao.canonicalize) *>
+    Statements.insertNonstandardProgramIdSlice(pid).run
 
   def selectBySubstring(pat: String, max: Int): ConnectionIO[List[Program[Nothing]]] =
     Statements.selectBySubstring(pat, max).list
@@ -81,32 +78,32 @@ object ProgramDao {
         .map { case (pid, title) => Program(pid, title, Nil) }
 
     // N.B. assumes semester has been canonicalized
-    def insertArbitraryProgramIdSlice(pid: ProgramId.Arbitrary): Update0 =
+    def insertNonstandardProgramIdSlice(pid: Program.Id.Nonstandard): Update0 =
       sql"""
         INSERT INTO program (program_id,
                              site,
                              semester_id,
                              program_type)
               VALUES (${pid: Program.Id},
-                      ${pid.site},
-                      ${pid.semester.map(_.toString)},
-                      ${pid.ptype})
+                      ${pid.siteOption},
+                      ${pid.semesterOption.map(_.format)},
+                      ${pid.programTypeOption})
       """.update
 
-    def insertDailyProgramIdSlice(pid: ProgramId.Daily): Update0 =
+    def insertDailyProgramIdSlice(pid: Program.Id.Daily): Update0 =
       sql"""
         INSERT INTO program (program_id,
                             site,
                             program_type,
                             day)
               VALUES (${pid: Program.Id},
-                      ${pid.siteVal},
-                      ${pid.ptypeVal},
-                      ${new java.util.Date(pid.start)})
+                      ${pid.site},
+                      ${pid.programTypeOption},
+                      ${pid.localDate})
       """.update
 
     // N.B. assumes semester has been canonicalized
-    def insertScienceProgramIdSlice(pid: ProgramId.Science): Update0 =
+    def insertScienceProgramIdSlice(pid: Program.Id.Science): Update0 =
       sql"""
          INSERT INTO program (program_id,
                              site,
@@ -114,9 +111,9 @@ object ProgramDao {
                              program_type,
                              index)
              VALUES (${pid: Program.Id},
-                     ${pid.siteVal},
-                     ${pid.semesterVal.toString},
-                     ${pid.ptypeVal},
+                     ${pid.site},
+                     ${pid.semester.format},
+                     ${pid.programType},
                      ${Index(pid.index)})
       """.update
 

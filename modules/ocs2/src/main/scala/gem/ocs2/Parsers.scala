@@ -3,7 +3,7 @@
 
 package gem.ocs2
 
-import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ, ProgramId}
+import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ}
 
 import gem.{Dataset, Observation, Program}
 import gem.enum._
@@ -55,7 +55,7 @@ object Parsers {
   )
 
   val progId: PioParse[Program.Id] =
-    PioParse(s => Option(ProgramId.parse(s)))
+    PioParse(s => Option(Program.Id.unsafeFromString(s)))
 
   val obsId: PioParse[Observation.Id] =
     PioParse(Observation.Id.fromString)

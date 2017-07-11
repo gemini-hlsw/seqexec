@@ -192,9 +192,16 @@ object ProgramId {
   def fromString(s: String): Option[ProgramId] =
     Science.fromString(s) orElse
     Daily  .fromString(s) orElse
+    // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
+    // that can be formatted and re-parsed as a Science or Daily program id. This is important.
     Parsers.parseExact(Parsers.programId.nonstandard)(s).map {
       case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
     }
+
+  /** Parse a `ProgramId` from string, throwing on failure. */
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  def unsafeFromString(s: String): ProgramId =
+    fromString(s).getOrElse(throw new IllegalArgumentException(s"Invalid program id: $s"))
 
   /**
    * Programs are ordered lexically by prodict prefix (Daily, Nonstandard, then Science) and then
@@ -207,5 +214,12 @@ object ProgramId {
       case (a: Nonstandard, b: Nonstandard) => a cmp b
       case (a,              b)              => a.productPrefix cmp b.productPrefix
     }
+
+  /**
+   * `Ordering` instance for Scala standard library.
+   * @see ProgramIdOrder
+   */
+  implicit val ProgramOrdering: scala.math.Ordering[ProgramId] =
+    ProgramIdOrder.toScalaOrdering
 
 }
