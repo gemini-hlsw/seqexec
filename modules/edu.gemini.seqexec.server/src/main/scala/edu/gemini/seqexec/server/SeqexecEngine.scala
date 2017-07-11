@@ -1,13 +1,15 @@
 package edu.gemini.seqexec.server
 
 import java.time.LocalDate
+import java.nio.file.Paths
 
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.model.p1.immutable.Site
+import edu.gemini.spModel.core.Site
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
 import edu.gemini.seqexec.server.ConfigUtilOps._
+import edu.gemini.seqexec.odb.SmartGcal
 
 import scalaz._
 import Scalaz._
@@ -278,8 +280,13 @@ object SeqexecEngine {
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
-
   private def decodeTops(s: String): Map[String, String] = s.split("=|,").grouped(2).map { case Array(k, v) => k.trim -> v.trim }.toMap
+
+  private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): Task[Unit] = {
+    // SmartGCal always talks to GS
+    val peer = new Peer(smartGCalHost, 8443, Site.GS)
+    Task.delay(Paths.get(smartGCalLocation)) >>= {p => Task.delay(SmartGcal.initialize(peer, p))}
+  }
 
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
     val site = cfg.require[String]("seqexec-engine.site") match {
@@ -303,6 +310,8 @@ object SeqexecEngine {
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
     val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
+    val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
+    val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
@@ -332,6 +341,7 @@ object SeqexecEngine {
     val gwsInit  = if (gwsKeywords) initEpicsSystem(GwsEpics, tops) else taskUnit
     val gcalInit = if (!gcalSim) initEpicsSystem(GcalEpics, tops) else taskUnit
 
+    initSmartGCal(smartGCalHost, smartGCalDir) *>
     caInit *>
       tcsInit *>
       gwsInit *>

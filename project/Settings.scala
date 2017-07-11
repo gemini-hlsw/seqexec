@@ -66,10 +66,12 @@ object Settings {
     val jQuery         = "3.2.1"
     val semanticUI     = "2.2.7"
     val jQueryTerminal = "0.11.2"
-    val ocsVersion     = "2017101.1.2"
+    val ocsVersion     = "2017101.1.3"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"
+
+    val opencsv        = "2.1"
   }
 
   /**
@@ -91,6 +93,7 @@ object Settings {
     val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
     val Slf4jJuli   = "org.slf4j"          %  "slf4j-jdk14"                       % LibraryVersions.slf4j
     val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
+    val OpenCSV     = "net.sf.opencsv"     %  "opencsv"                           % LibraryVersions.opencsv
 
     val Squants     = Def.setting("org.typelevel" %%% "squants"              % LibraryVersions.squants)
     val BooPickle   = Def.setting("io.suzaku"     %%% "boopickle"            % LibraryVersions.booPickle)
