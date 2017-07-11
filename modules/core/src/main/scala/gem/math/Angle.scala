@@ -51,7 +51,7 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
     HourAngle.fromMicroseconds(toMicroarcseconds.toLong / 15L)
 
   /**
-   * Convert to the closest hour angle iff its magnitide is an even multiple of 15 milliarcseconds.
+   * Convert to the closest hour angle iff its magnitude is an even multiple of 15 milliarcseconds.
    * Exact and invertible where defined.
    */
   def toHourAngleExact: Option[HourAngle] =
@@ -95,38 +95,38 @@ object Angle {
   val Angle180: Angle = fromDegrees(180)
   val Angle270: Angle = fromDegrees(270)
 
-  /** Construct a new Angle of the given magnitide in integral microarcseconds, modulo 360°. Exact. */
+  /** Construct a new Angle of the given magnitude in integral microarcseconds, modulo 360°. Exact. */
   def fromMicroarcseconds(µas: Long): Angle = {
     val µasPer360 = 360L * 60L * 60L * 1000L * 1000L
     val µasʹ = (((µas % µasPer360) + µasPer360) % µasPer360)
     new Angle(µasʹ)
   }
 
-  /** Construct a new Angle of the given magnitide in integral arcseconds, modulo 360°. Exact. */
+  /** Construct a new Angle of the given magnitude in integral arcseconds, modulo 360°. Exact. */
   def fromMilliarcseconds(as: Int): Angle =
     fromMicroarcseconds(as.toLong * 1000L)
 
-  /** Construct a new Angle of the given magnitide in integral arcseconds, modulo 360°. Exact. */
+  /** Construct a new Angle of the given magnitude in integral arcseconds, modulo 360°. Exact. */
   def fromArcseconds(as: Int): Angle =
     fromMilliarcseconds(as * 1000)
 
-  /** Construct a new Angle of the given magnitide in integral arcminutes, modulo 360°. Exact. */
+  /** Construct a new Angle of the given magnitude in integral arcminutes, modulo 360°. Exact. */
   def fromArcminutes(ms: Int): Angle =
     fromArcseconds(ms * 60)
 
-  /** Construct a new Angle of the given magnitide in integral degrees, modulo 360°. Exact. */
+  /** Construct a new Angle of the given magnitude in integral degrees, modulo 360°. Exact. */
   def fromDegrees(ms: Int): Angle =
     fromArcminutes(ms * 60)
 
-  /** Construct a new Angle of the given magnitide in double degrees, modulo 360°. Approximate. */
+  /** Construct a new Angle of the given magnitude in double degrees, modulo 360°. Approximate. */
   def fromDoubleDegrees(ds: Double): Angle =
     fromMicroarcseconds((ds * 60 * 60 * 1000 * 1000).toLong)
 
-  /** Construct a new Angle of the given magnitide in double arcseconds, modulo 360°. Approximate. */
+  /** Construct a new Angle of the given magnitude in double arcseconds, modulo 360°. Approximate. */
   def fromDoubleArcseconds(as: Double): Angle =
     fromMicroarcseconds((as * 1000 * 1000).toLong)
 
-  /** Construct a new Angle of the given magnitide in radians, modulo 2π. Approximate. */
+  /** Construct a new Angle of the given magnitude in radians, modulo 2π. Approximate. */
   def fromDoubleRadians(rad: Double): Angle =
     fromDoubleDegrees(rad.toDegrees)
 
@@ -164,7 +164,7 @@ object Angle {
   }
 
   /**
-   * Construct a new Angle of the given magnitide as a sum of degrees, arcminutes, arcseconds,
+   * Construct a new Angle of the given magnitude as a sum of degrees, arcminutes, arcseconds,
    * milliarcseconds, and microarcseconds. Exact modulo 360°.
    */
   def fromDMS(
@@ -247,26 +247,26 @@ object HourAngle {
   val HourAngle0 : HourAngle = fromMicroseconds(0)
   val HourAngle12: HourAngle = fromHours(12)
 
-  /** Construct a new Angle of the given magnitide in integral microseconds, modulo 24h. Exact. */
+  /** Construct a new Angle of the given magnitude in integral microseconds, modulo 24h. Exact. */
   def fromMicroseconds(µs: Long): HourAngle = {
     val µsPer24 = 24L * 60L * 60L * 1000L * 1000L
     val µsʹ = (((µs % µsPer24) + µsPer24) % µsPer24)
     new HourAngle(µsʹ * 15L)
   }
 
-  /** Construct a new HourAngle of the given magnitide in integral milliseconds, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitude in integral milliseconds, modulo 24h. Exact. */
   def fromMilliseconds(milliseconds: Int): HourAngle =
     fromMicroseconds(milliseconds.toLong * 1000L)
 
-  /** Construct a new HourAngle of the given magnitide in integral seconds, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitude in integral seconds, modulo 24h. Exact. */
   def fromSeconds(seconds: Int): HourAngle =
     fromMilliseconds(seconds * 1000)
 
-  /** Construct a new HourAngle of the given magnitide in integral minutes, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitude in integral minutes, modulo 24h. Exact. */
   def fromMinutes(minutes: Int): HourAngle =
     fromSeconds(minutes * 60)
 
-  /** Construct a new HourAngle of the given magnitide in integral hours, modulo 24h. Exact. */
+  /** Construct a new HourAngle of the given magnitude in integral hours, modulo 24h. Exact. */
   def fromHours(hours: Int):     HourAngle =
     fromMinutes(hours * 60)
 
@@ -274,7 +274,7 @@ object HourAngle {
     fromMicroseconds((hs * 60.0 * 60.0 * 1000.0).toLong)
 
   /**
-   * Construct a new HourAngle of the given magnitide as a sum of hours, minutes, seconds,
+   * Construct a new HourAngle of the given magnitude as a sum of hours, minutes, seconds,
    * milliseconds, and microseconds. Exact modulo 24h.
    */
   def fromHMS(hours: Int, minutes: Int, seconds: Int, milliseconds: Int, microseconds: Int): HourAngle =
