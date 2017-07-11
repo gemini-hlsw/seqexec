@@ -7,10 +7,11 @@ package check
 import gem._
 import gem.enum._
 import gem.config._
-import edu.gemini.spModel.core.{ Site, ProgramType, Semester, _ }
 
 import doobie.imports._
 import doobie.scalatest.imports._
+import edu.gemini.spModel.core.{ OffsetP, OffsetQ }
+import java.time.LocalDate
 import org.scalatest._
 
 import scalaz._, Scalaz._
@@ -33,11 +34,11 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
   object Dummy {
     val instant          = java.time.Instant.EPOCH
     val duration         = java.time.Duration.ZERO
-    val programId        = Program.Id.Arbitrary(None, None, None, "")
-    val semester         = Semester.parse("2015-B")
+    val programId        = Program.Id.unsafeFromString("GS-foobar") match { case n: Program.Id.Nonstandard => n ; case _ => sys.error("unpossbile") }
+    val semester         = Semester.unsafeFromString("2015B")
     val site             = Site.GN
-    val programType      = ProgramType.Classical
-    val dailyProgramId   = Program.Id.Daily(site, programType, 0, 0, 0)
+    val programType      = ProgramType.C
+    val dailyProgramId   = Program.Id.Daily(site, DailyProgramType.ENG, LocalDate.now())
     val scienceProgramId = Program.Id.Science(site, semester, programType, 0)
     val observationId    = Observation.Id(programId, 0)
     val datasetLabel     = Dataset.Label(observationId, 0)

@@ -90,13 +90,12 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
     AngleMetaAsSignedArcseconds.xmap(OffsetQ(_), _.toAngle)
 
   // Program.Id as string
-  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   implicit val ProgramIdMeta: Meta[Program.Id] =
-    Meta[String].xmap(Program.Id.parse, _.toString)
+    Meta[String].xmap(Program.Id.unsafeFromString, _.format)
 
   // Observation.Id as string
   implicit val ObservationIdMeta: Meta[Observation.Id] =
-    Meta[String].xmap(Observation.Id.unsafeFromString, _.toString)
+    Meta[String].xmap(Observation.Id.unsafeFromString, _.format)
 
   // Dataset.Label as string
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
