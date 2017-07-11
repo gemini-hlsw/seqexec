@@ -41,6 +41,8 @@ object Sequence {
 
     val current: Prism[State, Step.F2.Current] = ???
 
+    val standard: Prism[State, Step.F2.Current.Pending.Standard] = ???
+
     val ready: Prism[State, Step.F2.Current.Pending] = ???
 
     // Thread safe mutable but careful need to be careful not to block for very long.

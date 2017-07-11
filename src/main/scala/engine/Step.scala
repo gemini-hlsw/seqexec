@@ -5,8 +5,6 @@ import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.effect.Effect
 
-import fs2.async
-
 sealed trait Step
 object Step {
 
@@ -14,7 +12,8 @@ object Step {
   // because it's meant to be used only internally
   case class Core(
     id: String,
-    config: Core.Configuration
+    config: Core.Configuration,
+    breakpoint: Boolean
   )
 
   object Core {
@@ -24,34 +23,187 @@ object Step {
   sealed trait F2 extends Step
   object F2 {
 
+    case class Done(core: Core, fileId: String) extends F2
+
     sealed trait Pending extends F2
-
     object Pending {
-
-      case class Standard(core: Core, breakpoint: Boolean) extends Pending
+      case class Standard(core: Core) extends Pending
       case class Flat(core: Core) extends Pending
       case class Dark(core: Core) extends Pending
+    }
+
+    sealed trait Ongoing extends F2
+    object Ongoing {
+      final case class Standard(core: Core, tcsConfigured: Boolean, instConfigured: Boolean) extends Ongoing
+    }
+
+    sealed trait Failed extends F2
+    object Failed {
+      final case class Standard(core: Core, tcsFailed: Boolean, instFailed: Boolean, observationFailed: Boolean) extends F2
+      // TODO: final case class Standard(core: Core, tcsFailure: Option[Failure], instFailure: Option[Failure]) extends F2
+    }
+
+    sealed trait Current extends F2 {
+
+      // Accessor to the core Step
+      val core: Core = ???
 
     }
 
-    case class Done(core: Core, fileId: String) extends F2
-    case class Ongoing(core: Core, progress: Int) extends F2
-    case class Failed(core: Core, message: String) extends F2
-
-    sealed trait Current extends F2
     object Current {
       // Only a Pending Step in Current can be executed
-      case class Pending(step: F2.Pending) extends Current {
-        def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] = ???
+      sealed trait Pending extends Current {
+
+        def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit]
+
       }
-      case class Ongoing(current: F2.Ongoing) extends Current
-      case class Failed(current: F2.Failed) extends Current
+
+      object Pending {
+
+        case class Standard(step: F2.Pending.Standard) extends Pending {
+
+          def execute[F[_]](m: Sequence.State.Mutable[F])(implicit F: Effect[F], ec: ExecutionContext): F[Unit] = {
+
+            def configureTCS: F[Boolean] =
+              Execution.configureTCS.flatMap {
+                case Right(_) =>
+                  m.modify(
+                    Sequence.State.current.modify {
+                      case Pending.Standard(s) => Ongoing.Standard(
+                        F2.Ongoing.Standard(s.core, tcsConfigured = true, instConfigured = false)
+                      )
+                      case Ongoing.Standard(s) => Ongoing.Standard(
+                        F2.Ongoing.Standard(s.core, tcsConfigured = true, instConfigured = true)
+                      )
+                      case Failed.Standard(s) => Failed.Standard(
+                        F2.Failed.Standard(
+                          s.core,
+                          tcsFailed = false,
+                          instFailed = true,
+                          observationFailed = true
+                        )
+                      ) // Instrument already failed
+                    }
+                  ) *> true.pure[F]
+
+                case Left(_) =>
+                  m.modify(
+                    Sequence.State.current.modify {
+                      case Failed.Standard(s) => Failed.Standard(
+                        F2.Failed.Standard(
+                          s.core,
+                          tcsFailed = true,
+                          instFailed = true,
+                          observationFailed = false
+                        )
+                      )
+                      // Instrument didn't fail yet
+                      case s => Failed.Standard(
+                        F2.Failed.Standard(
+                          s.core,
+                          tcsFailed = true,
+                          instFailed = false,
+                          observationFailed = false
+                        )
+                      )
+                    }
+                  ) *> false.pure[F]
+
+              }
+
+            def configureInst: F[Boolean] =
+              Execution.configureInst("F2").flatMap {
+                case Right(_) =>
+                  m.modify(
+                    Sequence.State.current.modify {
+                      case Pending.Standard(s) => Ongoing.Standard(
+                        F2.Ongoing.Standard(s.core, tcsConfigured = false, instConfigured = true)
+                      )
+                      case Ongoing.Standard(s) => Ongoing.Standard(
+                        F2.Ongoing.Standard(s.core, tcsConfigured = true, instConfigured = true)
+                      )
+                      case Failed.Standard(s) => Failed.Standard(
+                        F2.Failed.Standard(
+                          s.core,
+                          tcsFailed = true,
+                          instFailed = false,
+                          observationFailed = false
+                        )
+                      ) // Instrument already failed
+                    }
+                  ) *> true.pure[F]
+
+                case Left(_) =>
+                  m.modify(
+                    Sequence.State.current.modify {
+                      case Failed.Standard(s) => Failed.Standard(
+                        F2.Failed.Standard(
+                          s.core,
+                          tcsFailed = true,
+                          instFailed = true,
+                          observationFailed = false
+                        )
+                      )
+                      // TCS didn't fail yet
+                      case s => Failed.Standard(
+                        F2.Failed.Standard(
+                          s.core,
+                          tcsFailed = false,
+                          instFailed = true,
+                          observationFailed = false
+                        )
+                      )
+                    }
+                  ) *> false.pure[F]
+              }
+
+              // XXX: Check running status
+              both(configureTCS, configureInst).flatMap {
+              case (true, true) =>
+                  // XXX: Check running status
+                  Execution.observe.flatMap {
+                    case Some(fileId) => execute(m) // XXX: Shift current focus
+                    case None =>
+                      m.modify(
+                        Sequence.State.current.modify(s =>
+                          Failed.Standard(
+                            F2.Failed.Standard(
+                              s.core,
+                              tcsFailed = false,
+                              instFailed = false,
+                              observationFailed = true
+                            )
+                          )
+                        )
+                      ).void
+                  }
+
+              case (_, _) => F.pure(Unit)
+            }
+          }
+        }
+      }
+
+      sealed trait Ongoing extends Current
+      object Ongoing {
+        case class Standard(step: F2.Ongoing.Standard) extends Ongoing
+      }
+
+      sealed trait Failed extends Current
+      object Failed {
+        case class Standard(step: F2.Failed.Standard) extends Failed
+      }
     }
 
   }
 
   sealed trait GMOS extends Step
   case object GMOS
+
+  // This won't be accepted in cats-effect
+  // https://gist.github.com/djspiewak/a775b73804c581f4028fea2e98482b3c but with
+  // fs2 it should be possible, `parallelSequence` is already there.
+  private def both[F[_], A, B](fa: F[A], fb: F[B])(implicit F: Effect[F]): F[(A, B)] = ???
 
 }
 
