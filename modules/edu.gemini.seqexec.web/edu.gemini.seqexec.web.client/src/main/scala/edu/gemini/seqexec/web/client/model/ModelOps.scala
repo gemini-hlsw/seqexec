@@ -2,7 +2,6 @@ package edu.gemini.seqexec.web.client.model
 
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
 import edu.gemini.seqexec.model.Model.ObservationOperations
-import edu.gemini.seqexec.model.Model.ObservationOperations._
 import edu.gemini.seqexec.model.Model.SequenceOperations
 
 import scalaz.Show
@@ -64,13 +63,6 @@ object ModelOps {
      */
     def allowedObservationOperations(step: Step): List[ObservationOperations] =
       s.metadata.instrument match {
-        // Note the F2 doesn't suppor these operations but we'll simulate them
-        // for demonstration purposes
-        //case "Flamingos2" if status == SequenceState.Running => List(PauseImmediatelyObservation, PauseGracefullyObservation, StopImmediatelyObservation, StopGracefullyObservation, AbortObservation)
-        // Regular instrument that support pause/stop/abort
-        case "Flamingos2" if s.status == SequenceState.Running => List(PauseObservation, StopObservation, AbortObservation)
-        case "Flamingos2" if step.hasError                     => List(ResumeObservation, AbortObservation)
-        case "Flamingos2" if step.status == StepState.Paused   => List(ResumeObservation, StopObservation, AbortObservation)
         case _                                                 => Nil
       }
 
