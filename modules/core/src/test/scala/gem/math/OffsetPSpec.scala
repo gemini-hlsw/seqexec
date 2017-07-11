@@ -33,13 +33,13 @@ class OffsetPSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  it must "have p left identity" in {
+  it must "have a left identity" in {
     forAll { (p: Offset.P) =>
       p + Offset.P.Zero shouldEqual p
     }
   }
 
-  it must "have p right identity" in {
+  it must "have a right identity" in {
     forAll { (p: Offset.P) =>
       Offset.P.Zero + p shouldEqual p
     }
