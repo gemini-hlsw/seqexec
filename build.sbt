@@ -13,6 +13,7 @@ lazy val http4sVersion            = "0.15.2a"
 lazy val scalaXmlVerson           = "1.0.6"
 lazy val scalaParsersVersion      = "1.0.4"
 lazy val tucoVersion              = "0.1.1"
+lazy val attoVersion              = "0.5.2"
 
 enablePlugins(GitVersioning)
 
@@ -161,8 +162,10 @@ lazy val core = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalaz"  %% "scalaz-core" % scalazVersion,
-      "com.chuusai" %% "shapeless"   % shapelessVersion
+      "org.scalaz"   %% "scalaz-core"          % scalazVersion,
+      "com.chuusai"  %% "shapeless"            % shapelessVersion,
+      "org.tpolecat" %% "atto-core"            % attoVersion,
+      "org.tpolecat" %% "atto-compat-scalaz72" % attoVersion
     ),
     sourceGenerators in Compile +=
       Def.task { gen2((sourceManaged in Compile).value / "gem").unsafePerformIO }.taskValue

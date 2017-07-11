@@ -15,7 +15,8 @@ import java.time.Duration
 import scalaz._, Scalaz._
 
 
-trait Arbitraries extends gem.enum.Arbitraries {
+trait Arbitraries {
+  import gem.arb.ArbEnumerated._
 
   // Surely this is already defined somewhere?
   implicit val functorGen = new Functor[Gen] {
