@@ -1,7 +1,5 @@
 import doobie.imports._
 
-import edu.gemini.spModel.core.Angle
-
 import java.io.File
 
 import java.time.{ Duration, ZoneId }
@@ -18,6 +16,12 @@ import shapeless.syntax.singleton._
 import shapeless.record._
 
 object gen2 {
+
+  final case class Angle(toArcsecs: Double)
+  object Angle {
+    def fromArcsecs(d: Double) =
+      Angle(d)
+  }
 
   val xa = DriverManagerTransactor[IO](
     "org.postgresql.Driver",
@@ -41,10 +45,10 @@ object gen2 {
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
     implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": java.time.Duration" }
-    implicit def caseAngle   [S <: Symbol] = at[(S, Angle)   ] { case (s, _) => "  val " + s.name + ": edu.gemini.spModel.core.Angle"}
+    implicit def caseAngle   [S <: Symbol] = at[(S, Angle)   ] { case (s, _) => "  val " + s.name + ": gem.math.Angle"}
     implicit def caseZoneId  [S <: Symbol] = at[(S, ZoneId)  ] { case (s, _) => "  val " + s.name + ": java.time.ZoneId"}
 
-    implicit def caseOptionAngle [S <: Symbol] = at[(S, Option[Angle] ) ] { case (s, _) => "  val " + s.name + ": Option[edu.gemini.spModel.core.Angle]" }
+    implicit def caseOptionAngle [S <: Symbol] = at[(S, Option[Angle] ) ] { case (s, _) => "  val " + s.name + ": Option[gem.math.Angle]" }
     implicit def caseOptionDouble[S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
   }
 
@@ -54,10 +58,10 @@ object gen2 {
     implicit val caseBoolean      = at[Boolean ](a => a.toString)
     implicit val caseDouble       = at[Double  ](a => a.toString)
     implicit val caseDuration     = at[Duration](a => s"java.time.Duration.ofMillis(${a.toMillis})")
-    implicit val caseAngle        = at[Angle   ](a => s"edu.gemini.spModel.core.Angle.fromArcsecs(${a.toArcsecs})")
+    implicit val caseAngle        = at[Angle   ](a => s"gem.math.Angle.fromDoubleArcseconds(${a.toArcsecs})")
     implicit val caseZoneId       = at[ZoneId  ](a => s"""java.time.ZoneId.of("${a.toString}")""")
 
-    implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[edu.gemini.spModel.core.Angle]")(a0 => s"Some(edu.gemini.spModel.core.Angle.fromArcsecs(${a0.toArcsecs}))"))
+    implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[gem.math.Angle]")(a0 => s"Some(gem.math.Angle.fromDoubleArcseconds(${a0.toArcsecs}))"))
     implicit val caseOptionDouble = at[Option[Double]](a => a.toString)
   }
 

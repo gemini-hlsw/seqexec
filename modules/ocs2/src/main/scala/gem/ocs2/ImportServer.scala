@@ -5,8 +5,6 @@ package gem.ocs2
 
 import Decoders._
 
-import edu.gemini.spModel.core.SPProgramID
-
 import gem.{Dataset, Observation, Program, Step }
 import gem.config.{ StaticConfig, DynamicConfig }
 import gem.ocs2.pio.{PioDecoder, PioError}
@@ -67,7 +65,7 @@ final class ImportServer(ocsHost: String) {
   }
 
   def importProgram(pidStr: String): ServerResponse = {
-    val checkId = \/.fromTryCatchNonFatal(SPProgramID.toProgramID(pidStr))
+    val checkId = \/.fromTryCatchNonFatal(Program.Id.unsafeFromString(pidStr))
                     .leftMap(_ => badRequest(pidStr, "program"))
     checkId.as { fetchDecodeAndStore[Prog](pidStr, Importer.importProgram) }.merge
   }

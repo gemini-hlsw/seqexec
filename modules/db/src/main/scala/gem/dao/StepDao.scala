@@ -4,11 +4,11 @@
 package gem
 package dao
 
-import edu.gemini.spModel.core._
 import gem.Location
 import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
+import gem.math.Offset
 import doobie.imports._
 
 import java.time.Duration
@@ -196,7 +196,7 @@ object StepDao {
     i: Instrument,
     stepType: StepType, // todo: make an enum
     gcal: (Option[GcalContinuum], Option[Boolean], Option[Boolean], Option[Boolean], Option[Boolean], Option[GcalFilter], Option[GcalDiffuser], Option[GcalShutter], Option[Duration], Option[Short]),
-    telescope: (Option[OffsetP],  Option[OffsetQ]),
+    telescope: (Option[Offset.P],  Option[Offset.Q]),
     smartGcalType: Option[SmartGcalType])
   {
     def toStep: Step[Instrument] =

@@ -4,8 +4,8 @@
 package gem
 
 import gem.config.{DynamicConfig, GcalConfig, StaticConfig, TelescopeConfig}
-import edu.gemini.spModel.core.{OffsetP, OffsetQ}
 import gem.enum.{Instrument, SmartGcalType}
+import gem.math.Offset
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
@@ -54,7 +54,7 @@ trait Arbitraries extends gem.config.Arbitraries  {
     } yield GcalStep(d, g)
 
   def genScienceStepOf(i: Instrument): Gen[ScienceStep[DynamicConfig]] =
-    genDynamicConfigOf(i).map(ScienceStep(_, TelescopeConfig(OffsetP.Zero, OffsetQ.Zero)))
+    genDynamicConfigOf(i).map(ScienceStep(_, TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)))
 
   def genSmartGcalStepOf(i: Instrument): Gen[SmartGcalStep[DynamicConfig]] =
     for {

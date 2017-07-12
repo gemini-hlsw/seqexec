@@ -3,10 +3,10 @@
 
 package gem.ocs2
 
-import edu.gemini.spModel.core.{OffsetP, OffsetQ}
 import gem._
 import gem.config._
 import gem.enum._
+import gem.math.Offset
 import gem.ocs2.pio._
 
 import java.time.Duration
@@ -129,8 +129,8 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
 
         case "OBJECT" | "CAL" =>
           for {
-            p <- Legacy.Telescope.P.cparseOrElse(cm, OffsetP.Zero)
-            q <- Legacy.Telescope.Q.cparseOrElse(cm, OffsetQ.Zero)
+            p <- Legacy.Telescope.P.cparseOrElse(cm, Offset.P.Zero)
+            q <- Legacy.Telescope.Q.cparseOrElse(cm, Offset.Q.Zero)
           } yield ScienceStep(instrument, TelescopeConfig(p, q))
 
         case "ARC" | "FLAT" =>

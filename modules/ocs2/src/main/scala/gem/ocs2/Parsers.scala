@@ -3,11 +3,10 @@
 
 package gem.ocs2
 
-import edu.gemini.spModel.core.{Angle, OffsetP, OffsetQ}
-
 import gem.{Dataset, Observation, Program}
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
+import gem.math.{ Angle, Offset }
 
 import scalaz._
 import Scalaz._
@@ -30,7 +29,7 @@ object Parsers {
   )
 
   val arcsec: PioParse[Angle] =
-    double.map(Angle.fromArcsecs)
+    double.map(d => Angle.fromDoubleDegrees(d * 60 * 60))
 
   val instrument: PioParse[Instrument] = enum(
     "AcqCam"     -> gem.enum.Instrument.AcqCam,
@@ -63,11 +62,11 @@ object Parsers {
   val datasetLabel: PioParse[Dataset.Label] =
     PioParse(Dataset.Label.fromString)
 
-  val offsetP: PioParse[OffsetP] =
-    arcsec.map(OffsetP.apply)
+  val offsetP: PioParse[Offset.P] =
+    arcsec.map(Offset.P.apply)
 
-  val offsetQ: PioParse[OffsetQ] =
-    arcsec.map(OffsetQ.apply)
+  val offsetQ: PioParse[Offset.Q] =
+    arcsec.map(Offset.Q.apply)
 
   object Calibration {
 

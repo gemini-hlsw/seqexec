@@ -5,8 +5,8 @@ package gem
 
 import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
+import gem.math.{ Angle, Offset }
 
-import edu.gemini.spModel.core._
 import java.time.Duration
 import argonaut._, Argonaut._, ArgonautShapeless._
 import scalaz.{ ISet, OneAnd, Order }
@@ -20,7 +20,10 @@ package object json {
 
   // Angle mapping to signed arcseconds. NOT implicit.
   val AngleMetaAsSignedArcseconds: CodecJson[Angle] =
-    CodecJson.derived[Double].xmap(Angle.fromArcsecs)(_.toSignedDegrees * 3600)
+    CodecJson.derived[BigDecimal]
+      .xmap[Angle](
+        b => Angle.fromMicroarcseconds(b.underlying.movePointLeft(6).longValue))(
+        a => BigDecimal(new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(6)))
 
   implicit val durationCodec: CodecJson[Duration] =
     CodecJson(
@@ -41,12 +44,12 @@ package object json {
     casecodec2(Observation.Id.apply, Observation.Id.unapply)("program-id", "index")
 
   // OffsetP maps to a signed angle in arcseconds
-  implicit val OffsetPCodec: CodecJson[OffsetP] =
-    AngleMetaAsSignedArcseconds.xmap(OffsetP(_))(_.toAngle)
+  implicit val OffsetPCodec: CodecJson[Offset.P] =
+    AngleMetaAsSignedArcseconds.xmap(Offset.P(_))(_.toAngle)
 
   // OffsetQ maps to a signed angle in arcseconds
-  implicit val OffsetQCodec: CodecJson[OffsetQ] =
-    AngleMetaAsSignedArcseconds.xmap(OffsetQ(_))(_.toAngle)
+  implicit val OffsetQCodec: CodecJson[Offset.Q] =
+    AngleMetaAsSignedArcseconds.xmap(Offset.Q(_))(_.toAngle)
 
   // Codec for ISet
   implicit def isetCodec[A: CodecJson: Order]: CodecJson[ISet[A]] =
