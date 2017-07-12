@@ -48,6 +48,13 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case _ =>
           noChange
       }
+
+    case SyncToRunning(s) =>
+      // We'll select the sequence currently running and show the correct url
+      updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectToDisplay(s))))
+
+    case _ =>
+      noChange
   }
 }
 
@@ -344,12 +351,19 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
       val observer = value.user.map(_.displayName)
+      val syncToRunE: Option[Effect] = (value.firstLoad option {
+        s.view.queue.filter(_.status.isRunning) match {
+           case x :: _   => Effect(Future(SyncToPage(x))).some // if we have multiple sequences running, let's pick the first
+           case _        => none
+        }
+      }).join
+
       val (sequencesWithObserver, effects) =
         filterSequences(s.view).queue.foldLeft(
           (List.empty[SequenceView],
            List[Option[Effect]](Effect(Future(NoAction)).some))
         ) { case ((seq, eff), q) =>
-            val syncUrlE: Option[Effect] = value.firstLoad option Effect(Future(SyncToPage(q)))
+            val syncUrlE: Option[Effect] = syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q))))
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
               Effect(Future(UpdateObserver(q, observer.getOrElse("")))).some ::

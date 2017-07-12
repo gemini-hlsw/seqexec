@@ -38,6 +38,11 @@ object ModelOps {
       case SequenceState.Idle => false
       case _                  => true
     }
+
+    def isRunning: Boolean = s match {
+      case SequenceState.Running => true
+      case _                     => false
+    }
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
