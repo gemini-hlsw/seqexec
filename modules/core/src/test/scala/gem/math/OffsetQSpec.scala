@@ -7,13 +7,34 @@ import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
 
-import scalaz.Monoid
+import scalaz.{ Equal, Show, Monoid }
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class OffsetQSpec extends FlatSpec with Matchers with PropertyChecks {
   import ArbOffset._
 
   // Compilation test
   protected val a0 = implicitly[Monoid[Offset.Q]]
+  protected val a1 = implicitly[Show[Offset.Q]]
+  protected val a2 = implicitly[Equal[Offset.Q]]
+
+  "Equality" must "be natural" in {
+    forAll { (a: Offset.Q, b: Offset.Q) =>
+      a.equals(b) shouldEqual Equal[Offset.Q].equal(a, b)
+    }
+  }
+
+  it must "be consistent with .toAngle" in {
+    forAll { (a: Offset.Q, b: Offset.Q) =>
+      Equal[Angle].equal(a.toAngle, b.toAngle) shouldEqual Equal[Offset.Q].equal(a, b)
+    }
+  }
+
+  "Show" must "be natural" in {
+    forAll { (a: Offset.Q) =>
+      a.toString shouldEqual Show[Offset.Q].shows(a)
+    }
+  }
 
   "Conversion to angle" must "be invertable" in {
     forAll { (q: Offset.Q) =>

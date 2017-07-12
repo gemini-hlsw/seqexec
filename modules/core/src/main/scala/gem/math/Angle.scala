@@ -3,7 +3,7 @@
 
 package gem.math
 
-import scalaz.{ Monoid, Show }
+import scalaz.{ Equal, Monoid, Show }
 import scalaz.std.anyVal.longInstance
 import scalaz.syntax.equal._
 
@@ -136,6 +136,10 @@ object Angle {
 
   implicit val AngleShow: Show[Angle] =
     Show.showA
+
+  /** Angles are equal if their magnitudes are equal. */
+  implicit val AngleEqual: Equal[Angle] =
+    Equal.equalBy(_.toMicroarcseconds)
 
   // This works for both DMS and HMS so let's just do it once.
   protected[math] def toMicrosexigesimal(micros: Long): (Int, Int, Int, Int, Int) = {
@@ -292,6 +296,10 @@ object HourAngle {
 
   implicit val HourAngleShow: Show[HourAngle] =
     Show.showA
+
+  /** Angles are equal if their magnitudes are equal. */
+  implicit val HourAngleEqual: Equal[HourAngle] =
+    Equal.equalBy(_.toMicroarcseconds)
 
   /**
    * Integral hour angle represented as a sum of hours, minutes, seconds, milliseconds, and

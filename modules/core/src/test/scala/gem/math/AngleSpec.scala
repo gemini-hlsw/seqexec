@@ -7,14 +7,36 @@ import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
 
-import scalaz.{ Monoid, Show }
+import scalaz.{ Equal, Monoid, Show }
+import scalaz.std.anyVal._
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class AngleSpec extends FlatSpec with Matchers with PropertyChecks {
   import ArbAngle._
 
   // Compilation test
   protected val a0 = implicitly[Monoid[Angle]]
-  protected val a1 = implicitly[Show[Angle]]
+  protected val a1 = implicitly[Equal[Angle]]
+  protected val a2 = implicitly[Show[Angle]]
+
+  "Equality" must "be natural" in {
+    forAll { (a: Angle, b: Angle) =>
+      a.equals(b) shouldEqual Equal[Angle].equal(a, b)
+    }
+  }
+
+  it must "be consistent with .toMicroarcseconds" in {
+    forAll { (a: Angle, b: Angle) =>
+      Equal[Long].equal(a.toMicroarcseconds, b.toMicroarcseconds) shouldEqual
+      Equal[Angle].equal(a, b)
+    }
+  }
+
+  "Show" must "be natural" in {
+    forAll { (a: Angle) =>
+      a.toString shouldEqual Show[Angle].shows(a)
+    }
+  }
 
   "Conversion to DMS" must "be invertable" in {
     forAll { (a: Angle) =>

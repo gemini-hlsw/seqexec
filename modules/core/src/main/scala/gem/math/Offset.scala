@@ -4,7 +4,8 @@
 package gem
 package math
 
-import scalaz.Monoid
+import scalaz.{ Equal, Monoid, Show }
+import scalaz.std.tuple._
 
 /** Angular offset with P and Q components. */
 final case class Offset(p: Offset.P, q: Offset.Q) {
@@ -13,7 +14,7 @@ final case class Offset(p: Offset.P, q: Offset.Q) {
   def unary_- : Offset =
     Offset(-p, -q)
 
-  /** Componentwise sum of this offet and `o`. Exact. */
+  /** Componentwise sum of this offset and `o`. Exact. */
   def +(o: Offset): Offset =
     Offset(p + o.p, q + o.q)
 
@@ -28,6 +29,14 @@ object Offset {
   /** Offset forms an Abelian group but Monoid is the best we can do right now. */
   implicit val MonoidOffset: Monoid[Offset] =
     Monoid.instance(_ + _, Zero)
+
+  implicit val ShowOffset: Show[Offset] =
+    Show.showA
+
+  /** Offsets are equal if their components are pairwise equal. */
+  implicit val EqualOffset: Equal[Offset] =
+    Equal.equalBy(o => (o.p, o.q))
+
 
   /** P component of an angular offset.. */
   final case class P(toAngle: Angle) {
@@ -51,6 +60,13 @@ object Offset {
     implicit val MonoidP: Monoid[P] =
       Monoid.instance(_ + _, Zero)
 
+    implicit val ShowP: Show[P] =
+      Show.showA
+
+    /** P components are equal if their angles are equal. */
+    implicit val EqualP: Equal[P] =
+      Equal.equalBy(_.toAngle)
+
   }
 
   /** Q component of an angular offset.. */
@@ -72,8 +88,15 @@ object Offset {
       Q(Angle.Angle0)
 
     /** Q forms an Abelian group but Monoid is the best we can do right now. */
-    implicit val MonoidP: Monoid[Q] =
+    implicit val MonoidQ: Monoid[Q] =
       Monoid.instance(_ + _, Zero)
+
+    implicit val ShowQ: Show[Q] =
+      Show.showA
+
+    /** Q components are equal if their angles are equal. */
+    implicit val EqualQ: Equal[Q] =
+      Equal.equalBy(_.toAngle)
 
   }
 

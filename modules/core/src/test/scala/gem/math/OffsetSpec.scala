@@ -7,13 +7,35 @@ import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
 
-import scalaz.Monoid
+import scalaz.{ Equal, Show, Monoid }
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class OffsetSpec extends FlatSpec with Matchers with PropertyChecks {
   import ArbOffset._
 
   // Compilation test
   protected val a0 = implicitly[Monoid[Offset]]
+  protected val a1 = implicitly[Show[Offset]]
+  protected val a2 = implicitly[Equal[Offset]]
+
+  "Equality" must "be natural" in {
+    forAll { (a: Offset, b: Offset) =>
+      a.equals(b) shouldEqual Equal[Offset].equal(a, b)
+    }
+  }
+
+  it must "operate pairwise" in {
+    forAll { (a: Offset, b: Offset) =>
+      Equal[Offset.P].equal(a.p, b.p) &&
+      Equal[Offset.Q].equal(a.q, b.q) shouldEqual Equal[Offset].equal(a, b)
+    }
+  }
+
+  "Show" must "be natural" in {
+    forAll { (a: Offset) =>
+      a.toString shouldEqual Show[Offset].shows(a)
+    }
+  }
 
   "Conversion to components" must "be invertable" in {
     forAll { (o: Offset) =>

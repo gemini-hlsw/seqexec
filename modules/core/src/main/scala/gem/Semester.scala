@@ -7,7 +7,8 @@ import atto._, Atto._
 import gem.enum.{ Half, Site }
 import java.time._
 import java.time.Month._
-import scalaz.Order, scalaz.syntax.semigroup._
+import scalaz.{ Order, Show }
+import scalaz.syntax.semigroup._
 
 /** A (Year, Half) pair. */
 final case class Semester(year: Year, half: Half) {
@@ -127,5 +128,8 @@ object Semester {
    */
   implicit val SemesterOrding: scala.math.Ordering[Semester] =
     SemesterOrder.toScalaOrdering
+
+  implicit val SemesterShow: Show[Semester] =
+    Show.showA
 
 }

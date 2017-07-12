@@ -9,11 +9,32 @@ import java.time.{ Year, ZoneId }
 import java.time.format.DateTimeFormatter
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
+import scalaz.{ Equal, Show }
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class SemesterSpec extends FlatSpec with Matchers with PropertyChecks {
   import ArbEnumerated._
   import ArbSemester._
   import ArbTime._
+
+  "Equality" must "be natural" in {
+    forAll { (a: Semester, b: Semester) =>
+      a.equals(b) shouldEqual Equal[Semester].equal(a, b)
+    }
+  }
+
+  it must "operate pairwise" in {
+    forAll { (a: Semester, b: Semester) =>
+      Equal[Year].equal(a.year, b.year) &&
+      Equal[Half].equal(a.half, b.half) shouldEqual Equal[Semester].equal(a, b)
+    }
+  }
+
+  "Show" must "be natural" in {
+    forAll { (a: Semester) =>
+      a.toString shouldEqual Show[Semester].shows(a)
+    }
+  }
 
   ".fromString" should "be invertible via .format" in {
     forAll { (y: Year, h: Half) =>
