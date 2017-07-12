@@ -24,6 +24,7 @@ case class NavigateTo(page: Pages.SeqexecPages) extends Action
 case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
 case class SyncToPage(view: SequenceView) extends Action
 case class SyncToRunning(view: SequenceView) extends Action
+case class SyncPageToRemovedSequence(id: SequenceId) extends Action
 case class Initialize(site: SeqexecSite) extends Action
 
 // Actions to close and/open the login box
