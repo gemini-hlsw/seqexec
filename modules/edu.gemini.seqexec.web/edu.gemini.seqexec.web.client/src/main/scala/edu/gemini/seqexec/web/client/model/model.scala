@@ -160,12 +160,13 @@ case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           sequences: SeqexecAppRootModel.LoadedSequences,
                           loginBox: SectionVisibilityState,
                           globalLog: GlobalLog,
-                          sequencesOnDisplay: SequencesOnDisplay)
+                          sequencesOnDisplay: SequencesOnDisplay,
+                          firstLoad: Boolean)
 
 object SeqexecUIModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
   val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
+    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty, true)
 }
 
 

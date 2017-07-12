@@ -331,7 +331,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
-      updated(value.copy(_2 = u))
+      updated(value.copy(user = u))
 
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
@@ -343,22 +343,22 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
-      val observer = value._2.map(_.displayName)
+      val observer = value.user.map(_.displayName)
       val (sequencesWithObserver, effects) =
         filterSequences(s.view).queue.foldLeft(
           (List.empty[SequenceView],
-           List(Some(Effect(Future(NoAction: Action)): Effect))
-          )
+           List[Option[Effect]](Effect(Future(NoAction)).some))
         ) { case ((seq, eff), q) =>
+            val syncUrlE: Option[Effect] = value.firstLoad option Effect(Future(SyncToPage(q)))
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
-               Some(Effect(Future(UpdateObserver(q.id, observer.getOrElse("")): Action))) ::
-               Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+              Effect(Future(UpdateObserver(q, observer.getOrElse("")))).some ::
+              syncUrlE :: eff)
             } else {
-              (q :: seq, Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+              (q :: seq, syncUrlE :: eff)
             }
           }
-      updated(value.copy(_1 = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver)),
+      updated(value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false),
               effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(_) =>
