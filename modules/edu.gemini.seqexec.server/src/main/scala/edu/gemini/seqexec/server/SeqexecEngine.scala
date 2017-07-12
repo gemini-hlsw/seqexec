@@ -8,6 +8,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Site
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
+import edu.gemini.seqexec.engine.{EventUser, Load}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
 
@@ -108,9 +109,17 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
           SequencesQueue(
             qState.conditions,
             qState.operator,
-            qState.sequences.values.map(
-              s => viewSequence(s.toSequence, s.status)
-            ).toList
+            qState.sequences.values.map{
+              s =>
+              ev match {
+                case EventUser(Load(_, sequence)) =>
+                  viewSequence(s.toSequence.copy(metadata = sequence.metadata), s.status)
+
+                case _                            =>
+                  viewSequence(s.toSequence, s.status)
+
+              }
+            }.toList
           )
         )
     }
