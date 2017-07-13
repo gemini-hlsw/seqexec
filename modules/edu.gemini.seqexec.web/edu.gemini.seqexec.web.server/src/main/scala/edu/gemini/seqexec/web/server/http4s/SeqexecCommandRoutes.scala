@@ -33,70 +33,70 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case GET  -> Root  / obsId / "count" as _ =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
-    case POST -> Root / obsId / "start" as _ =>
+    case POST -> Root / obsId / "start" as user =>
       for {
         obs <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))
               .fold(e => Task.fail(e), Task.now)
-        _     <- se.start(inputQueue, obs)
+        _     <- se.start(inputQueue, obs, user)
         resp  <- Ok(s"Started sequence $obs")
       } yield resp
 
-    case POST -> Root / obsId / "pause" as _ =>
+    case POST -> Root / obsId / "pause" as user =>
       for {
         obs <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))
               .fold(e => Task.fail(e), Task.now)
-        _     <- se.requestPause(inputQueue, obs)
+        _     <- se.requestPause(inputQueue, obs, user)
         resp  <- Ok(s"Pause sequence $obs")
       } yield resp
 
-    case POST -> Root / obsId / stepId / "breakpoint" / bp as _ =>
+    case POST -> Root / obsId / stepId / "breakpoint" / bp as user =>
       for {
         obs    <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
         step   <- \/.fromTryCatchNonFatal(stepId.toInt).fold(e => Task.fail(e), Task.now)
         newVal <- \/.fromTryCatchNonFatal(bp.toBoolean).fold(e => Task.fail(e), Task.now)
-        _      <- se.setBreakpoint(inputQueue, obs, step, newVal)
+        _      <- se.setBreakpoint(inputQueue, obs, user, step, newVal)
         resp   <- Ok(s"Set breakpoint in step $step of sequence $obsId")
 
       } yield resp
 
-    case POST -> Root / "operator" / name as _ =>
-      se.setOperator(inputQueue, name) *> Ok(s"Set operator name to $name")
+    case POST -> Root / "operator" / name as user =>
+      se.setOperator(inputQueue, user, name) *> Ok(s"Set operator name to $name")
 
-    case POST -> Root / obsId / "observer" / name as _ =>
+    case POST -> Root / obsId / "observer" / name as user =>
       for {
         obs   <-
           \/.fromTryCatchNonFatal(new SPObservationID(obsId))
             .fold(e => Task.fail(e), Task.now)
-        _     <- se.setObserver(inputQueue, obs, name)
+        _     <- se.setObserver(inputQueue, obs, user, name)
         resp  <- Ok(s"Set observer name to $name for sequence $obs")
       } yield resp
 
 
-    case req @ POST -> Root / "conditions" as _ =>
+    case req @ POST -> Root / "conditions" as user =>
       req.req.decode[Conditions] (conditions =>
-        se.setConditions(inputQueue, conditions) *> Ok(s"Set conditions to $conditions")
+        se.setConditions(inputQueue, conditions, user) *> Ok(s"Set conditions to $conditions")
       )
 
-    case req @ POST -> Root / "iq" as _ =>
+    case req @ POST -> Root / "iq" as user =>
       req.req.decode[ImageQuality] (iq =>
-        se.setImageQuality(inputQueue, iq) *> Ok(s"Set image quality to $iq")
+        se.setImageQuality(inputQueue, iq, user) *> Ok(s"Set image quality to $iq")
       )
 
-    case req @ POST -> Root / "wv" as _ =>
+    case req @ POST -> Root / "wv" as user =>
       req.req.decode[WaterVapor] (wv =>
-        se.setWaterVapor(inputQueue, wv) *> Ok(s"Set water vapor to $wv")
+        se.setWaterVapor(inputQueue, wv, user) *> Ok(s"Set water vapor to $wv")
       )
 
-    case req @ POST -> Root / "sb" as _ =>
+    case req @ POST -> Root / "sb" as user =>
       req.req.decode[SkyBackground] (sb =>
-        se.setSkyBackground(inputQueue, sb) *> Ok(s"Set sky background to $sb")
+        se.setSkyBackground(inputQueue, sb, user) *> Ok(s"Set sky background to $sb")
       )
 
-    case req @ POST -> Root / "cc" as _ =>
+    case req @ POST -> Root / "cc" as user =>
       req.req.decode[CloudCover] (cc =>
-        se.setCloudCover(inputQueue, cc) *> Ok(s"Set cloud cover to $cc")
+        se.setCloudCover(inputQueue, cc, user) *> Ok(s"Set cloud cover to $cc")
       )
 
     }

@@ -296,21 +296,21 @@ package object engine {
     */
   private def run(ev: Event): HandleP[Engine.State] = {
     def handleUserEvent(ue: UserEvent): HandleP[Unit] = ue match {
-      case Start(id)               => Logger.info("Engine: Started") *> rollback(id) *> switch(id)(SequenceState.Running) *> send(Event.executing(id))
-      case Pause(id)               => Logger.info("Engine: Paused") *> switch(id)(SequenceState.Stopping)
-      case Load(id, seq)           => Logger.info("Engine: Sequence loaded") *> load(id, seq)
-      case Unload(id)              => Logger.info("Engine: Sequence unloaded") *> unload(id)
-      case Breakpoint(id, step, v) => Logger.info("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
-      case SetOperator(name)       => Logger.info("Engine: Setting Operator name") *> setOperator(name)
-      case SetObserver(id, name)   => Logger.info("Engine: Setting Observer name") *> setObserver(id)(name)
-      case SetConditions(conds)    => Logger.info("Engine: Setting conditions") *> setConditions(conds)
-      case SetImageQuality(iq)     => Logger.info("Engine: Setting image quality") *> setImageQuality(iq)
-      case SetWaterVapor(wv)       => Logger.info("Engine: Setting water vapor") *> setWaterVapor(wv)
-      case SetSkyBackground(sb)    => Logger.info("Engine: Setting sky background") *> setSkyBackground(sb)
-      case SetCloudCover(cc)       => Logger.info("Engine: Setting cloud cover") *> setCloudCover(cc)
-      case Poll                    => Logger.info("Engine: Polling current state")
-      case GetState(f)             => getState(f)
-      case Log(msg)                => Logger.info(msg)
+      case Start(id, _)                => Logger.info("Engine: Started") *> rollback(id) *> switch(id)(SequenceState.Running) *> send(Event.executing(id))
+      case Pause(id, _)                => Logger.info("Engine: Paused") *> switch(id)(SequenceState.Stopping)
+      case Load(id, seq)               => Logger.info("Engine: Sequence loaded") *> load(id, seq)
+      case Unload(id)                  => Logger.info("Engine: Sequence unloaded") *> unload(id)
+      case Breakpoint(id, _, step, v)  => Logger.info("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
+      case SetOperator(name, user)     => Logger.info("Engine: Setting Operator name") *> setOperator(name)
+      case SetObserver(id, user, name) => Logger.info(s"Engine: Setting Observer for observation $id to $name by ${ue.username}") *> setObserver(id)(name)
+      case SetConditions(conds, user)  => Logger.info("Engine: Setting conditions") *> setConditions(conds)
+      case SetImageQuality(iq, user)   => Logger.info("Engine: Setting image quality") *> setImageQuality(iq)
+      case SetWaterVapor(wv, user)     => Logger.info("Engine: Setting water vapor") *> setWaterVapor(wv)
+      case SetSkyBackground(sb, user)  => Logger.info("Engine: Setting sky background") *> setSkyBackground(sb)
+      case SetCloudCover(cc, user)     => Logger.info("Engine: Setting cloud cover") *> setCloudCover(cc)
+      case Poll                        => Logger.info("Engine: Polling current state")
+      case GetState(f)                 => getState(f)
+      case Log(msg)                    => Logger.info(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
