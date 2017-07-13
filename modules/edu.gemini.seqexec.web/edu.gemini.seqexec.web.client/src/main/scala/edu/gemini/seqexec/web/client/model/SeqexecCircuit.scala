@@ -10,7 +10,7 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, SequenceCompleted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
@@ -331,6 +331,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
       // Play audio when the sequence completes
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
       updated(value.copy(_1 = sv), audioEffect)
+
+    case ServerMessage(s: ObserverUpdated) =>
+      updated(value.copy(_1 = s.view))
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
