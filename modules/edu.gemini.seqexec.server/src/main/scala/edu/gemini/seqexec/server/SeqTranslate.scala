@@ -175,10 +175,20 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
   }
 
+  import TcsController.Subsystem._
+
+  private def hasOI(inst: Resource.Instrument): Boolean = inst match {
+    case Resource.F2   => true
+    case Resource.GMOS => true
+    case Resource.NIFS => true
+    case Resource.NIRI => true
+    case _             => false
+  }
+
   private def calcSystems(stepType: StepType): TrySeq[List[System]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, false, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, true, ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
+      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, all, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, NonEmptyList[TcsController.Subsystem](ScienceFold) :::> (if(hasOI(inst)) IList(OIWFS) else IList.empty), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
     }

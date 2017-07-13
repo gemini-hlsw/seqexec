@@ -21,10 +21,7 @@ trait TcsController {
 
   def guide(gc: GuideConfig): SeqAction[Unit]
 
-  def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit]
-
-  def applyScienceFoldConfig(agc: AGConfig): SeqAction[Unit]
-
+  def applyConfig(subsystems: NonEmptyList[Subsystem], tc: TcsConfig): SeqAction[Unit]
 }
 
 object TcsController {
@@ -306,5 +303,20 @@ object TcsController {
     def setAGConfig(v: AGConfig) = TcsConfig(gc, tc, gtc, ge, v, iaa)
     def setIAA(v: InstrumentAlignAngle) = TcsConfig(gc, tc, gtc, ge, agc, v)
   }
+
+  sealed trait Subsystem
+  object Subsystem {
+    object OIWFS extends Subsystem
+    object P1WFS extends Subsystem
+    object P2WFS extends Subsystem
+    object ScienceFold extends Subsystem
+    object HRProbe extends Subsystem
+    object Mount extends Subsystem
+    object M1 extends Subsystem
+    object M2 extends Subsystem
+
+    val all = NonEmptyList(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
+  }
+
 
 }
