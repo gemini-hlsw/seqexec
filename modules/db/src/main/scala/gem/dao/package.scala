@@ -103,7 +103,7 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
 
   // Dataset.Label as string
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
-    Meta[String].xmap(Dataset.Label.unsafeFromString, _.toString)
+    Meta[String].xmap(Dataset.Label.unsafeFromString, _.format)
 
   // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
