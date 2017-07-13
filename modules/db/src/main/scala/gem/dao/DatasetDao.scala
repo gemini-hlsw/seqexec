@@ -45,7 +45,7 @@ object DatasetDao {
 
     def selectAll(oid: Observation.Id): Query0[Dataset] =
       sql"""
-        SELEcT dataset_label, filename, timestamp
+        SELECT dataset_label, filename, timestamp
           FROM dataset
          WHERE observation_id = ${oid}
       ORDER BY dataset_index
