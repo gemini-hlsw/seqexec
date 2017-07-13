@@ -301,7 +301,7 @@ package object engine {
       case Load(id, seq)               => Logger.info("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)                  => Logger.info("Engine: Sequence unloaded") *> unload(id)
       case Breakpoint(id, _, step, v)  => Logger.info("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
-      case SetOperator(name, user)     => Logger.info("Engine: Setting Operator name") *> setOperator(name)
+      case SetOperator(name, user)     => Logger.info(s"Engine: Setting Operator name to $name by ${ue.username}") *> setOperator(name)
       case SetObserver(id, user, name) => Logger.info(s"Engine: Setting Observer for observation $id to $name by ${ue.username}") *> setObserver(id)(name)
       case SetConditions(conds, user)  => Logger.info("Engine: Setting conditions") *> setConditions(conds)
       case SetImageQuality(iq, user)   => Logger.info("Engine: Setting image quality") *> setImageQuality(iq)
