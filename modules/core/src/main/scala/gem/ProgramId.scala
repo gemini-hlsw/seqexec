@@ -219,7 +219,10 @@ object ProgramId {
    * `Ordering` instance for Scala standard library.
    * @see ProgramIdOrder
    */
-  implicit val ProgramOrdering: scala.math.Ordering[ProgramId] =
+  implicit val ProgramIdOrdering: scala.math.Ordering[ProgramId] =
     ProgramIdOrder.toScalaOrdering
+
+  implicit val ProgramIdShow: Show[ProgramId] =
+    Show.showA
 
 }

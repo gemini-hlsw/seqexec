@@ -7,14 +7,36 @@ import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
-import scalaz.{ Monoid, Show }
+import scalaz.{ Equal, Monoid, Show }
+import scalaz.std.anyVal._
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks {
   import ArbAngle._
 
   // Compilation test
   protected val a0 = implicitly[Monoid[HourAngle]]
-  protected val a1 = implicitly[Show[HourAngle]]
+  protected val a1 = implicitly[Equal[HourAngle]]
+  protected val a2 = implicitly[Show[HourAngle]]
+
+  "Equality" must "be natural" in {
+    forAll { (a: HourAngle, b: HourAngle) =>
+      a.equals(b) shouldEqual Equal[HourAngle].equal(a, b)
+    }
+  }
+
+  it must "be consistent with .toMicroseconds" in {
+    forAll { (a: HourAngle, b: HourAngle) =>
+      Equal[Long].equal(a.toMicroseconds, b.toMicroseconds) shouldEqual
+      Equal[HourAngle].equal(a, b)
+    }
+  }
+
+  "Show" must "be natural" in {
+    forAll { (a: HourAngle) =>
+      a.toString shouldEqual Show[HourAngle].shows(a)
+    }
+  }
 
   "Conversion to HMS" must "be invertable" in {
     forAll { (a: HourAngle) =>
