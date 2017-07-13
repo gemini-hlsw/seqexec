@@ -3,17 +3,21 @@
 
 package gem.dao
 
-import gem.{Dataset, Observation}
-
 import doobie.imports._
-
-import java.time.Instant
+import gem.{ Dataset, Observation }
+import scalaz.syntax.functor._
 
 object DatasetDao {
 
-  def insert(sid: Int, d: Dataset): ConnectionIO[Int] =
-    Statements.insert(sid, d).run
+  /**
+   * Construct a program to insert the given a `Dataset`, associating it with the given step
+   * (identified by its internal unique serial number). This program will raise a key violation
+   * if the dataset label already exists in the database.
+   */
+  def insert(stepId: Int, d: Dataset): ConnectionIO[Unit] =
+    Statements.insert(stepId, d).run.void
 
+  /** Select all datasets (if any) for the specified observation, ordered by index. */
   def selectAll(oid: Observation.Id): ConnectionIO[List[Dataset]] =
     Statements.selectAll(oid).list
 
@@ -27,7 +31,8 @@ object DatasetDao {
         Distinct.integer("id_index").xmap(StepId(_), _.toInt)
     }
 
-    def insert(sid: Int, d: Dataset): Update0 =
+    // This uses the internal unique serial number for steps, which is a code smell.
+    def insert(stepId: Int, d: Dataset): Update0 =
       sql"""
         INSERT INTO dataset (dataset_label,
                              observation_id,
@@ -36,21 +41,20 @@ object DatasetDao {
                              filename,
                              timestamp)
             VALUES (${d.label},
-                    ${d.label.oid},
+                    ${d.label.observationId},
                     ${StepId(d.label.index)},
-                    ${sid},
+                    ${stepId},
                     ${d.filename},
                     ${d.timestamp})
       """.update
 
     def selectAll(oid: Observation.Id): Query0[Dataset] =
       sql"""
-        SELEcT dataset_label, filename, timestamp
+        SELECT dataset_label, filename, timestamp
           FROM dataset
          WHERE observation_id = ${oid}
       ORDER BY dataset_index
-      """.query[(Dataset.Label, String, Instant)]
-         .map { case (l, f, t) => Dataset(l, f, t) }
+      """.query[Dataset]
 
   }
 

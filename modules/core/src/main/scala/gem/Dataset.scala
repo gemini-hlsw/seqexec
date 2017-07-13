@@ -4,21 +4,24 @@
 package gem
 
 import java.time.Instant
-
 import scalaz._, Scalaz._
 
+/** A labeled, timestamped file. */
 final case class Dataset(
-  label: Dataset.Label,
-  filename: String,
-  timestamp: Instant)
+  label:     Dataset.Label,
+  filename:  String,
+  timestamp: Instant
+)
 
 object Dataset {
 
-  final case class Label(oid: Observation.Id, index: Int) {
-    override def toString = f"$oid-$index%03d"
+  /** Datasets are labeled by observation and index. */
+  final case class Label(observationId: Observation.Id, index: Int) {
+    def format: String =
+      f"${observationId.format}-$index%03d"
   }
-
   object Label {
+
     def fromString(s: String): Option[Dataset.Label] =
       s.lastIndexOf('-') match {
         case -1 => None
@@ -31,6 +34,27 @@ object Dataset {
 
     def unsafeFromString(s: String): Dataset.Label =
       fromString(s).getOrElse(sys.error("Malformed Dataset.Label: " + s))
+
+    /** Labels are ordered by observation and index. */
+    implicit val LabelOrder: Order[Label] =
+      Order[Observation.Id].contramap[Label](_.observationId) |+|
+      Order[Int]           .contramap[Label](_.index)
+
+    implicit val LabelShow: Show[Label] =
+      Show.showA
+
   }
+
+  /**
+   * Labels are ordered by their ids, which are normally unique. For completeness they are further
+   * ordered by timestamp and filename.
+   */
+  implicit val DatasetOrder: Order[Dataset] =
+    Order[Label]  .contramap[Dataset](_.label)     |+|
+    Order[Instant].contramap[Dataset](_.timestamp) |+|
+    Order[String] .contramap[Dataset](_.filename)
+
+  implicit val DatasetShow: Show[Dataset] =
+    Show.showA
 
 }

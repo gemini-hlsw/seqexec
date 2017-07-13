@@ -49,5 +49,16 @@ trait ArbTime {
       } yield LocalDateTime.of(d, t)
     }
 
+  implicit val arbZonedDateTime: Arbitrary[ZonedDateTime] =
+    Arbitrary {
+      for {
+        ldt <- arbitrary[LocalDateTime]
+        zid <- arbitrary[ZoneId]
+      } yield ZonedDateTime.of(ldt, zid)
+    }
+
+  implicit val arbInstant: Arbitrary[Instant] =
+    Arbitrary(arbitrary[ZonedDateTime].map(_.toInstant))
+
 }
 object ArbTime extends ArbTime

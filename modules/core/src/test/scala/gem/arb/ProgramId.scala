@@ -7,6 +7,7 @@ package arb
 import gem.enum. { Site, ProgramType, DailyProgramType }
 import java.time.LocalDate
 import org.scalacheck._
+import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
 trait ArbProgramId {
@@ -21,7 +22,7 @@ trait ArbProgramId {
         site        <- arbitrary[Site]
         semester    <- arbitrary[Semester]
         programType <- arbitrary[ProgramType]
-        index       <- arbitrary[Int].map(n => (n % 200).abs + 1)
+        index       <- choose(1, 200)
       } yield Science.unsafeApply(site, semester, programType, index)
     }
 
