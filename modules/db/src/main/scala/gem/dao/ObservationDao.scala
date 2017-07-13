@@ -4,31 +4,31 @@
 package gem
 package dao
 
+import doobie.imports._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum.Instrument
-
-import doobie.imports._
-
 import scalaz._, Scalaz._
 
 object ObservationDao {
 
-  def insert(o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Int] =
+  /**
+   * Construct a program to insert a fully-populated Observation. This program will raise a
+   * key violation if an observation with the same id already exists.
+   */
+  def insert(o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Unit] =
     for {
       id <- StaticConfigDao.insert(o.staticConfig)
       _  <- Statements.insert(o, id).run
       _  <- o.steps.zipWithIndex.traverseU { case (s, i) =>
               StepDao.insert(o.id, Location.unsafeMiddle((i + 1) * 100), s)
             }.void
-    } yield id
+    } yield ()
 
-  /** Select all the observation ids associated with the given program. */
-  def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
-    Statements.selectIds(pid).list
-
+  /** Construct a program to select the specified observation, with the instrument and no steps. */
   def selectFlat(id: Observation.Id): ConnectionIO[Observation[Instrument, Nothing]] =
     Statements.selectFlat(id).unique.map(_._1)
 
+  /** Construct a program to select the specified observation, with static connfig and no steps. */
   def selectStatic(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Nothing]] =
     for {
       obs <- selectFlat(id)
@@ -36,21 +36,38 @@ object ObservationDao {
       sc  <- StaticConfigDao.select(tup._1, tup._2)
     } yield obs.leftMap(_ => sc)
 
+  /** Construct a program to select the specified observation, with static connfig and steps. */
   def select(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
       on <- selectStatic(id)
       ss <- StepDao.selectAll(id)
     } yield on.copy(steps = ss.values)
 
+  /** Construct a program to select the all obseravation ids for the specified science program. */
+  def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
+    Statements.selectIds(pid).list
+
+  /**
+   * Construct a program to select all observations for the specified science program, with the
+   * instrument and no steps.
+   */
   def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[Instrument, Nothing]]] =
     Statements.selectAllFlat(pid).list.map(_.map(_._1))
 
+  /**
+   * Construct a program to select all observations for the specified science program, with the
+   * static component and no steps.
+   */
   def selectAllStatic(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Nothing]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverseU(selectStatic)
     } yield oss
 
+  /**
+   * Construct a program to select all observations for the specified science program, with the
+   * static component and steps.
+   */
   def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       ids <- selectIds(pid)

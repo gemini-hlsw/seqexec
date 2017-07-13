@@ -46,7 +46,7 @@ object Dataset {
   }
 
   /**
-   * Labels are ordered by their ids, which are normally unique. For completeness they are further
+   * Datasets are ordered by their labels, which are normally unique. For completeness they are further
    * ordered by timestamp and filename.
    */
   implicit val DatasetOrder: Order[Dataset] =

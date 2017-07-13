@@ -39,6 +39,9 @@ object Observation {
     implicit val OrderingId: scala.math.Ordering[Id] =
       OrderId.toScalaOrdering
 
+    implicit val showId: Show[Id] =
+      Show.showA
+
   }
 
   implicit val ObservationBitraverse: Bitraverse[Observation] =
