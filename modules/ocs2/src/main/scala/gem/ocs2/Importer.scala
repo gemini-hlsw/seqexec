@@ -49,7 +49,7 @@ object Importer extends DoobieClient {
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
 
-    val dsMap = ds.groupBy(_.label.oid).withDefaultValue(List.empty[Dataset])
+    val dsMap = ds.groupBy(_.label.observationId).withDefaultValue(List.empty[Dataset])
 
     (u: User[_], l: Log[ConnectionIO]) =>
       for {
