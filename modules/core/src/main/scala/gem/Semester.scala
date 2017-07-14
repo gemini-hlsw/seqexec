@@ -5,17 +5,21 @@ package gem
 
 import atto._, Atto._
 import gem.enum.{ Half, Site }
+import gem.imp.TimeInstances._
 import java.time._
 import java.time.Month._
 import scalaz.{ Order, Show }
 import scalaz.syntax.semigroup._
 
-/** A (Year, Half) pair. */
+/**
+ * A (Year, Half) pair.
+ * @group Program Model
+ */
 final case class Semester(year: Year, half: Half) {
 
   /**
-   * This Semester plus the given number of years.
-   * @throws DateTimeException for final year out of range -999999999 - 999999999
+   * This Semester plus the given number of years. Raises a `DateTimeException` for final year out
+   * of range -999999999 - 999999999.
    */
   def plusYears(n: Int): Semester =
     copy(year = year.plusYears(n.toLong))
@@ -44,7 +48,10 @@ final case class Semester(year: Year, half: Half) {
     def atSite(site: Site): ZonedDateTime = zonedDateTime(site.timezone)
   }
 
-  /** Module of various representations of the last instant of the semester, *inclusive*. */
+  /**
+   * Module of various representations of the last instant of the semester, *inclusive*.
+   * @group Program Model
+   */
   object end {
     private def nextYear = (half match { case Half.A => year; case Half.B => year.plusYears(1) }).getValue
     lazy val yearMonth: YearMonth = YearMonth.of(nextYear, half.endMonth)

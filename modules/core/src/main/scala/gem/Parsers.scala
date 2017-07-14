@@ -8,6 +8,11 @@ import gem.enum.{ Half, Site, ProgramType, DailyProgramType }
 import java.time.{ DateTimeException, Year, Month, LocalDate }
 import scalaz._, Scalaz.{ char => _, _ }
 
+/**
+ * Module of parsers for various data types used in the science model, for internal use (user code
+ * should rely on `fromString` methods on individual data type companions).
+ * @group Utilities
+ */
 object Parsers {
 
   /** Convenience method for client code. Parse entire input into an Option. */

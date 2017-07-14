@@ -13,6 +13,7 @@ import scalaz.Ordering.{EQ, GT, LT}
   * that differ determine the ordering of the `Location`s as a whole.  If one
   * `Location` is a proper prefex of another, then it sorts ahead of the other
   * `Location`.
+  * @group Sequence Model
   */
 sealed trait Location extends Product with Serializable {
 

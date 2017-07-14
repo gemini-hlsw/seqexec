@@ -13,6 +13,10 @@ import Scalaz._
 
 import GcalConfig.GcalLamp
 
+/**
+ * Additional configuration information for [[gem.Step.Gcal Gcal]] steps.
+ * @group Configurations
+ */
 final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Short) {
   def continuum: Option[GcalContinuum] =
     lamp.swap.toOption

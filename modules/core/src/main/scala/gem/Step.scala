@@ -8,25 +8,33 @@ import gem.enum.SmartGcalType
 
 import scalaz.Functor
 
+/**
+ * An observation sequence step, parameterized on the type of its dynamic configuration, typically
+ * some kind of [[gem.config.DynamicConfig DynamicConfig]] for a fully-specified step, or `Unit`
+ * for a step without instrument-specific configuration information.
+ * @group Sequence Model
+ */
 sealed abstract class Step[A] extends Product with Serializable {
   def dynamicConfig: A
 }
 
-final case class BiasStep     [A](dynamicConfig: A)                               extends Step[A]
-final case class DarkStep     [A](dynamicConfig: A)                               extends Step[A]
-final case class GcalStep     [A](dynamicConfig: A, gcal:      GcalConfig)        extends Step[A]
-final case class ScienceStep  [A](dynamicConfig: A, telescope: TelescopeConfig)   extends Step[A]
-final case class SmartGcalStep[A](dynamicConfig: A, smartGcalType: SmartGcalType) extends Step[A]
-
 object Step {
+
+  final case class Bias     [A](dynamicConfig: A)                               extends Step[A]
+  final case class Dark     [A](dynamicConfig: A)                               extends Step[A]
+  final case class Gcal     [A](dynamicConfig: A, gcal: GcalConfig)             extends Step[A]
+  final case class Science  [A](dynamicConfig: A, telescope: TelescopeConfig)   extends Step[A]
+  final case class SmartGcal[A](dynamicConfig: A, smartGcalType: SmartGcalType) extends Step[A]
+
   implicit val FunctorStep: Functor[Step] = new Functor[Step] {
     def map[A, B](fa: Step[A])(f: A => B): Step[B] =
       fa match {
-        case BiasStep(a)         => BiasStep(f(a))
-        case DarkStep(a)         => DarkStep(f(a))
-        case GcalStep(a, g)      => GcalStep(f(a), g)
-        case ScienceStep(a, t)   => ScienceStep(f(a), t)
-        case SmartGcalStep(a, s) => SmartGcalStep(f(a), s)
+        case Bias(a)         => Bias(f(a))
+        case Dark(a)         => Dark(f(a))
+        case Gcal(a, g)      => Gcal(f(a), g)
+        case Science(a, t)   => Science(f(a), t)
+        case SmartGcal(a, s) => SmartGcal(f(a), s)
       }
   }
+
 }

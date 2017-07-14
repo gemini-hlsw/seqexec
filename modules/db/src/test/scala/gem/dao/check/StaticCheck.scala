@@ -5,7 +5,7 @@ package gem.dao
 package check
 
 import gem.enum.Instrument.Flamingos2
-import gem.config.{F2StaticConfig, GmosNorthStaticConfig, GmosSouthStaticConfig}
+import gem.config.StaticConfig
 
 class StaticCheck extends Check {
   import StaticConfigDao.Statements._
@@ -15,7 +15,7 @@ class StaticCheck extends Check {
   it should "selectGmosNorth" in check(selectGmosNorth(0))
   it should "selectGmosSouth" in check(selectGmosSouth(0))
   it should "insertBaseSlice" in check(insertBaseSlice(Flamingos2))
-  it should "insertF2"        in check(insertF2(0, F2StaticConfig.Default))
-  it should "insertGmosNorth" in check(insertGmosNorth(0, GmosNorthStaticConfig.Default))
-  it should "insertGmosSouth" in check(insertGmosSouth(0, GmosSouthStaticConfig.Default))
+  it should "insertF2"        in check(insertF2(0, StaticConfig.F2.Default))
+  it should "insertGmosNorth" in check(insertGmosNorth(0, StaticConfig.GmosNorth.Default))
+  it should "insertGmosSouth" in check(insertGmosSouth(0, StaticConfig.GmosSouth.Default))
 }

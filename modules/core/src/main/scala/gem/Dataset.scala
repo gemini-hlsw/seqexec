@@ -3,10 +3,14 @@
 
 package gem
 
+import gem.imp.TimeInstances._
 import java.time.Instant
 import scalaz._, Scalaz._
 
-/** A labeled, timestamped file. */
+/**
+ * A labeled, timestamped data file.
+ * @group Sequence Model
+ */
 final case class Dataset(
   label:     Dataset.Label,
   filename:  String,
@@ -15,13 +19,17 @@ final case class Dataset(
 
 object Dataset {
 
-  /** Datasets are labeled by observation and index. */
+  /**
+   * Datasets are labeled by observation and index.
+   * @group Data Types
+   */
   final case class Label(observationId: Observation.Id, index: Int) {
     def format: String =
       f"${observationId.format}-$index%03d"
   }
   object Label {
 
+    /** @group Constructors */
     def fromString(s: String): Option[Dataset.Label] =
       s.lastIndexOf('-') match {
         case -1 => None
@@ -32,14 +40,19 @@ object Dataset {
           }
       }
 
+    /** @group Constructors */
     def unsafeFromString(s: String): Dataset.Label =
       fromString(s).getOrElse(sys.error("Malformed Dataset.Label: " + s))
 
-    /** Labels are ordered by observation and index. */
+    /**
+     * Labels are ordered by observation and index.
+     * @group Typeclass Instances
+     */
     implicit val LabelOrder: Order[Label] =
       Order[Observation.Id].contramap[Label](_.observationId) |+|
       Order[Int]           .contramap[Label](_.index)
 
+    /** @group Typeclass Instances */
     implicit val LabelShow: Show[Label] =
       Show.showA
 
@@ -48,12 +61,14 @@ object Dataset {
   /**
    * Datasets are ordered by their labels, which are normally unique. For completeness they are further
    * ordered by timestamp and filename.
+   * @group Typeclass Instances
    */
   implicit val DatasetOrder: Order[Dataset] =
     Order[Label]  .contramap[Dataset](_.label)     |+|
     Order[Instant].contramap[Dataset](_.timestamp) |+|
     Order[String] .contramap[Dataset](_.filename)
 
+  /** @group Typeclass Instances */
   implicit val DatasetShow: Show[Dataset] =
     Show.showA
 

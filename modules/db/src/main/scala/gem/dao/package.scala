@@ -17,7 +17,7 @@ import scala.reflect.runtime.universe.TypeTag
 import scalaz._
 import Scalaz._
 
-package object dao extends MoreTupleOps with ToUserProgramRoleOps {
+package object dao extends MoreTupleOps {
 
   // Uncomment to turn on statement logging
   // implicit val han = LogHandler.jdkLogHandler

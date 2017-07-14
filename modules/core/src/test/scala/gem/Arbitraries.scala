@@ -3,6 +3,7 @@
 
 package gem
 
+import gem.arb._
 import gem.config.{DynamicConfig, GcalConfig, StaticConfig, TelescopeConfig}
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.Offset
@@ -14,7 +15,7 @@ import scalaz._
 import Scalaz._
 
 trait Arbitraries extends gem.config.Arbitraries  {
-  import gem.arb.ArbEnumerated._
+  import ArbEnumerated._
 
   implicit val arbLocationMiddle: Arbitrary[Location.Middle] =
     Arbitrary {
@@ -41,26 +42,26 @@ trait Arbitraries extends gem.config.Arbitraries  {
 
   // Step and Sequence
 
-  def genBiasStepOf(i: Instrument): Gen[BiasStep[DynamicConfig]] =
-    genDynamicConfigOf(i).map(BiasStep(_))
+  def genBiasStepOf(i: Instrument): Gen[Step.Bias[DynamicConfig]] =
+    genDynamicConfigOf(i).map(Step.Bias(_))
 
-  def genDarkStepOf(i: Instrument): Gen[DarkStep[DynamicConfig]] =
-    genDynamicConfigOf(i).map(DarkStep(_))
+  def genDarkStepOf(i: Instrument): Gen[Step.Dark[DynamicConfig]] =
+    genDynamicConfigOf(i).map(Step.Dark(_))
 
-  def genGcalStepOf(i: Instrument): Gen[GcalStep[DynamicConfig]] =
+  def genGcalStepOf(i: Instrument): Gen[Step.Gcal[DynamicConfig]] =
     for {
       d <- genDynamicConfigOf(i)
       g <- arbitrary[GcalConfig]
-    } yield GcalStep(d, g)
+    } yield Step.Gcal(d, g)
 
-  def genScienceStepOf(i: Instrument): Gen[ScienceStep[DynamicConfig]] =
-    genDynamicConfigOf(i).map(ScienceStep(_, TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)))
+  def genScienceStepOf(i: Instrument): Gen[Step.Science[DynamicConfig]] =
+    genDynamicConfigOf(i).map(Step.Science(_, TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)))
 
-  def genSmartGcalStepOf(i: Instrument): Gen[SmartGcalStep[DynamicConfig]] =
+  def genSmartGcalStepOf(i: Instrument): Gen[Step.SmartGcal[DynamicConfig]] =
     for {
       d <- genDynamicConfigOf(i)
       s <- arbitrary[SmartGcalType]
-    } yield SmartGcalStep(d, s)
+    } yield Step.SmartGcal(d, s)
 
   def genStepOf(i: Instrument): Gen[Step[DynamicConfig]] =
     Gen.oneOf(

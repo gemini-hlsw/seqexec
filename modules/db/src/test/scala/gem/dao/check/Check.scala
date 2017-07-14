@@ -50,13 +50,13 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val gcalShutter      = GcalShutter.Open
     val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
-    val observation      = Observation[StaticConfig, Nothing](observationId, "", F2StaticConfig.Default, Nil)
+    val observation      = Observation[StaticConfig, Nothing](observationId, "", StaticConfig.F2.Default, Nil)
     val program          = Program(programId, "", Nil)
-    val f2SmartGcalKey   = F2SmartGcalKey(F2Disperser.NoDisperser, F2Filter.Dark, F2FpUnit.LongSlit1)
+    val f2SmartGcalKey   = DynamicConfig.SmartGcalKey.F2(F2Disperser.NoDisperser, F2Filter.Dark, F2FpUnit.LongSlit1)
     val gcalLampType     = GcalLampType.Arc
     val gcalBaselineType = GcalBaselineType.Day
     val locationMiddle   = Location.unsafeMiddle(1)
-    val f2Config         = F2DynamicConfig(F2Disperser.NoDisperser, duration, F2Filter.Dark, F2FpUnit.LongSlit1,
+    val f2Config         = DynamicConfig.F2(F2Disperser.NoDisperser, duration, F2Filter.Dark, F2FpUnit.LongSlit1,
       F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
     val telescopeConfig  = TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)
     val smartGcalType    = SmartGcalType.Arc

@@ -3,7 +3,8 @@
 
 package gem.dao
 
-import gem.config.{GcalConfig, SmartGcalKey, F2SmartGcalKey}
+import gem.config.GcalConfig
+import gem.config.DynamicConfig.SmartGcalKey
 import gem.enum.{F2Disperser, F2Filter, F2FpUnit, SmartGcalType}
 
 import doobie.imports._
@@ -21,7 +22,7 @@ object SmartGcalSample extends TimedSample {
       d <- F2Disperser.all
       f <- F2Filter.all
       u <- F2FpUnit.all
-    } yield F2SmartGcalKey(d, f, u)).toVector
+    } yield SmartGcalKey.F2(d, f, u)).toVector
 
   val rand: Random = new Random(0)
 

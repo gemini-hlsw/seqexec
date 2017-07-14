@@ -44,21 +44,21 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   it should "fail when there is no corresponding mapping" in {
     runF2Expansionʹ(SmartGcalType.DayBaseline) { (expansion, steps) =>
       expansion    shouldEqual noMappingDefined.left[ExpandedSteps]
-      steps.values shouldEqual List(SmartGcalStep(f2, SmartGcalType.DayBaseline))
+      steps.values shouldEqual List(Step.SmartGcal(f2, SmartGcalType.DayBaseline))
     }
   }
 
   it should "fail when the location is not found" in {
     runF2Expansion(SmartGcalType.Arc, loc1, loc2) { (expansion, steps) =>
       expansion shouldEqual stepNotFound(loc2).left[ExpandedSteps]
-      steps.values shouldEqual List(SmartGcalStep(f2, SmartGcalType.Arc))
+      steps.values shouldEqual List(Step.SmartGcal(f2, SmartGcalType.Arc))
     }
   }
 
   it should "fail when the location is not a smart gcal step" in {
     val expansion = doTest {
       for {
-        _  <- StepDao.insert(oid, loc1, BiasStep(f2))
+        _  <- StepDao.insert(oid, loc1, Step.Bias(f2))
         ex <- SmartGcalDao.expand(oid, loc1).run
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
@@ -71,24 +71,24 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   it should "expand intermediate smart gcal steps" in {
     val steps = doTest {
       for {
-        _  <- StepDao.insert(oid, loc1, BiasStep(f2))
-        _  <- StepDao.insert(oid, loc2, SmartGcalStep(f2, SmartGcalType.NightBaseline))
-        _  <- StepDao.insert(oid, loc9, DarkStep(f2))
+        _  <- StepDao.insert(oid, loc1, Step.Bias(f2))
+        _  <- StepDao.insert(oid, loc2, Step.SmartGcal(f2, SmartGcalType.NightBaseline))
+        _  <- StepDao.insert(oid, loc9, Step.Dark(f2))
         _  <- SmartGcalDao.expand(oid, loc2).run
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
       } yield ss
     }
 
-    val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => GcalStep(f2, config) }
-    steps.values shouldEqual (BiasStep(f2) :: exp) :+ DarkStep(f2)
+    val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => Step.Gcal(f2, config) }
+    steps.values shouldEqual (Step.Bias(f2) :: exp) :+ Step.Dark(f2)
   }
 
   private def verifySteps(m: GcalLampType \/ GcalBaselineType, ss: Location.Middle ==>> Step[DynamicConfig]): Assertion = {
     def lookup(m: GcalLampType \/ GcalBaselineType): List[GcalConfig] =
       gcals.filter(t => m.fold(_ == t._1, _ == t._2)).map(_._3)
 
-    ss.values shouldEqual lookup(m).map(GcalStep(f2, _))
+    ss.values shouldEqual lookup(m).map(Step.Gcal(f2, _))
   }
 
   private val oid = Observation.Id(pid, 1)
@@ -96,7 +96,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   private def doTest[A](test: ConnectionIO[A]): A =
     withProgram {
       for {
-        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", F2StaticConfig.Default, List.empty[Step[DynamicConfig]]))
+        _ <- ObservationDao.insert(Observation(oid, "SmartGcalSpec Obs", StaticConfig.F2.Default, List.empty[Step[DynamicConfig]]))
         a <- test
       } yield a
     }
@@ -107,7 +107,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion = {
     val (expansion, steps) = doTest {
       for {
-        _  <- StepDao.insert(oid, insertionLoc, SmartGcalStep(f2, t))
+        _  <- StepDao.insert(oid, insertionLoc, Step.SmartGcal(f2, t))
         ex <- SmartGcalDao.expand(oid, searchLoc).run
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
@@ -123,8 +123,8 @@ object SmartGcalSpec {
   private val loc2: Location.Middle = Location.unsafeMiddle(2)
   private val loc9: Location.Middle = Location.unsafeMiddle(9)
 
-  private val f2: F2DynamicConfig =
-    F2DynamicConfig(
+  private val f2: DynamicConfig.F2 =
+    DynamicConfig.F2(
       /* Disperser             */ F2Disperser.R1200JH,
       Duration.ofMillis(1000),
       /* Filter                */ F2Filter.JH,

@@ -5,7 +5,13 @@ package gem
 
 import scalaz._, Scalaz._
 
-/** An observation, parameterized over the types of its static config and steps. */
+/**
+ * An observation, parameterized over the types of its static config and steps (typically
+ * [[gem.config.StaticConfig StaticConfig]] and [[gem.Step Step[α]]], respectively, for a
+ * fully-specified Observation; or `Unit` and `Nothing` for a
+ * minimally-specified Observation.
+ * @group Program Model
+ */
 final case class Observation[S, D](
   id: Observation.Id,
   title: String,

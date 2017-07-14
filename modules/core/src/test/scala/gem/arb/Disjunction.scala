@@ -2,6 +2,7 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package gem
+package arb
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary.arbitrary
@@ -9,10 +10,9 @@ import org.scalacheck.Arbitrary.arbitrary
 import scalaz._
 import Scalaz._
 
-package object config {
+trait ArbDisjunction {
 
-  // Surely defined somewhere, but I can't find it.
-  implicit def arbScalazEither[A, B](implicit aa: Arbitrary[A], ab: Arbitrary[B]): Arbitrary[A \/ B] =
+  implicit def arbDisjunction[A: Arbitrary, B: Arbitrary]: Arbitrary[A \/ B] =
     Arbitrary {
       Gen.oneOf(
         arbitrary[A].map(_.left[B] ),
@@ -20,3 +20,4 @@ package object config {
       )
     }
 }
+object ArbDisjunction extends ArbDisjunction

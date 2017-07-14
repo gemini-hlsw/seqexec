@@ -10,21 +10,31 @@ import scalaz.Scalaz._
 // The members of this package are generated from database tables, which are the source of truth.
 // See project/gen2.scala for details. Associations with other model types, as needed, are provided
 // here as implicit classes wrapping val the generated companion object extends AnyVals.
+
+/**
+ * Enumerated types (normally generated from database tables) and related syntactic snrichments.
+ */
 package object enum {
 
-  /** Add mapping from Step to StepType. */
+  /**
+   * Enrichment methods for the [[StepType]] companion object.
+   * @group Enrichments
+   */
   implicit class StepTypeCompanionOps(val value: StepType.type) extends AnyVal {
     def forStep(s: Step[_]): StepType =
       s match {
-        case BiasStep(_)         => StepType.Bias
-        case DarkStep(_)         => StepType.Dark
-        case GcalStep(_, _)      => StepType.Gcal
-        case ScienceStep(_, _)   => StepType.Science
-        case SmartGcalStep(_, _) => StepType.SmartGcal
+        case Step.Bias(_)         => StepType.Bias
+        case Step.Dark(_)         => StepType.Dark
+        case Step.Gcal(_, _)      => StepType.Gcal
+        case Step.Science(_, _)   => StepType.Science
+        case Step.SmartGcal(_, _) => StepType.SmartGcal
       }
   }
 
-  /** Add fold on SmartGcalType. */
+  /**
+   * Enrichment methods for [[SmartGcalType]].
+   * @group Enrichments
+   */
   implicit class SmartGcalTypeOps(val value: SmartGcalType) extends AnyVal {
     def fold[X](lamp: GcalLampType => X, baseline: GcalBaselineType => X): X =
       value match {
@@ -35,6 +45,10 @@ package object enum {
       }
   }
 
+  /**
+   * Enrichment methods for the [[Half]] companion object.
+   * @group Enrichments
+   */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   implicit class HalfCompanionOps(val value: Half.type) extends AnyVal {
 
@@ -52,6 +66,10 @@ package object enum {
 
   }
 
+  /**
+   * Enrichment methods for [[Half]].
+   * @group Enrichments
+   */
   implicit class HalfOps(val value: Half) extends AnyVal {
 
     def startMonth: Month =
