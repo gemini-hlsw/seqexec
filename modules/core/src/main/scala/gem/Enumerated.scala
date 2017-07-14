@@ -6,20 +6,33 @@ package gem
 import scalaz._
 import Scalaz._
 
-/**
- * Typeclass for an enumerated type with unique string tags.
- * unsafeFromTag . tag = id
- */
+/** Typeclass for an enumerated type with unique string tags and a canonical ordering. */
 trait Enumerated[A] extends Order[A] {
+
+  /** All members of this enumeration, in unspecified but canonical order. */
   def all: List[A]
+
+  /** The tag for a given value. */
   def tag(a: A): String
+
+  /** Select the member of this enumeration with the given tag, if any. */
   def fromTag(s: String): Option[A] = all.find(tag(_) === s)
+
+  /** Select the member of this enumeration with the given tag, throwing if absent. */
   def unsafeFromTag(tag: String): A = fromTag(tag).getOrElse(sys.error("Invalid tag: " + tag))
-  def order(a: A, b: A): Ordering = Order[String].order(tag(a), tag(b))
+
+  /** Relative order of `a` and `b` in `all`;. */
+  def order(a: A, b: A): Ordering =
+    Order[Int].order(indexOfTag(tag(a)), indexOfTag(tag(b)))
+
+  // Hashed index lookup, for efficient use as an `Order`.
+  private lazy val indexOfTag: Map[String, Int] =
+    all.zipWithIndex.map { case (a, n) => (tag(a), n) } (collection.breakOut)
+
 }
 
 object Enumerated {
-  def apply[A](implicit ev: Enumerated[A]): Enumerated[A] = ev
+  def apply[A](implicit ev: Enumerated[A]): ev.type = ev
 }
 
 trait Obsoletable[A] {
