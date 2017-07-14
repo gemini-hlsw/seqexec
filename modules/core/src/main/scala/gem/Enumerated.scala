@@ -21,7 +21,7 @@ trait Enumerated[A] extends Order[A] {
   /** Select the member of this enumeration with the given tag, throwing if absent. */
   def unsafeFromTag(tag: String): A = fromTag(tag).getOrElse(sys.error("Invalid tag: " + tag))
 
-  /** Relative order of `a` and `b` in `all`;. */
+  /** Relative order of `a` and `b` in `all`. */
   def order(a: A, b: A): Ordering =
     Order[Int].order(indexOfTag(tag(a)), indexOfTag(tag(b)))
 
