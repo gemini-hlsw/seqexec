@@ -13,7 +13,7 @@ lazy val http4sVersion            = "0.16.0a-M3"
 lazy val scalaXmlVerson           = "1.0.6"
 lazy val scalaParsersVersion      = "1.0.4"
 lazy val tucoVersion              = "0.1.1"
-lazy val attoVersion              = "0.5.2"
+lazy val attoVersion              = "0.5.3"
 lazy val slf4jVersion             = "1.7.25"
 lazy val jwtVersion               = "0.14.0"
 
@@ -51,10 +51,13 @@ organizationName in ThisBuild := "Association of Universities for Research in As
 startYear        in ThisBuild := Some(2017)
 licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
 
-lazy val testLibs = Seq(
-  "org.scalatest"  %% "scalatest"  % scalaTestVersion  % "test",
-  "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test"
-)
+// Make JS tests run fine on travis
+parallelExecution in (ThisBuild, Test) := false
+
+lazy val testLibs = Def.setting(Seq(
+  "org.scalatest"  %%% "scalatest"  % scalaTestVersion  % "test",
+  "org.scalacheck" %%% "scalacheck" % scalaCheckVersion % "test"
+))
 
 lazy val gemWarts =
   Warts.allBut(
@@ -147,7 +150,7 @@ lazy val commonSettings = Seq(
     "-doc-version", version.value
   ),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
-  libraryDependencies ++= (scalaOrganization.value %  "scala-reflect" % scalaVersion.value +: testLibs),
+  libraryDependencies ++= (scalaOrganization.value % "scala-reflect" % scalaVersion.value +: testLibs.value),
   name := "gem-" + name.value
 )
 
@@ -164,27 +167,41 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, json, ocs2, service, telnetd, ctl, web)
+  .aggregate(coreJVM, coreJS, db, json, ocs2, service, telnetd, ctl, web)
 
-lazy val core = project
+lazy val core = crossProject
+  .crossType(CrossType.Pure)
   .in(file("modules/core"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalaz"   %% "scalaz-core"          % scalazVersion,
-      "com.chuusai"  %% "shapeless"            % shapelessVersion,
-      "org.tpolecat" %% "atto-core"            % attoVersion,
-      "org.tpolecat" %% "atto-compat-scalaz72" % attoVersion
+      "org.scalaz"   %%% "scalaz-core"          % scalazVersion,
+      "com.chuusai"  %%% "shapeless"            % shapelessVersion,
+      "org.tpolecat" %%% "atto-core"            % attoVersion,
+      "org.tpolecat" %%% "atto-compat-scalaz72" % attoVersion
     ),
     sourceGenerators in Compile +=
       Def.task { gen2((sourceManaged in Compile).value / "gem").unsafePerformIO }.taskValue
   )
+  .jsSettings(
+    // Skip using the typelevel compiler until interoperability is improved
+    libraryDependencies +=
+      "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12",
+    // These settings allow to use TLS with scala.js
+    // Remove the dependency on the scalajs-compiler
+    libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+  )
+
+lazy val coreJVM = core.jvm
+lazy val coreJS = core.js
 
 lazy val db = project
   .in(file("modules/db"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core % "compile->compile;test->test")
+  .dependsOn(coreJVM % "compile->compile;test->test")
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -209,7 +226,7 @@ lazy val db = project
 lazy val json = project
   .in(file("modules/json"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core)
+  .dependsOn(coreJVM)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -230,7 +247,7 @@ lazy val sql = project
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core, db, sql)
+  .dependsOn(coreJVM, db, sql)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -246,7 +263,7 @@ lazy val ocs2 = project
 lazy val service = project
   .in(file("modules/service"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core, db)
+  .dependsOn(coreJVM, db)
   .settings(commonSettings)
 
 lazy val telnetd = project
