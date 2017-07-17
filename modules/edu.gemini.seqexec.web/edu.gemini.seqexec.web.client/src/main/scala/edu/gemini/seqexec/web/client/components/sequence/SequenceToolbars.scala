@@ -187,9 +187,9 @@ object SequenceDefaultToolbar {
                 onClick = $.runState(requestPause(p.s)),
                 color = Some("teal"),
                 dataTooltip = Some("Pause the sequence after the current step completes"),
-                disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested),
+                disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested || p.s.status === SequenceState.Stopping),
               "Pause"
-            ).when(p.s.status === SequenceState.Running),
+            ).when(p.s.status === SequenceState.Running || p.s.status === SequenceState.Stopping),
             Button(
               Button.Props(
                 icon = Some(IconPlay),
