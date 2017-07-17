@@ -19,11 +19,11 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
 
   private def parseStaticConfig(i: Instrument, cm: ConfigMap): PioError \/ StaticConfig =
     i match {
-      case Instrument.AcqCam     => AcqCamStaticConfig().right
-      case Instrument.Bhros      => BhrosStaticConfig().right
+      case Instrument.AcqCam     => StaticConfig.AcqCam().right
+      case Instrument.Bhros      => StaticConfig.Bhros().right
 
       case Instrument.Flamingos2 =>
-        Legacy.Instrument.MosPreImaging.parse(cm).map(F2StaticConfig(_))
+        Legacy.Instrument.MosPreImaging.parse(cm).map(StaticConfig.F2(_))
 
       case Instrument.GmosN      =>
         parseGmosNorthStaticConfig(cm)
@@ -31,16 +31,16 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.GmosS      =>
         parseGmosSouthStaticConfig(cm)
 
-      case Instrument.Gnirs      => GnirsStaticConfig()          .right
-      case Instrument.Gpi        => GpiStaticConfig()            .right
-      case Instrument.Gsaoi      => GsaoiStaticConfig()          .right
-      case Instrument.Michelle   => MichelleStaticConfig()       .right
-      case Instrument.Nici       => NiciStaticConfig()           .right
-      case Instrument.Nifs       => NifsStaticConfig()           .right
-      case Instrument.Niri       => NiriStaticConfig()           .right
-      case Instrument.Phoenix    => PhoenixStaticConfig()        .right
-      case Instrument.Trecs      => TrecsStaticConfig()          .right
-      case Instrument.Visitor    => VisitorStaticConfig()        .right
+      case Instrument.Gnirs      => StaticConfig.Gnirs()          .right
+      case Instrument.Gpi        => StaticConfig.Gpi()            .right
+      case Instrument.Gsaoi      => StaticConfig.Gsaoi()          .right
+      case Instrument.Michelle   => StaticConfig.Michelle()       .right
+      case Instrument.Nici       => StaticConfig.Nici()           .right
+      case Instrument.Nifs       => StaticConfig.Nifs()           .right
+      case Instrument.Niri       => StaticConfig.Niri()           .right
+      case Instrument.Phoenix    => StaticConfig.Phoenix()        .right
+      case Instrument.Trecs      => StaticConfig.Trecs()          .right
+      case Instrument.Visitor    => StaticConfig.Visitor()        .right
     }
 
   private def parseGmosCommonStatic(cm: ConfigMap): PioError \/ Gmos.GmosCommonStaticConfig =
@@ -53,13 +53,13 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
     for {
       c <- parseGmosCommonStatic(cm)
       s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
-    } yield GmosNorthStaticConfig(c, s)
+    } yield StaticConfig.GmosNorth(c, s)
 
   private def parseGmosSouthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
     for {
       c <- parseGmosCommonStatic(cm)
       s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
-    } yield GmosSouthStaticConfig(c, s)
+    } yield StaticConfig.GmosSouth(c, s)
 
   def decode(n: Node): PioError \/ StaticConfig =
     for {

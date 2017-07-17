@@ -3,6 +3,7 @@
 
 package gem.config
 
+import gem.arb._
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
 import gem.enum._
 import gem.enum.Instrument._
@@ -16,7 +17,9 @@ import scalaz._, Scalaz._
 
 
 trait Arbitraries {
-  import gem.arb.ArbEnumerated._
+  import ArbEnumerated._
+  import ArbDisjunction._
+
 
   // Surely this is already defined somewhere?
   implicit val functorGen = new Functor[Gen] {
@@ -47,21 +50,21 @@ trait Arbitraries {
                 MosPreImaging.IsNotMosPreImaging)
     )
 
-  implicit val arbAcqCamStatic    = const(AcqCamStaticConfig()         )
-  implicit val arbBhrosStatic     = const(BhrosStaticConfig()          )
-  implicit val arbGnirsStatic     = const(GnirsStaticConfig()          )
-  implicit val arbGpiStatic       = const(GpiStaticConfig()            )
-  implicit val arbGsaoiStatic     = const(GsaoiStaticConfig()          )
-  implicit val arbMichelleStatic  = const(MichelleStaticConfig()       )
-  implicit val arbNiciStatic      = const(NiciStaticConfig()           )
-  implicit val arbNifsStatic      = const(NifsStaticConfig()           )
-  implicit val arbNiriStatic      = const(NiriStaticConfig()           )
-  implicit val arbPhoenixStatic   = const(PhoenixStaticConfig()        )
-  implicit val arbTrecsStatic     = const(TrecsStaticConfig()          )
-  implicit val arbVisitorStatic   = const(VisitorStaticConfig()        )
+  implicit val arbAcqCamStatic    = const(StaticConfig.AcqCam()         )
+  implicit val arbBhrosStatic     = const(StaticConfig.Bhros()          )
+  implicit val arbGnirsStatic     = const(StaticConfig.Gnirs()          )
+  implicit val arbGpiStatic       = const(StaticConfig.Gpi()            )
+  implicit val arbGsaoiStatic     = const(StaticConfig.Gsaoi()          )
+  implicit val arbMichelleStatic  = const(StaticConfig.Michelle()       )
+  implicit val arbNiciStatic      = const(StaticConfig.Nici()           )
+  implicit val arbNifsStatic      = const(StaticConfig.Nifs()           )
+  implicit val arbNiriStatic      = const(StaticConfig.Niri()           )
+  implicit val arbPhoenixStatic   = const(StaticConfig.Phoenix()        )
+  implicit val arbTrecsStatic     = const(StaticConfig.Trecs()          )
+  implicit val arbVisitorStatic   = const(StaticConfig.Visitor()        )
 
   implicit val arbF2Static        =
-    Arbitrary(arbitrary[MosPreImaging].map(F2StaticConfig(_)))
+    Arbitrary(arbitrary[MosPreImaging].map(StaticConfig.F2(_)))
 
   implicit val arbGmosNorthStatic =
     Arbitrary(
@@ -69,7 +72,7 @@ trait Arbitraries {
         d <- arbitrary[GmosDetector]
         p <- arbitrary[MosPreImaging]
         s <- arbitrary[GmosNorthStageMode]
-      } yield GmosNorthStaticConfig(Gmos.GmosCommonStaticConfig(d, p, None), s)
+      } yield StaticConfig.GmosNorth(Gmos.GmosCommonStaticConfig(d, p, None), s)
     )
 
   implicit val arbGmosSouthStatic =
@@ -78,40 +81,40 @@ trait Arbitraries {
         d <- arbitrary[GmosDetector]
         p <- arbitrary[MosPreImaging]
         s <- arbitrary[GmosSouthStageMode]
-      } yield GmosSouthStaticConfig(Gmos.GmosCommonStaticConfig(d, p, None), s)
+      } yield StaticConfig.GmosSouth(Gmos.GmosCommonStaticConfig(d, p, None), s)
     )
 
   def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
     i match {
-      case AcqCam     => arbitrary[AcqCamStaticConfig   ]
-      case Bhros      => arbitrary[BhrosStaticConfig    ]
-      case Flamingos2 => arbitrary[F2StaticConfig       ]
-      case GmosN      => arbitrary[GmosNorthStaticConfig]
-      case GmosS      => arbitrary[GmosSouthStaticConfig]
-      case Gnirs      => arbitrary[GnirsStaticConfig    ]
-      case Gpi        => arbitrary[GpiStaticConfig      ]
-      case Gsaoi      => arbitrary[GsaoiStaticConfig    ]
-      case Michelle   => arbitrary[MichelleStaticConfig ]
-      case Nici       => arbitrary[NiciStaticConfig     ]
-      case Nifs       => arbitrary[NifsStaticConfig     ]
-      case Niri       => arbitrary[NiriStaticConfig     ]
-      case Phoenix    => arbitrary[PhoenixStaticConfig  ]
-      case Trecs      => arbitrary[TrecsStaticConfig    ]
-      case Visitor    => arbitrary[VisitorStaticConfig  ]
+      case AcqCam     => arbitrary[StaticConfig.AcqCam   ]
+      case Bhros      => arbitrary[StaticConfig.Bhros    ]
+      case Flamingos2 => arbitrary[StaticConfig.F2       ]
+      case GmosN      => arbitrary[StaticConfig.GmosNorth]
+      case GmosS      => arbitrary[StaticConfig.GmosSouth]
+      case Gnirs      => arbitrary[StaticConfig.Gnirs    ]
+      case Gpi        => arbitrary[StaticConfig.Gpi      ]
+      case Gsaoi      => arbitrary[StaticConfig.Gsaoi    ]
+      case Michelle   => arbitrary[StaticConfig.Michelle ]
+      case Nici       => arbitrary[StaticConfig.Nici     ]
+      case Nifs       => arbitrary[StaticConfig.Nifs     ]
+      case Niri       => arbitrary[StaticConfig.Niri     ]
+      case Phoenix    => arbitrary[StaticConfig.Phoenix  ]
+      case Trecs      => arbitrary[StaticConfig.Trecs    ]
+      case Visitor    => arbitrary[StaticConfig.Visitor  ]
     }
 
-  implicit val arbAcqCamDynamic    = const(AcqCamDynamicConfig()         )
-  implicit val arbBhrosDynamic     = const(BhrosDynamicConfig()          )
-  implicit val arbGnirsDynamic     = const(GnirsDynamicConfig()          )
-  implicit val arbGpiDynamic       = const(GpiDynamicConfig()            )
-  implicit val arbGsaoiDynamic     = const(GsaoiDynamicConfig()          )
-  implicit val arbMichelleDynamic  = const(MichelleDynamicConfig()       )
-  implicit val arbNiciDynamic      = const(NiciDynamicConfig()           )
-  implicit val arbNifsDynamic      = const(NifsDynamicConfig()           )
-  implicit val arbNiriDynamic      = const(NiriDynamicConfig()           )
-  implicit val arbPhoenixDynamic   = const(PhoenixDynamicConfig()        )
-  implicit val arbTrecsDynamic     = const(TrecsDynamicConfig()          )
-  implicit val arbVisitorDynamic   = const(VisitorDynamicConfig()        )
+  implicit val arbAcqCamDynamic    = const(DynamicConfig.AcqCam()         )
+  implicit val arbBhrosDynamic     = const(DynamicConfig.Bhros()          )
+  implicit val arbGnirsDynamic     = const(DynamicConfig.Gnirs()          )
+  implicit val arbGpiDynamic       = const(DynamicConfig.Gpi()            )
+  implicit val arbGsaoiDynamic     = const(DynamicConfig.Gsaoi()          )
+  implicit val arbMichelleDynamic  = const(DynamicConfig.Michelle()       )
+  implicit val arbNiciDynamic      = const(DynamicConfig.Nici()           )
+  implicit val arbNifsDynamic      = const(DynamicConfig.Nifs()           )
+  implicit val arbNiriDynamic      = const(DynamicConfig.Niri()           )
+  implicit val arbPhoenixDynamic   = const(DynamicConfig.Phoenix()        )
+  implicit val arbTrecsDynamic     = const(DynamicConfig.Trecs()          )
+  implicit val arbVisitorDynamic   = const(DynamicConfig.Visitor()        )
 
   implicit val arbF2Dynamic       =
     Arbitrary {
@@ -123,7 +126,7 @@ trait Arbitraries {
         l <- arbitrary[F2LyotWheel  ]
         r <- arbitrary[F2ReadMode   ]
         w <- arbitrary[F2WindowCover]
-      } yield F2DynamicConfig(d, e, f, u, l, r, w)
+      } yield DynamicConfig.F2(d, e, f, u, l, r, w)
     }
 
   implicit val arbGmosCcdReadout =
@@ -184,7 +187,7 @@ trait Arbitraries {
         g <- arbitrary[Option[Gmos.GmosGrating[GmosNorthDisperser]]]
         f <- arbitrary[Option[GmosNorthFilter]]
         u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosNorthFpu]]
-      } yield GmosNorthDynamicConfig(c, g, f, u)
+      } yield DynamicConfig.GmosNorth(c, g, f, u)
     }
 
   implicit val arbGmosSouthDynamic =
@@ -194,26 +197,26 @@ trait Arbitraries {
         g <- arbitrary[Option[Gmos.GmosGrating[GmosSouthDisperser]]]
         f <- arbitrary[Option[GmosSouthFilter]]
         u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosSouthFpu]]
-      } yield GmosSouthDynamicConfig(c, g, f, u)
+      } yield DynamicConfig.GmosSouth(c, g, f, u)
     }
 
   def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] =
     i match {
-      case AcqCam     => arbitrary[AcqCamDynamicConfig   ]
-      case Bhros      => arbitrary[BhrosDynamicConfig    ]
-      case Flamingos2 => arbitrary[F2DynamicConfig       ]
-      case GmosN      => arbitrary[GmosNorthDynamicConfig]
-      case GmosS      => arbitrary[GmosSouthDynamicConfig]
-      case Gnirs      => arbitrary[GnirsDynamicConfig    ]
-      case Gpi        => arbitrary[GpiDynamicConfig      ]
-      case Gsaoi      => arbitrary[GsaoiDynamicConfig    ]
-      case Michelle   => arbitrary[MichelleDynamicConfig ]
-      case Nici       => arbitrary[NiciDynamicConfig     ]
-      case Nifs       => arbitrary[NifsDynamicConfig     ]
-      case Niri       => arbitrary[NiriDynamicConfig     ]
-      case Phoenix    => arbitrary[PhoenixDynamicConfig  ]
-      case Trecs      => arbitrary[TrecsDynamicConfig    ]
-      case Visitor    => arbitrary[VisitorDynamicConfig  ]
+      case AcqCam     => arbitrary[DynamicConfig.AcqCam   ]
+      case Bhros      => arbitrary[DynamicConfig.Bhros    ]
+      case Flamingos2 => arbitrary[DynamicConfig.F2       ]
+      case GmosN      => arbitrary[DynamicConfig.GmosNorth]
+      case GmosS      => arbitrary[DynamicConfig.GmosSouth]
+      case Gnirs      => arbitrary[DynamicConfig.Gnirs    ]
+      case Gpi        => arbitrary[DynamicConfig.Gpi      ]
+      case Gsaoi      => arbitrary[DynamicConfig.Gsaoi    ]
+      case Michelle   => arbitrary[DynamicConfig.Michelle ]
+      case Nici       => arbitrary[DynamicConfig.Nici     ]
+      case Nifs       => arbitrary[DynamicConfig.Nifs     ]
+      case Niri       => arbitrary[DynamicConfig.Niri     ]
+      case Phoenix    => arbitrary[DynamicConfig.Phoenix  ]
+      case Trecs      => arbitrary[DynamicConfig.Trecs    ]
+      case Visitor    => arbitrary[DynamicConfig.Visitor  ]
     }
 
 

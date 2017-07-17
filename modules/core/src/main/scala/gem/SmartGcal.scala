@@ -5,11 +5,15 @@ package gem
 
 import gem.config.DynamicConfig
 
+/**
+ * Module of types and constuctors related to Smart GCal.
+ * @group Sequence Model
+ */
 object SmartGcal {
 
   sealed trait ExpansionError extends Product with Serializable
 
-  type ExpandedSteps      = List[GcalStep[DynamicConfig]]
+  type ExpandedSteps      = List[Step.Gcal[DynamicConfig]]
 
   final case class StepNotFound(loc: Location.Middle) extends ExpansionError
   case object      NotSmartGcal                       extends ExpansionError

@@ -4,9 +4,10 @@
 package gem.ocs2
 
 import gem.Log
-import gem.config.{F2SmartGcalKey, GcalConfig, SmartGcalKey}
-import gem.dao.{SmartGcalDao, UserDao}
-import gem.enum.{GcalBaselineType, GcalLampType}
+import gem.config.GcalConfig
+import gem.config.DynamicConfig.SmartGcalKey
+import gem.dao.{ SmartGcalDao, UserDao }
+import gem.enum.{ GcalBaselineType, GcalLampType }
 import gem.ocs2.pio.PioParse
 
 import java.io.File
@@ -63,7 +64,7 @@ object SmartGcalImporter extends SafeApp with DoobieClient {
     val f = filterS   .parseAs(filterDisplayValue   )
     val u = fpuS      .parseAs(fpuDisplayValue      )
 
-    (F2SmartGcalKey(d, f, u), gcal)
+    (SmartGcalKey.F2(d, f, u), gcal)
   }
 
   // -------------------------------------------------------------------------

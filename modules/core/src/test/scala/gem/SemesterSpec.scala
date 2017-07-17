@@ -4,6 +4,7 @@
 package gem
 
 import gem.arb._
+import gem.imp.TimeInstances._
 import gem.enum.{ Half, Site }
 import java.time.{ Year, ZoneId }
 import java.time.format.DateTimeFormatter

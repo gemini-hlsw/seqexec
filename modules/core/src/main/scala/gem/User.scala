@@ -3,12 +3,12 @@
 
 package gem
 
-import gem.enum.ProgramRole
-
-import scala.language.implicitConversions
-
-import scalaz._, Scalaz._, scalaz.syntax.Ops
-
+/**
+ * A Gem user, parameterized on the type of owned program roles, typically
+ * [[gem.enum.ProgramRole ProgramRole]] for a fully specified user, or `Nothing` for a user with
+ * unstated permission information.
+ * @group Application Model
+ */
 final case class User[A](
   id: User.Id,
   firstName: String,
@@ -20,21 +20,4 @@ final case class User[A](
 
 object User {
   type Id = String // TODO
-}
-
-trait UserProgramRoleOps extends Ops[User[ProgramRole]] {
-
-  def programRoles(pid: Program.Id): Set[ProgramRole] =
-    self.allProgramRoles.get(pid).orZero
-
-  def hasProgramRole(pid: Program.Id, role: ProgramRole): Boolean =
-    programRoles(pid).contains(role)
-
-}
-
-trait ToUserProgramRoleOps {
-  implicit def toUserProgramRoleOps(self0: User[ProgramRole]): UserProgramRoleOps =
-    new UserProgramRoleOps {
-      val self: User[ProgramRole] = self0
-    }
 }

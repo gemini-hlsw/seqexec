@@ -21,23 +21,23 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
 
   def parseInstConfig(i: Instrument, cm: ConfigMap): PioError \/ DynamicConfig =
     i match {
-      case Instrument.AcqCam     => AcqCamDynamicConfig()         .right
-      case Instrument.Bhros      => BhrosDynamicConfig()          .right
+      case Instrument.AcqCam     => DynamicConfig.AcqCam()         .right
+      case Instrument.Bhros      => DynamicConfig.Bhros()          .right
 
       case Instrument.Flamingos2 => f2Dynamic(cm)
       case Instrument.GmosN      => gmosNorthDynamic(cm)
       case Instrument.GmosS      => gmosSouthDynamic(cm)
 
-      case Instrument.Gnirs      => GnirsDynamicConfig()          .right
-      case Instrument.Gpi        => GpiDynamicConfig()            .right
-      case Instrument.Gsaoi      => GsaoiDynamicConfig()          .right
-      case Instrument.Michelle   => MichelleDynamicConfig()       .right
-      case Instrument.Nici       => NiciDynamicConfig()           .right
-      case Instrument.Nifs       => NifsDynamicConfig()           .right
-      case Instrument.Niri       => NiriDynamicConfig()           .right
-      case Instrument.Phoenix    => PhoenixDynamicConfig()        .right
-      case Instrument.Trecs      => TrecsDynamicConfig()          .right
-      case Instrument.Visitor    => VisitorDynamicConfig()        .right
+      case Instrument.Gnirs      => DynamicConfig.Gnirs()          .right
+      case Instrument.Gpi        => DynamicConfig.Gpi()            .right
+      case Instrument.Gsaoi      => DynamicConfig.Gsaoi()          .right
+      case Instrument.Michelle   => DynamicConfig.Michelle()       .right
+      case Instrument.Nici       => DynamicConfig.Nici()           .right
+      case Instrument.Nifs       => DynamicConfig.Nifs()           .right
+      case Instrument.Niri       => DynamicConfig.Niri()           .right
+      case Instrument.Phoenix    => DynamicConfig.Phoenix()        .right
+      case Instrument.Trecs      => DynamicConfig.Trecs()          .right
+      case Instrument.Visitor    => DynamicConfig.Visitor()        .right
     }
 
   private def f2Dynamic(cm: ConfigMap): PioError \/ DynamicConfig = {
@@ -50,7 +50,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       l <- LyotWheel.parse(cm)
       r <- ReadMode.parse(cm)
       w <- WindowCover.cparseOrElse(cm, F2WindowCover.Close)
-    } yield F2DynamicConfig(d, e, f, u, l, r, w)
+    } yield DynamicConfig.F2(d, e, f, u, l, r, w)
   }
 
   private def gmosCommonDynamic(cm: ConfigMap): PioError \/ Gmos.GmosCommonDynamicConfig = {
@@ -94,7 +94,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       u <- Fpu.cparse(cm).map(_.flatten)
       m <- gmosCustomMask(cm)
       fpu = u.map(_.right[Gmos.GmosCustomMask]) orElse m.map(_.left[GmosNorthFpu])
-    } yield GmosNorthDynamicConfig(c, g, f, fpu)
+    } yield DynamicConfig.GmosNorth(c, g, f, fpu)
   }
 
   private def gmosSouthDynamic(cm: ConfigMap): PioError \/ DynamicConfig = {
@@ -115,23 +115,23 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       u <- Fpu.cparse(cm).map(_.flatten)
       m <- gmosCustomMask(cm)
       fpu = u.map(_.right[Gmos.GmosCustomMask]) orElse m.map(_.left[GmosSouthFpu])
-    } yield GmosSouthDynamicConfig(c, g, f, fpu)
+    } yield DynamicConfig.GmosSouth(c, g, f, fpu)
   }
 
   def parseStep(cm: ConfigMap): PioError \/ Step[DynamicConfig] = {
     def go(observeType: String, instrument: DynamicConfig): PioError \/ Step[DynamicConfig] =
       observeType match {
         case "BIAS" =>
-          BiasStep(instrument).right
+          Step.Bias(instrument).right
 
         case "DARK" =>
-          DarkStep(instrument).right
+          Step.Dark(instrument).right
 
         case "OBJECT" | "CAL" =>
           for {
             p <- Legacy.Telescope.P.cparseOrElse(cm, Offset.P.Zero)
             q <- Legacy.Telescope.Q.cparseOrElse(cm, Offset.Q.Zero)
-          } yield ScienceStep(instrument, TelescopeConfig(p, q))
+          } yield Step.Science(instrument, TelescopeConfig(p, q))
 
         case "ARC" | "FLAT" =>
           import Legacy.Calibration._
@@ -142,7 +142,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
             s <- Shutter.parse(cm)
             e <- ExposureTime.parse(cm)
             c <- Coadds.parse(cm)
-          } yield GcalStep(instrument, GcalConfig(l, f, d, s, e, c.toShort))
+          } yield Step.Gcal(instrument, GcalConfig(l, f, d, s, e, c.toShort))
 
         case x =>
           PioError.parseError(x, "ObserveType").left

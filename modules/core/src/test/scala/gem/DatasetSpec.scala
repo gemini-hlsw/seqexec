@@ -4,6 +4,7 @@
 package gem
 
 import gem.arb._
+import gem.imp.TimeInstances._
 import java.time.Instant
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }

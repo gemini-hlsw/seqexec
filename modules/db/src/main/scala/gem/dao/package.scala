@@ -17,7 +17,7 @@ import scala.reflect.runtime.universe.TypeTag
 import scalaz._
 import Scalaz._
 
-package object dao extends MoreTupleOps with ToUserProgramRoleOps {
+package object dao extends MoreTupleOps {
 
   // Uncomment to turn on statement logging
   // implicit val han = LogHandler.jdkLogHandler
@@ -134,8 +134,8 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
         NonEmptyList(JdbcDistinct, Integer),
         NonEmptyList(name),
         _ getInt _,
-        FPS.setInt,
-        FRS.updateInt
+        _.setInt(_, _),
+        _.updateInt(_, _)
       )
 
     def long(name: String): Meta[Long] =
@@ -143,8 +143,8 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
         NonEmptyList(JdbcDistinct, BigInt),
         NonEmptyList(name),
         _ getLong _,
-        FPS.setLong,
-        FRS.updateLong
+        _.setLong(_, _),
+        _.updateLong(_, _)
       )
 
     def short(name: String): Meta[Short] =
@@ -152,8 +152,8 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
         NonEmptyList(JdbcDistinct, SmallInt),
         NonEmptyList(name),
         _ getShort _,
-        FPS.setShort,
-        FRS.updateShort
+        _.setShort(_, _),
+        _.updateShort(_, _)
       )
 
     def string(name: String): Meta[String] =
@@ -161,8 +161,8 @@ package object dao extends MoreTupleOps with ToUserProgramRoleOps {
         NonEmptyList(JdbcDistinct, VarChar),
         NonEmptyList(name),
         _ getString _,
-        FPS.setString,
-        FRS.updateString
+        _.setString(_, _),
+        _.updateString(_, _)
       )
 
   }

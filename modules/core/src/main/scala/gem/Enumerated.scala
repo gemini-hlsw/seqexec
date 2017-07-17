@@ -6,7 +6,10 @@ package gem
 import scalaz._
 import Scalaz._
 
-/** Typeclass for an enumerated type with unique string tags and a canonical ordering. */
+/**
+ * Typeclass for an enumerated type with unique string tags and a canonical ordering.
+ * @group Typeclasses
+ */
 trait Enumerated[A] extends Order[A] {
 
   /** All members of this enumeration, in unspecified but canonical order. */
@@ -35,13 +38,17 @@ object Enumerated {
   def apply[A](implicit ev: Enumerated[A]): ev.type = ev
 }
 
+/** @group Typeclasses */
 trait Obsoletable[A] {
   def isActive(a: A): Boolean
   final def isObsolete(a: A): Boolean = !isActive(a)
 }
 
 
-/** Typeclass for things that can be show in a user interface. */
+/**
+ * Typeclass for things that can be shown in a user interface.
+ * @group Typeclasses
+ */
 trait Display[A] {
   def name(a:A): String         // short name, for labels
   def elaboration(a:A): Option[String]  // an elaboration on the name, used for computing longname

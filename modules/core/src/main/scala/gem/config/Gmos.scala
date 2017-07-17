@@ -4,10 +4,12 @@
 package gem.config
 
 import gem.enum._
-
 import java.time.Duration
 
-/** Additional type hierarchy over the low-level GMOS enums. */
+/**
+ * Additional type hierarchy over the low-level GMOS enums.
+ * @group Instrument-Specific Models
+ */
 object Gmos {
 
   final case class GmosNodAndShuffle(

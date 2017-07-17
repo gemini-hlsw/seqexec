@@ -25,21 +25,21 @@ object StaticConfigDao {
 
   private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Int] =
     s match {
-      case _: AcqCamStaticConfig    => 0.point[ConnectionIO]
-      case _: BhrosStaticConfig     => 0.point[ConnectionIO]
-      case f2: F2StaticConfig       => Statements.insertF2(id, f2).run
-      case g: GmosNorthStaticConfig => Statements.insertGmosNorth(id, g).run
-      case g: GmosSouthStaticConfig => Statements.insertGmosSouth(id, g).run
-      case _: GnirsStaticConfig     => 0.point[ConnectionIO]
-      case _: GpiStaticConfig       => 0.point[ConnectionIO]
-      case _: GsaoiStaticConfig     => 0.point[ConnectionIO]
-      case _: MichelleStaticConfig  => 0.point[ConnectionIO]
-      case _: NiciStaticConfig      => 0.point[ConnectionIO]
-      case _: NifsStaticConfig      => 0.point[ConnectionIO]
-      case _: NiriStaticConfig      => 0.point[ConnectionIO]
-      case _: PhoenixStaticConfig   => 0.point[ConnectionIO]
-      case _: TrecsStaticConfig     => 0.point[ConnectionIO]
-      case _: VisitorStaticConfig   => 0.point[ConnectionIO]
+      case _:  StaticConfig.AcqCam    => 0.point[ConnectionIO]
+      case _:  StaticConfig.Bhros     => 0.point[ConnectionIO]
+      case f2: StaticConfig.F2       => Statements.insertF2(id, f2).run
+      case g:  StaticConfig.GmosNorth => Statements.insertGmosNorth(id, g).run
+      case g:  StaticConfig.GmosSouth => Statements.insertGmosSouth(id, g).run
+      case _:  StaticConfig.Gnirs     => 0.point[ConnectionIO]
+      case _:  StaticConfig.Gpi       => 0.point[ConnectionIO]
+      case _:  StaticConfig.Gsaoi     => 0.point[ConnectionIO]
+      case _:  StaticConfig.Michelle  => 0.point[ConnectionIO]
+      case _:  StaticConfig.Nici      => 0.point[ConnectionIO]
+      case _:  StaticConfig.Nifs      => 0.point[ConnectionIO]
+      case _:  StaticConfig.Niri      => 0.point[ConnectionIO]
+      case _:  StaticConfig.Phoenix   => 0.point[ConnectionIO]
+      case _:  StaticConfig.Trecs     => 0.point[ConnectionIO]
+      case _:  StaticConfig.Visitor   => 0.point[ConnectionIO]
     }
 
   def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
@@ -47,34 +47,34 @@ object StaticConfigDao {
       sc.point[ConnectionIO]
 
     i match {
-      case Instrument.AcqCam     => point(AcqCamStaticConfig())
-      case Instrument.Bhros      => point(BhrosStaticConfig())
+      case Instrument.AcqCam     => point(StaticConfig.AcqCam())
+      case Instrument.Bhros      => point(StaticConfig.Bhros())
 
       case Instrument.Flamingos2 => Statements.selectF2(sid)       .unique.widen[StaticConfig]
       case Instrument.GmosN      => Statements.selectGmosNorth(sid).unique.widen[StaticConfig]
       case Instrument.GmosS      => Statements.selectGmosSouth(sid).unique.widen[StaticConfig]
 
-      case Instrument.Gnirs      => point(GnirsStaticConfig())
-      case Instrument.Gpi        => point(GpiStaticConfig())
-      case Instrument.Gsaoi      => point(GsaoiStaticConfig())
-      case Instrument.Michelle   => point(MichelleStaticConfig())
-      case Instrument.Nici       => point(NiciStaticConfig())
-      case Instrument.Nifs       => point(NifsStaticConfig())
-      case Instrument.Niri       => point(NiriStaticConfig())
-      case Instrument.Phoenix    => point(PhoenixStaticConfig())
-      case Instrument.Trecs      => point(TrecsStaticConfig())
-      case Instrument.Visitor    => point(VisitorStaticConfig())
+      case Instrument.Gnirs      => point(StaticConfig.Gnirs())
+      case Instrument.Gpi        => point(StaticConfig.Gpi())
+      case Instrument.Gsaoi      => point(StaticConfig.Gsaoi())
+      case Instrument.Michelle   => point(StaticConfig.Michelle())
+      case Instrument.Nici       => point(StaticConfig.Nici())
+      case Instrument.Nifs       => point(StaticConfig.Nifs())
+      case Instrument.Niri       => point(StaticConfig.Niri())
+      case Instrument.Phoenix    => point(StaticConfig.Phoenix())
+      case Instrument.Trecs      => point(StaticConfig.Trecs())
+      case Instrument.Visitor    => point(StaticConfig.Visitor())
     }
   }
 
 
   object Statements {
-    def selectF2(sid: Int): Query0[F2StaticConfig] =
+    def selectF2(sid: Int): Query0[StaticConfig.F2] =
       sql"""
         SELECT mos_preimaging
           FROM static_f2
          WHERE static_id = $sid AND instrument = ${Instrument.Flamingos2: Instrument}
-      """.query[F2StaticConfig]
+      """.query[StaticConfig.F2]
 
     // We need to define this explicitly because we're ignoring the nod and
     // shuffle bit for now.
@@ -84,23 +84,23 @@ object StaticConfigDao {
         (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
       )
 
-    def selectGmosNorth(sid: Int): Query0[GmosNorthStaticConfig] =
+    def selectGmosNorth(sid: Int): Query0[StaticConfig.GmosNorth] =
       sql"""
         SELECT detector,
                mos_preimaging,
                stage_mode
           FROM static_gmos_north
          WHERE static_id = $sid AND instrument = ${Instrument.GmosN: Instrument}
-      """.query[GmosNorthStaticConfig]
+      """.query[StaticConfig.GmosNorth]
 
-    def selectGmosSouth(sid: Int): Query0[GmosSouthStaticConfig] =
+    def selectGmosSouth(sid: Int): Query0[StaticConfig.GmosSouth] =
       sql"""
         SELECT detector,
                mos_preimaging,
                stage_mode
           FROM static_gmos_south
          WHERE static_id = $sid AND instrument = ${Instrument.GmosS: Instrument}
-      """.query[GmosSouthStaticConfig]
+      """.query[StaticConfig.GmosSouth]
 
     def insertBaseSlice(i: Instrument): Update0 =
       sql"""
@@ -108,7 +108,7 @@ object StaticConfigDao {
         VALUES ($i)
       """.update
 
-    def insertF2(id: Int, f2: F2StaticConfig): Update0 =
+    def insertF2(id: Int, f2: StaticConfig.F2): Update0 =
       sql"""
         INSERT INTO static_f2 (static_id, instrument, mos_preimaging)
         VALUES (
@@ -117,7 +117,7 @@ object StaticConfigDao {
           ${f2.mosPreImaging})
       """.update
 
-    def insertGmosNorth(id: Int, g: GmosNorthStaticConfig): Update0 =
+    def insertGmosNorth(id: Int, g: StaticConfig.GmosNorth): Update0 =
       sql"""
         INSERT INTO static_gmos_north (static_id, instrument, detector, mos_preimaging, stage_mode)
         VALUES (
@@ -128,7 +128,7 @@ object StaticConfigDao {
           ${g.stageMode})
       """.update
 
-    def insertGmosSouth(id: Int, g: GmosSouthStaticConfig): Update0 =
+    def insertGmosSouth(id: Int, g: StaticConfig.GmosSouth): Update0 =
       sql"""
         INSERT INTO static_gmos_south (static_id, instrument, detector, mos_preimaging, stage_mode)
         VALUES (

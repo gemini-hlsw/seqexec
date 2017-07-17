@@ -6,6 +6,7 @@ package gem.dao
 import gem._
 import gem.SmartGcal._
 import gem.config._
+import gem.config.DynamicConfig.SmartGcalKey
 import gem.enum._
 
 import doobie.imports._
@@ -14,13 +15,13 @@ import scalaz._, Scalaz._
 
 object SmartGcalDao {
 
-  def selectF2(k: F2SmartGcalKey, t: SmartGcalType): ConnectionIO[List[Int]] =
+  def selectF2(k: SmartGcalKey.F2, t: SmartGcalType): ConnectionIO[List[Int]] =
     t.fold(Statements.selectF2byLamp(k), Statements.selectF2byBaseline(k)).list
 
   def select(k: SmartGcalKey, t: SmartGcalType): ConnectionIO[List[GcalConfig]] =
     for {
       ids <- k match {
-               case f2: F2SmartGcalKey => selectF2(f2, t)
+               case f2: SmartGcalKey.F2 => selectF2(f2, t)
              }
       gcs <- ids.traverseU { GcalDao.select }.map(_.collect { case Some(a) => a })
     } yield gcs
@@ -30,7 +31,7 @@ object SmartGcalDao {
       id <- GcalDao.insert(g, None)
       r  <-
         k match {
-          case f2: F2SmartGcalKey => Statements.insertSmartF2(l, b, id, f2).run
+          case f2: SmartGcalKey.F2 => Statements.insertSmartF2(l, b, id, f2).run
         }
     } yield r
 
@@ -50,7 +51,7 @@ object SmartGcalDao {
       for {
         s <- step.toRight(stepNotFound(loc))
         c <- s match {
-               case SmartGcalStep(i, t) =>
+               case Step.SmartGcal(i, t) =>
                  EitherConnectionIO.fromDisjunction {
                    (i.smartGcalKey \/> noMappingDefined).map { k => (k, t, i) }
                  }
@@ -66,7 +67,7 @@ object SmartGcalDao {
       (k, t, i) = kti
       gcal <- EitherConnectionIO(select(k, t).map {
                 case Nil => noMappingDefined.left
-                case cs  => cs.map(GcalStep(i, _)).right
+                case cs  => cs.map(Step.Gcal(i, _)).right
               })
     } yield gcal
   }
@@ -124,7 +125,7 @@ object SmartGcalDao {
 
   object Statements {
 
-    def selectF2byLamp(k: F2SmartGcalKey)(l: GcalLampType): Query0[Int] =
+    def selectF2byLamp(k: SmartGcalKey.F2)(l: GcalLampType): Query0[Int] =
         sql"""
           SELECT gcal_id
             FROM smart_f2
@@ -134,7 +135,7 @@ object SmartGcalDao {
              AND fpu       = ${k.fpu}
         """.query[Int]
 
-    def selectF2byBaseline(k: F2SmartGcalKey)(b: GcalBaselineType): Query0[Int] =
+    def selectF2byBaseline(k: SmartGcalKey.F2)(b: GcalBaselineType): Query0[Int] =
         sql"""
           SELECT gcal_id
             FROM smart_f2
@@ -144,7 +145,7 @@ object SmartGcalDao {
              AND fpu       = ${k.fpu}
         """.query[Int]
 
-    def insertSmartF2(l: GcalLampType, b: GcalBaselineType, gcalId: Int, k: F2SmartGcalKey): Update0 =
+    def insertSmartF2(l: GcalLampType, b: GcalBaselineType, gcalId: Int, k: SmartGcalKey.F2): Update0 =
       sql"""
         INSERT INTO smart_f2 (lamp, baseline, disperser, filter, fpu, gcal_id)
              VALUES ($l :: gcal_lamp_type, $b :: gcal_baseline_type, ${k.disperser}, ${k.filter}, ${k.fpu}, $gcalId)

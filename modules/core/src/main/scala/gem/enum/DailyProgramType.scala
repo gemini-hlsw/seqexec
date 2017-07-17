@@ -7,7 +7,10 @@ package enum
 import scalaz.syntax.equal._
 import scalaz.std.string._
 
-/** The subset of ProgramType values usable for daily science programs. */
+/**
+ * Enumerated type for the subset of [[ProgramType]] allowed for daily science programs.
+ * @group Enumerations
+ */
 sealed abstract class DailyProgramType(
   val toProgramType: ProgramType
 ) {
@@ -19,8 +22,8 @@ sealed abstract class DailyProgramType(
 
 object DailyProgramType {
 
-  case object CAL extends DailyProgramType(ProgramType.CAL)
-  case object ENG extends DailyProgramType(ProgramType.ENG)
+  /** @group Constructors */ case object CAL extends DailyProgramType(ProgramType.CAL)
+  /** @group Constructors */ case object ENG extends DailyProgramType(ProgramType.ENG)
 
   val all: List[DailyProgramType] =
     List(CAL, ENG)
@@ -32,6 +35,7 @@ object DailyProgramType {
   def unsafeFromTag(s: String): DailyProgramType =
     fromTag(s).getOrElse(throw new NoSuchElementException(s))
 
+  /** @group Typeclass Instances */
   implicit val ProgramTypeEnumerated: Enumerated[DailyProgramType] =
     new Enumerated[DailyProgramType] {
       def all = DailyProgramType.all

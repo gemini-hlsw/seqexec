@@ -6,6 +6,11 @@ package config
 
 import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
 
+/**
+ * Instrument configuration that is specified once per [[gem.Observation Observation]] and is thus
+ * the same for every [[gem.Step Step]].
+ * @group Configurations
+ */
 sealed abstract class StaticConfig {
   type I <: Instrument with Singleton
   def instrument: I
@@ -16,54 +21,55 @@ object StaticConfig {
   sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: I0) extends StaticConfig {
     type I = I0
   }
-}
 
-final case class PhoenixStaticConfig()    extends StaticConfig.Impl(Instrument.Phoenix)
-final case class MichelleStaticConfig()   extends StaticConfig.Impl(Instrument.Michelle)
-final case class GnirsStaticConfig()      extends StaticConfig.Impl(Instrument.Gnirs)
-final case class NiriStaticConfig()       extends StaticConfig.Impl(Instrument.Niri)
-final case class TrecsStaticConfig()      extends StaticConfig.Impl(Instrument.Trecs)
-final case class NiciStaticConfig()       extends StaticConfig.Impl(Instrument.Nici)
-final case class NifsStaticConfig()       extends StaticConfig.Impl(Instrument.Nifs)
-final case class GpiStaticConfig()        extends StaticConfig.Impl(Instrument.Gpi)
-final case class GsaoiStaticConfig()      extends StaticConfig.Impl(Instrument.Gsaoi)
-final case class AcqCamStaticConfig()     extends StaticConfig.Impl(Instrument.AcqCam)
-final case class BhrosStaticConfig()      extends StaticConfig.Impl(Instrument.Bhros)
-final case class VisitorStaticConfig()    extends StaticConfig.Impl(Instrument.Visitor)
+  final case class Phoenix()    extends StaticConfig.Impl(Instrument.Phoenix)
+  final case class Michelle()   extends StaticConfig.Impl(Instrument.Michelle)
+  final case class Gnirs()      extends StaticConfig.Impl(Instrument.Gnirs)
+  final case class Niri()       extends StaticConfig.Impl(Instrument.Niri)
+  final case class Trecs()      extends StaticConfig.Impl(Instrument.Trecs)
+  final case class Nici()       extends StaticConfig.Impl(Instrument.Nici)
+  final case class Nifs()       extends StaticConfig.Impl(Instrument.Nifs)
+  final case class Gpi()        extends StaticConfig.Impl(Instrument.Gpi)
+  final case class Gsaoi()      extends StaticConfig.Impl(Instrument.Gsaoi)
+  final case class AcqCam()     extends StaticConfig.Impl(Instrument.AcqCam)
+  final case class Bhros()      extends StaticConfig.Impl(Instrument.Bhros)
+  final case class Visitor()    extends StaticConfig.Impl(Instrument.Visitor)
 
-final case class F2StaticConfig(
-  mosPreImaging: MosPreImaging
-) extends StaticConfig.Impl(Instrument.Flamingos2)
+  final case class F2(
+    mosPreImaging: MosPreImaging
+  ) extends StaticConfig.Impl(Instrument.Flamingos2)
 
-object F2StaticConfig {
-  val Default: F2StaticConfig =
-    F2StaticConfig(MosPreImaging.IsNotMosPreImaging)
-}
+  object F2 {
+    val Default: F2 =
+      F2(MosPreImaging.IsNotMosPreImaging)
+  }
 
-import Gmos._
+  import Gmos._
 
-final case class GmosNorthStaticConfig(
-  common:    GmosCommonStaticConfig,
-  stageMode: GmosNorthStageMode
-) extends StaticConfig.Impl(Instrument.GmosN)
+  final case class GmosNorth(
+    common:    GmosCommonStaticConfig,
+    stageMode: GmosNorthStageMode
+  ) extends StaticConfig.Impl(Instrument.GmosN)
 
-object GmosNorthStaticConfig {
-  val Default: GmosNorthStaticConfig =
-    GmosNorthStaticConfig(
-      GmosCommonStaticConfig.Default,
-      GmosNorthStageMode.FollowXy
-    )
-}
+  object GmosNorth {
+    val Default: GmosNorth =
+      GmosNorth(
+        GmosCommonStaticConfig.Default,
+        GmosNorthStageMode.FollowXy
+      )
+  }
 
-final case class GmosSouthStaticConfig(
-  common:    GmosCommonStaticConfig,
-  stageMode: GmosSouthStageMode
-) extends StaticConfig.Impl(Instrument.GmosS)
+  final case class GmosSouth(
+    common:    GmosCommonStaticConfig,
+    stageMode: GmosSouthStageMode
+  ) extends StaticConfig.Impl(Instrument.GmosS)
 
-object GmosSouthStaticConfig {
-  val Default: GmosSouthStaticConfig =
-    GmosSouthStaticConfig(
-      GmosCommonStaticConfig.Default,
-      GmosSouthStageMode.FollowXyz
-    )
+  object GmosSouth {
+    val Default: GmosSouth =
+      GmosSouth(
+        GmosCommonStaticConfig.Default,
+        GmosSouthStageMode.FollowXyz
+      )
+  }
+
 }

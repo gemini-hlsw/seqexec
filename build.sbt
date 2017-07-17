@@ -136,6 +136,13 @@ lazy val commonSettings = Seq(
     "-Xfatal-warnings",
     "-Ywarn-unused:imports"
   ))),
+  scalacOptions in (Compile, doc) ++= Seq(
+    "-groups",
+    "-sourcepath", (baseDirectory in LocalRootProject).value.getAbsolutePath,
+    "-skip-packages", "scalaz",
+    "-doc-title", "Gem",
+    "-doc-version", version.value
+  ),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
   libraryDependencies ++= (scalaOrganization.value %  "scala-reflect" % scalaVersion.value +: testLibs),
   name := "gem-" + name.value

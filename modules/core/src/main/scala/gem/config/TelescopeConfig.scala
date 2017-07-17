@@ -6,6 +6,10 @@ package config
 
 import gem.math.Offset
 
+/**
+ * Additional configuration information for [[gem.Step.Science Science]] steps.
+ * @group Configurations
+ */
 final case class TelescopeConfig(p: Offset.P, q: Offset.Q) {
   def offset: Offset = Offset(p, q)
 }

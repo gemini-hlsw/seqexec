@@ -6,11 +6,14 @@ package gem
 import java.time._
 import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
+import gem.imp.TimeInstances._
 import scalaz._, scalaz.Scalaz.{ char => _, _ }
 
 /**
- * A science program id, which has three constructors. `Science` for standard programs; `Daily` for
- * standard daily engineering and calibration programs; and `Nonstandard` for all others.
+ * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
+ * programs; [[gem.ProgramId.Science Science]] for standard daily engineering and calibration
+ * programs; and [[gem.ProgramId.Nonstandard Nonstandard]]` for all others.
+ * @group Program Model
  */
 sealed abstract class ProgramId(
   val siteOption:        Option[Site],

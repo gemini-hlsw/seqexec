@@ -5,6 +5,10 @@ package gem
 
 import java.time.Instant
 
+/**
+ * An observing event, with many constuctors.
+ * @group Sequence Model
+ */
 sealed trait Event {
   def timestamp: Instant
   def oid: Observation.Id
