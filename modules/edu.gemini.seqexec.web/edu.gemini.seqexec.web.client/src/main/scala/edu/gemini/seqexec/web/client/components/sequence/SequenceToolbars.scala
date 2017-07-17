@@ -111,6 +111,10 @@ object SequenceObserverField {
       // Update the observer field
       Callback.when((observer =/= f.state.currentText) && observer.nonEmpty)(f.modState(_.copy(currentText = observer)))
     }
+    .shouldComponentUpdatePure { f =>
+      val observer = f.nextProps.s.metadata.observer
+      observer =/= f.currentState.currentText
+    }
     .build
 
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)

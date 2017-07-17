@@ -47,7 +47,7 @@ case class RunStartFailed(s: SequenceView) extends Action
 case class RunPauseFailed(s: SequenceView) extends Action
 case class RunSyncFailed(s: SequenceView) extends Action
 
-case class ShowStep(s: SequenceView, i: Int) extends Action
+case class ShowStep(s: SequenceId, i: Int) extends Action
 case class UnShowStep(s: SequenceView) extends Action
 
 case class AppendToLog(s: String) extends Action
@@ -61,8 +61,8 @@ case class ConnectionError(s: String) extends Action
 case class ServerMessage(e: SeqexecEvent) extends Action
 
 // Temporal actions for UI prototyping
-case class FlipSkipStep(view: SequenceView, step: Step) extends Action
-case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
+case class FlipSkipStep(id: SequenceId, step: Step) extends Action
+case class FlipBreakpointStep(id: SequenceId, step: Step) extends Action
 case class UpdateObserver(view: SequenceView, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
 case class UpdateImageQuality(iq: ImageQuality) extends Action

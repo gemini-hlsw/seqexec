@@ -30,7 +30,7 @@ object StepsTableContainer {
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  case class Props(s: SequenceView, status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
+  case class Props(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
 
   class Backend($: BackendScope[Props, State]) {
 
@@ -80,8 +80,8 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(s: SequenceView): TagMod = {
-      s.allowedObservationOperations.map {
+    def observationControlButtons(step: Step): TagMod = {
+      step.allowedObservationOperations.map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
@@ -102,7 +102,7 @@ object StepsTableContainer {
       }.toTagMod
     }
 
-    def controlButtons(loggedIn: Boolean, sequenceView: SequenceView, step: Step): VdomNode =
+    def controlButtons(loggedIn: Boolean, step: Step): VdomNode =
       <.div(
         ^.cls := "ui two column grid stackable",
         <.div(
@@ -119,28 +119,30 @@ object StepsTableContainer {
             SeqexecStyles.buttonsRow,
             <.div(
               ^.cls := "ui icon buttons",
-              observationControlButtons(sequenceView)
+              observationControlButtons(step)
             )
           ).when(loggedIn)
         )
       )
 
-    def stepInError(loggedIn: Boolean, s: SequenceView, msg: String): VdomNode =
+    def isPartiallyExecuted(p: Props): Boolean = p.steps.exists(_.status == StepState.Completed)
+
+    def stepInError(loggedIn: Boolean, isPartiallyExecuted: Boolean, msg: String): VdomNode =
         <.div(
           <.p(s"Error: $msg"),
           IconMessage(
             IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
               s"Press ",
-              <.b(s.isPartiallyExecuted ? "Continue" | "Run"),
+              <.b(isPartiallyExecuted ? "Continue" | "Run"),
               " to re-try"
           ).when(loggedIn)
         )
 
     def stepDisplay(p: Props, step: Step): VdomNode =
       step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, p.s, step)
+        case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, step)
         case StepState.Completed                  => <.p(step.status.shows)
-        case StepState.Error(msg)                 => stepInError(p.status.isLogged, p.s, msg)
+        case StepState.Error(msg)                 => stepInError(p.status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)
@@ -158,11 +160,11 @@ object StepsTableContainer {
     def mouseLeave: Callback =
       $.modState(_.copy(onHover = None))
 
-    def markAsSkipped(view: SequenceView, step: Step): Callback =
-      $.props >>= {p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipSkipStep(view, step)) }) }
+    def markAsSkipped(id: SequenceId, step: Step): Callback =
+      $.props >>= {p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipSkipStep(id, step)) }) }
 
-    def breakpointAt(view: SequenceView, step: Step): Callback =
-      $.props >>= { p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(view, step)) }) }
+    def breakpointAt(id: SequenceId, step: Step): Callback =
+      $.props >>= { p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(id, step)) }) }
 
     def stepsTable(p: Props, s: State): TagMod =
       <.table(
@@ -171,7 +173,7 @@ object StepsTableContainer {
         ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
-            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings.copyIcon(key = s"${p.s.metadata.instrument}.steps.settings")),
+            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings.copyIcon(key = s"${p.instrument}.steps.settings")),
             TableHeader(TableHeader.Props(collapsing = true), "Step"),
             TableHeader(TableHeader.Props(width = Width.Eight), "State"),
             TableHeader(TableHeader.Props(width = Width.Eight), "File"),
@@ -180,7 +182,7 @@ object StepsTableContainer {
         ),
         <.tbody(
           SeqexecStyles.stepsListBody,
-          p.s.steps.zipWithIndex.flatMap {
+          p.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
                 <.tr(
@@ -195,17 +197,17 @@ object StepsTableContainer {
                       SeqexecStyles.breakpointHandleContainer,
                       step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
                       if (step.breakpoint) {
-                        Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.s, step))
+                        Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.id, step))
                       } else {
-                        Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.s, step))
+                        Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.id, step))
                       }
                     ),
                     <.div(
                       SeqexecStyles.skipHandleContainer,
                       if (step.skip) {
-                        IconPlusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                        IconPlusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.id, step))
                       } else {
-                        IconMinusCircle.copyIcon(link = true, color = Some("orange"), extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.s, step))
+                        IconMinusCircle.copyIcon(link = true, color = Some("orange"), extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.id, step))
                       }
                     )
                   ),
@@ -253,7 +255,7 @@ object StepsTableContainer {
                     stepProgress(step)),
                   <.td(
                     ^.cls := "collapsing right aligned",
-                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.s, i))
+                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
                   )
                 )
               )
@@ -268,7 +270,7 @@ object StepsTableContainer {
         //^.ref := scrollRef,
         p.stepConfigDisplayed.map { i =>
           // TODO consider the failure case
-          val step = p.s.steps(i)
+          val step = p.steps(i)
           configTable(step)
         }.getOrElse {
           stepsTable(p, s)
@@ -279,7 +281,7 @@ object StepsTableContainer {
 
   def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s))}
 
-  def displayStepDetails(s: SequenceView, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
+  def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
   //private val scrollRef = Ref[HTMLElement]("scrollRef")

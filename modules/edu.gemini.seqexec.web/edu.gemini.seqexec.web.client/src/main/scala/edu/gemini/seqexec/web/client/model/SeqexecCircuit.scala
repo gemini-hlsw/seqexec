@@ -95,15 +95,15 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
 
     case FlipSkipStep(sequence, step) =>
       updated(value.copy(queue = value.queue.collect {
-        case s if s == sequence => sequence.flipStep(step)
-        case s                  => s
+        case s if s.id === sequence => s.flipStep(step)
+        case s                      => s
       }))
 
-    case FlipBreakpointStep(sequence, step) =>
-      val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequence, step.flipBreakpoint).map(_ => NoAction))
+    case FlipBreakpointStep(sequenceId, step) =>
+      val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequenceId, step.flipBreakpoint).map(_ => NoAction))
       updated(value.copy(queue = value.queue.collect {
-        case s if s == sequence => sequence.flipBreakpointAtStep(step)
-        case s                  => s
+        case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
+        case s                      => s
       }), breakpointRequest)
   }
 }
@@ -168,7 +168,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       updated(value.copy(_1 = value._1.focusOnSequence(ref)))
 
     case ShowStep(s, i) =>
-      if (value._1.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+      if (value._1.instrumentSequences.focus.sequence().exists(_.id === s)) {
         updated(value.copy(_1 = value._1.showStep(i)))
       } else {
         noChange
@@ -386,7 +386,7 @@ case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, ope
 case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
-case class InstrumentSequence(tab: SequenceTab, active: Boolean) extends UseValueEq
+case class InstrumentSequence(instrument: Instrument, sequence: Option[(SequenceView, Option[Int])], active: Boolean) extends UseValueEq
 case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentSequence]) extends UseValueEq
 
 /**
@@ -440,7 +440,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[(SequenceTab, Boolean)]] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
   def instrumentTabAndStatus(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabAndStatus] =
     status.zip(instrumentTab(i)).zoom {
-      case (status, Some((tab, active))) => InstrumentTabAndStatus(status, InstrumentSequence(tab, active).some)
+      case (status, Some((tab, active))) => InstrumentTabAndStatus(status, InstrumentSequence(i, tab.sequence().map(s => (s, tab.stepConfigDisplayed)), active).some)
       case (status, _)                   => InstrumentTabAndStatus(status, none)
     }
 

@@ -52,9 +52,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set a breakpoint
     */
-  def breakpoint(s: SequenceView, step: Step): Future[RegularCommand] = {
+  def breakpoint(sid: SequenceId, step: Step): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/${step.id}/breakpoint/${step.breakpoint}",
+      url = s"$baseUrl/commands/$sid/${step.id}/breakpoint/${step.breakpoint}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

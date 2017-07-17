@@ -27,45 +27,44 @@ object SequenceStepsTableContainer {
   def updateStepToRun(step: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.set(State(step)).liftCB
 
-    private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
+  private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
     .initialState(State(0))
     .renderPS { ($, p, s) =>
       val status = p.p().status
-      val it = p.p().tab.map(_.tab)
-      val sequence = it.flatMap(_.sequence())
-      (it |@| sequence) { (t, s) =>
+      val sequence = p.p().tab.flatMap(_.sequence)
+      sequence.map { case (s, stepConfigDisplayed) =>
         <.div(
           ^.cls := "ui raised secondary segment",
-          t.stepConfigDisplayed.fold{
+          stepConfigDisplayed.fold{
             (if (status.isLogged)
             SequenceDefaultToolbar(SequenceDefaultToolbar.Props(s, status, s.nextStepToRun))
             else
             SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(s))): VdomElement
           }
           (step => StepConfigToolbar(StepConfigToolbar.Props(s, status.isLogged, step))): VdomElement,
-          StepsTableContainer(StepsTableContainer.Props(s, status, t.stepConfigDisplayed, s.nextStepToRun, x => $.runState(updateStepToRun(x))))
+          StepsTableContainer(StepsTableContainer.Props(s.id, s.metadata.instrument, s.steps, status, stepConfigDisplayed, s.nextStepToRun, x => $.runState(updateStepToRun(x))))
         ): VdomElement
       }.getOrElse(<.div(): VdomElement)
     }.componentWillMount { f =>
       val nextStep = for {
-        t <- f.props.p().tab
-        s <- t.tab.sequence()
-        n <- s.nextStepToRun
+        t      <- f.props.p().tab
+        (s, _) <- t.sequence
+        n      <- s.nextStepToRun
       } yield n
       f.modState(_.copy(nextStepToRun = nextStep.getOrElse(0)))
     }.build
 
-    def apply(p: ModelProxy[InstrumentTabAndStatus]): Unmounted[Props, State, Unit] = component(Props(p))
-  }
+  def apply(p: ModelProxy[InstrumentTabAndStatus]): Unmounted[Props, State, Unit] = component(Props(p))
+}
 
-  /**
-  * Content of a single tab with a sequence
-  */
-  object SequenceTabContent {
+/**
+* Content of a single tab with a sequence
+*/
+object SequenceTabContent {
 
-    case class Props(p: ModelProxy[InstrumentTabAndStatus])
+  case class Props(p: ModelProxy[InstrumentTabAndStatus])
 
-    private val component = ScalaComponent.builder[Props]("SequenceTabContent")
+  private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
       val sequenceTab = p.p()
@@ -82,7 +81,7 @@ object SequenceStepsTableContainer {
           }
         )
         case _ =>
-        <.div()
+          <.div()
       }
     }
     .build

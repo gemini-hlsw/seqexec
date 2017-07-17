@@ -61,15 +61,6 @@ object ModelOps {
      * Returns the observation operations allowed
      * TODO Convert to an Instrument-level typeclass
      */
-    def allowedObservationOperations: List[ObservationOperations] =
-      s.metadata.instrument match {
-        case _                                                 => Nil
-      }
-
-    /**
-     * Returns the observation operations allowed
-     * TODO Convert to an Instrument-level typeclass
-     */
     def allowedSequenceOperations: List[SequenceOperations] = Nil
 
     def flipBreakpointAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
@@ -120,5 +111,7 @@ object ModelOps {
         case StepState.Error(_) => true
         case _                  => false
       }
+
+    def allowedObservationOperations: List[ObservationOperations] = Nil
   }
 }
