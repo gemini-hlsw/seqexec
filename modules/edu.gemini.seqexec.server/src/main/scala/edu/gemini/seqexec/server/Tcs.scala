@@ -18,7 +18,7 @@ import squants.space.Millimeters
 /**
  * Created by jluhrs on 4/23/15.
  */
-final case class Tcs(tcsController: TcsController, sfOnly: Boolean, scienceFoldPosition: ScienceFoldPosition) extends System {
+final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System {
 
   import Tcs._
   import MountGuideOption._
@@ -56,24 +56,17 @@ final case class Tcs(tcsController: TcsController, sfOnly: Boolean, scienceFoldP
     val tcsConfig = fromSequenceConfig(config)(tcsState)
     Log.info("Applying TCS configuration " + tcsConfig)
 
-    for {
-      _ <- guideOff(tcsState, Requested(tcsConfig))
-      _ <- tcsController.applyConfig(tcsConfig.tc, tcsConfig.gtc, tcsConfig.ge, tcsConfig.agc)
-      _ <- tcsController.guide(tcsConfig.gc)
-    } yield ConfigResult(this)
+    if(subsystems.toList.contains(Subsystem.Mount))
+      for {
+        _ <- guideOff(tcsState, Requested(tcsConfig))
+        _ <- tcsController.applyConfig(subsystems, tcsConfig)
+        _ <- tcsController.guide(tcsConfig.gc)
+      } yield ConfigResult(this)
+    else
+      tcsController.applyConfig(subsystems, tcsConfig).map(_ => ConfigResult(this))
   }
 
-  private def configureAG(tcsState: TcsConfig): SeqAction[ConfigResult] = {
-    val agConfig = tcsState.agc.copy(sfPos = scienceFoldPosition.some)
-
-    Log.info("Applying AG configuration " + agConfig)
-
-    tcsController.applyScienceFoldConfig(agConfig).map(_ => ConfigResult(this))
-  }
-
-  override def configure(config: Config): SeqAction[ConfigResult] = {
-    tcsController.getConfig.flatMap(if(sfOnly) configureAG(_) else configure(config, _))
-  }
+  override def configure(config: Config): SeqAction[ConfigResult] = tcsController.getConfig.flatMap(configure(config, _))
 
 }
 

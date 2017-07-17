@@ -71,7 +71,7 @@ object TcsControllerEpics extends TcsController {
       case "A" => Beam.A
       case "B" => Beam.B
       case "C" => Beam.C
-      case _ => Beam.A
+      case _   => Beam.A
     }
   )
 
@@ -316,18 +316,6 @@ object TcsControllerEpics extends TcsController {
       case GuiderSensorOn => on.setNoexp(-1) // Set number of exposures to non-stop (-1)
     }
 
-  private def setGuidersWfs(c: GuidersEnabled): SeqAction[Unit] = for {
-    _ <- setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, c.pwfs1.self)
-    _ <- setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, c.pwfs2.self)
-    _ <- setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, c.oiwfs.self)
-  } yield TrySeq(())
-
-  private def setProbesTrackingConfig(c: GuidersTrackingConfig): SeqAction[Unit] = for {
-    _ <- setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, c.pwfs1.self)
-    _ <- setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, c.pwfs2.self)
-    _ <- setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, c.oiwfs.self)
-  } yield TrySeq(())
-
   // Special case: if source is the sky and the instrument is at the bottom port (port 1), the science fold must be parked.
   def setScienceFoldConfig(sfPos: ScienceFoldPosition): SeqAction[Unit] = sfPos match {
     case ScienceFoldPosition.Parked => TcsEpics.instance.scienceFoldParkCmd.mark
@@ -350,9 +338,9 @@ object TcsControllerEpics extends TcsController {
     case _ => TcsEpics.instance.hrwfsPosCmd.setHrwfsPos(encode(hrwfsPos))
   }
 
-  private def setAGConfig(c: AGConfig): SeqAction[Unit] =
-    c.sfPos.map(setScienceFoldConfig).getOrElse(SeqAction(())) *>
-      c.hrwfsPos.map(setHRPickupConfig).getOrElse(SeqAction(()))
+  private def setScienceFoldPosition(p: Option[ScienceFoldPosition]): SeqAction[Unit] = p.map(setScienceFoldConfig).getOrElse(SeqAction(()))
+
+  private def setHrProbePosition(p: Option[HrwfsPickupPosition]): SeqAction[Unit] = p.map(setHRPickupConfig).getOrElse(SeqAction(()))
 
   implicit private val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] = EncodeEpicsValue((op: MountGuideOption)
   => op match {
@@ -378,17 +366,23 @@ object TcsControllerEpics extends TcsController {
 
   private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.instance.m2GuideCmd.setState(encode(c))
 
-  override def applyConfig(tc: TelescopeConfig, gtc: GuidersTrackingConfig, ge: GuidersEnabled, agc: AGConfig): SeqAction[Unit] =
-    for {
-      _ <- setTelescopeConfig(tc)
-      _ <- setProbesTrackingConfig(gtc)
-      _ <- setGuidersWfs(ge)
-      _ <- setAGConfig(agc)
-      _ <- TcsEpics.instance.post
-      _ <- EitherT(Task(Log.info("TCS configuration command post").right))
-      _ <- TcsEpics.instance.waitInPosition(Seconds(30))
-      _ <- EitherT(Task(Log.info("TCS inposition").right))
-    } yield TrySeq(())
+  override def applyConfig(subsystems: NonEmptyList[Subsystem], tcs: TcsConfig): SeqAction[Unit] = {
+    def configSubsystem(subsystem: Subsystem): SeqAction[Unit] = subsystem match {
+      case Subsystem.M1 => setM1Guide(tcs.gc.m1Guide)
+      case Subsystem.M2 => setM2Guide(tcs.gc.m2Guide)
+      case Subsystem.OIWFS => setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, tcs.gtc.oiwfs.self) *> setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, tcs.ge.oiwfs.self)
+      case Subsystem.P1WFS => setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, tcs.gtc.pwfs1.self) *> setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, tcs.ge.pwfs1.self)
+      case Subsystem.P2WFS =>  setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, tcs.gtc.pwfs2.self) *> setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, tcs.ge.pwfs2.self)
+      case Subsystem.Mount => setTelescopeConfig(tcs.tc)
+      case Subsystem.HRProbe => setHrProbePosition(tcs.agc.hrwfsPos)
+      case Subsystem.ScienceFold => setScienceFoldPosition(tcs.agc.sfPos)
+    }
+
+    subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)) *>
+      EitherT(Task(Log.info("TCS configuration command post").right)) *>
+      TcsEpics.instance.waitInPosition(Seconds(30)) *>
+      EitherT(Task(Log.info("TCS inposition").right))
+  }
 
   override def guide(gc: GuideConfig): SeqAction[Unit] = for {
     _ <- setMountGuide(gc.mountGuide)
@@ -396,14 +390,6 @@ object TcsControllerEpics extends TcsController {
     _ <- setM2Guide(gc.m2Guide)
     _ <- TcsEpics.instance.post
     _ <- EitherT(Task(Log.info("TCS guide command post").right))
-  } yield TrySeq(())
-
-  override def applyScienceFoldConfig(agc: AGConfig): SeqAction[Unit] = for {
-    _ <- setAGConfig(agc)
-    _ <- TcsEpics.instance.post
-    _ <- EitherT(Task(Log.info("AG configuration command post").right))
-    _ <- TcsEpics.instance.waitAGInPosition(Seconds(30))
-    _ <- EitherT(Task(Log.info("AG inposition").right))
   } yield TrySeq(())
 
 }
