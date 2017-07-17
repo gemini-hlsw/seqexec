@@ -46,7 +46,7 @@ trait Obsoletable[A] {
 
 
 /**
- * Typeclass for things that can be show in a user interface.
+ * Typeclass for things that can be shown in a user interface.
  * @group Typeclasses
  */
 trait Display[A] {

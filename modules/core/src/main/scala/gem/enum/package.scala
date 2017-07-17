@@ -12,7 +12,7 @@ import scalaz.Scalaz._
 // here as implicit classes wrapping val the generated companion object extends AnyVals.
 
 /**
- * Enumerated types (normally generated from database tables) and related syntactic snrichments.
+ * Enumerated types (normally generated from database tables) and related syntactic enrichments.
  */
 package object enum {
 
