@@ -208,7 +208,6 @@ class StandardHeader(
   hs: DhsClient,
   obsReader: ObsKeywordsReader,
   tcsReader: TcsKeywordsReader,
-  gwsReader: GwsKeywordReader,
   stateReader: StateKeywordsReader) extends Header {
 
   import Header._
@@ -291,49 +290,6 @@ class StandardHeader(
     val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
       List(buildDouble(tcsReader.getOiwfsFreq.orDefault, "OIFREQ")))
 
-    val gwsKeywords = gwsReader.getHealth.flatMap{
-      case Some(0) => sendKeywords(id, inst, hs, List(
-        buildDouble(gwsReader.getHumidity.orDefault, "HUMIDITY"),
-        {
-          val x = gwsReader.getTemperature.map(_.map(_.toCelsiusScale))
-          buildDouble(x.orDefault, "TAMBIENT")
-        },
-        {
-          val x = gwsReader.getTemperature.map(_.map(_.toFahrenheitScale))
-          buildDouble(x.orDefault, "TAMBIEN2")
-        },
-        {
-          val x = gwsReader.getAirPressure.map(_.map(_.toMillimetersOfMercury))
-          buildDouble(x.orDefault, "PRESSURE")
-        },
-        {
-          val x = gwsReader.getAirPressure.map(_.map(_.toPascals))
-          buildDouble(x.orDefault, "PRESSUR2")
-        },
-        {
-          val x = gwsReader.getDewPoint.map(_.map(_.toCelsiusScale))
-          buildDouble(x.orDefault, "DEWPOINT")
-        },
-        {
-          val x = gwsReader.getDewPoint.map(_.map(_.toFahrenheitScale))
-          buildDouble(x.orDefault, "DEWPOIN2")
-        },
-        {
-          val x = gwsReader.getWindVelocity.map(_.map(_.toMetersPerSecond))
-          buildDouble(x.orDefault, "WINDSPEE")
-        },
-        {
-          val x = gwsReader.getWindVelocity.map(_.map(_.toInternationalMilesPerHour))
-          buildDouble(x.orDefault, "WINDSPE2")
-        },
-        {
-          val x = gwsReader.getWindDirection.map(_.map(_.toDegrees))
-          buildDouble(x.orDefault, "WINDDIRE")
-        }
-      ))
-      case _       => SeqAction(())
-    }
-
     val obsObject: SeqAction[Option[String]] = for {
       obsType   <- obsReader.getObsType
       obsObject <- obsReader.getObsObject
@@ -357,9 +313,9 @@ class StandardHeader(
     val requestedConditions: SeqAction[Unit] = {
       import ObsKeywordsReader._
       val keys = List(
-        "REQBG" -> SB,
-        "REQCC" -> CC,
         "REQIQ" -> IQ,
+        "REQCC" -> CC,
+        "REQBG" -> SB,
         "REQWV" -> WV)
       val requested = keys.flatMap {
         case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
@@ -459,8 +415,7 @@ class StandardHeader(
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
-    aowfsKeywords *>
-    gwsKeywords
+    aowfsKeywords
   }
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,

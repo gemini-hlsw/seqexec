@@ -205,22 +205,25 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
-  private def commonHeaders(config: Config): List[Header] = List(new StandardHeader(systems.dhs,
-    ObsKeywordReaderImpl(config, site.name.replace(' ', '-')),
+  private def commonHeaders(config: Config): Header = new StandardHeader(systems.dhs,
+    ObsKeywordReaderImpl(config, site.displayName.replace(' ', '-')),
     if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
-    if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader,
     // TODO: Replace Unit by something that can read the State
     StateKeywordsReader(Unit)
-  ))
+  )
 
-  private val gcalHeaders: Header = new GcalHeader(
+  private def gwsHeaders: Header = new GwsHeader(systems.dhs,
+    if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader
+  )
+
+  private val gcalHeader: Header = new GcalHeader(
     systems.dhs,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader)
 
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[List[Header]] = stepType match {
-    case CelestialObject(inst) => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(f => f :: gcalHeaders :: commonHeaders(config)) // TODO: Add GCAL keywords here
-    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(_ :: commonHeaders(config))
+    case CelestialObject(inst) => calcInstHeader(config, inst).map(List(commonHeaders(config), gwsHeaders, _))
+    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(List(commonHeaders(config), gcalHeader, gwsHeaders, _))
+    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(List(commonHeaders(config), gwsHeaders, _))
     case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
   }
 
