@@ -9,7 +9,7 @@ import edu.gemini.seqexec.server.Header.Implicits._
 class GwsHeader(hs: DhsClient, gwsReader: GwsKeywordReader) extends Header {
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
     gwsReader.getHealth.flatMap{
-      case Some(0) => sendKeywords(id, inst, hs, List(
+      case Some(EpicsHealth.Good) => sendKeywords(id, inst, hs, List(
         buildDouble(gwsReader.getHumidity.orDefault, "HUMIDITY"),
         {
           val x = gwsReader.getTemperature.map(_.map(_.toCelsiusScale))

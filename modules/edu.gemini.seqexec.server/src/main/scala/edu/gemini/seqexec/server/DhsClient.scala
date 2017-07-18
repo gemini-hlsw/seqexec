@@ -80,7 +80,7 @@ object DhsClient {
 
   //TODO: Add more apply methods if necessary
   object KeywordBag {
-    def apply: KeywordBag = KeywordBag(List())
+    def empty: KeywordBag = KeywordBag(List())
     def apply[A](k1: Keyword[A]): KeywordBag = KeywordBag(List(internalKeywordConvert(k1)))
     def apply[A, B](k1: Keyword[A], k2: Keyword[B]): KeywordBag = KeywordBag(List(internalKeywordConvert(k1), internalKeywordConvert(k2)))
     def apply[A, B, C](k1: Keyword[A], k2: Keyword[B], k3: Keyword[C]): KeywordBag =

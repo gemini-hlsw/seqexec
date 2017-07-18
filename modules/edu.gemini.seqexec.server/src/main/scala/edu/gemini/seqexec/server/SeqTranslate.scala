@@ -212,7 +212,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     StateKeywordsReader(Unit)
   )
 
-  private def gwsHeaders: Header = new GwsHeader(systems.dhs,
+  private val gwsHeaders: Header = new GwsHeader(systems.dhs,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader
   )
 

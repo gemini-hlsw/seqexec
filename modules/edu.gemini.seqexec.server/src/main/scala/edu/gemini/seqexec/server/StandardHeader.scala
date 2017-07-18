@@ -307,7 +307,8 @@ class StandardHeader(
       val requested = keys.flatMap {
         case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
       }
-      sendKeywords(id, inst, hs, requested)
+      if(!requested.isEmpty) sendKeywords(id, inst, hs, requested)
+      else SeqAction(())
     }
 
     val requestedConditions: SeqAction[Unit] = {
