@@ -11,7 +11,7 @@ import scalaz._, Scalaz._
  * or `Nothing` for a minimally-specified program.
  * @group Program Model
  */
-final case class Program[A](id: Program.Id, title: String, observations: List[A])
+final case class Program[+A](id: Program.Id, title: String, observations: List[A])
 
 object Program {
 

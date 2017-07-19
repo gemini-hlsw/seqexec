@@ -13,7 +13,7 @@ import scalaz.effect.IO
 trait DaoTest extends gem.Arbitraries {
   val pid = Program.Id.unsafeFromString("GS-1234A-Q-1")
 
-  private val xa = Transactor.after.set(
+  protected val xa = Transactor.after.set(
     DriverManagerTransactor[IO](
       "org.postgresql.Driver",
       "jdbc:postgresql:gem",
@@ -25,7 +25,7 @@ trait DaoTest extends gem.Arbitraries {
 
   def withProgram[A](test: ConnectionIO[A]): A =
     (for {
-      _ <- ProgramDao.insert(Program(pid, "Test Prog", List.empty[Step[Nothing]]))
+      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", List.empty[Step[Nothing]]))
       a <- test
     } yield a).transact(xa).unsafePerformIO()
 }
