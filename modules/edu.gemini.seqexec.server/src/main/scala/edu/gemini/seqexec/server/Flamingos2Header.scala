@@ -21,8 +21,10 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
   import Header._
   import Header.Implicits._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
-
     sendKeywords(id, inst, hs, List(
+      buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), "PREIMAGE"),
+      buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
+      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
       buildString(f2ObsReader.getReadMode.map{
         case ReadMode.BRIGHT_OBJECT_SPEC => "Bright"
         case ReadMode.MEDIUM_OBJECT_SPEC => "Medium"
@@ -32,11 +34,8 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
         case ReadMode.BRIGHT_OBJECT_SPEC => 1
         case ReadMode.MEDIUM_OBJECT_SPEC => 4
         case ReadMode.FAINT_OBJECT_SPEC  => 8
-      }, "NREADS"),
-      buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), "PREIMAGE"),
-      buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
-      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS")
-    ))
+      }, "NREADS"))
+    )
   }
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = SeqAction(())

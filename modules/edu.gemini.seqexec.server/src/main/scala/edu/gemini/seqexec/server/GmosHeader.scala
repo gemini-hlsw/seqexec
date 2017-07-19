@@ -1,8 +1,5 @@
 package edu.gemini.seqexec.server
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.Header._
@@ -23,7 +20,6 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
       buildString(gmosReader.ccName, "GMOSCC"),
       buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
-      buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
       buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"))
       // TODO NOD*
     )
@@ -35,9 +31,9 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
         List(
           buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
           buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
-          buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+          buildDouble(gmosReader.adcPrismEntMe, "ADCENPME"),
+          buildDouble(gmosReader.adcPrismExtSt, "ADCEXPST"),
           buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
-          buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
           buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
           buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
           buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")

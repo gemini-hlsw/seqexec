@@ -6,11 +6,11 @@ import Header.Implicits._
 
 class GcalHeader(hs: DhsClient, gcalReader: GcalKeywordReader) extends Header {
   val gcalKeywords = List(
-      buildString(gcalReader.getDiffuser.orDefault, "GCALDIFF"),
-      buildString(gcalReader.getFilter.orDefault, "GCALFILT"),
-      buildString(gcalReader.getLamp.orDefault, "GCALLAMP"),
-      buildString(gcalReader.getShutter.orDefault, "GCALSHUT")
-    )
+    buildString(gcalReader.getLamp.orDefault, "GCALLAMP"),
+    buildString(gcalReader.getFilter.orDefault, "GCALFILT"),
+    buildString(gcalReader.getDiffuser.orDefault, "GCALDIFF"),
+    buildString(gcalReader.getShutter.orDefault, "GCALSHUT")
+  )
 
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =
     sendKeywords(id, inst, hs, gcalKeywords)

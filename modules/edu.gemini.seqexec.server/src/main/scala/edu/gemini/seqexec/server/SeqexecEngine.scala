@@ -339,7 +339,7 @@ object SeqexecEngine {
     // More instruments to be added to the list here
     val instInit = Nondeterminism[Task].gatherUnordered(List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics)).filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
     val gwsInit  = if (gwsKeywords) initEpicsSystem(GwsEpics, tops) else taskUnit
-    val gcalInit = if (!gcalSim) initEpicsSystem(GcalEpics, tops) else taskUnit
+    val gcalInit = if (gcalKeywords || !gcalSim) initEpicsSystem(GcalEpics, tops) else taskUnit
 
     initSmartGCal(smartGCalHost, smartGCalDir) *>
     caInit *>

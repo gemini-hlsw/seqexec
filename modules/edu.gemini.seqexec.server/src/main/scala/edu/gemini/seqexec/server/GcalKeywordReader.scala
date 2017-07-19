@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.gcal.BinaryOnOff
 
 import scalaz._
 import Scalaz._
@@ -32,16 +32,22 @@ object GcalKeywordsReaderImpl extends GcalKeywordReader {
   def getFilter: SeqAction[Option[String]] = GcalEpics.instance.filter
 
   def getLamp: SeqAction[Option[String]] = {
-    val ar   = GcalEpics.instance.lampAr().filter(_ == BinaryOnOff.On) *> "Ar".some
-    val cuAr = GcalEpics.instance.lampCuAr().filter(_ == BinaryOnOff.On) *> "CuAr".some
-    val ir   = GcalEpics.instance.lampIr().filter(_ == BinaryOnOff.On) *> "IR".some
-    val qh   = GcalEpics.instance.lampQH().filter(_ == BinaryOnOff.On) *> "QH".some
-    val thAr = GcalEpics.instance.lampThAr().filter(_ == BinaryOnOff.On) *> "ThAr".some
-    val xe   = GcalEpics.instance.lampXe().filter(_ == BinaryOnOff.On) *> "Xe".some
+    val ar   = GcalEpics.instance.lampAr().filter(_ == BinaryOnOff.ON) *> "Ar".some
+    val cuAr = GcalEpics.instance.lampCuAr().filter(_ == BinaryOnOff.ON) *> "CuAr".some
+    val ir   = GcalEpics.instance.lampIr().map{
+      case BinaryOnOff.ON => "IRhigh"
+      case _              => "IRlow"
+    }
+    val qh   = GcalEpics.instance.lampQH().filter(_ == BinaryOnOff.ON) *> "QH".some
+    val thAr = GcalEpics.instance.lampThAr().filter(_ == BinaryOnOff.ON) *> "ThAr".some
+    val xe   = GcalEpics.instance.lampXe().filter(_ == BinaryOnOff.ON) *> "Xe".some
 
-    // Order is important to preserve alphabetical order
-    List(ar, cuAr, ir, qh, thAr, xe).flatten.mkString(" + ")
+    ar.orElse(xe).orElse(cuAr).orElse(thAr).orElse(qh).orElse(ir)
   }
 
-  def getShutter: SeqAction[Option[String]] = GcalEpics.instance.shutter
+  def getShutter: SeqAction[Option[String]] = GcalEpics.instance.shutter.map{
+    case "OPEN"  => "OPEN"
+    case "CLOSE" => "CLOSED"
+    case _       => "INDEF"
+  }
 }
