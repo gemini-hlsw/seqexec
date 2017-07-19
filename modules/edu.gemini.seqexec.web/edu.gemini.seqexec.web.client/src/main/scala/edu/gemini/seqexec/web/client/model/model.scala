@@ -83,6 +83,10 @@ object SectionVisibilityState {
 
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
+object SequenceTab {
+  val empty = SequenceTab(F2, RefTo(new RootModelR(None)), None)
+}
+
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   // Display a given step on the focused sequence
@@ -111,8 +115,9 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def idDisplayed(id: SequenceId): Boolean =
     instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence().exists(_.id === id)}.isDefined
 
-  def instrument(i: Instrument): Option[(SequenceTab, Boolean)] =
-    instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
+  def instrument(i: Instrument): (SequenceTab, Boolean) =
+    // The getOrElse shouldn't be called as we have an element per instrument
+    instrumentSequences.withFocus.toStream.find(_._1.instrument === i).getOrElse((SequenceTab.empty, false))
 }
 
 /**

@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
+import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -30,7 +31,8 @@ object StepsTableContainer {
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  case class Props(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
+  // case class Props(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
+  case class Props(stepsTable: ModelProxy[StepsTable], onStepToRun: Int => Callback)
 
   class Backend($: BackendScope[Props, State]) {
 
@@ -125,7 +127,7 @@ object StepsTableContainer {
         )
       )
 
-    def isPartiallyExecuted(p: Props): Boolean = p.steps.exists(_.status == StepState.Completed)
+    def isPartiallyExecuted(p: StepsTable): Boolean = p.steps.exists(_.status == StepState.Completed)
 
     def stepInError(loggedIn: Boolean, isPartiallyExecuted: Boolean, msg: String): VdomNode =
         <.div(
@@ -138,7 +140,7 @@ object StepsTableContainer {
           ).when(loggedIn)
         )
 
-    def stepDisplay(p: Props, step: Step): VdomNode =
+    def stepDisplay(p: StepsTable, step: Step): VdomNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, step)
         case StepState.Completed                  => <.p(step.status.shows)
@@ -149,7 +151,7 @@ object StepsTableContainer {
       }
 
     def selectRow(step: Step, index: Int): Callback =
-      $.props >>= { p => Callback.when(p.status.isLogged)(Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})) }
+      $.props >>= { p => Callback.when(p.stepsTable().status.isLogged)(Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})) }
 
     def mouseEnter(index: Int): Callback =
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
@@ -161,12 +163,12 @@ object StepsTableContainer {
       $.modState(_.copy(onHover = None))
 
     def markAsSkipped(id: SequenceId, step: Step): Callback =
-      $.props >>= {p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipSkipStep(id, step)) }) }
+      $.props >>= {p => Callback.when(p.stepsTable().status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipSkipStep(id, step)) }) }
 
     def breakpointAt(id: SequenceId, step: Step): Callback =
-      $.props >>= { p => Callback.when(p.status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(id, step)) }) }
+      $.props >>= { p => Callback.when(p.stepsTable().status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(id, step)) }) }
 
-    def stepsTable(p: Props, s: State): TagMod =
+    def stepsTable(p: StepsTable, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
@@ -268,12 +270,12 @@ object StepsTableContainer {
         ^.cls := "ui row scroll pane",
         SeqexecStyles.stepsListPane,
         //^.ref := scrollRef,
-        p.stepConfigDisplayed.map { i =>
+        p.stepsTable().stepConfigDisplayed.map { i =>
           // TODO consider the failure case
-          val step = p.steps(i)
+          val step = p.stepsTable().steps(i)
           configTable(step)
         }.getOrElse {
-          stepsTable(p, s)
+          stepsTable(p.stepsTable(), s)
         }
       )
     }

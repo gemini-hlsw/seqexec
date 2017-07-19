@@ -387,7 +387,9 @@ case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: In
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
 case class InstrumentSequence(instrument: Instrument, sequence: Option[(SequenceView, Option[Int])], active: Boolean) extends UseValueEq
-case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentSequence]) extends UseValueEq
+case class InstrumentActive(status: ClientStatus, instrument: Instrument, active: Boolean) extends UseValueEq
+case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentActive]) extends UseValueEq
+case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int])
 
 /**
   * Contains the model for Diode
@@ -427,21 +429,22 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
     SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
-  def instrumentStatusTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[InstrumentStatus]] =
-    zoom(_.uiModel.sequencesOnDisplay.instrument(i).map {
+  def instrumentStatusTab(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatus] =
+    zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
       case (tab, active) => InstrumentStatus(tab.instrument, active, tab.sequence().map(s => (s.id, s.status)))
-    })(new FastEq[Option[InstrumentStatus]] {
-      def eqv(a: Option[InstrumentStatus], b: Option[InstrumentStatus]): Boolean =
-        (a, b) match {
-          case (Some(v1), Some(v2)) => v1 == v2
-          case _                    => false
-        }
-    })
-  def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, Option[(SequenceTab, Boolean)]] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
-  def instrumentTabAndStatus(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabAndStatus] =
+    }
+  def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
+  def instrumentActive(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentActive] =
     status.zip(instrumentTab(i)).zoom {
-      case (status, Some((tab, active))) => InstrumentTabAndStatus(status, InstrumentSequence(i, tab.sequence().map(s => (s, tab.stepConfigDisplayed)), active).some)
-      case (status, _)                   => InstrumentTabAndStatus(status, none)
+      case (status, (tab, active)) => InstrumentActive(status, i, active)
+    }
+  def instrumentStepsTable(i: Instrument): ModelR[SeqexecAppRootModel, Option[StepsTable]] =
+    status.zip(instrumentTab(i)).zoom {
+      case (status, (tab, active)) =>
+        tab.sequence().map { sequence =>
+          StepsTable(sequence.id, i, sequence.steps, status, tab.stepConfigDisplayed, sequence.nextStepToRun)
+        }
+      case (status, _)                   => None
     }
 
   // Reader for a specific sequence if available

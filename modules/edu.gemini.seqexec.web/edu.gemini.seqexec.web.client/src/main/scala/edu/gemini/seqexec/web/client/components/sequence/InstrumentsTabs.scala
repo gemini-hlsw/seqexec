@@ -21,40 +21,39 @@ import scalaz.syntax.std.option._
 import scalaz.syntax.show._
 
 object InstrumentTab {
-  case class Props(t: ModelProxy[Option[InstrumentStatus]])
+  case class Props(t: ModelProxy[InstrumentStatus])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
     .render_P { q =>
-      q.t().fold(<.div(): VdomElement) { case tab =>
-        val active = tab.active
-        val status = tab.idState.map(_._2)
-        val hasError = status.map(SequenceState.isError).getOrElse(false)
-        val sequenceId = tab.idState.map(_._1)
-        val instrument = tab.instrument
-        val icon = status.flatMap {
-          case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
-          case SequenceState.Completed => IconCheckmark.some
-          case _                       => IconSelectedRadio.some
-        }
-        val color = status.flatMap {
-          case SequenceState.Running   => "green".some
-          case SequenceState.Completed => "green".some
-          case _                       => none[String]
-        }
-        <.a(
-          ^.cls := "item",
-          ^.classSet(
-            "active" -> active,
-            "error"  -> hasError
-          ),
-          SeqexecStyles.activeInstrumentContent.when(sequenceId.isDefined),
-          SeqexecStyles.errorTab.when(hasError),
-          dataTab := instrument.shows,
-          IconAttention.copyIcon(color = Some("red")).when(hasError),
-          sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument.shows)
-        )
+      val tab = q.t()
+      val active = tab.active
+      val status = tab.idState.map(_._2)
+      val hasError = status.map(SequenceState.isError).getOrElse(false)
+      val sequenceId = tab.idState.map(_._1)
+      val instrument = tab.instrument
+      val icon = status.flatMap {
+        case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
+        case SequenceState.Completed => IconCheckmark.some
+        case _                       => IconSelectedRadio.some
       }
+      val color = status.flatMap {
+        case SequenceState.Running   => "green".some
+        case SequenceState.Completed => "green".some
+        case _                       => none[String]
+      }
+      <.a(
+        ^.cls := "item",
+        ^.classSet(
+          "active" -> active,
+          "error"  -> hasError
+        ),
+        SeqexecStyles.activeInstrumentContent.when(sequenceId.isDefined),
+        SeqexecStyles.errorTab.when(hasError),
+        dataTab := instrument.shows,
+        IconAttention.copyIcon(color = Some("red")).when(hasError),
+        sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument.shows)
+      )
     }.componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
@@ -63,18 +62,20 @@ object InstrumentTab {
         $(ctx.getDOMNode).tab(
           JsTabOptions
             .onVisible { (x: Instrument) =>
-              ctx.props.t().map(_.idState).foreach { sequence =>
-                val updateModelCB = sequence.map(seq => ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, seq._1.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(seq._1)))
-                  .getOrElse(ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(x)))
-                // runNow as we are outside react loop
-                updateModelCB.runNow()
+              val updateModelCB = ctx.props.t().idState match {
+                case Some((id, _)) =>
+                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, id.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
+                case _             =>
+                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(x))
               }
+              // runNow as we are outside react loop
+              updateModelCB.runNow()
             }
         )
       }
     ).build
 
-  def apply(p: ModelProxy[Option[InstrumentStatus]]) = component(Props(p))
+  def apply(p: ModelProxy[InstrumentStatus]) = component(Props(p))
 }
 /**
   * Menu with tabs
