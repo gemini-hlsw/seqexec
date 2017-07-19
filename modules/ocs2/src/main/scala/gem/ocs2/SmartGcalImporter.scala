@@ -167,7 +167,7 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
       .flatMap { v => writer(v).void.transact(lxa) }
 
     for {
-      _ <- Task.delay(println(s"Importing $instFilePrefix ..."))
+      _ <- Task.delay(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore
       _ <- unindexer.transact(lxa)
       _ <- prog.run
       _ <- indexer.transact(lxa)
@@ -183,6 +183,6 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
       _ <- clean.transact(lxa)
       _ <- importAllInst
       _ <- l.shutdown(5 * 1000)
-      _ <- Task.delay(println("Done."))
+      _ <- Task.delay(println("Done.")) // scalastyle:ignore
     } yield ()
 }
