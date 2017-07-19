@@ -1,14 +1,17 @@
 package edu.gemini.seqexec.web.client.components
 
 import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
-import edu.gemini.seqexec.web.client.model.InstrumentNames
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.model.NavigateSilentTo
 import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
+import edu.gemini.seqexec.model.Model.Instrument
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
+
+import scalaz._
+import Scalaz._
 
 object SeqexecMain {
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
@@ -35,6 +38,9 @@ object SeqexecMain {
 object SeqexecUI {
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
+  private val siteInstruments = Instrument.gsInstruments
+  private val instrumentNames = siteInstruments.map(i => (i.shows, i)).toIList.toList.toMap
+
   def router: Router[SeqexecPages] = {
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
       import dsl._
@@ -44,16 +50,20 @@ object SeqexecUI {
 
       (emptyRule
       | staticRoute(root, Root) ~> renderR(r => SeqexecMain(r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option).caseClass[InstrumentPage]) {
-          case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
+      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
+        .pmap {
+          case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
+          case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, none))
+        }(p => (p.instrument.shows, p.obsId))) {
+          case x @ InstrumentPage(i, _) if siteInstruments.toIList.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => Some(InstrumentPage(i, None)))(i => i.i)) {
-          case x @ InstrumentPage(i, _) if InstrumentNames.instruments.list.toList.contains(i) => x
+      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => instrumentNames.get(i).map(InstrumentPage(_, None)))(p => p.instrument.shows)) {
+          case x @ InstrumentPage(i, _) if siteInstruments.toIList.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
-        .verify(Root, InstrumentNames.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
+        .verify(Root, siteInstruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
           Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback.log("silent " + next) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith(layout)

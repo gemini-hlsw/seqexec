@@ -8,12 +8,14 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import edu.gemini.seqexec.model.Model.Instrument
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalazReact._
 
 import scalaz.syntax.apply.{^ => _, _}
+import scalaz.syntax.show._
 import scalaz.std.option._
 
 object SequenceStepsTableContainer {
@@ -74,7 +76,7 @@ object SequenceStepsTableContainer {
           ^.classSet(
             "active" -> active
           ),
-          dataTab := tab.instrument,
+          dataTab := tab.instrument.shows,
           tab.sequence().fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): VdomNode) { s =>
             SequenceStepsTableContainer(p.p): VdomNode
           }
@@ -95,7 +97,7 @@ object SequenceStepsTableContainer {
     case class Props(s: ClientStatus, d: SequencesOnDisplay)
 
     // TODO Consider GN/GS
-    val instrumentConnects = InstrumentNames.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabAndStatus(i)))
+    val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabAndStatus(i)))
 
     private val component = ScalaComponent.builder[Unit]("SequenceTabsBody")
     .stateless

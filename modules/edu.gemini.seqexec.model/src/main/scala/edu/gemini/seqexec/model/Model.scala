@@ -105,7 +105,26 @@ object Model {
   // TODO This should be a richer type
   type SequenceId = String
   type StepId = Int
-  type Instrument = String
+  sealed trait Instrument
+  case object F2 extends Instrument
+  case object GmosS extends Instrument
+  case object GmosN extends Instrument
+  case object GPI extends Instrument
+  case object GSAOI extends Instrument
+
+  object Instrument {
+    implicit val equal: Equal[Instrument] = Equal.equalA[Instrument]
+    implicit val show: Show[Instrument] = Show.shows({
+      case F2    => "Flamingos2"
+      case GmosS => "GMOS-S"
+      case GmosN => "GMOS-N"
+      case GPI   => "GPI"
+      case GSAOI => "GSAOI"
+    })
+    val gsInstruments = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
+    val gnInstruments = NonEmptyList[Instrument](GmosN)
+  }
+
   type Operator = String
   type Observer = String
 

@@ -108,8 +108,8 @@ object QueueTableBody {
                 ),
                 <.td(
                   selectableRowCls.toTagMod,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.instrument).unless(inProcess),
-                  s.instrument.when(inProcess)
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.instrument.shows).unless(inProcess),
+                  s.instrument.shows.when(inProcess)
                 ),
                 <.td(
                   selectableRowCls.toTagMod,

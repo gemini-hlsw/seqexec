@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, Instrument}
-import edu.gemini.seqexec.web.client.model.{InstrumentNames, InstrumentStatus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.model.{InstrumentStatus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
@@ -18,6 +18,7 @@ import scalacss.ScalaCssReact._
 
 import scalaz.std.option._
 import scalaz.syntax.std.option._
+import scalaz.syntax.show._
 
 object InstrumentTab {
   case class Props(t: ModelProxy[Option[InstrumentStatus]])
@@ -49,9 +50,9 @@ object InstrumentTab {
           ),
           SeqexecStyles.activeInstrumentContent.when(sequenceId.isDefined),
           SeqexecStyles.errorTab.when(hasError),
-          dataTab := instrument,
+          dataTab := instrument.shows,
           IconAttention.copyIcon(color = Some("red")).when(hasError),
-          sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument)
+          sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument.shows)
         )
       }
     }.componentDidMount(ctx =>
@@ -80,7 +81,7 @@ object InstrumentTab {
   */
 object InstrumentsTabs {
   // TODO Consider GN/GS
-  val instrumentConnects = InstrumentNames.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusTab(i)))
+  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusTab(i)))
 
   private val component = ScalaComponent.builder[Unit]("InstrumentsMenu")
     .stateless
