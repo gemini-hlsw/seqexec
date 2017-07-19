@@ -12,7 +12,7 @@ import scalaz.syntax.equal._
  * which means the largest representable wavelength is 214.7483647 mm.
  * @param toAngstroms This wavelength in integral angstroms (10^-10 of a meter).
  */
-sealed class Wavelength private (val toAngstroms: Int) {
+final class Wavelength private (val toAngstroms: Int) {
 
   // Sanity checks … should be correct via the companion constructor.
   assert(toAngstroms >= 0, s"Invariant violated. $toAngstroms is negative.")
