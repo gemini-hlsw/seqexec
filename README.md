@@ -79,16 +79,12 @@ There are no other instrument-specific slices for science steps yet.
 
 #### Importing Smart Gcal Configuration
 
-Smart Gcal configuration is stored in database tables like everything else instead of in `.csv` files downloaded from SVN as in OCS2.  The `.csv` files can be imported though much like old program `.xml` files.  First, make a symlink to a directory containing the `.csv` files. 
+Smart Gcal configuration is stored in database tables instead of in `.csv` files downloaded from SVN as in OCS2.  The `.csv` files can be imported, though much like old program `.xml` files, we use a modified format.  To obtain compatible Smart Gcal `.csv` files from OCS2, start the ODB and use the `exportSmartGcal` shell command providing the name of a directory into which to write the files.
+
+Next, make a symlink to the directory containing the `.csv` files that were exported:
 
 ```
 ln -s /path/to/old/smart/gcal/csv smartgcal
-```
-
-If you've ever used the old OT or ODB, you will likely have downloaded the `.csv` files for Smart Gcal. For example, for the production OT you can find them in your home directory:
-
-```
-~/.ocs15/Gemini\ OT\ 2017A.1.1.2_mac/data/jsky.app.ot/smartgcal
 ```
 
 Having created the symlink, you can then import from the `sbt` prompt:
