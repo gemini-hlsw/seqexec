@@ -40,7 +40,7 @@ object Wavelength {
 
   /** Construct a wavelength from integral angstroms, if non-negative. */
   def fromAngstroms(angstroms: Int): Option[Wavelength] =
-    Some(angstroms).filter(_ > 0).map(new Wavelength(_))
+    Some(angstroms).filter(_ >= 0).map(new Wavelength(_))
 
   /** Construct a wavelength from integral angstroms, raising an exception if negative. */
   def unsafeFromAngstroms(angstroms: Int): Wavelength =
