@@ -23,13 +23,13 @@ final class Wavelength private (val toAngstroms: Int) {
     f"Wavelength($toAngstroms Å)"
 
   /** Wavelengths are equal if their magnitudes are equal. */
-  override final def equals(a: Any) =
+  override def equals(a: Any) =
     a match {
       case a: Wavelength => a.toAngstroms === toAngstroms
-      case _        => false
+      case _             => false
     }
 
-  override final def hashCode =
+  override def hashCode =
     toAngstroms
 
 }
