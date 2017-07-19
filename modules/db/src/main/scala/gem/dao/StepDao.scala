@@ -36,7 +36,7 @@ object StepDao {
               case Step.Dark(_)         => Statements.insertDarkSlice(id).run
               case Step.Science(_, t)   => Statements.insertScienceSlice(id, t).run
               case Step.SmartGcal(_, t) => Statements.insertSmartGcalSlice(id, t).run
-              case Step.Gcal(_, g)      => GcalDao.insertGcal(id, g) >>= (Statements.insertGcalStep(id, _).run)
+              case Step.Gcal(_, g)      => GcalDao.insertStepGcal(id, g)
             }
       _  <- insertConfigSlice(id, s.dynamicConfig)
     } yield id
@@ -401,10 +401,8 @@ object StepDao {
                sc.offset_q,
                ss.type
           FROM step s
-               LEFT OUTER JOIN step_gcal sg
-                  ON sg.step_gcal_id       = s.step_id
-               LEFT OUTER JOIN gcal gc
-                  ON gc.gcal_id            = sg.gcal_id
+               LEFT OUTER JOIN step_gcal gc
+                  ON gc.step_gcal_id       = s.step_id
                LEFT OUTER JOIN step_science sc
                   ON sc.step_science_id    = s.step_id
                LEFT OUTER JOIN step_smart_gcal ss
@@ -430,10 +428,8 @@ object StepDao {
                sc.offset_q,
                ss.type
           FROM step s
-               LEFT OUTER JOIN step_gcal sg
-                  ON sg.step_gcal_id       = s.step_id
-               LEFT OUTER JOIN gcal gc
-                  ON gc.gcal_id            = sg.gcal_id
+               LEFT OUTER JOIN step_gcal gc
+                  ON gc.step_gcal_id       = s.step_id
                LEFT OUTER JOIN step_science sc
                   ON sc.step_science_id    = s.step_id
                LEFT OUTER JOIN step_smart_gcal ss
@@ -519,12 +515,6 @@ object StepDao {
       sql"""
         INSERT INTO step_smart_gcal (step_smart_gcal_id, type)
         VALUES ($id, $t :: smart_gcal_type)
-      """.update
-
-    def insertGcalStep(id: Int, gcal_id: Int): Update0 =
-      sql"""
-        INSERT into step_gcal (step_gcal_id, gcal_id)
-        VALUES ($id, $gcal_id)
       """.update
 
     def insertDarkSlice(id: Int): Update0 =

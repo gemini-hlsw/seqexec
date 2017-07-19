@@ -118,7 +118,7 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
 
   /** Truncates all the smart gcal tables. */
   val clean: ConnectionIO[Unit] =
-    sql"TRUNCATE smartgcal CASCADE".update.run.void
+    sql"TRUNCATE gcal CASCADE".update.run.void
 
   def parseMaxWavelength(s: String): Int =
     s match {

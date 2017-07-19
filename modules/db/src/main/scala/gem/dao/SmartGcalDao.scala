@@ -166,7 +166,7 @@ object SmartGcalDao {
 
     def selectF2ByLamp(k: SmartGcalKey.F2)(l: GcalLampType): Query0[Int] =
       sql"""
-          SELECT smart_id
+          SELECT gcal_id
             FROM smart_f2
            WHERE lamp      = $l :: gcal_lamp_type
              AND disperser = ${k.disperser}
@@ -176,7 +176,7 @@ object SmartGcalDao {
 
     def selectF2ByBaseline(k: SmartGcalKey.F2)(b: GcalBaselineType): Query0[Int] =
       sql"""
-          SELECT smart_id
+          SELECT gcal_id
             FROM smart_f2
            WHERE baseline  = $b :: gcal_baseline_type
              AND disperser = ${k.disperser}
@@ -194,7 +194,7 @@ object SmartGcalDao {
                                 disperser,
                                 filter,
                                 fpu,
-                                smart_id)
+                                gcal_id)
                VALUES (? :: gcal_lamp_type, ? :: gcal_baseline_type, ?, ?, ?, ?)
         """
       Update[F2Row](sql)
@@ -222,7 +222,7 @@ object SmartGcalDao {
 
     private def selectGmosNorth(k: SmartGcalKey.GmosNorthSearch, searchType: Fragment): Fragment =
       Fragment.const(
-        s"""SELECT smart_id
+        s"""SELECT gcal_id
                FROM smart_gmos_north
               WHERE """) ++ searchType ++
         fr"""
@@ -257,7 +257,7 @@ object SmartGcalDao {
                                         amp_gain,
                                         min_wavelength,
                                         max_wavelength,
-                                        smart_id)
+                                        gcal_id)
                VALUES (? :: gcal_lamp_type, ? :: gcal_baseline_type, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
       Update[GmosNorthRow](sql)

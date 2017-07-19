@@ -22,7 +22,6 @@ class StepCheck extends Check {
   it should "insertGmosSouthConfig" in check(insertGmosSouthConfig(0, gem.config.DynamicConfig.GmosSouth.Default))
   it should "insertScienceSlice"    in check(insertScienceSlice(0, Dummy.telescopeConfig))
   it should "insertSmartGcalSlice"  in check(insertSmartGcalSlice(0, Dummy.smartGcalType))
-  it should "insertGcalStep"        in check(insertGcalStep(0, 0))
   it should "insertDarkSlice"       in check(insertDarkSlice(0))
   it should "insertBiasSlice"       in check(insertBiasSlice(0))
   it should "insertBaseSlice"       in check(insertBaseSlice(Dummy.observationId, Dummy.locationMiddle, Dummy.instrumentConfig, Dummy.stepType))

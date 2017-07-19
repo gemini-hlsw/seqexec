@@ -13,18 +13,21 @@ import scalaz._, Scalaz._
 
 import java.time.Duration
 
+/** DAO support for inserting [[gem.config.GcalConfig]] in either step_gcal or
+  * gcal (for smart gcal lookup).
+  */
 object GcalDao {
-  def insertGcal(stepId: Int, gcal: GcalConfig): ConnectionIO[Int] =
-    Statements.insertGcal(stepId, gcal).withUniqueGeneratedKeys[Int]("gcal_id") // janky, hm
+  def insertStepGcal(stepId: Int, gcal: GcalConfig): ConnectionIO[Int] =
+    Statements.insertStepGcal(stepId, gcal).run
 
   def bulkInsertSmartGcal(gs: Vector[GcalConfig]): scalaz.stream.Process[ConnectionIO, Int] =
-    Statements.bulkInsertSmartGcal.updateManyWithGeneratedKeys[Int]("smart_id")(gs.map(Statements.GcalRow.fromGcalConfig))
+    Statements.bulkInsertSmartGcal.updateManyWithGeneratedKeys[Int]("gcal_id")(gs.map(Statements.GcalRow.fromGcalConfig))
 
-  def selectGcal(id: Int): ConnectionIO[Option[GcalConfig]] =
-    Statements.selectGcal(id).option.map(_.flatten)
+  def selectStepGcal(stepId: Int): ConnectionIO[Option[GcalConfig]] =
+    Statements.selectStepGcal(stepId).option.map(_.flatten)
 
-  def selectSmartGcal(id: Int): ConnectionIO[Option[GcalConfig]] =
-    Statements.selectSmartGcal(id).option.map(_.flatten)
+  def selectSmartGcal(gcalId: Int): ConnectionIO[Option[GcalConfig]] =
+    Statements.selectSmartGcal(gcalId).option.map(_.flatten)
 
   object Statements {
 
@@ -66,24 +69,24 @@ object GcalDao {
     val bulkInsertSmartGcal: Update[GcalRow] = {
       val sql =
         """
-          INSERT INTO smartgcal (continuum,
-                                 ar_arc,
-                                 cuar_arc,
-                                 thar_arc,
-                                 xe_arc,
-                                 filter,
-                                 diffuser,
-                                 shutter,
-                                 exposure_time,
-                                 coadds)
+          INSERT INTO gcal (continuum,
+                            ar_arc,
+                            cuar_arc,
+                            thar_arc,
+                            xe_arc,
+                            filter,
+                            diffuser,
+                            shutter,
+                            exposure_time,
+                            coadds)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
       Update[GcalRow](sql)
     }
 
-    def insertGcal(stepId: Int, gcal: GcalConfig): Update0 = {
+    def insertStepGcal(stepId: Int, gcal: GcalConfig): Update0 = {
       val arcs: GcalArc => Boolean = gcal.arcs.member
-      sql"""INSERT INTO gcal (step_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
+      sql"""INSERT INTO step_gcal (step_gcal_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
             VALUES ($stepId, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
          """.update
     }
@@ -105,13 +108,13 @@ object GcalDao {
          """
       )
 
-    def selectGcal(id: Int): Query0[Option[GcalConfig]] =
-      (selectFragment("gcal") ++
-        fr"""WHERE gcal_id = $id""").query[GcalRow].map(_.toGcalConfig)
+    def selectStepGcal(id: Int): Query0[Option[GcalConfig]] =
+      (selectFragment("step_gcal") ++
+        fr"""WHERE step_gcal_id = $id""").query[GcalRow].map(_.toGcalConfig)
 
     def selectSmartGcal(id: Int): Query0[Option[GcalConfig]] =
-      (selectFragment("smartgcal") ++
-        fr"""WHERE smart_id = $id""").query[GcalRow].map(_.toGcalConfig)
+      (selectFragment("gcal") ++
+        fr"""WHERE gcal_id = $id""").query[GcalRow].map(_.toGcalConfig)
   }
 
 }
