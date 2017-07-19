@@ -12,7 +12,7 @@ import scalaz._, Scalaz._
  * minimally-specified Observation.
  * @group Program Model
  */
-final case class Observation[S, D](
+final case class Observation[+S, +D](
   id: Observation.Id,
   title: String,
   staticConfig: S,

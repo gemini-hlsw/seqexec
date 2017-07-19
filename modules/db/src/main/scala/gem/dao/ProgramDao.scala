@@ -13,9 +13,13 @@ import scalaz._, Scalaz._
 object ProgramDao {
 
   /** Insert a program, disregarding its observations, if any. */
-  def insert(p: Program[_]): ConnectionIO[Int] =
+  def insertFlat(p: Program[_]): ConnectionIO[Program.Id] =
     insertProgramIdSlice(p.id) *>
-    Statements.insert(p).run
+    Statements.insert(p).run.as(p.id)
+
+  /** Insert a complete program. */
+  def insert(p: Program[Observation[StaticConfig, Step[DynamicConfig]]]): ConnectionIO[Program.Id] =
+    insertFlat(p) <* p.observations.traverse(ObservationDao.insert)
 
   private def insertProgramIdSlice(pid: Program.Id): ConnectionIO[Int] =
     pid match {

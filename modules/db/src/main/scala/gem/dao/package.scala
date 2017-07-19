@@ -82,7 +82,7 @@ package object dao extends MoreTupleOps {
     Meta[java.math.BigDecimal]
       .xmap[Angle](
         b => Angle.fromMicroarcseconds(b.movePointRight(6).longValue),
-        a => new java.math.BigDecimal(a.toMicroarcseconds).movePointLeft(6)
+        a => new java.math.BigDecimal(a.toSignedMicroarcseconds).movePointLeft(6)
       )
 
   // OffsetP maps to a signed angle in arcseconds

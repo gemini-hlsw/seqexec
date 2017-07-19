@@ -14,7 +14,7 @@ import scalaz.Functor
  * for a step without instrument-specific configuration information.
  * @group Sequence Model
  */
-sealed abstract class Step[A] extends Product with Serializable {
+sealed abstract class Step[+A] extends Product with Serializable {
   def dynamicConfig: A
 }
 
