@@ -29,7 +29,7 @@ object Parsers {
   )
 
   val arcsec: PioParse[Angle] =
-    double.map(d => Angle.fromDoubleDegrees(d * 60 * 60))
+    double.map(Angle.fromDoubleArcseconds)
 
   val instrument: PioParse[Instrument] = enum(
     "AcqCam"     -> gem.enum.Instrument.AcqCam,
