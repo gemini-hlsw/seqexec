@@ -159,7 +159,7 @@ trait Arbitraries {
 
   implicit val arbGmosCentralWavelength =
     Arbitrary {
-      Gen.const(Gmos.GmosCentralWavelength(0.0)) // for now ...
+      Gen.choose(3000, 12000).map(Gmos.GmosCentralWavelength(_))
     }
 
   implicit val arbGmosNorthGrating =

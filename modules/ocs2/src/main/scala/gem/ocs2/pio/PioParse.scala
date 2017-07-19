@@ -34,6 +34,9 @@ object PioParse {
   val double: PioParse[Double] =
     PioParse(_.parseDouble.toOption)
 
+  val short: PioParse[Short] =
+    PioParse(_.parseShort.toOption)
+
   val int: PioParse[Int] =
     PioParse(_.parseInt.toOption)
 

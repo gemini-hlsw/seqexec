@@ -7,6 +7,7 @@ package check
 import gem._
 import gem.enum._
 import gem.config._
+import gem.config.DynamicConfig.SmartGcalKey
 import gem.math.Offset
 
 import doobie.imports._
@@ -52,16 +53,26 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
     val observation      = Observation[StaticConfig, Nothing](observationId, "", StaticConfig.F2.Default, Nil)
     val program          = Program(programId, "", Nil)
-    val f2SmartGcalKey   = DynamicConfig.SmartGcalKey.F2(F2Disperser.NoDisperser, F2Filter.Dark, F2FpUnit.LongSlit1)
+    val f2SmartGcalKey   = DynamicConfig.F2.Default.key
     val gcalLampType     = GcalLampType.Arc
     val gcalBaselineType = GcalBaselineType.Day
     val locationMiddle   = Location.unsafeMiddle(1)
-    val f2Config         = DynamicConfig.F2(F2Disperser.NoDisperser, duration, F2Filter.Dark, F2FpUnit.LongSlit1,
-      F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
+    val f2Config         = DynamicConfig.F2.Default
     val telescopeConfig  = TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)
     val smartGcalType    = SmartGcalType.Arc
     val instrumentConfig = f2Config
     val stepType         = StepType.Science
+
+    val gmosNorthSmartGcalSearchKey     =
+      DynamicConfig.GmosNorth.Default.key
+
+    val gmosNorthSmartGcalDefinitionKey = {
+      val sk = DynamicConfig.GmosNorth.Default.key
+      SmartGcalKey.GmosNorthDefinition(
+        sk.gmos,
+        (Gmos.GmosCentralWavelength(0), Gmos.GmosCentralWavelength(1))
+      )
+    }
   }
 
 

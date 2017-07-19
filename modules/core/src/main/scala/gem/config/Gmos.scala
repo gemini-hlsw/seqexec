@@ -6,6 +6,8 @@ package gem.config
 import gem.enum._
 import java.time.Duration
 
+import scalaz._, Scalaz._
+
 /**
  * Additional type hierarchy over the low-level GMOS enums.
  * @group Instrument-Specific Models
@@ -81,9 +83,16 @@ object Gmos {
   )
 
   /** GMOS grating central wavelength.  For now, just a value class wrapper
-    * around a BigDecimal.  This should be switched to Fixed / squants?
+    * around an integer.
+    * TODO: wavelength. This class needs to be converted to a generic Wavelength
+    * class and built out.
     */
-  final case class GmosCentralWavelength(val nm: BigDecimal) extends AnyVal
+  final case class GmosCentralWavelength(val toAngstroms: Int) extends AnyVal
+
+  object GmosCentralWavelength {
+    implicit val OrderGmosCentralWavelength: Order[GmosCentralWavelength] =
+      Order.orderBy(_.toAngstroms)
+  }
 
   /** GMOS grating configuration, parameterized on the disperser type.  These
     * are grouped because they only apply when using a grating.  That is, all

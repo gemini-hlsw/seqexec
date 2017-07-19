@@ -9,66 +9,112 @@ import doobie.imports._
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
 
+import scalaz._, Scalaz._
+
 import java.time.Duration
 
+/** DAO support for inserting [[gem.config.GcalConfig]] in either step_gcal or
+  * gcal (for smart gcal lookup).
+  */
 object GcalDao {
+  def insertStepGcal(stepId: Int, gcal: GcalConfig): ConnectionIO[Int] =
+    Statements.insertStepGcal(stepId, gcal).run
 
-  def insert(gcal: GcalConfig, step: Option[Int]): ConnectionIO[Int] =
-    Statements.insert(gcal, step).withUniqueGeneratedKeys[Int]("gcal_id") // janky, hm
+  def bulkInsertSmartGcal(gs: Vector[GcalConfig]): scalaz.stream.Process[ConnectionIO, Int] =
+    Statements.bulkInsertSmartGcal.updateManyWithGeneratedKeys[Int]("gcal_id")(gs.map(Statements.GcalRow.fromGcalConfig))
 
-  def select(id: Int): ConnectionIO[Option[GcalConfig]] =
-    Statements.select(id).option.map(_.flatten)
+  def selectStepGcal(stepId: Int): ConnectionIO[Option[GcalConfig]] =
+    Statements.selectStepGcal(stepId).option.map(_.flatten)
+
+  def selectSmartGcal(gcalId: Int): ConnectionIO[Option[GcalConfig]] =
+    Statements.selectSmartGcal(gcalId).option.map(_.flatten)
 
   object Statements {
 
     // CoAdds has a DISTINCT type due to its check constraint so we need a fine-grained mapping
     // here to satisfy the query checker.
-    private final case class CoAdds(toShort: Short)
-    private object CoAdds {
-      implicit val StepIdMeta: Meta[CoAdds] =
+    final case class CoAdds(toShort: Short)
+    object CoAdds {
+      implicit val MetaCoAdds: Meta[CoAdds] =
         Distinct.short("coadds").xmap(CoAdds(_), _.toShort)
     }
 
-    def insert(gcal: GcalConfig, step: Option[Int]): Update0 = {
+    final case class GcalRow(
+      continuum:    Option[GcalContinuum],
+      ar:           Boolean,
+      cuar:         Boolean,
+      thar:         Boolean,
+      xe:           Boolean,
+      filter:       GcalFilter,
+      diffuser:     GcalDiffuser,
+      shutter:      GcalShutter,
+      exposureTime: Duration,
+      coadds:       CoAdds)
+    {
+      def toGcalConfig: Option[GcalConfig] =
+        GcalLamp.fromConfig(continuum, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe).map { lamp =>
+          GcalConfig(lamp, filter, diffuser, shutter, exposureTime, coadds.toShort)
+        }
+    }
+
+    object GcalRow {
+      def fromGcalConfig(c: GcalConfig): GcalRow = {
+        val arcs: GcalArc => Boolean =
+          c.arcs.member
+
+        GcalRow(c.continuum, arcs(ArArc), arcs(CuArArc), arcs(ThArArc), arcs(XeArc), c.filter, c.diffuser, c.shutter, c.exposureTime, CoAdds(c.coadds))
+      }
+    }
+
+    val bulkInsertSmartGcal: Update[GcalRow] = {
+      val sql =
+        """
+          INSERT INTO gcal (continuum,
+                            ar_arc,
+                            cuar_arc,
+                            thar_arc,
+                            xe_arc,
+                            filter,
+                            diffuser,
+                            shutter,
+                            exposure_time,
+                            coadds)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+      Update[GcalRow](sql)
+    }
+
+    def insertStepGcal(stepId: Int, gcal: GcalConfig): Update0 = {
       val arcs: GcalArc => Boolean = gcal.arcs.member
-      sql"""INSERT INTO gcal (step_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
-            VALUES ($step, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
+      sql"""INSERT INTO step_gcal (step_gcal_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
+            VALUES ($stepId, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
          """.update
     }
 
-    def select(id: Int): Query0[Option[GcalConfig]] =
-      sql"""
-        SELECT continuum,
-               ar_arc,
-               cuar_arc,
-               thar_arc,
-               xe_arc,
-               filter,
-               diffuser,
-               shutter,
-               exposure_time,
-               coadds
-          FROM gcal
-         WHERE gcal_id =$id
-      """.query[GcalKernel].map(_.toGcalConfig)
+    private def selectFragment(table: String): Fragment =
+      Fragment.const(
+        s"""
+           SELECT continuum,
+                  ar_arc,
+                  cuar_arc,
+                  thar_arc,
+                  xe_arc,
+                  filter,
+                  diffuser,
+                  shutter,
+                  exposure_time,
+                  coadds
+             FROM $table
+         """
+      )
 
-      private final case class GcalKernel(
-        continuum: Option[GcalContinuum],
-        ar_arc:    Boolean,
-        cuar_arc:  Boolean,
-        thar_arc:  Boolean,
-        xe_arc:    Boolean,
-        filter:    GcalFilter,
-        diffuser:  GcalDiffuser,
-        shutter:   GcalShutter,
-        expTime:   Duration,
-        coadds:    Short)
-      {
-        def toGcalConfig: Option[GcalConfig] =
-          GcalLamp.fromConfig(continuum, ArArc -> ar_arc, CuArArc -> cuar_arc, ThArArc -> thar_arc, XeArc -> xe_arc).map { lamp =>
-            GcalConfig(lamp, filter, diffuser, shutter, expTime, coadds)
-          }
-      }
+    def selectStepGcal(id: Int): Query0[Option[GcalConfig]] =
+      (selectFragment("step_gcal") ++
+        fr"""WHERE step_gcal_id = $id""").query[GcalRow].map(_.toGcalConfig)
+
+    def selectSmartGcal(id: Int): Query0[Option[GcalConfig]] =
+      (selectFragment("gcal") ++
+        fr"""WHERE gcal_id = $id""").query[GcalRow].map(_.toGcalConfig)
   }
 
 }
