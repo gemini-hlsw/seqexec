@@ -8,9 +8,9 @@ import scalaz.std.anyVal.intInstance
 import scalaz.syntax.equal._
 
 /**
- * Exact wavelengths represented as unsigned integral Angstroms in the range [0 .. Int.MaxValue]
+ * Exact wavelengths represented as unsigned integral angstroms in the range [0 .. Int.MaxValue]
  * which means the largest representable wavelength is 214.7483647 mm.
- * @param toAngstroms This wavelengths in integral angstroms (10^-10).
+ * @param toAngstroms This wavelength in integral angstroms (10^-10 of a meter).
  */
 sealed class Wavelength private (val toAngstroms: Int) {
 
@@ -22,7 +22,7 @@ sealed class Wavelength private (val toAngstroms: Int) {
   override def toString =
     f"Wavelength($toAngstroms Å)"
 
-  /** Angles are equal if their magnitudes are equal. */
+  /** Wavelengths are equal if their magnitudes are equal. */
   override final def equals(a: Any) =
     a match {
       case a: Wavelength => a.toAngstroms === toAngstroms
@@ -30,7 +30,7 @@ sealed class Wavelength private (val toAngstroms: Int) {
     }
 
   override final def hashCode =
-    toAngstroms.toInt
+    toAngstroms
 
 }
 
@@ -43,9 +43,8 @@ object Wavelength {
     Some(angstroms).filter(_ > 0).map(new Wavelength(_))
 
   /** Construct a wavelength from integral angstroms, raising an exception if negative. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromAngstroms(angstroms: Int): Wavelength =
-    fromAngstroms(angstroms).getOrElse(throw new ArithmeticException(s"Wavelength: overflow: $angstroms"))
+    fromAngstroms(angstroms).getOrElse(sys.error(s"Negative wavelength: $angstroms"))
 
   /** @group Typeclass Instances */
   implicit val WavelengthShow: Show[Wavelength] =
