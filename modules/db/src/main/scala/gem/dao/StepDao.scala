@@ -8,7 +8,7 @@ import gem.Location
 import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
-import gem.math.Offset
+import gem.math.{ Offset, Wavelength }
 import doobie.imports._
 
 import java.time.Duration
@@ -295,8 +295,8 @@ object StepDao {
         for {
           d <- disperser
           o <- disperserOrder
-          w <- wavelength
-        } yield GmosGrating(d, o, GmosCentralWavelength(w))
+          w <- wavelength.flatMap(Wavelength.fromAngstroms)
+        } yield GmosGrating(d, o, w)
     }
 
     final case class GmosFpuBuilder[U](

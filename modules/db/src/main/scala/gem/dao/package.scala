@@ -7,7 +7,7 @@ import doobie.postgres.imports._
 import doobie.imports._
 import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
 
-import gem.math.{ Angle, Offset }
+import gem.math.{ Angle, Offset, Wavelength }
 
 import java.sql.Timestamp
 import java.time.{Duration, Instant}
@@ -92,6 +92,10 @@ package object dao extends MoreTupleOps {
   // OffsetQ maps to a signed angle in arcseconds
   implicit val OffsetQMeta: Meta[Offset.Q] =
     AngleMetaAsSignedArcseconds.xmap(Offset.Q(_), _.toAngle)
+
+  // Wavelength maps to an integer in angstroms
+  implicit val WavelengthMeta: Meta[Wavelength] =
+    Meta[Int].xmap(Wavelength.unsafeFromAngstroms, _.toAngstroms)
 
   // Program.Id as string
   implicit val ProgramIdMeta: Meta[Program.Id] =

@@ -6,7 +6,7 @@ package gem.ocs2
 import gem.{Dataset, Observation, Program}
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
-import gem.math.{ Angle, Offset }
+import gem.math.{ Angle, Offset, Wavelength }
 
 import scalaz._
 import Scalaz._
@@ -30,6 +30,9 @@ object Parsers {
 
   val arcsec: PioParse[Angle] =
     double.map(Angle.fromDoubleArcseconds)
+
+  val angstroms: PioParse[Wavelength] =
+    int.map(Wavelength.unsafeFromAngstroms)
 
   val instrument: PioParse[Instrument] = enum(
     "AcqCam"     -> gem.enum.Instrument.AcqCam,
@@ -270,9 +273,8 @@ object Parsers {
       "2" -> GmosDisperserOrder.Two
     )
 
-    // TODO: wavelength - parse into generic Wavelength type directly
-    val disperserLambda: PioParse[Int] =
-      double.map(d => (d * 10.0).round.toInt)
+    val disperserLambda: PioParse[Wavelength] =
+      double.map(d => Wavelength.unsafeFromAngstroms((d * 10.0).round.toInt))
 
     val dtax: PioParse[GmosDtax] = enum(
       "-6" -> GmosDtax.MinusSix,
