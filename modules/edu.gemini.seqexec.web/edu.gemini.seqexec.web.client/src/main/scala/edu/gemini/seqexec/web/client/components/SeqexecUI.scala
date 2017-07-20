@@ -39,7 +39,7 @@ object SeqexecUI {
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
   private val siteInstruments = Instrument.gsInstruments
-  private val instrumentNames = siteInstruments.map(i => (i.shows, i)).toIList.toList.toMap
+  private val instrumentNames = siteInstruments.map(i => (i.shows, i)).list.toList.toMap
 
   def router: Router[SeqexecPages] = {
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
@@ -55,10 +55,10 @@ object SeqexecUI {
           case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
           case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, none))
         }(p => (p.instrument.shows, p.obsId))) {
-          case x @ InstrumentPage(i, _) if siteInstruments.toIList.toList.contains(i) => x
+          case x @ InstrumentPage(i, _) if siteInstruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => instrumentNames.get(i).map(InstrumentPage(_, None)))(p => p.instrument.shows)) {
-          case x @ InstrumentPage(i, _) if siteInstruments.toIList.toList.contains(i) => x
+          case x @ InstrumentPage(i, _) if siteInstruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))

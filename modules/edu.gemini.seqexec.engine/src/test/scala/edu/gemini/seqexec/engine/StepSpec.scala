@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig, StepState}
+import edu.gemini.seqexec.model.Model.F2
 
 import scalaz.syntax.either._
 import org.scalatest._
@@ -96,7 +97,7 @@ class StepSpec extends FlatSpec {
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None, ""),
+               SequenceMetadata(F2, None, ""),
                List(
                  Step(
                    1,
@@ -145,7 +146,7 @@ class StepSpec extends FlatSpec {
            Sequence.State.Zipper(
              Sequence.Zipper(
                "First",
-               SequenceMetadata("F2", None, ""),
+               SequenceMetadata(F2, None, ""),
                Nil,
                Step.Zipper(
                  2,
@@ -208,7 +209,7 @@ class StepSpec extends FlatSpec {
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None, ""),
+               SequenceMetadata(F2, None, ""),
                List(
                  Step(
                    1,

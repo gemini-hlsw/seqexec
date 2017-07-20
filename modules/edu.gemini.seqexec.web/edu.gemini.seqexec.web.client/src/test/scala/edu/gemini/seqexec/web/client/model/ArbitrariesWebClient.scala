@@ -21,6 +21,9 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
       } yield i
     }
 
+  implicit val arbInstrument: Arbitrary[Instrument] =
+    Arbitrary { Gen.oneOf(Instrument.gsInstruments.list.toList ++ Instrument.gnInstruments.list.toList) }
+
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =
     Arbitrary {
       for {

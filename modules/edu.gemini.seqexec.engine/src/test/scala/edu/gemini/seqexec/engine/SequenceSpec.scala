@@ -2,6 +2,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.engine.Event.start
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
+import edu.gemini.seqexec.model.Model.F2
 
 import scala.Function.const
 import scalaz._
@@ -51,7 +52,7 @@ class SequenceSpec extends FlatSpec {
 
   }
 
-  val metadata = SequenceMetadata("F2", None, "")
+  val metadata = SequenceMetadata(F2, None, "")
 
   def simpleStep(id: Int, breakpoint: Boolean): Step[Action \/ Result] =
     Step(
@@ -91,7 +92,7 @@ class SequenceSpec extends FlatSpec {
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None, ""),
+               SequenceMetadata(F2, None, ""),
                List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
              )
            )
@@ -120,7 +121,7 @@ class SequenceSpec extends FlatSpec {
            Sequence.State.init(
              Sequence(
                seqId,
-               SequenceMetadata("F2", None, ""),
+               SequenceMetadata(F2, None, ""),
                List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
              )
            )

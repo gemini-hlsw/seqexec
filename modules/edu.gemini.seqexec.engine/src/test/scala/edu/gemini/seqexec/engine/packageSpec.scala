@@ -5,6 +5,7 @@ import java.util.concurrent.Semaphore
 import Event._
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
+import edu.gemini.seqexec.model.Model.{F2, GmosS}
 
 import scala.concurrent.duration._
 import scalaz._
@@ -54,7 +55,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
          Sequence.State.init(
            Sequence(
              "First",
-             SequenceMetadata("F2", None, ""),
+             SequenceMetadata(F2, None, ""),
              List(
                Step(
                  1,
@@ -91,7 +92,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     Sequence.State.init(
       Sequence(
         "First",
-        SequenceMetadata("GMOS", None, ""),
+        SequenceMetadata(GmosS, None, ""),
         List(
           Step(
             1,
@@ -182,7 +183,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       None,
       Map((seqId, Sequence.State.init(Sequence(
         "First",
-        SequenceMetadata("GMOS", None, ""),
+        SequenceMetadata(GmosS, None, ""),
         List(
           Step(
             1,
@@ -219,7 +220,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       None,
       Map((seqId, Sequence.State.init(Sequence(
         "First",
-        SequenceMetadata("GMOS", None, ""),
+        SequenceMetadata(GmosS, None, ""),
         List(
           Step(
             1,
