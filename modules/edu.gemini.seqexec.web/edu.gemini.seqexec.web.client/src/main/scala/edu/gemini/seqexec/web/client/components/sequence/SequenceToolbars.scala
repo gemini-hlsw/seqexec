@@ -159,7 +159,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(runContinueTooltip),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               runContinueButton
-            ).when(p.s.hasError),
+            ).when(p.s.hasError && p.s.steps.nonEmpty),
             Button(
               Button.Props(
                 icon = Some(IconRefresh),
@@ -179,7 +179,7 @@ object SequenceDefaultToolbar {
                 dataTooltip = Some(runContinueTooltip),
                 disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
               runContinueButton
-            ).when(p.s.status === SequenceState.Idle),
+            ).when(p.s.status === SequenceState.Idle && p.s.steps.nonEmpty),
             Button(
               Button.Props(
                 icon = Some(IconPause),
