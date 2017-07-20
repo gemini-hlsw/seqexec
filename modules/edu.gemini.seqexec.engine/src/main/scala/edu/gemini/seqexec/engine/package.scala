@@ -136,7 +136,6 @@ package object engine {
   def setCloudCover(cc: CloudCover): HandleP[Unit] =
     modify(st => Engine.State(st.conditions.copy(cc = cc), st.operator, st.sequences))
 
-
   /**
     * Load a Sequence
     */
@@ -194,13 +193,13 @@ package object engine {
           case SequenceState.Running =>
             seq.next match {
               // Empty state
-              case None =>
+              case None                           =>
                 send(finished(id))
               // Final State
               case Some(qs: Sequence.State.Final) =>
                 putS(id)(qs) *> send(finished(id))
               // Execution completed. Check breakpoint here
-              case Some(qs) =>
+              case Some(qs)                       =>
                 putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(id)(SequenceState.Idle)
                                  else send(executing(id)))
             }
@@ -214,7 +213,6 @@ package object engine {
     * It also updates the `State` as needed.
     */
   private def execute(id: Sequence.Id): HandleP[Unit] = {
-
     // Send the expected event when the `Action` is executed
     // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
     def act(t: (Action, Int)): Process[Task, Event] = t match {
@@ -229,18 +227,20 @@ package object engine {
     getS(id).flatMap(
       _.map { seq =>
         seq match {
-          case Sequence.State.Final(_,_) => unit
-          case _                         => {
+          case Sequence.State.Final(_, _) =>
+            // The sequence is marked as completed here
+            putS(id)(seq) *> send(finished(id))
+          case _                          =>
             val u = seq.current.actions.zipWithIndex.map(act)
             val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed (id))
             HandleP.fromProcess(v)
-          }
         }
       }.getOrElse(unit)
     )
   }
 
-  private def getState(f: Engine.State => Task[Option[Process[Task, Event]]]): HandleP[Unit] = get.flatMap(s => HandleP(f(s).liftM[HandleStateT].map((Unit, _))))
+  private def getState(f: Engine.State => Task[Option[Process[Task, Event]]]): HandleP[Unit] =
+    get.flatMap(s => HandleP(f(s).liftM[HandleStateT].map((Unit, _))))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -333,7 +333,7 @@ package object engine {
   ): Process[Task, B] = {
     def go(fi: Process[Task, A], si: S): Process[Task, B] = {
       Process.eval(fi.unconsOption).flatMap {
-        case None => Process.halt
+        case None         => Process.halt
         case Some((h, t)) => Process.eval(f(h).run(si)).flatMap {
           case (s, (b, p)) => Process.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
         }

@@ -145,7 +145,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, i == (configs.length-1))
+      case (c, i) => step(obsId, i, c, i == (configs.length - 1))
     }.separate
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)

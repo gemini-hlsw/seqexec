@@ -32,6 +32,7 @@ case class Execution(execution: List[Action \/ Result]) {
     if (execution.forall(_.isLeft)) Status.Waiting
     // Empty execution is handled here
     else if (execution.all(finished)) Status.Completed
+    else if (isEmpty) Status.Completed
     else Status.Running
 
   /**
@@ -75,8 +76,8 @@ object Execution {
     ar match {
       case (-\/(_)) => false
       case (\/-(r)) => r match {
-        case Result.Partial(_,_) => false
-        case _                   => true
+        case Result.Partial(_, _) => false
+        case _                    => true
       }
     }
 }

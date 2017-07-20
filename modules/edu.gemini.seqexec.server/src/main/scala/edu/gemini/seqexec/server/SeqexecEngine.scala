@@ -99,7 +99,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
-  def seqQueueRefreshProcess(q: EventQueue): Process[Task, Event] = awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList(q)))
+  def seqQueueRefreshProcess(q: EventQueue): Process[Task, Event] =
+    awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList(q)))
 
   def eventProcess(q: EventQueue): Process[Task, SeqexecEvent] =
     engine.process(wye(q.dequeue, seqQueueRefreshProcess(q))(mergeHaltBoth))(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
@@ -144,7 +145,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     t.map {
       case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
       case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logMsg(SeqexecFailure.explain(e)))
-      case _                 => List()
+      case _                 => Nil
     }
   }
 
@@ -210,6 +211,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
       seq.steps.map(viewStep) match {
+        // The sequence could be empty
+        case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
         case steps if (st === SequenceState.Running || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
