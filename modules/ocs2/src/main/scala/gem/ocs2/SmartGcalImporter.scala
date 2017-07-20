@@ -6,10 +6,10 @@ package gem.ocs2
 import gem.Log
 import gem.config.GcalConfig
 import gem.config.DynamicConfig.SmartGcalKey
-import gem.config.Gmos.GmosCentralWavelength
 import gem.dao.{ SmartGcalDao, UserDao }
 import gem.enum.{ GcalBaselineType, GcalLampType }
 import gem.ocs2.pio.PioParse
+import gem.math.Wavelength
 
 import java.io.File
 import java.time.Duration
@@ -82,9 +82,8 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
 
     val c = SmartGcalKey.GmosNorthCommon(d, f, u, x, y, a)
 
-    // TODO: wavelength.  Replace with generic Wavelength storing integral angstrom
-    val wmin = GmosCentralWavelength(wavelengthMinS.parseAs(PioParse.int))
-    val wmax = GmosCentralWavelength(parseMaxWavelength(wavelengthMaxS))
+    val wmin = wavelengthMinS.parseAs(Parsers.angstroms)
+    val wmax = parseMaxWavelength(wavelengthMaxS)
 
     (SmartGcalKey.GmosNorthDefinition(c, (wmin, wmax)), gcal)
   }
@@ -120,10 +119,10 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
   val clean: ConnectionIO[Unit] =
     sql"TRUNCATE gcal CASCADE".update.run.void
 
-  def parseMaxWavelength(s: String): Int =
+  def parseMaxWavelength(s: String): Wavelength =
     s match {
-      case "MAX" => Int.MaxValue
-      case _     => s.parseAs(PioParse.int)
+      case "MAX" => Wavelength.unsafeFromAngstroms(Int.MaxValue)
+      case _     => s.parseAs(Parsers.angstroms)
     }
 
   def parseGcal(input: List[String]): (GcalBaselineType, GcalConfig) = {

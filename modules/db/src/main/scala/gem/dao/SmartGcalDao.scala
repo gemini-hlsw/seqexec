@@ -216,7 +216,6 @@ object SmartGcalDao {
         DROP INDEX IF EXISTS smart_gmos_north_index
       """.update
 
-    // TODO: wavelength
     private val MinWavelength = 0
     private val MaxWavelength = Int.MaxValue
 

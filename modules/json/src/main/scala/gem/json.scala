@@ -5,7 +5,7 @@ package gem
 
 import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
-import gem.math.{ Angle, Offset }
+import gem.math.{ Angle, Offset, Wavelength }
 
 import java.time.Duration
 import argonaut._, Argonaut._, ArgonautShapeless._
@@ -24,6 +24,10 @@ package object json {
       .xmap[Angle](
         b => Angle.fromMicroarcseconds(b.underlying.movePointLeft(6).longValue))(
         a => BigDecimal(new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(6)))
+
+  // Wavelength mapping to integral Angstroms.
+  implicit val WavelengthCodec: CodecJson[Wavelength] =
+    CodecJson.derived[Int].xmap(Wavelength.unsafeFromAngstroms)(_.toAngstroms)
 
   implicit val durationCodec: CodecJson[Duration] =
     CodecJson(

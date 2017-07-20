@@ -4,9 +4,8 @@
 package gem.config
 
 import gem.enum._
+import gem.math.Wavelength
 import java.time.Duration
-
-import scalaz._, Scalaz._
 
 /**
  * Additional type hierarchy over the low-level GMOS enums.
@@ -82,18 +81,6 @@ object Gmos {
     slitWidth:              GmosCustomSlitWidth
   )
 
-  /** GMOS grating central wavelength.  For now, just a value class wrapper
-    * around an integer.
-    * TODO: wavelength. This class needs to be converted to a generic Wavelength
-    * class and built out.
-    */
-  final case class GmosCentralWavelength(val toAngstroms: Int) extends AnyVal
-
-  object GmosCentralWavelength {
-    implicit val OrderGmosCentralWavelength: Order[GmosCentralWavelength] =
-      Order.orderBy(_.toAngstroms)
-  }
-
   /** GMOS grating configuration, parameterized on the disperser type.  These
     * are grouped because they only apply when using a grating.  That is, all
     * are defined or none or defined in the dynamic config.
@@ -104,6 +91,6 @@ object Gmos {
   final case class GmosGrating[D](
     disperser:  D,
     order:      GmosDisperserOrder,
-    wavelength: GmosCentralWavelength
+    wavelength: Wavelength
   )
 }

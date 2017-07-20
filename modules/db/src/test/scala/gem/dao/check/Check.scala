@@ -8,7 +8,7 @@ import gem._
 import gem.enum._
 import gem.config._
 import gem.config.DynamicConfig.SmartGcalKey
-import gem.math.Offset
+import gem.math.{ Offset, Wavelength }
 
 import doobie.imports._
 import doobie.scalatest.imports._
@@ -70,7 +70,7 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
       val sk = DynamicConfig.GmosNorth.Default.key
       SmartGcalKey.GmosNorthDefinition(
         sk.gmos,
-        (Gmos.GmosCentralWavelength(0), Gmos.GmosCentralWavelength(1))
+        (Wavelength.ZeroAngstroms, Wavelength.ZeroAngstroms)
       )
     }
   }

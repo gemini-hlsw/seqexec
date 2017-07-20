@@ -5,6 +5,7 @@ package gem
 package config
 
 import gem.enum._
+import gem.math.Wavelength
 
 import java.time.Duration
 
@@ -67,16 +68,14 @@ object DynamicConfig {
       ampGain:   GmosAmpGain
     )
 
-    import gem.config.Gmos.GmosCentralWavelength
-
     final case class GmosNorthSearch(
       gmos:       GmosNorthCommon,
-      wavelength: Option[GmosCentralWavelength]
+      wavelength: Option[Wavelength]
     ) extends SmartGcalSearchKey
 
     final case class GmosNorthDefinition(
       gmos:            GmosNorthCommon,
-      wavelengthRange: (GmosCentralWavelength, GmosCentralWavelength)
+      wavelengthRange: (Wavelength, Wavelength)
     ) extends SmartGcalDefinitionKey
   }
 

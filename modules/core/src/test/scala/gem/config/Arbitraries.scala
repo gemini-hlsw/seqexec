@@ -7,6 +7,7 @@ import gem.arb._
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
 import gem.enum._
 import gem.enum.Instrument._
+import gem.math.Wavelength
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
@@ -157,17 +158,12 @@ trait Arbitraries {
       } yield Gmos.GmosCustomMask(m, w)
     }
 
-  implicit val arbGmosCentralWavelength =
-    Arbitrary {
-      Gen.choose(3000, 12000).map(Gmos.GmosCentralWavelength(_))
-    }
-
   implicit val arbGmosNorthGrating =
     Arbitrary {
       for {
         d <- arbitrary[GmosNorthDisperser]
         o <- arbitrary[GmosDisperserOrder]
-        w <- arbitrary[Gmos.GmosCentralWavelength]
+        w <- Gen.choose(3000, 12000).map(Wavelength.unsafeFromAngstroms)
       } yield Gmos.GmosGrating(d, o, w)
     }
 
@@ -176,7 +172,7 @@ trait Arbitraries {
       for {
         d <- arbitrary[GmosSouthDisperser]
         o <- arbitrary[GmosDisperserOrder]
-        w <- arbitrary[Gmos.GmosCentralWavelength]
+        w <- Gen.choose(3000, 12000).map(Wavelength.unsafeFromAngstroms)
       } yield Gmos.GmosGrating(d, o, w)
     }
 
