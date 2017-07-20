@@ -16,7 +16,7 @@ object Pages {
   sealed trait SeqexecPages
 
   case object Root extends SeqexecPages
-  case class InstrumentPage(i: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
+  case class InstrumentPage(instrument: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
 }
 
 // Actions
@@ -83,14 +83,6 @@ object SectionVisibilityState {
 
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
 
-/**
-  * Internal list of object names.
-  * TODO This should belong to the model
-  */
-object InstrumentNames {
-  val instruments = NonEmptyList[Instrument]("Flamingos2", "GMOS-S", "GPI", "GSAOI")
-}
-
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   // Display a given step on the focused sequence
@@ -129,7 +121,7 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
 object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
-  val empty = SequencesOnDisplay(InstrumentNames.instruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
+  val empty = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)

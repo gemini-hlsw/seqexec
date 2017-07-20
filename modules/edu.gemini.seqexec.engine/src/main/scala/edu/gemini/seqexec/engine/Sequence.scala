@@ -25,7 +25,7 @@ object Sequence {
 
   type Id = String
 
-  def empty[A](id: Id): Sequence[A] = Sequence(id, SequenceMetadata("", None, ""), Nil)
+  def empty[A](id: Id, m: SequenceMetadata): Sequence[A] = Sequence(id, m, Nil)
 
   implicit val sequenceFunctor = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
@@ -223,13 +223,10 @@ object Sequence {
     val status: State @> SequenceState =
     // `State` doesn't provide `.copy`
       Lens.lensu(
-        (qs, s) => (
-          qs match {
-            // TODO: Isn't there a better way to write this?
-            case Zipper(st, _) => Zipper(st, s)
-            case Final(st, _)  => Final(st, s)
-          }
-          ),
+        (qs, s) => qs match {
+          case Zipper(st, _) => Zipper(st, s)
+          case Final(st, _)  => Final(st, s)
+        },
         _.status
       )
 
@@ -237,8 +234,9 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action \/ Result]): State = Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
-      .getOrElse(Final(Sequence.empty(q.id), SequenceState.Idle))
+    def init(q: Sequence[Action \/ Result]): State =
+      Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
+        .getOrElse(Final(Sequence.empty(q.id, q.metadata), SequenceState.Idle))
 
     /**
       * This is the `State` in Zipper mode, which means is under execution.

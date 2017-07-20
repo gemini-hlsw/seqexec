@@ -116,9 +116,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   }
 
-  private def extractInstrumentName(config: Config): String =
+  private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =
     // This is too weak. We may want to use the extractors used in ITC
-    config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)).toString
+    config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)) match {
+      case "Flamingos2" => edu.gemini.seqexec.model.Model.F2.right
+      case "GMOS-S"     => edu.gemini.seqexec.model.Model.GmosS.right
+      case n            => SeqexecFailure.UnrecognizedInstrument(n.toString).left
+
+    }
 
   private def extractStatus(config: Config): StepState =
     config.getItemValue(new ItemKey("observe:status")).toString match {
@@ -143,23 +148,24 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case (c, i) => step(obsId, i, c, i == (configs.length-1))
     }.separate
 
-    val instName = configs.headOption.map(extractInstrumentName).getOrElse("Unknown instrument")
+    val instName = configs.headOption.map(extractInstrumentName).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)
 
-    steps match {
-      case (errs, ss) => (
-        errs,
-        if (ss.isEmpty)
-          None
-        else
-          Some(
-            Sequence[Action \/ Result](
-              obsId.stringValue(),
-              SequenceMetadata(instName, None, name),
-              ss
+    instName.fold(e => (List(e), none), i =>
+      steps match {
+        case (errs, ss) => (
+          errs,
+          if (ss.isEmpty)
+            None
+          else
+            Some(
+              Sequence[Action \/ Result](
+                obsId.stringValue(),
+                SequenceMetadata(i, None, name),
+                ss
+              )
             )
-          )
-      )
-    }
+        )
+      })
   }
 
   private def toInstrumentSys(inst: Resource.Instrument): TrySeq[Instrument] = inst match {
