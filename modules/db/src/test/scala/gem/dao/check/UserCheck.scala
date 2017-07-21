@@ -7,7 +7,8 @@ package check
 class UserCheck extends Check {
   import UserDao.Statements._
   "UserDao.Statements" should
-            "select"          in check(select(""))
-  it should "selectWithRoles" in check(selectWithRoles("", ""))
+            "selectUser"      in check(selectUser(""))
+  it should "selectRoles"     in check(selectRoles(""))
+  it should "countUsers"      in check(countUsers("", ""))
   it should "changePassword"  in check(changePassword("", "", ""))
 }
