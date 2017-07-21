@@ -12,26 +12,34 @@ import doobie.imports._
 object UserDao {
 
   /**
-   * Select the super-user, for system processes.
+   * Select the root user, for system processes. Always succceds if the system is consistent;
+   * raises an exception if the root user is missing.
    * @group Queries
    */
-  val selectRoot: ConnectionIO[User[Nothing]] =
-    selectUser("root")
+  val selectRoot: ConnectionIO[User[ProgramRole]] =
+    OptionT(selectUser(User.Id.Root)).getOrElse(sys.error("No root user. Cannot continue."))
+
+  // Helper method to add roles to a selected user, if any.
+  private def selectUserImpl(q: Query0[User[Nothing]]): ConnectionIO[Option[User[ProgramRole]]] = {
+    for {
+      u <- OptionT(q.option)
+      r <- selectRoles(u.id).liftM[OptionT]
+    } yield u.copy(roles = r)
+  } .run
+
+  /**
+   * Select the given user, with roles.
+   * @group Queries
+   */
+  def selectUser(uid: User.Id): ConnectionIO[Option[User[ProgramRole]]] =
+    selectUserImpl(Statements.selectUser(uid))
 
   /**
    * Select the given user, with roles, if the id and password match a known user.
    * @group Queries
    */
-  def tryLogin(uid: User.Id, password: String): ConnectionIO[Option[User[ProgramRole]]] =
-    (Statements.countUsers(uid, password).unique.liftM[OptionT].filter(_ == 1) *>
-     selectUserWithRoles(uid).liftM[OptionT]).run
-
-  /**
-   * Select the given user, without roles. Raises an exception if the user is not found.
-   * @group Queries
-   */
-  def selectUser(id: User.Id): ConnectionIO[User[Nothing]] =
-    Statements.selectUser(id).unique
+  def selectUserʹ(uid: User.Id, password: String): ConnectionIO[Option[User[ProgramRole]]] =
+    selectUserImpl(Statements.selectUserʹ(uid, password))
 
   /**
    * Select the map of roles associated with the given user.
@@ -45,7 +53,7 @@ object UserDao {
    * @group Queries
    */
   def selectUserWithRoles(id: User.Id): ConnectionIO[User[ProgramRole]] =
-    (Statements.selectUser(id).unique |@| selectRoles(id))((u, r) => u.copy(allProgramRoles = r))
+    (Statements.selectUser(id).unique |@| selectRoles(id))((u, r) => u.copy(roles = r))
 
   /**
    * Attempts to change the specified user's password, yielding success. A cause of failure (user
@@ -57,14 +65,20 @@ object UserDao {
 
   object Statements {
 
-    def selectUser(id: String): Query0[User[Nothing]] =
-      sql"""
+    private def selectUserImpl(id: String, and: Fragment): Query0[User[Nothing]] =
+      (fr"""
         SELECT id, first, last, email, staff
         FROM gem_user
         WHERE id = $id
-      """.query[(String, String, String, String, Boolean)].map {
+       """ ++ and).query[(String, String, String, String, Boolean)].map {
         case (i, f, l, e, s) => User(i, f, l, e, s, Map.empty)
       }
+
+    def selectUser(id: String): Query0[User[Nothing]] =
+      selectUserImpl(id, Fragment.empty)
+
+    def selectUserʹ(id: String, password: String): Query0[User[Nothing]] =
+      selectUserImpl(id, fr"AND md5 = md5($password)")
 
     def selectRoles(id: User.Id): Query0[(Program.Id, ProgramRole)] =
       sql"""
@@ -72,15 +86,6 @@ object UserDao {
         FROM gem_user_program
         WHERE user_id = $id
       """.query
-
-    // count the number of users with the given id and password; useful for checking passwords
-    def countUsers(uid: User.Id, password: String): Query0[Int] =
-      sql"""
-        SELECT count(*)::integer
-        FROM   gem_user
-        WHERE  id  = ${uid}
-        AND    md5 = md5($password)
-      """.query[Int]
 
     def changePassword(uid: User.Id, oldPassword: String, newPassword: String): Update0 =
       sql"""
