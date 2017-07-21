@@ -101,20 +101,19 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     Location.find(count, low, hi).toList.map(_.toList) shouldEqual expected.toList
 
   it should "evenly space values it finds" in {
-    check(2, Location( 0), Location(10),  3 :: Nil,  6 :: Nil)
-    check(2, Location( 0), Location( 9),  3 :: Nil,  6 :: Nil)
-    check(2, Location( 0), Location( 8),  3 :: Nil,  6 :: Nil)
-    check(2, Location( 0), Location( 7),  2 :: Nil,  4 :: Nil)
-    check(2, Location( 0), Location( 6),  2 :: Nil,  4 :: Nil)
-    check(2, Location( 0), Location( 5),  2 :: Nil,  4 :: Nil)
-    check(2, Location( 0), Location( 4),  1 :: Nil,  2 :: Nil)
-    check(2, Location( 0), Location( 3),  1 :: Nil,  2 :: Nil)
-    check(2, Location(-7), Location( 0), -5 :: Nil, -3 :: Nil)
+    check(2, Location( 0   ), Location(10   ),  3 :: Nil,  6 :: Nil)
+    check(2, Location( 0   ), Location( 9   ),  3 :: Nil,  6 :: Nil)
+    check(2, Location( 0   ), Location( 8   ),  2 :: Nil,  5 :: Nil)
+    check(2, Location( 0   ), Location( 7   ),  2 :: Nil,  4 :: Nil)
+    check(2, Location( 0   ), Location( 6   ),  2 :: Nil,  4 :: Nil)
+    check(2, Location( 0   ), Location( 5   ),  1 :: Nil,  3 :: Nil)
+    check(2, Location( 0   ), Location( 4   ),  1 :: Nil,  2 :: Nil)
+    check(2, Location( 0   ), Location( 3   ),  1 :: Nil,  2 :: Nil)
+    check(2, Location(-7   ), Location( 0   ), -5 :: Nil, -3 :: Nil)
 
-    check(1, Location(1, 2), Location(1, 3),  1 :: 2 :: 0 :: Nil)
-    check(2, Location(1, 2), Location(1, 3),  1 :: 2 :: -715827883 :: Nil, 1 :: 2 :: 715827882 :: Nil)
-
-    check(2, Location(0), Location(2), 0 :: 715827883 :: Nil, 1 :: -715827882 :: Nil)
+    check(1, Location( 1, 2), Location( 1, 3),  1 :: 2 :: 0 :: Nil)
+    check(2, Location( 1, 2), Location( 1, 3),  1 :: 2 :: -715827883 :: Nil, 1 :: 2 :: 715827882 :: Nil)
+    check(2, Location( 0   ), Location( 2   ),  0 :: 715827882 :: Nil, 1 :: -715827883 :: Nil)
 
     check(1, Location.Beginning,         Location.End,               -1 :: Nil)
     check(1, Location.Beginning,         Location(Int.MinValue + 2), Int.MinValue + 1 :: Nil)
