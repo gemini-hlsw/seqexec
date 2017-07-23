@@ -97,26 +97,44 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  private def check(count: Int, low: Location, hi: Location, expected: List[Int]*): org.scalatest.compatible.Assertion =
-    Location.find(count, low, hi).toList.map(_.toList) shouldEqual expected.toList
-
   it should "evenly space values it finds" in {
-    check(2, Location( 0   ), Location(10   ),  3 :: Nil,  6 :: Nil)
-    check(2, Location( 0   ), Location( 9   ),  3 :: Nil,  6 :: Nil)
-    check(2, Location( 0   ), Location( 8   ),  2 :: Nil,  5 :: Nil)
-    check(2, Location( 0   ), Location( 7   ),  2 :: Nil,  4 :: Nil)
-    check(2, Location( 0   ), Location( 6   ),  2 :: Nil,  4 :: Nil)
-    check(2, Location( 0   ), Location( 5   ),  1 :: Nil,  3 :: Nil)
-    check(2, Location( 0   ), Location( 4   ),  1 :: Nil,  2 :: Nil)
-    check(2, Location( 0   ), Location( 3   ),  1 :: Nil,  2 :: Nil)
-    check(2, Location(-7   ), Location( 0   ), -5 :: Nil, -3 :: Nil)
+    val Max   = BigInt(Int.MaxValue)
+    val Min   = BigInt(Int.MinValue)
+    val Radix = Max + Min.abs + BigInt(1)
 
-    check(1, Location( 1, 2), Location( 1, 3),  1 :: 2 :: 0 :: Nil)
-    check(2, Location( 1, 2), Location( 1, 3),  1 :: 2 :: -715827883 :: Nil, 1 :: 2 :: 715827882 :: Nil)
-    check(2, Location( 0   ), Location( 2   ),  0 :: 715827882 :: Nil, 1 :: -715827883 :: Nil)
+    def toBase10(loc: Location.Middle, len: Int): BigInt = {
+      val prefix  = loc.posList.toList
+      val posList = prefix ::: List.fill(len - prefix.length)(Int.MinValue)
 
-    check(1, Location.Beginning,         Location.End,               -1 :: Nil)
-    check(1, Location.Beginning,         Location(Int.MinValue + 2), Int.MinValue + 1 :: Nil)
-    check(1, Location(Int.MaxValue - 2), Location.End,               Int.MaxValue - 1 :: Nil)
+      posList.foldRight((BigInt(0), BigInt(1))) { case (i, (acc, pow)) =>
+        (acc + (BigInt(i) + Min.abs) * pow, pow * Radix)
+      }._1
+    }
+
+    def positions(locs: List[Location.Middle]): List[BigInt] = {
+      val len = locs match {
+        case Nil => 0
+        case _   => locs.map(_.posList.length).max
+      }
+      locs.map(toBase10(_, len))
+    }
+
+    forAll { (i: Int, l0: Location, l1: Location) =>
+      val count      = (i % 10000).abs + 1
+      val (fst, snd) = Order[Location].sort(l0, l1)
+      val middles    = Location.find(count, fst, snd)
+      val maxDiff    = positions(middles.toList) match {
+        case Nil | _ :: Nil =>
+          BigInt(0)
+        case posList        =>
+          val gapSizes = posList.zip(posList.drop(1)).map { case (a, b) => b - a }
+          gapSizes.max - gapSizes.min
+      }
+
+      // The gap between consecutive locations across all the values found
+      // should never differ one from the other by more than 1.  That is, the
+      // locations should be as evenly spaced as possible.
+      maxDiff shouldBe <= (BigInt(1))
+    }
   }
 }
