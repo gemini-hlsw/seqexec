@@ -48,6 +48,12 @@ object SmartGcalDao {
   val dropIndexGmosNorth: ConnectionIO[Int] =
     Statements.dropIndexGmosNorth.run
 
+  val createIndexGmosSouth: ConnectionIO[Int] =
+    Statements.createIndexGmosSouth.run
+
+  val dropIndexGmosSouth: ConnectionIO[Int] =
+    Statements.dropIndexGmosSouth.run
+
   def bulkInsertF2(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.F2, GcalConfig)]): scalaz.stream.Process[ConnectionIO, Int] =
     bulkInsert(Statements.bulkInsertF2, entries)
 

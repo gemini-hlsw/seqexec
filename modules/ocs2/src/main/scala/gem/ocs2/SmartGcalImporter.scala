@@ -52,6 +52,7 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
     for {
       _ <- importInst("Flamingos2", parseF2,        dropIndexF2,        bulkInsertF2,        createIndexF2       )
       _ <- importInst("GMOS-N",     parseGmosNorth, dropIndexGmosNorth, bulkInsertGmosNorth, createIndexGmosNorth)
+      _ <- importInst("GMOS-S",     parseGmosSouth, dropIndexGmosSouth, bulkInsertGmosSouth, createIndexGmosSouth)
     } yield ()
   }
 
@@ -70,6 +71,27 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
   def parseGmosNorth(input: List[String]): (SmartGcalKey.GmosNorthDefinition, List[String]) = {
     import Parsers.Gmos._
     import Parsers.GmosNorth._
+
+    val disperserS :: filterS :: fpuS :: xBinS :: yBinS :: _ :: ampGainS :: wavelengthMinS :: wavelengthMaxS :: gcal = input
+
+    val d = disperserS.parseAs(disperser)
+    val f = filterS   .parseAs(filter   )
+    val u = fpuS      .parseAs(fpu)
+    val x = xBinS     .parseAs(xBinning)
+    val y = yBinS     .parseAs(yBinning)
+    val a = ampGainS  .parseAs(ampGain)
+
+    val c = SmartGcalKey.GmosCommon(d, f, u, x, y, a)
+
+    val wmin = wavelengthMinS.parseAs(Parsers.angstroms)
+    val wmax = parseMaxWavelength(wavelengthMaxS)
+
+    (SmartGcalKey.GmosDefinition(c, (wmin, wmax)), gcal)
+  }
+
+  def parseGmosSouth(input: List[String]): (SmartGcalKey.GmosSouthDefinition, List[String]) = {
+    import Parsers.Gmos._
+    import Parsers.GmosSouth._
 
     val disperserS :: filterS :: fpuS :: xBinS :: yBinS :: _ :: ampGainS :: wavelengthMinS :: wavelengthMaxS :: gcal = input
 
