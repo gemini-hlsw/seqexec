@@ -32,6 +32,7 @@ sealed abstract class DynamicConfig extends Product with Serializable {
     this match {
       case f2: DynamicConfig.F2        => Some(f2.key)
       case gn: DynamicConfig.GmosNorth => Some(gn.key)
+      case gs: DynamicConfig.GmosSouth => Some(gs.key)
       case _                           => None
     }
 }
@@ -68,9 +69,15 @@ object DynamicConfig {
     )
 
     type GmosNorthCommon = GmosCommon[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
+    type GmosSouthCommon = GmosCommon[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
 
     final case class GmosNorthSearch(
       gmos:       GmosNorthCommon,
+      wavelength: Option[Wavelength]
+    ) extends SmartGcalSearchKey
+
+    final case class GmosSouthSearch(
+      gmos:       GmosSouthCommon,
       wavelength: Option[Wavelength]
     ) extends SmartGcalSearchKey
 
@@ -80,8 +87,7 @@ object DynamicConfig {
     )
 
     type GmosNorthDefinition = GmosDefinition[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
-//    type GmosSouthSearch     = GmosSearch[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
-//    type GmosSouthDefinition = GmosSearch[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
+    type GmosSouthDefinition = GmosDefinition[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
   }
 
   sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: I0) extends DynamicConfig {
@@ -161,7 +167,22 @@ object DynamicConfig {
     grating: Option[GmosGrating[GmosSouthDisperser]],
     filter:  Option[GmosSouthFilter],
     fpu:     Option[GmosCustomMask \/ GmosSouthFpu]
-  ) extends DynamicConfig.Impl(Instrument.GmosS)
+  ) extends DynamicConfig.Impl(Instrument.GmosS) {
+
+    /** Returns the smart gcal search key for this GMOS-S configuration. */
+    def key: SmartGcalKey.GmosSouthSearch =
+      SmartGcalKey.GmosSouthSearch(
+        SmartGcalKey.GmosCommon(
+          grating.map(_.disperser),
+          filter,
+          fpu.flatMap(_.toOption),
+          common.ccdReadout.xBinning,
+          common.ccdReadout.yBinning,
+          common.ccdReadout.ampGain
+        ),
+        grating.map(_.wavelength)
+      )
+  }
 
   object GmosSouth {
     val Default: GmosSouth =
