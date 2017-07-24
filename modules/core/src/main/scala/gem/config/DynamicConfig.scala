@@ -32,6 +32,7 @@ sealed abstract class DynamicConfig extends Product with Serializable {
     this match {
       case f2: DynamicConfig.F2        => Some(f2.key)
       case gn: DynamicConfig.GmosNorth => Some(gn.key)
+      case gs: DynamicConfig.GmosSouth => Some(gs.key)
       case _                           => None
     }
 }
@@ -58,25 +59,35 @@ object DynamicConfig {
       fpu:       F2FpUnit
     ) extends SmartGcalSearchKey with SmartGcalDefinitionKey
 
-
-    final case class GmosNorthCommon(
-      disperser: Option[GmosNorthDisperser],
-      filter:    Option[GmosNorthFilter],
-      fpu:       Option[GmosNorthFpu],
+    final case class GmosCommon[D, F, U](
+      disperser: Option[D],
+      filter:    Option[F],
+      fpu:       Option[U],
       xBinning:  GmosXBinning,
       yBinning:  GmosYBinning,
       ampGain:   GmosAmpGain
     )
+
+    type GmosNorthCommon = GmosCommon[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
+    type GmosSouthCommon = GmosCommon[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
 
     final case class GmosNorthSearch(
       gmos:       GmosNorthCommon,
       wavelength: Option[Wavelength]
     ) extends SmartGcalSearchKey
 
-    final case class GmosNorthDefinition(
-      gmos:            GmosNorthCommon,
+    final case class GmosSouthSearch(
+      gmos:       GmosSouthCommon,
+      wavelength: Option[Wavelength]
+    ) extends SmartGcalSearchKey
+
+    final case class GmosDefinition[D, F, U](
+      gmos:            GmosCommon[D, F, U],
       wavelengthRange: (Wavelength, Wavelength)
-    ) extends SmartGcalDefinitionKey
+    )
+
+    type GmosNorthDefinition = GmosDefinition[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
+    type GmosSouthDefinition = GmosDefinition[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
   }
 
   sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: I0) extends DynamicConfig {
@@ -132,7 +143,7 @@ object DynamicConfig {
     /** Returns the smart gcal search key for this GMOS-N configuration. */
     def key: SmartGcalKey.GmosNorthSearch =
       SmartGcalKey.GmosNorthSearch(
-        SmartGcalKey.GmosNorthCommon(
+        SmartGcalKey.GmosCommon(
           grating.map(_.disperser),
           filter,
           fpu.flatMap(_.toOption),
@@ -156,7 +167,22 @@ object DynamicConfig {
     grating: Option[GmosGrating[GmosSouthDisperser]],
     filter:  Option[GmosSouthFilter],
     fpu:     Option[GmosCustomMask \/ GmosSouthFpu]
-  ) extends DynamicConfig.Impl(Instrument.GmosS)
+  ) extends DynamicConfig.Impl(Instrument.GmosS) {
+
+    /** Returns the smart gcal search key for this GMOS-S configuration. */
+    def key: SmartGcalKey.GmosSouthSearch =
+      SmartGcalKey.GmosSouthSearch(
+        SmartGcalKey.GmosCommon(
+          grating.map(_.disperser),
+          filter,
+          fpu.flatMap(_.toOption),
+          common.ccdReadout.xBinning,
+          common.ccdReadout.yBinning,
+          common.ccdReadout.ampGain
+        ),
+        grating.map(_.wavelength)
+      )
+  }
 
   object GmosSouth {
     val Default: GmosSouth =

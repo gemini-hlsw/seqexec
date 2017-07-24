@@ -13,7 +13,12 @@ class SmartGcalCheck extends Check {
   it should "dropIndexF2"               in check(dropIndexF2)
   it should "selectGmosNorthByLamp"     in check(selectGmosNorthByLamp(Dummy.gmosNorthSmartGcalSearchKey)(Dummy.gcalLampType))
   it should "selectGmosNorthByBaseline" in check(selectGmosNorthByBaseline(Dummy.gmosNorthSmartGcalSearchKey)(Dummy.gcalBaselineType))
+  it should "selectGmosSouthByLamp"     in check(selectGmosSouthByLamp(Dummy.gmosSouthSmartGcalSearchKey)(Dummy.gcalLampType))
+  it should "selectGmosSouthByBaseline" in check(selectGmosSouthByBaseline(Dummy.gmosSouthSmartGcalSearchKey)(Dummy.gcalBaselineType))
   it should "bulkInsertGmosNorth"       in check(bulkInsertGmosNorth)
+  it should "bulkInsertGmosSouth"       in check(bulkInsertGmosSouth)
   it should "createIndexGmosNorth"      in check(createIndexGmosNorth)
   it should "dropIndexGmosNorth"        in check(dropIndexGmosNorth)
+  it should "createIndexGmosSouth"      in check(createIndexGmosSouth)
+  it should "dropIndexGmosSouth"        in check(dropIndexGmosSouth)
 }

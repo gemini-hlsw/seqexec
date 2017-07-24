@@ -66,9 +66,20 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val gmosNorthSmartGcalSearchKey     =
       DynamicConfig.GmosNorth.Default.key
 
+    val gmosSouthSmartGcalSearchKey     =
+      DynamicConfig.GmosSouth.Default.key
+
     val gmosNorthSmartGcalDefinitionKey = {
       val sk = DynamicConfig.GmosNorth.Default.key
-      SmartGcalKey.GmosNorthDefinition(
+      SmartGcalKey.GmosDefinition(
+        sk.gmos,
+        (Wavelength.ZeroAngstroms, Wavelength.ZeroAngstroms)
+      )
+    }
+
+    val gmosSouthSmartGcalDefinitionKey = {
+      val sk = DynamicConfig.GmosSouth.Default.key
+      SmartGcalKey.GmosDefinition(
         sk.gmos,
         (Wavelength.ZeroAngstroms, Wavelength.ZeroAngstroms)
       )
