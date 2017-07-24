@@ -80,12 +80,12 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
     val y = yBinS     .parseAs(yBinning)
     val a = ampGainS  .parseAs(ampGain)
 
-    val c = SmartGcalKey.GmosNorthCommon(d, f, u, x, y, a)
+    val c = SmartGcalKey.GmosCommon(d, f, u, x, y, a)
 
     val wmin = wavelengthMinS.parseAs(Parsers.angstroms)
     val wmax = parseMaxWavelength(wavelengthMaxS)
 
-    (SmartGcalKey.GmosNorthDefinition(c, (wmin, wmax)), gcal)
+    (SmartGcalKey.GmosDefinition(c, (wmin, wmax)), gcal)
   }
 
   // -------------------------------------------------------------------------
