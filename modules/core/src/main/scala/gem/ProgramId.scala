@@ -96,11 +96,11 @@ object ProgramId {
 
     /** The first moment of this observing day, 2pm the day before `localDate`. */
     lazy val start: ZonedDateTime =
-      ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, site.timezone).minusHours(10)
+      ZonedDateTime.of(localDate.minusDays(1), LocalTime.of(14,0,0), site.timezone)
 
     /** The last moment of this observing day, just before 2pm on 'localDate'. */
     lazy val end: ZonedDateTime =
-      ZonedDateTime.of(localDate.minusDays(1), LocalTime.MAX, site.timezone).plusHours(14)
+      ZonedDateTime.of(localDate, LocalTime.of(14,0,0).minusNanos(1), site.timezone)
 
     /** True if the given instant falls within the observing day defined by `start` and `end`. */
     def includes(i: Instant): Boolean =
