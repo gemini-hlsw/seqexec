@@ -1,4 +1,4 @@
-package edu.gemini.seqexec.web.client.semanticui
+package edu.gemini.web.client.facades.semanticui
 
 import org.querki.jquery.JQuery
 import org.querki.jsext.{JSOptionBuilder, _}

@@ -27,6 +27,17 @@ lazy val edu_gemini_web_server_common = project
     libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s
   )
 
+lazy val edu_gemini_web_client_facades = project
+  .in(file("modules/edu.gemini.web.client.facades"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(commonJSSettings: _*)
+  .settings(
+    scalacOptions ~= (_.filterNot(Set(
+      // By necessity facades will have unused params
+      "-Ywarn-unused:params"
+    ))),
+    libraryDependencies += JQuery.value
+  )
 // Root web project
 lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
   .settings(commonSettings: _*)
@@ -127,7 +138,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "edu.gemini.seqexec.web.client"
   )
-  .dependsOn(edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test", edu_gemini_seqexec_model_JS % "compile->compile;test->test")
+  .dependsOn(edu_gemini_web_client_facades, edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test", edu_gemini_seqexec_model_JS % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
 lazy val edu_gemini_seqexec_server = project

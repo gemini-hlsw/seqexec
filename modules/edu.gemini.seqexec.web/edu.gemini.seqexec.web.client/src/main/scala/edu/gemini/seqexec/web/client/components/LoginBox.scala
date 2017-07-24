@@ -4,7 +4,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
