@@ -37,7 +37,7 @@ object CloseableMessage extends Message {
       Callback {
         // Need to go into jQuery and semantic to enable the close button
         import org.querki.jquery.$
-        import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+        import edu.gemini.web.client.facades.semanticui.SemanticUI._
         import org.scalajs.dom.Element
 
         $(ctx.getDOMNode).on("click", (e: Element, ev: Any) =>

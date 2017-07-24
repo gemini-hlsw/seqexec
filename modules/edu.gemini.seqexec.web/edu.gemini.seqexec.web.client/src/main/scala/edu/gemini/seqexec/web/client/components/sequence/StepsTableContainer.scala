@@ -80,8 +80,8 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(s: SequenceView, step: Step): TagMod = {
-      s.allowedObservationOperations(step).map {
+    def observationControlButtons(s: SequenceView): TagMod = {
+      s.allowedObservationOperations.map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
@@ -119,7 +119,7 @@ object StepsTableContainer {
             SeqexecStyles.buttonsRow,
             <.div(
               ^.cls := "ui icon buttons",
-              observationControlButtons(sequenceView, step)
+              observationControlButtons(sequenceView)
             )
           ).when(loggedIn)
         )

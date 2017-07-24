@@ -42,7 +42,7 @@ object QueueTableBody {
     )
   }
 
-  def showSequence(s: SequenceView): Callback =
+  def showSequence(p: Props, s: SequenceInQueue): Callback =
     // Request to display the selected sequence
     p.sequences.dispatchCB(NavigateTo(InstrumentPage(s.instrument, s.id.some))) >> p.sequences.dispatchCB(SelectIdToDisplay(s.id))
 
@@ -87,7 +87,7 @@ object QueueTableBody {
                   "active"   -> (s.active && !inProcess)
                 ),
                 ^.key := s"item.queue.$i",
-                ^.onClick --> showSequence(s),
+                ^.onClick --> showSequence(p, s),
                 <.td(
                   ^.cls := "collapsing",
                   selectableRowCls.toTagMod,

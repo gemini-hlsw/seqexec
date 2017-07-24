@@ -51,7 +51,7 @@ object DropdownMenu {
       Callback {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
-        import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+        import edu.gemini.web.client.facades.semanticui.SemanticUI._
 
         $(ctx.getDOMNode).find(".ui.dropdown").dropdown(
           JsDropdownOptions

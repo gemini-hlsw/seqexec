@@ -61,7 +61,7 @@ object ModelOps {
      * Returns the observation operations allowed
      * TODO Convert to an Instrument-level typeclass
      */
-    def allowedObservationOperations(step: Step): List[ObservationOperations] =
+    def allowedObservationOperations: List[ObservationOperations] =
       s.metadata.instrument match {
         case _                                                 => Nil
       }

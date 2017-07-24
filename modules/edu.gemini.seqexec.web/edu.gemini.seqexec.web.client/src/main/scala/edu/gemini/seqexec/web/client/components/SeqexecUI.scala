@@ -10,6 +10,8 @@ import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
 
+import scala.scalajs.js.timers.SetTimeoutHandle
+
 import scalaz._
 import Scalaz._
 
@@ -45,9 +47,6 @@ object SeqexecUI {
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
       import dsl._
 
-      def layout(c: RouterCtl[SeqexecPages], r: Resolution[SeqexecPages]) =
-        <.div(r.render()).render
-
       (emptyRule
       | staticRoute(root, Root) ~> renderR(r => SeqexecMain(r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
@@ -66,18 +65,18 @@ object SeqexecUI {
         .verify(Root, siteInstruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
           Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback.log("silent " + next) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
-        .renderWith(layout)
+        .renderWith { case (_, r) => <.div(r.render()).render}
         .logToConsole
     }
 
     val (router, routerLogic) = Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig)
 
-    def navigated(page: ModelRO[SeqexecPages]): Unit = {
+    def navigated(page: ModelRO[SeqexecPages]): SetTimeoutHandle = {
       scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
     }
 
     // subscribe to navigation changes
-    SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(navigated _)
+    SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(x); ()})
 
     // Initiate the WebSocket connection
     SeqexecCircuit.dispatch(WSConnect(0))
@@ -86,3 +85,4 @@ object SeqexecUI {
   }
 
 }
+
