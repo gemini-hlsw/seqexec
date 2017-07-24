@@ -61,7 +61,7 @@ object Importer extends DoobieClient {
 
   def doImport(write: (User[_], Log[ConnectionIO]) => ConnectionIO[Unit]): Task[Unit] =
     for {
-      u <- UserDao.selectRoot.transact(lxa)
+      u <- UserDao.selectRootUser.transact(lxa)
       l <- Log.newLog[ConnectionIO]("importer", lxa).transact(lxa)
       _ <- Task.delay(configureLogging)
       _ <- write(u, l).transact(lxa)

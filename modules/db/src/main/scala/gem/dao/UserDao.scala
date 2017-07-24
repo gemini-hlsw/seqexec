@@ -16,7 +16,7 @@ object UserDao {
    * raises an exception if the root user is missing.
    * @group Queries
    */
-  val selectRoot: ConnectionIO[User[ProgramRole]] =
+  val selectRootUser: ConnectionIO[User[ProgramRole]] =
     OptionT(selectUser(User.Id.Root)).getOrElse(sys.error("No root user. Cannot continue."))
 
   // Helper method to add roles to a selected user, if any.
@@ -28,14 +28,14 @@ object UserDao {
   } .run
 
   /**
-   * Select the given user, with roles.
+   * Select the given user, if any, with roles.
    * @group Queries
    */
   def selectUser(uid: User.Id): ConnectionIO[Option[User[ProgramRole]]] =
     selectUserImpl(Statements.selectUser(uid))
 
   /**
-   * Select the given user, with roles, if the id and password match a known user.
+   * Select the given user, if any, with roles, if the id and password match a known user.
    * @group Queries
    */
   def selectUserʹ(uid: User.Id, password: String): ConnectionIO[Option[User[ProgramRole]]] =
@@ -47,13 +47,6 @@ object UserDao {
    */
   def selectRoles(id: User.Id): ConnectionIO[Map[Program.Id, Set[ProgramRole]]] =
     Statements.selectRoles(id).list.map(_.foldMap { case (k, v) => Map((k -> Set(v))) })
-
-  /**
-   * Select the given user, with roles. Raises an exception if the user is not found.
-   * @group Queries
-   */
-  def selectUserWithRoles(id: User.Id): ConnectionIO[User[ProgramRole]] =
-    (Statements.selectUser(id).unique |@| selectRoles(id))((u, r) => u.copy(roles = r))
 
   /**
    * Attempts to change the specified user's password, yielding success. A cause of failure (user

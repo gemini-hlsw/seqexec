@@ -6,16 +6,17 @@ package gem
 /**
  * A Gem user, parameterized on the type of granted program roles, typically
  * [[gem.enum.ProgramRole ProgramRole]] for a fully specified user, or `Nothing` for a user with
- * unstated grants. Permissions are granted based on a combination of granted roles,
+ * unstated grants. Permissions are granted based on a combination of granted roles, staff status,
+ * and rootness.
  * @group Application Model
  */
 final case class User[A](
-  id: User.Id,
+  id:        User.Id,
   firstName: String,
   lastName:  String,
-  email: String,
-  isStaff: Boolean,
-  roles: Map[Program.Id, Set[A]]
+  email:     String,
+  isStaff:   Boolean,
+  roles:     Map[Program.Id, Set[A]]
 )
 
 object User {
