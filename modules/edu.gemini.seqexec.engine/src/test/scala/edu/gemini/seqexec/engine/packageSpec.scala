@@ -20,29 +20,29 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = for {
+  val configureTcs: Action  = new Action(_ => for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured("TCS"))
+  } yield Result.OK(Result.Configured("TCS")))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = for {
+  val configureInst: Action  = new Action(_ => for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured("Instrument"))
+  } yield Result.OK(Result.Configured("Instrument")))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = for {
+  val observe: Action  = new Action(_ => for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Observed("DummyFileId"))
+  } yield Result.OK(Result.Observed("DummyFileId")))
 
-  val faulty: Action  = for {
+  val faulty: Action  = new Action(_ => for {
     _ <- Task(Thread.sleep(100))
-  } yield Result.Error("There was an error in this action")
+  } yield Result.Error("There was an error in this action"))
 
   val config: StepConfig = Map()
   val seqId = "TEST-01"
@@ -193,11 +193,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Task.apply{
+              List(new Action(_ => Task.apply{
                 startedFlag.release
                 finishFlag.acquire
                 Result.OK(Result.Configured("TCS"))
-              }.left )
+              }).left )
             )
           )
         )
@@ -230,9 +230,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Task.apply{
+              List(new Action(_ => Task.apply{
                 throw e
-              }.left )
+              }).left )
             )
           )
         )

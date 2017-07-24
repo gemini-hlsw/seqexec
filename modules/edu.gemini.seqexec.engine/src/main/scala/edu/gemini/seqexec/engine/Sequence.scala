@@ -142,7 +142,7 @@ object Sequence {
                 _.fold(
                   identity,
                   // It should never happen
-                  _ => Task(Result.Error("Inconsistent status"))
+                  _ => new Action(_ => Task(Result.Error("Inconsistent status")))
                 )
               )
             )

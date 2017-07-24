@@ -27,38 +27,38 @@ class StepSpec extends FlatSpec {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = for {
+  val configureTcs: Action  = new Action(_ => for {
     _ <- Task(println("System: Start TCS configuration"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete TCS configuration"))
-  } yield Result.OK(Result.Configured("TCS"))
+  } yield Result.OK(Result.Configured("TCS")))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = for {
+  val configureInst: Action  = new Action(_ => for {
     _ <- Task(println("System: Start Instrument configuration"))
     _ <- Task(Thread.sleep(150))
     _ <- Task(println("System: Complete Instrument configuration"))
-  } yield Result.OK(Result.Configured("Instrument"))
+  } yield Result.OK(Result.Configured("Instrument")))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = for {
+  val observe: Action  = new Action(_ => for {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete observation"))
-  } yield Result.OK(Result.Observed("DummyFileId"))
+  } yield Result.OK(Result.Observed("DummyFileId")))
 
-  def triggerPause(q: async.mutable.Queue[Event]): Action = for {
+  def triggerPause(q: async.mutable.Queue[Event]): Action = new Action(_ => for {
     _ <- q.enqueueOne(pause(seqId))
     // There is not a distinct result for Pause because the Pause action is a
     // trick for testing but we don't need to support it real life, he pause
     // input event is enough.
-  } yield Result.OK(Result.Observed("DummyFileId"))
+  } yield Result.OK(Result.Observed("DummyFileId")))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -220,13 +220,13 @@ class StepSpec extends FlatSpec {
                    false,
                    List(
                      List(
-                       Task(
+                       new Action(_ => Task(
                          Result.Partial(
                            PartialValDouble(0.5),
-                           Task(Result.OK(RetValDouble(1.0))
+                           new Action(_ => Task(Result.OK(RetValDouble(1.0)))
                            )
                          )
-                       ).left
+                       )).left
                      )
                    )
                  )
@@ -256,7 +256,7 @@ class StepSpec extends FlatSpec {
 
   val result = Result.OK(Result.Observed("dummyId"))
   val failure = Result.Error("Dummy error")
-  val action: Action = Task(result)
+  val action: Action = new Action(_ => Task(result))
   val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) = (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {

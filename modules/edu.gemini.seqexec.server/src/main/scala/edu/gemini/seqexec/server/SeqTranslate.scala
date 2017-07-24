@@ -27,10 +27,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import SeqTranslate._
 
-  implicit def toAction(x: SeqAction[Result.Response]): Action = x.run map {
-    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+  def toResult(r: SeqexecFailure\/Result.Response): Result = r match {
     case \/-(r) => Result.OK(r)
+    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
   }
+
+  def toAction(x: SeqAction[Result.Response]): Action = new Action(_ => x.run.map(toResult))
 
   private def step(
     obsId: SPObservationID,
