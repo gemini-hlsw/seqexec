@@ -71,7 +71,7 @@ object FileImporter extends SafeApp with DoobieClient {
 
   override def runl(args: List[String]): IO[Unit] =
     for {
-      u <- UserDao.selectRoot.transact(xa)
+      u <- UserDao.selectRootUser.transact(xa)
       l <- Log.newLog[ConnectionIO]("importer", lxa).transact(xa)
       n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
       _ <- checkArchive

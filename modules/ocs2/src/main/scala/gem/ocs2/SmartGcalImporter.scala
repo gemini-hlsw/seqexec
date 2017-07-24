@@ -175,7 +175,7 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
 
   override def runl(args: List[String]): Task[Unit] =
     for {
-      u <- UserDao.selectRoot.transact(lxa)
+      u <- UserDao.selectRootUser.transact(lxa)
       l <- Log.newLog[Task]("smartgcal importer", lxa)
       _ <- checkSmartDir
       _ <- Task.delay(configureLogging)

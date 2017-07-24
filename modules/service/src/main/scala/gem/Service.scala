@@ -47,7 +47,7 @@ object Service {
   def tryLogin[M[_]: Monad: Catchable: Capture](
     user: User.Id, pass: String, xa: Transactor[M,_], txa: Transactor[Task, _]
   ): M[Option[Service[M]]] =
-    xa.trans.apply(UserDao.selectWithRoles(user, pass)).flatMap {
+    xa.trans.apply(UserDao.selectUserʹ(user, pass)).flatMap {
       case None    => Option.empty[Service[M]].point[M]
       case Some(u) => Log.newLog[M](s"session:$u.name", txa).map(l => Some(Service[M](xa, l, u)))
     }
