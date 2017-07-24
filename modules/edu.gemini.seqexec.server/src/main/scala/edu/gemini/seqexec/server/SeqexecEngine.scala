@@ -95,15 +95,15 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setCloudCover(q: EventQueue, cc: CloudCover): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setCloudCover(cc)).map(_.right)
 
-  def setSkipMark(q: EventQueue, id: SPObservationID, stepId: edu.gemini.seqexec.engine.Step.Id): Task[SeqexecFailure \/ Unit] = ???
+  def setSkipMark: Task[SeqexecFailure \/ Unit] = ???
 
   def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
-  def seqQueueRefreshProcess(q: EventQueue): Process[Task, Event] =
-    awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList(q)))
+  def seqQueueRefreshProcess: Process[Task, Event] =
+    awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList()))
 
   def eventProcess(q: EventQueue): Process[Task, SeqexecEvent] =
-    engine.process(wye(q.dequeue, seqQueueRefreshProcess(q))(mergeHaltBoth))(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
+    engine.process(wye(q.dequeue, seqQueueRefreshProcess)(mergeHaltBoth))(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
@@ -140,7 +140,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       progIdString <- EitherT(Task.delay(odbSeq.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
       progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
       name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
-    } yield translator.sequence(translatorSettings)(seqId, odbSeq, name)
+    } yield translator.sequence(seqId, odbSeq, name)
 
     t.map {
       case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
@@ -228,7 +228,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
   }
 
-  private def refreshSequenceList(q: EventQueue): Engine.State => Task[Option[Process[Task, Event]]] = (st: Engine.State) => {
+  private def refreshSequenceList(): Engine.State => Task[Option[Process[Task, Event]]] = (st: Engine.State) => {
 
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
@@ -288,7 +288,7 @@ object SeqexecEngine {
   private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): Task[Unit] = {
     // SmartGCal always talks to GS
     val peer = new Peer(smartGCalHost, 8443, Site.GS)
-    Task.delay(Paths.get(smartGCalLocation)) >>= {p => Task.delay(SmartGcal.initialize(peer, p))}
+    Task.delay(Paths.get(smartGCalLocation)) >>= {p => Task.delay(SmartGcal.initialize(peer, p)) *> Task.now(()) }
   }
 
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
@@ -324,10 +324,10 @@ object SeqexecEngine {
           case Some(s) =>
             sys.init(s, tops).leftMap {
                 case SeqexecFailure.SeqexecException(ex) => throw ex
-                case c: SeqexecFailure => throw new Exception(SeqexecFailure.explain(c))
+                case c: SeqexecFailure                   => throw new Exception(SeqexecFailure.explain(c))
             }
         }
-      )
+      ) *> taskUnit
 
     val taskUnit = Task.now(())
     // Ensure there is a valid way to init CaService either from

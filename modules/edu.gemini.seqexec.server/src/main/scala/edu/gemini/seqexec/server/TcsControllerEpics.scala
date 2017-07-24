@@ -288,7 +288,7 @@ object TcsControllerEpics extends TcsController {
     _ <- TcsEpics.instance.wavelSourceA.setWavel(c.wavelB.self.toMicrons)
     _ <- TcsEpics.instance.wavelSourceA.setWavel(c.wavelB.self.toMicrons)
     _ <- TcsEpics.instance.m2Beam.setBeam(encode(c.m2beam))
-  } yield TrySeq(())
+  } yield ()
 
   implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
     EncodeEpicsValue { (op: NodChopTrackingOption) =>
@@ -298,7 +298,7 @@ object TcsControllerEpics extends TcsController {
       }
     }
 
-  private def setProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd, c: ProbeTrackingConfig) = for {
+  private def setProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd, c: ProbeTrackingConfig): SeqAction[Unit] = for {
     _ <- s.setNodachopa(encode(c.getNodChop.get(NodChop(Beam.A, Beam.A))))
     _ <- s.setNodachopb(encode(c.getNodChop.get(NodChop(Beam.A, Beam.B))))
     _ <- s.setNodachopc(encode(c.getNodChop.get(NodChop(Beam.A, Beam.C))))
@@ -308,7 +308,7 @@ object TcsControllerEpics extends TcsController {
     _ <- s.setNodcchopa(encode(c.getNodChop.get(NodChop(Beam.C, Beam.A))))
     _ <- s.setNodcchopb(encode(c.getNodChop.get(NodChop(Beam.C, Beam.B))))
     _ <- s.setNodcchopc(encode(c.getNodChop.get(NodChop(Beam.C, Beam.C))))
-  } yield TrySeq(())
+  } yield ()
 
   private def setGuiderWfs(on: TcsEpics.WfsObserveCmd, off: EpicsCommand, c: GuiderSensorOption): SeqAction[Unit] =
     c match {
@@ -390,6 +390,6 @@ object TcsControllerEpics extends TcsController {
     _ <- setM2Guide(gc.m2Guide)
     _ <- TcsEpics.instance.post
     _ <- EitherT(Task(Log.info("TCS guide command post").right))
-  } yield TrySeq(())
+  } yield ()
 
 }

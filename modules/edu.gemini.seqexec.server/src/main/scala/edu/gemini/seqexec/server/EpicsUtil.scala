@@ -17,13 +17,17 @@ trait EpicsCommand {
 
   protected val cs: Option[CaCommandSender]
 
-  def post: SeqAction[Unit] = safe(EitherT(Task.async[TrySeq[Unit]](f => cs.map(_.postCallback {
-    new CaCommandListener {
-      override def onSuccess(): Unit = f(TrySeq(()).right)
+  def post: SeqAction[Unit] = safe(EitherT(
+    Task.async[TrySeq[Unit]](f => {
+      cs.foreach(_.postCallback {
+        new CaCommandListener {
+          override def onSuccess(): Unit = f(TrySeq(()).right)
 
-      override def onFailure(cause: Exception): Unit = f(cause.left)
+          override def onFailure(cause: Exception): Unit = f(cause.left)
+        }
+      } )
+      ()
     }
-  } ).getOrElse(SeqexecFailure.Unexpected("Unable to trigger command.").left)
   ) ) )
 
   def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
@@ -73,7 +77,7 @@ object EpicsCommand {
     safe(SeqAction.either {
       p.map(_.set(f(v)).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
     } )
-    
+
   def setParameter[T](p: Option[CaParameter[T]], v: T): SeqAction[Unit] =
     safe(SeqAction.either {
       p.map(_.set(v).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)

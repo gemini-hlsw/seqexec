@@ -17,7 +17,7 @@ import scalaz.concurrent.Task
   * Created by jluhrs on 2/10/17.
   */
 
-class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, f2Reader: Flamingos2Header.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
+class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header._
   import Header.Implicits._
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =  {
@@ -44,7 +44,8 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
 object Flamingos2Header {
   import Header.Implicits._
 
-  def apply(hs: DhsClient, f2ObsReader: ObsKeywordsReader, f2Reader: InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) = new Flamingos2Header(hs, f2ObsReader, f2Reader, tcsKeywordsReader)
+  def apply(hs: DhsClient, f2ObsReader: ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) =
+    new Flamingos2Header(hs, f2ObsReader, tcsKeywordsReader)
 
   trait ObsKeywordsReader {
     def getPreimage: SeqAction[YesNoType]
