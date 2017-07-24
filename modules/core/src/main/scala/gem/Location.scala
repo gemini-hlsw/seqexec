@@ -3,7 +3,9 @@
 
 package gem
 
+import BigDecimal.RoundingMode.FLOOR
 import scala.annotation.tailrec
+import scala.collection.breakOut
 import scalaz._, Scalaz._
 import scalaz.Ordering.{EQ, GT, LT}
 
@@ -119,17 +121,7 @@ object Location {
 
   // Utility
 
-  /** Finds `count` `Location`s that fall evenly distributed between `l0` and
-    * `l1`, assuming these locations are not the same.
-    *
-    * @param count how many locations to find
-    * @param start starting location (exclusive)
-    * @param end ending Location (exclusive)
-    *
-    * @return sorted list of `Location` where every element is GT l0 and LT l1
-    *         (or vice versa if l0 is GT l1)
-    */
-  def find(count: Int, start: Location, end: Location): IList[Middle] = {
+  private object Base10 {
     val Zero  = BigInt(0)
     val One   = BigInt(1)
     val Max   = BigInt(Int.MaxValue)
@@ -150,18 +142,45 @@ object Location {
       }
       go(bi, IList.empty)
     }
+  }
+
+  /** Finds `count` `Location`s that fall evenly distributed between `l0` and
+    * `l1`, assuming these locations are not the same.
+    *
+    * @param count how many locations to find
+    * @param start starting location (exclusive)
+    * @param end ending Location (exclusive)
+    *
+    * @return sorted list of `Location` where every element is GT l0 and LT l1
+    *         (or vice versa if l0 is GT l1)
+    */
+  def find(count: Int, start: Location, end: Location): IList[Middle] = {
+    import Base10._
 
     @tailrec
     def go(len: Int): IList[Middle] = {
       val start10 = toBase10(start, len)
       val end10   = toBase10(end, len)
-      val avail   = end10 - start10 - One
 
-      if (avail < count)
-        go(len + 1)
+      // (end10 - start10) is the space we have to fill.  We need count + 1
+      // more or less evenly spaced gaps between numbers in that space.  So
+      // total space / gaps needed is the decimal gap size.  It has to be at
+      // least 1.0 or else we don't have enough space to accommodate `count`
+      // new elements and we have to recurse.
+      val gapSize = BigDecimal.exact(end10 - start10) / (count + 1)
+
+      if (gapSize < BigDecimal.exact(1)) go(len + 1)
       else {
-        val incr = (BigDecimal.exact(avail) / (count + 1)).setScale(0, BigDecimal.RoundingMode.CEILING).toBigInt
-        IList.fromList((1 to count).toList.map(i => fromBase10(start10 + (incr * i))))
+        // This is the existing start position as a BigDecimal.
+        val startBd = BigDecimal(start10, 0)
+
+        // Calculate count digits separated one from the other by gapSized gaps,
+        // but rounding down to make them integral. Since gapSize is at least
+        // 1.0, this will always advance and never produce duplicates.
+        IList.fromList((1 to count)
+          .scanLeft(startBd) { (sum, _) => sum + gapSize }
+          .drop(1)
+          .map { bd => fromBase10(bd.setScale(0, FLOOR).toBigInt) }(breakOut))
       }
     }
 
