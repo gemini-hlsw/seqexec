@@ -32,7 +32,10 @@ object StepsTableContainer {
                    autoScrolled   : Boolean)
 
   // case class Props(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
-  case class Props(stepsTable: ModelProxy[StepsTable], onStepToRun: Int => Callback)
+  case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTable])], onStepToRun: Int => Callback) {
+    def status: ClientStatus = stepsTable()._1
+    def steps: Option[StepsTable] = stepsTable()._2
+  }
 
   class Backend($: BackendScope[Props, State]) {
 
@@ -130,28 +133,28 @@ object StepsTableContainer {
     def isPartiallyExecuted(p: StepsTable): Boolean = p.steps.exists(_.status == StepState.Completed)
 
     def stepInError(loggedIn: Boolean, isPartiallyExecuted: Boolean, msg: String): VdomNode =
-        <.div(
-          <.p(s"Error: $msg"),
-          IconMessage(
-            IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
-              s"Press ",
-              <.b(isPartiallyExecuted ? "Continue" | "Run"),
-              " to re-try"
-          ).when(loggedIn)
-        )
+      <.div(
+        <.p(s"Error: $msg"),
+        IconMessage(
+          IconMessage.Props(IconAttention, None, IconMessage.Style.Info, Size.Tiny),
+            s"Press ",
+            <.b(isPartiallyExecuted ? "Continue" | "Run"),
+            " to re-try"
+        ).when(loggedIn)
+      )
 
-    def stepDisplay(p: StepsTable, step: Step): VdomNode =
+    def stepDisplay(status: ClientStatus, p: StepsTable, step: Step): VdomNode =
       step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(p.status.isLogged, step)
+        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, step)
         case StepState.Completed                  => <.p(step.status.shows)
-        case StepState.Error(msg)                 => stepInError(p.status.isLogged, isPartiallyExecuted(p), msg)
+        case StepState.Error(msg)                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case s if step.skip                       => <.p(step.status.shows + " - Skipped")
         case _                                    => <.p(step.status.shows)
       }
 
     def selectRow(step: Step, index: Int): Callback =
-      $.props >>= { p => Callback.when(p.stepsTable().status.isLogged)(Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})) }
+      $.props >>= { p => Callback.when(p.status.isLogged)(Callback.when(step.status.canRunFrom)($.props >>= {_.onStepToRun(index)})) }
 
     def mouseEnter(index: Int): Callback =
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
@@ -163,12 +166,12 @@ object StepsTableContainer {
       $.modState(_.copy(onHover = None))
 
     def markAsSkipped(id: SequenceId, step: Step): Callback =
-      $.props >>= {p => Callback.when(p.stepsTable().status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipSkipStep(id, step)) }) }
+      $.props >>= {p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipSkipStep(id, step))) }
 
     def breakpointAt(id: SequenceId, step: Step): Callback =
-      $.props >>= { p => Callback.when(p.stepsTable().status.isLogged)(Callback { SeqexecCircuit.dispatch(FlipBreakpointStep(id, step)) }) }
+      $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipBreakpointStep(id, step))) }
 
-    def stepsTable(p: StepsTable, s: State): TagMod =
+    def stepsTable(status: ClientStatus, p: StepsTable, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
@@ -236,11 +239,11 @@ object StepsTableContainer {
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
-                      case StepState.Completed => IconCheckmark
-                      case StepState.Running => IconCircleNotched.copyIcon(loading = true)
-                      case StepState.Error(_) => IconAttention
+                      case StepState.Completed       => IconCheckmark
+                      case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
+                      case StepState.Error(_)        => IconAttention
                       case _ if i == p.nextStepToRun => IconChevronRight
-                      case _ if step.skip => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+                      case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
                       case _ => iconEmpty
                     }
                   ),
@@ -250,7 +253,7 @@ object StepsTableContainer {
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     ^.cls := "middle aligned",
-                    stepDisplay(p, step)),
+                    stepDisplay(status, p, step)),
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     ^.cls := "middle aligned",
@@ -270,12 +273,13 @@ object StepsTableContainer {
         ^.cls := "ui row scroll pane",
         SeqexecStyles.stepsListPane,
         //^.ref := scrollRef,
-        p.stepsTable().stepConfigDisplayed.map { i =>
-          // TODO consider the failure case
-          val step = p.stepsTable().steps(i)
-          configTable(step)
-        }.getOrElse {
-          stepsTable(p.stepsTable(), s)
+        p.steps.whenDefined { tab =>
+          tab.stepConfigDisplayed.map { i =>
+            val step = tab.steps(i)
+            configTable(step)
+          }.getOrElse {
+            stepsTable(p.status, tab, s)
+          }
         }
       )
     }
@@ -369,4 +373,5 @@ object StepsTableContainer {
 
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
+
 

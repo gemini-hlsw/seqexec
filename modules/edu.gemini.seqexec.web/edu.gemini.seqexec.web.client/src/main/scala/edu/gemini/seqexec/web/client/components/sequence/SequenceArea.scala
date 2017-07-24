@@ -7,11 +7,11 @@ import edu.gemini.seqexec.web.client.components.TextMenuSegment
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.model.Model.Instrument
 import edu.gemini.seqexec.web.client.semanticui._
-// import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
-// import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import edu.gemini.seqexec.model.Model.Instrument
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalazReact._
 
@@ -50,8 +50,8 @@ object SequenceStepsTableContainer {
         ): VdomElement
       }.getOrElse(<.div(): VdomElement)*/
         <.div(
-          ^.cls := "ui raised secondary segment"//,
-          // instrumentConnects.get(p.p).map(x => x.map(StepsTableContainer(StepsTableContainer.Props(x, _ => Callback.empty)))).getOrElse(<.div(): VdomElement)
+          ^.cls := "ui raised secondary segment",
+          instrumentConnects.get(p.p).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, _ => Callback.empty))))
         )
       // <.div()
     }.componentWillMount { f =>
@@ -72,21 +72,23 @@ object SequenceStepsTableContainer {
 */
 object SequenceTabContent {
 
-  case class Props(p: ModelProxy[InstrumentActive])
+  case class Props(p: ModelProxy[InstrumentActive]) {
+    val connect = SeqexecCircuit.connect(SeqexecCircuit.instrumentTab(p().instrument))
+  }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val InstrumentActive(_, instrument, active) = p.p()
+      val InstrumentActive(instrument, id, active) = p.p()
       <.div(
         ^.cls := "ui bottom attached tab segment",
         ^.classSet(
           "active" -> active
         ),
-        dataTab := instrument.shows//,
-        // sequence.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): VdomNode) { s =>
-        //   SequenceStepsTableContainer(p.p): VdomNode
-        // }
+        dataTab := instrument.shows,
+        id.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): VdomElement) { s =>
+          p.connect(st =>  SequenceStepsTableContainer(instrument): VdomElement)
+        }
       )
     }
     .build

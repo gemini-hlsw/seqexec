@@ -387,9 +387,9 @@ case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: In
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
 case class InstrumentSequence(instrument: Instrument, sequence: Option[(SequenceView, Option[Int])], active: Boolean) extends UseValueEq
-case class InstrumentActive(status: ClientStatus, instrument: Instrument, active: Boolean) extends UseValueEq
+case class InstrumentActive(instrument: Instrument, id: Option[SequenceId], active: Boolean) extends UseValueEq
 case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentActive]) extends UseValueEq
-case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int])
+case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int])
 
 /**
   * Contains the model for Diode
@@ -435,16 +435,15 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     }
   def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
   def instrumentActive(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentActive] =
-    status.zip(instrumentTab(i)).zoom {
-      case (status, (tab, active)) => InstrumentActive(status, i, active)
+    instrumentTab(i).zoom {
+      case (tab, active) => InstrumentActive(i, tab.sequence().map(_.id), active)
     }
-  def instrumentStepsTable(i: Instrument): ModelR[SeqexecAppRootModel, Option[StepsTable]] =
+  def instrumentStepsTable(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTable])] =
     status.zip(instrumentTab(i)).zoom {
       case (status, (tab, active)) =>
-        tab.sequence().map { sequence =>
-          StepsTable(sequence.id, i, sequence.steps, status, tab.stepConfigDisplayed, sequence.nextStepToRun)
-        }
-      case (status, _)                   => None
+        (status, tab.sequence().map { sequence =>
+          StepsTable(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
+        })
     }
 
   // Reader for a specific sequence if available
