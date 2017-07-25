@@ -66,7 +66,12 @@ class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task, _]
 
 object Log {
 
-  def newLog[M[_]: Monad: Catchable](name: String, xa: Transactor[Task, _])(implicit delay: Capture[M]): M[Log[M]] =
-    delay(new Log(name, xa, delay))
+  /** Program in M to construct a Log, also in M. */
+  def newLog[M[_]: Monad: Catchable: Capture](name: String, xa: Transactor[Task, _]): M[Log[M]] =
+    newLogIn[M, M](name, xa)
+
+  /** Program in F to construct a Log in M. */
+  def newLogIn[M[_]: Monad: Catchable: Capture, F[_]](name: String, xa: Transactor[Task, _])(implicit delay: Capture[F]): F[Log[M]] =
+    delay(new Log[M](name, xa, implicitly))
 
 }

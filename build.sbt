@@ -9,11 +9,12 @@ lazy val shapelessVersion         = "2.3.2"
 lazy val argonautShapelessVersion = "1.2.0-M4"
 lazy val scalaTestVersion         = "3.0.1"
 lazy val scalaCheckVersion        = "1.13.5"
-lazy val http4sVersion            = "0.15.2a"
+lazy val http4sVersion            = "0.16.0a-M3"
 lazy val scalaXmlVerson           = "1.0.6"
 lazy val scalaParsersVersion      = "1.0.4"
 lazy val tucoVersion              = "0.1.1"
 lazy val attoVersion              = "0.5.2"
+lazy val slf4jVersion             = "1.7.25"
 
 enablePlugins(GitVersioning)
 
@@ -161,7 +162,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(core, db, json, ocs2, service, telnetd, ctl)
+  .aggregate(core, db, json, ocs2, service, telnetd, ctl, web)
 
 lazy val core = project
   .in(file("modules/core"))
@@ -257,6 +258,24 @@ lazy val telnetd = project
   .settings(
     libraryDependencies += "org.tpolecat" %% "tuco-core" % tucoVersion,
     dockerExposedPorts  := List(6666),
+    dockerRepository    := Some("geminihlsw")
+  )
+
+lazy val web = project
+  .in(file("modules/web"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(service, sql, json)
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.slf4j"   % "slf4j-jdk14"         % slf4jVersion,
+      "org.http4s" %% "http4s-argonaut"     % http4sVersion,
+      "org.http4s" %% "http4s-dsl"          % http4sVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion
+    ),
+    dockerExposedPorts  := List(6667),
     dockerRepository    := Some("geminihlsw")
   )
 

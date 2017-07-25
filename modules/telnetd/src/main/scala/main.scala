@@ -44,8 +44,9 @@ object Main extends SafeApp {
       _    <- IO.putStrLn(s"Connecting with URL $url, user $user, pass «hidden»")
       _    <- migrate(url, user, pass)
       sxa  = xa[SessionIO](url, user, pass)
-      txa  = xa[Task     ](url, user, pass)
-      _    <- Config(Interaction.main(sxa, txa), 6666).run(simpleServer)
+      txa  = xa[Task](url, user, pass)
+      log  <- Log.newLogIn[SessionIO, IO]("telnetd", txa)
+      _    <- Config(Interaction.main(sxa, log), 6666).run(simpleServer)
     } yield ()
 
 }
