@@ -283,7 +283,10 @@ object SeqexecEngine {
 
   def apply(settings: Settings) = new SeqexecEngine(settings)
 
-  private def decodeTops(s: String): Map[String, String] = s.split("=|,").grouped(2).map { case Array(k, v) => k.trim -> v.trim }.toMap
+  private def decodeTops(s: String): Map[String, String] =
+    s.split("=|,").grouped(2).collect {
+      case Array(k, v) => k.trim -> v.trim
+    }.toMap
 
   private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): Task[Unit] = {
     // SmartGCal always talks to GS
@@ -316,6 +319,8 @@ object SeqexecEngine {
     val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
 
+    val taskUnit = Task.now(())
+    
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
       Task.delay(
@@ -329,7 +334,6 @@ object SeqexecEngine {
         }
       ) *> taskUnit
 
-    val taskUnit = Task.now(())
     // Ensure there is a valid way to init CaService either from
     // the configuration file or from the environment
     val caInit   = caAddrList.map(a => Task.delay(CaService.setAddressList(a))).getOrElse {
