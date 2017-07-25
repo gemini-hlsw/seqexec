@@ -90,7 +90,7 @@ object ProgramId {
     localDate:        LocalDate
   ) extends ProgramId(
     Some(site),
-    None,
+    Some(Semester.fromLocalDate(localDate)),
     Some(dailyProgramType.toProgramType)
   ) {
 
