@@ -15,11 +15,7 @@ import scalaz._, scalaz.Scalaz.{ char => _, _ }
  * programs; and [[gem.ProgramId.Nonstandard Nonstandard]]` for all others.
  * @group Program Model
  */
-sealed abstract class ProgramId(
-  val siteOption:        Option[Site],
-  val semesterOption:    Option[Semester],
-  val programTypeOption: Option[ProgramType]
-) extends Product with Serializable {
+sealed trait ProgramId extends Product with Serializable {
 
   /**
    * Format a canonical string for this `ProgramId`. This is for human use, and can be round-
@@ -27,6 +23,14 @@ sealed abstract class ProgramId(
    */
   def format: String
 
+  /** The `Site` associated with this id, if any. */
+  def siteOption: Option[Site]
+
+  /** The `Semester` associated with this id, if any. */
+  def semesterOption: Option[Semester]
+
+  /** The `ProgramType` associated with this id, if any. */
+  def programTypeOption: Option[ProgramType]
 }
 
 object ProgramId {
@@ -37,11 +41,7 @@ object ProgramId {
     semester:    Semester,
     programType: ProgramType,
     index:       Int
-  ) extends ProgramId(
-    Some(site),
-    Some(semester),
-    Some(programType)
-  ) {
+  ) extends ProgramId {
 
     // A copy method isn't generated because this class is abstract, so we do so here. It can't
     // support `index` because this could break the invariant that it must be positive.
@@ -56,7 +56,16 @@ object ProgramId {
     override def format =
       s"${site.shortName}-${semester.format}-${programType.shortName}-$index"
 
+    override def siteOption: Option[Site] =
+      Some(site)
+
+    override def semesterOption: Option[Semester] =
+      Some(semester)
+
+    override def programTypeOption: Option[ProgramType] =
+      Some(programType)
   }
+
   object Science {
 
     /** Construct a `Science` program id, if `index` is positive. */
@@ -88,11 +97,7 @@ object ProgramId {
     site:             Site,
     dailyProgramType: DailyProgramType,
     localDate:        LocalDate
-  ) extends ProgramId(
-    Some(site),
-    Some(Semester.fromLocalDate(localDate)),
-    Some(dailyProgramType.toProgramType)
-  ) {
+  ) extends ProgramId {
 
     /** The first moment of this observing day, 2pm the day before `localDate`. */
     lazy val start: ZonedDateTime =
@@ -102,6 +107,14 @@ object ProgramId {
     lazy val end: ZonedDateTime =
       ZonedDateTime.of(localDate, LocalTime.of(14,0,0).minusNanos(1), site.timezone)
 
+    /** Semester inferred from the `localDate`. */
+    def semester: Semester =
+      Semester.fromLocalDate(localDate)
+
+    /** ProgramType inferred from the `dailyProgramType`. */
+    def programType: ProgramType =
+      dailyProgramType.toProgramType
+
     /** True if the given instant falls within the observing day defined by `start` and `end`. */
     def includes(i: Instant): Boolean =
       start.toInstant <= i && i <= end.toInstant
@@ -109,6 +122,14 @@ object ProgramId {
     override def format =
       f"${site.shortName}-${dailyProgramType.shortName}${Daily.ymd.format(localDate)}"
 
+    override def siteOption: Option[Site] =
+      Some(site)
+
+    override def semesterOption: Option[Semester] =
+      Some(semester)
+
+    override def programTypeOption: Option[ProgramType] =
+      Some(programType)
   }
   object Daily {
 
@@ -148,11 +169,7 @@ object ProgramId {
     override val semesterOption:    Option[Semester],
     override val programTypeOption: Option[ProgramType],
                  tail:              String
-  ) extends ProgramId(
-    siteOption,
-    semesterOption,
-    programTypeOption
-  ) {
+  ) extends ProgramId {
     override def format =
       Nonstandard.format(siteOption, semesterOption, programTypeOption, tail)
 
