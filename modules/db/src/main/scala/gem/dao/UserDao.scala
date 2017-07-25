@@ -63,7 +63,7 @@ object UserDao {
     Statements.unsetRole(id, pid, role).run.map(_ > 0)
 
   /**
-   * Insert a user, yielding a temporary password.
+   * Insert a user.
    * @group Updates
    */
   def insertUser(user: User[ProgramRole], password: String): ConnectionIO[Unit] =
