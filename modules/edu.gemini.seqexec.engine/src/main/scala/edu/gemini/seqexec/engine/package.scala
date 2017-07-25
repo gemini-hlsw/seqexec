@@ -278,12 +278,12 @@ package object engine {
     /**
       * Log info lifted into Handle.
       */
-    def info(msg: String): HandleP[Unit] = pure({(logger.info(msg), None); ()})
+    def info(msg: String): HandleP[Unit] = pure((logger.info(msg), None)).void
 
     /**
       * Log warning lifted into Handle.
       */
-    def warning(msg: String): HandleP[Unit] = pure({(logger.warning(msg), None); ()})
+    def warning(msg: String): HandleP[Unit] = pure((logger.warning(msg), None)).void
   }
 
   /**
@@ -386,8 +386,8 @@ package object engine {
     modify(st => Engine.State(st.conditions, st.operator, st.sequences.updated(id, s)))
 
   // For debugging
-  def printSequenceState(id: Sequence.Id): HandleP[Option[Unit]] =
-    getSs(id)((qs: Sequence.State) => {Task.now(println(qs)).liftM[HandleStateT]; ()})
+  def printSequenceState(id: Sequence.Id): HandleP[Unit] =
+    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT]).void
 
   // The `Catchable` instance of `Handle`` needs to be manually written.
   // Without it it's not possible to use `Handle` as a scalaz-stream process effects.

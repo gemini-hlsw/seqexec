@@ -288,10 +288,10 @@ object SeqexecEngine {
       case Array(k, v) => k.trim -> v.trim
     }.toMap
 
-  private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): Task[Unit] = {
+  private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): Task[edu.gemini.seqexec.odb.TrySeq[Unit]] = {
     // SmartGCal always talks to GS
     val peer = new Peer(smartGCalHost, 8443, Site.GS)
-    Task.delay(Paths.get(smartGCalLocation)) >>= {p => Task.delay(SmartGcal.initialize(peer, p)) *> Task.now(()) }
+    Task.delay(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
@@ -320,7 +320,7 @@ object SeqexecEngine {
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
 
     val taskUnit = Task.now(())
-    
+
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
       Task.delay(
