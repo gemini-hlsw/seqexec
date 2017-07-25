@@ -75,6 +75,18 @@ class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
+  it should "have a consistent program type and daily program type" in {
+    forAll { (did: Daily) =>
+      did.dailyProgramType.toProgramType shouldEqual did.programType
+    }
+  }
+
+  it should "have a consistent date and semester" in {
+    forAll { (did: Daily) =>
+      Semester.fromLocalDate(did.localDate) shouldEqual did.semester
+    }
+  }
+
   "Nonstandard" should "reparse" in {
     forAll { (nid: Nonstandard) =>
       Nonstandard.fromString(nid.format) shouldEqual Some(nid)
