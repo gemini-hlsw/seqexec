@@ -1,8 +1,8 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.model.ModelOps._
+// import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
@@ -14,9 +14,10 @@ import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ScalaComponen
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import org.scalajs.dom.html.Div
+import diode.react.ModelProxy
 
 import scalaz.syntax.equal._
-import scalaz.syntax.std.boolean._
+// import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import scalaz.std.string._
 import scalaz.std.option._
@@ -25,34 +26,35 @@ import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 
 object SequenceInfo {
-  case class Props(s: SequenceView, isLogged: Boolean)
+  case class Props(p: ModelProxy[StatusAndSequenceInfo])
 
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val name = Option(p.s.metadata.name).filter(_.nonEmpty).getOrElse("Unknown.")
+      val StatusAndSequenceInfo(isLogged, name, observer) = p.p()
+      val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
       <.div(
         ^.cls := "ui form",
         <.div(
           ^.cls := "fields",
-          SeqexecStyles.fieldsNoBottom.unless(p.isLogged),
+          SeqexecStyles.fieldsNoBottom.unless(isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props(name, basic = true))
-          ).when(p.isLogged),
+            Label(Label.Props(obsName, basic = true))
+          ).when(isLogged),
           <.div(
             ^.cls := "field",
             Label(Label.Props("Observer:", basic = true, color = "red".some))
-          ).unless(p.isLogged),
+          ).unless(isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props(p.s.metadata.observer.getOrElse("Unknown."), basic = true))
-          ).unless(p.isLogged)
+            Label(Label.Props(observer.getOrElse("Unknown."), basic = true))
+          ).unless(isLogged)
         )
       )
     }.build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+  def apply(p: ModelProxy[StatusAndSequenceInfo]): Unmounted[Props, Unit, Unit] = component(Props(p))
 }
 
 object SequenceObserverField {
@@ -121,8 +123,11 @@ object SequenceObserverField {
 }
 
 object SequenceDefaultToolbar {
-  case class Props(s: SequenceView, status: ClientStatus, nextStepToRun: Option[Int])
+  case class Props(instrument: Instrument)
   case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
+
+  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
+
   private val ST = ReactS.Fix[State]
 
   def requestRun(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
@@ -137,89 +142,92 @@ object SequenceDefaultToolbar {
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS{ ($, p, s) =>
-      val isLogged = p.status.isLogged
-      val nextStepToRun = p.nextStepToRun.getOrElse(0) + 1
-      val runContinueTooltip = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
-      val runContinueButton = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
+      // val isLogged = p.status.isLogged
+      // val nextStepToRun = p.nextStepToRun.getOrElse(0) + 1
+      // val runContinueTooltip = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
+      // val runContinueButton = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
       <.div(
         ^.cls := "ui row",
         <.div(
-          SequenceInfo(SequenceInfo.Props(p.s, isLogged))
-        ),
-        <.div(
-          ^.cls := "ui two column grid",
-          <.div(
-            ^.cls := "ui left column eight wide computer sixteen wide tablet only",
-            <.h3(
-              ^.cls := "ui green header",
-              "Sequence complete"
-            ).when(p.s.status === SequenceState.Completed),
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = $.runState(requestRun(p.s)),
-                color = Some("blue"),
-                dataTooltip = Some(runContinueTooltip),
-                disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-              runContinueButton
-            ).when(p.s.hasError && p.s.steps.nonEmpty),
-            Button(
-              Button.Props(
-                icon = Some(IconRefresh),
-                labeled = true,
-                onClick = $.runState(requestSync(p.s)),
-                color = Some("purple"),
-                dataTooltip = Some(s"Sync sequence"),
-                disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-              s" Sync"
-            ).when(p.s.status === SequenceState.Idle),
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = $.runState(requestRun(p.s)),
-                color = Some("blue"),
-                dataTooltip = Some(runContinueTooltip),
-                disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-              runContinueButton
-            ).when(p.s.status === SequenceState.Idle && p.s.steps.nonEmpty),
-            Button(
-              Button.Props(
-                icon = Some(IconPause),
-                labeled = true,
-                onClick = $.runState(requestPause(p.s)),
-                color = Some("teal"),
-                dataTooltip = Some("Pause the sequence after the current step completes"),
-                disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested || p.s.status === SequenceState.Stopping),
-              "Pause"
-            ).when(p.s.status === SequenceState.Running || p.s.status === SequenceState.Stopping),
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = $.runState(requestPause(p.s)),
-                color = Some("teal"),
-                disabled = !p.status.isConnected || s.syncRequested),
-              "Continue from step 1"
-            ).when(p.s.status === SequenceState.Paused)
-          ),
-          <.div(
-            ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
-            SequenceObserverField(SequenceObserverField.Props(p.s, isLogged))
-          )
-        )
+          sequenceInfoConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
+        )//,
+        // <.div(
+        //   ^.cls := "ui two column grid",
+        //   <.div(
+        //     ^.cls := "ui left column eight wide computer sixteen wide tablet only",
+        //     <.h3(
+        //       ^.cls := "ui green header",
+        //       "Sequence complete"
+        //     ).when(p.s.status === SequenceState.Completed),
+        //     Button(
+        //       Button.Props(
+        //         icon = Some(IconPlay),
+        //         labeled = true,
+        //         onClick = $.runState(requestRun(p.s)),
+        //         color = Some("blue"),
+        //         dataTooltip = Some(runContinueTooltip),
+        //         disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
+        //       runContinueButton
+        //     ).when(p.s.hasError && p.s.steps.nonEmpty),
+        //     Button(
+        //       Button.Props(
+        //         icon = Some(IconRefresh),
+        //         labeled = true,
+        //         onClick = $.runState(requestSync(p.s)),
+        //         color = Some("purple"),
+        //         dataTooltip = Some(s"Sync sequence"),
+        //         disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
+        //       s" Sync"
+        //     ).when(p.s.status === SequenceState.Idle),
+        //     Button(
+        //       Button.Props(
+        //         icon = Some(IconPlay),
+        //         labeled = true,
+        //         onClick = $.runState(requestRun(p.s)),
+        //         color = Some("blue"),
+        //         dataTooltip = Some(runContinueTooltip),
+        //         disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
+        //       runContinueButton
+        //     ).when(p.s.status === SequenceState.Idle && p.s.steps.nonEmpty),
+        //     Button(
+        //       Button.Props(
+        //         icon = Some(IconPause),
+        //         labeled = true,
+        //         onClick = $.runState(requestPause(p.s)),
+        //         color = Some("teal"),
+        //         dataTooltip = Some("Pause the sequence after the current step completes"),
+        //         disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested || p.s.status === SequenceState.Stopping),
+        //       "Pause"
+        //     ).when(p.s.status === SequenceState.Running || p.s.status === SequenceState.Stopping),
+        //     Button(
+        //       Button.Props(
+        //         icon = Some(IconPlay),
+        //         labeled = true,
+        //         onClick = $.runState(requestPause(p.s)),
+        //         color = Some("teal"),
+        //         disabled = !p.status.isConnected || s.syncRequested),
+        //       "Continue from step 1"
+        //     ).when(p.s.status === SequenceState.Paused)
+        //   ),
+        //   <.div(
+        //     ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
+        //     SequenceObserverField(SequenceObserverField.Props(p.s, isLogged))
+        //   )
+        // )
       )
     }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
-      Callback.when(f.nextProps.s.status === SequenceState.Running && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
+      // Callback.when(f.nextProps.s.status === SequenceState.Running && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
+      Callback.empty
     }.build
 
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
+  def apply(p: Instrument): Unmounted[Props, State, Unit] = component(Props(p))
 }
 
 object SequenceAnonymousToolbar {
-  case class Props(s: SequenceView)
+  case class Props(instrument: Instrument)
+
+  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .stateless
@@ -230,17 +238,13 @@ object SequenceAnonymousToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            SequenceInfo(SequenceInfo.Props(p.s, false)),
-            <.h3(
-              ^.cls := "ui green header",
-              "Sequence complete"
-            ).when(p.s.status === SequenceState.Completed)
+            instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
           )
         )
       )
     ).build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+  def apply(i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(i))
 }
 
 object StepConfigToolbar {
@@ -256,7 +260,7 @@ object StepConfigToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            SequenceInfo(SequenceInfo.Props(p.s, p.isLogged)),
+            // SequenceInfo(SequenceInfo.Props(p.s, p.isLogged)),
             <.h3(
               ^.cls := "ui green header",
               "Sequence complete"

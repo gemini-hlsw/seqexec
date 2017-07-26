@@ -3,6 +3,7 @@ package edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Event.start
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.F2
+import edu.gemini.seqexec.model.UserDetails
 
 import scala.Function.const
 import scalaz._
@@ -53,6 +54,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   val metadata = SequenceMetadata(F2, None, "")
+  val user = UserDetails("telops", "Telops")
 
   def simpleStep(id: Int, breakpoint: Boolean): Step[Action \/ Result] =
     Step(
@@ -76,7 +78,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
-    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.get._2
   }

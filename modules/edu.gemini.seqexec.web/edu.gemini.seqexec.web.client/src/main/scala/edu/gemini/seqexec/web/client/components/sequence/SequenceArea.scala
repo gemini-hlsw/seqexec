@@ -20,7 +20,7 @@ import scalaz.syntax.show._
 // import scalaz.std.option._
 
 object SequenceStepsTableContainer {
-  case class Props(p: Instrument)
+  case class Props(p: ModelProxy[InstrumentStatusAndStep])
   case class State(nextStepToRun: Int)
 
   private val ST = ReactS.Fix[State]
@@ -51,9 +51,17 @@ object SequenceStepsTableContainer {
       }.getOrElse(<.div(): VdomElement)*/
         <.div(
           ^.cls := "ui raised secondary segment",
-          instrumentConnects.get(p.p).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, _ => Callback.empty))))
+          p.p().stepConfigDisplayed.fold{
+            if (p.p().isLogged)
+              SequenceDefaultToolbar(p.p().instrument): VdomElement
+            else
+              SequenceAnonymousToolbar(p.p().instrument): VdomElement
+          }(_ => <.div()),
+          <.div(
+            ^.cls := "ui raised secondary segment",
+            instrumentConnects.get(p.p().instrument).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, _ => Callback.empty))))
+          )
         )
-      // <.div()
     }.componentWillMount { f =>
       /*val nextStep = for {
         t      <- f.props.p().tab
@@ -64,7 +72,7 @@ object SequenceStepsTableContainer {
       japgolly.scalajs.react.Callback.empty
     }.build
 
-  def apply(p: Instrument): Unmounted[Props, State, Unit] = component(Props(p))
+  def apply(p: ModelProxy[InstrumentStatusAndStep]): Unmounted[Props, State, Unit] = component(Props(p))
 }
 
 /**
@@ -73,7 +81,7 @@ object SequenceStepsTableContainer {
 object SequenceTabContent {
 
   case class Props(p: ModelProxy[InstrumentActive]) {
-    val connect = SeqexecCircuit.connect(SeqexecCircuit.instrumentTab(p().instrument))
+    val connect = SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusAndStep(p().instrument))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
@@ -87,7 +95,7 @@ object SequenceTabContent {
         ),
         dataTab := instrument.shows,
         id.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): VdomElement) { s =>
-          p.connect(st =>  SequenceStepsTableContainer(instrument): VdomElement)
+          p.connect(st => SequenceStepsTableContainer(st): VdomElement)
         }
       )
     }

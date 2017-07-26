@@ -389,7 +389,9 @@ case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Op
 case class InstrumentSequence(instrument: Instrument, sequence: Option[(SequenceView, Option[Int])], active: Boolean) extends UseValueEq
 case class InstrumentActive(instrument: Instrument, id: Option[SequenceId], active: Boolean) extends UseValueEq
 case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentActive]) extends UseValueEq
-case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int])
+case class InstrumentStatusAndStep(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
+case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
+case class StatusAndSequenceInfo(isLogged: Boolean, name: Option[String], observer: Option[Observer]) extends UseValueEq
 
 /**
   * Contains the model for Diode
@@ -437,6 +439,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def instrumentActive(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentActive] =
     instrumentTab(i).zoom {
       case (tab, active) => InstrumentActive(i, tab.sequence().map(_.id), active)
+    }
+    def sequenceInfo(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndSequenceInfo] =
+    status.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) => StatusAndSequenceInfo(status.isLogged, tab.sequence().map(_.metadata.name), tab.sequence().flatMap(_.metadata.observer))
+    }
+  def instrumentStatusAndStep(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusAndStep] =
+    status.zip(instrumentTab(i)).zoom {
+      case (status, (tab, active)) => InstrumentStatusAndStep(status.isLogged, i, tab.stepConfigDisplayed)
     }
   def instrumentStepsTable(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTable])] =
     status.zip(instrumentTab(i)).zoom {

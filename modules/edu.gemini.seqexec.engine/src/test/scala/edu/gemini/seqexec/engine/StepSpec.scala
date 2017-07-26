@@ -12,6 +12,7 @@ import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
 import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.Running
+import edu.gemini.seqexec.model.UserDetails
 
 import scala.Function.const
 import scalaz.\/-
@@ -22,6 +23,7 @@ import scalaz.\/-
 class StepSpec extends FlatSpec {
 
   val seqId ="TEST-01"
+  val user = UserDetails("telops", "Telops")
 
   /**
     * Emulates TCS configuration in the real world.
@@ -54,7 +56,7 @@ class StepSpec extends FlatSpec {
   } yield Result.OK(Result.Observed("DummyFileId")))
 
   def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(for {
-    _ <- q.enqueueOne(pause(seqId))
+    _ <- q.enqueueOne(pause(seqId, user))
     // There is not a distinct result for Pause because the Pause action is a
     // trick for testing but we don't need to support it real life, he pause
     // input event is enough.
@@ -68,13 +70,13 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Engine.State = {
-    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.get._2
   }
 
   def runToCompletionL(s0: Engine.State): List[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog.unsafePerformSync.map(_._2).toList
   }
@@ -118,7 +120,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = (q.enqueueOne(start(seqId)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qs1 = (q.enqueueOne(start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
           a => !isFinished(a._2.sequences(seqId).status)
         ).runLast)).unsafePerformSync.get._2
 
@@ -167,7 +169,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = process(Process.eval(Task.now(start(seqId))))(qs0).take(1).runLast.unsafePerformSync.get._2
+    val qs1 = process(Process.eval(Task.now(start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.get._2
 
     inside (qs1.sequences.get(seqId).get) {
       case Sequence.State.Zipper(zipper, status) =>
