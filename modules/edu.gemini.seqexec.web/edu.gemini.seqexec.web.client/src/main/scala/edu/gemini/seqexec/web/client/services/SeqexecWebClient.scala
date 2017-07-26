@@ -72,9 +72,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set the observer name of a sequence
     */
-  def setObserver(s: SequenceView, name: String): Future[RegularCommand] = {
+  def setObserver(id: SequenceId, name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/observer/$name",
+      url = s"$baseUrl/commands/$id/observer/$name",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

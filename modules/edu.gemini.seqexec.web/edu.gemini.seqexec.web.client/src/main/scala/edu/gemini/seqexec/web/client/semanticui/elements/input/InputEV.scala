@@ -64,7 +64,8 @@ object InputEV {
       Callback.when((ctx.props.value.value =/= ctx.state.value) && !ctx.state.changed)(ctx.setState(State(ctx.props.value.value)))
     }.componentWillReceiveProps { f =>
       // Update state of the input if the property has changed
-      Callback.when((f.nextProps.value.value =/= f.state.value) && !f.state.changed)(f.setState(State(f.nextProps.value.value)))
+      // TBD Should check if the state has changed?
+      Callback.when((f.nextProps.value.value =/= f.state.value))(f.setState(State(f.nextProps.value.value)))
     }.build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)

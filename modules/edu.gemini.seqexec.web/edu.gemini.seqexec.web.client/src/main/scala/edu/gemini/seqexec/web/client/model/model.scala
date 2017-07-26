@@ -63,7 +63,7 @@ case class ServerMessage(e: SeqexecEvent) extends Action
 // Temporal actions for UI prototyping
 case class FlipSkipStep(id: SequenceId, step: Step) extends Action
 case class FlipBreakpointStep(id: SequenceId, step: Step) extends Action
-case class UpdateObserver(view: SequenceView, name: String) extends Action
+case class UpdateObserver(id: SequenceId, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
 case class UpdateImageQuality(iq: ImageQuality) extends Action
 case class UpdateCloudCover(cc: CloudCover) extends Action

@@ -84,11 +84,11 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
     case RunPauseFailed(_) =>
       noChange
 
-    case UpdateObserver(sequence, name) =>
-      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequence, name).map(_ => NoAction))
+    case UpdateObserver(sequenceId, name) =>
+      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
       val updatedSequences = value.copy(queue = value.queue.collect {
-        case s if s.metadata.instrument === sequence.metadata.instrument =>
-          sequence.copy(metadata = s.metadata.copy(observer = Some(name)))
+        case s if s.id === sequenceId =>
+          s.copy(metadata = s.metadata.copy(observer = Some(name)))
         case s                  => s
       })
       updated(updatedSequences, updateObserverE)
@@ -103,7 +103,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
       val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequenceId, step.flipBreakpoint).map(_ => NoAction))
       updated(value.copy(queue = value.queue.collect {
         case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
-        case s                      => s
+        case s                        => s
       }), breakpointRequest)
   }
 }
@@ -333,6 +333,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
       updated(value.copy(_1 = sv), audioEffect)
 
     case ServerMessage(s: ObserverUpdated) =>
+      s.view.queue.map(_.metadata.observer).foreach(println)
       updated(value.copy(_1 = s.view))
 
     case ServerMessage(s: SeqexecModelUpdate) =>
@@ -346,7 +347,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
         ) { case ((seq, eff), q) =>
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
-               Some(Effect(Future(UpdateObserver(q, observer.getOrElse("")): Action))) ::
+               Some(Effect(Future(UpdateObserver(q.id, observer.getOrElse("")): Action))) ::
                Some(Effect(Future(SyncToPage(q): Action))) :: eff)
             } else {
               (q :: seq, Some(Effect(Future(SyncToPage(q): Action))) :: eff)
@@ -392,6 +393,7 @@ case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentAc
 case class InstrumentStatusAndStep(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
 case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
 case class StatusAndSequenceInfo(isLogged: Boolean, name: Option[String], observer: Option[Observer]) extends UseValueEq
+case class StatusAndObserverInfo(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
 
 /**
   * Contains the model for Diode
@@ -440,9 +442,13 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     instrumentTab(i).zoom {
       case (tab, active) => InstrumentActive(i, tab.sequence().map(_.id), active)
     }
-    def sequenceInfo(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndSequenceInfo] =
+  def sequenceInfo(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndSequenceInfo] =
     status.zip(instrumentTab(i)).zoom {
       case (status, (tab, _)) => StatusAndSequenceInfo(status.isLogged, tab.sequence().map(_.metadata.name), tab.sequence().flatMap(_.metadata.observer))
+    }
+  def sequenceObserver(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverInfo] =
+    status.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) => StatusAndObserverInfo(status.isLogged, i, tab.sequence().map(_.id), tab.sequence().flatMap(_.metadata.observer))
     }
   def instrumentStatusAndStep(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusAndStep] =
     status.zip(instrumentTab(i)).zoom {

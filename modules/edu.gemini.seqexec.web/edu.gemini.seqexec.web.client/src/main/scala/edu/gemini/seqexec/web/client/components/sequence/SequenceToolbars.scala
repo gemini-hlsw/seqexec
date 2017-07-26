@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import edu.gemini.seqexec.model.Model.{Instrument, SequenceState, SequenceView}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
 // import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -58,20 +58,21 @@ object SequenceInfo {
 }
 
 object SequenceObserverField {
-  case class Props(s: SequenceView, isLogged: Boolean)
+  // case class Props(isLogged: Boolean, obsId: Option[SequenceId], instrument: Instrument, observer: Option[Observer])
+  case class Props(p: ModelProxy[StatusAndObserverInfo])
 
   case class State(currentText: Option[String])
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
-    def updateObserver(s: SequenceView, name: String): Callback =
-      $.props >>= { p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateObserver(s, name)))) }
+    def updateObserver(id: SequenceId, name: String): Callback =
+      $.props >>= { p => Callback.when(p.p().isLogged)(p.p.dispatchCB(UpdateObserver(id, name))) }
 
     def updateState(value: String): Callback =
       $.state >>= { s => Callback.when(!s.currentText.contains(value))($.modState(_.copy(currentText = Some(value)))) }
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.isLogged && s.currentText =/= p.s.metadata.observer)(updateObserver(p.s, s.currentText.getOrElse("")))
+        case (s, p) => Callback.when(p.p().isLogged && s.currentText =/= p.p().observer)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
       }
 
     def setupTimer: Callback =
@@ -91,8 +92,8 @@ object SequenceObserverField {
           <.div(
             ^.cls := "field fourteen wide",
             InputEV(InputEV.Props(
-              p.s.metadata.instrument + ".observer",
-              p.s.metadata.instrument + ".observer",
+              p.p().instrument + ".observer",
+              p.p().instrument + ".observer",
               observerEV,
               placeholder = "Observer...",
               onBlur = _ => submitIfChanged))
@@ -106,20 +107,20 @@ object SequenceObserverField {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.s.metadata.observer.getOrElse(""))})
+    .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.p().observer.getOrElse(""))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
-      val observer = f.nextProps.s.metadata.observer
+      val observer = f.nextProps.p().observer
       // Update the observer field
-      Callback.when((observer =/= f.state.currentText) && observer.nonEmpty)(f.modState(_.copy(currentText = observer)))
+      Callback.when((observer =/= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.getOrElse("")))
     }
     .shouldComponentUpdatePure { f =>
-      val observer = f.nextProps.s.metadata.observer
+      val observer = f.nextProps.p().observer
       observer =/= f.currentState.currentText
     }
     .build
 
-  def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
+  def apply(p: ModelProxy[StatusAndObserverInfo]): Unmounted[Props, State, Backend] = component(Props(p))
 }
 
 object SequenceDefaultToolbar {
@@ -127,6 +128,7 @@ object SequenceDefaultToolbar {
   case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
 
   val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
+  val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserver(i)))).toMap
 
   private val ST = ReactS.Fix[State]
 
@@ -150,7 +152,7 @@ object SequenceDefaultToolbar {
         ^.cls := "ui row",
         <.div(
           sequenceInfoConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
-        )//,
+        ),
         // <.div(
         //   ^.cls := "ui two column grid",
         //   <.div(
@@ -209,10 +211,10 @@ object SequenceDefaultToolbar {
         //       "Continue from step 1"
         //     ).when(p.s.status === SequenceState.Paused)
         //   ),
-        //   <.div(
-        //     ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
-        //     SequenceObserverField(SequenceObserverField.Props(p.s, isLogged))
-        //   )
+          <.div(
+            ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
+            sequenceObserverConnects.get(p.instrument).whenDefined(x => x(m => SequenceObserverField(m)))
+          )
         // )
       )
     }.componentWillReceiveProps { f =>
