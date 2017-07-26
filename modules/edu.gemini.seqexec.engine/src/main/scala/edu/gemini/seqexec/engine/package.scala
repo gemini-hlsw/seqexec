@@ -27,7 +27,7 @@ package object engine {
     * systems.
     */
   type Action = Kleisli[Task, ActionMetadata, Result]
-
+  def fromTask(t: Task[Result]): Action = new Action(_ => t)
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
@@ -232,11 +232,10 @@ package object engine {
           case Sequence.State.Final(_, _) =>
             // The sequence is marked as completed here
             putS(id)(seq) *> send(finished(id))
-          case _                          => {
+          case _                          =>
             val u = seq.current.actions.zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
             val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed (id))
             HandleP.fromProcess(v)
-          }
         }
       }.getOrElse(unit)
     )

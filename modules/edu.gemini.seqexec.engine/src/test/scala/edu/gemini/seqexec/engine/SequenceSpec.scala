@@ -149,7 +149,7 @@ class SequenceSpec extends FlatSpec {
 
   // TODO: Share these fixtures with StepSpec
   val result = Result.OK(Result.Observed("dummyId"))
-  val action: Action = new Action(_ => Task(result))
+  val action: Action = fromTask(Task(result))
   val config: StepConfig = Map()
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {

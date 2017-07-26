@@ -20,7 +20,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = new Action(_ => for {
+  val configureTcs: Action  = fromTask(for {
     _ <- Task(Thread.sleep(200))
   } yield Result.OK(Result.Configured("TCS")))
 
@@ -28,7 +28,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = new Action(_ => for {
+  val configureInst: Action  = fromTask(for {
     _ <- Task(Thread.sleep(200))
   } yield Result.OK(Result.Configured("Instrument")))
 
@@ -36,11 +36,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = new Action(_ => for {
+  val observe: Action  = fromTask(for {
     _ <- Task(Thread.sleep(200))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
-  val faulty: Action  = new Action(_ => for {
+  val faulty: Action  = fromTask(for {
     _ <- Task(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
@@ -193,7 +193,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(new Action(_ => Task.apply{
+              List(fromTask(Task.apply{
                 startedFlag.release
                 finishFlag.acquire
                 Result.OK(Result.Configured("TCS"))
@@ -230,7 +230,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(new Action(_ => Task.apply{
+              List(fromTask(Task.apply{
                 throw e
               }).left )
             )

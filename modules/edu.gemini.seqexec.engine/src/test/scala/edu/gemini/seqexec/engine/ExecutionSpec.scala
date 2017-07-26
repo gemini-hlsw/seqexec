@@ -8,7 +8,7 @@ import scalaz.concurrent.Task
 class ExecutionSpec extends FlatSpec with Matchers {
 
   val ok: Result = Result.OK(Result.Observed("dummyId"))
-  val action: Action = new Action(_ => Task(ok))
+  val action: Action = fromTask(Task(ok))
   val curr: Execution = Execution(List(ok.right, action.left))
 
   "currentify" should "be None only when an Execution is empty" in {
