@@ -28,7 +28,7 @@ final case class GmosSouth(controller: GmosSouthController) extends Instrument {
 
   override val sfName: String = "gmos"
 
-  override val contributorName = "gmos"
+  override val contributorName = "gmosdc"
   val dhsInstrumentName = "GMOS-S"
 
   val Log = Logger.getLogger(getClass.getName)
