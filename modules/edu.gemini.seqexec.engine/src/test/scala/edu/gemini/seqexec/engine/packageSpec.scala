@@ -20,29 +20,29 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = for {
+  val configureTcs: Action  = fromTask(for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured("TCS"))
+  } yield Result.OK(Result.Configured("TCS")))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = for {
+  val configureInst: Action  = fromTask(for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured("Instrument"))
+  } yield Result.OK(Result.Configured("Instrument")))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = for {
+  val observe: Action  = fromTask(for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Observed("DummyFileId"))
+  } yield Result.OK(Result.Observed("DummyFileId")))
 
-  val faulty: Action  = for {
+  val faulty: Action  = fromTask(for {
     _ <- Task(Thread.sleep(100))
-  } yield Result.Error("There was an error in this action")
+  } yield Result.Error("There was an error in this action"))
 
   val config: StepConfig = Map()
   val seqId = "TEST-01"
@@ -193,11 +193,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Task.apply{
+              List(fromTask(Task.apply{
                 startedFlag.release
                 finishFlag.acquire
                 Result.OK(Result.Configured("TCS"))
-              }.left )
+              }).left )
             )
           )
         )
@@ -230,9 +230,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Task.apply{
+              List(fromTask(Task.apply{
                 throw e
-              }.left )
+              }).left )
             )
           )
         )
@@ -245,6 +245,36 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     intercept[StackOverflowError](
       runToCompletion(s0(new StackOverflowError))
     )
+  }
+
+  "engine" should "pass parameters to Actions." in {
+    val p = Process.emitAll(List(Event.setOperator("John"), Event.setObserver(seqId1,  "Smith"), start(seqId1))).evalMap(Task.now(_))
+    val s0 = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step(
+            1,
+            None,
+            config,
+            Set(Resource.GMOS),
+            breakpoint = false,
+            skip = false,
+            List(
+              List(new Action(v => Task(Result.OK(Result.Configured(v.operator.getOrElse("") + "-" + v.observer.getOrElse(""))))).left)
+            )
+          )
+        )
+      ) ) ) )
+    )
+
+    val sf = process(p)(s0).drop(3).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLast.unsafePerformSync.get._2
+
+    assertResult(Result.OK(Result.Configured("John-Smith")))(sf.sequences.get(seqId).get.done.head.executions.head.head)
   }
 
 }

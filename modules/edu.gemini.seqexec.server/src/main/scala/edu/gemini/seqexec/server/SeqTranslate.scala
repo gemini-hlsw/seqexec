@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.{Action, Resource, Result, Sequence, Step}
+import edu.gemini.seqexec.engine.{Action, Resource, Result, Sequence, Step, fromTask}
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -27,10 +27,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import SeqTranslate._
 
-  implicit def toAction(x: SeqAction[Result.Response]): Action = x.run map {
-    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+  def toResult(r: SeqexecFailure\/Result.Response): Result = r match {
     case \/-(r) => Result.OK(r)
+    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
   }
+
+  def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
 
   private def step(
     obsId: SPObservationID,

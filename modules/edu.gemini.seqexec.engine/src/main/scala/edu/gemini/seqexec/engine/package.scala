@@ -2,7 +2,7 @@ package edu.gemini.seqexec
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor, Operator, Observer}
 import java.util.logging.{Logger => JLogger}
 
 import scalaz._
@@ -15,6 +15,7 @@ package engine {
   object HandleP {
     def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
   }
+  case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
 }
 
 package object engine {
@@ -25,8 +26,8 @@ package object engine {
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
-  type Action = Task[Result]
-
+  type Action = Kleisli[Task, ActionMetadata, Result]
+  def fromTask(t: Task[Result]): Action = new Action(_ => t)
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
@@ -136,6 +137,7 @@ package object engine {
   def setCloudCover(cc: CloudCover): HandleP[Unit] =
     modify(st => Engine.State(st.conditions.copy(cc = cc), st.operator, st.sequences))
 
+
   /**
     * Load a Sequence
     */
@@ -193,13 +195,13 @@ package object engine {
           case SequenceState.Running =>
             seq.next match {
               // Empty state
-              case None                           =>
+              case None =>
                 send(finished(id))
               // Final State
               case Some(qs: Sequence.State.Final) =>
                 putS(id)(qs) *> send(finished(id))
               // Execution completed. Check breakpoint here
-              case Some(qs)                       =>
+              case Some(qs) =>
                 putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(id)(SequenceState.Idle)
                                  else send(executing(id)))
             }
@@ -213,25 +215,25 @@ package object engine {
     * It also updates the `State` as needed.
     */
   private def execute(id: Sequence.Id): HandleP[Unit] = {
+
     // Send the expected event when the `Action` is executed
     // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
-    def act(t: (Action, Int)): Process[Task, Event] = t match {
+    def act(t: (Action, Int), cx: ActionMetadata): Process[Task, Event] = t match {
       case (action, i) =>
-        Process.eval(action).flatMap {
+        Process.eval(action(cx)).flatMap {
           case r@Result.OK(_)         => Process(completed(id, i, r))
-          case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i))
+          case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i), cx)
           case e@Result.Error(_)      => Process(failed(id, i, e))
         }
     }
 
-    getS(id).flatMap(
-      _.map { seq =>
+    get.flatMap(st => st.sequences.get(id).map { seq =>
         seq match {
           case Sequence.State.Final(_, _) =>
             // The sequence is marked as completed here
             putS(id)(seq) *> send(finished(id))
           case _                          =>
-            val u = seq.current.actions.zipWithIndex.map(act)
+            val u = seq.current.actions.zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
             val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed (id))
             HandleP.fromProcess(v)
         }
@@ -333,7 +335,7 @@ package object engine {
   ): Process[Task, B] = {
     def go(fi: Process[Task, A], si: S): Process[Task, B] = {
       Process.eval(fi.unconsOption).flatMap {
-        case None         => Process.halt
+        case None => Process.halt
         case Some((h, t)) => Process.eval(f(h).run(si)).flatMap {
           case (s, (b, p)) => Process.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
         }
