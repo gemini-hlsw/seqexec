@@ -263,12 +263,14 @@ object Model {
 
   }
 
-  sealed trait CloudCover
+  sealed trait CloudCover {
+    val toInt: Int
+  }
   object CloudCover {
-    case object Percent50 extends CloudCover { val toInt: Int = 50  }
-    case object Percent70 extends CloudCover { val toInt: Int = 70  }
-    case object Percent80 extends CloudCover { val toInt: Int = 80  }
-    case object Any       extends CloudCover { val toInt: Int = 100 } // ODB is 100
+    case object Percent50 extends CloudCover { override val toInt: Int = 50  }
+    case object Percent70 extends CloudCover { override val toInt: Int = 70  }
+    case object Percent80 extends CloudCover { override val toInt: Int = 80  }
+    case object Any       extends CloudCover { override val toInt: Int = 100 } // ODB is 100
 
     val all: List[CloudCover] = List(Percent50, Percent70, Percent80, Any)
 
@@ -283,12 +285,14 @@ object Model {
 
   }
 
-  sealed trait ImageQuality
+  sealed trait ImageQuality {
+    val toInt: Int
+  }
   object ImageQuality {
-    case object Percent20 extends ImageQuality { val toInt: Int = 20  }
-    case object Percent70 extends ImageQuality { val toInt: Int = 70  }
-    case object Percent85 extends ImageQuality { val toInt: Int = 85  }
-    case object Any       extends ImageQuality { val toInt: Int = 100 } // ODB is 100
+    case object Percent20 extends ImageQuality { override val toInt: Int = 20  }
+    case object Percent70 extends ImageQuality { override val toInt: Int = 70  }
+    case object Percent85 extends ImageQuality { override val toInt: Int = 85  }
+    case object Any       extends ImageQuality { override val toInt: Int = 100 } // ODB is 100
 
     val all: List[ImageQuality] = List(Percent20, Percent70, Percent85, Any)
 
@@ -303,12 +307,14 @@ object Model {
 
   }
 
-  sealed trait SkyBackground
+  sealed trait SkyBackground {
+    val toInt: Int
+  }
   object SkyBackground {
-    case object Percent20 extends SkyBackground { val toInt: Int = 20  }
-    case object Percent50 extends SkyBackground { val toInt: Int = 50  }
-    case object Percent80 extends SkyBackground { val toInt: Int = 80  }
-    case object Any       extends SkyBackground { val toInt: Int = 100 } // ODB is 100
+    case object Percent20 extends SkyBackground { override val toInt: Int = 20  }
+    case object Percent50 extends SkyBackground { override val toInt: Int = 50  }
+    case object Percent80 extends SkyBackground { override val toInt: Int = 80  }
+    case object Any       extends SkyBackground { override val toInt: Int = 100 } // ODB is 100
 
     val all: List[SkyBackground] = List(Percent20, Percent50, Percent80, Any)
 
@@ -323,12 +329,14 @@ object Model {
 
   }
 
-  sealed trait WaterVapor
+  sealed trait WaterVapor {
+    val toInt: Int
+  }
   object WaterVapor {
-    case object Percent20 extends WaterVapor { val toInt: Int = 20  }
-    case object Percent50 extends WaterVapor { val toInt: Int = 50  }
-    case object Percent80 extends WaterVapor { val toInt: Int = 80  }
-    case object Any       extends WaterVapor { val toInt: Int = 100 } // ODB is 100
+    case object Percent20 extends WaterVapor { override val toInt: Int = 20  }
+    case object Percent50 extends WaterVapor { override val toInt: Int = 50  }
+    case object Percent80 extends WaterVapor { override val toInt: Int = 80  }
+    case object Any       extends WaterVapor { override val toInt: Int = 100 } // ODB is 100
 
     val all: List[WaterVapor] = List(Percent20, Percent50, Percent80, Any)
 

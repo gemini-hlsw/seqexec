@@ -1,8 +1,9 @@
 package edu.gemini.seqexec.server
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, ZoneId, LocalDateTime, Instant}
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 
+import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.KeywordBag
@@ -194,14 +195,16 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 }
 
 // TODO: Replace Unit by something that can read the state for real
-case class StateKeywordsReader(state: Unit) {
+case class StateKeywordsReader(conditions: Conditions, operator: Option[Operator], observer: Option[Observer]) {
+  def encodeCondition(c: Int): String = if(c == 100) "Any" else s"$c-percentile"
+
   // TODO: "observer" should be the default when not set in state
-  def getObserverName: SeqAction[String] = SeqAction("observer")
-  def getOperatorName: SeqAction[String] = SeqAction("ssa")
-  def getRawImageQuality: SeqAction[String] = SeqAction("UNKNOWN")
-  def getRawCloudCover: SeqAction[String] = SeqAction("UNKNOWN")
-  def getRawWaterVapor: SeqAction[String] = SeqAction("UNKNOWN")
-  def getRawBackgroundLight: SeqAction[String] = SeqAction("UNKNOWN")
+  def getObserverName: SeqAction[String] = SeqAction(observer.getOrElse("observer"))
+  def getOperatorName: SeqAction[String] = SeqAction(operator.getOrElse("ssa"))
+  def getRawImageQuality: SeqAction[String] = SeqAction(encodeCondition(conditions.iq.toInt))
+  def getRawCloudCover: SeqAction[String] = SeqAction(encodeCondition(conditions.cc.toInt))
+  def getRawWaterVapor: SeqAction[String] = SeqAction(encodeCondition(conditions.wv.toInt))
+  def getRawBackgroundLight: SeqAction[String] = SeqAction(encodeCondition(conditions.sb.toInt))
 }
 
 class StandardHeader(

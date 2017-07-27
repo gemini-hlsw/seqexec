@@ -116,26 +116,27 @@ package object engine {
   def rollback(id: Sequence.Id): HandleP[Unit] =
     modifyS(id)(_.rollback)
 
+  // A blank value is regarded as a None
   def setOperator(name: String): HandleP[Unit] =
-    modify(st => Engine.State(st.conditions, name.some, st.sequences))
+    modify(_.copy(operator = if(name.isEmpty || name.forall(_.isSpaceChar)) None else name.some))
 
   def setObserver(id: Sequence.Id)(name: String): HandleP[Unit] =
     modifyS(id)(_.setObserver(name))
 
   def setConditions(conditions: Conditions): HandleP[Unit] =
-    modify(st => Engine.State(conditions, st.operator, st.sequences))
+    modify(_.copy(conditions = conditions))
 
   def setImageQuality(iq: ImageQuality): HandleP[Unit] =
-    modify(st => Engine.State(st.conditions.copy(iq = iq), st.operator, st.sequences))
+    modify(st => st.copy(conditions = st.conditions.copy(iq = iq)))
 
   def setWaterVapor(wv: WaterVapor): HandleP[Unit] =
-    modify(st => Engine.State(st.conditions.copy(wv = wv), st.operator, st.sequences))
+    modify(st => st.copy(conditions = st.conditions.copy(wv = wv)))
 
   def setSkyBackground(sb: SkyBackground): HandleP[Unit] =
-    modify(st => Engine.State(st.conditions.copy(sb = sb), st.operator, st.sequences))
+    modify(st => st.copy(conditions = st.conditions.copy(sb = sb)))
 
   def setCloudCover(cc: CloudCover): HandleP[Unit] =
-    modify(st => Engine.State(st.conditions.copy(cc = cc), st.operator, st.sequences))
+    modify(st => st.copy(conditions = st.conditions.copy(cc = cc)))
 
 
   /**
