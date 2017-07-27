@@ -271,7 +271,9 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
-      override def setObserver(name: String): State = observerL.set(self, Some(name))
+      // I put a guard against blank values, although Observer is forced to have
+      // a default value at an upper level.
+      override def setObserver(name: String): State = observerL.set(self, if(name.isEmpty || name.forall(_.isSpaceChar)) None else Some(name))
 
       override val done: List[Step[Result]] = zipper.done
 
@@ -323,7 +325,9 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = false
 
-      override def setObserver(name: String): State = observerL.set(self, Some(name))
+      // I put a guard against blank values, although Observer is forced to have
+      // a default value at an upper level.
+      override def setObserver(name: String): State = observerL.set(self, if(name.isEmpty || name.forall(_.isSpaceChar)) None else Some(name))
 
       override val done: List[Step[Result]] = seq.steps
 

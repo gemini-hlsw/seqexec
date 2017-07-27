@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.{Action, Resource, Result, Sequence, Step, fromTask}
+import edu.gemini.seqexec.engine.{Action, ActionMetadata, Resource, Result, Sequence, Step, fromTask}
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -41,9 +41,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     last: Boolean
   ): TrySeq[Step[Action \/ Result]] = {
 
-    def buildStep(inst: Instrument, sys: List[System], headers: List[Header], resources: Set[Resource]): Step[Action \/ Result] = {
+    def buildStep(inst: Instrument, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
 
-      def observe(config: Config): SeqAction[ObserveResult] = {
+      def observe(config: Config)(ctx: ActionMetadata): SeqAction[ObserveResult] = {
         val dataId: SeqAction[String] = EitherT(Task(config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
           SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
@@ -62,9 +62,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         for {
           id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
           _ <- sendDataStart(id)
-          _ <- headers.map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
+          _ <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
           _ <- inst.observe(config)(id)
-          _ <- headers.map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+          _ <- headers(ctx).map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
           _ <- closeImage(id, systems.dhs)
           _ <- sendDataEnd(id)
         } yield ObserveResult(id)
@@ -84,7 +84,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             ++
             List(
               sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-              List(toAction(observe(config).map(x => Result.Observed(x.dataId))))
+              List(new Action(ctx => observe(config)(ctx).map(x => Result.Observed(x.dataId)).run.map(toResult)))
             )
             ++
             (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
@@ -213,11 +213,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
-  private def commonHeaders(config: Config): Header = new StandardHeader(systems.dhs,
+  private def commonHeaders(config: Config)(ctx: ActionMetadata): Header = new StandardHeader(systems.dhs,
     ObsKeywordReaderImpl(config, site.displayName.replace(' ', '-')),
     if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
-    // TODO: Replace Unit by something that can read the State
-    StateKeywordsReader(Unit)
+    StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer)
   )
 
   private val gwsHeaders: Header = new GwsHeader(systems.dhs,
@@ -228,10 +227,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     systems.dhs,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader)
 
-  private def calcHeaders(config: Config, stepType: StepType): TrySeq[List[Header]] = stepType match {
-    case CelestialObject(inst) => calcInstHeader(config, inst).map(List(commonHeaders(config), gwsHeaders, _))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(List(commonHeaders(config), gcalHeader, gwsHeaders, _))
-    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(List(commonHeaders(config), gwsHeaders, _))
+  private def calcHeaders(config: Config, stepType: StepType): TrySeq[Reader[ActionMetadata, List[Header]]] = stepType match {
+    case CelestialObject(inst) => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gwsHeaders, h)))
+    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gcalHeader, gwsHeaders, h)))
+    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gwsHeaders, h)))
     case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
   }
 
