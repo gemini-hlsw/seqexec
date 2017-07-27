@@ -250,7 +250,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "pass parameters to Actions." in {
-    val p = Process.emitAll(List(Event.setOperator("John"), Event.setObserver(seqId1,  "Smith"), start(seqId1))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.setOperator("John", user), Event.setObserver(seqId1, user, "Smith"), start(seqId1, user))).evalMap(Task.now(_))
     val s0 = Engine.State(Conditions.default,
       None,
       Map((seqId, Sequence.State.init(Sequence(
