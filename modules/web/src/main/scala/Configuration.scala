@@ -23,10 +23,25 @@ object Configuration {
   /** A reasonable configuration for testing with a local database. */
   val forTesting: Configuration =
     Configuration(
-      Database("org.postgresql.Driver", "jdbc:postgresql:gem", "postgres", ""),
-      Jwt(JwtAlgorithm.HS256, "gem.jwt", 60L),
-      WebServer(8080, "localhost"),
-      Log("web", 1000L)
+      database = Database(
+        driver     = "org.postgresql.Driver",
+        connectUrl = "jdbc:postgresql:gem",
+        userName   = "postgres",
+        password   = ""
+      ),
+      jwt = Jwt(
+        algorithm  = JwtAlgorithm.HS256,
+        cookieName = "gem.jwt",
+        ttlSeconds = 60 * 5
+      ),
+      webServer = WebServer(
+        port = 8080,
+        host = "localhost"
+      ),
+      log = Log(
+        name            = "web",
+        shutdownTimeout = 1000L
+      )
     )
 
   /** Logger configuration. */
