@@ -4,44 +4,29 @@
 package gem
 package web
 
-import doobie.imports._
-import org.http4s._
-import org.http4s.dsl._
-import org.http4s.server.blaze._
-import scalaz.concurrent._
+import org.http4s.HttpService
+import org.http4s.server.Server
+import org.http4s.server.blaze.BlazeBuilder
+import scalaz.concurrent.{ Task, TaskApp }
 
 object Main extends TaskApp {
 
-  val xa: Transactor[Task, _] =
-    DriverManagerTransactor[Task](
-      "org.postgresql.Driver",
-      "jdbc:postgresql:gem",
-      "postgres",
-      ""
-    )
-
-  def service(log: Log[Task]): HttpService =
-    HttpService.lift {
-      case req =>
-        gem.Service.tryLogin("root", "", xa, log).flatMap {
-          case None    => Forbidden()
-          case Some(s) => WebService(s).run(req)
-        }
-    }
-
-  def builder(log: Log[Task]): BlazeBuilder =
+  /** Create a new server with the given config, mounting the given root service. */
+  def newServer(cfg: Configuration.WebServer, root: HttpService): Task[Server] =
     BlazeBuilder
-      .bindHttp(8080, "localhost")
-      .mountService(service(log), "/")
+      .bindHttp(cfg.port, cfg.host)
+      .mountService(root, "/")
+      .start
 
-  override def runl(args: List[String]): Task[Unit] =
+  /** Entry point. Run the server with a test config, until someone stops it. */
+  override def runc: Task[Unit] =
     for {
-      log <- Log.newLog[Task]("web", xa)
-      svr <- builder(log).start
+      env <- Environment.quicken(Configuration.forTesting)
+      svr <- newServer(env.config.webServer, Gatekeeper(env)(Application.service))
       _   <- Task.delay(Console.println("Press a key to exit."))
       _   <- Task.delay(io.StdIn.readLine())
       _   <- svr.shutdown
-      _   <- log.shutdown(1000L)
+      _   <- env.shutdown
     } yield ()
 
 }

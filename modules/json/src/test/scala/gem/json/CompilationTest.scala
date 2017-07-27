@@ -5,6 +5,7 @@ package gem
 package json
 
 import gem.config.{ StaticConfig, DynamicConfig }
+import gem.enum._
 
 import argonaut._, Argonaut._, ArgonautShapeless._
 
@@ -16,6 +17,7 @@ trait CompilatonTests {
 
   // Sanity check
   // TODO: this, better
+  implicitly[EncodeJson[User[ProgramRole]]]
   implicitly[EncodeJson[Program[Observation[StaticConfig, Step[DynamicConfig]]]]]
   implicitly[DecodeJson[Program[Observation[StaticConfig, Step[DynamicConfig]]]]]
 

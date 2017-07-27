@@ -51,4 +51,15 @@ object Service {
       case Some(u) => Some(Service[M](xa, log, u))
     }
 
+  /**
+   * Like `tryLogin`, but for previously-authenticated users.
+   */
+  def service[M[_]: Monad: Catchable: Capture](
+    user: User.Id, xa: Transactor[M,_], log: Log[M]
+  ): M[Option[Service[M]]] =
+    xa.trans.apply(UserDao.selectUser(user)).map {
+      case None    => Option.empty[Service[M]]
+      case Some(u) => Some(Service[M](xa, log, u))
+    }
+
 }

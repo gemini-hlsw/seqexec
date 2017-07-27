@@ -15,6 +15,7 @@ lazy val scalaParsersVersion      = "1.0.4"
 lazy val tucoVersion              = "0.1.1"
 lazy val attoVersion              = "0.5.2"
 lazy val slf4jVersion             = "1.7.25"
+lazy val jwtVersion               = "0.14.0"
 
 enablePlugins(GitVersioning)
 
@@ -59,6 +60,7 @@ lazy val gemWarts =
   Warts.allBut(
     Wart.Any,                // false positives
     Wart.Nothing,            // false positives
+    Wart.Null,               // false positives
     Wart.Product,            // false positives
     Wart.Serializable,       // false positives
     Wart.Recursion,          // false positives
@@ -270,10 +272,11 @@ lazy val web = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.slf4j"   % "slf4j-jdk14"         % slf4jVersion,
-      "org.http4s" %% "http4s-argonaut"     % http4sVersion,
-      "org.http4s" %% "http4s-dsl"          % http4sVersion,
-      "org.http4s" %% "http4s-blaze-server" % http4sVersion
+      "org.slf4j"      % "slf4j-jdk14"         % slf4jVersion,
+      "org.http4s"    %% "http4s-argonaut"     % http4sVersion,
+      "org.http4s"    %% "http4s-dsl"          % http4sVersion,
+      "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
+      "com.pauldijou" %% "jwt-core"            % jwtVersion
     ),
     dockerExposedPorts  := List(6667),
     dockerRepository    := Some("geminihlsw")
