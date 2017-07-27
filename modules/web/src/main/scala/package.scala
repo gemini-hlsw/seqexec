@@ -24,7 +24,7 @@ package object web {
       new OptionalQueryParamDecoderMatcher[A](key)(fa) {}
   }
 
-  implicit class RequestOps(req: Request) {
+  implicit class RequestOps(val req: Request) extends AnyVal {
     def findCookie(name: String): Option[Cookie] =
       headers.Cookie.from(req.headers).flatMap(cs => cs.values.list.find(_.name === name))
   }
