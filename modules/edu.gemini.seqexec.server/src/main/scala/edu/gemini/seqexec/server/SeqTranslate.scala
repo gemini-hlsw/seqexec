@@ -140,8 +140,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case _         => false
     }
 
-  def sequence(settings: Settings)
-              (obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String):
+  def sequence(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String):
       (List[SeqexecFailure], Option[Sequence[Action \/ Result]]) = {
 
     val configs = sequenceConfig.getAllSteps.toList
@@ -204,7 +203,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def calcInstHeader(config: Config, inst: Resource.Instrument): TrySeq[Header] = inst match {
     case Resource.F2   =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
-      if (settings.f2Keywords) Flamingos2Header.InstKeywordReaderImpl else Flamingos2Header.DummyInstKeywordReader,
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
     case Resource.GMOS =>
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader

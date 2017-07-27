@@ -85,7 +85,7 @@ object GmosSouthController {
         case (BuiltinROI.CUSTOM, r) if r.nonEmpty => \/.right(new RegionsOfInterest(\/.right(r)) {})
         case _ => \/.left(Unexpected("Inconsistent values for GMOS regions of interest"))
       }
-    def unapply(r: RegionsOfInterest): Option[BuiltinROI \/ List[ROI]] = Some(r.rois)
+    def unapply(r: RegionsOfInterest): Some[BuiltinROI \/ List[ROI]] = Some(r.rois)
   }
 
   final case class DCConfig(t: ExposureTime, b: BiasTime, s: ShutterState, r: CCDReadout, bi: CCDBinning, roi: RegionsOfInterest)

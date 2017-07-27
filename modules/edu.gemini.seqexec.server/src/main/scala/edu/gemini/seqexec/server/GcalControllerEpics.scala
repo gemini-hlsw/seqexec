@@ -177,6 +177,6 @@ object GcalControllerEpics extends GcalController {
     else for {
       _ <- params.sequence
       _ <- GcalEpics.instance.post
-    } yield TrySeq(())
+    } yield ()
   }
 }

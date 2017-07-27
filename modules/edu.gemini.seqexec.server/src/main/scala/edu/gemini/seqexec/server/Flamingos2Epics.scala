@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import java.util.logging.Logger
 
-import edu.gemini.epics.acm.CaService
+import edu.gemini.epics.acm.{CaParameter, CaService}
 
 final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) {
 
@@ -24,7 +24,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     val readoutMode = cs.map(_.getString("readoutMode"))
     def setReadoutMode(v: String): SeqAction[Unit] = setParameter(readoutMode, v)
 
-    val exposureTime = cs.map(_.getDouble("exposureTime"))
+    val exposureTime: Option[CaParameter[java.lang.Double]] = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](exposureTime, v)
 
   }

@@ -182,7 +182,7 @@ object GmosHeader {
     override def dcName: SeqAction[String] = SeqAction(Header.StrDefault)
     override def detectorType: SeqAction[String] = SeqAction(Header.StrDefault)
     override def detectorId: SeqAction[String] = SeqAction(Header.StrDefault)
-    override def exposureTime: SeqAction[Double] = SeqAction(Header.IntDefault)
+    override def exposureTime: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def adcUsed: SeqAction[Int] = SeqAction(Header.IntDefault)
     override def adcPrismEntSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
     override def adcPrismEntEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)

@@ -275,7 +275,7 @@ class StandardHeader(
         buildDouble(target.getProperMotionRA.orDefault, baseName + "APMRA"),
         buildDouble(target.getParallax.orDefault, baseName + "APARAL")
       ) ++ extras)
-      else SeqAction(List())
+      else SeqAction(())
     }
 
     def standardGuiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String,

@@ -6,7 +6,7 @@ import edu.gemini.seqexec.web.client.model.{InstrumentStatus, NavigateTo, Select
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
-import edu.gemini.seqexec.web.client.semanticui.SemanticUI._
+import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label

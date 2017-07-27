@@ -17,14 +17,22 @@ trait EpicsCommand {
 
   protected val cs: Option[CaCommandSender]
 
-  def post: SeqAction[Unit] = safe(EitherT(Task.async[TrySeq[Unit]](f => cs.map(_.postCallback {
-    new CaCommandListener {
-      override def onSuccess(): Unit = f(TrySeq(()).right)
-
-      override def onFailure(cause: Exception): Unit = f(cause.left)
+  def post: SeqAction[Unit] =
+    safe {
+      EitherT {
+        Task.async[TrySeq[Unit]] { (f: (Throwable \/ TrySeq[Unit]) => Unit) =>
+          cs.map { ccs =>
+            ccs.postCallback {
+              new CaCommandListener {
+                override def onSuccess(): Unit = f(TrySeq(()).right)
+                override def onFailure(cause: Exception): Unit = f(cause.left)
+              }
+            }
+          // It should call f on all execution paths, thanks @tpolecat
+          }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").left.right))
+        }
+      }
     }
-  } ).getOrElse(SeqexecFailure.Unexpected("Unable to trigger command.").left)
-  ) ) )
 
   def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
       cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
@@ -73,7 +81,7 @@ object EpicsCommand {
     safe(SeqAction.either {
       p.map(_.set(f(v)).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
     } )
-    
+
   def setParameter[T](p: Option[CaParameter[T]], v: T): SeqAction[Unit] =
     safe(SeqAction.either {
       p.map(_.set(v).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)

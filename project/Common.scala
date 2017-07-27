@@ -1,6 +1,6 @@
 import Settings.Libraries._
 import sbt.Keys._
-import sbt.{file, ModuleID, project}
+import sbt.{file, Compile, ModuleID, project}
 
 /**
   * Define tasks and settings used by module definitions
@@ -10,6 +10,10 @@ object Common {
     scalaOrganization := "org.typelevel",
     scalaVersion := Settings.LibraryVersions.scalaVersion,
     scalacOptions ++= Settings.Definitions.scalacOptions,
+    scalacOptions in (Compile, console) ~= (_.filterNot(Set(
+      "-Xfatal-warnings",
+      "-Ywarn-unused:imports"
+    ))),
 
     // Common libraries
     libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value,
@@ -25,6 +29,13 @@ object Common {
     // scalaOrganization := "org.typelevel",
     scalaVersion := Settings.LibraryVersions.scalaJSVersion,
     scalacOptions ++= Settings.Definitions.scalacOptions,
+    scalacOptions ~= (_.filterNot(Set(
+      // typelevel option not supported on js
+      "-Yinduction-heuristics",
+      "-Yliteral-types",
+      "-Xstrict-patmat-analysis",
+      "-Xlint:strict-unsealed-patmat"
+    ))),
 
     // Common libraries
     libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value

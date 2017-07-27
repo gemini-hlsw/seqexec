@@ -86,9 +86,9 @@ object GmosControllerEpics extends GmosSouthController {
     case s            => DC.setShutterState(encode(s))
   }
 
-  private def roiNumUsed(s: RegionsOfInterest): Int = s match {
-    case RegionsOfInterest(\/-(rois)) => rois.length
-    case RegionsOfInterest(-\/(b))    => 1
+  private def roiNumUsed(s: RegionsOfInterest): Int = s.rois match {
+    case \/-(rois) => rois.length
+    case -\/(b)    => 1
   }
 
   // Parameters to define a ROI
@@ -136,9 +136,9 @@ object GmosControllerEpics extends GmosSouthController {
     }
   }
 
-  private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s match {
-    case RegionsOfInterest(-\/(b))    => roiParameters(binning, 1, ROIValues.builtInROI(b))
-    case RegionsOfInterest(\/-(rois)) => rois.zipWithIndex.map { case (roi, i) =>
+  private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s.rois match {
+    case -\/(b)    => roiParameters(binning, 1, ROIValues.builtInROI(b))
+    case \/-(rois) => rois.zipWithIndex.map { case (roi, i) =>
       roiParameters(binning, i, ROIValues.fromOCS(roi))
     }.sequenceU.flatMap(_ => SeqAction.void)
   }

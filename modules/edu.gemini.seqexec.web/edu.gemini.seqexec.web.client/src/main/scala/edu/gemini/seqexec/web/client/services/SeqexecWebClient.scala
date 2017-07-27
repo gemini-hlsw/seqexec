@@ -175,7 +175,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Log record
     */
-  def log(record: LogRecord): Future[Unit] =
+  def log(record: LogRecord): Future[String] =
     Ajax.post(
       url = s"$baseUrl/log",
       responseType = "arraybuffer",

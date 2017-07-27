@@ -37,7 +37,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   )
 
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
-    _ <- Flamingos2Epics.instance.dcConfigCmd.setExposureTime(dc.t.toSeconds)
+    _ <- Flamingos2Epics.instance.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
     _ <- Flamingos2Epics.instance.dcConfigCmd.setNumReads(dc.n.getCount)
     _ <- Flamingos2Epics.instance.dcConfigCmd.setReadoutMode(encode(dc.r))
     _ <- Flamingos2Epics.instance.dcConfigCmd.setBiasMode(encode(dc.b))

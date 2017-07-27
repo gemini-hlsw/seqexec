@@ -34,5 +34,6 @@ object SeqexecApp extends JSApp {
 
     // Render the UI using React
     SeqexecUI.router().renderIntoDOM(document.getElementById("content"))
+    ()
   }
 }

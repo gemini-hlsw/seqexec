@@ -85,7 +85,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::dcconfig"))
 
     val roiNumUsed: Option[CaParameter[JDouble]] = cs.map(_.addDouble("roiNumUsed", GMOS_TOP + "dc:roiNumrois", "Number of ROI used", false))
-    def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v))
+    def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble))
 
     val rois: Map[Int, RoiParameters] = (1 to 5).map(i => i -> RoiParameters(cs, i))(breakOut)
 
@@ -93,7 +93,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     def setShutterState(v: String): SeqAction[Unit] = setParameter(shutterState, v)
 
     val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Duration): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v.toSeconds))
+    def setExposureTime(v: Duration): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v.toSeconds.toDouble))
 
     val ampCount: Option[CaParameter[String]] = cs.map(_.getString("ampCount"))
     def setAmpCount(v: String): SeqAction[Unit] = setParameter(ampCount, v)
@@ -105,10 +105,10 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     def setGainSetting(v: String): SeqAction[Unit] = setParameter(gainSetting, v)
 
     val ccdXBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdXBinning", GMOS_TOP + "dc:roiXBin", "CCD X Binning Value", false))
-    def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v))
+    def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble))
 
     val ccdYBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdYBinning", GMOS_TOP + "dc:roiYBin", "CCD Y Binning Value", false))
-    def setCcdYBinning(v: Int): SeqAction[Unit] = setParameter(ccdYBinning, java.lang.Double.valueOf(v))
+    def setCcdYBinning(v: Int): SeqAction[Unit] = setParameter(ccdYBinning, java.lang.Double.valueOf(v.toDouble))
 
     val nsPairs: Option[CaParameter[Integer]] = cs.map(_.getInteger("nsPairs"))
     def setNsPairs(v: Integer): SeqAction[Unit] = setParameter(nsPairs, v)
