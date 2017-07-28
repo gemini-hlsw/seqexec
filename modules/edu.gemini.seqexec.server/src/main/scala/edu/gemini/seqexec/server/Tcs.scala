@@ -52,9 +52,21 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
       else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
     }
 
+  // Helper function to output the part of the TCS configuration that is actually applied.
+  def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[String] = (subsystem match {
+    case Subsystem.M1          => List(tcs.gc.m1Guide)
+    case Subsystem.M2          => List(tcs.gc.m2Guide)
+    case Subsystem.OIWFS       => List(tcs.gtc.oiwfs, tcs.ge.oiwfs)
+    case Subsystem.P1WFS       => List(tcs.gtc.pwfs1, tcs.ge.pwfs1)
+    case Subsystem.P2WFS       => List(tcs.gtc.pwfs2, tcs.ge.pwfs2)
+    case Subsystem.Mount       => List(tcs.tc)
+    case Subsystem.HRProbe     => List(tcs.agc.hrwfsPos)
+    case Subsystem.ScienceFold => List(tcs.agc.sfPos)
+  }).map(_.toString)
+
   private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
     val tcsConfig = fromSequenceConfig(config)(tcsState)
-    Log.info("Applying TCS configuration " + tcsConfig)
+    Log.info("Applying TCS configuration: " + subsystems.toList.flatMap(subsystemConfig(tcsConfig, _)))
 
     if(subsystems.toList.contains(Subsystem.Mount))
       for {

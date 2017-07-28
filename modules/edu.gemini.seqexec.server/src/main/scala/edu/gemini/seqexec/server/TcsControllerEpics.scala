@@ -366,22 +366,35 @@ object TcsControllerEpics extends TcsController {
 
   private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.instance.m2GuideCmd.setState(encode(c))
 
+  val tcsTimeout = Seconds(30)
+  val agTimeout = Seconds(30)
+
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tcs: TcsConfig): SeqAction[Unit] = {
     def configSubsystem(subsystem: Subsystem): SeqAction[Unit] = subsystem match {
-      case Subsystem.M1 => setM1Guide(tcs.gc.m1Guide)
-      case Subsystem.M2 => setM2Guide(tcs.gc.m2Guide)
-      case Subsystem.OIWFS => setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, tcs.gtc.oiwfs.self) *> setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, tcs.ge.oiwfs.self)
-      case Subsystem.P1WFS => setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, tcs.gtc.pwfs1.self) *> setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, tcs.ge.pwfs1.self)
-      case Subsystem.P2WFS =>  setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, tcs.gtc.pwfs2.self) *> setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, tcs.ge.pwfs2.self)
-      case Subsystem.Mount => setTelescopeConfig(tcs.tc)
-      case Subsystem.HRProbe => setHrProbePosition(tcs.agc.hrwfsPos)
+      case Subsystem.M1          => setM1Guide(tcs.gc.m1Guide)
+      case Subsystem.M2          => setM2Guide(tcs.gc.m2Guide)
+      case Subsystem.OIWFS       =>
+        setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, tcs.gtc.oiwfs.self) *>
+          setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, tcs.ge.oiwfs.self)
+      case Subsystem.P1WFS       =>
+        setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, tcs.gtc.pwfs1.self) *>
+          setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, tcs.ge.pwfs1.self)
+      case Subsystem.P2WFS       =>
+        setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, tcs.gtc.pwfs2.self) *>
+          setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, tcs.ge.pwfs2.self)
+      case Subsystem.Mount       => setTelescopeConfig(tcs.tc)
+      case Subsystem.HRProbe     => setHrProbePosition(tcs.agc.hrwfsPos)
       case Subsystem.ScienceFold => setScienceFoldPosition(tcs.agc.sfPos)
     }
 
     subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)) *>
+      TcsEpics.instance.post *>
       EitherT(Task(Log.info("TCS configuration command post").right)) *>
-      TcsEpics.instance.waitInPosition(Seconds(30)) *>
-      EitherT(Task(Log.info("TCS inposition").right))
+      (if(subsystems.toList.contains(Subsystem.Mount))
+        TcsEpics.instance.waitInPosition(tcsTimeout) *> EitherT(Task(Log.info("TCS inposition").right))
+      else if(subsystems.toList.contains(Subsystem.ScienceFold))
+        TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT(Task(Log.info("AG inposition").right))
+      else SeqAction.void)
   }
 
   override def guide(gc: GuideConfig): SeqAction[Unit] = for {
