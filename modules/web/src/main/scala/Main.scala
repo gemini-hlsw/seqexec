@@ -23,7 +23,7 @@ object Main extends TaskApp {
     for {
       env <- Environment.quicken(Configuration.forTesting)
       svr <- newServer(env.config.webServer, Gatekeeper(env)(Application.service))
-      _   <- Task.delay(Console.println("Press a key to exit."))
+      _   <- Task.delay(Console.println("Press a key to exit.")) // scalastyle:off
       _   <- Task.delay(io.StdIn.readLine())
       _   <- svr.shutdown
       _   <- env.shutdown
