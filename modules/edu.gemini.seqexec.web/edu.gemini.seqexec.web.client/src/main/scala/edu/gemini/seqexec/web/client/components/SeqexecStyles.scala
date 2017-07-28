@@ -94,6 +94,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     display.inline
   }
 
+  val controlColumn: StyleA = style {
+    paddingBottom(0.px).important
+  }
+
   val noPadding: StyleS = mixin(
     padding(0.px).important
   )
@@ -160,6 +164,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
       display.none.important
     )
   )
+
   val onlyMobile: StyleA = style(
     media.only.screen.minWidth(767.px)(
       display.none.important

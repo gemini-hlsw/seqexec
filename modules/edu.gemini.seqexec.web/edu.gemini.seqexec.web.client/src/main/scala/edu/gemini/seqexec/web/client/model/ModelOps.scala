@@ -29,7 +29,7 @@ object ModelOps {
   }
 
   implicit class SequenceStateOps(val s: SequenceState) extends AnyVal {
-    def hasError: Boolean = s match {
+    def isError: Boolean = s match {
       case SequenceState.Error(_) => true
       case _                      => false
     }

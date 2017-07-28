@@ -285,7 +285,7 @@ object StepsTableContainer {
     }
   }
 
-  def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s))}
+  def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s.id))}
 
   def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
@@ -373,5 +373,3 @@ object StepsTableContainer {
 
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
-
-

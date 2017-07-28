@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SequenceState, SequenceView}
 import edu.gemini.seqexec.web.client.model._
-// import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
@@ -17,7 +17,7 @@ import org.scalajs.dom.html.Div
 import diode.react.ModelProxy
 
 import scalaz.syntax.equal._
-// import scalaz.syntax.std.boolean._
+import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import scalaz.std.string._
 import scalaz.std.option._
@@ -123,99 +123,87 @@ object SequenceObserverField {
   def apply(p: ModelProxy[StatusAndObserverInfo]): Unmounted[Props, State, Backend] = component(Props(p))
 }
 
-object SequenceDefaultToolbar {
-  case class Props(instrument: Instrument)
+object SequenceControl {
+  case class Props(p: ModelProxy[SequenceControlModel])
   case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
-
-  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
-  val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserver(i)))).toMap
 
   private val ST = ReactS.Fix[State]
 
-  def requestRun(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestRun(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestRun(s)))) >> ST.mod(_.copy(runRequested = true, pauseRequested = false, syncRequested = false)).liftCB
 
-  def requestSync(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestSync(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestSync(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
 
-  def requestPause(s: SequenceView): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
-    .renderPS{ ($, p, s) =>
-      // val isLogged = p.status.isLogged
-      // val nextStepToRun = p.nextStepToRun.getOrElse(0) + 1
-      // val runContinueTooltip = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
-      // val runContinueButton = s"${p.s.isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
+    .renderPS { ($, p, s) =>
+      val SequenceControlModel(isLogged, isConnected, control) = p.p()
       <.div(
-        ^.cls := "ui row",
-        <.div(
-          sequenceInfoConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
-        ),
-        // <.div(
-        //   ^.cls := "ui two column grid",
-        //   <.div(
-        //     ^.cls := "ui left column eight wide computer sixteen wide tablet only",
-        //     <.h3(
-        //       ^.cls := "ui green header",
-        //       "Sequence complete"
-        //     ).when(p.s.status === SequenceState.Completed),
-        //     Button(
-        //       Button.Props(
-        //         icon = Some(IconPlay),
-        //         labeled = true,
-        //         onClick = $.runState(requestRun(p.s)),
-        //         color = Some("blue"),
-        //         dataTooltip = Some(runContinueTooltip),
-        //         disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-        //       runContinueButton
-        //     ).when(p.s.hasError && p.s.steps.nonEmpty),
-        //     Button(
-        //       Button.Props(
-        //         icon = Some(IconRefresh),
-        //         labeled = true,
-        //         onClick = $.runState(requestSync(p.s)),
-        //         color = Some("purple"),
-        //         dataTooltip = Some(s"Sync sequence"),
-        //         disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-        //       s" Sync"
-        //     ).when(p.s.status === SequenceState.Idle),
-        //     Button(
-        //       Button.Props(
-        //         icon = Some(IconPlay),
-        //         labeled = true,
-        //         onClick = $.runState(requestRun(p.s)),
-        //         color = Some("blue"),
-        //         dataTooltip = Some(runContinueTooltip),
-        //         disabled = !p.status.isConnected || s.runRequested || s.syncRequested),
-        //       runContinueButton
-        //     ).when(p.s.status === SequenceState.Idle && p.s.steps.nonEmpty),
-        //     Button(
-        //       Button.Props(
-        //         icon = Some(IconPause),
-        //         labeled = true,
-        //         onClick = $.runState(requestPause(p.s)),
-        //         color = Some("teal"),
-        //         dataTooltip = Some("Pause the sequence after the current step completes"),
-        //         disabled = !p.status.isConnected || s.pauseRequested || s.syncRequested || p.s.status === SequenceState.Stopping),
-        //       "Pause"
-        //     ).when(p.s.status === SequenceState.Running || p.s.status === SequenceState.Stopping),
-        //     Button(
-        //       Button.Props(
-        //         icon = Some(IconPlay),
-        //         labeled = true,
-        //         onClick = $.runState(requestPause(p.s)),
-        //         color = Some("teal"),
-        //         disabled = !p.status.isConnected || s.syncRequested),
-        //       "Continue from step 1"
-        //     ).when(p.s.status === SequenceState.Paused)
-        //   ),
-          <.div(
-            ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
-            sequenceObserverConnects.get(p.instrument).whenDefined(x => x(m => SequenceObserverField(m)))
-          )
-        // )
+        control.whenDefined { m =>
+          val ControlModel(id, isPartiallyExecuted, nextStep, status) = m
+          val nextStepToRun = nextStep.getOrElse(0) + 1
+          val runContinueTooltip = s"${isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
+          val runContinueButton = s"${isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
+          List(
+            <.h3(
+              ^.cls := "ui green header",
+              "Sequence complete"
+            ).when(status === SequenceState.Completed),
+            Button(
+              Button.Props(
+                icon = Some(IconPlay),
+                labeled = true,
+                onClick = $.runState(requestRun(id)),
+                color = Some("blue"),
+                dataTooltip = Some(runContinueTooltip),
+                disabled = !isConnected || s.runRequested || s.syncRequested),
+              runContinueButton
+            ).when(status.isError),
+            Button(
+              Button.Props(
+                icon = Some(IconRefresh),
+                labeled = true,
+                onClick = $.runState(requestSync(id)),
+                color = Some("purple"),
+                dataTooltip = Some(s"Sync sequence"),
+                disabled = !isConnected || s.runRequested || s.syncRequested),
+              s" Synkeys"
+            ).when(status === SequenceState.Idle),
+            Button(
+              Button.Props(
+                icon = Some(IconPlay),
+                labeled = true,
+                onClick = $.runState(requestRun(id)),
+                color = Some("blue"),
+                dataTooltip = Some(runContinueTooltip),
+                disabled = !isConnected || s.runRequested || s.syncRequested),
+              runContinueButton
+            ).when(status === SequenceState.Idle),
+            Button(
+              Button.Props(
+                icon = Some(IconPause),
+                labeled = true,
+                onClick = $.runState(requestPause(id)),
+                color = Some("teal"),
+                dataTooltip = Some("Pause the sequence after the current step completes"),
+                disabled = !isConnected || s.pauseRequested || s.syncRequested || status === SequenceState.Stopping),
+              "Pause"
+            ).when(status === SequenceState.Running || status === SequenceState.Stopping),
+            Button(
+              Button.Props(
+                icon = Some(IconPlay),
+                labeled = true,
+                onClick = $.runState(requestPause(id)),
+                color = Some("teal"),
+                disabled = !isConnected || s.syncRequested),
+              "Continue from step 1"
+            ).when(status === SequenceState.Paused)
+          ).toTagMod
+        }
       )
     }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
@@ -223,7 +211,40 @@ object SequenceDefaultToolbar {
       Callback.empty
     }.build
 
-  def apply(p: Instrument): Unmounted[Props, State, Unit] = component(Props(p))
+  def apply(p: ModelProxy[SequenceControlModel]): Unmounted[Props, State, Unit] = component(Props(p))
+}
+
+object SequenceDefaultToolbar {
+  case class Props(instrument: Instrument)
+
+  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
+  val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserver(i)))).toMap
+  val sequenceControlConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControl(i)))).toMap
+
+  private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
+    .render_P( p =>
+      <.div(
+        ^.cls := "ui row",
+        <.div(
+          sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
+        ),
+        <.div(
+          ^.cls := "ui two column grid",
+          <.div(
+            ^.cls := "ui left column eight wide computer sixteen wide tablet only",
+            SeqexecStyles.controlColumn,
+            sequenceControlConnects.get(p.instrument).whenDefined(c => c(SequenceControl.apply)),
+          ),
+          <.div(
+            ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
+            SeqexecStyles.controlColumn,
+            sequenceObserverConnects.get(p.instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+          )
+        )
+      )
+    ).build
+
+  def apply(p: Instrument): Unmounted[Props, Unit, Unit] = component(Props(p))
 }
 
 object SequenceAnonymousToolbar {

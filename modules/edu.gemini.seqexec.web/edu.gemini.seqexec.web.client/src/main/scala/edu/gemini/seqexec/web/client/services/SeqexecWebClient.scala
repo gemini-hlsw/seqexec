@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import boopickle.Default._
-import edu.gemini.seqexec.model.Model.{SequenceView, Step}
+import edu.gemini.seqexec.model.Model.Step
 import org.scalajs.dom.XMLHttpRequest
 
 import scala.concurrent.Future
@@ -27,9 +27,9 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def sync(s: SequenceView): Future[SequencesQueue[SequenceId]] =
+  def sync(id: SequenceId): Future[SequencesQueue[SequenceId]] =
     Ajax.get(
-      url = s"$baseUrl/sequence/${s.id}",
+      url = s"$baseUrl/sequence/$id",
       responseType = "arraybuffer"
     )
     .map(unpickle[SequencesQueue[SequenceId]])
@@ -42,9 +42,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to execute a sequence
     */
-  def run(s: SequenceView): Future[RegularCommand] = {
+  def run(id: SequenceId): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/start",
+      url = s"$baseUrl/commands/$id/start",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -147,9 +147,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to stop a sequence
     */
-  def stop(s: SequenceView): Future[RegularCommand] = {
+  def stop(id: SequenceId): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/pause",
+      url = s"$baseUrl/commands/$id/pause",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

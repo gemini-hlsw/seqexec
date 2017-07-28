@@ -37,15 +37,15 @@ case class SelectIdToDisplay(id: SequenceId) extends Action
 case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
 // Actions related to executing sequences
-case class RequestRun(s: SequenceView) extends Action
-case class RequestSync(s: SequenceView) extends Action
-case class RequestPause(s: SequenceView) extends Action
-case class RunStarted(s: SequenceView) extends Action
-case class RunPaused(s: SequenceView) extends Action
-case class RunSync(s: SequenceView) extends Action
-case class RunStartFailed(s: SequenceView) extends Action
-case class RunPauseFailed(s: SequenceView) extends Action
-case class RunSyncFailed(s: SequenceView) extends Action
+case class RequestRun(s: SequenceId) extends Action
+case class RequestSync(s: SequenceId) extends Action
+case class RequestPause(s: SequenceId) extends Action
+case class RunStarted(s: SequenceId) extends Action
+case class RunPaused(s: SequenceId) extends Action
+case class RunSync(s: SequenceId) extends Action
+case class RunStartFailed(s: SequenceId) extends Action
+case class RunPauseFailed(s: SequenceId) extends Action
+case class RunSyncFailed(s: SequenceId) extends Action
 
 case class ShowStep(s: SequenceId, i: Int) extends Action
 case class UnShowStep(s: SequenceView) extends Action

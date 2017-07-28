@@ -383,6 +383,8 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelec
   def isConnected: Boolean = w.ws.isReady
 }
 
+// All these classes are focused views of the root model. They are used to only update small sections of the
+// UI even if other parts of the root model change
 case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
 case class StatusAndLoadedSequences(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
@@ -394,6 +396,9 @@ case class InstrumentStatusAndStep(isLogged: Boolean, instrument: Instrument, st
 case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
 case class StatusAndSequenceInfo(isLogged: Boolean, name: Option[String], observer: Option[Observer]) extends UseValueEq
 case class StatusAndObserverInfo(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
+
+case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
+case class SequenceControlModel(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
 
 /**
   * Contains the model for Diode
@@ -460,6 +465,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
         (status, tab.sequence().map { sequence =>
           StepsTable(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
         })
+    }
+  def sequenceControl(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlModel] =
+    status.zip(instrumentTab(i)).zoom {
+      case (status, (tab, active)) =>
+        SequenceControlModel(status.isLogged, status.isConnected, tab.sequence().map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
     }
 
   // Reader for a specific sequence if available

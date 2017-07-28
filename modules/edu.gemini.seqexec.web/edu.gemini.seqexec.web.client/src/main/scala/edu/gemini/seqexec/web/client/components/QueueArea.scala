@@ -83,7 +83,7 @@ object QueueTableBody {
                 ^.classSet(
                   "positive" -> (s.status === SequenceState.Completed),
                   "warning"  -> (s.status === SequenceState.Running),
-                  "negative" -> s.status.hasError,
+                  "negative" -> s.status.isError,
                   "active"   -> (s.active && !inProcess)
                 ),
                 ^.key := s"item.queue.$i",
