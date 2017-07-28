@@ -158,6 +158,8 @@ lazy val edu_gemini_seqexec_server = project
           Knobs,
           OpenCSV
       ) ++ SeqexecOdb ++ WDBAClient ++ Http4sClient ++ TestLibs.value
+  ).settings(
+    sources in (Compile,doc) := Seq.empty
   )
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
@@ -392,4 +394,3 @@ lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1bac
     buildInfoPackage := "edu.gemini.p1backend.client"
   )
   .dependsOn(edu_gemini_p1backend_shared_JS % "compile->compile;test->test")
-
