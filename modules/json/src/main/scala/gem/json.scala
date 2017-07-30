@@ -66,4 +66,17 @@ package object json {
   // Codec for GcalArcs
   implicit def gcalArcsCodec: CodecJson[GcalArcs] =
     CodecJson.derived[OneAnd[ISet, GcalArc]].xmap(oa => GcalArcs(oa.head, oa.tail.toList))(_.arcs)
+
+  // Codec for role maps
+  implicit def programIdKeyedMapCodec[A: CodecJson]: CodecJson[Map[Program.Id, A]] =
+    CodecJson.derived[Map[String, A]].xmap(
+      m => m.map { case (k, v) => (Program.Id.unsafeFromString(k), v) })(
+      m => m.map { case (k, v) => (k.format, v) }
+    )
+
+  // Codec for sets
+  implicit def setCodec[A: CodecJson]: CodecJson[Set[A]] =
+    CodecJson.derived[List[A]].xmap(_.toSet)(_.toList)
+
+
 }

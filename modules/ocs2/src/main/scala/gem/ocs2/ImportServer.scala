@@ -14,8 +14,8 @@ import org.http4s.Status.{BadRequest, InternalServerError, Ok}
 import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.dsl._
 import org.http4s.headers.`Content-Length`
-import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.util.ProcessApp
 import org.http4s.scalaxml.xml
 
 import java.net.URLEncoder
@@ -28,6 +28,7 @@ import scala.xml.{Elem, Node}
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.Process
 
 /** A server that accepts HTTP requests to import observations or programs from
   * an OCS2 ODB.  If the corresponding observation or program has already been
@@ -71,7 +72,7 @@ final class ImportServer(ocsHost: String) {
   }
 }
 
-object ImportServer extends ServerApp {
+object ImportServer extends ProcessApp {
   private val Log = Logger.getLogger(ImportServer.getClass.getName)
 
   // Port where our http service will run.
@@ -110,7 +111,7 @@ object ImportServer extends ServerApp {
     }
   }
 
-  override def server(args: List[String]): Task[Server] = {
+  override def process(args: List[String]): Process[Task, Nothing] = {
     val hostName = args match {
       case Nil       => "localhost"
       case host :: _ => host
@@ -131,6 +132,6 @@ object ImportServer extends ServerApp {
     BlazeBuilder
         .bindHttp(8989, "localhost")
         .mountService(service, "/import")
-        .start
+        .serve
   }
 }

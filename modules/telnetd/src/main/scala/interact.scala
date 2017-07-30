@@ -5,7 +5,7 @@ package gem
 package telnetd
 
 import doobie.imports.Transactor
-import scalaz._, Scalaz._, scalaz.concurrent.Task
+import scalaz._, Scalaz._
 import tuco._, Tuco._
 
 /** Module defining the behavior of our telnet server, parameterized over transactors. */
@@ -29,7 +29,7 @@ object Interaction {
     user:     String,
     maxTries: Int,
     xa:       Transactor[SessionIO, _],
-    txa:      Transactor[Task, _]
+    log:      Log[SessionIO]
   ): SessionIO[Option[Service[SessionIO]]] = {
     def go(remaining: Int): SessionIO[Option[Service[SessionIO]]] =
       if (remaining < 1) {
@@ -37,7 +37,7 @@ object Interaction {
       } else {
         for {
           p <- readLn("Password: ", mask = Some('*'))
-          u <- Service.tryLogin(user, p, xa, txa)
+          u <- Service.tryLogin(user, p, xa, log)
           r <- if (u.isEmpty) writeLn("Incorrect password.") *> go(remaining - 1)
                else u.point[SessionIO]
         } yield r
@@ -62,11 +62,11 @@ object Interaction {
    * Entry point for our telnet behavior. If the user logs in successfully the transactors will be
    * associated with the Session.
    */
-  def main(xa: Transactor[SessionIO, _], txa: Transactor[Task, _]): SessionIO[Unit] =
+  def main(xa: Transactor[SessionIO, _], log: Log[SessionIO]): SessionIO[Unit] =
     for {
       _ <- writeLn("Welcome to Gem")
       n <- readLn("Username: ")
-      s <- loginLoop(n, 3, xa, txa)
+      s <- loginLoop(n, 3, xa, log)
       _ <- s.fold(writeLn(s"Login failed."))(runSession)
     } yield ()
 

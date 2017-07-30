@@ -9,7 +9,6 @@ import gem.dao._
 import gem.enum._
 
 import scalaz._, Scalaz._
-import scalaz.concurrent.Task
 
 final class Service[M[_]: Monad] private (private val xa: Transactor[M, _], val log: Log[M], val user: User[ProgramRole]) {
 
@@ -45,11 +44,22 @@ object Service {
    * Construct a program that verifies a user's id and password and returns a `Service`.
    */
   def tryLogin[M[_]: Monad: Catchable: Capture](
-    user: User.Id, pass: String, xa: Transactor[M,_], txa: Transactor[Task, _]
+    user: User.Id, pass: String, xa: Transactor[M,_], log: Log[M]
   ): M[Option[Service[M]]] =
-    xa.trans.apply(UserDao.selectUserʹ(user, pass)).flatMap {
-      case None    => Option.empty[Service[M]].point[M]
-      case Some(u) => Log.newLog[M](s"session:$u.name", txa).map(l => Some(Service[M](xa, l, u)))
+    xa.trans.apply(UserDao.selectUserʹ(user, pass)).map {
+      case None    => Option.empty[Service[M]]
+      case Some(u) => Some(Service[M](xa, log, u))
+    }
+
+  /**
+   * Like `tryLogin`, but for previously-authenticated users.
+   */
+  def service[M[_]: Monad: Catchable: Capture](
+    user: User.Id, xa: Transactor[M,_], log: Log[M]
+  ): M[Option[Service[M]]] =
+    xa.trans.apply(UserDao.selectUser(user)).map {
+      case None    => Option.empty[Service[M]]
+      case Some(u) => Some(Service[M](xa, log, u))
     }
 
 }
