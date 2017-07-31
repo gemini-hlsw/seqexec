@@ -36,8 +36,11 @@ lazy val edu_gemini_web_client_facades = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies += JQuery.value
+    libraryDependencies += JQuery.value,
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
   )
+
 // Root web project
 lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
   .settings(commonSettings: _*)
@@ -46,17 +49,17 @@ lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.we
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
   .dependsOn(edu_gemini_seqexec_model)
-  .jvmSettings(
-  )
+  .jvmSettings(commonSettings)
+  .jsSettings(commonJSSettings)
   .jsSettings(
-    libraryDependencies += JavaLogJS.value
+    libraryDependencies += JavaLogJS.value,
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
-  .settings(commonSettings: _*)
 
 lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
-  .settings(commonJSSettings: _*)
 
 // Project for the server side application
 lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
@@ -130,7 +133,9 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       ScalaJSDom.value,
       JavaTimeJS.value,
       JavaLogJS.value
-    ) ++ ReactScalaJS.value ++ Diode.value
+    ) ++ ReactScalaJS.value ++ Diode.value,
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -167,12 +172,16 @@ lazy val edu_gemini_seqexec_server = project
 lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .in(file("modules/edu.gemini.seqexec.model"))
   .settings(libraryDependencies ++= BooPickle.value +: Monocle.value)
+  .jvmSettings(commonSettings)
+  .jsSettings(commonJSSettings)
+  .jsSettings(
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+  )
 
 lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
-  .settings(commonSettings: _*)
 
 lazy val edu_gemini_seqexec_model_JS:Project = edu_gemini_seqexec_model.js
-  .settings(commonJSSettings: _*)
 
 lazy val edu_gemini_seqexec_engine = project
   .in(file("modules/edu.gemini.seqexec.engine"))
@@ -311,7 +320,12 @@ lazy val edu_gemini_p1backend = project.in(file("modules/edu.gemini.p1backend"))
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_p1backend_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.p1backend/edu.gemini.p1backend.shared"))
-  .settings(commonSettings: _*)
+  .jvmSettings(commonSettings)
+  .jsSettings(commonJSSettings)
+  .jsSettings(
+    // And add a custom one
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+  )
 
 lazy val edu_gemini_p1backend_shared_JVM = edu_gemini_p1backend_shared.jvm
 
