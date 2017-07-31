@@ -7,9 +7,10 @@ import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, Sky
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
+import org.scalajs.dom.XMLHttpRequest
 import boopickle.Default._
 import edu.gemini.seqexec.model.Model.Step
-import org.scalajs.dom.XMLHttpRequest
+import scala.scalajs.js.URIUtils._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,7 +65,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def setOperator(name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/operator/$name",
+      url = s"$baseUrl/commands/operator/${encodeURI(name)}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -74,7 +75,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def setObserver(id: SequenceId, name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$id/observer/$name",
+      url = s"$baseUrl/commands/$id/observer/${encodeURI(name)}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
