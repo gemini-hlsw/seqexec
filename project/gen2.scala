@@ -279,7 +279,7 @@ object gen2 {
       },
 
       enum("GmosDetector", "GMOS detector") {
-        type GmosDetectorRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Angle, 'southPixelSize -> Angle, 'suffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
+        type GmosDetectorRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Angle, 'southPixelSize -> Angle, 'shuffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, north_pixel_size, south_pixel_size, shuffle_offset, x_size, y_size, max_rois FROM e_gmos_detector""".query[(String, GmosDetectorRec)].list
         io.transact(xa).unsafePerformIO
       },
@@ -293,6 +293,12 @@ object gen2 {
       enum("GmosDtax", "GMOS detector translation X offset") {
         type GmosDtaxRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'dtax -> Int`.T
         val io = sql"""SELECT id, id tag, short_name, long_name, dtax FROM e_gmos_dtax""".query[(String, GmosDtaxRec)].list
+        io.transact(xa).unsafePerformIO
+      },
+
+      enum("GmosEOffsetting", "GMOS Electric Offsetting") {
+        type GmosEOffsettingRec = Record.`'tag -> String, 'description -> String, 'toBoolean -> Boolean`.T
+        val io = sql"select id, id tag, description, to_boolean from e_gmos_e_offsetting".query[(String, GmosEOffsettingRec)].list
         io.transact(xa).unsafePerformIO
       },
 
