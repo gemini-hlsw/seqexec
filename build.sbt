@@ -51,9 +51,6 @@ organizationName in ThisBuild := "Association of Universities for Research in As
 startYear        in ThisBuild := Some(2017)
 licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
 
-// Make JS tests run fine on travis
-parallelExecution in (ThisBuild, Test) := false
-
 lazy val testLibs = Def.setting(Seq(
   "org.scalatest"  %%% "scalatest"  % scalaTestVersion  % "test",
   "org.scalacheck" %%% "scalacheck" % scalaCheckVersion % "test"
@@ -192,7 +189,9 @@ lazy val core = crossProject
     // Remove the dependency on the scalajs-compiler
     libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
     // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch),
+    // Make JS tests run fine on travis
+    parallelExecution in Test := false
   )
 
 lazy val coreJVM = core.jvm
