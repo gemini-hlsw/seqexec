@@ -14,8 +14,16 @@ import java.time.Duration
 object Gmos {
 
   final case class GmosNodAndShuffle(
-    /*placeholder for now*/
+    offsetA: Offset,
+    offsetB: Offset,
+    eOffset: Boolean,
+    rows:    Int,
+    cycles:  Int
   )
+
+  object GmosNodAndShuffle {
+
+  }
 
   /** Shared static configuration for both GMOS-N and GMOS-S.
     */
