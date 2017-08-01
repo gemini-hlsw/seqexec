@@ -25,13 +25,16 @@ import scala.concurrent.duration._
 
 import scalacss.ScalaCssReact._
 
+/**
+  * Display the name of the sequence and the observer
+  */
 object SequenceInfo {
-  case class Props(p: ModelProxy[StatusAndSequenceFocus])
+  case class Props(p: ModelProxy[StatusAndObserverFocus])
 
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val StatusAndSequenceFocus(isLogged, name, observer) = p.p()
+      val StatusAndObserverFocus(isLogged, name, _, _, observer) = p.p()
       val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
       <.div(
         ^.cls := "ui form",
@@ -54,9 +57,12 @@ object SequenceInfo {
       )
     }.build
 
-  def apply(p: ModelProxy[StatusAndSequenceFocus]): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(p: ModelProxy[StatusAndObserverFocus]): Unmounted[Props, Unit, Unit] = component(Props(p))
 }
 
+/**
+  * Encapsulates the field to change the observer name
+  */
 object SequenceObserverField {
   case class Props(p: ModelProxy[StatusAndObserverFocus])
 
@@ -80,6 +86,7 @@ object SequenceObserverField {
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val observerEV = StateSnapshot(~s.currentText)(updateState)
+      val StatusAndObserverFocus(_, _, instrument, _, _) = p.p()
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -91,8 +98,8 @@ object SequenceObserverField {
           <.div(
             ^.cls := "field fourteen wide",
             InputEV(InputEV.Props(
-              p.p().instrument + ".observer",
-              p.p().instrument + ".observer",
+              instrument + ".observer",
+              instrument + ".observer",
               observerEV,
               placeholder = "Observer...",
               onBlur = _ => submitIfChanged))
@@ -122,6 +129,9 @@ object SequenceObserverField {
   def apply(p: ModelProxy[StatusAndObserverFocus]): Unmounted[Props, State, Backend] = component(Props(p))
 }
 
+/**
+  * Control buttons for the sequence
+  */
 object SequenceControl {
   case class Props(p: ModelProxy[SequenceControlFocus])
   case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
@@ -159,7 +169,7 @@ object SequenceControl {
                 onClick = $.runState(requestRun(id)),
                 color = Some("blue"),
                 dataTooltip = Some(runContinueTooltip),
-                disabled = !isConnected || s.runRequested || s.syncRequested),
+                disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
               runContinueButton
             ).when(status.isError),
             Button(
@@ -169,7 +179,7 @@ object SequenceControl {
                 onClick = $.runState(requestSync(id)),
                 color = Some("purple"),
                 dataTooltip = Some(s"Sync sequence"),
-                disabled = !isConnected || s.runRequested || s.syncRequested),
+                disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
               s" Synkeys"
             ).when(status === SequenceState.Idle),
             Button(
@@ -179,7 +189,7 @@ object SequenceControl {
                 onClick = $.runState(requestRun(id)),
                 color = Some("blue"),
                 dataTooltip = Some(runContinueTooltip),
-                disabled = !isConnected || s.runRequested || s.syncRequested),
+                disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
               runContinueButton
             ).when(status === SequenceState.Idle),
             Button(
@@ -189,7 +199,7 @@ object SequenceControl {
                 onClick = $.runState(requestPause(id)),
                 color = Some("teal"),
                 dataTooltip = Some("Pause the sequence after the current step completes"),
-                disabled = !isConnected || s.pauseRequested || s.syncRequested || status === SequenceState.Stopping),
+                disabled = !isLogged || !isConnected || s.pauseRequested || s.syncRequested || status === SequenceState.Stopping),
               "Pause"
             ).when(status === SequenceState.Running || status === SequenceState.Stopping),
             Button(
@@ -198,7 +208,7 @@ object SequenceControl {
                 labeled = true,
                 onClick = $.runState(requestPause(id)),
                 color = Some("teal"),
-                disabled = !isConnected || s.syncRequested),
+                disabled = !isLogged || !isConnected || s.syncRequested),
               "Continue from step 1"
             ).when(status === SequenceState.Paused)
           ).toTagMod
@@ -212,19 +222,21 @@ object SequenceControl {
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
 }
 
+/**
+  * Component deciding what tooblat to display
+  */
 object SequenceDefaultToolbar {
   case class Props(instrument: Instrument)
 
-  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfoReader(i)))).toMap
-  val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-  val sequenceControlConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
+  private val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  private val sequenceControlConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .render_P( p =>
       <.div(
         ^.cls := "ui row",
         <.div(
-          sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
+          sequenceObserverConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
         ),
         <.div(
           ^.cls := "ui two column grid",
@@ -245,10 +257,13 @@ object SequenceDefaultToolbar {
   def apply(p: Instrument): Unmounted[Props, Unit, Unit] = component(Props(p))
 }
 
+/**
+  * Toolbar for anonymous users
+  */
 object SequenceAnonymousToolbar {
   case class Props(instrument: Instrument)
 
-  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfoReader(i)))).toMap
+  private val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .stateless
@@ -268,12 +283,15 @@ object SequenceAnonymousToolbar {
   def apply(i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(i))
 }
 
+/**
+  * Toolbar when displaying a step configuration
+  */
 object StepConfigToolbar {
   case class Props(instrument: Instrument, isLogged: Boolean, step: Int)
 
   def backToSequence(i: Instrument): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(i))}
 
-  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfoReader(i)))).toMap
+  private val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless

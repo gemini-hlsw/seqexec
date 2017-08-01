@@ -385,8 +385,7 @@ case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: In
 case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
-case class StatusAndSequenceFocus(isLogged: Boolean, name: Option[String], observer: Option[Observer]) extends UseValueEq
-case class StatusAndObserverFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
+case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
 case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
 case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
 case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
@@ -436,14 +435,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
 
-  def sequenceInfoReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndSequenceFocus] =
-    statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndSequenceFocus(status.isLogged, tab.sequence().map(_.metadata.name), tab.sequence().flatMap(_.metadata.observer))
-    }
-
   def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
     statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndObserverFocus(status.isLogged, i, tab.sequence().map(_.id), tab.sequence().flatMap(_.metadata.observer))
+      case (status, (tab, _)) => StatusAndObserverFocus(status.isLogged, tab.sequence().map(_.metadata.name), i, tab.sequence().map(_.id), tab.sequence().flatMap(_.metadata.observer))
     }
 
   def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
