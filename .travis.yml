@@ -2,6 +2,8 @@ language: scala
 
 dist: trusty
 
+sudo: required
+
 jdk:
   - oraclejdk8
 
@@ -14,8 +16,14 @@ addons:
 before_script:
   - psql -c 'create database gem' -U postgres
 
+install:
+  - . $HOME/.nvm/nvm.sh
+  - nvm install stable
+  - nvm use stable
+  - npm install jsdom
+
 script:
-  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test
+  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test coreJS/test
 
 cache:
   directories:
