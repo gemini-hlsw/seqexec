@@ -9,7 +9,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import edu.gemini.seqexec.model.Model.Instrument
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
+import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalazReact._
 
@@ -29,7 +29,7 @@ object SequenceStepsTableContainer {
 
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
     .initialState(State(0))
-    .render_P { p =>
+    .renderP { ($, p) =>
         <.div(
           ^.cls := "ui raised secondary segment",
           p.p().stepConfigDisplayed.fold{
@@ -40,7 +40,7 @@ object SequenceStepsTableContainer {
           }(s => StepConfigToolbar(StepConfigToolbar.Props(p.p().instrument, p.p().isLogged, s))),
           <.div(
             ^.cls := "ui raised secondary segment",
-            instrumentConnects.get(p.p().instrument).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, _ => Callback.empty))))
+            instrumentConnects.get(p.p().instrument).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, x => $.runState(updateStepToRun(x))))))
           )
         )
     }.build
