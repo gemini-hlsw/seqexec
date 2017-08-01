@@ -23,7 +23,7 @@ install:
   - npm install jsdom
 
 script:
-  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test
+  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test coreJS/test
 
 cache:
   directories:

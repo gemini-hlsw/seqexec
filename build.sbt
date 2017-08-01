@@ -164,7 +164,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(scalaVersion := "2.11.8")
-  .aggregate(coreJVM, coreJS, db, json, ocs2, service, telnetd, ctl, web)
+  .aggregate(coreJVM, db, json, ocs2, service, telnetd, ctl, web)
 
 lazy val core = crossProject
   .crossType(CrossType.Pure)
@@ -182,7 +182,6 @@ lazy val core = crossProject
       Def.task { gen2((sourceManaged in Compile).value / "gem").unsafePerformIO }.taskValue
   )
   .jsSettings(
-    // Skip using the typelevel compiler until interoperability is improved
     libraryDependencies +=
       "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12",
     // These settings allow to use TLS with scala.js
