@@ -48,7 +48,7 @@ case class RunPauseFailed(s: SequenceId) extends Action
 case class RunSyncFailed(s: SequenceId) extends Action
 
 case class ShowStep(s: SequenceId, i: Int) extends Action
-case class UnShowStep(s: SequenceView) extends Action
+case class UnShowStep(i: Instrument) extends Action
 
 case class AppendToLog(s: String) extends Action
 

@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SequenceState, SequenceView}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SequenceState}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -270,9 +270,11 @@ object SequenceAnonymousToolbar {
 }
 
 object StepConfigToolbar {
-  case class Props(s: SequenceView, isLogged: Boolean, step: Int)
+  case class Props(instrument: Instrument, isLogged: Boolean, step: Int)
 
-  def backToSequence(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(s))}
+  def backToSequence(i: Instrument): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(i))}
+
+  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
@@ -282,16 +284,12 @@ object StepConfigToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            // SequenceInfo(SequenceInfo.Props(p.s, p.isLogged)),
-            <.h3(
-              ^.cls := "ui green header",
-              "Sequence complete"
-            ).when(p.s.status === SequenceState.Completed)
+            sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
           )
         ),
         <.div(
           ^.cls := "row",
-          Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.s)), "Back"),
+          Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.instrument)), "Back"),
           <.h5(
             ^.cls := "ui header",
             SeqexecStyles.inline,

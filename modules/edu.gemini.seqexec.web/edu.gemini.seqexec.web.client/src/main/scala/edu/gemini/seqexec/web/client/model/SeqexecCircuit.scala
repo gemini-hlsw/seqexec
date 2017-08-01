@@ -174,8 +174,8 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
         noChange
       }
 
-    case UnShowStep(s) =>
-      if (value._1.instrumentSequences.focus.sequence().exists(_.id == s.id)) {
+    case UnShowStep(instrument) =>
+      if (value._1.instrumentSequences.focus.sequence().exists(_.metadata.instrument == instrument)) {
         updated(value.copy(_1 = value._1.unshowStep))
       } else {
         noChange

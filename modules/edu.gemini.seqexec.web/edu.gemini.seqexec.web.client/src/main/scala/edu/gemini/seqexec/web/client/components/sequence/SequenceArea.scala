@@ -56,7 +56,7 @@ object SequenceStepsTableContainer {
               SequenceDefaultToolbar(p.p().instrument): VdomElement
             else
               SequenceAnonymousToolbar(p.p().instrument): VdomElement
-          }(_ => <.div()),
+          }(s => StepConfigToolbar(StepConfigToolbar.Props(p.p().instrument, p.p().isLogged, s))),
           <.div(
             ^.cls := "ui raised secondary segment",
             instrumentConnects.get(p.p().instrument).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, _ => Callback.empty))))
