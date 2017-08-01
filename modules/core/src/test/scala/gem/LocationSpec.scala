@@ -70,14 +70,15 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  ignore should "produce a sorted list of Location.Middle" in {
+  it should "produce a sorted list of Location.Middle" in {
     forAll { (i: Int, l0: Location, l1: Location) =>
       val count = (i % 10000).abs + 1
       val res   = Order[Location].order(l0, l1) match {
         case LT => l0 +: Location.find(count, l0, l1).widen[Location] :+ l1
         case _  => l1 +: Location.find(count, l1, l0).widen[Location] :+ l0
       }
-      res.sorted shouldEqual res
+
+      assert(Equal[IList[Location]].equal(res.sorted, res))
     }
   }
 
