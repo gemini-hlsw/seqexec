@@ -159,7 +159,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       updated(value.copy(_1 = value._1.focusOnInstrument(i)))
 
     case SelectIdToDisplay(id) =>
-      println("to disp " + " " +id)
       val seq = SeqexecCircuit.sequenceRef(id)
       updated(value.copy(_1 = value._1.focusOnSequence(seq)))
 
@@ -333,7 +332,6 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
       updated(value.copy(_1 = sv), audioEffect)
 
     case ServerMessage(s: ObserverUpdated) =>
-      s.view.queue.map(_.metadata.observer).foreach(println)
       updated(value.copy(_1 = s.view))
 
     case ServerMessage(s: SeqexecModelUpdate) =>
@@ -366,9 +364,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
   * Generates Eq comparisons for Pot[A], it is useful for state indicators
   */
 object PotEq {
-  def potStateEq[A]: FastEq[Pot[A]] = new FastEq[Pot[A]] {
-    override def eqv(a: Pot[A], b: Pot[A]): Boolean = a.state == b.state
-  }
+  def potStateEq[A]: FastEq[Pot[A]] = (a: Pot[A], b: Pot[A]) => a.state == b.state
 
   val seqexecQueueEq: FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
   val searchResultsEq: FastEq[Pot[SearchResults]] = potStateEq[SearchResults]
@@ -385,20 +381,16 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelec
 
 // All these classes are focused views of the root model. They are used to only update small sections of the
 // UI even if other parts of the root model change
-case class HeaderSideBarReader(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
-case class StatusAndLoadedSequences(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
-case class InstrumentStatus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
-case class InstrumentSequence(instrument: Instrument, sequence: Option[(SequenceView, Option[Int])], active: Boolean) extends UseValueEq
-case class InstrumentActive(instrument: Instrument, id: Option[SequenceId], active: Boolean) extends UseValueEq
-case class InstrumentTabAndStatus(status: ClientStatus, tab: Option[InstrumentActive]) extends UseValueEq
-case class InstrumentStatusAndStep(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
-case class StepsTable(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-case class StatusAndSequenceInfo(isLogged: Boolean, name: Option[String], observer: Option[Observer]) extends UseValueEq
-case class StatusAndObserverInfo(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
-
+case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
+case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
+case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
+case class StatusAndSequenceFocus(isLogged: Boolean, name: Option[String], observer: Option[Observer]) extends UseValueEq
+case class StatusAndObserverFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
+case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
+case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
 case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
-case class SequenceControlModel(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
+case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
 
 /**
   * Contains the model for Diode
@@ -424,52 +416,53 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   override protected def initialModel = SeqexecAppRootModel.initial
 
   // Some useful readers
-  val statusAndLoadedSequences: ModelR[SeqexecAppRootModel, StatusAndLoadedSequences] =
+  val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     SeqexecCircuit.zoom { c =>
       val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
         val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
         SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, s.runningStep)
       }
-      StatusAndLoadedSequences(c.uiModel.user.isDefined, sequencesInQueue)
+      StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue)
     }
-  // Reader for sequences on display
-  val sequencesOnDisplay: ModelR[SeqexecAppRootModel, SequencesOnDisplay] = zoom(_.uiModel.sequencesOnDisplay)
-  val statusAndSequences: ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)] = SeqexecCircuit.status.zip(SeqexecCircuit.sequencesOnDisplay)
-  def headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarReader] =
-    SeqexecCircuit.zoom(c => HeaderSideBarReader(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
-  def instrumentStatusTab(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatus] =
+  // Reader for sequences on display
+  val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
+    SeqexecCircuit.zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+
+  def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
     zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
-      case (tab, active) => InstrumentStatus(tab.instrument, active, tab.sequence().map(s => (s.id, s.status)))
+      case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence().map(s => (s.id, s.status)))
     }
-  def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
-  def instrumentActive(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentActive] =
-    instrumentTab(i).zoom {
-      case (tab, active) => InstrumentActive(i, tab.sequence().map(_.id), active)
+
+  private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
+
+  def sequenceInfoReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndSequenceFocus] =
+    statusReader.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) => StatusAndSequenceFocus(status.isLogged, tab.sequence().map(_.metadata.name), tab.sequence().flatMap(_.metadata.observer))
     }
-  def sequenceInfo(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndSequenceInfo] =
-    status.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndSequenceInfo(status.isLogged, tab.sequence().map(_.metadata.name), tab.sequence().flatMap(_.metadata.observer))
+
+  def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
+    statusReader.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) => StatusAndObserverFocus(status.isLogged, i, tab.sequence().map(_.id), tab.sequence().flatMap(_.metadata.observer))
     }
-  def sequenceObserver(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverInfo] =
-    status.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndObserverInfo(status.isLogged, i, tab.sequence().map(_.id), tab.sequence().flatMap(_.metadata.observer))
+
+  def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
+    statusReader.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) => StatusAndStepFocus(status.isLogged, i, tab.stepConfigDisplayed)
     }
-  def instrumentStatusAndStep(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusAndStep] =
-    status.zip(instrumentTab(i)).zoom {
-      case (status, (tab, active)) => InstrumentStatusAndStep(status.isLogged, i, tab.stepConfigDisplayed)
-    }
-  def instrumentStepsTable(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTable])] =
-    status.zip(instrumentTab(i)).zoom {
-      case (status, (tab, active)) =>
+
+  def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTableFocus])] =
+    statusReader.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) =>
         (status, tab.sequence().map { sequence =>
-          StepsTable(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
+          StepsTableFocus(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
         })
     }
-  def sequenceControl(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlModel] =
-    status.zip(instrumentTab(i)).zoom {
-      case (status, (tab, active)) =>
-        SequenceControlModel(status.isLogged, status.isConnected, tab.sequence().map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
+
+  def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
+    statusReader.zip(instrumentTab(i)).zoom {
+      case (status, (tab, _)) =>
+        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence().map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
     }
 
   // Reader for a specific sequence if available
@@ -477,9 +470,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoom(_.uiModel.sequences.queue.find(_.id == id))
 
   // Reader to indicate the allowed interactions
-  def status: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
-
-  val statusAndConditions: ModelR[SeqexecAppRootModel, (ClientStatus, Conditions)] = SeqexecCircuit.status.zip(zoom(_.uiModel.sequences.conditions))
+  val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
 
   /**
     * Makes a reference to a sequence on the queue.

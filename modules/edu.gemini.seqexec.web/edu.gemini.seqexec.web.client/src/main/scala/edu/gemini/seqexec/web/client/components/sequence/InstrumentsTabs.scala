@@ -2,7 +2,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, Instrument}
-import edu.gemini.seqexec.web.client.model.{InstrumentStatus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
@@ -21,7 +21,7 @@ import scalaz.syntax.std.option._
 import scalaz.syntax.show._
 
 object InstrumentTab {
-  case class Props(t: ModelProxy[InstrumentStatus])
+  case class Props(t: ModelProxy[InstrumentStatusFocus])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
@@ -75,14 +75,14 @@ object InstrumentTab {
       }
     ).build
 
-  def apply(p: ModelProxy[InstrumentStatus]) = component(Props(p))
+  def apply(p: ModelProxy[InstrumentStatusFocus]) = component(Props(p))
 }
 /**
   * Menu with tabs
   */
 object InstrumentsTabs {
   // TODO Consider GN/GS
-  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusTab(i)))
+  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
 
   private val component = ScalaComponent.builder[Unit]("InstrumentsMenu")
     .stateless

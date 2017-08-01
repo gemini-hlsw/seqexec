@@ -23,7 +23,7 @@ import scala.concurrent.duration._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(model: ModelProxy[HeaderSideBarReader]) {
+  case class Props(model: ModelProxy[HeaderSideBarFocus]) {
     def isLogged: Boolean = model().status.isLogged
   }
 
@@ -103,6 +103,6 @@ object HeadersSideBar {
     }
     .build
 
-  def apply(model: ModelProxy[HeaderSideBarReader]): Unmounted[Props, State, Backend] =
+  def apply(model: ModelProxy[HeaderSideBarFocus]): Unmounted[Props, State, Backend] =
     component(Props(model))
 }

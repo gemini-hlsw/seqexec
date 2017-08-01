@@ -26,12 +26,12 @@ import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 
 object SequenceInfo {
-  case class Props(p: ModelProxy[StatusAndSequenceInfo])
+  case class Props(p: ModelProxy[StatusAndSequenceFocus])
 
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val StatusAndSequenceInfo(isLogged, name, observer) = p.p()
+      val StatusAndSequenceFocus(isLogged, name, observer) = p.p()
       val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
       <.div(
         ^.cls := "ui form",
@@ -54,11 +54,11 @@ object SequenceInfo {
       )
     }.build
 
-  def apply(p: ModelProxy[StatusAndSequenceInfo]): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(p: ModelProxy[StatusAndSequenceFocus]): Unmounted[Props, Unit, Unit] = component(Props(p))
 }
 
 object SequenceObserverField {
-  case class Props(p: ModelProxy[StatusAndObserverInfo])
+  case class Props(p: ModelProxy[StatusAndObserverFocus])
 
   case class State(currentText: Option[String])
 
@@ -119,11 +119,11 @@ object SequenceObserverField {
     }
     .build
 
-  def apply(p: ModelProxy[StatusAndObserverInfo]): Unmounted[Props, State, Backend] = component(Props(p))
+  def apply(p: ModelProxy[StatusAndObserverFocus]): Unmounted[Props, State, Backend] = component(Props(p))
 }
 
 object SequenceControl {
-  case class Props(p: ModelProxy[SequenceControlModel])
+  case class Props(p: ModelProxy[SequenceControlFocus])
   case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
 
   private val ST = ReactS.Fix[State]
@@ -140,7 +140,7 @@ object SequenceControl {
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS { ($, p, s) =>
-      val SequenceControlModel(isLogged, isConnected, control) = p.p()
+      val SequenceControlFocus(isLogged, isConnected, control) = p.p()
       <.div(
         control.whenDefined { m =>
           val ControlModel(id, isPartiallyExecuted, nextStep, status) = m
@@ -206,19 +206,18 @@ object SequenceControl {
       )
     }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
-      // Callback.when(f.nextProps.s.status === SequenceState.Running && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
-      Callback.empty
+      Callback.when(f.nextProps.p().control.map(_.status).contains(SequenceState.Running) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 
-  def apply(p: ModelProxy[SequenceControlModel]): Unmounted[Props, State, Unit] = component(Props(p))
+  def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
 }
 
 object SequenceDefaultToolbar {
   case class Props(instrument: Instrument)
 
-  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
-  val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserver(i)))).toMap
-  val sequenceControlConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControl(i)))).toMap
+  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfoReader(i)))).toMap
+  val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  val sequenceControlConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .render_P( p =>
@@ -249,7 +248,7 @@ object SequenceDefaultToolbar {
 object SequenceAnonymousToolbar {
   case class Props(instrument: Instrument)
 
-  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
+  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfoReader(i)))).toMap
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .stateless
@@ -274,7 +273,7 @@ object StepConfigToolbar {
 
   def backToSequence(i: Instrument): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(i))}
 
-  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfo(i)))).toMap
+  val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceInfoReader(i)))).toMap
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless

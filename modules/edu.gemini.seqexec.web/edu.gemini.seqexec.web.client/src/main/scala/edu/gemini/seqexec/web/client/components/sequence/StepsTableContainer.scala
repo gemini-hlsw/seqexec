@@ -31,10 +31,9 @@ object StepsTableContainer {
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  // case class Props(id: SequenceId, instrument: Instrument, steps: List[Step], status: ClientStatus, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], onStepToRun: Int => Callback)
-  case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTable])], onStepToRun: Int => Callback) {
+  case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
-    def steps: Option[StepsTable] = stepsTable()._2
+    def steps: Option[StepsTableFocus] = stepsTable()._2
   }
 
   class Backend($: BackendScope[Props, State]) {
@@ -130,7 +129,7 @@ object StepsTableContainer {
         )
       )
 
-    def isPartiallyExecuted(p: StepsTable): Boolean = p.steps.exists(_.status == StepState.Completed)
+    def isPartiallyExecuted(p: StepsTableFocus): Boolean = p.steps.exists(_.status == StepState.Completed)
 
     def stepInError(loggedIn: Boolean, isPartiallyExecuted: Boolean, msg: String): VdomNode =
       <.div(
@@ -143,7 +142,7 @@ object StepsTableContainer {
         ).when(loggedIn)
       )
 
-    def stepDisplay(status: ClientStatus, p: StepsTable, step: Step): VdomNode =
+    def stepDisplay(status: ClientStatus, p: StepsTableFocus, step: Step): VdomNode =
       step.status match {
         case StepState.Running | StepState.Paused => controlButtons(status.isLogged, step)
         case StepState.Completed                  => <.p(step.status.shows)
@@ -171,14 +170,14 @@ object StepsTableContainer {
     def breakpointAt(id: SequenceId, step: Step): Callback =
       $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipBreakpointStep(id, step))) }
 
-    def stepsTable(status: ClientStatus, p: StepsTable, s: State): TagMod =
+    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         ^.onMouseLeave  --> mouseLeave,
         <.thead(
           <.tr(
-            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings.copyIcon(key = s"${p.instrument}.steps.settings")),
+            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
             TableHeader(TableHeader.Props(collapsing = true), "Step"),
             TableHeader(TableHeader.Props(width = Width.Eight), "State"),
             TableHeader(TableHeader.Props(width = Width.Eight), "File"),
@@ -239,12 +238,12 @@ object StepsTableContainer {
                   <.td(
                     ^.onDoubleClick --> selectRow(step, i),
                     step.status match {
-                      case StepState.Completed       => IconCheckmark
-                      case StepState.Running         => IconCircleNotched.copyIcon(loading = true)
-                      case StepState.Error(_)        => IconAttention
-                      case _ if i == p.nextStepToRun => IconChevronRight
-                      case _ if step.skip            => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-                      case _ => iconEmpty
+                      case StepState.Completed                 => IconCheckmark
+                      case StepState.Running                   => IconCircleNotched.copyIcon(loading = true)
+                      case StepState.Error(_)                  => IconAttention
+                      case _ if p.nextStepToRun.forall(_ == i) => IconChevronRight
+                      case _ if step.skip                      => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+                      case _                                   => iconEmpty
                     }
                   ),
                   <.td(

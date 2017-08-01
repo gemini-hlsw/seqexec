@@ -20,7 +20,7 @@ import scalaz.syntax.equal._
 import scalaz.syntax.std.option._
 
 object QueueTableBody {
-  type SequencesModel = ModelProxy[StatusAndLoadedSequences]
+  type SequencesModel = ModelProxy[StatusAndLoadedSequencesFocus]
 
   case class Props(ctl: RouterCtl[SeqexecPages], sequences: SequencesModel)
 
@@ -98,7 +98,7 @@ object QueueTableBody {
                   ^.cls := "collapsing",
                   selectableRowCls.toTagMod,
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.id).unless(inProcess),
-                  (s.id).when(inProcess)
+                  s.id.when(inProcess)
                 ),
                 <.td(
                   ^.cls := "collapsing",
@@ -134,7 +134,7 @@ object QueueTableBody {
   * Container for the queue table
   */
 object QueueTableSection {
-  private val sequencesConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequences)
+  private val sequencesConnect = SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequencesReader)
 
   private val component = ScalaComponent.builder[RouterCtl[SeqexecPages]]("QueueTableSection")
     .stateless

@@ -19,7 +19,7 @@ import scalacss.ScalaCssReact._
   * Component for the bar at the top of the page
   */
 object NavBar {
-  private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.status)
+  private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
   private def goHome(e: ReactEvent): Callback = {
