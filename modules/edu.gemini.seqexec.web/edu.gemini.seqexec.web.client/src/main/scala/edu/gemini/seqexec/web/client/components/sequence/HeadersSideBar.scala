@@ -35,7 +35,7 @@ object HeadersSideBar {
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
     def updateOperator(name: String): Callback =
-      $.props >>= { p => Callback.when(p.isLogged)(Callback(SeqexecCircuit.dispatch(UpdateOperator(name)))) }
+      $.props >>= { p => Callback.when(p.isLogged)(p.model.dispatchCB(UpdateOperator(name))) }
 
     def updateState(value: String): Callback =
       $.modState(_.copy(currentText = Some(value)))
@@ -46,7 +46,7 @@ object HeadersSideBar {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(s.currentText =/= p.model().operator)(updateOperator(~s.currentText))
+        case (s, p) => Callback.when(p.model().operator.fold(s.currentText.forall(_.nonEmpty))(o => s.currentText.forall(_ =/= o)))(updateOperator(~s.currentText))
       }
 
     def iqChanged(iq: ImageQuality): Callback =
@@ -94,7 +94,7 @@ object HeadersSideBar {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(~p.model().operator)})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(~p.model().operator))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator

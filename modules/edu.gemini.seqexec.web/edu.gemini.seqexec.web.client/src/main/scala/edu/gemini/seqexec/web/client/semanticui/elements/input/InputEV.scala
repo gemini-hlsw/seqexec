@@ -37,7 +37,7 @@ object InputEV {
     // Capture the value outside setState, react reuses the events
     val v = e.target.value
     // First update the internal state, then call the outside listener
-    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.onChange(v)) >> ST.retM(p.value.setState(v))
+    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.value.setState(v)) >> ST.retM(p.onChange(v))
   }
 
   def onBlur(c: ChangeCallback): ReactST[CallbackTo, State, Unit] =
@@ -62,10 +62,10 @@ object InputEV {
     }.componentWillMount { ctx =>
       // Update state of the input if the property has changed
       Callback.when((ctx.props.value.value =/= ctx.state.value) && !ctx.state.changed)(ctx.setState(State(ctx.props.value.value)))
-    }.componentWillReceiveProps { f =>
+    }.componentWillReceiveProps { ctx =>
       // Update state of the input if the property has changed
       // TBD Should check if the state has changed?
-      Callback.when((f.nextProps.value.value =/= f.state.value))(f.setState(State(f.nextProps.value.value)))
+      Callback.when(ctx.nextProps.value.value =/= ctx.state.value)(ctx.setState(State(ctx.nextProps.value.value)))
     }.build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)

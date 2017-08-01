@@ -58,7 +58,6 @@ object SequenceInfo {
 }
 
 object SequenceObserverField {
-  // case class Props(isLogged: Boolean, obsId: Option[SequenceId], instrument: Instrument, observer: Option[Observer])
   case class Props(p: ModelProxy[StatusAndObserverInfo])
 
   case class State(currentText: Option[String])
@@ -72,7 +71,7 @@ object SequenceObserverField {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.p().isLogged && s.currentText =/= p.p().observer)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
+        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.fold(s.currentText.forall(_.nonEmpty))(o => s.currentText.forall(_ =/= o)))(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
       }
 
     def setupTimer: Callback =
@@ -107,7 +106,7 @@ object SequenceObserverField {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => f.backend.updateState(p.p().observer.getOrElse(""))})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.p().observer.isDefined)(f.backend.updateState(p.p().observer.getOrElse("")))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val observer = f.nextProps.p().observer
