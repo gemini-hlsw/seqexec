@@ -74,7 +74,7 @@ object DhsClient {
   protected implicit def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword = InternalKeyword(k.n, k.t, k.v.toString)
 
   final case class KeywordBag(keywords: List[InternalKeyword]) {
-    def add[T](k: Keyword[T]): KeywordBag = KeywordBag(internalKeywordConvert(k) :: keywords)
+    def add[T](k: Keyword[T]): KeywordBag = KeywordBag(keywords :+ internalKeywordConvert(k))
     def append(other: KeywordBag): KeywordBag =  KeywordBag(keywords ::: other.keywords)
   }
 
