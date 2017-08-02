@@ -15,20 +15,26 @@ EOffsettingOn	Electronic Offsetting On	true
 EOffsettingOff	Electronic Offsetting Off	false
 \.
 
-ALTER TABLE static_gmos_north
-    ADD COLUMN a_offset_p  numeric(9,3) NOT NULL,
-    ADD COLUMN a_offset_q  numeric(9,3) NOT NULL,
-    ADD COLUMN b_offset_p  numeric(9,3) NOT NULL,
-    ADD COLUMN b_offset_q  numeric(9,3) NOT NULL,
-    ADD COLUMN e_offset    identifier   NOT NULL REFERENCES e_gmos_e_offsetting ON DELETE CASCADE,
-    ADD COLUMN offset_rows integer      NOT NULL CHECK (offset_rows > 0),
-    ADD COLUMN cycles      integer      NOT NULL CHECK (cycles      > 0);
+CREATE TABLE gmos_nod_and_shuffle(
+    static_id   integer,
+    instrument  identifier   NOT NULL,
+    a_offset_p  numeric(9,3) NOT NULL,
+    a_offset_q  numeric(9,3) NOT NULL,
+    b_offset_p  numeric(9,3) NOT NULL,
+    b_offset_q  numeric(9,3) NOT NULL,
+    e_offset    identifier   NOT NULL REFERENCES e_gmos_e_offsetting ON DELETE CASCADE,
+    offset_rows integer      NOT NULL CHECK (offset_rows > 0),
+    cycles      integer      NOT NULL CHECK (cycles      > 0),
+    PRIMARY KEY (static_id, instrument),
+    FOREIGN KEY (static_id, instrument) REFERENCES static_config ON DELETE CASCADE,
+    CONSTRAINT is_gmos CHECK ((instrument = 'GmosN') OR (instrument = 'GmosS'))
+);
 
-ALTER TABLE static_gmos_south
-    ADD COLUMN a_offset_p  numeric(9,3) NOT NULL,
-    ADD COLUMN a_offset_q  numeric(9,3) NOT NULL,
-    ADD COLUMN b_offset_p  numeric(9,3) NOT NULL,
-    ADD COLUMN b_offset_q  numeric(9,3) NOT NULL,
-    ADD COLUMN e_offset    identifier   NOT NULL REFERENCES e_gmos_e_offsetting ON DELETE CASCADE,
-    ADD COLUMN offset_rows integer      NOT NULL CHECK (offset_rows > 0),
-    ADD COLUMN cycles      integer      NOT NULL CHECK (cycles      > 0);
+--ALTER TABLE static_gmos_north
+--    ADD COLUMN a_offset_p  numeric(9,3) NOT NULL,
+--    ADD COLUMN a_offset_q  numeric(9,3) NOT NULL,
+--    ADD COLUMN b_offset_p  numeric(9,3) NOT NULL,
+--    ADD COLUMN b_offset_q  numeric(9,3) NOT NULL,
+--    ADD COLUMN e_offset    identifier   NOT NULL REFERENCES e_gmos_e_offsetting ON DELETE CASCADE,
+--    ADD COLUMN offset_rows integer      NOT NULL CHECK (offset_rows > 0),
+--    ADD COLUMN cycles      integer      NOT NULL CHECK (cycles      > 0);

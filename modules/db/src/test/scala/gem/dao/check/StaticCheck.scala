@@ -4,18 +4,20 @@
 package gem.dao
 package check
 
-import gem.enum.Instrument.Flamingos2
-import gem.config.StaticConfig
+import gem.enum.Instrument.{Flamingos2, GmosN}
+import gem.config.{Gmos, StaticConfig}
 
 class StaticCheck extends Check {
   import StaticConfigDao.Statements._
 
   "StaticDao.Statements" should
-            "selectF2"        in check(selectF2(0))
-  it should "selectGmosNorth" in check(selectGmosNorth(0))
-  it should "selectGmosSouth" in check(selectGmosSouth(0))
-  it should "insertBaseSlice" in check(insertBaseSlice(Flamingos2))
-  it should "insertF2"        in check(insertF2(0, StaticConfig.F2.Default))
-  it should "insertGmosNorth" in check(insertGmosNorth(0, StaticConfig.GmosNorth.Default))
-  it should "insertGmosSouth" in check(insertGmosSouth(0, StaticConfig.GmosSouth.Default))
+            "selectF2"                in check(selectF2(0))
+  it should "selectGmosNorth"         in check(selectGmosNorth(0))
+  it should "selectGmosSouth"         in check(selectGmosSouth(0))
+  it should "selectGmosNodAndShuffle" in check(selectGmosNodAndShuffle(0, GmosN))
+  it should "insertBaseSlice"         in check(insertBaseSlice(Flamingos2))
+  it should "insertF2"                in check(insertF2(0, StaticConfig.F2.Default))
+  it should "insertGmosNorth"         in check(insertGmosNorth(0, StaticConfig.GmosNorth.Default))
+  it should "insertGmosSouth"         in check(insertGmosSouth(0, StaticConfig.GmosSouth.Default))
+  it should "insertGmosNodAndShuffle" in check(insertGmosNodAndShuffle(0, GmosN, Gmos.GmosNodAndShuffle.Default))
 }

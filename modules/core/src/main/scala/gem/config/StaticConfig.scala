@@ -6,6 +6,8 @@ package config
 
 import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
 
+import scalaz._
+
 /**
  * Instrument configuration that is specified once per [[gem.Observation Observation]] and is thus
  * the same for every [[gem.Step Step]].
@@ -51,7 +53,7 @@ object StaticConfig {
     stageMode: GmosNorthStageMode
   ) extends StaticConfig.Impl(Instrument.GmosN)
 
-  object GmosNorth {
+  object GmosNorth extends GmosNorthLenses {
     val Default: GmosNorth =
       GmosNorth(
         GmosCommonStaticConfig.Default,
@@ -59,17 +61,33 @@ object StaticConfig {
       )
   }
 
+  trait GmosNorthLenses {
+    val Common: GmosNorth @> GmosCommonStaticConfig =
+      Lens.lensu((a, b) => a.copy(common = b), _.common)
+
+    val NodAndShuffle: GmosNorth @> Option[GmosNodAndShuffle] =
+      Common andThen GmosCommonStaticConfig.NodAndShuffle
+  }
+
   final case class GmosSouth(
     common:    GmosCommonStaticConfig,
     stageMode: GmosSouthStageMode
   ) extends StaticConfig.Impl(Instrument.GmosS)
 
-  object GmosSouth {
+  object GmosSouth extends GmosSouthLenses {
     val Default: GmosSouth =
       GmosSouth(
         GmosCommonStaticConfig.Default,
         GmosSouthStageMode.FollowXyz
       )
+  }
+
+  trait GmosSouthLenses {
+    val Common: GmosSouth @> GmosCommonStaticConfig =
+      Lens.lensu((a, b) => a.copy(common = b), _.common)
+
+    val NodAndShuffle: GmosSouth @> Option[GmosNodAndShuffle] =
+      Common andThen GmosCommonStaticConfig.NodAndShuffle
   }
 
 }

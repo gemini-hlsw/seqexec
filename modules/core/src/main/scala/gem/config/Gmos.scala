@@ -95,6 +95,17 @@ object Gmos {
     cycles:  GmosShuffleCycles
   )
 
+  object GmosNodAndShuffle {
+    val Default: GmosNodAndShuffle =
+      GmosNodAndShuffle(
+        Offset.Zero,
+        Offset.Zero,
+        GmosEOffsetting.EOffsettingOff,
+        GmosShuffleOffset.defaultFromDetector(GmosDetector.HAMAMATSU),
+        GmosShuffleCycles.Default
+      )
+  }
+
   /** Shared static configuration for both GMOS-N and GMOS-S.
     */
   final case class GmosCommonStaticConfig(
@@ -103,13 +114,18 @@ object Gmos {
     nodAndShuffle: Option[GmosNodAndShuffle]
   )
 
-  object GmosCommonStaticConfig {
+  object GmosCommonStaticConfig extends GmosCommonStaticConfigLenses {
     val Default: GmosCommonStaticConfig =
       GmosCommonStaticConfig(
         GmosDetector.HAMAMATSU,
         MosPreImaging.IsNotMosPreImaging,
         None
       )
+  }
+
+  trait GmosCommonStaticConfigLenses {
+    val NodAndShuffle: GmosCommonStaticConfig @> Option[GmosNodAndShuffle] =
+      Lens.lensu((a, b) => a.copy(nodAndShuffle = b), _.nodAndShuffle)
   }
 
   /** Parameters that determine GMOS CCD readout.
