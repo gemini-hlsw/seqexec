@@ -37,18 +37,18 @@ case class SelectIdToDisplay(id: SequenceId) extends Action
 case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
 // Actions related to executing sequences
-case class RequestRun(s: SequenceView) extends Action
-case class RequestSync(s: SequenceView) extends Action
-case class RequestPause(s: SequenceView) extends Action
-case class RunStarted(s: SequenceView) extends Action
-case class RunPaused(s: SequenceView) extends Action
-case class RunSync(s: SequenceView) extends Action
-case class RunStartFailed(s: SequenceView) extends Action
-case class RunPauseFailed(s: SequenceView) extends Action
-case class RunSyncFailed(s: SequenceView) extends Action
+case class RequestRun(s: SequenceId) extends Action
+case class RequestSync(s: SequenceId) extends Action
+case class RequestPause(s: SequenceId) extends Action
+case class RunStarted(s: SequenceId) extends Action
+case class RunPaused(s: SequenceId) extends Action
+case class RunSync(s: SequenceId) extends Action
+case class RunStartFailed(s: SequenceId) extends Action
+case class RunPauseFailed(s: SequenceId) extends Action
+case class RunSyncFailed(s: SequenceId) extends Action
 
-case class ShowStep(s: SequenceView, i: Int) extends Action
-case class UnShowStep(s: SequenceView) extends Action
+case class ShowStep(s: SequenceId, i: Int) extends Action
+case class UnShowStep(i: Instrument) extends Action
 
 case class AppendToLog(s: String) extends Action
 
@@ -61,9 +61,9 @@ case class ConnectionError(s: String) extends Action
 case class ServerMessage(e: SeqexecEvent) extends Action
 
 // Temporal actions for UI prototyping
-case class FlipSkipStep(view: SequenceView, step: Step) extends Action
-case class FlipBreakpointStep(view: SequenceView, step: Step) extends Action
-case class UpdateObserver(view: SequenceView, name: String) extends Action
+case class FlipSkipStep(id: SequenceId, step: Step) extends Action
+case class FlipBreakpointStep(id: SequenceId, step: Step) extends Action
+case class UpdateObserver(id: SequenceId, name: String) extends Action
 case class UpdateOperator(name: String) extends Action
 case class UpdateImageQuality(iq: ImageQuality) extends Action
 case class UpdateCloudCover(cc: CloudCover) extends Action
@@ -82,6 +82,10 @@ object SectionVisibilityState {
 }
 
 case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
+
+object SequenceTab {
+  val empty = SequenceTab(F2, RefTo(new RootModelR(None)), None)
+}
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
@@ -111,8 +115,9 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def idDisplayed(id: SequenceId): Boolean =
     instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence().exists(_.id === id)}.isDefined
 
-  def instrument(i: Instrument): Option[(SequenceTab, Boolean)] =
-    instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
+  def instrument(i: Instrument): (SequenceTab, Boolean) =
+    // The getOrElse shouldn't be called as we have an element per instrument
+    instrumentSequences.withFocus.toStream.find(_._1.instrument === i).getOrElse((SequenceTab.empty, false))
 }
 
 /**

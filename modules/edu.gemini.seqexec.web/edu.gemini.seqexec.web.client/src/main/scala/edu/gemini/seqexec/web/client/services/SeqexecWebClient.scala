@@ -7,9 +7,10 @@ import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, Sky
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 import org.scalajs.dom.ext.{Ajax, AjaxException}
-import boopickle.Default._
-import edu.gemini.seqexec.model.Model.{SequenceView, Step}
 import org.scalajs.dom.XMLHttpRequest
+import boopickle.Default._
+import edu.gemini.seqexec.model.Model.Step
+import scala.scalajs.js.URIUtils._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,9 +28,9 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def sync(s: SequenceView): Future[SequencesQueue[SequenceId]] =
+  def sync(id: SequenceId): Future[SequencesQueue[SequenceId]] =
     Ajax.get(
-      url = s"$baseUrl/sequence/${s.id}",
+      url = s"$baseUrl/sequence/$id",
       responseType = "arraybuffer"
     )
     .map(unpickle[SequencesQueue[SequenceId]])
@@ -42,9 +43,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to execute a sequence
     */
-  def run(s: SequenceView): Future[RegularCommand] = {
+  def run(id: SequenceId): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/start",
+      url = s"$baseUrl/commands/$id/start",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -52,9 +53,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set a breakpoint
     */
-  def breakpoint(s: SequenceView, step: Step): Future[RegularCommand] = {
+  def breakpoint(sid: SequenceId, step: Step): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/${step.id}/breakpoint/${step.breakpoint}",
+      url = s"$baseUrl/commands/$sid/${step.id}/breakpoint/${step.breakpoint}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -64,7 +65,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def setOperator(name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/operator/$name",
+      url = s"$baseUrl/commands/operator/${encodeURI(name)}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -72,9 +73,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set the observer name of a sequence
     */
-  def setObserver(s: SequenceView, name: String): Future[RegularCommand] = {
+  def setObserver(id: SequenceId, name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/observer/$name",
+      url = s"$baseUrl/commands/$id/observer/${encodeURI(name)}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -147,9 +148,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to stop a sequence
     */
-  def stop(s: SequenceView): Future[RegularCommand] = {
+  def stop(id: SequenceId): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/${s.id}/pause",
+      url = s"$baseUrl/commands/$id/pause",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

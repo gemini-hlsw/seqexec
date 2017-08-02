@@ -29,7 +29,7 @@ object ModelOps {
   }
 
   implicit class SequenceStateOps(val s: SequenceState) extends AnyVal {
-    def hasError: Boolean = s match {
+    def isError: Boolean = s match {
       case SequenceState.Error(_) => true
       case _                      => false
     }
@@ -56,15 +56,6 @@ object ModelOps {
       case st: StandardStep if st == step => st.copy(skip = !st.skip)
       case st               => st
     })
-
-    /**
-     * Returns the observation operations allowed
-     * TODO Convert to an Instrument-level typeclass
-     */
-    def allowedObservationOperations: List[ObservationOperations] =
-      s.metadata.instrument match {
-        case _                                                 => Nil
-      }
 
     /**
      * Returns the observation operations allowed
@@ -120,5 +111,7 @@ object ModelOps {
         case StepState.Error(_) => true
         case _                  => false
       }
+
+    def allowedObservationOperations: List[ObservationOperations] = Nil
   }
 }

@@ -20,6 +20,7 @@ import scalaz.stream.wye._
 import scalaz.stream.time._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
+import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.spModel.core.Peer
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import edu.gemini.spModel.obscomp.InstConstants
@@ -60,40 +61,42 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.right)).run
 
-  def start(q: EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.start(id.stringValue())).map(_.right)
+  def start(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.start(id.stringValue(), user)).map(_.right)
 
-  def requestPause(q: EventQueue, id: SPObservationID): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.pause(id.stringValue())).map(_.right)
+  def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.right)
 
   def setBreakpoint(q: EventQueue,
                     seqId: SPObservationID,
+                    user: UserDetails,
                     stepId: edu.gemini.seqexec.engine.Step.Id,
                     v: Boolean): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.breakpoint(seqId.stringValue(), stepId, v)).map(_.right)
+    q.enqueueOne(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.right)
 
-  def setOperator(q: EventQueue, name: String): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setOperator(name)).map(_.right)
+  def setOperator(q: EventQueue, user: UserDetails, name: String): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setOperator(name, user)).map(_.right)
 
   def setObserver(q: EventQueue,
                   seqId: SPObservationID,
+                  user: UserDetails,
                   name: String): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setObserver(seqId.stringValue(), name)).map(_.right)
+    q.enqueueOne(Event.setObserver(seqId.stringValue(), user, name)).map(_.right)
 
-  def setConditions(q: EventQueue, conditions: Conditions): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setConditions(conditions)).map(_.right)
+  def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setConditions(conditions, user)).map(_.right)
 
-  def setImageQuality(q: EventQueue, iq: ImageQuality): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setImageQuality(iq)).map(_.right)
+  def setImageQuality(q: EventQueue, iq: ImageQuality, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setImageQuality(iq, user)).map(_.right)
 
-  def setWaterVapor(q: EventQueue, wv: WaterVapor): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setWaterVapor(wv)).map(_.right)
+  def setWaterVapor(q: EventQueue, wv: WaterVapor, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setWaterVapor(wv, user)).map(_.right)
 
-  def setSkyBackground(q: EventQueue, sb: SkyBackground): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setSkyBackground(sb)).map(_.right)
+  def setSkyBackground(q: EventQueue, sb: SkyBackground, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setSkyBackground(sb, user)).map(_.right)
 
-  def setCloudCover(q: EventQueue, cc: CloudCover): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setCloudCover(cc)).map(_.right)
+  def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.setCloudCover(cc, user)).map(_.right)
 
   def setSkipMark: Task[SeqexecFailure \/ Unit] = ???
 
@@ -153,21 +156,21 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private def toSeqexecEvent(ev: engine.Event)(svs: SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
-      case engine.Start(_)            => SequenceStart(svs)
-      case engine.Pause(_)            => SequencePauseRequested(svs)
-      case engine.Load(id, _)         => SequenceLoaded(id, svs)
-      case engine.Unload(id)          => SequenceUnloaded(id, svs)
-      case engine.Breakpoint(_, _, _) => StepBreakpointChanged(svs)
-      case engine.SetOperator(_)      => OperatorUpdated(svs)
-      case engine.SetObserver(_, _)   => ObserverUpdated(svs)
-      case engine.SetConditions(_)    => ConditionsUpdated(svs)
-      case engine.SetImageQuality(_)  => ConditionsUpdated(svs)
-      case engine.SetWaterVapor(_)    => ConditionsUpdated(svs)
-      case engine.SetSkyBackground(_) => ConditionsUpdated(svs)
-      case engine.SetCloudCover(_)    => ConditionsUpdated(svs)
-      case engine.Poll                => SequenceRefreshed(svs)
-      case engine.GetState(_)         => NullEvent
-      case engine.Log(msg)            => NewLogMessage(msg)
+      case engine.Start(_, _)            => SequenceStart(svs)
+      case engine.Pause(_, _)            => SequencePauseRequested(svs)
+      case engine.Load(id, _)            => SequenceLoaded(id, svs)
+      case engine.Unload(id)             => SequenceUnloaded(id, svs)
+      case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
+      case engine.SetOperator(_, _)      => OperatorUpdated(svs)
+      case engine.SetObserver(_, _, _)   => ObserverUpdated(svs)
+      case engine.SetConditions(_, _)    => ConditionsUpdated(svs)
+      case engine.SetImageQuality(_, _)  => ConditionsUpdated(svs)
+      case engine.SetWaterVapor(_, _)    => ConditionsUpdated(svs)
+      case engine.SetSkyBackground(_, _) => ConditionsUpdated(svs)
+      case engine.SetCloudCover(_, _)    => ConditionsUpdated(svs)
+      case engine.Poll                   => SequenceRefreshed(svs)
+      case engine.GetState(_)            => NullEvent
+      case engine.Log(msg)               => NewLogMessage(msg)
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
