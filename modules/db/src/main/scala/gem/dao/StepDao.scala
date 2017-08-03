@@ -58,33 +58,6 @@ object StepDao {
   def selectAllEmpty(oid: Observation.Id): ConnectionIO[Loc ==>> Step[Instrument]] =
     Statements.selectAllEmpty(oid).list.map(==>>.fromList(_))
 
-  /** Selects all steps with their F2 instrument configuration data, assuming
-    * the indicated observation is an F2 observation.  If not, fails with an
-    * exception.
-    *
-    * @param oid F2 observation whose steps are sought
-    */
-  def selectAllF2(oid: Observation.Id): ConnectionIO[Loc ==>> Step[DynamicConfig.F2]] =
-    selectAllʹ(oid, allF2Only)
-
-  /** Selects all steps with their GMOS North instrument configuration data,
-    * assuming the indicated observation is a GMOS North observation.  If not,
-    * fails with an exception.
-    *
-    * @param oid GMOS North observation whose steps are sought
-    */
-  def selectAllGmosNorth(oid: Observation.Id): ConnectionIO[Loc ==>> Step[DynamicConfig.GmosNorth]] =
-    selectAllʹ(oid, allGmosNorthOnly)
-
-  /** Selects all steps with their GMOS South instrument configuration data,
-    * assuming the indicated observation is a GMOS South observation.  If not,
-    * fails with an exception.
-    *
-    * @param oid GMOS South observation whose steps are sought
-    */
-  def selectAllGmosSouth(oid: Observation.Id): ConnectionIO[Loc ==>> Step[DynamicConfig.GmosSouth]] =
-    selectAllʹ(oid, allGmosSouthOnly)
-
   /** Selects the step at the indicated location in the sequence associated with
     * the indicated observation.
     *
@@ -99,9 +72,9 @@ object StepDao {
       s.dynamicConfig match {
         case Instrument.AcqCam     => point(DynamicConfig.AcqCam())
         case Instrument.Bhros      => point(DynamicConfig.Bhros())
-        case Instrument.Flamingos2 => oneF2Only(oid, loc)       .maybe.widen[DynamicConfig]
-        case Instrument.GmosN      => oneGmosNorthOnly(oid, loc).maybe.widen[DynamicConfig]
-        case Instrument.GmosS      => oneGmosSouthOnly(oid, loc).maybe.widen[DynamicConfig]
+        case Instrument.Flamingos2 => F2.selectOne(oid, loc)       .maybe.widen[DynamicConfig]
+        case Instrument.GmosN      => Gmos.selectOneNorth(oid, loc).maybe.widen[DynamicConfig]
+        case Instrument.GmosS      => Gmos.selectOneSouth(oid, loc).maybe.widen[DynamicConfig]
         case Instrument.Gnirs      => point(DynamicConfig.Gnirs())
         case Instrument.Gpi        => point(DynamicConfig.Gpi())
         case Instrument.Gsaoi      => point(DynamicConfig.Gsaoi())
@@ -132,9 +105,9 @@ object StepDao {
       ss.findMin.map(_._2.dynamicConfig).fold(==>>.empty[Loc, DynamicConfig].point[ConnectionIO]) {
         case Instrument.AcqCam     => point(DynamicConfig.AcqCam())
         case Instrument.Bhros      => point(DynamicConfig.Bhros())
-        case Instrument.Flamingos2 => allF2Only(oid)       .toMap.map(_.widen[DynamicConfig])
-        case Instrument.GmosN      => allGmosNorthOnly(oid).toMap.map(_.widen[DynamicConfig])
-        case Instrument.GmosS      => allGmosSouthOnly(oid).toMap.map(_.widen[DynamicConfig])
+        case Instrument.Flamingos2 => F2.selectAll(oid)       .toMap.map(_.widen[DynamicConfig])
+        case Instrument.GmosN      => Gmos.selectAllNorth(oid).toMap.map(_.widen[DynamicConfig])
+        case Instrument.GmosS      => Gmos.selectAllSouth(oid).toMap.map(_.widen[DynamicConfig])
         case Instrument.Gnirs      => point(DynamicConfig.Gnirs())
         case Instrument.Gpi        => point(DynamicConfig.Gpi())
         case Instrument.Gsaoi      => point(DynamicConfig.Gsaoi())
@@ -174,11 +147,11 @@ object StepDao {
     i match {
       case _: DynamicConfig.AcqCam    => 0.point[ConnectionIO]
       case _: DynamicConfig.Bhros     => 0.point[ConnectionIO]
-      case f2: DynamicConfig.F2       => insertF2Config(id, f2).run
-      case g: DynamicConfig.GmosNorth => insertGmosCommonConfig(id, g.common).run *>
-                                        insertGmosNorthConfig(id, g).run
-      case g: DynamicConfig.GmosSouth => insertGmosCommonConfig(id, g.common).run *>
-                                        insertGmosSouthConfig(id, g).run
+      case f2: DynamicConfig.F2       => F2.insert(id, f2).run
+      case g: DynamicConfig.GmosNorth => Gmos.insertCommon(id, g.common).run *>
+                                         Gmos.insertNorth(id, g).run
+      case g: DynamicConfig.GmosSouth => Gmos.insertCommon(id, g.common).run *>
+                                         Gmos.insertSouth(id, g).run
       case _: DynamicConfig.Gnirs     => 0.point[ConnectionIO]
       case _: DynamicConfig.Gpi       => 0.point[ConnectionIO]
       case _: DynamicConfig.Gsaoi     => 0.point[ConnectionIO]
@@ -232,11 +205,6 @@ object StepDao {
       }
   }
 
-  private def selectAllʹ[I](oid: Observation.Id, q: Observation.Id => Query0[(Loc, I)]): ConnectionIO[Loc ==>> Step[I]] =
-    for {
-      ss <- selectAllEmpty(oid)
-      is <- q(oid).toMap
-    } yield ss.intersectionWith(is) { (s, i) => s.as(i) }
 
   object Statements {
 
@@ -252,135 +220,6 @@ object StepDao {
         DELETE FROM step
               WHERE observation_id = $oid
       """.update
-
-    def allF2Only(oid: Observation.Id): Query0[(Loc, DynamicConfig.F2)] =
-      sql"""
-        SELECT s.location,
-               i.disperser,
-               i.exposure_time,
-               i.filter,
-               i.fpu,
-               i.lyot_wheel,
-               i.read_mode,
-               i.window_cover
-          FROM step s
-               LEFT OUTER JOIN step_f2 i
-                 ON i.step_f2_id = s.step_id
-         WHERE s.observation_id = $oid
-      """.query[(Loc, DynamicConfig.F2)]
-
-    def oneF2Only(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.F2] =
-      sql"""
-        SELECT i.disperser,
-               i.exposure_time,
-               i.filter,
-               i.fpu,
-               i.lyot_wheel,
-               i.read_mode,
-               i.window_cover
-          FROM step s
-               LEFT OUTER JOIN step_f2 i
-                 ON i.step_f2_id = s.step_id
-         WHERE s.observation_id = $oid AND s.location = $loc
-      """.query[DynamicConfig.F2]
-
-    final case class GmosGratingBuilder[D](
-      disperser:      Option[D],
-      disperserOrder: Option[GmosDisperserOrder],
-      wavelength:     Option[Int]
-    ) {
-      import Gmos._
-
-      def toGrating: Option[Gmos.GmosGrating[D]] =
-        for {
-          d <- disperser
-          o <- disperserOrder
-          w <- wavelength.flatMap(Wavelength.fromAngstroms)
-        } yield GmosGrating(d, o, w)
-    }
-
-    final case class GmosFpuBuilder[U](
-      mdfFileName:     Option[String],
-      customSlitWidth: Option[GmosCustomSlitWidth],
-      builtin:         Option[U]
-    ) {
-      import Gmos._
-
-      val toFpu: Option[Gmos.GmosCustomMask \/ U] = {
-        val customMask: Option[GmosCustomMask] =
-          for {
-            m <- mdfFileName
-            w <- customSlitWidth
-          } yield GmosCustomMask(m, w)
-
-        customMask.map(_.left[U]) orElse
-          builtin.map(_.right[GmosCustomMask])
-      }
-    }
-
-    final case class GmosNorthBuilder(
-      c: Gmos.GmosCommonDynamicConfig,
-      g: GmosGratingBuilder[GmosNorthDisperser],
-      f: Option[GmosNorthFilter],
-      u: GmosFpuBuilder[GmosNorthFpu]
-    ) {
-      val toDynamicConfig: DynamicConfig.GmosNorth =
-        DynamicConfig.GmosNorth(c, g.toGrating, f, u.toFpu)
-    }
-
-    final case class GmosSouthBuilder(
-      c: Gmos.GmosCommonDynamicConfig,
-      g: GmosGratingBuilder[GmosSouthDisperser],
-      f: Option[GmosSouthFilter],
-      u: GmosFpuBuilder[GmosSouthFpu]
-    ) {
-      val toDynamicConfig: DynamicConfig.GmosSouth =
-        DynamicConfig.GmosSouth(c, g.toGrating, f, u.toFpu)
-    }
-
-    private def gmosSelectFragment(withLocation: Boolean, table: String, oid: Observation.Id): Fragment =
-      Fragment.const(
-        s"""SELECT ${if (withLocation) "s.location," else ""}
-                   c.x_binning,
-                   c.y_binning,
-                   c.amp_count,
-                   c.amp_gain,
-                   c.amp_read_mode,
-                   c.dtax,
-                   c.exposure_time,
-                   i.disperser,
-                   i.disperser_order,
-                   i.wavelength,
-                   i.filter,
-                   i.mdf_file_name,
-                   i.custom_slit_width,
-                   i.fpu
-              FROM step s
-                   LEFT OUTER JOIN step_gmos_common c
-                     ON c.step_id = s.step_id
-                   LEFT OUTER JOIN $table i
-                     ON i.step_id = s.step_id
-          """) ++
-        fr"""WHERE s.observation_id = $oid"""
-
-    def allGmosNorthOnly(oid: Observation.Id): Query0[(Loc, DynamicConfig.GmosNorth)] =
-      gmosSelectFragment(withLocation = true, "step_gmos_north", oid)
-        .query[(Loc, GmosNorthBuilder)].map(_.map(_.toDynamicConfig))
-
-    def oneGmosNorthOnly(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.GmosNorth] =
-      (gmosSelectFragment(withLocation = false, "step_gmos_north", oid) ++
-        fr"""AND s.location = $loc"""
-      ).query[GmosNorthBuilder].map(_.toDynamicConfig)
-
-    def allGmosSouthOnly(oid: Observation.Id): Query0[(Loc, DynamicConfig.GmosSouth)] =
-      gmosSelectFragment(withLocation = true, "step_gmos_south", oid)
-        .query[(Loc, GmosSouthBuilder)].map(_.map(_.toDynamicConfig))
-
-    def oneGmosSouthOnly(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.GmosSouth] =
-      (gmosSelectFragment(withLocation = false, "step_gmos_south", oid) ++
-        fr"""AND s.location = $loc"""
-      ).query[GmosSouthBuilder].map(_.toDynamicConfig)
-
 
     def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
       sql"""
@@ -437,74 +276,6 @@ object StepDao {
          WHERE s.observation_id = $oid AND s.location = $loc
       """.query[StepKernel].map(_.toStep)
 
-    def insertF2Config(id: Int, f2: DynamicConfig.F2): Update0 =
-      sql"""
-        INSERT INTO step_f2 (
-          step_f2_id,
-          disperser, exposure_time, filter, fpu, lyot_wheel, read_mode, window_cover
-        )
-        VALUES (
-          $id,
-          ${f2.disperser},
-          ${f2.exposureTime},
-          ${f2.filter},
-          ${f2.fpu},
-          ${f2.lyotWheel},
-          ${f2.readMode},
-          ${f2.windowCover})
-      """.update
-
-    def insertGmosCommonConfig(id: Int, g: Gmos.GmosCommonDynamicConfig): Update0 =
-      sql"""
-        INSERT INTO step_gmos_common (
-          step_id,
-          x_binning, y_binning, amp_count, amp_gain, amp_read_mode, dtax, exposure_time
-        )
-        VALUES (
-          $id,
-          ${g.ccdReadout.xBinning},
-          ${g.ccdReadout.yBinning},
-          ${g.ccdReadout.ampCount},
-          ${g.ccdReadout.ampGain},
-          ${g.ccdReadout.ampReadMode},
-          ${g.dtaxOffset},
-          ${g.exposureTime})
-      """.update
-
-    def insertGmosNorthConfig(id: Int, g: DynamicConfig.GmosNorth): Update0 =
-      sql"""
-        INSERT INTO step_gmos_north (
-          step_id,
-          disperser, disperser_order, wavelength, filter, mdf_file_name, custom_slit_width, fpu
-        )
-        VALUES (
-          $id,
-          ${g.grating.map(_.disperser)},
-          ${g.grating.map(_.order)},
-          ${g.grating.map(_.wavelength.toAngstroms)},
-          ${g.filter},
-          ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
-          ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
-          ${g.fpu.flatMap(_.toOption)})
-      """.update
-
-    def insertGmosSouthConfig(id: Int, g: DynamicConfig.GmosSouth): Update0 =
-      sql"""
-        INSERT INTO step_gmos_south (
-          step_id,
-          disperser, disperser_order, wavelength, filter, mdf_file_name, custom_slit_width, fpu
-        )
-        VALUES (
-          $id,
-          ${g.grating.map(_.disperser)},
-          ${g.grating.map(_.order)},
-          ${g.grating.map(_.wavelength.toAngstroms)},
-          ${g.filter},
-          ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
-          ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
-          ${g.fpu.flatMap(_.toOption)})
-      """.update
-
     def insertScienceSlice(id: Int, t: TelescopeConfig): Update0 =
       sql"""
         INSERT INTO step_science (step_science_id, offset_p, offset_q)
@@ -535,6 +306,207 @@ object StepDao {
         VALUES ($oid, $loc, ${i.instrument: Instrument}, ${t} :: step_type)
       """.update
 
-  }
+    object F2 {
 
+      def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.F2)] =
+        sql"""
+          SELECT s.location,
+                 i.disperser,
+                 i.exposure_time,
+                 i.filter,
+                 i.fpu,
+                 i.lyot_wheel,
+                 i.read_mode,
+                 i.window_cover
+            FROM step s
+                 LEFT OUTER JOIN step_f2 i
+                   ON i.step_f2_id = s.step_id
+           WHERE s.observation_id = $oid
+        """.query[(Loc, DynamicConfig.F2)]
+
+      def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.F2] =
+        sql"""
+          SELECT i.disperser,
+                 i.exposure_time,
+                 i.filter,
+                 i.fpu,
+                 i.lyot_wheel,
+                 i.read_mode,
+                 i.window_cover
+            FROM step s
+                 LEFT OUTER JOIN step_f2 i
+                   ON i.step_f2_id = s.step_id
+           WHERE s.observation_id = $oid AND s.location = $loc
+        """.query[DynamicConfig.F2]
+
+      def insert(id: Int, f2: DynamicConfig.F2): Update0 =
+        sql"""
+          INSERT INTO step_f2 (
+            step_f2_id,
+            disperser, exposure_time, filter, fpu, lyot_wheel, read_mode, window_cover
+          )
+          VALUES (
+            $id,
+            ${f2.disperser},
+            ${f2.exposureTime},
+            ${f2.filter},
+            ${f2.fpu},
+            ${f2.lyotWheel},
+            ${f2.readMode},
+            ${f2.windowCover})
+        """.update
+    }
+
+    object Gmos {
+
+      import gem.config.Gmos.{GmosCommonDynamicConfig, GmosCustomMask, GmosGrating}
+      import DynamicConfig.{GmosNorth, GmosSouth}
+
+      final case class GmosGratingBuilder[D](
+                         disperser: Option[D],
+                         disperserOrder: Option[GmosDisperserOrder],
+                         wavelength: Option[Int]) {
+
+
+        def toGrating: Option[GmosGrating[D]] =
+          for {
+            d <- disperser
+            o <- disperserOrder
+            w <- wavelength.flatMap(Wavelength.fromAngstroms)
+          } yield GmosGrating(d, o, w)
+      }
+
+      final case class GmosFpuBuilder[U](
+                         mdfFileName: Option[String],
+                         customSlitWidth: Option[GmosCustomSlitWidth],
+                         builtin: Option[U]) {
+
+        val toFpu: Option[GmosCustomMask \/ U] = {
+          val customMask: Option[GmosCustomMask] =
+            for {
+              m <- mdfFileName
+              w <- customSlitWidth
+            } yield GmosCustomMask(m, w)
+
+          customMask.map(_.left[U]) orElse
+            builtin.map(_.right[GmosCustomMask])
+        }
+      }
+
+      final case class GmosNorthBuilder(
+                         c: GmosCommonDynamicConfig,
+                         g: GmosGratingBuilder[GmosNorthDisperser],
+                         f: Option[GmosNorthFilter],
+                         u: GmosFpuBuilder[GmosNorthFpu]) {
+
+        val toDynamicConfig: GmosNorth =
+          GmosNorth(c, g.toGrating, f, u.toFpu)
+      }
+
+      final case class GmosSouthBuilder(
+                         c: GmosCommonDynamicConfig,
+                         g: GmosGratingBuilder[GmosSouthDisperser],
+                         f: Option[GmosSouthFilter],
+                         u: GmosFpuBuilder[GmosSouthFpu]) {
+
+        val toDynamicConfig: GmosSouth =
+          GmosSouth(c, g.toGrating, f, u.toFpu)
+      }
+
+      private def selectFragment(withLocation: Boolean, table: String, oid: Observation.Id): Fragment =
+        Fragment.const(
+          s"""SELECT ${if (withLocation) "s.location," else ""}
+                     c.x_binning,
+                     c.y_binning,
+                     c.amp_count,
+                     c.amp_gain,
+                     c.amp_read_mode,
+                     c.dtax,
+                     c.exposure_time,
+                     i.disperser,
+                     i.disperser_order,
+                     i.wavelength,
+                     i.filter,
+                     i.mdf_file_name,
+                     i.custom_slit_width,
+                     i.fpu
+                FROM step s
+                     LEFT OUTER JOIN step_gmos_common c
+                       ON c.step_id = s.step_id
+                     LEFT OUTER JOIN $table i
+                       ON i.step_id = s.step_id
+            """) ++
+          fr"""WHERE s.observation_id = $oid"""
+
+      def selectAllNorth(oid: Observation.Id): Query0[(Loc, GmosNorth)] =
+        selectFragment(withLocation = true, "step_gmos_north", oid)
+          .query[(Loc, GmosNorthBuilder)].map(_.map(_.toDynamicConfig))
+
+      def selectOneNorth(oid: Observation.Id, loc: Loc): Query0[GmosNorth] =
+        (selectFragment(withLocation = false, "step_gmos_north", oid) ++
+          fr"""AND s.location = $loc"""
+          ).query[GmosNorthBuilder].map(_.toDynamicConfig)
+
+      def selectAllSouth(oid: Observation.Id): Query0[(Loc, GmosSouth)] =
+        selectFragment(withLocation = true, "step_gmos_south", oid)
+          .query[(Loc, GmosSouthBuilder)].map(_.map(_.toDynamicConfig))
+
+      def selectOneSouth(oid: Observation.Id, loc: Loc): Query0[GmosSouth] =
+        (selectFragment(withLocation = false, "step_gmos_south", oid) ++
+          fr"""AND s.location = $loc"""
+          ).query[GmosSouthBuilder].map(_.toDynamicConfig)
+
+
+      def insertCommon(id: Int, g: GmosCommonDynamicConfig): Update0 =
+        sql"""
+          INSERT INTO step_gmos_common (
+            step_id,
+            x_binning, y_binning, amp_count, amp_gain, amp_read_mode, dtax, exposure_time
+          )
+          VALUES (
+            $id,
+            ${g.ccdReadout.xBinning},
+            ${g.ccdReadout.yBinning},
+            ${g.ccdReadout.ampCount},
+            ${g.ccdReadout.ampGain},
+            ${g.ccdReadout.ampReadMode},
+            ${g.dtaxOffset},
+            ${g.exposureTime})
+        """.update
+
+      def insertNorth(id: Int, g: GmosNorth): Update0 =
+        sql"""
+          INSERT INTO step_gmos_north (
+            step_id,
+            disperser, disperser_order, wavelength, filter, mdf_file_name, custom_slit_width, fpu
+          )
+          VALUES (
+            $id,
+            ${g.grating.map(_.disperser)},
+            ${g.grating.map(_.order)},
+            ${g.grating.map(_.wavelength.toAngstroms)},
+            ${g.filter},
+            ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
+            ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
+            ${g.fpu.flatMap(_.toOption)})
+        """.update
+
+      def insertSouth(id: Int, g: GmosSouth): Update0 =
+        sql"""
+          INSERT INTO step_gmos_south (
+            step_id,
+            disperser, disperser_order, wavelength, filter, mdf_file_name, custom_slit_width, fpu
+          )
+          VALUES (
+            $id,
+            ${g.grating.map(_.disperser)},
+            ${g.grating.map(_.order)},
+            ${g.grating.map(_.wavelength.toAngstroms)},
+            ${g.filter},
+            ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
+            ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
+            ${g.fpu.flatMap(_.toOption)})
+        """.update
+    }
+  }
 }
