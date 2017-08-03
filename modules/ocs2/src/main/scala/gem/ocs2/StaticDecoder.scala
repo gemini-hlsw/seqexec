@@ -5,11 +5,11 @@ package gem.ocs2
 
 import gem.config._
 import gem.enum._
-import gem.ocs2.pio.{PioDecoder, PioError}
+import gem.math.Offset
+import gem.ocs2.pio._
 import gem.ocs2.pio.PioError.missingKey
 
 import scala.xml.Node
-
 import scalaz._
 import Scalaz._
 
@@ -43,11 +43,26 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Visitor    => StaticConfig.Visitor()        .right
     }
 
+  private def parseGmosNodAndShuffle(cm: ConfigMap): PioError \/ Option[Gmos.GmosNodAndShuffle] = {
+    import Legacy.Instrument.Gmos._
+
+    (for {
+      ap <- PioOptional(NsBeamAp   .cparse(cm))
+      aq <- PioOptional(NsBeamAq   .cparse(cm))
+      bp <- PioOptional(NsBeamBp   .cparse(cm))
+      bq <- PioOptional(NsBeamBq   .cparse(cm))
+      eo <- PioOptional(EOffsetting.cparse(cm))
+      sf <- PioOptional(NsShuffle  .cparse(cm))
+      cy <- PioOptional(NsCycles   .cparse(cm))
+    } yield Gmos.GmosNodAndShuffle(Offset(ap, aq), Offset(bp, bq), eo, sf, cy)).run
+  }
+
   private def parseGmosCommonStatic(cm: ConfigMap): PioError \/ Gmos.GmosCommonStaticConfig =
     for {
       d <- Legacy.Instrument.Gmos.Detector.parse(cm)
       m <- Legacy.Instrument.MosPreImaging.parse(cm)
-    } yield Gmos.GmosCommonStaticConfig(d, m, None)
+      n <- parseGmosNodAndShuffle(cm)
+    } yield Gmos.GmosCommonStaticConfig(d, m, n)
 
   private def parseGmosNorthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
     for {

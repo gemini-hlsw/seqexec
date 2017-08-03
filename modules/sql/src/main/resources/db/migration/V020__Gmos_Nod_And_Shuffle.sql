@@ -29,12 +29,3 @@ CREATE TABLE gmos_nod_and_shuffle(
     FOREIGN KEY (static_id, instrument) REFERENCES static_config ON DELETE CASCADE,
     CONSTRAINT is_gmos CHECK ((instrument = 'GmosN') OR (instrument = 'GmosS'))
 );
-
---ALTER TABLE static_gmos_north
---    ADD COLUMN a_offset_p  numeric(9,3) NOT NULL,
---    ADD COLUMN a_offset_q  numeric(9,3) NOT NULL,
---    ADD COLUMN b_offset_p  numeric(9,3) NOT NULL,
---    ADD COLUMN b_offset_q  numeric(9,3) NOT NULL,
---    ADD COLUMN e_offset    identifier   NOT NULL REFERENCES e_gmos_e_offsetting ON DELETE CASCADE,
---    ADD COLUMN offset_rows integer      NOT NULL CHECK (offset_rows > 0),
---    ADD COLUMN cycles      integer      NOT NULL CHECK (cycles      > 0);

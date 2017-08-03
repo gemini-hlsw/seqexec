@@ -16,8 +16,8 @@ import Scalaz._
  */
 object Gmos {
 
-  /** Nod-and-shuffle offset in detector rows.  This class essentially provides
-    * a newtype for Int.
+  /** Nod-and-shuffle offset in detector rows, which must be positive, non-zero.
+    * This class essentially provides a newtype for Int.
     */
   sealed abstract case class GmosShuffleOffset(detectorRows: Int)
 
@@ -48,8 +48,8 @@ object Gmos {
       Equal.equalA
   }
 
-  /** The number of nod-and-shuffle cycles. This class essentially provides a
-    * newtype for Int.
+  /** The number of nod-and-shuffle cycles, which must be at least 1. This class
+    * essentially provides a newtype for Int.
     */
   sealed abstract case class GmosShuffleCycles(toInt: Int)
 
