@@ -20,23 +20,23 @@ object StaticConfigDao {
       _  <- insertConfigSlice(id, s)
     } yield id
 
-  private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Int] =
+  private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Unit] =
     s match {
-      case _:  StaticConfig.AcqCam    => 0.point[ConnectionIO]
-      case _:  StaticConfig.Bhros     => 0.point[ConnectionIO]
-      case f2: StaticConfig.F2        => Statements.F2.insert(id, f2).run
+      case _:  StaticConfig.AcqCam    => ().point[ConnectionIO]
+      case _:  StaticConfig.Bhros     => ().point[ConnectionIO]
+      case f2: StaticConfig.F2        => Statements.F2.insert(id, f2).run.void
       case g:  StaticConfig.GmosNorth => Gmos.insertNorth(id, g)
       case g:  StaticConfig.GmosSouth => Gmos.insertSouth(id, g)
-      case _:  StaticConfig.Gnirs     => 0.point[ConnectionIO]
-      case _:  StaticConfig.Gpi       => 0.point[ConnectionIO]
-      case _:  StaticConfig.Gsaoi     => 0.point[ConnectionIO]
-      case _:  StaticConfig.Michelle  => 0.point[ConnectionIO]
-      case _:  StaticConfig.Nici      => 0.point[ConnectionIO]
-      case _:  StaticConfig.Nifs      => 0.point[ConnectionIO]
-      case _:  StaticConfig.Niri      => 0.point[ConnectionIO]
-      case _:  StaticConfig.Phoenix   => 0.point[ConnectionIO]
-      case _:  StaticConfig.Trecs     => 0.point[ConnectionIO]
-      case _:  StaticConfig.Visitor   => 0.point[ConnectionIO]
+      case _:  StaticConfig.Gnirs     => ().point[ConnectionIO]
+      case _:  StaticConfig.Gpi       => ().point[ConnectionIO]
+      case _:  StaticConfig.Gsaoi     => ().point[ConnectionIO]
+      case _:  StaticConfig.Michelle  => ().point[ConnectionIO]
+      case _:  StaticConfig.Nici      => ().point[ConnectionIO]
+      case _:  StaticConfig.Nifs      => ().point[ConnectionIO]
+      case _:  StaticConfig.Niri      => ().point[ConnectionIO]
+      case _:  StaticConfig.Phoenix   => ().point[ConnectionIO]
+      case _:  StaticConfig.Trecs     => ().point[ConnectionIO]
+      case _:  StaticConfig.Visitor   => ().point[ConnectionIO]
     }
 
   def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
@@ -73,20 +73,16 @@ object StaticConfigDao {
     import gem.enum.Instrument.{ GmosN, GmosS }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
-    def insertNorth(sid: Int, gn: GmosNorth): ConnectionIO[Int] =
-      for {
-        i <- insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle)
-        j <- Statements.Gmos.insertNorth(sid, gn).run
-      } yield i + j
+    def insertNorth(sid: Int, gn: GmosNorth): ConnectionIO[Unit] =
+        insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle) *>
+          Statements.Gmos.insertNorth(sid, gn).run.void
 
-    def insertSouth(sid: Int, gs: GmosSouth): ConnectionIO[Int] =
-      for {
-        i <- insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle)
-        j <- Statements.Gmos.insertSouth(sid, gs).run
-      } yield i + j
+    def insertSouth(sid: Int, gs: GmosSouth): ConnectionIO[Unit] =
+        insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle) *>
+          Statements.Gmos.insertSouth(sid, gs).run.void
 
-    def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Int] =
-      ns.fold(0.point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run)
+    def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
+      ns.fold(().point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
 
     def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
       for {

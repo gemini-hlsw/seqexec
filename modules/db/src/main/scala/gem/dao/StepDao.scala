@@ -143,25 +143,25 @@ object StepDao {
 
   // HELPERS
 
-  private def insertConfigSlice(id: Int, i: DynamicConfig): ConnectionIO[Int] =
+  private def insertConfigSlice(id: Int, i: DynamicConfig): ConnectionIO[Unit] =
     i match {
-      case _: DynamicConfig.AcqCam    => 0.point[ConnectionIO]
-      case _: DynamicConfig.Bhros     => 0.point[ConnectionIO]
-      case f2: DynamicConfig.F2       => F2.insert(id, f2).run
+      case _: DynamicConfig.AcqCam    => ().point[ConnectionIO]
+      case _: DynamicConfig.Bhros     => ().point[ConnectionIO]
+      case f2: DynamicConfig.F2       => F2.insert(id, f2).run.void
       case g: DynamicConfig.GmosNorth => Gmos.insertCommon(id, g.common).run *>
-                                         Gmos.insertNorth(id, g).run
+                                           Gmos.insertNorth(id, g).run.void
       case g: DynamicConfig.GmosSouth => Gmos.insertCommon(id, g.common).run *>
-                                         Gmos.insertSouth(id, g).run
-      case _: DynamicConfig.Gnirs     => 0.point[ConnectionIO]
-      case _: DynamicConfig.Gpi       => 0.point[ConnectionIO]
-      case _: DynamicConfig.Gsaoi     => 0.point[ConnectionIO]
-      case _: DynamicConfig.Michelle  => 0.point[ConnectionIO]
-      case _: DynamicConfig.Nici      => 0.point[ConnectionIO]
-      case _: DynamicConfig.Nifs      => 0.point[ConnectionIO]
-      case _: DynamicConfig.Niri      => 0.point[ConnectionIO]
-      case _: DynamicConfig.Phoenix   => 0.point[ConnectionIO]
-      case _: DynamicConfig.Trecs     => 0.point[ConnectionIO]
-      case _: DynamicConfig.Visitor   => 0.point[ConnectionIO]
+                                           Gmos.insertSouth(id, g).run.void
+      case _: DynamicConfig.Gnirs     => ().point[ConnectionIO]
+      case _: DynamicConfig.Gpi       => ().point[ConnectionIO]
+      case _: DynamicConfig.Gsaoi     => ().point[ConnectionIO]
+      case _: DynamicConfig.Michelle  => ().point[ConnectionIO]
+      case _: DynamicConfig.Nici      => ().point[ConnectionIO]
+      case _: DynamicConfig.Nifs      => ().point[ConnectionIO]
+      case _: DynamicConfig.Niri      => ().point[ConnectionIO]
+      case _: DynamicConfig.Phoenix   => ().point[ConnectionIO]
+      case _: DynamicConfig.Trecs     => ().point[ConnectionIO]
+      case _: DynamicConfig.Visitor   => ().point[ConnectionIO]
     }
 
   // The type we get when we select the fully joined step
@@ -204,7 +204,6 @@ object StepDao {
 
       }
   }
-
 
   object Statements {
 
