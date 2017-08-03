@@ -11,8 +11,8 @@ CREATE TABLE e_gmos_e_offsetting(
 ALTER TABLE e_gmos_e_offsetting OWNER TO postgres;
 
 COPY e_gmos_e_offsetting (id, description, to_boolean) FROM stdin;
-EOffsettingOn	Electronic Offsetting On	true
-EOffsettingOff	Electronic Offsetting Off	false
+On	Electronic Offsetting On	true
+Off	Electronic Offsetting Off	false
 \.
 
 CREATE TABLE gmos_nod_and_shuffle(

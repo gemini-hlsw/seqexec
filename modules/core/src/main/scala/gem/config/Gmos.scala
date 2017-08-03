@@ -100,7 +100,7 @@ object Gmos {
       GmosNodAndShuffle(
         Offset.Zero,
         Offset.Zero,
-        GmosEOffsetting.EOffsettingOff,
+        GmosEOffsetting.Off,
         GmosShuffleOffset.defaultFromDetector(GmosDetector.HAMAMATSU),
         GmosShuffleCycles.Default
       )

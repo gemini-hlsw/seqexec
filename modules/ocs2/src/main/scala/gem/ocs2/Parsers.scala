@@ -293,8 +293,8 @@ object Parsers {
     )
 
     val nsEOffsetting: PioParse[GmosEOffsetting] = enum(
-      "true"  -> GmosEOffsetting.EOffsettingOn,
-      "false" -> GmosEOffsetting.EOffsettingOff
+      "true"  -> GmosEOffsetting.On,
+      "false" -> GmosEOffsetting.Off
     )
 
     import gem.config.Gmos.GmosShuffleOffset
