@@ -292,6 +292,21 @@ object Parsers {
       "6"  -> GmosDtax.Six
     )
 
+    val nsEOffsetting: PioParse[GmosEOffsetting] = enum(
+      "true"  -> GmosEOffsetting.On,
+      "false" -> GmosEOffsetting.Off
+    )
+
+    import gem.config.Gmos.GmosShuffleOffset
+
+    val nsShuffle: PioParse[GmosShuffleOffset] =
+      positiveInt.map(GmosShuffleOffset.unsafeFromRowCount)
+
+    import gem.config.Gmos.GmosShuffleCycles
+
+    val nsCycles: PioParse[GmosShuffleCycles] =
+      positiveInt.map(GmosShuffleCycles.unsafeFromCycleCount)
+
     val xBinning: PioParse[GmosXBinning] = enum(
       "1" -> GmosXBinning.One,
       "2" -> GmosXBinning.Two,
