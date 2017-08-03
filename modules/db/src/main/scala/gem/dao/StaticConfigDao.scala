@@ -5,12 +5,8 @@ package gem
 package dao
 
 import doobie.imports._
-
-import gem.enum.{GmosDetector, Instrument, MosPreImaging}
-import gem.enum.Instrument.{GmosN, GmosS}
+import gem.enum.{ GmosDetector, Instrument, MosPreImaging }
 import gem.config._
-
-import Gmos.{GmosCommonStaticConfig => GmosCommonSC}
 
 import scalaz._
 import Scalaz._
@@ -28,9 +24,9 @@ object StaticConfigDao {
     s match {
       case _:  StaticConfig.AcqCam    => 0.point[ConnectionIO]
       case _:  StaticConfig.Bhros     => 0.point[ConnectionIO]
-      case f2: StaticConfig.F2        => Statements.insertF2(id, f2).run
-      case g:  StaticConfig.GmosNorth => insertGmosNorth(id, g)
-      case g:  StaticConfig.GmosSouth => insertGmosSouth(id, g)
+      case f2: StaticConfig.F2        => Statements.F2.insert(id, f2).run
+      case g:  StaticConfig.GmosNorth => Gmos.insertNorth(id, g)
+      case g:  StaticConfig.GmosSouth => Gmos.insertSouth(id, g)
       case _:  StaticConfig.Gnirs     => 0.point[ConnectionIO]
       case _:  StaticConfig.Gpi       => 0.point[ConnectionIO]
       case _:  StaticConfig.Gsaoi     => 0.point[ConnectionIO]
@@ -43,19 +39,6 @@ object StaticConfigDao {
       case _:  StaticConfig.Visitor   => 0.point[ConnectionIO]
     }
 
-  private def insertGmosNorth(sid: Int, gn: StaticConfig.GmosNorth): ConnectionIO[Int] =
-    for {
-      i <- gn.common.nodAndShuffle.fold(FC.delay(0))(ns => Statements.insertGmosNodAndShuffle(sid, Instrument.GmosN, ns).run)
-      j <- Statements.insertGmosNorth(sid, gn).run
-    } yield i + j  // is this right?  the number of rows updated?
-
-  private def insertGmosSouth(sid: Int, gs: StaticConfig.GmosSouth): ConnectionIO[Int] =
-    for {
-      i <- gs.common.nodAndShuffle.fold(FC.delay(0))(ns => Statements.insertGmosNodAndShuffle(sid, Instrument.GmosS, ns).run)
-      j <- Statements.insertGmosSouth(sid, gs).run
-    } yield i + j  // is this right?  the number of rows updated?
-
-
   def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
     def point(sc: StaticConfig): ConnectionIO[StaticConfig] =
       sc.point[ConnectionIO]
@@ -64,9 +47,9 @@ object StaticConfigDao {
       case Instrument.AcqCam     => point(StaticConfig.AcqCam())
       case Instrument.Bhros      => point(StaticConfig.Bhros())
 
-      case Instrument.Flamingos2 => Statements.selectF2(sid).unique.widen[StaticConfig]
-      case Instrument.GmosN      => selectGmosNorth(sid)           .widen[StaticConfig]
-      case Instrument.GmosS      => selectGmosSouth(sid)           .widen[StaticConfig]
+      case Instrument.Flamingos2 => Statements.F2.select(sid).unique.widen[StaticConfig]
+      case Instrument.GmosN      => Gmos.selectNorth(sid)           .widen[StaticConfig]
+      case Instrument.GmosS      => Gmos.selectSouth(sid)           .widen[StaticConfig]
 
       case Instrument.Gnirs      => point(StaticConfig.Gnirs())
       case Instrument.Gpi        => point(StaticConfig.Gpi())
@@ -81,131 +64,172 @@ object StaticConfigDao {
     }
   }
 
-  private def selectGmosNorth(sid: Int): ConnectionIO[StaticConfig.GmosNorth] =
-    for {
-      ns <- Statements.selectGmosNodAndShuffle(sid, GmosN).option
-      gn <- Statements.selectGmosNorth(sid).unique
-    } yield StaticConfig.GmosNorth.NodAndShuffle.set(gn, ns)
+  /** Combines lower-level GMOS statements into higher-level inserts and
+    * selects.
+    */
+  private object Gmos {
 
-  private def selectGmosSouth(sid: Int): ConnectionIO[StaticConfig.GmosSouth] =
-    for {
-      ns <- Statements.selectGmosNodAndShuffle(sid, GmosS).option
-      gs <- Statements.selectGmosSouth(sid).unique
-    } yield StaticConfig.GmosSouth.NodAndShuffle.set(gs, ns)
+    import gem.config.Gmos.GmosNodAndShuffle
+    import gem.enum.Instrument.{ GmosN, GmosS }
+    import StaticConfig.{ GmosNorth, GmosSouth }
+
+    def insertNorth(sid: Int, gn: GmosNorth): ConnectionIO[Int] =
+      for {
+        i <- insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle)
+        j <- Statements.Gmos.insertNorth(sid, gn).run
+      } yield i + j
+
+    def insertSouth(sid: Int, gs: GmosSouth): ConnectionIO[Int] =
+      for {
+        i <- insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle)
+        j <- Statements.Gmos.insertSouth(sid, gs).run
+      } yield i + j
+
+    def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Int] =
+      ns.fold(0.point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run)
+
+    def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
+      for {
+        ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosN).option
+        gn <- Statements.Gmos.selectNorth(sid).unique
+      } yield GmosNorth.NodAndShuffle.set(gn, ns)
+
+    def selectSouth(sid: Int): ConnectionIO[GmosSouth] =
+      for {
+        ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosS).option
+        gs <- Statements.Gmos.selectSouth(sid).unique
+      } yield GmosSouth.NodAndShuffle.set(gs, ns)
+  }
 
   object Statements {
-    def selectF2(sid: Int): Query0[StaticConfig.F2] =
-      sql"""
-        SELECT mos_preimaging
-          FROM static_f2
-         WHERE static_id = $sid AND instrument = ${Instrument.Flamingos2: Instrument}
-      """.query[StaticConfig.F2]
-
-    // We need to define this explicitly because we're ignoring the nod and
-    // shuffle bit.
-    implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
-      Composite[(GmosDetector, MosPreImaging)].xmap(
-        (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None),
-        (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
-      )
-
-    implicit val MetaGmosShuffleOffset: Meta[Gmos.GmosShuffleOffset] =
-      Meta[Int].xmap(Gmos.GmosShuffleOffset.unsafeFromRowCount, _.detectorRows)
-
-    implicit val MetaGmosShuffleCycles: Meta[Gmos.GmosShuffleCycles] =
-      Meta[Int].xmap(Gmos.GmosShuffleCycles.unsafeFromCycleCount, _.toInt)
-
-    def selectGmosNodAndShuffle(sid: Int, i: Instrument): Query0[Gmos.GmosNodAndShuffle] =
-      sql"""
-        SELECT a_offset_p,
-               a_offset_q,
-               b_offset_p,
-               b_offset_q,
-               e_offset,
-               offset_rows,
-               cycles
-          FROM gmos_nod_and_shuffle
-         WHERE static_id = $sid AND instrument = $i
-      """.query[Gmos.GmosNodAndShuffle]
-
-    def selectGmosNorth(sid: Int): Query0[StaticConfig.GmosNorth] =
-      sql"""
-        SELECT detector,
-               mos_preimaging,
-               stage_mode
-          FROM static_gmos_north
-         WHERE static_id = $sid AND instrument = ${Instrument.GmosN: Instrument}
-      """.query[StaticConfig.GmosNorth]
-
-    def selectGmosSouth(sid: Int): Query0[StaticConfig.GmosSouth] =
-      sql"""
-        SELECT detector,
-               mos_preimaging,
-               stage_mode
-          FROM static_gmos_south
-         WHERE static_id = $sid AND instrument = ${Instrument.GmosS: Instrument}
-      """.query[StaticConfig.GmosSouth]
-
     def insertBaseSlice(i: Instrument): Update0 =
       sql"""
         INSERT INTO static_config (instrument)
         VALUES ($i)
       """.update
 
-    def insertF2(id: Int, f2: StaticConfig.F2): Update0 =
-      sql"""
-        INSERT INTO static_f2 (static_id, instrument, mos_preimaging)
-        VALUES (
-          $id,
-          ${Instrument.Flamingos2: Instrument},
-          ${f2.mosPreImaging})
-      """.update
+    /** F2 Statements. */
+    object F2 {
 
-    def insertGmosNodAndShuffle(id: Int, inst: Instrument, ns: Gmos.GmosNodAndShuffle): Update0 =
-      sql"""
-        INSERT INTO gmos_nod_and_shuffle (
-              static_id,
-              instrument,
-              a_offset_p,
-              a_offset_q,
-              b_offset_p,
-              b_offset_q,
-              e_offset,
-              offset_rows,
-              cycles)
-       VALUES (
+      import Instrument.Flamingos2
+
+      def select(sid: Int): Query0[StaticConfig.F2] =
+        sql"""
+          SELECT mos_preimaging
+            FROM static_f2
+           WHERE static_id = $sid AND instrument = ${Flamingos2: Instrument}
+        """.query[StaticConfig.F2]
+
+      def insert(id: Int, f2: StaticConfig.F2): Update0 =
+        sql"""
+          INSERT INTO static_f2 (static_id, instrument, mos_preimaging)
+          VALUES (
             $id,
-            $inst,
-            ${ns.posA.p},
-            ${ns.posA.q},
-            ${ns.posB.p},
-            ${ns.posB.q},
-            ${ns.eOffset},
-            ${ns.shuffle},
-            ${ns.cycles})
-      """.update
+            ${Flamingos2: Instrument},
+            ${f2.mosPreImaging})
+        """.update
+    }
 
-    def insertGmosNorth(id: Int, g: StaticConfig.GmosNorth): Update0 =
-      sql"""
-        INSERT INTO static_gmos_north (static_id, instrument, detector, mos_preimaging, stage_mode)
-        VALUES (
-          $id,
-          ${Instrument.GmosN: Instrument},
-          ${g.common.detector},
-          ${g.common.mosPreImaging},
-          ${g.stageMode})
-      """.update
+    /** GMOS Statements. */
+    object Gmos {
 
-    def insertGmosSouth(id: Int, g: StaticConfig.GmosSouth): Update0 =
-      sql"""
-        INSERT INTO static_gmos_south (static_id, instrument, detector, mos_preimaging, stage_mode)
-        VALUES (
-          $id,
-          ${Instrument.GmosS: Instrument},
-          ${g.common.detector},
-          ${g.common.mosPreImaging},
-          ${g.stageMode})
-      """.update
+      import gem.config.Gmos.{ GmosCommonStaticConfig => GmosCommonSC, GmosNodAndShuffle, GmosShuffleCycles, GmosShuffleOffset }
+      import gem.enum.Instrument.{ GmosN, GmosS }
+      import StaticConfig.{ GmosNorth, GmosSouth }
+
+      // We need to define this explicitly because we're ignoring the nod and
+      // shuffle bit.
+      implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
+        Composite[(GmosDetector, MosPreImaging)].xmap(
+          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None),
+          (s: GmosCommonSC) => (s.detector, s.mosPreImaging)
+        )
+
+      implicit val MetaGmosShuffleOffset: Meta[GmosShuffleOffset] =
+        Meta[Int].xmap(GmosShuffleOffset.unsafeFromRowCount, _.detectorRows)
+
+      implicit val MetaGmosShuffleCycles: Meta[GmosShuffleCycles] =
+        Meta[Int].xmap(GmosShuffleCycles.unsafeFromCycleCount, _.toInt)
+
+      def selectNodAndShuffle(sid: Int, i: Instrument): Query0[GmosNodAndShuffle] =
+        sql"""
+          SELECT a_offset_p,
+                 a_offset_q,
+                 b_offset_p,
+                 b_offset_q,
+                 e_offset,
+                 offset_rows,
+                 cycles
+            FROM gmos_nod_and_shuffle
+           WHERE static_id = $sid AND instrument = $i
+        """.query[GmosNodAndShuffle]
+
+      def selectNorth(sid: Int): Query0[GmosNorth] =
+        sql"""
+          SELECT detector,
+                 mos_preimaging,
+                 stage_mode
+            FROM static_gmos_north
+           WHERE static_id = $sid AND instrument = ${GmosN: Instrument}
+        """.query[GmosNorth]
+
+      def selectSouth(sid: Int): Query0[GmosSouth] =
+        sql"""
+          SELECT detector,
+                 mos_preimaging,
+                 stage_mode
+            FROM static_gmos_south
+           WHERE static_id = $sid AND instrument = ${GmosS: Instrument}
+        """.query[GmosSouth]
+
+      def insertNodAndShuffle(id: Int, inst: Instrument, ns: GmosNodAndShuffle): Update0 =
+        sql"""
+          INSERT INTO gmos_nod_and_shuffle (
+                static_id,
+                instrument,
+                a_offset_p,
+                a_offset_q,
+                b_offset_p,
+                b_offset_q,
+                e_offset,
+                offset_rows,
+                cycles)
+         VALUES (
+              $id,
+              $inst,
+              ${ns.posA.p},
+              ${ns.posA.q},
+              ${ns.posB.p},
+              ${ns.posB.q},
+              ${ns.eOffset},
+              ${ns.shuffle},
+              ${ns.cycles})
+        """.update
+
+      def insertNorth(id: Int, g: GmosNorth): Update0 =
+        sql"""
+          INSERT INTO static_gmos_north (static_id, instrument, detector, mos_preimaging, stage_mode)
+          VALUES (
+            $id,
+            ${GmosN: Instrument},
+            ${g.common.detector},
+            ${g.common.mosPreImaging},
+            ${g.stageMode})
+        """.update
+
+      def insertSouth(id: Int, g: GmosSouth): Update0 =
+        sql"""
+          INSERT INTO static_gmos_south (static_id, instrument, detector, mos_preimaging, stage_mode)
+          VALUES (
+            $id,
+            ${GmosS: Instrument},
+            ${g.common.detector},
+            ${g.common.mosPreImaging},
+            ${g.stageMode})
+        """.update
+
+    }
+
   }
 
 }

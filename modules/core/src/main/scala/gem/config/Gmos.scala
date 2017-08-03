@@ -4,7 +4,7 @@
 package gem.config
 
 import gem.enum._
-import gem.math.{Offset, Wavelength}
+import gem.math.{ Offset, Wavelength }
 import java.time.Duration
 
 import scalaz._
