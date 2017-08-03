@@ -5,6 +5,7 @@ package gem
 
 import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
+import gem.config.Gmos
 import gem.math.{ Angle, Offset, Wavelength }
 
 import java.time.Duration
@@ -78,5 +79,12 @@ package object json {
   implicit def setCodec[A: CodecJson]: CodecJson[Set[A]] =
     CodecJson.derived[List[A]].xmap(_.toSet)(_.toList)
 
+  // Codec for GmosShuffleOffset
+  implicit def gmosShuffleOffsetCodec: CodecJson[Gmos.GmosShuffleOffset] =
+    CodecJson.derived[Int].xmap(Gmos.GmosShuffleOffset.unsafeFromRowCount)(_.detectorRows)
+
+  // Codec for GmosShuffleCycles
+  implicit def gmosShuffleCyclesCodec: CodecJson[Gmos.GmosShuffleCycles] =
+    CodecJson.derived[Int].xmap(Gmos.GmosShuffleCycles.unsafeFromCycleCount)(_.toInt)
 
 }
