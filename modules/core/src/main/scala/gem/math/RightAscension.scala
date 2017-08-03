@@ -29,6 +29,10 @@ final case class RightAscension(toHourAngle: HourAngle) {
   def flip: RightAscension =
     RightAscension(toHourAngle.flip)
 
+  /** Forget that this [[RightAscension]] wraps an [[HourAngle]]. */
+  def toAngle: Angle =
+    toHourAngle
+
   override def toString =
     s"RA(${toHourAngle.toHMS})"
 
@@ -47,7 +51,7 @@ object RightAscension {
    * The `RightAscension` at zero degrees.
    * @group Constructors
    */
-  val zero: RightAscension =
+  val Zero: RightAscension =
     RightAscension(HourAngle.HourAngle0)
 
   /**
