@@ -20,13 +20,24 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
   assert(toMicroarcseconds >= 0, s"Invariant violated. $toMicroarcseconds is negative.")
   assert(toMicroarcseconds < 360L * 60L * 60L * 1000L * 1000L, s"Invariant violated. $toMicroarcseconds is >= 360°.")
 
-  /** Flip this angle 180°. Exact, invertible. */
+  /**
+   * Flip this angle 180°. Equivalent to `mirrorBy(this + Angle90)`. Exact, invertible.
+   */
   def flip: Angle =
     this + Angle.Angle180
 
-  /** Additive inverse of this angle (by mirroring around the 0-180 axis). Exact, invertible. */
+  /** Additive inverse of this angle, equvalent to `mirrorBy Angle0`. Exact, invertible. */
   def unary_- : Angle =
     Angle.fromMicroarcseconds(-toMicroarcseconds.toLong)
+
+  /**
+   * Mirror this agle around the axis defined by `a`. This operation is specified completely by the
+   * identity `b - a = (a mirrorBy b) - b`.
+   */
+  def mirrorBy(a: Angle): Angle = {
+    val Δ = a.toMicroarcseconds - toMicroarcseconds
+    Angle.fromMicroarcseconds(toMicroarcseconds + Δ * 2L)
+  }
 
   /** Signed microarcseconds, in [-180°, 180°). */
   def toSignedMicroarcseconds: Long = {
@@ -194,6 +205,7 @@ object Angle {
  * Exact hour angles represented as integral microseconds. These values form an Abelian group over
  * addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
  * integral Angles where microarcseconds are evenly divisible by 15.
+ * @see The helpful [[https://en.wikipedia.org/wiki/Hour_angle Wikipedia]] article.
  */
 final class HourAngle private (µas: Long) extends Angle(µas) {
 
