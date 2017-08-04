@@ -5,7 +5,6 @@ package gem.math
 
 import scalaz.{ Order, Show }
 import scalaz.std.anyVal._
-import scalaz.syntax.equal._
 
 /**
  * Celestial latitude, measured in angular distance from the celestial equator. Points north of the
@@ -40,15 +39,6 @@ sealed abstract case class Declination private (toAngle: Angle) {
     val signedDegrees = if (degrees > 180) degrees - 360 else degrees
     f"Dec($signedDegrees:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d)"
   }
-
-  final override def equals(a: Any) =
-    a match {
-      case dec: Declination => dec.toAngle === this.toAngle
-      case _                => false
-    }
-
-  final override def hashCode =
-    toAngle.hashCode
 
 }
 
@@ -89,7 +79,7 @@ object Declination {
     fromAngle(a).getOrElse(sys.error(s"Declination out of range: $a"))
 
   /**
-   * Declinations are ordered from north to south.
+   * Declinations are ordered from south to north.
    * @group Typeclass Instances
    */
   implicit val DeclinationOrder: Order[Declination] =

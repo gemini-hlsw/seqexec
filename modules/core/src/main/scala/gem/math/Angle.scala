@@ -31,8 +31,10 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
     Angle.fromMicroarcseconds(-toMicroarcseconds.toLong)
 
   /**
-   * Mirror this agle around the axis defined by `a`. This operation is specified completely by the
-   * identity `b - a = (a mirrorBy b) - b`.
+   * Mirror image of this angle, when the mirror stands at angle `a`; or picture picking up the
+   * circle and flipping it over, around a line drawn from the center going off in direction `a`.
+   * So `(88° mirrorBy 90°) = 92°` for instance, as is `88° mirrorBy 270°` since it's the same
+   * line. This operation is specified completely by the identity `b - a = (a mirrorBy b) - b`.
    */
   def mirrorBy(a: Angle): Angle = {
     val Δ = a.toMicroarcseconds - toMicroarcseconds

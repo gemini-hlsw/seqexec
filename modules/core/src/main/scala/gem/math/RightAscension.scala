@@ -4,7 +4,6 @@
 package gem.math
 
 import scalaz.{ Order, Show }
-import scalaz.syntax.equal._
 import scalaz.std.anyVal._
 
 /**
@@ -32,15 +31,6 @@ final case class RightAscension(toHourAngle: HourAngle) {
 
   override def toString =
     s"RA(${toHourAngle.toHMS})"
-
-  override def equals(a: Any) =
-    a match {
-      case ra: RightAscension => ra.toHourAngle === this.toHourAngle
-      case _ => false
-    }
-
-  override def hashCode =
-    toHourAngle.hashCode
 
 }
 
