@@ -17,6 +17,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     backgroundColor(white)
   ))
 
+  val site: StyleA = style(unsafeRoot("site")(
+    display.none
+  ))
+
   val mainContainer: StyleA = style(
     addClassNames("main", "ui", "borderless", "menu", "container")
   )

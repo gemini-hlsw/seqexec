@@ -8,6 +8,12 @@ import monocle.macros.GenLens
 import monocle.Traversal
 
 object Model {
+  // We use this to avoid a dependency on spModel, should be replaced by gem
+  sealed trait SeqexecSite
+  object SeqexecSite {
+    case object SeqexecGN extends SeqexecSite
+    case object SeqexecGS extends SeqexecSite
+  }
 
   sealed trait SeqexecEvent
   sealed trait SeqexecModelUpdate extends SeqexecEvent {

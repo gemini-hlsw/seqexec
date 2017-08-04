@@ -10,7 +10,6 @@ import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes, RedirectToHttpsRoutes}
-import edu.gemini.spModel.core.Site
 import knobs._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
@@ -33,7 +32,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(site: Site, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
+  case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -55,12 +54,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
     config.map { cfg =>
-      val site = cfg.require[String]("seqexec-engine.site") match {
-        case "GS" => Site.GS
-        case "GN" => Site.GN
-        case _    => Site.GS // Let's default to GS
-      }
-
+      val site = cfg.require[String]("seqexec-engine.site")
       val host            = cfg.require[String]("web-server.host")
       val port            = cfg.require[Int]("web-server.port")
       val insecurePort    = cfg.require[Int]("web-server.insecurePort")
@@ -111,7 +105,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
 
     val builder = BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
-      .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
+      .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
       .mountService(new SeqexecUIApiRoutes(as, events, se).service, "/api")
     conf.sslConfig.fold(builder) { ssl =>

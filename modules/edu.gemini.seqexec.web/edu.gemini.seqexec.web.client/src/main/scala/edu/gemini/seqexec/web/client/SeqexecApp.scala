@@ -1,23 +1,23 @@
 package edu.gemini.seqexec.web.client
 
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
+import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
+import edu.gemini.seqexec.model.Model.SeqexecSite
 
-import scala.scalajs.js.JSApp
 import org.scalajs.dom.document
 import java.util.logging.{Level, Logger}
-
-import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
 
 /**
   * Seqexec WebApp entry point
   */
-object SeqexecApp extends JSApp {
+object SeqexecApp {
   private val defaultFmt = "[%4$s] %1s - %5$s"
 
   // Set the global formatting for log messages
   System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
 
-  def main(): Unit = {
+  // On JS args is always empty
+  def main(args: Array[String]): Unit = {
     val CssSettings = scalacss.devOrProdDefaults
     import CssSettings._
     // Using the root logger setup the handlers
@@ -32,8 +32,15 @@ object SeqexecApp extends JSApp {
     // Register CSS styles
     SeqexecStyles.addToDocument()
 
+    // Not to happy about this but the alternatives are complicated
+    val site = Option(document.getElementById("site")).map(_.textContent) match {
+      case Some("GN") => SeqexecSite.SeqexecGN
+      case Some("GS") => SeqexecSite.SeqexecGS
+      case _          => SeqexecSite.SeqexecGS // Default to something reasonable
+    }
+
     // Render the UI using React
-    SeqexecUI.router().renderIntoDOM(document.getElementById("content"))
+    SeqexecUI.router(site)().renderIntoDOM(document.getElementById("content"))
     ()
   }
 }

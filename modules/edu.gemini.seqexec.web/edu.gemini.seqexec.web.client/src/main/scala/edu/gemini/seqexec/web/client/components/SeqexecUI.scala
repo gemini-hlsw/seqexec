@@ -4,7 +4,7 @@ import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.model.NavigateSilentTo
 import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
-import edu.gemini.seqexec.model.Model.Instrument
+import edu.gemini.seqexec.model.Model.{Instrument, SeqexecSite}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
@@ -43,7 +43,8 @@ object SeqexecUI {
   private val siteInstruments = Instrument.gsInstruments
   private val instrumentNames = siteInstruments.map(i => (i.shows, i)).list.toList.toMap
 
-  def router: Router[SeqexecPages] = {
+  def router(site: SeqexecSite): Router[SeqexecPages] = {
+    println(site)
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
       import dsl._
 
@@ -64,7 +65,7 @@ object SeqexecUI {
         // Runtime verification that all pages are routed
         .verify(Root, siteInstruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
-          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback.log("silent " + next) >> Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
+          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith { case (_, r) => <.div(r.render()).render}
         .logToConsole
     }
@@ -85,4 +86,3 @@ object SeqexecUI {
   }
 
 }
-
