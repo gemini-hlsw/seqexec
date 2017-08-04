@@ -3,6 +3,10 @@ package edu.gemini.seqexec.web.server
 package object http4s {
   def index(site: String, devMode: Boolean, builtAtMillis: Long) = {
     val style = """
+                  |   site {
+                  |     display: none
+                  |   }
+                  |
                   |   @media screen and (-webkit-min-device-pixel-ratio:0) {
                   |        select,
                   |        textarea,
@@ -36,9 +40,9 @@ package object http4s {
           <style>{style.stripMargin}</style>
         </head>
 
-        <body>
+        <site id="site">{site}</site>
 
-          <site id="site">{site}</site>
+        <body>
 
           <div id="content">
           </div>

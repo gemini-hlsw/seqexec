@@ -13,6 +13,11 @@ object Model {
   object SeqexecSite {
     case object SeqexecGN extends SeqexecSite
     case object SeqexecGS extends SeqexecSite
+
+    implicit val show: Show[SeqexecSite] = Show.shows({
+      case SeqexecGN => "GN"
+      case SeqexecGS => "GS"
+    })
   }
 
   sealed trait SeqexecEvent

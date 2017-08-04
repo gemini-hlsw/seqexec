@@ -16,22 +16,24 @@ import scalaz._
 import Scalaz._
 
 object SeqexecMain {
+  case class Props(site: SeqexecSite, ctl: RouterCtl[SeqexecPages])
+
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
 
-  private val component = ScalaComponent.builder[RouterCtl[SeqexecPages]]("SeqexecUI")
+  private val component = ScalaComponent.builder[Props]("SeqexecUI")
     .stateless
     .render_P(p =>
       <.div(
-        NavBar(),
-        QueueArea(p),
+        NavBar(p.site),
+        QueueArea(p.ctl),
         SequenceArea(),
         logConnect(LogArea.apply),
         lbConnect(LoginBox.apply)
       )
     ).build
 
-  def apply(ctl: RouterCtl[SeqexecPages]) = component(ctl)
+  def apply(site: SeqexecSite, ctl: RouterCtl[SeqexecPages]) = component(Props(site, ctl))
 }
 
 /**
@@ -40,26 +42,29 @@ object SeqexecMain {
 object SeqexecUI {
   case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
-  private val siteInstruments = Instrument.gsInstruments
-  private val instrumentNames = siteInstruments.map(i => (i.shows, i)).list.toList.toMap
-
   def router(site: SeqexecSite): Router[SeqexecPages] = {
-    println(site)
+    val siteInstruments = site match {
+      case SeqexecSite.SeqexecGS => Instrument.gsInstruments
+      case SeqexecSite.SeqexecGN => Instrument.gnInstruments
+    }
+
+    val instrumentNames = siteInstruments.map(i => (i.shows, i)).list.toList.toMap
+
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
       import dsl._
 
       (emptyRule
-      | staticRoute(root, Root) ~> renderR(r => SeqexecMain(r))
+      | staticRoute(root, Root) ~> renderR(r => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
         .pmap {
           case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
           case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, none))
         }(p => (p.instrument.shows, p.obsId))) {
           case x @ InstrumentPage(i, _) if siteInstruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain(r))
+        } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => instrumentNames.get(i).map(InstrumentPage(_, None)))(p => p.instrument.shows)) {
           case x @ InstrumentPage(i, _) if siteInstruments.list.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain(r))
+        } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
