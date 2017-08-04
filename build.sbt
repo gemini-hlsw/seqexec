@@ -115,7 +115,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
     artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
     // Requires the DOM
-    jsDependencies += RuntimeDOM,
+    jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
     // JS dependencies from webjars
     jsDependencies ++= Seq(
       "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
@@ -123,6 +123,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js" commonJSName "jQuery",
       "org.webjars"       % "Semantic-UI" % LibraryVersions.semanticUI  / "semantic.js"          minified "semantic.min.js" dependsOn "jquery.js"
     ),
+    scalaJSUseMainModuleInitializer := true,
     // Build a js dependencies file
     skip in packageJSDependencies := false,
     // Put the jsdeps file on a place reachable for the server
