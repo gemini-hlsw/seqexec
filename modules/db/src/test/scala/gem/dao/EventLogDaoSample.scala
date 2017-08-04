@@ -13,8 +13,8 @@ import scalaz.effect.{IO, SafeApp}
 
 object EventLogDaoSample extends SafeApp {
 
-  val xa: Transactor[IO, Unit] =
-    DriverManagerTransactor[IO](
+  val xa: Transactor[IO] =
+    Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
       "jdbc:postgresql:gem",
       "postgres",

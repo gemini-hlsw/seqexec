@@ -28,7 +28,7 @@ object Interaction {
   def loginLoop(
     user:     String,
     maxTries: Int,
-    xa:       Transactor[SessionIO, _],
+    xa:       Transactor[SessionIO],
     log:      Log[SessionIO]
   ): SessionIO[Option[Service[SessionIO]]] = {
     def go(remaining: Int): SessionIO[Option[Service[SessionIO]]] =
@@ -62,7 +62,7 @@ object Interaction {
    * Entry point for our telnet behavior. If the user logs in successfully the transactors will be
    * associated with the Session.
    */
-  def main(xa: Transactor[SessionIO, _], log: Log[SessionIO]): SessionIO[Unit] =
+  def main(xa: Transactor[SessionIO], log: Log[SessionIO]): SessionIO[Unit] =
     for {
       _ <- writeLn("Welcome to Gem")
       n <- readLn("Username: ")
