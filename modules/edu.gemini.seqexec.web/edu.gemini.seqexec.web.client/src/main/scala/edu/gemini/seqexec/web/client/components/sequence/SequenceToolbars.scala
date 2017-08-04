@@ -77,7 +77,7 @@ object SequenceObserverField {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.fold(s.currentText.forall(_.nonEmpty))(o => s.currentText.forall(_ =/= o)))(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
+        case (s, p) => Callback.when(p.p().isLogged && p.p().observer =/= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
       }
 
     def setupTimer: Callback =

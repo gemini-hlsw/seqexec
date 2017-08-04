@@ -118,7 +118,7 @@ package object engine {
 
   // A blank value is regarded as a None
   def setOperator(name: String): HandleP[Unit] =
-    modify(_.copy(operator = if(name.isEmpty || name.forall(_.isSpaceChar)) None else name.some))
+    modify(_.copy(operator = name.some))
 
   def setObserver(id: Sequence.Id)(name: String): HandleP[Unit] =
     modifyS(id)(_.setObserver(name))
