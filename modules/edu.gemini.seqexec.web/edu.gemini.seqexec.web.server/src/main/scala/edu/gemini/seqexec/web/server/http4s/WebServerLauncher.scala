@@ -10,6 +10,7 @@ import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes, RedirectToHttpsRoutes}
+import edu.gemini.spModel.core.Site
 import knobs._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
@@ -32,7 +33,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
+  case class WebServerConfiguration(site: Site, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
@@ -54,6 +55,12 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
     config.map { cfg =>
+      val site = cfg.require[String]("seqexec-engine.site") match {
+        case "GS" => Site.GS
+        case "GN" => Site.GN
+        case _    => Site.GS // Let's default to GS
+      }
+
       val host            = cfg.require[String]("web-server.host")
       val port            = cfg.require[Int]("web-server.port")
       val insecurePort    = cfg.require[Int]("web-server.insecurePort")
@@ -63,7 +70,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
       val keystorePwd     = cfg.lookup[String]("web-server.tls.keyStorePwd")
       val certPwd         = cfg.lookup[String]("web-server.tls.certPwd")
       val sslConfig       = (keystore |@| keystorePwd |@| certPwd)(SSLConfig.apply)
-      WebServerConfiguration(host, port, insecurePort, externalBaseUrl, devMode.equalsIgnoreCase("dev"), sslConfig)
+      WebServerConfiguration(site, host, port, insecurePort, externalBaseUrl, devMode.equalsIgnoreCase("dev"), sslConfig)
     }
 
   // Configuration of the ldap clients
