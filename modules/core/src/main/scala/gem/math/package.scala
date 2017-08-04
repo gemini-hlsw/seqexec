@@ -4,4 +4,12 @@
 package gem
 
 /** Mathematical data types for general use, not specific to the Gem model. */
-package object math
+package object math {
+
+  type RA = RightAscension
+  val  RA: RightAscension.type = RightAscension
+
+  type Dec = Declination
+  val  Dec:  Declination.type = Declination
+
+}
