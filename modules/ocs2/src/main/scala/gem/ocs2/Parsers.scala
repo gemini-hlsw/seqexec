@@ -235,18 +235,6 @@ object Parsers {
       "Fast" -> Fast
     )
 
-    import GmosBuiltinRoi._
-
-    val builtinRoi: PioParse[Option[GmosBuiltinRoi]] = enum(
-      "Custom ROI"         -> Option.empty[GmosBuiltinRoi],
-      "Full Frame Readout" -> Some(FullFrame      ),
-      "CCD 2"              -> Some(Ccd2           ),
-      "Central Spectrum"   -> Some(CentralSpectrum),
-      "Central Stamp"      -> Some(CentralStamp   ),
-      "Top Spectrum"       -> Some(TopSpectrum    ),
-      "Bottom Spectrum"    -> Some(BottomSpectrum )
-    )
-
     import GmosCustomSlitWidth._
 
     val customSlitWidth: PioParse[Option[GmosCustomSlitWidth]] = enum(
@@ -306,6 +294,18 @@ object Parsers {
 
     val nsCycles: PioParse[GmosShuffleCycles] =
       positiveInt.map(GmosShuffleCycles.unsafeFromCycleCount)
+
+    import GmosRoi._
+
+    val roi: PioParse[GmosRoi] = enum(
+      "Custom ROI"         -> Custom,
+      "Full Frame Readout" -> FullFrame,
+      "CCD 2"              -> Ccd2,
+      "Central Spectrum"   -> CentralSpectrum,
+      "Central Stamp"      -> CentralStamp,
+      "Top Spectrum"       -> TopSpectrum,
+      "Bottom Spectrum"    -> BottomSpectrum
+    )
 
     val xBinning: PioParse[GmosXBinning] = enum(
       "1" -> GmosXBinning.One,

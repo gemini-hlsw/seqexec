@@ -95,7 +95,6 @@ object Legacy {
       val AmpCount        = Key("ampCount"               )(ampCount       )
       val AmpGain         = Key("gainChoice"             )(ampGain        )
       val AmpReadMode     = Key("ampReadMode"            )(ampReadMode    )
-      val BuiltinRoi      = Key("builtinROI"             )(builtinRoi     )
       val CustomMaskMdf   = Key("fpuCustomMask"          )(PioParse.string)
       val CustomSlitWidth = Key("customSlitWidth"        )(customSlitWidth)
       val Detector        = Key("detectorManufacturer"   )(detector       )
@@ -109,6 +108,7 @@ object Legacy {
       val NsBeamBq        = Key("nsBeamB-q"              )(Parsers.offsetQ)
       val NsCycles        = Key("nsNumCycles"            )(nsCycles       )
       val NsShuffle       = Key("nsDetectorRows"         )(nsShuffle      )
+      val Roi             = Key("builtinROI"             )(roi            )
       val XBinning        = Key("ccdXBinning"            )(xBinning       )
       val YBinning        = Key("ccdYBinning"            )(yBinning       )
     }
