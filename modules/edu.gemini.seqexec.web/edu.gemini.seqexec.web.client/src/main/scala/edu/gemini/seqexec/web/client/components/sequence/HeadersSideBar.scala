@@ -46,7 +46,7 @@ object HeadersSideBar {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.model().operator.fold(s.currentText.forall(_.nonEmpty))(o => s.currentText.forall(_ =/= o)))(updateOperator(~s.currentText))
+        case (s, p) => Callback.when(p.model().operator =/= s.currentText)(updateOperator(~s.currentText))
       }
 
     def iqChanged(iq: ImageQuality): Callback =
