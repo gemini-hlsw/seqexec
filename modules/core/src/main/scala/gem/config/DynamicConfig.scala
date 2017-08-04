@@ -23,9 +23,6 @@ sealed abstract class DynamicConfig extends Product with Serializable {
   /** Obtains the smart gcal search key that corresponds to the instrument
     * configuration, if any. This key can be used to find the matching gcal
     * configuration.
-    *
-    * @see [[gem.dao.SmartGcalDao]]
-    *
     * @return corresponding smart gcal search key, if any
     */
   def smartGcalKey: Option[DynamicConfig.SmartGcalSearchKey] =

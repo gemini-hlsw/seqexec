@@ -112,4 +112,47 @@ class AngleSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
+  // In principle I think this is the only thing we need to check.
+  "mirrorBy" must "obey the mirror law" in {
+    forAll { (a: Angle, b: Angle) =>
+      b - a shouldEqual (a mirrorBy b) - b
+    }
+  }
+
+  it must "be reflexive" in {
+    forAll { (a: Angle) =>
+      a mirrorBy a shouldEqual a
+    }
+  }
+
+  it must "be invertible" in {
+    forAll { (a: Angle, b: Angle) =>
+      a.mirrorBy(b).mirrorBy(b) shouldEqual a
+    }
+  }
+
+  it must "be invariant to flip in mirror angle" in {
+    forAll { (a: Angle, b: Angle) =>
+      a.mirrorBy(b) shouldEqual a.mirrorBy(b.flip)
+    }
+  }
+
+  it must "distribute over flip in target angle" in {
+    forAll { (a: Angle, b: Angle) =>
+      (a mirrorBy b).flip shouldEqual (a.flip mirrorBy b)
+    }
+  }
+
+  it must "be consistent with flip" in {
+    forAll { (a: Angle) =>
+      a.mirrorBy(a + Angle.Angle90) shouldEqual a.flip
+    }
+  }
+
+  it must "be consistent with unary negation" in {
+    forAll { (a: Angle) =>
+      a.mirrorBy(Angle.Angle0) shouldEqual -a
+    }
+  }
+
 }
