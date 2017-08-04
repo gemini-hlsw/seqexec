@@ -31,3 +31,5 @@ buildinfo.properties
 # Node modules
 node_modules/
 
+# Project specific
+modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server/log/
