@@ -23,7 +23,7 @@ object gen2 {
       Angle(d)
   }
 
-  val xa = DriverManagerTransactor[IO](
+  val xa = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver",
     "jdbc:postgresql:gem",
     "postgres",

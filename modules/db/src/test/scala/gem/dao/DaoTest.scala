@@ -14,7 +14,7 @@ trait DaoTest extends gem.Arbitraries {
   val pid = Program.Id.unsafeFromString("GS-1234A-Q-1")
 
   protected val xa = Transactor.after.set(
-    DriverManagerTransactor[IO](
+    Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
       "jdbc:postgresql:gem",
       "postgres",

@@ -5,7 +5,7 @@ package gem
 package web
 
 import argonaut._, Argonaut._
-import doobie.imports.{ Transactor, DriverManagerTransactor }
+import doobie.imports.Transactor
 import gem.{ Service => GemService }
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -27,7 +27,7 @@ abstract class Environment(val config: Configuration) {
   def log: Log[Task]
 
   /** A source of database connections. */
-  def transactor: Transactor[Task, _]
+  def transactor: Transactor[Task]
 
   /**
    * Encode a JWT claim, which is an arbitrary JSON object with some well-known fields. The result
@@ -71,7 +71,7 @@ object Environment {
   def quicken(cfg: Configuration): Task[Environment] = {
 
     // TODO: hikari
-    val xa = DriverManagerTransactor[Task](
+    val xa = Transactor.fromDriverManager[Task](
       cfg.database.driver,
       cfg.database.connectUrl,
       cfg.database.userName,

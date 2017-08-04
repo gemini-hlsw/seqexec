@@ -2,7 +2,7 @@ resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 lazy val argonautVersion          = "6.2-RC2"
-lazy val doobieVersion            = "0.4.2-SNAPSHOT"
+lazy val doobieVersion            = "0.4.2"
 lazy val kpVersion                = "0.9.3"
 lazy val scalazVersion            = "7.2.13"
 lazy val shapelessVersion         = "2.3.2"

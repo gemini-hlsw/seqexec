@@ -25,8 +25,8 @@ object Main extends SafeApp {
     IO(sys.env.getOrElse(key, default))
 
   /** Construct a transactor with the give effect type. */
-  def xa[M[_]: Monad: Capture: Catchable](url: String, user: String, pass: String): Transactor[M, _] =
-    DriverManagerTransactor[M]("org.postgresql.Driver", url, user, pass)
+  def xa[M[_]: Monad: Capture: Catchable](url: String, user: String, pass: String): Transactor[M] =
+    Transactor.fromDriverManager[M]("org.postgresql.Driver", url, user, pass)
 
   /** Run migrations. */
   def migrate(url: String, user: String, pass: String): IO[Int] =

@@ -20,11 +20,11 @@ trait DoobieClient {
   val User = "postgres"
   val Pass = ""
 
-  val xa = DriverManagerTransactor[IO](
+  val xa = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", Url, User, Pass
   )
 
-  val lxa = DriverManagerTransactor[Task](
+  val lxa = Transactor.fromDriverManager[Task](
     "org.postgresql.Driver", Url, User, Pass
   )
 

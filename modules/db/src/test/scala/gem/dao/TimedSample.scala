@@ -12,7 +12,7 @@ import scalaz.effect.IO
 trait TimedSample {
   type Result
 
-  val xa = DriverManagerTransactor[IO](
+  val xa = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver",
     "jdbc:postgresql:gem",
     "postgres",
