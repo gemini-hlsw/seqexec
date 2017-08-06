@@ -123,7 +123,6 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "org.webjars"       % "jquery"      % LibraryVersions.jQuery      / "jquery.js"            minified "jquery.min.js" commonJSName "jQuery",
       "org.webjars"       % "Semantic-UI" % LibraryVersions.semanticUI  / "semantic.js"          minified "semantic.min.js" dependsOn "jquery.js"
     ),
-    scalaJSUseMainModuleInitializer := true,
     // Build a js dependencies file
     skip in packageJSDependencies := false,
     // Put the jsdeps file on a place reachable for the server

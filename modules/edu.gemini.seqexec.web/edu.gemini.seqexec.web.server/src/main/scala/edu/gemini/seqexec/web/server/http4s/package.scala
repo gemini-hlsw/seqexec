@@ -40,8 +40,6 @@ package object http4s {
           <style>{style.stripMargin}</style>
         </head>
 
-        <site id="site">{site}</site>
-
         <body>
 
           <div id="content">
@@ -49,6 +47,9 @@ package object http4s {
 
           <script src={s"/$deps"}></script>
           <script src={s"/$seqexecScript"}></script>
+          <script>
+            {s"""SeqexecApp.start('$site');"""}
+          </script>
         </body>
       </html>
     s"<!DOCTYPE html>$xml"
