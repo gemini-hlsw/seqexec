@@ -130,6 +130,8 @@ object Model {
   case object GNIRS extends Instrument
   case object GPI extends Instrument
   case object GSAOI extends Instrument
+  case object NIRI extends Instrument
+  case object NIFS extends Instrument
 
   object Instrument {
     implicit val equal: Equal[Instrument] = Equal.equalA[Instrument]
@@ -140,9 +142,11 @@ object Model {
       case GPI   => "GPI"
       case GSAOI => "GSAOI"
       case GNIRS => "GNIRS"
+      case NIRI  => "NIRI"
+      case NIFS  => "NIFS"
     })
     val gsInstruments = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
-    val gnInstruments = NonEmptyList[Instrument](GmosN, GNIRS)
+    val gnInstruments = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
   }
 
   type Operator = String

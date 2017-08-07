@@ -2,6 +2,7 @@ package edu.gemini.seqexec.web.client
 
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
 import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
+import edu.gemini.seqexec.web.client.model.{Initialize, SeqexecCircuit}
 import edu.gemini.seqexec.model.Model.SeqexecSite
 
 import org.scalajs.dom.document
@@ -41,6 +42,9 @@ object SeqexecApp {
       case "GS" => SeqexecSite.SeqexecGS
       case _    => SeqexecSite.SeqexecGS // Default to something reasonable
     }
+
+    // Set thi instruments before adding it to the dom
+    SeqexecCircuit.dispatch(Initialize(seqexecSite))
 
     // Render the UI using React
     SeqexecUI.router(seqexecSite)().renderIntoDOM(document.getElementById("content"))

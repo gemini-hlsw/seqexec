@@ -166,6 +166,9 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       val ref = SeqexecCircuit.sequenceRef(s.id)
       updated(value.copy(_1 = value._1.focusOnSequence(ref)))
 
+    case Initialize(site) =>
+      updated(value.copy(_1 = value._1.withSite(site)))
+
     case ShowStep(s, i) =>
       if (value._1.instrumentSequences.focus.sequence().exists(_.id === s)) {
         updated(value.copy(_1 = value._1.showStep(i)))
@@ -416,7 +419,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Some useful readers
   val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
-    SeqexecCircuit.zoom { c =>
+    zoom { c =>
       val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
         val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
         SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, s.runningStep)
@@ -426,7 +429,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-    SeqexecCircuit.zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+    zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
   def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
     zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {

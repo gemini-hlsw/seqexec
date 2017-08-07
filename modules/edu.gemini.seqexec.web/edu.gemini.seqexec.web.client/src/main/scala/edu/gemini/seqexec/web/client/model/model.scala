@@ -23,6 +23,7 @@ object Pages {
 case class NavigateTo(page: Pages.SeqexecPages) extends Action
 case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
 case class SyncToPage(view: SequenceView) extends Action
+case class Initialize(site: SeqexecSite) extends Action
 
 // Actions to close and/open the login box
 case object OpenLoginBox extends Action
@@ -89,6 +90,9 @@ object SequenceTab {
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+  def withSite(site: SeqexecSite): SequencesOnDisplay =
+    SequencesOnDisplay(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None)).toZipper)
+
   // Display a given step on the focused sequence
   def showStep(i: Int): SequencesOnDisplay =
     copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
@@ -126,6 +130,7 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
 object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
+  // We need to initialize the model with some instruments but it will be shortly replaced by the actual list
   val empty = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
 }
 
