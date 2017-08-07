@@ -32,11 +32,6 @@ object GmosEnums {
         sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_amp_read_mode""".query[(String, R)]
       },
 
-      EnumDef.fromQuery("GmosBuiltinRoi", "GMOS built-in ROI (region of interest)") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'xStart -> Int, 'yStart -> Int, 'xSize -> Int, 'ySize -> Int, 'obsolete -> Boolean`.T
-        sql"""SELECT id, id tag, short_name, long_name, x_start, y_start, x_size, y_size, obsolete FROM e_gmos_builtin_roi""".query[(String, R)]
-      },
-
       EnumDef.fromQuery("GmosCustomSlitWidth", "GMOS custom slit width") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'width -> Angle`.T
         sql"""SELECT id, id tag, short_name, long_name, width FROM e_gmos_custom_slit_width""".query[(String, R)]
@@ -80,6 +75,11 @@ object GmosEnums {
       EnumDef.fromQuery("GmosNorthStageMode", "GMOS North stage modes") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
         sql"""SELECT id, id tag, short_name, long_name, obsolete FROM e_gmos_north_stage_mode""".query[(String, R)]
+      },
+
+      EnumDef.fromQuery("GmosRoi", "GMOS ROI (region of interest)") {
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
+        sql"""SELECT id, id tag, short_name, long_name, obsolete FROM e_gmos_roi""".query[(String, R)]
       },
 
       EnumDef.fromQuery("GmosSouthDisperser", "GMOS South dispersers") {

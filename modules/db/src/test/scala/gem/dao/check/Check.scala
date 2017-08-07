@@ -63,6 +63,9 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val instrumentConfig = f2Config
     val stepType         = StepType.Science
 
+    val gmosCustomRoiEntry =
+      gem.config.Gmos.GmosCustomRoiEntry.unsafeFromDescription(1, 1, 1, 1)
+
     val gmosNorthSmartGcalSearchKey     =
       DynamicConfig.GmosNorth.Default.key
 

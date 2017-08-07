@@ -4,7 +4,7 @@
 package gem.ocs2
 
 import gem.ocs2.pio.PioError._
-import gem.ocs2.pio.{PioError, PioParse}
+import gem.ocs2.pio.{PioError, PioOptional, PioParse}
 
 import scala.reflect.runtime.universe.TypeTag
 
@@ -41,6 +41,9 @@ object Legacy {
 
       def cparseOrElse(cm: ConfigMap, a: => A): PioError \/ A =
         cparse(cm).map { _.getOrElse(a) }
+
+      def oparse(cm: ConfigMap): PioOptional[A] =
+        PioOptional(cparse(cm))
 
       override def toString: String =
         s"Key[$tpe]($path)"
@@ -95,7 +98,6 @@ object Legacy {
       val AmpCount        = Key("ampCount"               )(ampCount       )
       val AmpGain         = Key("gainChoice"             )(ampGain        )
       val AmpReadMode     = Key("ampReadMode"            )(ampReadMode    )
-      val BuiltinRoi      = Key("builtinROI"             )(builtinRoi     )
       val CustomMaskMdf   = Key("fpuCustomMask"          )(PioParse.string)
       val CustomSlitWidth = Key("customSlitWidth"        )(customSlitWidth)
       val Detector        = Key("detectorManufacturer"   )(detector       )
@@ -109,8 +111,17 @@ object Legacy {
       val NsBeamBq        = Key("nsBeamB-q"              )(Parsers.offsetQ)
       val NsCycles        = Key("nsNumCycles"            )(nsCycles       )
       val NsShuffle       = Key("nsDetectorRows"         )(nsShuffle      )
+      val Roi             = Key("builtinROI"             )(roi            )
       val XBinning        = Key("ccdXBinning"            )(xBinning       )
       val YBinning        = Key("ccdYBinning"            )(yBinning       )
+
+      def roiKey(i: Int, n: String): Key[Short] =
+        Key(s"customROI$i$n")(PioParse.positiveShort)
+
+      def roiXMin(i: Int):   Key[Short] = roiKey(i, "Xmin"  )
+      def roiYMin(i: Int):   Key[Short] = roiKey(i, "Ymin"  )
+      def roiXRange(i: Int): Key[Short] = roiKey(i, "XRange")
+      def roiYRange(i: Int): Key[Short] = roiKey(i, "YRange")
     }
 
     object GmosNorth {

@@ -69,32 +69,41 @@ object StaticConfigDao {
     */
   private object Gmos {
 
-    import gem.config.Gmos.GmosNodAndShuffle
+    import gem.config.Gmos.{ GmosCustomRoiEntry, GmosNodAndShuffle }
     import gem.enum.Instrument.{ GmosN, GmosS }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
     def insertNorth(sid: Int, gn: GmosNorth): ConnectionIO[Unit] =
-        insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle) *>
+        insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle)   *>
+          insertCustomRoiEntries(sid, GmosN, gn.common.customRois) *>
           Statements.Gmos.insertNorth(sid, gn).run.void
 
     def insertSouth(sid: Int, gs: GmosSouth): ConnectionIO[Unit] =
-        insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle) *>
+        insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle)   *>
+          insertCustomRoiEntries(sid, GmosS, gs.common.customRois) *>
           Statements.Gmos.insertSouth(sid, gs).run.void
+
+    def insertCustomRoiEntries(sid: Int, i: Instrument, rois: List[GmosCustomRoiEntry]): ConnectionIO[Unit] =
+      rois.traverseU(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
 
     def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
       ns.fold(().point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
 
     def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
       for {
+        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosN).list
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosN).option
         gn <- Statements.Gmos.selectNorth(sid).unique
-      } yield GmosNorth.NodAndShuffle.set(gn, ns)
+        gnʹ = GmosNorth.CustomRois.set(gn, ro)
+      } yield GmosNorth.NodAndShuffle.set(gnʹ, ns)
 
     def selectSouth(sid: Int): ConnectionIO[GmosSouth] =
       for {
+        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosS).list
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosS).option
         gs <- Statements.Gmos.selectSouth(sid).unique
-      } yield GmosSouth.NodAndShuffle.set(gs, ns)
+        gsʹ = GmosSouth.CustomRois.set(gs, ro)
+      } yield GmosSouth.NodAndShuffle.set(gsʹ, ns)
   }
 
   object Statements {
@@ -129,16 +138,16 @@ object StaticConfigDao {
     /** GMOS Statements. */
     object Gmos {
 
-      import gem.config.Gmos.{ GmosCommonStaticConfig => GmosCommonSC, GmosNodAndShuffle, GmosShuffleCycles, GmosShuffleOffset }
+      import gem.config.Gmos.{ GmosCommonStaticConfig => GmosCommonSC, GmosCustomRoiEntry, GmosNodAndShuffle, GmosShuffleCycles, GmosShuffleOffset }
       import gem.enum.Instrument.{ GmosN, GmosS }
       import StaticConfig.{ GmosNorth, GmosSouth }
 
       // We need to define this explicitly because we're ignoring the nod and
-      // shuffle bit.
+      // shuffle and custom ROIs.
       implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
         Composite[(GmosDetector, MosPreImaging)].xmap(
-          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None),
-          (s: GmosCommonSC) => (s.detector, s.mosPreImaging)
+          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None, Nil),
+          (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
         )
 
       implicit val MetaGmosShuffleOffset: Meta[GmosShuffleOffset] =
@@ -146,6 +155,22 @@ object StaticConfigDao {
 
       implicit val MetaGmosShuffleCycles: Meta[GmosShuffleCycles] =
         Meta[Int].xmap(GmosShuffleCycles.unsafeFromCycleCount, _.toInt)
+
+      implicit val GmosCustomRoiEntryComposite: Composite[GmosCustomRoiEntry] =
+        Composite[(Short, Short, Short, Short)].xmap(
+          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4),
+          (r: GmosCustomRoiEntry)           => (r.xMin, r.yMin, r.xRange, r.yRange)
+        )
+
+      def selectCustomRoiEntry(sid: Int, i: Instrument): Query0[GmosCustomRoiEntry] =
+        sql"""
+          SELECT x_min,
+                 y_min,
+                 x_range,
+                 y_range
+            FROM gmos_custom_roi
+           WHERE static_id = $sid AND instrument = $i
+         """.query[GmosCustomRoiEntry]
 
       def selectNodAndShuffle(sid: Int, i: Instrument): Query0[GmosNodAndShuffle] =
         sql"""
@@ -177,6 +202,24 @@ object StaticConfigDao {
             FROM static_gmos_south
            WHERE static_id = $sid AND instrument = ${GmosS: Instrument}
         """.query[GmosSouth]
+
+      def insertCustomRoiEntry(id: Int, inst: Instrument, roi: GmosCustomRoiEntry): Update0 =
+        sql"""
+          INSERT INTO gmos_custom_roi (
+                        static_id,
+                        instrument,
+                        x_min,
+                        y_min,
+                        x_range,
+                        y_range)
+               VALUES (
+                      $id,
+                      $inst,
+                      ${roi.xMin},
+                      ${roi.yMin},
+                      ${roi.xRange},
+                      ${roi.yRange})
+        """.update
 
       def insertNodAndShuffle(id: Int, inst: Instrument, ns: GmosNodAndShuffle): Update0 =
         sql"""
