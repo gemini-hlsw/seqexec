@@ -1,12 +1,12 @@
 resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-lazy val argonautVersion          = "6.2-RC2"
+lazy val argonautVersion          = "6.2"
 lazy val doobieVersion            = "0.4.2"
 lazy val kpVersion                = "0.9.3"
 lazy val scalazVersion            = "7.2.13"
 lazy val shapelessVersion         = "2.3.2"
-lazy val argonautShapelessVersion = "1.2.0-M4"
+lazy val argonautShapelessVersion = "1.2.0-M6"
 lazy val scalaTestVersion         = "3.0.1"
 lazy val scalaCheckVersion        = "1.13.5"
 lazy val http4sVersion            = "0.16.0a-M3"
@@ -16,6 +16,7 @@ lazy val tucoVersion              = "0.1.1"
 lazy val attoVersion              = "0.5.3"
 lazy val slf4jVersion             = "1.7.25"
 lazy val jwtVersion               = "0.14.0"
+lazy val flywayVersion            = "4.0.3"
 
 enablePlugins(GitVersioning)
 
@@ -82,7 +83,7 @@ lazy val commonSettings = Seq(
   wartremoverErrors in (Test,    compile) := gemWarts,
 
   scalaOrganization := "org.typelevel",
-  scalaVersion := "2.12.2-bin-typelevel-4",
+  scalaVersion := "2.12.3-bin-typelevel-4",
   scalacOptions ++= Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",                // Specify character encoding used by source files.
@@ -177,9 +178,7 @@ lazy val core = crossProject
       "com.chuusai"  %%% "shapeless"            % shapelessVersion,
       "org.tpolecat" %%% "atto-core"            % attoVersion,
       "org.tpolecat" %%% "atto-compat-scalaz72" % attoVersion
-    ),
-    sourceGenerators in Compile +=
-      Def.task { gen2((sourceManaged in Compile).value / "gem").unsafePerformIO }.taskValue
+    )
   )
   .jsSettings(
     libraryDependencies +=
@@ -239,7 +238,12 @@ lazy val sql = project
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings ++ flywaySettings)
   .settings(
-    libraryDependencies += "org.flywaydb" % "flyway-core" % "4.0.3"
+    libraryDependencies ++= Seq(
+      "org.flywaydb" % "flyway-core"       % flywayVersion,
+      "org.tpolecat" %% "doobie-core"      % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres"  % doobieVersion
+    ),
+    addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/src/main/scala/gem/enum; headerCreate")
   )
 
 lazy val ocs2 = project
