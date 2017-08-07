@@ -44,9 +44,9 @@ sealed abstract case class Declination private (toAngle: Angle) {
 
 object Declination {
 
-  val DeclinationMin:  Declination = unsafeFromAngle(Angle.Angle270)
-  val DeclinationMax:  Declination = unsafeFromAngle(Angle.Angle90)
-  val DeclinationZero: Declination = unsafeFromAngle(Angle.Angle0)
+  val Min:  Declination = unsafeFromAngle(Angle.Angle270)
+  val Max:  Declination = unsafeFromAngle(Angle.Angle90)
+  val Zero: Declination = unsafeFromAngle(Angle.Angle0)
 
   /**
    * Construct a `Declination` from an `Angle` in [270 - 360) + [0 - 90], if possible.
