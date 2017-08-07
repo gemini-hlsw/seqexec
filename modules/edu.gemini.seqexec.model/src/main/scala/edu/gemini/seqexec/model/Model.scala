@@ -9,10 +9,17 @@ import monocle.Traversal
 
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
-  sealed trait SeqexecSite
+  sealed trait SeqexecSite {
+    def instruments: NonEmptyList[Instrument]
+  }
   object SeqexecSite {
-    case object SeqexecGN extends SeqexecSite
-    case object SeqexecGS extends SeqexecSite
+    case object SeqexecGN extends SeqexecSite {
+      val instruments = Instrument.gnInstruments
+    }
+
+    case object SeqexecGS extends SeqexecSite {
+      val instruments = Instrument.gsInstruments
+    }
 
     implicit val show: Show[SeqexecSite] = Show.shows({
       case SeqexecGN => "GN"
@@ -120,6 +127,7 @@ object Model {
   case object F2 extends Instrument
   case object GmosS extends Instrument
   case object GmosN extends Instrument
+  case object GNIRS extends Instrument
   case object GPI extends Instrument
   case object GSAOI extends Instrument
 
@@ -131,9 +139,10 @@ object Model {
       case GmosN => "GMOS-N"
       case GPI   => "GPI"
       case GSAOI => "GSAOI"
+      case GNIRS => "GNIRS"
     })
     val gsInstruments = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
-    val gnInstruments = NonEmptyList[Instrument](GmosN)
+    val gnInstruments = NonEmptyList[Instrument](GmosN, GNIRS)
   }
 
   type Operator = String

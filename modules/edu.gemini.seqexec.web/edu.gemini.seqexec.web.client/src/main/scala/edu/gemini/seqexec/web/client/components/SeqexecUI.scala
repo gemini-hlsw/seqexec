@@ -27,7 +27,7 @@ object SeqexecMain {
       <.div(
         NavBar(p.site),
         QueueArea(p.ctl),
-        SequenceArea(),
+        SequenceArea(p.site),
         logConnect(LogArea.apply),
         lbConnect(LoginBox.apply)
       )
