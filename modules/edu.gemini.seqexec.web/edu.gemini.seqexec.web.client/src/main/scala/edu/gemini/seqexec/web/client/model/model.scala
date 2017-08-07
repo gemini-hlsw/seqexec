@@ -173,10 +173,10 @@ object SeqexecUIModel {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(ws: WebSocketConnection, uiModel: SeqexecUIModel)
+case class SeqexecAppRootModel(ws: WebSocketConnection, site: SeqexecSite, uiModel: SeqexecUIModel)
 
 object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
 
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, SeqexecUIModel.initial)
+  val initial = SeqexecAppRootModel(WebSocketConnection.empty, SeqexecSite.SeqexecGS, SeqexecUIModel.initial)
 }
