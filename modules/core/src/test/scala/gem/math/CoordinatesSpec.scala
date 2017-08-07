@@ -120,7 +120,7 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  it should "result in angular distance of 0° `b` for factor 1.0, within 1µas" in {
+  it should "result in angular distance of 0° from `b` for factor 1.0, within 1µas" in {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = b.angularDistance(a.interpolate(b, 1.0))
       Δ.toSignedMicroarcseconds.abs should be <= 1L
