@@ -132,12 +132,12 @@ object Gmos {
     assert(yRange > 0, s"yRange must be > 0, not $yRange")
 
     /** Columns included in this ROI entry (start, end]. */
-    def columns: (Short, Int) =
-      (xMin, xMin + xRange)
+    def columns: (Int, Int) =
+      (xMin.toInt, xMin + xRange)
 
     /** Rows included in this ROI entry (start, end]. */
-    def rows: (Short, Int) =
-      (yMin, yMin + yRange)
+    def rows: (Int, Int) =
+      (yMin.toInt, yMin + yRange)
 
     /** Returns `true` if the pixels specified by this custom ROI entry overlap
       * with the pixels specified by `that` entry.
@@ -157,7 +157,7 @@ object Gmos {
     def rowsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.rows)
 
-    private def overlapCheck(that: GmosCustomRoiEntry, f: GmosCustomRoiEntry => (Short, Int)): Boolean = {
+    private def overlapCheck(that: GmosCustomRoiEntry, f: GmosCustomRoiEntry => (Int, Int)): Boolean = {
       val List((_, end), (start, _)) = List(f(this), f(that)).sortBy(_._1)
       end > start
     }
