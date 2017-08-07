@@ -7,7 +7,7 @@ import gem.arb._
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
 import gem.enum._
 import gem.enum.Instrument._
-import gem.math.Wavelength
+import gem.math.{ Offset, Wavelength }
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
@@ -20,6 +20,7 @@ import scalaz._, Scalaz._
 trait Arbitraries {
   import ArbEnumerated._
   import ArbDisjunction._
+  import ArbOffset._
 
 
   // Surely this is already defined somewhere?
@@ -67,22 +68,58 @@ trait Arbitraries {
   implicit val arbF2Static        =
     Arbitrary(arbitrary[MosPreImaging].map(StaticConfig.F2(_)))
 
-  implicit val arbGmosNorthStatic =
+  implicit val arbGmosShuffleOffset =
+    Arbitrary(Gen.posNum[Int].map(Gmos.GmosShuffleOffset.unsafeFromRowCount))
+
+  implicit val arbGmosShuffleCycles =
+    Arbitrary(Gen.posNum[Int].map(Gmos.GmosShuffleCycles.unsafeFromCycleCount))
+
+  implicit val arbGmosNodAndShuffle =
+    Arbitrary(
+      for {
+        a <- arbitrary[Offset]
+        b <- arbitrary[Offset]
+        e <- arbitrary[GmosEOffsetting]
+        o <- arbitrary[Gmos.GmosShuffleOffset]
+        c <- arbitrary[Gmos.GmosShuffleCycles]
+      } yield Gmos.GmosNodAndShuffle(a, b, e, o, c)
+    )
+
+  implicit val arbGmosCustomRoiEntry =
+    Arbitrary(
+      for {
+        xMin <- Gen.posNum[Short]
+        yMin <- Gen.posNum[Short]
+        xRng <- Gen.posNum[Short]
+        yRng <- Gen.posNum[Short]
+      } yield Gmos.GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)
+    )
+
+  implicit val arbGmosCommonStaticConfig =
     Arbitrary(
       for {
         d <- arbitrary[GmosDetector]
         p <- arbitrary[MosPreImaging]
+        n <- arbitrary[Option[Gmos.GmosNodAndShuffle]]
+        c <- Gen.choose(1, 5)
+        r <- Gen.listOfN(c, arbitrary[Gmos.GmosCustomRoiEntry])
+      } yield Gmos.GmosCommonStaticConfig(d, p, n, r)
+    )
+
+  implicit val arbGmosNorthStatic =
+    Arbitrary(
+      for {
+        c <- arbitrary[Gmos.GmosCommonStaticConfig]
         s <- arbitrary[GmosNorthStageMode]
-      } yield StaticConfig.GmosNorth(Gmos.GmosCommonStaticConfig(d, p, None), s)
+      } yield StaticConfig.GmosNorth(c, s)
     )
 
   implicit val arbGmosSouthStatic =
     Arbitrary(
       for {
-        d <- arbitrary[GmosDetector]
-        p <- arbitrary[MosPreImaging]
+        c <- arbitrary[Gmos.GmosCommonStaticConfig]
         s <- arbitrary[GmosSouthStageMode]
-      } yield StaticConfig.GmosSouth(Gmos.GmosCommonStaticConfig(d, p, None), s)
+      } yield StaticConfig.GmosSouth(c, s)
     )
 
   def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
@@ -147,7 +184,8 @@ trait Arbitraries {
         c <- arbitrary[Gmos.GmosCcdReadout]
         d <- arbitrary[GmosDtax]
         e <- arbitrary[Duration]
-      } yield Gmos.GmosCommonDynamicConfig(c, d, e)
+        r <- arbitrary[GmosRoi]
+      } yield Gmos.GmosCommonDynamicConfig(c, d, e, r)
     }
 
   implicit val arbGmosCustomMask =

@@ -165,7 +165,7 @@ object Gmos {
     def fromDescription(xMin: Short, yMin: Short, xRange: Short, yRange: Short): Option[GmosCustomRoiEntry] =
       ((xMin > 0) && (yMin > 0) && (xRange > 0) && (yRange > 0)) option new GmosCustomRoiEntry(xMin, yMin, xRange, yRange) {}
 
-    def unsafeFromDefinition(xMin: Short, yMin: Short, xRange: Short, yRange: Short): GmosCustomRoiEntry =
+    def unsafeFromDescription(xMin: Short, yMin: Short, xRange: Short, yRange: Short): GmosCustomRoiEntry =
       fromDescription(xMin, yMin, xRange, yRange)
         .getOrElse(sys.error(s"All custom ROI fields must be > 0 in GmosCustomRoi.unsafeFromDefinition($xMin, $yMin, $xRange, $yRange)"))
 

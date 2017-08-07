@@ -63,7 +63,7 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
         yMin <- roiYMin(index).oparse(cm)
         xRng <- roiXRange(index).oparse(cm)
         yRng <- roiYRange(index).oparse(cm)
-      } yield GmosCustomRoiEntry.unsafeFromDefinition(xMin, yMin, xRng, yRng)).run
+      } yield GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)).run
     }
 
     def parseCustomRoiEntries(cm: ConfigMap): PioError \/ List[GmosCustomRoiEntry] =

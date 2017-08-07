@@ -158,7 +158,7 @@ object StaticConfigDao {
 
       implicit val GmosCustomRoiEntryComposite: Composite[GmosCustomRoiEntry] =
         Composite[(Short, Short, Short, Short)].xmap(
-          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDefinition(t._1, t._2, t._3, t._4),
+          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4),
           (r: GmosCustomRoiEntry)           => (r.xMin, r.yMin, r.xRange, r.yRange)
         )
 

@@ -79,6 +79,13 @@ package object json {
   implicit def setCodec[A: CodecJson]: CodecJson[Set[A]] =
     CodecJson.derived[List[A]].xmap(_.toSet)(_.toList)
 
+  // Codec for GmosCustomRoiEntry
+  implicit def gmosCustomRoiEntryCodec: CodecJson[Gmos.GmosCustomRoiEntry] =
+    CodecJson.derived[(Short, Short, Short, Short)].xmap(
+      t => Gmos.GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))(
+      r => (r.xMin, r.yMin, r.xRange, r.yRange)
+    )
+
   // Codec for GmosShuffleOffset
   implicit def gmosShuffleOffsetCodec: CodecJson[Gmos.GmosShuffleOffset] =
     CodecJson.derived[Int].xmap(Gmos.GmosShuffleOffset.unsafeFromRowCount)(_.detectorRows)
