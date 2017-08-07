@@ -10,7 +10,7 @@ import scalaz._, Scalaz._
 final case class Coordinates(ra: RightAscension, dec: Declination) {
 
   /**
-   * Offset this `Coordinates` by the given deltas, and indicate whether the declination crossed
+   * Offset these `Coordinates` by the given deltas, and indicate whether the declination crossed
    * a pole; if so the right ascension will have been flipped 180°.
    * @group Operations
    */
@@ -21,7 +21,7 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
     }
 
   /**
-   * Offset this `Coordinates` by the given deltas. If the declination crossed a pole the right
+   * Offset these `Coordinates` by the given deltas. If the declination crossed a pole the right
    * ascension will have been flipped 180°.
    * @group Operations
    */
@@ -78,27 +78,15 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
     }
   }
 
-  override def toString =
-    s"Coordinates($ra, $dec)"
-
-  override def equals(a: Any) =
-    a match {
-      case c: Coordinates => c.ra === ra && c.dec === dec
-      case _ => false
-    }
-
-  override def hashCode =
-    ra.hashCode ^ dec.hashCode
+  // the default N.B. toString, equals, and hashCode are fine
 
 }
 
 object Coordinates {
 
-  /**
-   * The origin, at RA = Dec = 0.
-   * @group Constructors
-   */
-  val Zero: Coordinates = Coordinates(RightAscension.Zero, Declination.Zero)
+  /* @group Constructors */ val Zero:      Coordinates = Coordinates(RA.Zero, Dec.Zero)
+  /* @group Constructors */ val SouthPole: Coordinates = Coordinates(RA.Zero, Dec.Min)
+  /* @group Constructors */ val NorthPole: Coordinates = Coordinates(RA.Zero, Dec.Max)
 
   /** @group Typeclass Instances */
   implicit val CoordinatesEqual: Equal[Coordinates] =
