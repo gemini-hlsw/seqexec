@@ -9,13 +9,15 @@ import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
 trait ArbOffset {
-  import ArbAngle._
-
   implicit val arbOffsetP: Arbitrary[Offset.P] =
-    Arbitrary(arbitrary[Angle].map(Offset.P(_)))
+    Arbitrary(
+      Gen.chooseNum(0, 10000).map(mas => Offset.P(Angle.fromMilliarcseconds(mas)))
+    )
 
   implicit val arbOffsetQ: Arbitrary[Offset.Q] =
-    Arbitrary(arbitrary[Angle].map(Offset.Q(_)))
+    Arbitrary(
+      Gen.chooseNum(0, 10000).map(mas => Offset.Q(Angle.fromMilliarcseconds(mas)))
+    )
 
   implicit val arbOffset: Arbitrary[Offset] =
     Arbitrary {

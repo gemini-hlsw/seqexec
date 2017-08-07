@@ -112,6 +112,9 @@ object Gmos {
         GmosShuffleOffset.defaultFromDetector(GmosDetector.HAMAMATSU),
         GmosShuffleCycles.Default
       )
+
+    implicit val EqualGmosNodAndShuffle: Equal[GmosNodAndShuffle] =
+      Equal.equalA
   }
 
   /** GMOS custom ROI entry definition. */
