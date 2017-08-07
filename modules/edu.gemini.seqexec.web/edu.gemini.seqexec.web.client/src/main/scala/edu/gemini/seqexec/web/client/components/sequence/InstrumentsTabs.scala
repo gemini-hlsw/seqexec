@@ -82,7 +82,6 @@ object InstrumentTab {
   */
 object InstrumentsTabs {
   case class Props(site: SeqexecSite) {
-    println(site.instruments)
     val instrumentConnects = site.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
   }
 

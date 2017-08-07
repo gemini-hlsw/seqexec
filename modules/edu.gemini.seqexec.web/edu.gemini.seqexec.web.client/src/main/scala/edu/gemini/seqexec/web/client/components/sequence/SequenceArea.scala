@@ -33,10 +33,10 @@ object SequenceStepsTableContainer {
           ^.cls := "ui raised secondary segment",
           p.p().stepConfigDisplayed.fold{
             if (p.p().isLogged)
-              SequenceDefaultToolbar(p.p().instrument): VdomElement
+              SequenceDefaultToolbar(p.site, p.p().instrument): VdomElement
             else
-              SequenceAnonymousToolbar(p.p().instrument): VdomElement
-          }(s => StepConfigToolbar(StepConfigToolbar.Props(p.p().instrument, p.p().isLogged, s))),
+              SequenceAnonymousToolbar(p.site, p.p().instrument): VdomElement
+          }(s => StepConfigToolbar(StepConfigToolbar.Props(p.site, p.p().instrument, p.p().isLogged, s))),
           <.div(
             ^.cls := "ui raised secondary segment",
             p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m => StepsTableContainer(StepsTableContainer.Props(m, x => $.runState(updateStepToRun(x))))))
