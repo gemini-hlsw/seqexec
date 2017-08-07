@@ -358,8 +358,8 @@ object StepDao {
 
     object Gmos {
 
-      import gem.config.Gmos.{GmosCommonDynamicConfig, GmosCustomMask, GmosGrating}
-      import DynamicConfig.{GmosNorth, GmosSouth}
+      import gem.config.Gmos.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
+      import DynamicConfig.{ GmosNorth, GmosSouth }
 
       final case class GmosGratingBuilder[D](
                          disperser: Option[D],
@@ -422,6 +422,7 @@ object StepDao {
                      c.amp_read_mode,
                      c.dtax,
                      c.exposure_time,
+                     c.roi,
                      i.disperser,
                      i.disperser_order,
                      i.wavelength,
@@ -460,7 +461,7 @@ object StepDao {
         sql"""
           INSERT INTO step_gmos_common (
             step_id,
-            x_binning, y_binning, amp_count, amp_gain, amp_read_mode, dtax, exposure_time
+            x_binning, y_binning, amp_count, amp_gain, amp_read_mode, dtax, exposure_time, roi
           )
           VALUES (
             $id,
@@ -470,7 +471,8 @@ object StepDao {
             ${g.ccdReadout.ampGain},
             ${g.ccdReadout.ampReadMode},
             ${g.dtaxOffset},
-            ${g.exposureTime})
+            ${g.exposureTime},
+            ${g.roi})
         """.update
 
       def insertNorth(id: Int, g: GmosNorth): Update0 =

@@ -42,3 +42,5 @@ CREATE TABLE gmos_custom_roi(
 
 ALTER TABLE gmos_custom_roi OWNER TO postgres;
 
+ALTER TABLE step_gmos_common
+  ADD COLUMN roi identifier NOT NULL REFERENCES e_gmos_roi ON DELETE CASCADE;

@@ -106,14 +106,15 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       import Legacy.Instrument.Gmos._
 
       for {
-        x <- XBinning.parse(cm)
-        y <- YBinning.parse(cm)
+        x  <- XBinning.parse(cm)
+        y  <- YBinning.parse(cm)
         ac <- AmpCount.parse(cm)
         ag <- AmpGain.parse(cm)
         ar <- AmpReadMode.parse(cm)
         dx <- Dtax.parse(cm)
-        e <- Legacy.Observe.ExposureTime.cparseOrElse(cm, Duration.ofMillis(0))
-      } yield GmosCommonDynamicConfig(GmosCcdReadout(x, y, ac, ag, ar), dx, e)
+        e  <- Legacy.Observe.ExposureTime.cparseOrElse(cm, Duration.ofMillis(0))
+        r  <- Roi.parse(cm)
+      } yield GmosCommonDynamicConfig(GmosCcdReadout(x, y, ac, ag, ar), dx, e, r)
     }
 
     def customMask(cm: ConfigMap): PioError \/ Option[GmosCustomMask] = {

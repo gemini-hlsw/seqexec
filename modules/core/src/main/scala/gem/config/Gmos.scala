@@ -226,7 +226,8 @@ object Gmos {
   final case class GmosCommonDynamicConfig(
     ccdReadout:   GmosCcdReadout,
     dtaxOffset:   GmosDtax,
-    exposureTime: Duration
+    exposureTime: Duration,
+    roi:          GmosRoi
   )
 
   object GmosCommonDynamicConfig {
@@ -234,7 +235,8 @@ object Gmos {
       GmosCommonDynamicConfig(
         GmosCcdReadout.Default,
         GmosDtax.Zero,
-        Duration.ofSeconds(300)
+        Duration.ofSeconds(300),
+        GmosRoi.FullFrame
       )
   }
 
