@@ -178,8 +178,8 @@ object Gmos {
   final case class GmosCommonStaticConfig(
     detector:      GmosDetector,
     mosPreImaging: MosPreImaging,
-    nodAndShuffle: Option[GmosNodAndShuffle]//,
-//    customRois:    List[GmosCustomRoiEntry]
+    nodAndShuffle: Option[GmosNodAndShuffle],
+    customRois:    List[GmosCustomRoiEntry]
   )
 
   object GmosCommonStaticConfig extends GmosCommonStaticConfigLenses {
@@ -187,11 +187,15 @@ object Gmos {
       GmosCommonStaticConfig(
         GmosDetector.HAMAMATSU,
         MosPreImaging.IsNotMosPreImaging,
-        None
+        None,
+        Nil
       )
   }
 
   trait GmosCommonStaticConfigLenses {
+    val CustomRois: GmosCommonStaticConfig @> List[GmosCustomRoiEntry] =
+      Lens.lensu((a, b) => a.copy(customRois = b), _.customRois)
+
     val NodAndShuffle: GmosCommonStaticConfig @> Option[GmosNodAndShuffle] =
       Lens.lensu((a, b) => a.copy(nodAndShuffle = b), _.nodAndShuffle)
   }

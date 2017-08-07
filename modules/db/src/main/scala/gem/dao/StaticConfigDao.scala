@@ -69,32 +69,41 @@ object StaticConfigDao {
     */
   private object Gmos {
 
-    import gem.config.Gmos.GmosNodAndShuffle
+    import gem.config.Gmos.{ GmosCustomRoiEntry, GmosNodAndShuffle }
     import gem.enum.Instrument.{ GmosN, GmosS }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
     def insertNorth(sid: Int, gn: GmosNorth): ConnectionIO[Unit] =
-        insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle) *>
+        insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle)   *>
+          insertCustomRoiEntries(sid, GmosN, gn.common.customRois) *>
           Statements.Gmos.insertNorth(sid, gn).run.void
 
     def insertSouth(sid: Int, gs: GmosSouth): ConnectionIO[Unit] =
-        insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle) *>
+        insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle)   *>
+          insertCustomRoiEntries(sid, GmosS, gs.common.customRois) *>
           Statements.Gmos.insertSouth(sid, gs).run.void
+
+    def insertCustomRoiEntries(sid: Int, i: Instrument, rois: List[GmosCustomRoiEntry]): ConnectionIO[Unit] =
+      rois.traverseU(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
 
     def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
       ns.fold(().point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
 
     def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
       for {
+        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosN).list
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosN).option
         gn <- Statements.Gmos.selectNorth(sid).unique
-      } yield GmosNorth.NodAndShuffle.set(gn, ns)
+        gnʹ = GmosNorth.CustomRois.set(gn, ro)
+      } yield GmosNorth.NodAndShuffle.set(gnʹ, ns)
 
     def selectSouth(sid: Int): ConnectionIO[GmosSouth] =
       for {
+        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosS).list
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosS).option
         gs <- Statements.Gmos.selectSouth(sid).unique
-      } yield GmosSouth.NodAndShuffle.set(gs, ns)
+        gsʹ = GmosSouth.CustomRois.set(gs, ro)
+      } yield GmosSouth.NodAndShuffle.set(gsʹ, ns)
   }
 
   object Statements {
@@ -134,10 +143,10 @@ object StaticConfigDao {
       import StaticConfig.{ GmosNorth, GmosSouth }
 
       // We need to define this explicitly because we're ignoring the nod and
-      // shuffle bit.
+      // shuffle and custom ROIs.
       implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
         Composite[(GmosDetector, MosPreImaging)].xmap(
-          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None),
+          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None, Nil),
           (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
         )
 
