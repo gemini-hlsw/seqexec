@@ -19,7 +19,11 @@ object Gmos {
   /** Nod-and-shuffle offset in detector rows, which must be positive, non-zero.
     * This class essentially provides a newtype for Int.
     */
-  sealed abstract case class GmosShuffleOffset(detectorRows: Int)
+  sealed abstract case class GmosShuffleOffset(detectorRows: Int) {
+
+    // Enforced by fromRowCount constructor
+    assert(detectorRows > 0, s"detectorRows must be > 0, not $detectorRows")
+  }
 
   object GmosShuffleOffset {
 
@@ -51,7 +55,11 @@ object Gmos {
   /** The number of nod-and-shuffle cycles, which must be at least 1. This class
     * essentially provides a newtype for Int.
     */
-  sealed abstract case class GmosShuffleCycles(toInt: Int)
+  sealed abstract case class GmosShuffleCycles(toInt: Int) {
+
+    // Enforced by fromCycleCount constructor
+    assert(toInt > 0, s"toInt must be > 0, not $toInt")
+  }
 
   object GmosShuffleCycles {
 
@@ -106,12 +114,72 @@ object Gmos {
       )
   }
 
+  /** GMOS custom ROI entry definition. */
+  sealed abstract case class GmosCustomRoiEntry(
+    xMin:   Short,
+    yMin:   Short,
+    xRange: Short,
+    yRange: Short
+  ) {
+
+    // Enforced by fromDescription constructor
+    assert(xMin   > 0, s"xMin must be > 0, not $xMin")
+    assert(yMin   > 0, s"yMin must be > 0, not $yMin")
+    assert(xRange > 0, s"xRange must be > 0, not $xRange")
+    assert(yRange > 0, s"yRange must be > 0, not $yRange")
+
+    /** Columns included in this ROI entry (start, end]. */
+    def columns: (Short, Int) =
+      (xMin, xMin + xRange)
+
+    /** Rows included in this ROI entry (start, end]. */
+    def rows: (Short, Int) =
+      (yMin, yMin + yRange)
+
+    /** Returns `true` if the pixels specified by this custom ROI entry overlap
+      * with the pixels specified by `that` entry.
+      */
+    def overlaps(that: GmosCustomRoiEntry): Boolean =
+      columnsOverlap(that) && rowsOverlap(that)
+
+    /** Returns `true` if the columns spanned this custom ROI entry overlap with
+      * the columns spanned by `that` entry.
+      */
+    def columnsOverlap(that: GmosCustomRoiEntry): Boolean =
+      overlapCheck(that, _.columns)
+
+    /** Returns `true` if the rows spanned this custom ROI entry overlap with
+      * the rows spanned by `that` entry.
+      */
+    def rowsOverlap(that: GmosCustomRoiEntry): Boolean =
+      overlapCheck(that, _.rows)
+
+    private def overlapCheck(that: GmosCustomRoiEntry, f: GmosCustomRoiEntry => (Short, Int)): Boolean = {
+      val List((_, end), (start, _)) = List(f(this), f(that)).sortBy(_._1)
+      end > start
+    }
+  }
+
+  object GmosCustomRoiEntry {
+
+    def fromDescription(xMin: Short, yMin: Short, xRange: Short, yRange: Short): Option[GmosCustomRoiEntry] =
+      ((xMin > 0) && (yMin > 0) && (xRange > 0) && (yRange > 0)) option new GmosCustomRoiEntry(xMin, yMin, xRange, yRange) {}
+
+    def unsafeFromDefinition(xMin: Short, yMin: Short, xRange: Short, yRange: Short): GmosCustomRoiEntry =
+      fromDescription(xMin, yMin, xRange, yRange)
+        .getOrElse(sys.error(s"All custom ROI fields must be > 0 in GmosCustomRoi.unsafeFromDefinition($xMin, $yMin, $xRange, $yRange)"))
+
+    implicit val EqualGmosCustomRoiEntry: Equal[GmosCustomRoiEntry] =
+      Equal.equalA
+  }
+
   /** Shared static configuration for both GMOS-N and GMOS-S.
     */
   final case class GmosCommonStaticConfig(
     detector:      GmosDetector,
     mosPreImaging: MosPreImaging,
-    nodAndShuffle: Option[GmosNodAndShuffle]
+    nodAndShuffle: Option[GmosNodAndShuffle]//,
+//    customRois:    List[GmosCustomRoiEntry]
   )
 
   object GmosCommonStaticConfig extends GmosCommonStaticConfigLenses {
