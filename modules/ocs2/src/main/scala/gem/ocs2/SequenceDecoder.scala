@@ -71,7 +71,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     import gem.ocs2.Legacy.Instrument.Gmos.{CustomMaskMdf, CustomSlitWidth}
 
     (for {
-      f <- PioOptional(CustomMaskMdf.cparse(cm))
+      f <- CustomMaskMdf.oparse(cm)
       s <- PioOptional(CustomSlitWidth.parse(cm))
     } yield Gmos.GmosCustomMask(f, s)).run
   }
@@ -83,8 +83,8 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     val grating: PioError \/ Option[Gmos.GmosGrating[GmosNorthDisperser]] =
       (for {
         d <- PioOptional(Disperser.parse(cm))
-        o <- PioOptional(DisperserOrder.cparse(cm))
-        w <- PioOptional(DisperserLambda.cparse(cm))
+        o <- DisperserOrder.oparse(cm)
+        w <- DisperserLambda.oparse(cm)
       } yield Gmos.GmosGrating(d, o, w)).run
 
     for {
@@ -104,8 +104,8 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     val grating: PioError \/ Option[Gmos.GmosGrating[GmosSouthDisperser]] =
       (for {
         d <- PioOptional(Disperser.parse(cm))
-        o <- PioOptional(DisperserOrder.cparse(cm))
-        w <- PioOptional(DisperserLambda.cparse(cm))
+        o <- DisperserOrder.oparse(cm)
+        w <- DisperserLambda.oparse(cm)
       } yield Gmos.GmosGrating(d, o, w)).run
 
     for {

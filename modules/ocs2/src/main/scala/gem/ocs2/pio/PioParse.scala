@@ -43,6 +43,9 @@ object PioParse {
   val positiveInt: PioParse[Int] =
     PioParse(_.parseInt.toOption.filter(_ > 0))
 
+  val positiveShort: PioParse[Short] =
+    PioParse(_.parseShort.toOption.filter(_ > 0))
+
   val long: PioParse[Long] =
     PioParse(_.parseLong.toOption)
 

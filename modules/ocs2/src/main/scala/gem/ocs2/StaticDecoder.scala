@@ -17,19 +17,22 @@ import Scalaz._
   */
 object StaticDecoder extends PioDecoder[StaticConfig] {
 
+  def decode(n: Node): PioError \/ StaticConfig =
+    for {
+      cm <- ((n \ "step").headOption \/> missingKey("step")).map(_.toStepConfig)
+      i  <- Legacy.Instrument.Instrument.parse(cm)
+      sc <- parseStaticConfig(i, cm)
+    } yield sc
+
+
   private def parseStaticConfig(i: Instrument, cm: ConfigMap): PioError \/ StaticConfig =
     i match {
       case Instrument.AcqCam     => StaticConfig.AcqCam().right
       case Instrument.Bhros      => StaticConfig.Bhros().right
 
-      case Instrument.Flamingos2 =>
-        Legacy.Instrument.MosPreImaging.parse(cm).map(StaticConfig.F2(_))
-
-      case Instrument.GmosN      =>
-        parseGmosNorthStaticConfig(cm)
-
-      case Instrument.GmosS      =>
-        parseGmosSouthStaticConfig(cm)
+      case Instrument.Flamingos2 => Flamingos2.parse(cm)
+      case Instrument.GmosN      => Gmos.parseNorth(cm)
+      case Instrument.GmosS      => Gmos.parseSouth(cm)
 
       case Instrument.Gnirs      => StaticConfig.Gnirs()          .right
       case Instrument.Gpi        => StaticConfig.Gpi()            .right
@@ -43,43 +46,62 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Visitor    => StaticConfig.Visitor()        .right
     }
 
-  private def parseGmosNodAndShuffle(cm: ConfigMap): PioError \/ Option[Gmos.GmosNodAndShuffle] = {
-    import Legacy.Instrument.Gmos._
-
-    (for {
-      ap <- PioOptional(NsBeamAp   .cparse(cm))
-      aq <- PioOptional(NsBeamAq   .cparse(cm))
-      bp <- PioOptional(NsBeamBp   .cparse(cm))
-      bq <- PioOptional(NsBeamBq   .cparse(cm))
-      eo <- PioOptional(EOffsetting.cparse(cm))
-      sf <- PioOptional(NsShuffle  .cparse(cm))
-      cy <- PioOptional(NsCycles   .cparse(cm))
-    } yield Gmos.GmosNodAndShuffle(Offset(ap, aq), Offset(bp, bq), eo, sf, cy)).run
+  private object Flamingos2 {
+    def parse(cm: ConfigMap): PioError \/ StaticConfig =
+      Legacy.Instrument.MosPreImaging.parse(cm).map(StaticConfig.F2(_))
   }
 
-  private def parseGmosCommonStatic(cm: ConfigMap): PioError \/ Gmos.GmosCommonStaticConfig =
-    for {
-      d <- Legacy.Instrument.Gmos.Detector.parse(cm)
-      m <- Legacy.Instrument.MosPreImaging.parse(cm)
-      n <- parseGmosNodAndShuffle(cm)
-    } yield Gmos.GmosCommonStaticConfig(d, m, n)
+  private object Gmos {
+    import gem.config.Gmos.{ GmosCommonStaticConfig, GmosCustomRoiEntry, GmosNodAndShuffle }
+    import StaticConfig.{ GmosNorth, GmosSouth }
 
-  private def parseGmosNorthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
-    for {
-      c <- parseGmosCommonStatic(cm)
-      s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
-    } yield StaticConfig.GmosNorth(c, s)
+    def parseCustomRoiEntry(cm: ConfigMap, index: Int): PioError \/ Option[GmosCustomRoiEntry] = {
+      import Legacy.Instrument.Gmos._
 
-  private def parseGmosSouthStaticConfig(cm: ConfigMap): PioError \/ StaticConfig =
-    for {
-      c <- parseGmosCommonStatic(cm)
-      s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
-    } yield StaticConfig.GmosSouth(c, s)
+      (for {
+        xMin <- roiXMin(index).oparse(cm)
+        yMin <- roiYMin(index).oparse(cm)
+        xRng <- roiXRange(index).oparse(cm)
+        yRng <- roiYRange(index).oparse(cm)
+      } yield GmosCustomRoiEntry.unsafeFromDefinition(xMin, yMin, xRng, yRng)).run
+    }
 
-  def decode(n: Node): PioError \/ StaticConfig =
-    for {
-      cm <- ((n \ "step").headOption \/> missingKey("step")).map(_.toStepConfig)
-      i  <- Legacy.Instrument.Instrument.parse(cm)
-      sc <- parseStaticConfig(i, cm)
-    } yield sc
+    def parseCustomRoiEntries(cm: ConfigMap): PioError \/ List[GmosCustomRoiEntry] =
+      (1 to 5).toList.traverseU(parseCustomRoiEntry(cm, _)).map(_.flatMap(_.toList))
+
+    def parseNodAndShuffle(cm: ConfigMap): PioError \/ Option[GmosNodAndShuffle] = {
+      import Legacy.Instrument.Gmos._
+
+      (for {
+        ap <- NsBeamAp.oparse(cm)
+        aq <- NsBeamAq.oparse(cm)
+        bp <- NsBeamBp.oparse(cm)
+        bq <- NsBeamBq.oparse(cm)
+        eo <- EOffsetting.oparse(cm)
+        sf <- NsShuffle.oparse(cm)
+        cy <- NsCycles.oparse(cm)
+      } yield GmosNodAndShuffle(Offset(ap, aq), Offset(bp, bq), eo, sf, cy)).run
+    }
+
+    def parseCommonStatic(cm: ConfigMap): PioError \/ GmosCommonStaticConfig =
+      for {
+        d <- Legacy.Instrument.Gmos.Detector.parse(cm)
+        m <- Legacy.Instrument.MosPreImaging.parse(cm)
+        n <- parseNodAndShuffle(cm)
+        r <- parseCustomRoiEntries(cm)
+      } yield GmosCommonStaticConfig(d, m, n, r)
+
+    def parseNorth(cm: ConfigMap): PioError \/ StaticConfig =
+      for {
+        c <- parseCommonStatic(cm)
+        s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
+      } yield GmosNorth(c, s)
+
+    def parseSouth(cm: ConfigMap): PioError \/ StaticConfig =
+      for {
+        c <- parseCommonStatic(cm)
+        s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
+      } yield GmosSouth(c, s)
+  }
+
 }
