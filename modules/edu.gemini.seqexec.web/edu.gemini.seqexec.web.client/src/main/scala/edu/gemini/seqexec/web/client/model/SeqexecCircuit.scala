@@ -375,7 +375,8 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
           (List.empty[SequenceView],
            List[Option[Effect]](Effect(Future(NoAction)).some))
         ) { case ((seq, eff), q) =>
-            val syncUrlE: Option[Effect] = syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q))))
+            val syncUrlE: Option[Effect] =
+              syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(Effect(Future(NoAction)).some)
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
               Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::
