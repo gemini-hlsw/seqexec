@@ -3,7 +3,6 @@ package edu.gemini.seqexec.server
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
-import edu.gemini.seqexec.server.GmosSouthController.GmosSouthConfig
 
 import scalaz.EitherT
 import scalaz.concurrent.Task
@@ -11,7 +10,7 @@ import scalaz.concurrent.Task
 object GmosSouthControllerSim extends GmosSouthController {
   private val Log = Logger.getLogger(getClass.getName)
 
-  override def getConfig: SeqAction[GmosSouthConfig] = ???
+  override def getConfig: SeqAction[GmosConfig] = ???
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Gmos South observation with label " + obsid)
@@ -20,7 +19,7 @@ object GmosSouthControllerSim extends GmosSouthController {
     TrySeq(obsid)
   } )
 
-  override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = EitherT( Task {
+  override def applyConfig(config: GmosConfig): SeqAction[Unit] = EitherT( Task {
     Log.info("Applying Gmos South configuration " + config)
     TrySeq(())
   } )
