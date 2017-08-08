@@ -5,6 +5,8 @@ package gem.config
 
 import gem.enum.F2Fpu
 
+import scalaz.Equal
+
 /** Additional type hierarchy over the low-level F2 enums.
   */
 object F2Config {
@@ -25,6 +27,9 @@ object F2Config {
   object F2FpuChoice {
     case object      Custom              extends F2FpuChoice
     final case class Builtin(fpu: F2Fpu) extends F2FpuChoice
+
+    implicit val EqualF2FpuChoice: Equal[F2FpuChoice] =
+      Equal.equalA
   }
 
 }
