@@ -135,11 +135,11 @@ object Parsers {
 
     import F2Disperser._
 
-    val disperser: PioParse[F2Disperser] = enum(
-      "NONE"    -> NoDisperser,
-      "R1200HK" -> R1200HK,
-      "R1200JH" -> R1200JH,
-      "R3000"   -> R3000
+    val disperser: PioParse[Option[F2Disperser]] = enum(
+      "NONE"    -> None,
+      "R1200HK" -> Some(R1200HK),
+      "R1200JH" -> Some(R1200JH),
+      "R3000"   -> Some(R3000)
     )
 
 

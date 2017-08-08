@@ -157,13 +157,13 @@ trait Arbitraries {
   implicit val arbF2Dynamic       =
     Arbitrary {
       for {
-        d <- arbitrary[F2Disperser  ]
-        e <- arbitrary[Duration     ]
-        f <- arbitrary[F2Filter     ]
-        u <- arbitrary[F2FpUnit     ]
-        l <- arbitrary[F2LyotWheel  ]
-        r <- arbitrary[F2ReadMode   ]
-        w <- arbitrary[F2WindowCover]
+        d <- arbitrary[Option[F2Disperser]]
+        e <- arbitrary[Duration           ]
+        f <- arbitrary[F2Filter           ]
+        u <- arbitrary[F2FpUnit           ]
+        l <- arbitrary[F2LyotWheel        ]
+        r <- arbitrary[F2ReadMode         ]
+        w <- arbitrary[F2WindowCover      ]
       } yield DynamicConfig.F2(d, e, f, u, l, r, w)
     }
 

@@ -125,7 +125,7 @@ object SmartGcalSpec {
 
   private val f2: DynamicConfig.F2 =
     DynamicConfig.F2(
-      /* Disperser             */ F2Disperser.R1200JH,
+      /* Disperser             */ Some(F2Disperser.R1200JH),
       Duration.ofMillis(1000),
       /* Filter                */ F2Filter.JH,
       /* FPU                   */ F2FpUnit.LongSlit1,

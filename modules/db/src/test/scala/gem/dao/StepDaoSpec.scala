@@ -28,7 +28,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
           List(
             Step.Science(
               DynamicConfig.F2(
-                F2Disperser.NoDisperser,
+                None,
                 Duration.ZERO,
                 F2Filter.Dark,
                 F2FpUnit.LongSlit1,
