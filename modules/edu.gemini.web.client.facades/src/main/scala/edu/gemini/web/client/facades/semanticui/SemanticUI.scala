@@ -58,7 +58,7 @@ object SemanticUI {
   object JsTabOptions extends JsTabOptionBuilder(noOpts)
 
   class JsTabOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsTabOptions, JsTabOptionBuilder](new JsTabOptionBuilder(_)) {
-    def onVisible[A, B](t: js.Function1[A, B]) = jsOpt("onVisible", t)
+    def onVisible[A, B](t: js.Function1[A, B]): JsTabOptionBuilder = jsOpt("onVisible", t)
   }
 
   @js.native

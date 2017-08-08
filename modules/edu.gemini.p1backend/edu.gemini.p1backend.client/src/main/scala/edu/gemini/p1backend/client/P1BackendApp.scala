@@ -8,6 +8,6 @@ import scala.scalajs.js.JSApp
 object P1BackendApp extends JSApp {
 
   def main(): Unit = {
-    println("Phase1 Backend")
+    // Launch the application
   }
 }

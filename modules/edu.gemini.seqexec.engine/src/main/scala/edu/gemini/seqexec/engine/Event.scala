@@ -31,7 +31,7 @@ case class Load(id: Sequence.Id, sequence: Sequence[Action \/ Result]) extends U
   val user = None
 }
 case class Unload(id: Sequence.Id) extends UserEvent {
-  var user = None
+  val user = None
 }
 case class Breakpoint(id: Sequence.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent
 case class SetOperator(name: String, user: Option[UserDetails]) extends UserEvent
