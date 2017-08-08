@@ -15,7 +15,7 @@ object stop {
     gosub("Shutting down Gem deployment.") {
       for {
         ks <- findRunningContainersWithLabel("edu.gemini.commit")
-        _  <- ks.traverseU(stopOne)
+        _  <- ks.traverse(stopOne)
       } yield ()
     }
 

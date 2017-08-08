@@ -58,7 +58,7 @@ object Command {
     ).orNone
 
   private lazy val server: Opts[Server] =
-    (machine |@| host |@| user) map {
+    (machine, host, user) mapN {
       case (true,  oh,      ou) => Server.Remote(Host.Machine(oh.getOrElse("default")), ou)
       case (false, Some(h), ou) => Server.Remote(Host.Network(h), ou)
       case (false, None,    _ ) => Server.Local
@@ -102,7 +102,7 @@ object Command {
     ).orFalse
 
   private lazy val deploy: Opts[Deploy] =
-    (server |@| deployRevision |@| standalone |@| verbose |@| force) map Deploy.apply
+    (server, deployRevision, standalone, verbose, force) mapN Deploy.apply
 
   private lazy val lines: Opts[Int] = {
     val DefaultLines = 50
@@ -124,25 +124,25 @@ object Command {
     Opts.subcommand(
       name = "ps",
       help = "Get the status of a gem deployment."
-    )((server |@| verbose).map(Ps).widen[Command])
+    )((server, verbose).mapN(Ps).widen[Command])
 
   private lazy val stopCommand: Opts[Command] =
     Opts.subcommand(
       name = "stop",
       help = "Stop a gem deployment."
-    )((server |@| verbose).map(Stop).widen[Command])
+    )((server, verbose).mapN(Stop).widen[Command])
 
   private lazy val logCommand: Opts[Command] =
     Opts.subcommand(
       name = "log",
       help = "Show the Gem server log."
-    )((server |@| verbose |@| lines).map(Log).widen[Command])
+    )((server, verbose, lines).mapN(Log).widen[Command])
 
   private lazy val rollbackCommand: Opts[Command] =
     Opts.subcommand(
       name = "rollback",
       help = "Roll the current gem deployment back to the previous one, if possible."
-    )((server |@| verbose).map(Rollback).widen[Command])
+    )((server, verbose).mapN(Rollback).widen[Command])
 
   private def mainParser(progName: String): Cmd[Command] =
     Cmd(

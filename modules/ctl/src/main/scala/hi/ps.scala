@@ -15,7 +15,7 @@ object ps {
   val ps: CtlIO[Unit] =
     for {
       ks <- findRunningContainersWithLabel("edu.gemini.commit")
-      _  <- ks.traverseU(psOne)
+      _  <- ks.traverse(psOne)
     } yield ()
 
   def psOne(k: Container): CtlIO[Unit] =

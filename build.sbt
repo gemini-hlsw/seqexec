@@ -17,10 +17,10 @@ lazy val attoVersion              = "0.5.3"
 lazy val slf4jVersion             = "1.7.25"
 lazy val jwtVersion               = "0.14.0"
 lazy val flywayVersion            = "4.0.3"
-lazy val catsVersion              = "0.9.0"
-lazy val catsEffectVersion        = "0.3"
-lazy val declineVersion           = "0.2.2"
-lazy val mouseVersion             = "0.9"
+lazy val catsVersion              = "1.0.0-MF"
+lazy val catsEffectVersion        = "0.4"
+lazy val declineVersion           = "0.2.2" // NEED UPDATE
+lazy val mouseVersion             = "0.10-MF"
 
 enablePlugins(GitVersioning)
 
@@ -312,7 +312,8 @@ lazy val ctl = project
   .settings (
     resolvers += Resolver.bintrayRepo("bkirwi", "maven"),
     libraryDependencies ++= Seq(
-      "org.typelevel"           %% "cats"        % catsVersion,
+      "org.typelevel"           %% "cats-core"   % catsVersion,
+      "org.typelevel"           %% "cats-free"   % catsVersion,
       "org.typelevel"           %% "cats-effect" % catsEffectVersion,
       "com.monovore"            %% "decline"     % declineVersion,
       "com.github.benhutchison" %% "mouse"       % mouseVersion

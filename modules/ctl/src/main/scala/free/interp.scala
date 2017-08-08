@@ -121,7 +121,7 @@ object interpreter {
       _ <- if (verbose) doLog(Level.Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", state) else ().pure[EitherT[IO, Int, ?]]
       o <- EitherT.right(exec(cmd, handler))
       _ <- if (verbose) doLog(Level.Shell, s"exit(${o.exitCode})", state) else ().pure[EitherT[IO, Int, ?]]
-      - <- if (!verbose) EitherT.right[IO, Int, Unit](IO(Console.print("\u001B[1G\u001B[K"))) else ().pure[EitherT[IO, Int, ?]]
+      - <- if (!verbose) EitherT.right[Int](IO(Console.print("\u001B[1G\u001B[K"))) else ().pure[EitherT[IO, Int, ?]]
     } yield o
 
   }
