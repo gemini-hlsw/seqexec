@@ -14,6 +14,12 @@ package object sql {
   implicit val AngleMeta: Meta[Angle] =
     Meta[Double].xmap(Angle.fromArcsecs, _.toArcsecs)
 
+  implicit val WavelengthNmMeta: Meta[Wavelength.Nm] =
+    Meta[BigDecimal].xmap(Wavelength.fromNm, _.toBigDecimal)
+
+  implicit val WavelengthUmMeta: Meta[Wavelength.Um] =
+    Meta[BigDecimal].xmap(Wavelength.fromUm, _.toBigDecimal)
+
   implicit val ZoneIdMeta: Meta[ZoneId] =
     Meta[String].xmap(ZoneId.of, _.toString)
 

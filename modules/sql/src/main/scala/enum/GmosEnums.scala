@@ -63,7 +63,7 @@ object GmosEnums {
       },
 
       EnumDef.fromQuery("GmosNorthFilter", "GMOS North filters") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Angle, 'obsolete -> Boolean`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Wavelength.Um, 'obsolete -> Boolean`.T
         sql"""SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_gmos_north_filter""".query[(String, R)]
       },
 
@@ -88,7 +88,7 @@ object GmosEnums {
       },
 
       EnumDef.fromQuery("GmosSouthFilter", "GMOS South filters") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Angle, 'obsolete -> Boolean`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Wavelength.Um, 'obsolete -> Boolean`.T
         sql"""SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_gmos_south_filter""".query[(String, R)]
       },
 
