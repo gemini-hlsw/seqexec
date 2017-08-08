@@ -1,6 +1,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
-import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SequenceState}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, SequenceState}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -223,47 +223,47 @@ object SequenceControl {
 }
 
 /**
-  * Component deciding what tooblat to display
+  * Component deciding what tooblar to display
   */
 object SequenceDefaultToolbar {
-  case class Props(instrument: Instrument)
-
-  private val sequenceObserverConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-  private val sequenceControlConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
+  case class Props(site: SeqexecSite, instrument: Instrument) {
+    val sequenceObserverConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+    val sequenceControlConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
+  }
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .render_P( p =>
       <.div(
         ^.cls := "ui row",
         <.div(
-          sequenceObserverConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
+          p.sequenceObserverConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
         ),
         <.div(
           ^.cls := "ui two column grid",
           <.div(
             ^.cls := "ui left column eight wide computer sixteen wide tablet only",
             SeqexecStyles.controlColumn,
-            sequenceControlConnects.get(p.instrument).whenDefined(c => c(SequenceControl.apply)),
+            p.sequenceControlConnects.get(p.instrument).whenDefined(c => c(SequenceControl.apply)),
           ),
           <.div(
             ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
             SeqexecStyles.controlColumn,
-            sequenceObserverConnects.get(p.instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+            p.sequenceObserverConnects.get(p.instrument).whenDefined(c => c(m => SequenceObserverField(m)))
           )
         )
       )
     ).build
 
-  def apply(p: Instrument): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(site: SeqexecSite, p: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, p))
 }
 
 /**
   * Toolbar for anonymous users
   */
 object SequenceAnonymousToolbar {
-  case class Props(instrument: Instrument)
-
-  private val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  case class Props(site: SeqexecSite, instrument: Instrument) {
+    val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  }
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .stateless
@@ -274,24 +274,24 @@ object SequenceAnonymousToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
+            p.instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
           )
         )
       )
     ).build
 
-  def apply(i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(i))
+  def apply(site: SeqexecSite, i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, i))
 }
 
 /**
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  case class Props(instrument: Instrument, isLogged: Boolean, step: Int)
+  case class Props(site: SeqexecSite, instrument: Instrument, isLogged: Boolean, step: Int) {
+    val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  }
 
   def backToSequence(i: Instrument): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(i))}
-
-  private val sequenceInfoConnects = Instrument.gsInstruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
@@ -301,7 +301,7 @@ object StepConfigToolbar {
           ^.cls := "ui row",
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
+            p.sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
           )
         ),
         <.div(

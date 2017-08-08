@@ -2,18 +2,21 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import diode.react.ReactPot._
+import edu.gemini.web.client.facades.semanticui.SemanticUI._
+import edu.gemini.seqexec.model.Model.SeqexecSite
 import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, WebSocketConnection}
 import edu.gemini.seqexec.web.client.model.Pages.Root
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.OcsBuildInfo
-import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.HeaderItem
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
+
+import scalaz.syntax.show._
 
 /**
   * Component for the bar at the top of the page
@@ -27,9 +30,9 @@ object NavBar {
     Callback(SeqexecCircuit.dispatch(NavigateTo(Root)))
   }
 
-  private val component = ScalaComponent.builder[Unit]("SeqexecAppBar")
+  private val component = ScalaComponent.builder[SeqexecSite]("SeqexecAppBar")
     .stateless
-    .render(_ =>
+    .render_P(p =>
       <.div(
         SeqexecStyles.mainContainer,
         <.div(
@@ -46,7 +49,7 @@ object NavBar {
                 ),
                 ^.onClick ==> goHome
               ),
-              "Seqexec"
+              s"Seqexec - ${p.show}"
             ),
             HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
             wsConnect(ConnectionState.apply),
@@ -66,7 +69,7 @@ object NavBar {
     )
     .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(s: SeqexecSite): Unmounted[SeqexecSite, Unit, Unit] = component(s)
 }
 
 /**

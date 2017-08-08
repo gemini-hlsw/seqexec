@@ -8,6 +8,24 @@ import monocle.macros.GenLens
 import monocle.Traversal
 
 object Model {
+  // We use this to avoid a dependency on spModel, should be replaced by gem
+  sealed trait SeqexecSite {
+    def instruments: NonEmptyList[Instrument]
+  }
+  object SeqexecSite {
+    case object SeqexecGN extends SeqexecSite {
+      val instruments = Instrument.gnInstruments
+    }
+
+    case object SeqexecGS extends SeqexecSite {
+      val instruments = Instrument.gsInstruments
+    }
+
+    implicit val show: Show[SeqexecSite] = Show.shows({
+      case SeqexecGN => "GN"
+      case SeqexecGS => "GS"
+    })
+  }
 
   sealed trait SeqexecEvent
   sealed trait SeqexecModelUpdate extends SeqexecEvent {
@@ -109,8 +127,11 @@ object Model {
   case object F2 extends Instrument
   case object GmosS extends Instrument
   case object GmosN extends Instrument
+  case object GNIRS extends Instrument
   case object GPI extends Instrument
   case object GSAOI extends Instrument
+  case object NIRI extends Instrument
+  case object NIFS extends Instrument
 
   object Instrument {
     implicit val equal: Equal[Instrument] = Equal.equalA[Instrument]
@@ -120,9 +141,12 @@ object Model {
       case GmosN => "GMOS-N"
       case GPI   => "GPI"
       case GSAOI => "GSAOI"
+      case GNIRS => "GNIRS"
+      case NIRI  => "NIRI"
+      case NIFS  => "NIFS"
     })
     val gsInstruments = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
-    val gnInstruments = NonEmptyList[Instrument](GmosN)
+    val gnInstruments = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
   }
 
   type Operator = String

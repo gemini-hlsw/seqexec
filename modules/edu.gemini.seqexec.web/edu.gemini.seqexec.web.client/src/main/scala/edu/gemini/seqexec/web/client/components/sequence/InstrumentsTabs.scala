@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{SequenceState, Instrument}
+import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite, Instrument}
 import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
@@ -25,8 +25,8 @@ object InstrumentTab {
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
-    .render_P { q =>
-      val tab = q.t()
+    .render_P { p =>
+      val tab = p.t()
       val active = tab.active
       val status = tab.idState.map(_._2)
       val hasError = status.map(SequenceState.isError).getOrElse(false)
@@ -81,17 +81,18 @@ object InstrumentTab {
   * Menu with tabs
   */
 object InstrumentsTabs {
-  // TODO Consider GN/GS
-  val instrumentConnects = Instrument.gsInstruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
+  case class Props(site: SeqexecSite) {
+    val instrumentConnects = site.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
+  }
 
-  private val component = ScalaComponent.builder[Unit]("InstrumentsMenu")
+  private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
-    .render(_ =>
+    .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        instrumentConnects.map(c => c(InstrumentTab.apply)).toTagMod
+        p.instrumentConnects.map(c => c(InstrumentTab.apply)).toTagMod
       )
     ).build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(site: SeqexecSite): Unmounted[Props, Unit, Unit] = component(Props(site))
 }
