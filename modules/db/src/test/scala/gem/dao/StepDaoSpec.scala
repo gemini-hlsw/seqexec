@@ -6,6 +6,7 @@ package gem.dao
 import doobie.imports._
 import gem._
 import gem.config._
+import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.enum._
 import gem.math._
 import java.time.Duration
@@ -31,7 +32,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
                 None,
                 Duration.ZERO,
                 F2Filter.Dark,
-                F2FpUnit.LongSlit1,
+                Some(Builtin(F2FpUnit.LongSlit1)),
                 F2LyotWheel.F16,
                 F2ReadMode.Bright,
                 F2WindowCover.Close

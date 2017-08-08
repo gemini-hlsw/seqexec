@@ -163,18 +163,20 @@ object Parsers {
     )
 
     import F2FpUnit._
+    import gem.config.F2Config.F2FpuChoice
+    import gem.config.F2Config.F2FpuChoice.{ Builtin, Custom }
 
-    val fpu: PioParse[F2FpUnit] = enum(
-      "PINHOLE"         -> Pinhole,
-      "SUBPIX_PINHOLE"  -> SubPixPinhole,
+    val fpu: PioParse[Option[F2FpuChoice]] = enum(
+      "PINHOLE"         -> Some(Builtin(Pinhole)),
+      "SUBPIX_PINHOLE"  -> Some(Builtin(SubPixPinhole)),
       "FPU_NONE"        -> None,
-      "CUSTOM_MASK"     -> Custom,
-      "LONGSLIT_1"      -> LongSlit1,
-      "LONGSLIT_2"      -> LongSlit2,
-      "LONGSLIT_3"      -> LongSlit3,
-      "LONGSLIT_4"      -> LongSlit4,
-      "LONGSLIT_6"      -> LongSlit6,
-      "LONGSLIT_8"      -> LongSlit8
+      "CUSTOM_MASK"     -> Some(Custom),
+      "LONGSLIT_1"      -> Some(Builtin(LongSlit1)),
+      "LONGSLIT_2"      -> Some(Builtin(LongSlit2)),
+      "LONGSLIT_3"      -> Some(Builtin(LongSlit3)),
+      "LONGSLIT_4"      -> Some(Builtin(LongSlit4)),
+      "LONGSLIT_6"      -> Some(Builtin(LongSlit6)),
+      "LONGSLIT_8"      -> Some(Builtin(LongSlit8))
     )
 
     import F2LyotWheel._

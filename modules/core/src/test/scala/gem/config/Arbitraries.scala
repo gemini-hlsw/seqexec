@@ -4,6 +4,7 @@
 package gem.config
 
 import gem.arb._
+import gem.config.F2Config.F2FpuChoice
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
 import gem.enum._
 import gem.enum.Instrument._
@@ -154,13 +155,19 @@ trait Arbitraries {
   implicit val arbTrecsDynamic     = const(DynamicConfig.Trecs()          )
   implicit val arbVisitorDynamic   = const(DynamicConfig.Visitor()        )
 
+  implicit val arbF2FpuChoice      =
+    Arbitrary {
+      Gen.oneOf(Gen.const(F2FpuChoice.Custom),
+                arbitrary[F2FpUnit].map(F2FpuChoice.Builtin(_)))
+    }
+
   implicit val arbF2Dynamic       =
     Arbitrary {
       for {
         d <- arbitrary[Option[F2Disperser]]
         e <- arbitrary[Duration           ]
         f <- arbitrary[F2Filter           ]
-        u <- arbitrary[F2FpUnit           ]
+        u <- arbitrary[Option[F2FpuChoice]]
         l <- arbitrary[F2LyotWheel        ]
         r <- arbitrary[F2ReadMode         ]
         w <- arbitrary[F2WindowCover      ]

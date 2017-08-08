@@ -63,7 +63,7 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
 
     val d = disperserS.parseAs(disperser)
     val f = filterS   .parseAs(filter   )
-    val u = fpuS      .parseAs(fpu      )
+    val u = fpuS      .parseAs(fpu      ).flatMap(_.toBuiltin)
 
     (SmartGcalKey.F2(d, f, u), gcal)
   }

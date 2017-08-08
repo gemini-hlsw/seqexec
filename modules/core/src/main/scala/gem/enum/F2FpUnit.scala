@@ -24,8 +24,6 @@ object F2FpUnit {
 
   /** @group Constructors */ case object Pinhole extends F2FpUnit("Pinhole", "Pinhole", "2-Pixel Pinhole Grid", 0, "Imaging", false)
   /** @group Constructors */ case object SubPixPinhole extends F2FpUnit("SubPixPinhole", "Sub-Pix Pinhole", "Sub-Pixel Pinhole Gr", 0, "Imaging", false)
-  /** @group Constructors */ case object None extends F2FpUnit("None", "None", "Imaging (none)", 0, "Imaging", false)
-  /** @group Constructors */ case object Custom extends F2FpUnit("Custom", "Custom", "Custom Mask", 0, "MOS", false)
   /** @group Constructors */ case object LongSlit1 extends F2FpUnit("LongSlit1", "Long Slit 1px", "1-Pixel Long Slit", 1, "Long Slit", false)
   /** @group Constructors */ case object LongSlit2 extends F2FpUnit("LongSlit2", "Long Slit 2px", "2-Pixel Long Slit", 2, "Long Slit", false)
   /** @group Constructors */ case object LongSlit3 extends F2FpUnit("LongSlit3", "Long Slit 3px", "3-Pixel Long Slit", 3, "Long Slit", false)
@@ -35,7 +33,7 @@ object F2FpUnit {
 
   /** All members of F2FpUnit, in canonical order. */
   val all: List[F2FpUnit] =
-    List(Pinhole, SubPixPinhole, None, Custom, LongSlit1, LongSlit2, LongSlit3, LongSlit4, LongSlit6, LongSlit8)
+    List(Pinhole, SubPixPinhole, LongSlit1, LongSlit2, LongSlit3, LongSlit4, LongSlit6, LongSlit8)
 
   /** Select the member of F2FpUnit with the given tag, if any. */
   def fromTag(s: String): Option[F2FpUnit] =
