@@ -9,12 +9,12 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadoutMode
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
-import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.obscomp.InstConstants.{ARC_OBSERVE_TYPE, CAL_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, FLAT_OBSERVE_TYPE, SCIENCE_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 
-import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import scalaz.concurrent.Task
 import scalaz._
 
@@ -79,8 +79,8 @@ object Flamingos2 {
   }
 
   def windowCoverFromObserveType(observeType: String): WindowCover = observeType match {
-    case DARK_OBSERVE_TYPE    => WindowCover.CLOSE
-    case _                    => WindowCover.OPEN
+    case DARK_OBSERVE_TYPE => WindowCover.CLOSE
+    case _                 => WindowCover.OPEN
   }
 
   implicit def grismFromSPDisperser(d: Disperser): Grism = d match {
@@ -91,24 +91,38 @@ object Flamingos2 {
   }
 
   private def disperserFromObserveType(observeType: String, d: Disperser): Grism = observeType match {
-    case DARK_OBSERVE_TYPE    => Grism.Dark
-    case _                    => d
+    case DARK_OBSERVE_TYPE => Grism.Dark
+    case _                 => d
   }
+
+  private def exposureTime(config: Config): ExtractFailure \/ Duration =
+    config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].flatMap {
+      case SCIENCE_OBSERVE_TYPE                                    =>
+        config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
+      case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE                   =>
+        config.extract(CALIBRATION_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
+      case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE =>
+        config.extract(CALIBRATION_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
+      case obsType                                                 =>
+        \/.left(ContentError(s"Unknown step type $obsType"))
+    }
 
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] = ( for {
       obsType <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
       // WINDOW_COVER_PROP is optional. If not present, then window cover position is inferred from observe type.
-      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover].recover(PartialFunction((x:ConfigUtilOps.ExtractFailure) => windowCoverFromObserveType(obsType)))
-      q <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
-      r <- fpuConfig(config)
-      s <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
-      t <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP).as[LyotWheel]
-      u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser].map(disperserFromObserveType(obsType, _))
+      p       <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover].recover {
+                   case _: ConfigUtilOps.ExtractFailure => windowCoverFromObserveType(obsType)
+                 }
+      q       <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
+      r       <- fpuConfig(config)
+      s       <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
+      t       <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP).as[LyotWheel]
+      u       <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser].map(disperserFromObserveType(obsType, _))
 
     } yield CCConfig(p, q, r, s, t, u) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] = ( for {
-    p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Duration(x, SECONDS))
+    p <- exposureTime(config)
     // Reads is usually inferred from the read mode, but it can be explicit.
     q <- config.extract(OBSERVE_KEY / READS_PROP).as[Reads] match {
           case a: \/-[Reads] => a
