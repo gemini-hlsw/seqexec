@@ -9,9 +9,9 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
+import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scala.scalajs.js.timers.SetTimeoutHandle
-
 import scalaz._
 import Scalaz._
 
@@ -33,7 +33,7 @@ object SeqexecMain {
       )
     ).build
 
-  def apply(site: SeqexecSite, ctl: RouterCtl[SeqexecPages]) = component(Props(site, ctl))
+  def apply(site: SeqexecSite, ctl: RouterCtl[SeqexecPages]): Unmounted[Props, Unit, Unit] = component(Props(site, ctl))
 }
 
 /**

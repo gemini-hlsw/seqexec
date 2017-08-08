@@ -170,6 +170,7 @@ object StepsTableContainer {
     def breakpointAt(id: SequenceId, step: Step): Callback =
       $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipBreakpointStep(id, step))) }
 
+    // scalastyle:off
     def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
@@ -266,6 +267,7 @@ object StepsTableContainer {
           }.toTagMod
         )
       )
+    // scalastyle:on
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       <.div(

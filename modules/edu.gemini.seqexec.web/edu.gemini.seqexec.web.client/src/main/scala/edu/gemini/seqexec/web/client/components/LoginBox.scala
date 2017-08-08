@@ -60,6 +60,7 @@ object LoginBox {
       )
     }
 
+    // scalastyle:off
     def render(s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
@@ -137,6 +138,7 @@ object LoginBox {
           )
         )
       )
+    // scalastyle:on
   }
 
   private val component = ScalaComponent.builder[Props]("Login")
@@ -146,7 +148,7 @@ object LoginBox {
       Callback {
         // To properly handle the model we need to do updates with jQuery and
         // the Semantic UI javascript library
-        // The calls below use a custom scala.js facade for SemantiUI
+        // The calls below use a custom scala.js facade for SemanticUI
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
@@ -154,7 +156,7 @@ object LoginBox {
           $(ctx.getDOMNode).modal("hide")
         }
         if (ctx.currentProps.visible() === SectionOpen) {
-          // Configure the modal to autofoucs and to act properly on closing
+          // Configure the modal to autofocus and to act properly on closing
           $(ctx.getDOMNode).modal(
             JsModalOptions
               .autofocus(true)

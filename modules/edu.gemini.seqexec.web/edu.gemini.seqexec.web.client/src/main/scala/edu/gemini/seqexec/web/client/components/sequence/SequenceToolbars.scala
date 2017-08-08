@@ -147,6 +147,7 @@ object SequenceControl {
   def requestPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
+  // scalastyle:off
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS { ($, p, s) =>
@@ -218,6 +219,7 @@ object SequenceControl {
       // Update state of run requested depending on the run state
       Callback.when(f.nextProps.p().control.map(_.status).contains(SequenceState.Running) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
+  // scalastyle:on
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
 }
@@ -243,7 +245,7 @@ object SequenceDefaultToolbar {
           <.div(
             ^.cls := "ui left column eight wide computer sixteen wide tablet only",
             SeqexecStyles.controlColumn,
-            p.sequenceControlConnects.get(p.instrument).whenDefined(c => c(SequenceControl.apply)),
+            p.sequenceControlConnects.get(p.instrument).whenDefined(c => c(SequenceControl.apply))
           ),
           <.div(
             ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",

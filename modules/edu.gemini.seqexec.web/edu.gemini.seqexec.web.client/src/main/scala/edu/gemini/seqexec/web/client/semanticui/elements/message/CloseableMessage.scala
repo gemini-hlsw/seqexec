@@ -1,6 +1,7 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.message
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconClose
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
@@ -47,5 +48,5 @@ object CloseableMessage extends Message {
     )
     .build
 
-  def apply(p: Props, children: VdomNode*) = component(p)(children: _*)
+  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

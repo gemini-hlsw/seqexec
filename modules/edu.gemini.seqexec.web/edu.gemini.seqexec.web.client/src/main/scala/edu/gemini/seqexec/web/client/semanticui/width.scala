@@ -1,20 +1,6 @@
 package edu.gemini.seqexec.web.client.semanticui
 
-import scalaz._
-
-sealed trait Size
-
-object Size {
-  case object NotSized extends Size
-  case object Tiny extends Size
-  case object Mini extends Size
-  case object Medium extends Size
-  case object Small extends Size
-  case object Large extends Size
-  case object Big extends Size
-  case object Huge extends Size
-  case object Massive extends Size
-}
+import scalaz.Equal
 
 sealed trait Width
 
@@ -40,13 +26,4 @@ object Width {
   implicit val equal: Equal[Width] = Equal.equalA[Width]
 }
 
-sealed trait Aligned
-
-object Aligned {
-  case object None extends Aligned
-  case object Left extends Aligned
-  case object Center extends Aligned
-  case object Right extends Aligned
-
-  implicit val equal: Equal[Aligned] = Equal.equalA[Aligned]
-}
+trait SemanticUIWidth extends Width

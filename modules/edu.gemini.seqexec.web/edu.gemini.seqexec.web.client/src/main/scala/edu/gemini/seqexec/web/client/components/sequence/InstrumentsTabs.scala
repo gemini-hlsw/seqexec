@@ -31,7 +31,7 @@ object InstrumentTab {
       val tab = p.t()
       val active = tab.active
       val status = tab.idState.map(_._2)
-      val hasError = status.map(SequenceState.isError).getOrElse(false)
+      val hasError = status.exists(SequenceState.isError)
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
       val icon = status.flatMap {
@@ -80,7 +80,7 @@ object InstrumentTab {
       }
     ).build
 
-  def apply(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]) = component(Props(site, p))
+  def apply(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]): Unmounted[Props, Unit, Unit] = component(Props(site, p))
 }
 /**
   * Menu with tabs
