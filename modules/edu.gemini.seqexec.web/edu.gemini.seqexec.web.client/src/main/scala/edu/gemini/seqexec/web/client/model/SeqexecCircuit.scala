@@ -51,7 +51,12 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
 
     case SyncToRunning(s) =>
       // We'll select the sequence currently running and show the correct url
-      updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectToDisplay(s))))
+      value match {
+        case Root | InstrumentPage(_, None) =>
+          updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectToDisplay(s))))
+        case InstrumentPage(_, Some(id))    =>
+          effectOnly(Effect(Future(SelectIdToDisplay(id))))
+      }
 
     case SyncPageToRemovedSequence(id) =>
       // If the id is selected, reset the route
@@ -358,7 +363,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       updated(value.copy(sequences = filterSequences(s.view)))
 
     case ServerMessage(SequenceUnloaded(id, view)) =>
-      updated(value.copy(sequences = view, firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
+      updated(value.copy(sequences = filterSequences(view), firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
@@ -400,9 +405,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
 object PotEq {
   def potStateEq[A]: FastEq[Pot[A]] = (a: Pot[A], b: Pot[A]) => a.state == b.state
 
-  val seqexecQueueEq: FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
-  val searchResultsEq: FastEq[Pot[SearchResults]] = potStateEq[SearchResults]
-  val sequenceEq: FastEq[Pot[SequenceView]] = potStateEq[SequenceView]
+  val seqexecQueueEq:  FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
+  val searchResultsEq: FastEq[Pot[SearchResults]]      = potStateEq[SearchResults]
+  val sequenceEq:      FastEq[Pot[SequenceView]]       = potStateEq[SequenceView]
 }
 
 /**
