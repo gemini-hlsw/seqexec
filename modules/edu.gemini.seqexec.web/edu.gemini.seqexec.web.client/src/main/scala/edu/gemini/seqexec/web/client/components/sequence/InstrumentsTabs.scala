@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite, Instrument}
+import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite}
 import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
@@ -17,11 +17,13 @@ import japgolly.scalajs.react.{Callback, ScalaComponent}
 import scalacss.ScalaCssReact._
 
 import scalaz.std.option._
+import scalaz.std.string._
 import scalaz.syntax.std.option._
 import scalaz.syntax.show._
+import scalaz.syntax.equal._
 
 object InstrumentTab {
-  case class Props(t: ModelProxy[InstrumentStatusFocus])
+  case class Props(site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
@@ -61,12 +63,15 @@ object InstrumentTab {
 
         $(ctx.getDOMNode).tab(
           JsTabOptions
-            .onVisible { (x: Instrument) =>
-              val updateModelCB = ctx.props.t().idState match {
-                case Some((id, _)) =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, id.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
-                case _             =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(x, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(x))
+            .onVisible { (x: String) =>
+              val instrument = ctx.props.site.instruments.list.toList.find(_.shows === x)
+              val updateModelCB = (ctx.props.t().idState, instrument) match {
+                case (Some((id, _)), Some(i)) =>
+                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, id.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
+                case (_, Some(i))             =>
+                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
+                case _                        =>
+                  Callback.empty
               }
               // runNow as we are outside react loop
               updateModelCB.runNow()
@@ -75,7 +80,7 @@ object InstrumentTab {
       }
     ).build
 
-  def apply(p: ModelProxy[InstrumentStatusFocus]) = component(Props(p))
+  def apply(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]) = component(Props(site, p))
 }
 /**
   * Menu with tabs
@@ -90,7 +95,7 @@ object InstrumentsTabs {
     .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        p.instrumentConnects.map(c => c(InstrumentTab.apply)).toTagMod
+        p.instrumentConnects.map(c => c(InstrumentTab(p.site, _))).toTagMod
       )
     ).build
 
