@@ -162,7 +162,7 @@ object Parsers {
       "Y"       -> Y
     )
 
-    import F2FpUnit._
+    import F2Fpu._
     import gem.config.F2Config.F2FpuChoice
     import gem.config.F2Config.F2FpuChoice.{ Builtin, Custom }
 

@@ -3,7 +3,7 @@
 
 package gem.config
 
-import gem.enum.F2FpUnit
+import gem.enum.F2Fpu
 
 /** Additional type hierarchy over the low-level F2 enums.
   */
@@ -15,7 +15,7 @@ object F2Config {
     import F2FpuChoice.{ Builtin, Custom }
 
     /** Extracts the builtin FPU, if any. */
-    def toBuiltin: Option[F2FpUnit] =
+    def toBuiltin: Option[F2Fpu] =
       this match {
         case Custom       => None
         case Builtin(fpu) => Some(fpu)
@@ -23,8 +23,8 @@ object F2Config {
   }
 
   object F2FpuChoice {
-    case object      Custom                 extends F2FpuChoice
-    final case class Builtin(fpu: F2FpUnit) extends F2FpuChoice
+    case object      Custom              extends F2FpuChoice
+    final case class Builtin(fpu: F2Fpu) extends F2FpuChoice
   }
 
 }

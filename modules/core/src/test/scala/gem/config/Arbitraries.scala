@@ -158,7 +158,7 @@ trait Arbitraries {
   implicit val arbF2FpuChoice      =
     Arbitrary {
       Gen.oneOf(Gen.const(F2FpuChoice.Custom),
-                arbitrary[F2FpUnit].map(F2FpuChoice.Builtin(_)))
+                arbitrary[F2Fpu].map(F2FpuChoice.Builtin(_)))
     }
 
   implicit val arbF2Dynamic       =

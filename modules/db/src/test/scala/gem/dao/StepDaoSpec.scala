@@ -32,7 +32,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
                 None,
                 Duration.ZERO,
                 F2Filter.Dark,
-                Some(Builtin(F2FpUnit.LongSlit1)),
+                Some(Builtin(F2Fpu.LongSlit1)),
                 F2LyotWheel.F16,
                 F2ReadMode.Bright,
                 F2WindowCover.Close

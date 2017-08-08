@@ -53,7 +53,7 @@ object DynamicConfig {
     final case class F2(
       disperser: Option[F2Disperser],
       filter:    F2Filter,
-      fpu:       Option[F2FpUnit]
+      fpu:       Option[F2Fpu]
     ) extends SmartGcalSearchKey with SmartGcalDefinitionKey
 
     final case class GmosCommon[D, F, U](

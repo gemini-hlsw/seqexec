@@ -309,8 +309,8 @@ object StepDao {
       import F2Config.F2FpuChoice
       import F2Config.F2FpuChoice._
 
-      final case class F2FpuBuilder(fpu: Option[F2FpUnit], customMask: Boolean) {
-        def toFpu: Option[F2FpuChoice] =
+      final case class F2FpuBuilder(fpu: Option[F2Fpu], customMask: Boolean) {
+        def toFpuChoice: Option[F2FpuChoice] =
           if (customMask) Some(Custom) else fpu.map(Builtin(_))
       }
 
@@ -324,7 +324,7 @@ object StepDao {
         windowCover:   F2WindowCover
       ) {
         def toF2: DynamicConfig.F2 =
-          DynamicConfig.F2(disperser, exposureTime, filter, fpuBuilder.toFpu, lyotWheel, readMode, windowCover)
+          DynamicConfig.F2(disperser, exposureTime, filter, fpuBuilder.toFpuChoice, lyotWheel, readMode, windowCover)
       }
 
       def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.F2)] =

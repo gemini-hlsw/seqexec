@@ -17,11 +17,14 @@ COMMENT ON COLUMN e_f2_disperser.wavelength IS 'μm';
 ALTER TABLE step_f2
       ALTER COLUMN disperser DROP NOT NULL;
 
+-- Make the FPU table name match the corresponding gmos versions.
+ALTER TABLE e_f2_fpunit RENAME TO e_f2_fpu;
+
 -- Remove the None and Custom "FPUs".
-DELETE FROM e_f2_fpunit
+DELETE FROM e_f2_fpu
       WHERE id = 'None' OR id = 'Custom';
 
-COMMENT ON COLUMN e_f2_fpunit.slit_width IS 'pixels';
+COMMENT ON COLUMN e_f2_fpu.slit_width IS 'pixels';
 
 -- The builtin FPU is now optional and the choice to use a custom mask may
 -- be registered.  If a builtin is set, custom_mask must be false.

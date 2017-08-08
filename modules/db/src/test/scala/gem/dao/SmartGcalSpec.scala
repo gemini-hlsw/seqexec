@@ -129,7 +129,7 @@ object SmartGcalSpec {
       /* Disperser             */ Some(F2Disperser.R1200JH),
       Duration.ofMillis(1000),
       /* Filter                */ F2Filter.JH,
-      /* FPU                   */ Some(Builtin(F2FpUnit.LongSlit1)),
+      /* FPU                   */ Some(Builtin(F2Fpu.LongSlit1)),
       F2LyotWheel.F16,
       F2ReadMode.Bright,
       F2WindowCover.Open)
