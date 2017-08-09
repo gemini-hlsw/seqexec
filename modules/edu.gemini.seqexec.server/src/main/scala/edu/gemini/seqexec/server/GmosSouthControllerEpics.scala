@@ -93,5 +93,4 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
 
 }
 
-object GmosSouthControllerEpics extends GmosControllerEpics[SouthTypes](GmosSouthEncoders)(southConfigTypes) {
-}
+object GmosSouthControllerEpics extends GmosControllerEpics[SouthTypes](GmosSouthEncoders)(southConfigTypes)

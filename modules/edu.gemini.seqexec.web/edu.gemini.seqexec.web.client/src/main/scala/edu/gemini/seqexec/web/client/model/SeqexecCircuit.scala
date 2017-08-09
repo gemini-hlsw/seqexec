@@ -362,6 +362,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       case SequenceView(_, metadata, _, _, _) => value.site.instruments.list.toList.contains(metadata.instrument)
     })
 
+  // scalastyle:off
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(user = u))
@@ -422,6 +423,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       // Ignore unknown events
       noChange
   }
+  // scalastyle:on
 }
 
 /**

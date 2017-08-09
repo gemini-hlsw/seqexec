@@ -11,7 +11,7 @@ import scalaz.concurrent.Task
 private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends GmosController[T] {
   private val Log = Logger.getLogger(getClass.getName)
 
-  override def getConfig: SeqAction[GmosConfig[T]] = ???
+  override def getConfig: SeqAction[GmosConfig[T]] = ??? // scalastyle:ignore
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info(s"Simulate taking Gmos $name observation with label " + obsid)
@@ -30,4 +30,3 @@ object GmosControllerSim {
   val south: GmosController[SouthTypes] = new GmosControllerSim[SouthTypes]("South")
   val north: GmosController[NorthTypes] = new GmosControllerSim[NorthTypes]("North")
 }
-
