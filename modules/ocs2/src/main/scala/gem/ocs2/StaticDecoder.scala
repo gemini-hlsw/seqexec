@@ -52,7 +52,7 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
   }
 
   private object Gmos {
-    import gem.config.Gmos.{ GmosCommonStaticConfig, GmosCustomRoiEntry, GmosNodAndShuffle }
+    import gem.config.GmosConfig.{ GmosCommonStaticConfig, GmosCustomRoiEntry, GmosNodAndShuffle }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
     def parseCustomRoiEntry(cm: ConfigMap, index: Int): PioError \/ Option[GmosCustomRoiEntry] = {

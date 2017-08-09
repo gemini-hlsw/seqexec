@@ -381,7 +381,7 @@ object StepDao {
 
     object Gmos {
 
-      import gem.config.Gmos.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
+      import gem.config.GmosConfig.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
       import DynamicConfig.{ GmosNorth, GmosSouth }
 
       final case class GmosGratingBuilder[D](

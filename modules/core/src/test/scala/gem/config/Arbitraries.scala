@@ -70,10 +70,10 @@ trait Arbitraries {
     Arbitrary(arbitrary[MosPreImaging].map(StaticConfig.F2(_)))
 
   implicit val arbGmosShuffleOffset =
-    Arbitrary(Gen.posNum[Int].map(Gmos.GmosShuffleOffset.unsafeFromRowCount))
+    Arbitrary(Gen.posNum[Int].map(GmosConfig.GmosShuffleOffset.unsafeFromRowCount))
 
   implicit val arbGmosShuffleCycles =
-    Arbitrary(Gen.posNum[Int].map(Gmos.GmosShuffleCycles.unsafeFromCycleCount))
+    Arbitrary(Gen.posNum[Int].map(GmosConfig.GmosShuffleCycles.unsafeFromCycleCount))
 
   implicit val arbGmosNodAndShuffle =
     Arbitrary(
@@ -81,9 +81,9 @@ trait Arbitraries {
         a <- arbitrary[Offset]
         b <- arbitrary[Offset]
         e <- arbitrary[GmosEOffsetting]
-        o <- arbitrary[Gmos.GmosShuffleOffset]
-        c <- arbitrary[Gmos.GmosShuffleCycles]
-      } yield Gmos.GmosNodAndShuffle(a, b, e, o, c)
+        o <- arbitrary[GmosConfig.GmosShuffleOffset]
+        c <- arbitrary[GmosConfig.GmosShuffleCycles]
+      } yield GmosConfig.GmosNodAndShuffle(a, b, e, o, c)
     )
 
   implicit val arbGmosCustomRoiEntry =
@@ -93,7 +93,7 @@ trait Arbitraries {
         yMin <- Gen.posNum[Short]
         xRng <- Gen.posNum[Short]
         yRng <- Gen.posNum[Short]
-      } yield Gmos.GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)
+      } yield GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)
     )
 
   implicit val arbGmosCommonStaticConfig =
@@ -101,16 +101,16 @@ trait Arbitraries {
       for {
         d <- arbitrary[GmosDetector]
         p <- arbitrary[MosPreImaging]
-        n <- arbitrary[Option[Gmos.GmosNodAndShuffle]]
+        n <- arbitrary[Option[GmosConfig.GmosNodAndShuffle]]
         c <- Gen.choose(1, 5)
-        r <- Gen.listOfN(c, arbitrary[Gmos.GmosCustomRoiEntry])
-      } yield Gmos.GmosCommonStaticConfig(d, p, n, r.toSet)
+        r <- Gen.listOfN(c, arbitrary[GmosConfig.GmosCustomRoiEntry])
+      } yield GmosConfig.GmosCommonStaticConfig(d, p, n, r.toSet)
     )
 
   implicit val arbGmosNorthStatic =
     Arbitrary(
       for {
-        c <- arbitrary[Gmos.GmosCommonStaticConfig]
+        c <- arbitrary[GmosConfig.GmosCommonStaticConfig]
         s <- arbitrary[GmosNorthStageMode]
       } yield StaticConfig.GmosNorth(c, s)
     )
@@ -118,7 +118,7 @@ trait Arbitraries {
   implicit val arbGmosSouthStatic =
     Arbitrary(
       for {
-        c <- arbitrary[Gmos.GmosCommonStaticConfig]
+        c <- arbitrary[GmosConfig.GmosCommonStaticConfig]
         s <- arbitrary[GmosSouthStageMode]
       } yield StaticConfig.GmosSouth(c, s)
     )
@@ -182,17 +182,17 @@ trait Arbitraries {
         c <- arbitrary[GmosAmpCount]
         g <- arbitrary[GmosAmpGain]
         r <- arbitrary[GmosAmpReadMode]
-      } yield Gmos.GmosCcdReadout(x, y, c, g, r)
+      } yield GmosConfig.GmosCcdReadout(x, y, c, g, r)
     }
 
   implicit val arbGmosCommonDynamic =
     Arbitrary {
       for {
-        c <- arbitrary[Gmos.GmosCcdReadout]
+        c <- arbitrary[GmosConfig.GmosCcdReadout]
         d <- arbitrary[GmosDtax]
         e <- arbitrary[Duration]
         r <- arbitrary[GmosRoi]
-      } yield Gmos.GmosCommonDynamicConfig(c, d, e, r)
+      } yield GmosConfig.GmosCommonDynamicConfig(c, d, e, r)
     }
 
   implicit val arbGmosCustomMask =
@@ -200,7 +200,7 @@ trait Arbitraries {
       for {
         m <- Gen.alphaStr.map(_.take(32))
         w <- arbitrary[GmosCustomSlitWidth]
-      } yield Gmos.GmosCustomMask(m, w)
+      } yield GmosConfig.GmosCustomMask(m, w)
     }
 
   implicit val arbGmosNorthGrating =
@@ -209,7 +209,7 @@ trait Arbitraries {
         d <- arbitrary[GmosNorthDisperser]
         o <- arbitrary[GmosDisperserOrder]
         w <- Gen.choose(3000, 12000).map(Wavelength.unsafeFromAngstroms)
-      } yield Gmos.GmosGrating(d, o, w)
+      } yield GmosConfig.GmosGrating(d, o, w)
     }
 
   implicit val arbGmosSouthGrating =
@@ -218,26 +218,26 @@ trait Arbitraries {
         d <- arbitrary[GmosSouthDisperser]
         o <- arbitrary[GmosDisperserOrder]
         w <- Gen.choose(3000, 12000).map(Wavelength.unsafeFromAngstroms)
-      } yield Gmos.GmosGrating(d, o, w)
+      } yield GmosConfig.GmosGrating(d, o, w)
     }
 
   implicit val arbGmosNorthDynamic =
     Arbitrary {
       for {
-        c <- arbitrary[Gmos.GmosCommonDynamicConfig]
-        g <- arbitrary[Option[Gmos.GmosGrating[GmosNorthDisperser]]]
+        c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
+        g <- arbitrary[Option[GmosConfig.GmosGrating[GmosNorthDisperser]]]
         f <- arbitrary[Option[GmosNorthFilter]]
-        u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosNorthFpu]]
+        u <- arbitrary[Option[GmosConfig.GmosCustomMask \/ GmosNorthFpu]]
       } yield DynamicConfig.GmosNorth(c, g, f, u)
     }
 
   implicit val arbGmosSouthDynamic =
     Arbitrary {
       for {
-        c <- arbitrary[Gmos.GmosCommonDynamicConfig]
-        g <- arbitrary[Option[Gmos.GmosGrating[GmosSouthDisperser]]]
+        c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
+        g <- arbitrary[Option[GmosConfig.GmosGrating[GmosSouthDisperser]]]
         f <- arbitrary[Option[GmosSouthFilter]]
-        u <- arbitrary[Option[Gmos.GmosCustomMask \/ GmosSouthFpu]]
+        u <- arbitrary[Option[GmosConfig.GmosCustomMask \/ GmosSouthFpu]]
       } yield DynamicConfig.GmosSouth(c, g, f, u)
     }
 

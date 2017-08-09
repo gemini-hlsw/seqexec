@@ -14,7 +14,7 @@ import Scalaz._
  * Additional type hierarchy over the low-level GMOS enums.
  * @group Instrument-Specific Models
  */
-object Gmos {
+object GmosConfig {
 
   /** Nod-and-shuffle offset in detector rows, which must be positive, non-zero.
     * This class essentially provides a newtype for Int.

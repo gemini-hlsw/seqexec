@@ -99,7 +99,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
   }
 
   private object Gmos {
-    import gem.config.Gmos.{ GmosCcdReadout, GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
+    import gem.config.GmosConfig.{ GmosCcdReadout, GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
     import DynamicConfig.{ GmosNorth, GmosSouth }
 
     def common(cm: ConfigMap): PioError \/ GmosCommonDynamicConfig = {

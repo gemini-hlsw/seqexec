@@ -287,12 +287,12 @@ object Parsers {
       "false" -> GmosEOffsetting.Off
     )
 
-    import gem.config.Gmos.GmosShuffleOffset
+    import gem.config.GmosConfig.GmosShuffleOffset
 
     val nsShuffle: PioParse[GmosShuffleOffset] =
       positiveInt.map(GmosShuffleOffset.unsafeFromRowCount)
 
-    import gem.config.Gmos.GmosShuffleCycles
+    import gem.config.GmosConfig.GmosShuffleCycles
 
     val nsCycles: PioParse[GmosShuffleCycles] =
       positiveInt.map(GmosShuffleCycles.unsafeFromCycleCount)

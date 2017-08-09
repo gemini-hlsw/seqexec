@@ -5,7 +5,7 @@ package gem
 
 import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
-import gem.config.Gmos
+import gem.config.GmosConfig
 import gem.math.{ Angle, Offset, Wavelength }
 
 import java.time.Duration
@@ -80,18 +80,18 @@ package object json {
     CodecJson.derived[List[A]].xmap(_.toSet)(_.toList)
 
   // Codec for GmosCustomRoiEntry
-  implicit def gmosCustomRoiEntryCodec: CodecJson[Gmos.GmosCustomRoiEntry] =
+  implicit def gmosCustomRoiEntryCodec: CodecJson[GmosConfig.GmosCustomRoiEntry] =
     CodecJson.derived[(Short, Short, Short, Short)].xmap(
-      t => Gmos.GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))(
+      t => GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))(
       r => (r.xMin, r.yMin, r.xRange, r.yRange)
     )
 
   // Codec for GmosShuffleOffset
-  implicit def gmosShuffleOffsetCodec: CodecJson[Gmos.GmosShuffleOffset] =
-    CodecJson.derived[Int].xmap(Gmos.GmosShuffleOffset.unsafeFromRowCount)(_.detectorRows)
+  implicit def gmosShuffleOffsetCodec: CodecJson[GmosConfig.GmosShuffleOffset] =
+    CodecJson.derived[Int].xmap(GmosConfig.GmosShuffleOffset.unsafeFromRowCount)(_.detectorRows)
 
   // Codec for GmosShuffleCycles
-  implicit def gmosShuffleCyclesCodec: CodecJson[Gmos.GmosShuffleCycles] =
-    CodecJson.derived[Int].xmap(Gmos.GmosShuffleCycles.unsafeFromCycleCount)(_.toInt)
+  implicit def gmosShuffleCyclesCodec: CodecJson[GmosConfig.GmosShuffleCycles] =
+    CodecJson.derived[Int].xmap(GmosConfig.GmosShuffleCycles.unsafeFromCycleCount)(_.toInt)
 
 }

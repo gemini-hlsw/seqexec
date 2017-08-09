@@ -129,7 +129,7 @@ object DynamicConfig {
          None, F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
   }
 
-  import Gmos._
+  import GmosConfig._
 
   /** @group Constructors */
   final case class GmosNorth(
