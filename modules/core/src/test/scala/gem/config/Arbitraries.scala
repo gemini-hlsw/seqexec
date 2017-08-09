@@ -3,6 +3,8 @@
 
 package gem.config
 
+import cats._
+
 import gem.arb._
 import gem.config.F2Config.F2FpuChoice
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
@@ -15,12 +17,8 @@ import org.scalacheck.Arbitrary._
 
 import java.time.Duration
 
-import scalaz._, Scalaz._
-
-
 trait Arbitraries {
   import ArbEnumerated._
-  import ArbDisjunction._
   import ArbOffset._
 
 
@@ -31,13 +29,13 @@ trait Arbitraries {
   }
 
   implicit val applicativeGen = new Applicative[Gen] {
-    def ap[A, B](ga: => Gen[A])(gf: => Gen[(A) => B]): Gen[B] =
+    def ap[A, B](gf: Gen[A => B])(ga: Gen[A]): Gen[B] =
       for {
         f <- gf
         a <- ga
       } yield f(a)
 
-    def point[A](a: => A): Gen[A] =
+    def pure[A](a: A): Gen[A] =
       Gen.const(a)
   }
 
@@ -227,7 +225,7 @@ trait Arbitraries {
         c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
         g <- arbitrary[Option[GmosConfig.GmosGrating[GmosNorthDisperser]]]
         f <- arbitrary[Option[GmosNorthFilter]]
-        u <- arbitrary[Option[GmosConfig.GmosCustomMask \/ GmosNorthFpu]]
+        u <- arbitrary[Option[Either[Gmos.GmosCustomMask, GmosNorthFpu]]]
       } yield DynamicConfig.GmosNorth(c, g, f, u)
     }
 
@@ -237,7 +235,7 @@ trait Arbitraries {
         c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
         g <- arbitrary[Option[GmosConfig.GmosGrating[GmosSouthDisperser]]]
         f <- arbitrary[Option[GmosSouthFilter]]
-        u <- arbitrary[Option[GmosConfig.GmosCustomMask \/ GmosSouthFpu]]
+        u <- arbitrary[Option[Either[Gmos.GmosCustomMask, GmosSouthFpu]]]
       } yield DynamicConfig.GmosSouth(c, g, f, u)
     }
 
@@ -273,8 +271,8 @@ trait Arbitraries {
 
   implicit val arbGcalLamp: Arbitrary[GcalLamp] =
     Arbitrary(Gen.oneOf(
-      arbitrary[GcalContinuum].map(_.left[GcalArcs]),
-      arbitrary[GcalArcs     ].map(_.right[GcalContinuum])
+      arbitrary[GcalContinuum].map(Left(_)),
+      arbitrary[GcalArcs     ].map(Right(_))
     ))
 
   implicit val arbGcalConfig: Arbitrary[GcalConfig] =

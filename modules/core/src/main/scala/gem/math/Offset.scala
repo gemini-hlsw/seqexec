@@ -4,8 +4,8 @@
 package gem
 package math
 
-import scalaz.{ Equal, Monoid, Show }
-import scalaz.std.tuple._
+import cats.{ Eq, Monoid, Show }
+import cats.implicits._
 
 /** Angular offset with P and Q components. */
 final case class Offset(p: Offset.P, q: Offset.Q) {
@@ -28,14 +28,17 @@ object Offset {
 
   /** Offset forms an Abelian group but Monoid is the best we can do right now. */
   implicit val MonoidOffset: Monoid[Offset] =
-    Monoid.instance(_ + _, Zero)
+    new Monoid[Offset] {
+      val empty: Offset = Zero
+      def combine(a: Offset, b: Offset) = a + b
+    }
 
   implicit val ShowOffset: Show[Offset] =
-    Show.showA
+    Show.fromToString
 
   /** Offsets are equal if their components are pairwise equal. */
-  implicit val EqualOffset: Equal[Offset] =
-    Equal.equalBy(o => (o.p, o.q))
+  implicit val EqualOffset: Eq[Offset] =
+    Eq.by(o => (o.p, o.q))
 
 
   /** P component of an angular offset.. */
@@ -58,14 +61,17 @@ object Offset {
 
     /** P forms an Abelian group but Monoid is the best we can do right now. */
     implicit val MonoidP: Monoid[P] =
-      Monoid.instance(_ + _, Zero)
+      new Monoid[P] {
+        val empty: P = Zero
+        def combine(a: P, b: P) = a + b
+      }
 
     implicit val ShowP: Show[P] =
-      Show.showA
+      Show.fromToString
 
     /** P components are equal if their angles are equal. */
-    implicit val EqualP: Equal[P] =
-      Equal.equalBy(_.toAngle)
+    implicit val EqualP: Eq[P] =
+      Eq.by(_.toAngle)
 
   }
 
@@ -89,14 +95,17 @@ object Offset {
 
     /** Q forms an Abelian group but Monoid is the best we can do right now. */
     implicit val MonoidQ: Monoid[Q] =
-      Monoid.instance(_ + _, Zero)
+      new Monoid[Q] {
+        val empty: Q = Zero
+        def combine(a: Q, b: Q) = a + b
+      }
 
     implicit val ShowQ: Show[Q] =
-      Show.showA
+      Show.fromToString
 
     /** Q components are equal if their angles are equal. */
-    implicit val EqualQ: Equal[Q] =
-      Equal.equalBy(_.toAngle)
+    implicit val EqualQ: Eq[Q] =
+      Eq.by(_.toAngle)
 
   }
 

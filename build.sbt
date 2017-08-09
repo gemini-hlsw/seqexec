@@ -1,26 +1,26 @@
 resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
+lazy val argonautShapelessVersion = "1.2.0-M6"
 lazy val argonautVersion          = "6.2"
-lazy val doobieVersion            = "0.4.2"
+lazy val attoVersion              = "0.6.1-M1"
+lazy val catsEffectVersion        = "0.4"
+lazy val catsVersion              = "1.0.0-MF"
+lazy val declineVersion           = "0.4.0-M1"
+lazy val doobieVersion            = "0.5.0-M2"
+lazy val flywayVersion            = "4.0.3"
+lazy val http4sVersion            = "0.16.0a-M3"
+lazy val jwtVersion               = "0.14.0"
 lazy val kpVersion                = "0.9.3"
+lazy val mouseVersion             = "0.10-MF"
+lazy val scalaCheckVersion        = "1.13.5"
+lazy val scalaParsersVersion      = "1.0.4"
+lazy val scalaTestVersion         = "3.0.1"
+lazy val scalaXmlVerson           = "1.0.6"
 lazy val scalazVersion            = "7.2.13"
 lazy val shapelessVersion         = "2.3.2"
-lazy val argonautShapelessVersion = "1.2.0-M6"
-lazy val scalaTestVersion         = "3.0.1"
-lazy val scalaCheckVersion        = "1.13.5"
-lazy val http4sVersion            = "0.16.0a-M3"
-lazy val scalaXmlVerson           = "1.0.6"
-lazy val scalaParsersVersion      = "1.0.4"
-lazy val tucoVersion              = "0.1.1"
-lazy val attoVersion              = "0.5.3"
 lazy val slf4jVersion             = "1.7.25"
-lazy val jwtVersion               = "0.14.0"
-lazy val flywayVersion            = "4.0.3"
-lazy val catsVersion              = "1.0.0-MF"
-lazy val catsEffectVersion        = "0.4"
-lazy val declineVersion           = "0.2.2" // NEED UPDATE
-lazy val mouseVersion             = "0.10-MF"
+lazy val tucoVersion              = "0.3.0-M1"
 
 enablePlugins(GitVersioning)
 
@@ -81,6 +81,9 @@ lazy val commonSettings = Seq(
        |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
        |""".stripMargin
   )),
+
+  // Temporary, needed for decline 0.4.0-M1
+  resolvers += Resolver.jcenterRepo,
 
   // Wartremover in compile and test (not in Console)
   wartremoverErrors in (Compile, compile) := gemWarts,
@@ -178,10 +181,10 @@ lazy val core = crossProject
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalaz"   %%% "scalaz-core"          % scalazVersion,
-      "com.chuusai"  %%% "shapeless"            % shapelessVersion,
-      "org.tpolecat" %%% "atto-core"            % attoVersion,
-      "org.tpolecat" %%% "atto-compat-scalaz72" % attoVersion
+      "org.typelevel"           %%% "cats-core" % catsVersion,
+      "com.chuusai"             %%% "shapeless" % shapelessVersion,
+      "org.tpolecat"            %%% "atto-core" % attoVersion,
+      "com.github.benhutchison" %%% "mouse"     % mouseVersion
     )
   )
   .jsSettings(
@@ -211,7 +214,7 @@ lazy val db = project
       "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test"
     ),
     initialCommands += """
-      |import scalaz._, Scalaz._, scalaz.effect.IO
+      |import cats._, cats.data._, cats.implicits._, scalaz.effect.IO
       |import doobie.imports._
       |import gem._, gem.enum._, gem.dao._
       |val xa = DriverManagerTransactor[IO](
@@ -243,7 +246,7 @@ lazy val sql = project
   .settings(commonSettings ++ flywaySettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.flywaydb" % "flyway-core"       % flywayVersion,
+      "org.flywaydb" %  "flyway-core"      % flywayVersion,
       "org.tpolecat" %% "doobie-core"      % doobieVersion,
       "org.tpolecat" %% "doobie-postgres"  % doobieVersion
     ),

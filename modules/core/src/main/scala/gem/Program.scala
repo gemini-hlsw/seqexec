@@ -3,7 +3,8 @@
 
 package gem
 
-import scalaz._, Scalaz._
+import cats.{ Applicative, Eval, Traverse }
+import cats.implicits._
 
 /**
  * A science program, the root data type in the science model, parameterized over the type of its
@@ -21,8 +22,12 @@ object Program {
   /** Program is a traversable functor. */
   implicit val ProgramTraverse: Traverse[Program] =
     new Traverse[Program] {
-      def traverseImpl[G[_]: Applicative, A, B](fa: Program[A])(f: A => G[B]): G[Program[B]] =
-        fa.observations.traverse(f).map(os => fa.copy(observations = os))
+      def foldLeft[A, B](fa: Program[A], b: B)(f: (B, A) => B): B =
+        fa.observations.foldLeft(b)(f)
+      def foldRight[A, B](fa: Program[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] =
+        fa.observations.foldRight(lb)(f)
+      def traverse[G[_]: Applicative, A, B](fa: Program[A])(f: A => G[B]): G[Program[B]] =
+        fa.observations.traverse(f).map(bs => fa.copy(observations = bs))
     }
 
 }

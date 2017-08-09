@@ -5,7 +5,7 @@ package gem
 package dao
 
 import gem.enum.ProgramRole
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 import doobie.imports._
 

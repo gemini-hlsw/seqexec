@@ -4,8 +4,7 @@
 package gem.imp
 
 import java.time._
-import scalaz.{ Order, Ordering }
-import scalaz.Ordering.{ LT, EQ, GT }
+import cats.Order
 
 /** Instances for java.time data types. */
 trait TimeInstances {
@@ -13,11 +12,10 @@ trait TimeInstances {
   // The java.time types all follow this pattern.
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def naturalOrder[A](before: (A, A) => Boolean): Order[A] =
-    new Order[A] {
-      def order(a: A, b: A): Ordering =
-             if (a == b)       EQ
-        else if (before(a, b)) LT
-        else                   GT
+    Order.from { (a, b) =>
+             if (a == b)        0
+        else if (before(a, b)) -1
+        else                    1
     }
 
   // This looks like repetition but it's not. The isBefore methods have the same name but are

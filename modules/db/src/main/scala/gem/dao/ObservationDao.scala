@@ -7,7 +7,7 @@ package dao
 import doobie.imports._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum.Instrument
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 object ObservationDao {
 

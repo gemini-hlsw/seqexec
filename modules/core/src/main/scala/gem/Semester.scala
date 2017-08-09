@@ -4,12 +4,12 @@
 package gem
 
 import atto._, Atto._
+import cats.{ Order, Show }
+import cats.implicits._
 import gem.enum.{ Half, Site }
 import gem.imp.TimeInstances._
 import java.time._
 import java.time.Month._
-import scalaz.{ Order, Show }
-import scalaz.syntax.semigroup._
 
 /**
  * A (Year, Half) pair.
@@ -126,7 +126,7 @@ object Semester {
 
   /** `Semester` is ordered pairwise by its data members. */
   implicit val SemesterOrder: Order[Semester] =
-    Order[Year].contramap[Semester](_.year) |+|
+    Order[Year].contramap[Semester](_.year) whenEqual
     Order[Half].contramap[Semester](_.half)
 
   /**
@@ -134,9 +134,9 @@ object Semester {
    * @see SemesterOrder
    */
   implicit val SemesterOrding: scala.math.Ordering[Semester] =
-    SemesterOrder.toScalaOrdering
+    SemesterOrder.toOrdering
 
   implicit val SemesterShow: Show[Semester] =
-    Show.showA
+    Show.fromToString
 
 }

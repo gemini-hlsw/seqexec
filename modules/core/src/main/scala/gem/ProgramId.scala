@@ -3,11 +3,12 @@
 
 package gem
 
+import cats.{ Order, Show }
+import cats.implicits._
 import java.time._
 import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.imp.TimeInstances._
-import scalaz._, scalaz.Scalaz.{ char => _, _ }
 
 /**
  * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
@@ -85,9 +86,9 @@ object ProgramId {
 
     /** `Science` program ids are ordered pairwise by their data members. */
     implicit val ScienceOrder: Order[Science] =
-      Order[Site]       .contramap[Science](_.site)        |+|
-      Order[Semester]   .contramap[Science](_.semester)    |+|
-      Order[ProgramType].contramap[Science](_.programType) |+|
+      Order[Site]       .contramap[Science](_.site)        whenEqual
+      Order[Semester]   .contramap[Science](_.semester)    whenEqual
+      Order[ProgramType].contramap[Science](_.programType) whenEqual
       Order[Int]        .contramap[Science](_.index)
 
   }
@@ -150,8 +151,8 @@ object ProgramId {
 
     /** `Daily` program ids are ordered pairwise by their data members. */
     implicit val DailyOrder: Order[Daily] =
-      Order[Site]            .contramap[Daily](_.site)                           |+|
-      Order[DailyProgramType].contramap[Daily](_.dailyProgramType) |+|
+      Order[Site]            .contramap[Daily](_.site)             whenEqual
+      Order[DailyProgramType].contramap[Daily](_.dailyProgramType) whenEqual
       Order[LocalDate]       .contramap[Daily](_.localDate)
 
   }
@@ -201,9 +202,9 @@ object ProgramId {
 
     /** `Nonstandard` program ids are ordered pairwise by their data members. */
     implicit val NonStandardOrder: Order[Nonstandard] =
-      Order[Option[Site]]       .contramap[Nonstandard](_.siteOption)        |+|
-      Order[Option[Semester]]   .contramap[Nonstandard](_.semesterOption)    |+|
-      Order[Option[ProgramType]].contramap[Nonstandard](_.programTypeOption) |+|
+      Order[Option[Site]]       .contramap[Nonstandard](_.siteOption)        whenEqual
+      Order[Option[Semester]]   .contramap[Nonstandard](_.semesterOption)    whenEqual
+      Order[Option[ProgramType]].contramap[Nonstandard](_.programTypeOption) whenEqual
       Order[String]             .contramap[Nonstandard](_.tail)
 
   }
@@ -228,11 +229,11 @@ object ProgramId {
    * by the defined orderings for individual cases when constructors match.
    */
   implicit val ProgramIdOrder: Order[ProgramId] =
-    Order.order {
-      case (a: Science,     b: Science)     => a cmp b
-      case (a: Daily,       b: Daily)       => a cmp b
-      case (a: Nonstandard, b: Nonstandard) => a cmp b
-      case (a,              b)              => a.productPrefix cmp b.productPrefix
+    Order.from {
+      case (a: Science,     b: Science)     => a compare b
+      case (a: Daily,       b: Daily)       => a compare b
+      case (a: Nonstandard, b: Nonstandard) => a compare b
+      case (a,              b)              => a.productPrefix compare b.productPrefix
     }
 
   /**
@@ -240,9 +241,9 @@ object ProgramId {
    * @see ProgramIdOrder
    */
   implicit val ProgramIdOrdering: scala.math.Ordering[ProgramId] =
-    ProgramIdOrder.toScalaOrdering
+    ProgramIdOrder.toOrdering
 
   implicit val ProgramIdShow: Show[ProgramId] =
-    Show.showA
+    Show.fromToString
 
 }

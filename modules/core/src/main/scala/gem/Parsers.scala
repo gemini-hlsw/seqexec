@@ -3,10 +3,11 @@
 
 package gem
 
-import atto._, Atto._, atto.compat.scalaz._
+import cats.implicits._
+import atto._, Atto._
 import gem.enum.{ Half, Site, ProgramType, DailyProgramType }
 import java.time.{ DateTimeException, Year, Month, LocalDate }
-import scalaz._, Scalaz.{ char => _, _ }
+
 
 /**
  * Module of parsers for various data types used in the science model, for internal use (user code
@@ -86,7 +87,7 @@ object Parsers {
 
   /** Parser for a full-year `Semester` like `2015A`. */
   val semester: Parser[Semester] =
-    (year4 |@| half)(Semester.apply)
+    (year4, half).mapN(Semester.apply)
 
   /** Module of ProgramId parsers. */
   object programId {

@@ -3,12 +3,11 @@
 
 package gem.math
 
+import cats.{ Eq, Show }
+import cats.implicits._
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-
-import scalaz.{ Equal, Show }
-import scalaz.std.anyVal._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class DeclinationSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -17,20 +16,20 @@ class DeclinationSpec extends FlatSpec with Matchers with PropertyChecks {
 
   "Equality" must "be natural" in {
     forAll { (a: Declination, b: Declination) =>
-      a.equals(b) shouldEqual Equal[Declination].equal(a, b)
+      a.equals(b) shouldEqual Eq[Declination].eqv(a, b)
     }
   }
 
-  "Equal" must "be consistent with .toAngle.toMicroarcseconds" in {
+  "Eq" must "be consistent with .toAngle.toMicroarcseconds" in {
     forAll { (a: Declination, b: Declination) =>
-      Equal[Long].equal(a.toAngle.toMicroarcseconds, b.toAngle.toMicroarcseconds) shouldEqual
-      Equal[Declination].equal(a, b)
+      Eq[Long].eqv(a.toAngle.toMicroarcseconds, b.toAngle.toMicroarcseconds) shouldEqual
+      Eq[Declination].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Declination) =>
-      a.toString shouldEqual Show[Declination].shows(a)
+      a.toString shouldEqual Show[Declination].show(a)
     }
   }
 

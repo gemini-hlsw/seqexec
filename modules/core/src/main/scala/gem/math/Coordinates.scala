@@ -4,7 +4,7 @@
 package gem.math
 
 import scala.math._
-import scalaz._, Scalaz._
+import cats._, cats.implicits._
 
 /** A point in the sky, given right ascension and declination. */
 final case class Coordinates(ra: RightAscension, dec: Declination) {
@@ -89,11 +89,11 @@ object Coordinates {
   /* @group Constructors */ val NorthPole: Coordinates = Coordinates(RA.Zero, Dec.Max)
 
   /** @group Typeclass Instances */
-  implicit val CoordinatesEqual: Equal[Coordinates] =
-    Equal.equalA
+  implicit val CoordinatesEqual: Eq[Coordinates] =
+    Eq.fromUniversalEquals
 
   /** @group Typeclass Instances. */
   implicit val ShowCoordinates: Show[Coordinates] =
-    Show.showA
+    Show.fromToString
 
 }

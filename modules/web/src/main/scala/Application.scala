@@ -8,7 +8,7 @@ import gem.{ Service => GemService }
 import gem.json._
 import org.http4s._
 import org.http4s.dsl._
-// import scalaz._, Scalaz._
+// import cats._, cats.data._, cats.implicits._
 import scalaz.concurrent.Task
 
 /**

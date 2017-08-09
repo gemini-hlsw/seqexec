@@ -3,7 +3,7 @@
 
 package gem.ocs2
 
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 package object pio {
   type PioOptional[A] = OptionT[PioError \/ ?, A]

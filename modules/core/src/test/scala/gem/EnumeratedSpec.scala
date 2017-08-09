@@ -16,8 +16,8 @@ class EnumeratedSpec extends FlatSpec with Matchers with PropertyChecks {
   ): Unit =
     s"Ordering for ${ct.runtimeClass.getName}" should "be canonical" in {
       val sorted   = en.all
-      val shuffled = util.Random.shuffle(sorted)
-      shuffled.sorted(en.toScalaOrdering) shouldEqual sorted
+      val shuffled = scala.util.Random.shuffle(sorted)
+      shuffled.sorted(en.toOrdering) shouldEqual sorted
     }
 
   // Check a handful of enums.

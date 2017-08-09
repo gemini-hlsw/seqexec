@@ -3,10 +3,9 @@
 
 package gem
 
+import cats.Functor
 import gem.config._
 import gem.enum.SmartGcalType
-
-import scalaz.Functor
 
 /**
  * An observation sequence step, parameterized on the type of its dynamic configuration, typically

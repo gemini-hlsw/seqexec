@@ -3,13 +3,13 @@
 
 package gem
 
+import cats.{ Eq, Order, Show }
+import cats.implicits._
 import gem.arb._
 import gem.imp.TimeInstances._
 import java.time.Instant
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-import scalaz.{ Equal, Order, Show }
-import scalaz.std.string._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
 class DatasetSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -21,21 +21,21 @@ class DatasetSpec extends FlatSpec with Matchers with PropertyChecks {
 
   "Equality" must "be natural" in {
     forAll { (a: Dataset, b: Dataset) =>
-      a.equals(b) shouldEqual Equal[Dataset].equal(a, b)
+      a.equals(b) shouldEqual Eq[Dataset].eqv(a, b)
     }
   }
 
   it must "operate pairwise" in {
     forAll { (a: Dataset, b: Dataset) =>
-      Equal[Dataset.Label].equal(a.label, b.label) &&
-      Equal[String].equal(a.filename, b.filename)  &&
-      Equal[Instant].equal(a.timestamp, b.timestamp) shouldEqual Equal[Dataset].equal(a, b)
+      Eq[Dataset.Label].eqv(a.label, b.label) &&
+      Eq[String].eqv(a.filename, b.filename)  &&
+      Eq[Instant].eqv(a.timestamp, b.timestamp) shouldEqual Eq[Dataset].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Dataset) =>
-      a.toString shouldEqual Show[Dataset].shows(a)
+      a.toString shouldEqual Show[Dataset].show(a)
     }
   }
 

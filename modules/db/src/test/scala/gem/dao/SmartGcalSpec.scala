@@ -17,7 +17,7 @@ import org.scalatest.{Assertion, FlatSpec, Matchers}
 
 import java.time.Duration
 
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {

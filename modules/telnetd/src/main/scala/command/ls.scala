@@ -8,7 +8,7 @@ package command
 import net.bmjames.opts.{ intOption, help, metavar, short, long, value, strArgument }
 import net.bmjames.opts.types.Parser
 import tuco._, Tuco._
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 /** A command that lists programs with matching program id and/or title. */
 object ls {

@@ -190,7 +190,7 @@ package object dao extends MoreTupleOps {
 
 trait MoreTupleOps {
 
-  import scalaz._, Scalaz._
+  import cats._, cats.data._, cats.implicits._
 
   implicit class MoreTuple2Ops[F[_], A, B](t: (F[A], F[B]))(implicit ev: Apply[F]) {
     def apply2[T](f: (A, B) => T): F[T] =

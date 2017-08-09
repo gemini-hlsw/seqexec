@@ -8,7 +8,7 @@ import doobie.postgres.imports._
 import gem._
 import gem.enum.ProgramRole
 import org.scalatest._
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
 

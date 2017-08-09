@@ -9,7 +9,7 @@ import doobie.imports._
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
 
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 import java.time.Duration
 

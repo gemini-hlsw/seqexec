@@ -11,7 +11,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 import pdi.jwt.Jwt
 import pdi.jwt.algorithms.JwtHmacAlgorithm
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 import scalaz.concurrent.Task
 
 /**

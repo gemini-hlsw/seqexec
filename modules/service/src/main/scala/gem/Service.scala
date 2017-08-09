@@ -8,7 +8,7 @@ import doobie.imports._
 import gem.dao._
 import gem.enum._
 
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 final class Service[M[_]: Monad] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 

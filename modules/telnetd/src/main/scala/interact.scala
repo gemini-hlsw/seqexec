@@ -5,7 +5,7 @@ package gem
 package telnetd
 
 import doobie.imports.Transactor
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 import tuco._, Tuco._
 
 /** Module defining the behavior of our telnet server, parameterized over transactors. */

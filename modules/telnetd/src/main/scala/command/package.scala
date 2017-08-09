@@ -5,7 +5,7 @@ package gem
 package telnetd
 
 import net.bmjames.opts.types.Parser
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 import tuco._, Tuco._
 
 package object command {

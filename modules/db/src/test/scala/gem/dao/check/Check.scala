@@ -15,7 +15,7 @@ import doobie.scalatest.imports._
 import java.time.LocalDate
 import org.scalatest._
 
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 /** Trait for tests that check statement syntax and mappings. */
 trait Check extends FlatSpec with Matchers with IOLiteChecker {

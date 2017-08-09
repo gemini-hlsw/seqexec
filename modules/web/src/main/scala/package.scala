@@ -7,7 +7,7 @@ import argonaut._
 import org.http4s._
 import org.http4s.argonaut._
 import org.http4s.dsl._
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 package object web {
 

@@ -3,9 +3,9 @@
 
 package gem.math
 
-import scalaz.{ Equal, Monoid, Show }
-import scalaz.std.anyVal.longInstance
-import scalaz.syntax.equal._
+import cats.{ Eq, Monoid, Show }
+import cats.instances.long._
+import cats.syntax.eq._
 
 /**
  * Exact angles represented as integral microarcseconds. These values form an Abelian group over
@@ -145,14 +145,17 @@ object Angle {
 
   /** Angle is an Abelian group, but monoid is the best we can do for now. */
   implicit val AngleMonoid: Monoid[Angle] =
-    Monoid.instance(_ + _, Angle.Angle0)
+    new Monoid[Angle] {
+      val empty: Angle = Angle0
+      def combine(a: Angle, b: Angle) = a + b
+    }
 
   implicit val AngleShow: Show[Angle] =
-    Show.showA
+    Show.fromToString
 
   /** Angles are equal if their magnitudes are equal. */
-  implicit val AngleEqual: Equal[Angle] =
-    Equal.equalBy(_.toMicroarcseconds)
+  implicit val AngleEqual: Eq[Angle] =
+    Eq.fromUniversalEquals
 
   // This works for both DMS and HMS so let's just do it once.
   protected[math] def toMicrosexigesimal(micros: Long): (Int, Int, Int, Int, Int) = {
@@ -306,14 +309,17 @@ object HourAngle {
 
   /** HourAngle is an Abelian group (a subgroup of Angle), but monoid is the best we can do for now. */
   implicit val HourAngleMonoid: Monoid[HourAngle] =
-    Monoid.instance(_ + _, HourAngle.HourAngle0)
+    new Monoid[HourAngle] {
+      val empty: HourAngle = HourAngle0
+      def combine(a: HourAngle, b: HourAngle) = a + b
+    }
 
   implicit val HourAngleShow: Show[HourAngle] =
-    Show.showA
+    Show.fromToString
 
   /** Angles are equal if their magnitudes are equal. */
-  implicit val HourAngleEqual: Equal[HourAngle] =
-    Equal.equalBy(_.toMicroarcseconds)
+  implicit val HourAngleEqual: Eq[HourAngle] =
+    Eq.by(_.toMicroarcseconds)
 
   /**
    * Integral hour angle represented as a sum of hours, minutes, seconds, milliseconds, and

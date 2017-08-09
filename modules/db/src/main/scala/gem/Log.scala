@@ -7,7 +7,7 @@ import gem.dao.LogDao
 import doobie.imports._
 import java.util.concurrent.{ ExecutorService, Executors, TimeUnit }
 import java.util.logging._
-import scalaz._, Scalaz._, scalaz.concurrent.Task
+import cats._, cats.data._, cats.implicits._, scalaz.concurrent.Task
 
 /** Logger that logs to the database and a JDK logger, on its own thread, in effect type M. */
 class Log[M[_]: Monad: Catchable] private (name: String, xa: Transactor[Task], delay: Capture[M]) {

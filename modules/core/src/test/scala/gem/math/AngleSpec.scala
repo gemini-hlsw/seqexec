@@ -3,12 +3,11 @@
 
 package gem.math
 
+import cats.{ Eq, Monoid, Show }
+import cats.implicits._
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-
-import scalaz.{ Equal, Monoid, Show }
-import scalaz.std.anyVal._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class AngleSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -16,25 +15,25 @@ class AngleSpec extends FlatSpec with Matchers with PropertyChecks {
 
   // Compilation test
   protected val a0 = implicitly[Monoid[Angle]]
-  protected val a1 = implicitly[Equal[Angle]]
+  protected val a1 = implicitly[Eq[Angle]]
   protected val a2 = implicitly[Show[Angle]]
 
   "Equality" must "be natural" in {
     forAll { (a: Angle, b: Angle) =>
-      a.equals(b) shouldEqual Equal[Angle].equal(a, b)
+      a.equals(b) shouldEqual Eq[Angle].eqv(a, b)
     }
   }
 
   it must "be consistent with .toMicroarcseconds" in {
     forAll { (a: Angle, b: Angle) =>
-      Equal[Long].equal(a.toMicroarcseconds, b.toMicroarcseconds) shouldEqual
-      Equal[Angle].equal(a, b)
+      Eq[Long].eqv(a.toMicroarcseconds, b.toMicroarcseconds) shouldEqual
+      Eq[Angle].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Angle) =>
-      a.toString shouldEqual Show[Angle].shows(a)
+      a.toString shouldEqual Show[Angle].show(a)
     }
   }
 

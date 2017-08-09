@@ -14,7 +14,7 @@ import doobie.imports._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 
-import scalaz._, Scalaz._
+import cats._, cats.data._, cats.implicits._
 
 // Sample code that exercises SmartGcalDao.select.
 object SmartGcalSample extends TimedSample with gem.config.Arbitraries {

@@ -5,7 +5,7 @@ package gem.sql
 
 import doobie.imports._
 import java.time.{ Duration, ZoneId }
-import scalaz._, Scalaz._
+import cats.data.NonEmptyList, cats.implicits._
 import shapeless._
 import shapeless.ops.hlist._
 import shapeless.ops.record._
@@ -80,8 +80,8 @@ object EnumDef {
       |package gem
       |package enum
       |
-      |import scalaz.syntax.equal._
-      |import scalaz.std.string._
+      |import cats.syntax.eq._
+      |import cats.instances.string._
       |
       |/**
       | * Enumerated type for $desc.

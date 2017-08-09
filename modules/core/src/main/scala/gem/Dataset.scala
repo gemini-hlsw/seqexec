@@ -3,9 +3,10 @@
 
 package gem
 
+import cats.{ MonadError, Order, Show }
+import cats.implicits._
 import gem.imp.TimeInstances._
 import java.time.Instant
-import scalaz._, Scalaz._
 
 /**
  * A labeled, timestamped data file.
@@ -35,7 +36,7 @@ object Dataset {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          b.drop(1).parseInt.toOption.flatMap { n =>
+          MonadError[Either[Throwable, ?], Throwable].catchNonFatal(b.drop(1).toInt).toOption.flatMap { n =>
             Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
           }
       }
@@ -49,12 +50,12 @@ object Dataset {
      * @group Typeclass Instances
      */
     implicit val LabelOrder: Order[Label] =
-      Order[Observation.Id].contramap[Label](_.observationId) |+|
+      Order[Observation.Id].contramap[Label](_.observationId) whenEqual
       Order[Int]           .contramap[Label](_.index)
 
     /** @group Typeclass Instances */
     implicit val LabelShow: Show[Label] =
-      Show.showA
+      Show.fromToString
 
   }
 
@@ -64,12 +65,12 @@ object Dataset {
    * @group Typeclass Instances
    */
   implicit val DatasetOrder: Order[Dataset] =
-    Order[Label]  .contramap[Dataset](_.label)     |+|
-    Order[Instant].contramap[Dataset](_.timestamp) |+|
+    Order[Label]  .contramap[Dataset](_.label)     whenEqual
+    Order[Instant].contramap[Dataset](_.timestamp) whenEqual
     Order[String] .contramap[Dataset](_.filename)
 
   /** @group Typeclass Instances */
   implicit val DatasetShow: Show[Dataset] =
-    Show.showA
+    Show.fromToString
 
 }

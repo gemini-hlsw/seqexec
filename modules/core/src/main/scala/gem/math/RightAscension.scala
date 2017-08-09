@@ -3,8 +3,8 @@
 
 package gem.math
 
-import scalaz.{ Order, Show }
-import scalaz.std.anyVal._
+import cats.{ Order, Show }
+import cats.instances.long._
 
 /**
  * Celestial longitude, measured eastward along the celestial equator from the vernal equinox to the
@@ -59,10 +59,10 @@ object RightAscension {
    * @group Typeclass Instances
    */
   implicit val RightAscensionOrder: Order[RightAscension] =
-    Order.orderBy(_.toHourAngle.toMicroseconds)
+    Order.by(_.toHourAngle.toMicroseconds)
 
   /* @group Typeclass Instances */
   implicit val RightAscensionShow: Show[RightAscension] =
-    Show.showA
+    Show.fromToString
 
 }

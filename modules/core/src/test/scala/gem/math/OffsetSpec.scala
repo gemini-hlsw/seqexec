@@ -3,11 +3,10 @@
 
 package gem.math
 
+import cats.{ Eq, Show, Monoid }
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-
-import scalaz.{ Equal, Show, Monoid }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class OffsetSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -16,24 +15,24 @@ class OffsetSpec extends FlatSpec with Matchers with PropertyChecks {
   // Compilation test
   protected val a0 = implicitly[Monoid[Offset]]
   protected val a1 = implicitly[Show[Offset]]
-  protected val a2 = implicitly[Equal[Offset]]
+  protected val a2 = implicitly[Eq[Offset]]
 
   "Equality" must "be natural" in {
     forAll { (a: Offset, b: Offset) =>
-      a.equals(b) shouldEqual Equal[Offset].equal(a, b)
+      a.equals(b) shouldEqual Eq[Offset].eqv(a, b)
     }
   }
 
   it must "operate pairwise" in {
     forAll { (a: Offset, b: Offset) =>
-      Equal[Offset.P].equal(a.p, b.p) &&
-      Equal[Offset.Q].equal(a.q, b.q) shouldEqual Equal[Offset].equal(a, b)
+      Eq[Offset.P].eqv(a.p, b.p) &&
+      Eq[Offset.Q].eqv(a.q, b.q) shouldEqual Eq[Offset].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Offset) =>
-      a.toString shouldEqual Show[Offset].shows(a)
+      a.toString shouldEqual Show[Offset].show(a)
     }
   }
 

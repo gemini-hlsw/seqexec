@@ -3,12 +3,11 @@
 
 package gem.math
 
+import cats.{ Eq, Monoid, Show }
+import cats.implicits._
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
-
-import scalaz.{ Equal, Monoid, Show }
-import scalaz.std.anyVal._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -16,25 +15,25 @@ class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks {
 
   // Compilation test
   protected val a0 = implicitly[Monoid[HourAngle]]
-  protected val a1 = implicitly[Equal[HourAngle]]
+  protected val a1 = implicitly[Eq[HourAngle]]
   protected val a2 = implicitly[Show[HourAngle]]
 
   "Equality" must "be natural" in {
     forAll { (a: HourAngle, b: HourAngle) =>
-      a.equals(b) shouldEqual Equal[HourAngle].equal(a, b)
+      a.equals(b) shouldEqual Eq[HourAngle].eqv(a, b)
     }
   }
 
   it must "be consistent with .toMicroseconds" in {
     forAll { (a: HourAngle, b: HourAngle) =>
-      Equal[Long].equal(a.toMicroseconds, b.toMicroseconds) shouldEqual
-      Equal[HourAngle].equal(a, b)
+      Eq[Long].eqv(a.toMicroseconds, b.toMicroseconds) shouldEqual
+      Eq[HourAngle].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: HourAngle) =>
-      a.toString shouldEqual Show[HourAngle].shows(a)
+      a.toString shouldEqual Show[HourAngle].show(a)
     }
   }
 

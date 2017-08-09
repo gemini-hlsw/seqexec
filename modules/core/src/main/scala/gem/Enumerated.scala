@@ -3,8 +3,8 @@
 
 package gem
 
-import scalaz._
-import Scalaz._
+import cats.Order
+import cats.implicits._
 
 /**
  * Typeclass for an enumerated type with unique string tags and a canonical ordering.
@@ -24,9 +24,8 @@ trait Enumerated[A] extends Order[A] {
   /** Select the member of this enumeration with the given tag, throwing if absent. */
   def unsafeFromTag(tag: String): A = fromTag(tag).getOrElse(sys.error("Invalid tag: " + tag))
 
-  /** Relative order of `a` and `b` in `all`. */
-  def order(a: A, b: A): Ordering =
-    Order[Int].order(indexOfTag(tag(a)), indexOfTag(tag(b)))
+  def compare(a: A, b: A): Int =
+    Order[Int].compare(indexOfTag(tag(a)), indexOfTag(tag(b)))
 
   // Hashed index lookup, for efficient use as an `Order`.
   private lazy val indexOfTag: Map[String, Int] =
