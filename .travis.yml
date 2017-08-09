@@ -21,4 +21,4 @@ before_script:
   - sudo apt-get install -y rpm
 script:
   - sudo chmod +x /usr/local/bin/sbt
-  - sbt -J-Xmx3G -J-XX:-UseGCOverheadLimit test
+  - sbt -J-Xmx3G -J-XX:-UseGCOverheadLimit scalastyle test
