@@ -60,7 +60,36 @@ object LoginBox {
       )
     }
 
-    // scalastyle:off
+    private def toolbar(s: State) =
+      <.div(
+        ^.cls := "ui actions",
+        <.div(
+          ^.cls := "ui grid",
+          <.div(
+            ^.cls := "middle aligned row",
+            s.progressMsg.map( m =>
+              <.div(
+                ^.cls := "left floated left aligned six wide column",
+                IconCircleNotched.copyIcon(loading = true),
+                m
+              )
+            ).whenDefined,
+            s.errorMsg.map( m =>
+              <.div(
+                ^.cls := "left floated left aligned six wide column red",
+                IconAttention,
+                m
+              )
+            ).whenDefined,
+            <.div(
+              ^.cls := "right floated right aligned ten wide column",
+              Button(Button.Props(onClick = closeBox), "Cancel"),
+              Button(Button.Props(onClick = attemptLogin, buttonType = Button.SubmitType, form = Some(formId)), "Login")
+            )
+          )
+        )
+      )
+
     def render(s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
@@ -109,36 +138,8 @@ object LoginBox {
             )
           )
         ),
-        <.div(
-          ^.cls := "ui actions",
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "middle aligned row",
-              s.progressMsg.map( m =>
-                <.div(
-                  ^.cls := "left floated left aligned six wide column",
-                  IconCircleNotched.copyIcon(loading = true),
-                  m
-                )
-              ).whenDefined,
-              s.errorMsg.map( m =>
-                <.div(
-                  ^.cls := "left floated left aligned six wide column red",
-                  IconAttention,
-                  m
-                )
-              ).whenDefined,
-              <.div(
-                ^.cls := "right floated right aligned ten wide column",
-                Button(Button.Props(onClick = closeBox), "Cancel"),
-                Button(Button.Props(onClick = attemptLogin, buttonType = Button.SubmitType, form = Some(formId)), "Login")
-              )
-            )
-          )
-        )
+        toolbar(s)
       )
-    // scalastyle:on
   }
 
   private val component = ScalaComponent.builder[Props]("Login")

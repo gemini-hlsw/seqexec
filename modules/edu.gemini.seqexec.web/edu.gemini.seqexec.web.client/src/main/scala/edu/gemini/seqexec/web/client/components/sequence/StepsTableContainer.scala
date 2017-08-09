@@ -170,7 +170,83 @@ object StepsTableContainer {
     def breakpointAt(id: SequenceId, step: Step): Callback =
       $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipBreakpointStep(id, step))) }
 
-    // scalastyle:off
+    private def gutterCol(id: SequenceId, i: Int, step: Step, s: State) =
+      <.tr(
+        SeqexecStyles.trNoBorder,
+        SeqexecStyles.trBreakpoint,
+        ^.onMouseOver --> mouseEnter(i),
+        <.td(
+          SeqexecStyles.gutterTd,
+          SeqexecStyles.tdNoPadding,
+          ^.rowSpan := 2,
+          <.div(
+            SeqexecStyles.breakpointHandleContainer,
+            step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
+            if (step.breakpoint) {
+              Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(id, step))
+            } else {
+              Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(id, step))
+            }
+          ),
+          <.div(
+            SeqexecStyles.skipHandleContainer,
+            if (step.skip) {
+              IconPlusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(id, step))
+            } else {
+              IconMinusCircle.copyIcon(link = true, color = Some("orange"), extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(id, step))
+            }
+          )
+        ),
+        <.td(
+          if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+          SeqexecStyles.tdNoPadding,
+          ^.colSpan := 5
+        )
+      )
+
+    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, step: Step) =
+      <.tr(
+        SeqexecStyles.trNoBorder,
+        ^.onMouseOver --> mouseEnter(i),
+        // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
+        ^.classSet(
+          "positive" -> (step.status === StepState.Completed),
+          "warning"  -> (step.status === StepState.Running),
+          "negative" -> (step.status === StepState.Paused),
+          // TODO Show error case
+          "negative" -> step.hasError,
+          "active"   -> (step.status === StepState.Skipped),
+          "disabled" -> step.skip
+        ),
+        SeqexecStyles.stepRunning.when(step.status == StepState.Running),
+        <.td(
+          ^.onDoubleClick --> selectRow(step, i),
+          step.status match {
+            case StepState.Completed                 => IconCheckmark
+            case StepState.Running                   => IconCircleNotched.copyIcon(loading = true)
+            case StepState.Error(_)                  => IconAttention
+            case _ if p.nextStepToRun.forall(_ == i) => IconChevronRight
+            case _ if step.skip                      => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+            case _                                   => iconEmpty
+          }
+        ),
+        <.td(
+          ^.onDoubleClick --> selectRow(step, i),
+          i + 1),
+        <.td(
+          ^.onDoubleClick --> selectRow(step, i),
+          ^.cls := "middle aligned",
+          stepDisplay(status, p, step)),
+        <.td(
+          ^.onDoubleClick --> selectRow(step, i),
+          ^.cls := "middle aligned",
+          stepProgress(step)),
+        <.td(
+          ^.cls := "collapsing right aligned",
+          IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
+        )
+      )
+
     def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
@@ -190,84 +266,12 @@ object StepsTableContainer {
           p.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
-                <.tr(
-                  SeqexecStyles.trNoBorder,
-                  SeqexecStyles.trBreakpoint,
-                  ^.onMouseOver --> mouseEnter(i),
-                  <.td(
-                    SeqexecStyles.gutterTd,
-                    SeqexecStyles.tdNoPadding,
-                    ^.rowSpan := 2,
-                    <.div(
-                      SeqexecStyles.breakpointHandleContainer,
-                      step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
-                      if (step.breakpoint) {
-                        Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p.id, step))
-                      } else {
-                        Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(p.id, step))
-                      }
-                    ),
-                    <.div(
-                      SeqexecStyles.skipHandleContainer,
-                      if (step.skip) {
-                        IconPlusSquareOutline.copyIcon(link = true, extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.id, step))
-                      } else {
-                        IconMinusCircle.copyIcon(link = true, color = Some("orange"), extraStyles = List(if (s.onHover.contains(i) && step.canSetSkipmark) SeqexecStyles.gutterIconVisible else SeqexecStyles.gutterIconHidden), onClick = markAsSkipped(p.id, step))
-                      }
-                    )
-                  ),
-                  <.td(
-                    if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
-                    SeqexecStyles.tdNoPadding,
-                    ^.colSpan := 5
-                  )
-                ),
-                <.tr(
-                  SeqexecStyles.trNoBorder,
-                  ^.onMouseOver --> mouseEnter(i),
-                  // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
-                  ^.classSet(
-                    "positive" -> (step.status === StepState.Completed),
-                    "warning" -> (step.status === StepState.Running),
-                    "negative" -> (step.status === StepState.Paused),
-                    // TODO Show error case
-                    "negative" -> step.hasError,
-                    "active" -> (step.status === StepState.Skipped),
-                    "disabled" -> step.skip
-                  ),
-                  SeqexecStyles.stepRunning.when(step.status == StepState.Running),
-                  <.td(
-                    ^.onDoubleClick --> selectRow(step, i),
-                    step.status match {
-                      case StepState.Completed                 => IconCheckmark
-                      case StepState.Running                   => IconCircleNotched.copyIcon(loading = true)
-                      case StepState.Error(_)                  => IconAttention
-                      case _ if p.nextStepToRun.forall(_ == i) => IconChevronRight
-                      case _ if step.skip                      => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-                      case _                                   => iconEmpty
-                    }
-                  ),
-                  <.td(
-                    ^.onDoubleClick --> selectRow(step, i),
-                    i + 1),
-                  <.td(
-                    ^.onDoubleClick --> selectRow(step, i),
-                    ^.cls := "middle aligned",
-                    stepDisplay(status, p, step)),
-                  <.td(
-                    ^.onDoubleClick --> selectRow(step, i),
-                    ^.cls := "middle aligned",
-                    stepProgress(step)),
-                  <.td(
-                    ^.cls := "collapsing right aligned",
-                    IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
-                  )
-                )
+                gutterCol(p.id, i, step, s),
+                stepCols(status, p, i, step)
               )
           }.toTagMod
         )
       )
-    // scalastyle:on
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       <.div(

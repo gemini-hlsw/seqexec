@@ -7,6 +7,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.{FormLabel, Label}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -147,7 +148,18 @@ object SequenceControl {
   def requestPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
 
-  // scalastyle:off
+  private def controlButton(icon: Icon, color: String, onClick: Callback, disabled: Boolean, tooltip: String, text: String) =
+    Button(
+      Button.Props(
+        icon = Some(icon),
+        labeled = true,
+        onClick = onClick,
+        color = Some(color),
+        dataTooltip = Some(tooltip),
+        disabled = disabled),
+      text
+    )
+
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
     .renderPS { ($, p, s) =>
@@ -163,55 +175,18 @@ object SequenceControl {
               ^.cls := "ui green header",
               "Sequence complete"
             ).when(status === SequenceState.Completed),
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = $.runState(requestRun(id)),
-                color = Some("blue"),
-                dataTooltip = Some(runContinueTooltip),
-                disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
-              runContinueButton
-            ).when(status.isError),
-            Button(
-              Button.Props(
-                icon = Some(IconRefresh),
-                labeled = true,
-                onClick = $.runState(requestSync(id)),
-                color = Some("purple"),
-                dataTooltip = Some(s"Sync sequence"),
-                disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
-              s"Sync"
-            ).when(status === SequenceState.Idle),
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = $.runState(requestRun(id)),
-                color = Some("blue"),
-                dataTooltip = Some(runContinueTooltip),
-                disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
-              runContinueButton
-            ).when(status === SequenceState.Idle),
-            Button(
-              Button.Props(
-                icon = Some(IconPause),
-                labeled = true,
-                onClick = $.runState(requestPause(id)),
-                color = Some("teal"),
-                dataTooltip = Some("Pause the sequence after the current step completes"),
-                disabled = !isLogged || !isConnected || s.pauseRequested || s.syncRequested || status === SequenceState.Stopping),
-              "Pause"
-            ).when(status === SequenceState.Running || status === SequenceState.Stopping),
-            Button(
-              Button.Props(
-                icon = Some(IconPlay),
-                labeled = true,
-                onClick = $.runState(requestPause(id)),
-                color = Some("teal"),
-                disabled = !isLogged || !isConnected || s.syncRequested),
-              "Continue from step 1"
-            ).when(status === SequenceState.Paused)
+            // Sync button
+            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), !isLogged || !isConnected || s.runRequested || s.syncRequested, "Sync sequence", "Sync")
+              .when(status === SequenceState.Idle),
+            // Run button
+            controlButton(IconPlay, "blue", $.runState(requestRun(id)), !isLogged || !isConnected || s.runRequested || s.syncRequested, runContinueTooltip, runContinueButton)
+              .when(status === SequenceState.Idle || status.isError),
+            // Pause button
+            controlButton(IconPause, "teal", $.runState(requestPause(id)), !isLogged || !isConnected || s.pauseRequested || s.syncRequested, "Pause the sequence after the current step completes", "Pause")
+              .when(status === SequenceState.Running),
+            // Resume
+            controlButton(IconPlay, "teal", $.runState(requestPause(id)), !isLogged || !isConnected || s.syncRequested, "Resume the sequence", s"Continue from step $nextStepToRun")
+              .when(status === SequenceState.Paused)
           ).toTagMod
         }
       )
@@ -219,7 +194,6 @@ object SequenceControl {
       // Update state of run requested depending on the run state
       Callback.when(f.nextProps.p().control.map(_.status).contains(SequenceState.Running) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
-  // scalastyle:on
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
 }
