@@ -298,6 +298,8 @@ object SeqexecEngine {
     Task.delay(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
+  private val taskUnit = Task.now(())
+
   // scalastyle:off
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
     val site = cfg.require[String]("seqexec-engine.site") match {
@@ -323,8 +325,6 @@ object SeqexecEngine {
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
     val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
-
-    val taskUnit = Task.now(())
 
     // TODO: Review initialization of EPICS systems
     def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
