@@ -61,6 +61,7 @@ object Commands {
       |    -> shows dynamic instrument values for dataset 4 of obs 355
     """.stripMargin
 
+  // scalastyle:off
   def apply(odbProxy: ODBProxy): Commands = new Commands {
 
     override def host(): CommandResult =
@@ -125,6 +126,7 @@ object Commands {
         case i                   => \/.right(i)
       })
   }
+  // scalastyle:on
 
   def parseId(s: String): CommandError \/ SPObservationID =
     \/.fromTryCatchNonFatal {

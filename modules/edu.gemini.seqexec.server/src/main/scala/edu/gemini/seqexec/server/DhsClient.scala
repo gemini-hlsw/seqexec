@@ -32,6 +32,7 @@ trait DhsClient {
 
 }
 
+// scalastyle:off
 object DhsClient {
 
   type Contributor = String
@@ -97,6 +98,7 @@ object DhsClient {
   }
 
 }
+// scalastyle:on
 
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
@@ -200,7 +202,7 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply(uri: String) = new DhsClientHttp(uri)
+  def apply(uri: String): DhsClient = new DhsClientHttp(uri)
 }
 
 /**
@@ -209,7 +211,7 @@ object DhsClientHttp {
 class DhsClientSim(date: LocalDate) extends DhsClient {
   private val counter = new AtomicInteger(0)
 
-  val format = DateTimeFormatter.ofPattern("yyyyMMdd")
+  val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: ImageParameters): SeqAction[ImageFileId] =
     EitherT(Task.delay{
@@ -221,5 +223,5 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
 }
 
 object DhsClientSim {
-  def apply(date: LocalDate) = new DhsClientSim(date)
+  def apply(date: LocalDate): DhsClient = new DhsClientSim(date)
 }

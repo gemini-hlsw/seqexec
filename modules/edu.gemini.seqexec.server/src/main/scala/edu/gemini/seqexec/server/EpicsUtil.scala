@@ -50,7 +50,7 @@ trait EpicsSystem[T] {
 
   // Still using a var, but at least now it's hidden. Attempts to access the single instance will
   // now result in an Exception with a meaningful message, instead of a NullPointerException
-  private var instanceInternal = Option.empty[T]
+  private var instanceInternal = Option.empty[T] // scalastyle:ignore
   lazy val instance: T = instanceInternal.getOrElse(
     throw new Exception(s"Attempt to reference $className single instance before initialization."))
 

@@ -28,7 +28,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   val CC = GmosEpics.instance.configCmd
   val DC = GmosEpics.instance.configDCCmd
 
-  override def getConfig: SeqAction[GmosController.GmosConfig[T]] = ???
+  override def getConfig: SeqAction[GmosController.GmosConfig[T]] = ??? // scalastyle:ignore
 
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
     case AmpReadMode.SLOW => "SLOW"

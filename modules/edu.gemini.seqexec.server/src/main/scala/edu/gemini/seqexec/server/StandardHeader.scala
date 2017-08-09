@@ -216,6 +216,7 @@ class StandardHeader(
   import Header._
   import Header.Implicits._
 
+  // scalastyle:off
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
 
     val p: SeqAction[Option[Double]] = for {
@@ -421,6 +422,7 @@ class StandardHeader(
     oiwfsKeywords *>
     aowfsKeywords
   }
+  // scalastyle:on
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
     List(

@@ -24,6 +24,7 @@ trait TcsController {
   def applyConfig(subsystems: NonEmptyList[Subsystem], tc: TcsConfig): SeqAction[Unit]
 }
 
+// scalastyle:off
 object TcsController {
 
   case class Requested[T](self: T) extends AnyVal
@@ -102,12 +103,11 @@ object TcsController {
   sealed trait NodChopTrackingConfig {
     def get(nodchop: NodChop): NodChopTrackingOption
   }
-  sealed trait ActiveNodChopTracking extends NodChopTrackingConfig {
+  sealed trait ActiveNodChopTracking extends NodChopTrackingConfig
 
     // If x is of type ActiveNodChopTracking then ∃ a:NodChop ∍ x.get(a) == NodChopTrackingOn
     // How could I reflect that in the code?
 
-  }
   object NodChopTrackingConfig {
 
     object None extends NodChopTrackingConfig {
@@ -318,5 +318,5 @@ object TcsController {
     val all = NonEmptyList(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
   }
 
-
 }
+// scalastyle:on

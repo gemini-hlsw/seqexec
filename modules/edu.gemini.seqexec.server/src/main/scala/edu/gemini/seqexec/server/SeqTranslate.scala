@@ -34,6 +34,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
 
+  // scalastyle:off
   private def step(
     obsId: SPObservationID,
     i: Int,
@@ -118,6 +119,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield buildStep(inst, systems, headers, resources)
 
   }
+  // scalastyle:on
 
   private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =
     // This is too weak. We may want to use the extractors used in ITC

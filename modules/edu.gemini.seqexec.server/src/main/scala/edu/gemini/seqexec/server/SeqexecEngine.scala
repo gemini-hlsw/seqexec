@@ -99,7 +99,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setCloudCover(cc, user)).map(_.right)
 
-  def setSkipMark: Task[SeqexecFailure \/ Unit] = ???
+  def setSkipMark: Task[SeqexecFailure \/ Unit] = ??? // scalastyle:ignore
 
   def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
@@ -244,7 +244,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
     val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
     val y = x.map(_.valueOr(r => List(Event.logMsg(SeqexecFailure.explain(r)))))
-    y.map { ee => !ee.isEmpty option Process.emitAll(ee).evalMap(Task.delay(_)) }
+    y.map { ee => ee.nonEmpty option Process.emitAll(ee).evalMap(Task.delay(_)) }
   }
 
 }
@@ -285,7 +285,7 @@ object SeqexecEngine {
     instForceError = false,
     10.seconds)
 
-  def apply(settings: Settings) = new SeqexecEngine(settings)
+  def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
 
   private def decodeTops(s: String): Map[String, String] =
     s.split("=|,").grouped(2).collect {
@@ -298,6 +298,7 @@ object SeqexecEngine {
     Task.delay(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
+  // scalastyle:off
   def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
@@ -380,5 +381,6 @@ object SeqexecEngine {
 
     }
   }
+  // scalastyle:on
 
 }

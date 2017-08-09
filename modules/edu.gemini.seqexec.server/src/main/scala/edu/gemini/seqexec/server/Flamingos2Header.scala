@@ -44,7 +44,7 @@ class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsR
 object Flamingos2Header {
   import Header.Implicits._
 
-  def apply(hs: DhsClient, f2ObsReader: ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) =
+  def apply(hs: DhsClient, f2ObsReader: ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Flamingos2Header =
     new Flamingos2Header(hs, f2ObsReader, tcsKeywordsReader)
 
   trait ObsKeywordsReader {

@@ -12,7 +12,7 @@ import scalaz.concurrent.Task
 object Flamingos2ControllerSim extends Flamingos2Controller {
   private val Log = Logger.getLogger(getClass.getName)
 
-  override def getConfig: SeqAction[Flamingos2Config] = ???
+  override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
@@ -30,7 +30,7 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
 object Flamingos2ControllerSimBad extends Flamingos2Controller {
   private val Log = Logger.getLogger(getClass.getName)
 
-  override def getConfig: SeqAction[Flamingos2Config] = ???
+  override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)

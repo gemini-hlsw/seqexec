@@ -113,7 +113,7 @@ object TcsControllerEpics extends TcsController {
       cc <- g.nodcchopc.map(decodeNodChopOption)
 
       // This last production is slightly tricky.
-      o  <- if (List(aa, ab, ac, ba, bb, bc, ca, cb, cc).exists(_ == true)) {
+      o  <- if (List(aa, ab, ac, ba, bb, bc, ca, cb, cc).contais(true)) {
               if (List(aa, bb, cc).forall(_ == true) && List(ab, ac, ba, bc, ca, cb).forall(_ == false)) {
                 Some(NodChopTrackingConfig.Normal)
               } else {

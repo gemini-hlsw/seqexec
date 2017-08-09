@@ -1,7 +1,7 @@
 package edu.gemini.seqexec.web.server
 
 package object http4s {
-  def index(site: String, devMode: Boolean, builtAtMillis: Long) = {
+  def index(site: String, devMode: Boolean, builtAtMillis: Long): String = {
     val style = """
                   |   @media screen and (-webkit-min-device-pixel-ratio:0) {
                   |        select,
@@ -11,8 +11,8 @@ package object http4s {
                   |        }
                   |      }
                   |"""
-    val deps = if (devMode) "edu_gemini_seqexec_web_client-jsdeps.js" else s"edu_gemini_seqexec_web_client-jsdeps.min.${builtAtMillis}.js"
-    val seqexecScript = if (devMode) s"seqexec.js" else s"seqexec-opt.${builtAtMillis}.js"
+    val deps = if (devMode) "edu_gemini_seqexec_web_client-jsdeps.js" else s"edu_gemini_seqexec_web_client-jsdeps.min.$builtAtMillis.js"
+    val seqexecScript = if (devMode) s"seqexec.js" else s"seqexec-opt.$builtAtMillis.js"
     val xml =
       <html lang="en">
         <head>
@@ -22,17 +22,17 @@ package object http4s {
           <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
           <meta name="description" content={s"Seqexec - $site"}/>
           <meta name="author" content="Gemini Software Group"/>
-          <link rel="icon" href={s"/images/launcher.${builtAtMillis}.ico"}/>
+          <link rel="icon" href={s"/images/launcher.$builtAtMillis.ico"}/>
 
           <!-- Add to homescreen for Safari on iOS -->
           <meta name="apple-mobile-web-app-capable" content="yes"/>
           <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
           <meta name="apple-mobile-web-app-title" content="Seqexec"/>
-          <link rel="apple-touch-icon-precomposed" href={s"/images/launcher.${builtAtMillis}.png"}/>
+          <link rel="apple-touch-icon-precomposed" href={s"/images/launcher.$builtAtMillis.png"}/>
 
           <title>{s"Seqexec - $site"}</title>
 
-          <link rel="stylesheet" href={s"/css/semantic.${builtAtMillis}.css"}/>
+          <link rel="stylesheet" href={s"/css/semantic.$builtAtMillis.css"}/>
           <style>{style.stripMargin}</style>
         </head>
 

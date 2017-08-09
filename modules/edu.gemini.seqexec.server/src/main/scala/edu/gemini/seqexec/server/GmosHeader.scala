@@ -25,6 +25,7 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
     )
   }
 
+  // scalastyle:off
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = {
     val adcKeywords = {
       if (gmosReader.isADCInUse) {
@@ -87,6 +88,7 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
       buildInt32(gmosReader.exposureTime, "SUBINT")*/
     ) ::: adcKeywords ::: roiKeywords.flatten)
   }
+  // scalastyle:on
 
 }
 

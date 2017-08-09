@@ -24,6 +24,7 @@ import scalaz.concurrent.Task
  * Created by jluhrs on 10/1/15.
  */
 
+// scalastyle:off
 final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   import TcsEpics._
@@ -617,3 +618,4 @@ object TcsEpics extends EpicsSystem[TcsEpics] {
   }
 
 }
+// scalastyle:on
