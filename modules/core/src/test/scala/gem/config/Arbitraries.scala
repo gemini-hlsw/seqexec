@@ -103,7 +103,7 @@ trait Arbitraries {
         n <- arbitrary[Option[Gmos.GmosNodAndShuffle]]
         c <- Gen.choose(1, 5)
         r <- Gen.listOfN(c, arbitrary[Gmos.GmosCustomRoiEntry])
-      } yield Gmos.GmosCommonStaticConfig(d, p, n, r)
+      } yield Gmos.GmosCommonStaticConfig(d, p, n, r.toSet)
     )
 
   implicit val arbGmosNorthStatic =
