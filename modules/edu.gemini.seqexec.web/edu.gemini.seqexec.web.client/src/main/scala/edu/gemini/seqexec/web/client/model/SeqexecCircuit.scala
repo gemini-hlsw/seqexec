@@ -63,8 +63,17 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
       // If the id is selected, reset the route
       value match {
         case InstrumentPage(i, Some(sid)) if sid === id =>
-          updated(InstrumentPage(i, none), (Effect(Future(SelectInstrumentToDisplay(i)))))
+          updated(InstrumentPage(i, none), Effect(Future(SelectInstrumentToDisplay(i))))
         case _                                          =>
+          noChange
+      }
+
+    case SyncPageToAddedSequence(i, id) =>
+      // Switch to the sequence in none is selected
+      value match {
+        case Root | InstrumentPage(_, None) =>
+          updated(InstrumentPage(i, Some(id)), Effect(Future(SelectIdToDisplay(id))))
+        case _                                  =>
           noChange
       }
 
@@ -368,8 +377,13 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
     case ServerMessage(SequenceLoaded(id, view)) =>
       val observer = value.user.map(_.displayName)
       val newSequence = view.queue.find(_.id === id)
-      val updateObserverE = (observer |@| newSequence) { (o, _) =>
-          Effect(Future(UpdateObserver(id, o)))
+      val updateObserverE = (observer |@| newSequence) { (o, s) =>
+          val updateObserver = Effect(Future(UpdateObserver(id, o)))
+          if (view.queue.length == 1) {
+            updateObserver + Effect(Future(SyncPageToAddedSequence(s.metadata.instrument, id)))
+          } else {
+            updateObserver
+          }
         }.getOrElse(VoidEffect)
       updated(value.copy(sequences = filterSequences(view), firstLoad = false), updateObserverE)
 
