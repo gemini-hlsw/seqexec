@@ -4,13 +4,10 @@
 package gem
 package dao
 
+import cats.implicits._
 import doobie.imports._
 import gem.enum.{ GmosDetector, Instrument, MosPreImaging }
 import gem.config._
-
-import scalaz._
-import Scalaz._
-
 
 object StaticConfigDao {
 
@@ -22,45 +19,45 @@ object StaticConfigDao {
 
   private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Unit] =
     s match {
-      case _:  StaticConfig.AcqCam    => ().point[ConnectionIO]
-      case _:  StaticConfig.Bhros     => ().point[ConnectionIO]
+      case _:  StaticConfig.AcqCam    => ().pure[ConnectionIO]
+      case _:  StaticConfig.Bhros     => ().pure[ConnectionIO]
       case f2: StaticConfig.F2        => Statements.F2.insert(id, f2).run.void
       case g:  StaticConfig.GmosNorth => Gmos.insertNorth(id, g)
       case g:  StaticConfig.GmosSouth => Gmos.insertSouth(id, g)
-      case _:  StaticConfig.Gnirs     => ().point[ConnectionIO]
-      case _:  StaticConfig.Gpi       => ().point[ConnectionIO]
-      case _:  StaticConfig.Gsaoi     => ().point[ConnectionIO]
-      case _:  StaticConfig.Michelle  => ().point[ConnectionIO]
-      case _:  StaticConfig.Nici      => ().point[ConnectionIO]
-      case _:  StaticConfig.Nifs      => ().point[ConnectionIO]
-      case _:  StaticConfig.Niri      => ().point[ConnectionIO]
-      case _:  StaticConfig.Phoenix   => ().point[ConnectionIO]
-      case _:  StaticConfig.Trecs     => ().point[ConnectionIO]
-      case _:  StaticConfig.Visitor   => ().point[ConnectionIO]
+      case _:  StaticConfig.Gnirs     => ().pure[ConnectionIO]
+      case _:  StaticConfig.Gpi       => ().pure[ConnectionIO]
+      case _:  StaticConfig.Gsaoi     => ().pure[ConnectionIO]
+      case _:  StaticConfig.Michelle  => ().pure[ConnectionIO]
+      case _:  StaticConfig.Nici      => ().pure[ConnectionIO]
+      case _:  StaticConfig.Nifs      => ().pure[ConnectionIO]
+      case _:  StaticConfig.Niri      => ().pure[ConnectionIO]
+      case _:  StaticConfig.Phoenix   => ().pure[ConnectionIO]
+      case _:  StaticConfig.Trecs     => ().pure[ConnectionIO]
+      case _:  StaticConfig.Visitor   => ().pure[ConnectionIO]
     }
 
   def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
-    def point(sc: StaticConfig): ConnectionIO[StaticConfig] =
-      sc.point[ConnectionIO]
+    def pure(sc: StaticConfig): ConnectionIO[StaticConfig] =
+      sc.pure[ConnectionIO]
 
     i match {
-      case Instrument.AcqCam     => point(StaticConfig.AcqCam())
-      case Instrument.Bhros      => point(StaticConfig.Bhros())
+      case Instrument.AcqCam     => pure(StaticConfig.AcqCam())
+      case Instrument.Bhros      => pure(StaticConfig.Bhros())
 
       case Instrument.Flamingos2 => Statements.F2.select(sid).unique.widen[StaticConfig]
       case Instrument.GmosN      => Gmos.selectNorth(sid)           .widen[StaticConfig]
       case Instrument.GmosS      => Gmos.selectSouth(sid)           .widen[StaticConfig]
 
-      case Instrument.Gnirs      => point(StaticConfig.Gnirs())
-      case Instrument.Gpi        => point(StaticConfig.Gpi())
-      case Instrument.Gsaoi      => point(StaticConfig.Gsaoi())
-      case Instrument.Michelle   => point(StaticConfig.Michelle())
-      case Instrument.Nici       => point(StaticConfig.Nici())
-      case Instrument.Nifs       => point(StaticConfig.Nifs())
-      case Instrument.Niri       => point(StaticConfig.Niri())
-      case Instrument.Phoenix    => point(StaticConfig.Phoenix())
-      case Instrument.Trecs      => point(StaticConfig.Trecs())
-      case Instrument.Visitor    => point(StaticConfig.Visitor())
+      case Instrument.Gnirs      => pure(StaticConfig.Gnirs())
+      case Instrument.Gpi        => pure(StaticConfig.Gpi())
+      case Instrument.Gsaoi      => pure(StaticConfig.Gsaoi())
+      case Instrument.Michelle   => pure(StaticConfig.Michelle())
+      case Instrument.Nici       => pure(StaticConfig.Nici())
+      case Instrument.Nifs       => pure(StaticConfig.Nifs())
+      case Instrument.Niri       => pure(StaticConfig.Niri())
+      case Instrument.Phoenix    => pure(StaticConfig.Phoenix())
+      case Instrument.Trecs      => pure(StaticConfig.Trecs())
+      case Instrument.Visitor    => pure(StaticConfig.Visitor())
     }
   }
 
@@ -87,7 +84,7 @@ object StaticConfigDao {
       rois.toList.traverseU(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
 
     def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
-      ns.fold(().point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
+      ns.fold(().pure[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
 
     def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
       for {
@@ -157,8 +154,8 @@ object StaticConfigDao {
         Meta[Int].xmap(GmosShuffleCycles.unsafeFromCycleCount, _.toInt)
 
       implicit val GmosCustomRoiEntryComposite: Composite[GmosCustomRoiEntry] =
-        Composite[(Short, Short, Short, Short)].xmap(
-          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4),
+        Composite[(Short, Short, Short, Short)].imap(
+          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))(
           (r: GmosCustomRoiEntry)           => (r.xMin, r.yMin, r.xRange, r.yRange)
         )
 

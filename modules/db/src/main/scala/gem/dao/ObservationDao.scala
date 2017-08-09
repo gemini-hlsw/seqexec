@@ -4,10 +4,10 @@
 package gem
 package dao
 
+import cats.implicits._
 import doobie.imports._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum.Instrument
-import cats._, cats.data._, cats.implicits._
 
 object ObservationDao {
 
@@ -19,7 +19,7 @@ object ObservationDao {
     for {
       id <- StaticConfigDao.insert(o.staticConfig)
       _  <- Statements.insert(o, id).run
-      _  <- o.steps.zipWithIndex.traverseU { case (s, i) =>
+      _  <- o.steps.zipWithIndex.traverse { case (s, i) =>
               StepDao.insert(o.id, Location.unsafeMiddle((i + 1) * 100), s)
             }.void
     } yield ()
@@ -41,7 +41,7 @@ object ObservationDao {
     for {
       on <- selectStatic(id)
       ss <- StepDao.selectAll(id)
-    } yield on.copy(steps = ss.values)
+    } yield on.copy(steps = ss.values.toList)
 
   /** Construct a program to select the all obseravation ids for the specified science program. */
   def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
@@ -61,7 +61,7 @@ object ObservationDao {
   def selectAllStatic(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Nothing]]] =
     for {
       ids <- selectIds(pid)
-      oss <- ids.traverseU(selectStatic)
+      oss <- ids.traverse(selectStatic)
     } yield oss
 
   /**
@@ -71,7 +71,7 @@ object ObservationDao {
   def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       ids <- selectIds(pid)
-      oss <- ids.traverseU(select)
+      oss <- ids.traverse(select)
     } yield oss
 
   object Statements {

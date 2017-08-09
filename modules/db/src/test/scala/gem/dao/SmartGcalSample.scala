@@ -3,18 +3,15 @@
 
 package gem.dao
 
+import cats.implicits._
+import doobie.imports._
 import gem.arb.ArbEnumerated._
 import gem.config.GcalConfig
 import gem.config.DynamicConfig
 import gem.config.DynamicConfig.SmartGcalSearchKey
 import gem.enum.SmartGcalType
-
-import doobie.imports._
-
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
-
-import cats._, cats.data._, cats.implicits._
 
 // Sample code that exercises SmartGcalDao.select.
 object SmartGcalSample extends TimedSample with gem.config.Arbitraries {
@@ -40,7 +37,7 @@ object SmartGcalSample extends TimedSample with gem.config.Arbitraries {
     } yield (k, t)
 
   override def runl(args: List[String]): ConnectionIO[Result] =
-    ((1 to 1000).toList.as(nextTest().toList).flatten).traverseU { case (k, t) =>
+    ((1 to 1000).toList.as(nextTest().toList).flatten).traverse { case (k, t) =>
       SmartGcalDao.select(k, t).map { g => (k, t, g) }
     }
 

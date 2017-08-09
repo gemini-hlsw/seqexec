@@ -3,11 +3,10 @@
 
 package gem.dao
 
+import cats.effect.IO
 import doobie.imports._
-
 import java.time.{Duration, Instant}
 
-import scalaz.effect.IO
 
 trait TimedSample {
   type Result
@@ -26,7 +25,7 @@ trait TimedSample {
   def main(args: Array[String]): Unit = {
     val p     = runl(args.toList)
     val start = Instant.now()
-    val a     = p.transact(xa).unsafePerformIO()
+    val a     = p.transact(xa).unsafeRunSync()
     val end   = Instant.now()
 
     println(format(a))

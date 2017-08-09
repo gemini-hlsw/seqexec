@@ -4,6 +4,7 @@
 package gem
 package config
 
+import cats.Order
 import cats.data.OneAnd
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import java.time.Duration
@@ -38,7 +39,7 @@ object GcalConfig {
       */
     @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
     def apply(arc0: GcalArc, arcs: List[GcalArc]): GcalArcs = {
-      (arc0 :: arcs).toSet.toList match {
+      (arc0 :: arcs).toSet.toList.sorted(Order[GcalArc].toOrdering) match {
         case h :: t => new GcalArcs(OneAnd(h, t.toSet)) {}
         case Nil    => sys.error("unpossible")
       }

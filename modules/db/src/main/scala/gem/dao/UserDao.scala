@@ -5,7 +5,7 @@ package gem
 package dao
 
 import gem.enum.ProgramRole
-import cats._, cats.data._, cats.implicits._
+import cats.data._, cats.implicits._
 
 import doobie.imports._
 
@@ -23,9 +23,9 @@ object UserDao {
   private def selectUserImpl(q: Query0[User[Nothing]]): ConnectionIO[Option[User[ProgramRole]]] = {
     for {
       u <- OptionT(q.option)
-      r <- selectRoles(u.id).liftM[OptionT]
+      r <- OptionT(selectRoles(u.id).map(Option(_)))
     } yield u.copy(roles = r)
-  } .run
+  } .value
 
   /**
    * Select the given user, if any, with roles.

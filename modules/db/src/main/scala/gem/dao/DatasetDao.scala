@@ -3,9 +3,9 @@
 
 package gem.dao
 
+import cats.syntax.functor._
 import doobie.imports._
 import gem.{ Dataset, Observation }
-import scalaz.syntax.functor._
 
 object DatasetDao {
 

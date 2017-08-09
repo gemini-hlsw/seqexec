@@ -4,9 +4,8 @@
 package gem
 package dao
 
+import cats.syntax.functor._
 import doobie.imports._
-
-import cats._, cats.data._, cats.implicits._
 
 object SemesterDao {
 

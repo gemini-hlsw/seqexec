@@ -3,56 +3,53 @@
 
 package gem.dao
 
+import cats.implicits._
+import doobie.imports._
 import gem._
 import gem.SmartGcal._
 import gem.config._
 import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
-import GcalLampType.{Arc, Flat}
-import GcalBaselineType.Night
-
-import doobie.imports._
 import org.scalatest.{Assertion, FlatSpec, Matchers}
-
 import java.time.Duration
-
-import cats._, cats.data._, cats.implicits._
+import scala.collection.immutable.TreeMap
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
-
+  import GcalLampType.{ Arc, Flat }
+  import GcalBaselineType.Night
   import SmartGcalSpec._
 
   "SmartGcalDao" should "expand smart gcal arc steps" in {
     runF2Expansionʹ(SmartGcalType.Arc) { (_, steps) =>
-      verifySteps(GcalLampType.Arc.left, steps)
+      verifySteps(Left(Arc), steps)
     }
   }
 
   it should "expand smart gcal flat steps" in {
     runF2Expansionʹ(SmartGcalType.Flat) { (_, steps) =>
-      verifySteps(GcalLampType.Flat.left, steps)
+      verifySteps(Left(Flat), steps)
     }
   }
 
   it should "expand smart gcal baseline steps" in {
     runF2Expansionʹ(SmartGcalType.NightBaseline) { (_, steps) =>
-      verifySteps(GcalBaselineType.Night.right, steps)
+      verifySteps(Right(Night), steps)
     }
   }
 
   it should "fail when there is no corresponding mapping" in {
     runF2Expansionʹ(SmartGcalType.DayBaseline) { (expansion, steps) =>
-      expansion    shouldEqual noMappingDefined.left[ExpandedSteps]
-      steps.values shouldEqual List(Step.SmartGcal(f2, SmartGcalType.DayBaseline))
+      expansion    shouldEqual Left(noMappingDefined)
+      steps.values.toList shouldEqual List(Step.SmartGcal(f2, SmartGcalType.DayBaseline))
     }
   }
 
   it should "fail when the location is not found" in {
     runF2Expansion(SmartGcalType.Arc, loc1, loc2) { (expansion, steps) =>
-      expansion shouldEqual stepNotFound(loc2).left[ExpandedSteps]
-      steps.values shouldEqual List(Step.SmartGcal(f2, SmartGcalType.Arc))
+      expansion shouldEqual Left(stepNotFound(loc2))
+      steps.values.toList shouldEqual List(Step.SmartGcal(f2, SmartGcalType.Arc))
     }
   }
 
@@ -60,13 +57,13 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
     val expansion = doTest {
       for {
         _  <- StepDao.insert(oid, loc1, Step.Bias(f2))
-        ex <- SmartGcalDao.expand(oid, loc1).run
+        ex <- SmartGcalDao.expand(oid, loc1).value
         ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
+        _  <- ss.keys.toList.traverse { StepDao.deleteAtLocation(oid, _) }
       } yield ex
     }
 
-    expansion shouldEqual notSmartGcal.left[ExpandedSteps]
+    expansion shouldEqual Left(notSmartGcal)
   }
 
   it should "expand intermediate smart gcal steps" in {
@@ -75,21 +72,21 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
         _  <- StepDao.insert(oid, loc1, Step.Bias(f2))
         _  <- StepDao.insert(oid, loc2, Step.SmartGcal(f2, SmartGcalType.NightBaseline))
         _  <- StepDao.insert(oid, loc9, Step.Dark(f2))
-        _  <- SmartGcalDao.expand(oid, loc2).run
+        _  <- SmartGcalDao.expand(oid, loc2).value
         ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
+        _  <- ss.keys.toList.traverse { StepDao.deleteAtLocation(oid, _) }
       } yield ss
     }
 
     val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => Step.Gcal(f2, config) }
-    steps.values shouldEqual (Step.Bias(f2) :: exp) :+ Step.Dark(f2)
+    steps.values.toList shouldEqual (Step.Bias(f2) :: exp) :+ Step.Dark(f2)
   }
 
-  private def verifySteps(m: GcalLampType \/ GcalBaselineType, ss: Location.Middle ==>> Step[DynamicConfig]): Assertion = {
-    def lookup(m: GcalLampType \/ GcalBaselineType): List[GcalConfig] =
+  private def verifySteps(m: Either[GcalLampType, GcalBaselineType], ss: TreeMap[Location.Middle, Step[DynamicConfig]]): Assertion = {
+    def lookup(m: Either[GcalLampType, GcalBaselineType]): List[GcalConfig] =
       gcals.filter(t => m.fold(_ == t._1, _ == t._2)).map(_._3)
 
-    ss.values shouldEqual lookup(m).map(Step.Gcal(f2, _))
+    ss.values.toList shouldEqual lookup(m).map(Step.Gcal(f2, _))
   }
 
   private val oid = Observation.Id(pid, 1)
@@ -102,16 +99,20 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
       } yield a
     }
 
-  private def runF2Expansionʹ(t: SmartGcalType)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion =
+  private def runF2Expansionʹ(t: SmartGcalType)(
+    verify: (Either[ExpansionError, ExpandedSteps], TreeMap[Location.Middle, Step[DynamicConfig]]) => Assertion
+  ): Assertion =
     runF2Expansion(t, loc1, loc1)(verify)
 
-  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(verify: (ExpansionError \/ ExpandedSteps, Location.Middle ==>> Step[DynamicConfig]) => Assertion): Assertion = {
+  private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(
+    verify: (Either[ExpansionError, ExpandedSteps], TreeMap[Location.Middle, Step[DynamicConfig]]) => Assertion
+  ): Assertion = {
     val (expansion, steps) = doTest {
       for {
         _  <- StepDao.insert(oid, insertionLoc, Step.SmartGcal(f2, t))
-        ex <- SmartGcalDao.expand(oid, searchLoc).run
+        ex <- SmartGcalDao.expand(oid, searchLoc).value
         ss <- StepDao.selectAll(oid)
-        _  <- ss.keys.traverseU { StepDao.deleteAtLocation(oid, _) }
+        _  <- ss.keys.toList.traverse { StepDao.deleteAtLocation(oid, _) }
       } yield (ex, ss)
     }
 
@@ -120,6 +121,9 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
 }
 
 object SmartGcalSpec {
+  import GcalLampType.{ Arc, Flat }
+  import GcalBaselineType.Night
+
   private val loc1: Location.Middle = Location.unsafeMiddle(1)
   private val loc2: Location.Middle = Location.unsafeMiddle(2)
   private val loc9: Location.Middle = Location.unsafeMiddle(9)
