@@ -32,3 +32,10 @@ ALTER TABLE step_f2
       ALTER COLUMN fpu DROP NOT NULL,
         ADD COLUMN custom_mask boolean NOT NULL,
 	ADD CONSTRAINT f2_fpu_check CHECK ((fpu IS NULL) OR (custom_mask = 'f'));
+
+-- The filter wavelength should be precise μm.
+ALTER TABLE e_f2_filter
+      ALTER COLUMN wavelength TYPE NUMERIC(4,3);
+
+COMMENT ON COLUMN e_f2_filter.wavelength IS 'μm';
+

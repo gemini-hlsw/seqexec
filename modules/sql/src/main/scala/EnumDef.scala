@@ -31,6 +31,9 @@ object EnumDef {
 
     implicit def caseOptionAngle [S <: Symbol] = at[(S, Option[Angle] ) ] { case (s, _) => "  val " + s.name + ": Option[gem.math.Angle]" }
     implicit def caseOptionDouble[S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
+
+    implicit def caesOptionWavelengthNm[S <: Symbol] = at[(S, Option[Wavelength.Nm])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
+    implicit def caesOptionWavelengthUm[S <: Symbol] = at[(S, Option[Wavelength.Um])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
@@ -46,8 +49,11 @@ object EnumDef {
     implicit val caseWavelengthNm = at[Wavelength.Nm ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
     implicit val caseWavelengthUm = at[Wavelength.Um ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
 
-    implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[gem.math.Angle]")(a0 => s"Some(gem.math.Angle.fromDoubleArcseconds(${a0.toArcsecs}))"))
-    implicit val caseOptionDouble = at[Option[Double]](a => a.fold("None")(d => s"Some($d)"))
+    implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
+    implicit val caseOptionDouble = at[Option[Double]](a => a.fold("None")(aʹ => s"Some($aʹ)"))
+
+    implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
+    implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
   }
 
   private def constructor[H <: HList, O <: HList, L](name: String, id: String, h: H)(

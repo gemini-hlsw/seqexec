@@ -19,7 +19,7 @@ object F2Enums {
       },
 
       EnumDef.fromQuery("F2Filter", "Flamingos2 filters") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Double], 'obsolete -> Boolean`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Wavelength.Um], 'obsolete -> Boolean`.T
         sql"SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_f2_filter".query[(String, R)]
       },
 
