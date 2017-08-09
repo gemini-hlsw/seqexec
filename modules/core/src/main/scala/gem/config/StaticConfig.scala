@@ -65,7 +65,7 @@ object StaticConfig {
     val Common: GmosNorth @> GmosCommonStaticConfig =
       Lens.lensu((a, b) => a.copy(common = b), _.common)
 
-    val CustomRois: GmosNorth @> List[GmosCustomRoiEntry] =
+    val CustomRois: GmosNorth @> Set[GmosCustomRoiEntry] =
       Common >=> GmosCommonStaticConfig.CustomRois
 
     val NodAndShuffle: GmosNorth @> Option[GmosNodAndShuffle] =
@@ -89,7 +89,7 @@ object StaticConfig {
     val Common: GmosSouth @> GmosCommonStaticConfig =
       Lens.lensu((a, b) => a.copy(common = b), _.common)
 
-    val CustomRois: GmosSouth @> List[GmosCustomRoiEntry] =
+    val CustomRois: GmosSouth @> Set[GmosCustomRoiEntry] =
       Common >=> GmosCommonStaticConfig.CustomRois
 
     val NodAndShuffle: GmosSouth @> Option[GmosNodAndShuffle] =

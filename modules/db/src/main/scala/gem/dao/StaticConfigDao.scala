@@ -83,15 +83,15 @@ object StaticConfigDao {
           insertCustomRoiEntries(sid, GmosS, gs.common.customRois) *>
           Statements.Gmos.insertSouth(sid, gs).run.void
 
-    def insertCustomRoiEntries(sid: Int, i: Instrument, rois: List[GmosCustomRoiEntry]): ConnectionIO[Unit] =
-      rois.traverseU(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
+    def insertCustomRoiEntries(sid: Int, i: Instrument, rois: Set[GmosCustomRoiEntry]): ConnectionIO[Unit] =
+      rois.toList.traverseU(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
 
     def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
       ns.fold(().point[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
 
     def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
       for {
-        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosN).list
+        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosN).list.map(_.toSet)
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosN).option
         gn <- Statements.Gmos.selectNorth(sid).unique
         gnʹ = GmosNorth.CustomRois.set(gn, ro)
@@ -99,7 +99,7 @@ object StaticConfigDao {
 
     def selectSouth(sid: Int): ConnectionIO[GmosSouth] =
       for {
-        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosS).list
+        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosS).list.map(_.toSet)
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosS).option
         gs <- Statements.Gmos.selectSouth(sid).unique
         gsʹ = GmosSouth.CustomRois.set(gs, ro)
@@ -146,7 +146,7 @@ object StaticConfigDao {
       // shuffle and custom ROIs.
       implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
         Composite[(GmosDetector, MosPreImaging)].xmap(
-          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None, Nil),
+          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None, Set.empty),
           (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
         )
 

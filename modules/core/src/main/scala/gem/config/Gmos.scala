@@ -182,7 +182,7 @@ object Gmos {
     detector:      GmosDetector,
     mosPreImaging: MosPreImaging,
     nodAndShuffle: Option[GmosNodAndShuffle],
-    customRois:    List[GmosCustomRoiEntry]
+    customRois:    Set[GmosCustomRoiEntry]
   )
 
   object GmosCommonStaticConfig extends GmosCommonStaticConfigLenses {
@@ -191,12 +191,12 @@ object Gmos {
         GmosDetector.HAMAMATSU,
         MosPreImaging.IsNotMosPreImaging,
         None,
-        Nil
+        Set.empty[GmosCustomRoiEntry]
       )
   }
 
   trait GmosCommonStaticConfigLenses {
-    val CustomRois: GmosCommonStaticConfig @> List[GmosCustomRoiEntry] =
+    val CustomRois: GmosCommonStaticConfig @> Set[GmosCustomRoiEntry] =
       Lens.lensu((a, b) => a.copy(customRois = b), _.customRois)
 
     val NodAndShuffle: GmosCommonStaticConfig @> Option[GmosNodAndShuffle] =
