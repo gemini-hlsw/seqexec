@@ -19,7 +19,7 @@ lazy val scalaTestVersion         = "3.0.1"
 lazy val scalaXmlVerson           = "1.0.6"
 lazy val shapelessVersion         = "2.3.2"
 lazy val slf4jVersion             = "1.7.25"
-lazy val tucoVersion              = "0.3.0-M1"
+lazy val tucoVersion              = "0.3.0-M2"
 
 enablePlugins(GitVersioning)
 
@@ -283,7 +283,10 @@ lazy val telnetd = project
   .settings(commonSettings)
   .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
-    libraryDependencies += "org.tpolecat" %% "tuco-core" % tucoVersion,
+    libraryDependencies ++= Seq(
+      "org.tpolecat" %% "tuco-core" % tucoVersion,
+      "org.tpolecat" %% "tuco-shell" % tucoVersion
+    ),
     dockerExposedPorts  := List(6666),
     dockerRepository    := Some("geminihlsw")
   )

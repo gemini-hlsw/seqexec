@@ -5,9 +5,10 @@ package gem
 package telnetd
 package command
 
+import cats.Applicative
 import gem.enum.ProgramRole
-import net.bmjames.opts.types._
-import tuco._, Tuco._
+import com.monovore.decline.{ Command => _, _ }
+import tuco._, Tuco._, tuco.shell._
 
 /** A command to show information about the current user. */
 object whoami {
@@ -15,7 +16,7 @@ object whoami {
   val command: GemCommand =
     shellCommand[User[ProgramRole]](
       "whoami", "Show information about the current user.",
-      Parser.pure { u =>
+      Applicative[Opts].pure { u =>
         for {
           _ <- writeLn(s"username: ${u.id}")
           _ <- writeLn(s"   first: ${u.firstName}")
@@ -24,6 +25,6 @@ object whoami {
           _ <- writeLn(s"   flags: ${if (u.isStaff) "staff" else "<none>"}")
         } yield u
       }
-    ).zoom(Session.L.data[GemState] >=> GemState.L.user)
+    ).zoom(Session.L.data[GemState] >=> GemState.L.user[SessionIO].toTucoLens)
 
 }

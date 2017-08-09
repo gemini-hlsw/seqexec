@@ -4,16 +4,16 @@
 package gem
 package telnetd
 
+import cats.effect.{ IO, Async }
 import tuco._, Tuco._
 import doobie.imports._
 import org.flywaydb.core.Flyway
-import scalaz._, scalaz.effect._, scalaz.concurrent.Task
 
 /**
  * Entry point for running Gem with a telnet server. This will go away at some point and the telnet
  * server will be one of several services.
  */
-object Main extends SafeApp {
+object Main {
 
   /** When we start the app with docker we pass arguments as environment variables. */
   val ENV_GEM_DB_URL : String = "GEM_DB_URL"
@@ -25,7 +25,7 @@ object Main extends SafeApp {
     IO(sys.env.getOrElse(key, default))
 
   /** Construct a transactor with the give effect type. */
-  def xa[M[_]: Monad: Capture: Catchable](url: String, user: String, pass: String): Transactor[M] =
+  def xa[M[_]: Async](url: String, user: String, pass: String): Transactor[M] =
     Transactor.fromDriverManager[M]("org.postgresql.Driver", url, user, pass)
 
   /** Run migrations. */
@@ -36,17 +36,20 @@ object Main extends SafeApp {
       flyway.migrate()
     }
 
-  override def runc: IO[Unit] =
+  def runc: IO[Unit] =
     for {
       url  <- getEnv(ENV_GEM_DB_URL,  "jdbc:postgresql:gem")
       user <- getEnv(ENV_GEM_DB_USER, "postgres")
       pass <- getEnv(ENV_GEM_DB_PASS,  "")
-      _    <- IO.putStrLn(s"Connecting with URL $url, user $user, pass «hidden»")
+      _    <- IO(Console.println(s"Connecting with URL $url, user $user, pass «hidden»"))
       _    <- migrate(url, user, pass)
       sxa  = xa[SessionIO](url, user, pass)
-      txa  = xa[Task](url, user, pass)
+      txa  = xa[IO](url, user, pass)
       log  <- Log.newLogIn[SessionIO, IO]("telnetd", txa)
       _    <- Config(Interaction.main(sxa, log), 6666).run(simpleServer)
     } yield ()
+
+  def main(args: Array[String]): Unit =
+    runc.unsafeRunSync()
 
 }

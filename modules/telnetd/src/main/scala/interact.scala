@@ -4,9 +4,10 @@
 package gem
 package telnetd
 
+import cats.implicits._
 import doobie.imports.Transactor
-import cats._, cats.data._, cats.implicits._
 import tuco._, Tuco._
+import tuco.shell._
 
 /** Module defining the behavior of our telnet server, parameterized over transactors. */
 object Interaction {
@@ -33,13 +34,13 @@ object Interaction {
   ): SessionIO[Option[Service[SessionIO]]] = {
     def go(remaining: Int): SessionIO[Option[Service[SessionIO]]] =
       if (remaining < 1) {
-        Option.empty[Service[SessionIO]].point[SessionIO]
+        Option.empty[Service[SessionIO]].pure[SessionIO]
       } else {
         for {
           p <- readLn("Password: ", mask = Some('*'))
           u <- Service.tryLogin(user, p, xa, log)
           r <- if (u.isEmpty) writeLn("Incorrect password.") *> go(remaining - 1)
-               else u.point[SessionIO]
+               else u.pure[SessionIO]
         } yield r
       }
     go(maxTries)
