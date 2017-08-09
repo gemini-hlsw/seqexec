@@ -10,7 +10,7 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceUnloaded, SequenceCompleted}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
@@ -48,6 +48,27 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case _ =>
           noChange
       }
+
+    case SyncToRunning(s) =>
+      // We'll select the sequence currently running and show the correct url
+      value match {
+        case Root | InstrumentPage(_, None) =>
+          updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectToDisplay(s))))
+        case InstrumentPage(_, Some(id))    =>
+          effectOnly(Effect(Future(SelectIdToDisplay(id))))
+      }
+
+    case SyncPageToRemovedSequence(id) =>
+      // If the id is selected, reset the route
+      value match {
+        case InstrumentPage(i, Some(sid)) if sid === id =>
+          updated(InstrumentPage(i, none), (Effect(Future(SelectInstrumentToDisplay(i)))))
+        case _                                          =>
+          noChange
+      }
+
+    case _ =>
+      noChange
   }
 }
 
@@ -319,46 +340,57 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[UserDetails], SeqexecSite)]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
   // It is legal do put sequences of the other sites on the queue
   // but we don't know how to display them, so let's filter them out
   private def filterSequences(sequences: LoadedSequences): LoadedSequences =
     sequences.copy(queue = sequences.queue.filter {
-      case SequenceView(_, metadata, _, _, _) => value._3.instruments.list.toList.contains(metadata.instrument)
+      case SequenceView(_, metadata, _, _, _) => value.site.instruments.list.toList.contains(metadata.instrument)
     })
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
-      updated(value.copy(_2 = u))
+      updated(value.copy(user = u))
 
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
-      updated(value.copy(_1 = filterSequences(sv)), audioEffect)
+      updated(value.copy(sequences = filterSequences(sv)), audioEffect)
 
     case ServerMessage(s: ObserverUpdated) =>
-      updated(value.copy(_1 = filterSequences(s.view)))
+      updated(value.copy(sequences = filterSequences(s.view)))
+
+    case ServerMessage(SequenceUnloaded(id, view)) =>
+      updated(value.copy(sequences = filterSequences(view), firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
-      val observer = value._2.map(_.displayName)
+      val observer = value.user.map(_.displayName)
+      val syncToRunE: Option[Effect] = (value.firstLoad option {
+        s.view.queue.filter(_.status.isRunning) match {
+           case x :: _   => Effect(Future(SyncToRunning(x))).some // if we have multiple sequences running, let's pick the first
+           case _        => none
+        }
+      }).join
+
       val (sequencesWithObserver, effects) =
         filterSequences(s.view).queue.foldLeft(
           (List.empty[SequenceView],
-           List(Some(Effect(Future(NoAction: Action)): Effect))
-          )
+           List[Option[Effect]](Effect(Future(NoAction)).some))
         ) { case ((seq, eff), q) =>
+            val syncUrlE: Option[Effect] =
+              syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(Effect(Future(NoAction)).some)
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
-               Some(Effect(Future(UpdateObserver(q.id, observer.getOrElse("")): Action))) ::
-               Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+              Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::
+              syncUrlE :: eff)
             } else {
-              (q :: seq, Some(Effect(Future(SyncToPage(q): Action))) :: eff)
+              (q :: seq, syncUrlE :: eff)
             }
           }
-      updated(value.copy(_1 = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver)),
+      updated(value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false),
               effects.flatten.reduce(_ + _): Effect)
 
     case ServerMessage(_) =>
@@ -373,9 +405,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, (LoadedSequences, Option[Use
 object PotEq {
   def potStateEq[A]: FastEq[Pot[A]] = (a: Pot[A], b: Pot[A]) => a.state == b.state
 
-  val seqexecQueueEq: FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
-  val searchResultsEq: FastEq[Pot[SearchResults]] = potStateEq[SearchResults]
-  val sequenceEq: FastEq[Pot[SequenceView]] = potStateEq[SequenceView]
+  val seqexecQueueEq:  FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
+  val searchResultsEq: FastEq[Pot[SearchResults]]      = potStateEq[SearchResults]
+  val sequenceEq:      FastEq[Pot[SequenceView]]       = potStateEq[SequenceView]
 }
 
 /**
@@ -388,6 +420,7 @@ case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelec
 
 // All these classes are focused views of the root model. They are used to only update small sections of the
 // UI even if other parts of the root model change
+case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
 case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
 case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
@@ -408,8 +441,12 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def appendToLogE(s: String) =
     Effect(Future(AppendToLog(s)))
 
+  // Model read-writers
+  val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
+    zoomRW(m => WebSocketsFocus(m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
+
   val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  val wsEventsHandler        = new WebSocketEventsHandler(zoomRW(m => (m.uiModel.sequences, m.uiModel.user, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v._1, user = v._2), site = v._3)))
+  val wsEventsHandler        = new WebSocketEventsHandler(webSocketFocusRW)
   val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
   val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
   val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))

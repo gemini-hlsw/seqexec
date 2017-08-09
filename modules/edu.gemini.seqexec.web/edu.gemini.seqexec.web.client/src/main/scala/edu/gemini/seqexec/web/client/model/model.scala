@@ -23,6 +23,8 @@ object Pages {
 case class NavigateTo(page: Pages.SeqexecPages) extends Action
 case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
 case class SyncToPage(view: SequenceView) extends Action
+case class SyncToRunning(view: SequenceView) extends Action
+case class SyncPageToRemovedSequence(id: SequenceId) extends Action
 case class Initialize(site: SeqexecSite) extends Action
 
 // Actions to close and/open the login box
@@ -160,12 +162,13 @@ case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           sequences: SeqexecAppRootModel.LoadedSequences,
                           loginBox: SectionVisibilityState,
                           globalLog: GlobalLog,
-                          sequencesOnDisplay: SequencesOnDisplay)
+                          sequencesOnDisplay: SequencesOnDisplay,
+                          firstLoad: Boolean)
 
 object SeqexecUIModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
   val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty)
+    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty, true)
 }
 
 
