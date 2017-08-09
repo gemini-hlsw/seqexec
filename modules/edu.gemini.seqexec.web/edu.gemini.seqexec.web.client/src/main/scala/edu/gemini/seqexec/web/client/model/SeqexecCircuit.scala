@@ -10,7 +10,8 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceUnloaded, SequenceCompleted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
@@ -343,6 +344,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) {
   implicit val runner = new RunAfterJS
 
+  private val VoidEffect = Effect(Future(NoAction))
+
   // It is legal do put sequences of the other sites on the queue
   // but we don't know how to display them, so let's filter them out
   private def filterSequences(sequences: LoadedSequences): LoadedSequences =
@@ -362,6 +365,14 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
     case ServerMessage(s: ObserverUpdated) =>
       updated(value.copy(sequences = filterSequences(s.view)))
 
+    case ServerMessage(SequenceLoaded(id, view)) =>
+      val observer = value.user.map(_.displayName)
+      val newSequence = view.queue.find(_.id === id)
+      val updateObserverE = (observer |@| newSequence) { (o, _) =>
+          Effect(Future(UpdateObserver(id, o)))
+        }.getOrElse(VoidEffect)
+      updated(value.copy(sequences = filterSequences(view), firstLoad = false), updateObserverE)
+
     case ServerMessage(SequenceUnloaded(id, view)) =>
       updated(value.copy(sequences = filterSequences(view), firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
 
@@ -378,10 +389,10 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       val (sequencesWithObserver, effects) =
         filterSequences(s.view).queue.foldLeft(
           (List.empty[SequenceView],
-           List[Option[Effect]](Effect(Future(NoAction)).some))
+           List[Option[Effect]](VoidEffect.some))
         ) { case ((seq, eff), q) =>
             val syncUrlE: Option[Effect] =
-              syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(Effect(Future(NoAction)).some)
+              syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(VoidEffect.some)
             if (q.metadata.observer.isEmpty && observer.nonEmpty) {
               (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
               Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::
