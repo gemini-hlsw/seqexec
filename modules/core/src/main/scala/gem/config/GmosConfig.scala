@@ -199,7 +199,7 @@ object GmosConfig {
 
   trait GmosCommonStaticConfigLenses {
     val CustomRois: GmosCommonStaticConfig @> Set[GmosCustomRoiEntry] =
-      Lens.lensu((a, b) => a.copy(customRois = b), _.customRois)
+      Lens((a, b) => a.copy(customRois = b), _.customRois)
 
     val NodAndShuffle: GmosCommonStaticConfig @> Option[GmosNodAndShuffle] =
       Lens((a, b) => a.copy(nodAndShuffle = b), _.nodAndShuffle)

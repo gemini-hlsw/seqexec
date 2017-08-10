@@ -67,7 +67,7 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
     }
 
     def parseCustomRoiEntries(cm: ConfigMap): Either[PioError, Set[GmosCustomRoiEntry]] =
-      (1 to 5).toList.traverseU(parseCustomRoiEntry(cm, _)).map(_.flatMap(_.toList).toSet)
+      (1 to 5).toList.traverse(parseCustomRoiEntry(cm, _)).map(_.flatMap(_.toList).toSet)
 
     def parseNodAndShuffle(cm: ConfigMap): Either[PioError, Option[GmosNodAndShuffle]] = {
       import Legacy.Instrument.Gmos._

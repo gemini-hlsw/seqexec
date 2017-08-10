@@ -6,7 +6,7 @@ package gem
 import cats.data.OneAnd
 import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
-import gem.config.Gmos._
+import gem.config.GmosConfig._
 import gem.math.{ Angle, Offset, Wavelength }
 import io.circe._
 import io.circe.syntax._

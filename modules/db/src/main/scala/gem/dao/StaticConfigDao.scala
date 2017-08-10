@@ -81,7 +81,7 @@ object StaticConfigDao {
           Statements.Gmos.insertSouth(sid, gs).run.void
 
     def insertCustomRoiEntries(sid: Int, i: Instrument, rois: Set[GmosCustomRoiEntry]): ConnectionIO[Unit] =
-      rois.toList.traverseU(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
+      rois.toList.traverse(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
 
     def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
       ns.fold(().pure[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
@@ -142,8 +142,8 @@ object StaticConfigDao {
       // We need to define this explicitly because we're ignoring the nod and
       // shuffle and custom ROIs.
       implicit val GmosCommonStaticComposite: Composite[GmosCommonSC] =
-        Composite[(GmosDetector, MosPreImaging)].xmap(
-          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None, Set.empty),
+        Composite[(GmosDetector, MosPreImaging)].imap(
+          (t: (GmosDetector, MosPreImaging)) => GmosCommonSC(t._1, t._2, None, Set.empty))(
           (s: GmosCommonSC)                  => (s.detector, s.mosPreImaging)
         )
 

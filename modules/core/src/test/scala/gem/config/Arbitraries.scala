@@ -8,6 +8,7 @@ import cats._
 import gem.arb._
 import gem.config.F2Config.F2FpuChoice
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
+import gem.config.GmosConfig._
 import gem.enum._
 import gem.enum.Instrument._
 import gem.math.{ Offset, Wavelength }
@@ -225,7 +226,7 @@ trait Arbitraries {
         c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
         g <- arbitrary[Option[GmosConfig.GmosGrating[GmosNorthDisperser]]]
         f <- arbitrary[Option[GmosNorthFilter]]
-        u <- arbitrary[Option[Either[Gmos.GmosCustomMask, GmosNorthFpu]]]
+        u <- arbitrary[Option[Either[GmosCustomMask, GmosNorthFpu]]]
       } yield DynamicConfig.GmosNorth(c, g, f, u)
     }
 
@@ -235,7 +236,7 @@ trait Arbitraries {
         c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
         g <- arbitrary[Option[GmosConfig.GmosGrating[GmosSouthDisperser]]]
         f <- arbitrary[Option[GmosSouthFilter]]
-        u <- arbitrary[Option[Either[Gmos.GmosCustomMask, GmosSouthFpu]]]
+        u <- arbitrary[Option[Either[GmosCustomMask, GmosSouthFpu]]]
       } yield DynamicConfig.GmosSouth(c, g, f, u)
     }
 
