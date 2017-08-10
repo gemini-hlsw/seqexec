@@ -180,7 +180,7 @@ object SequenceControl {
                 color = Some("purple"),
                 dataTooltip = Some(s"Sync sequence"),
                 disabled = !isLogged || !isConnected || s.runRequested || s.syncRequested),
-              s" Synkeys"
+              s"Sync"
             ).when(status === SequenceState.Idle),
             Button(
               Button.Props(
