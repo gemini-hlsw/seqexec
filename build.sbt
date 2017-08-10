@@ -1,26 +1,25 @@
 resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-lazy val argonautShapelessVersion = "1.2.0-M6"
-lazy val argonautVersion          = "6.2"
-lazy val attoVersion              = "0.6.1-M1"
-lazy val catsEffectVersion        = "0.4"
-lazy val catsVersion              = "1.0.0-MF"
-lazy val declineVersion           = "0.4.0-M1"
-lazy val doobieVersion            = "0.5.0-M2"
-lazy val flywayVersion            = "4.0.3"
-lazy val fs2Version               = "0.10.0-M5"
-lazy val http4sVersion            = "0.18.0-SNAPSHOT"
-lazy val jwtVersion               = "0.14.0"
-lazy val kpVersion                = "0.9.3"
-lazy val mouseVersion             = "0.10-MF"
-lazy val scalaCheckVersion        = "1.13.5"
-lazy val scalaParsersVersion      = "1.0.4"
-lazy val scalaTestVersion         = "3.0.1"
-lazy val scalaXmlVerson           = "1.0.6"
-lazy val shapelessVersion         = "2.3.2"
-lazy val slf4jVersion             = "1.7.25"
-lazy val tucoVersion              = "0.3.0-M2"
+lazy val circeVersion        = "0.8.0" // TODO - 0.9.0-M1
+lazy val attoVersion         = "0.6.1-M1"
+lazy val catsEffectVersion   = "0.4"
+lazy val catsVersion         = "1.0.0-MF"
+lazy val declineVersion      = "0.4.0-M1"
+lazy val doobieVersion       = "0.5.0-M2"
+lazy val flywayVersion       = "4.0.3"
+lazy val fs2Version          = "0.10.0-M5"
+lazy val http4sVersion       = "0.18.0-SNAPSHOT"
+lazy val jwtVersion          = "0.14.0"
+lazy val kpVersion           = "0.9.3"
+lazy val mouseVersion        = "0.10-MF"
+lazy val scalaCheckVersion   = "1.13.5"
+lazy val scalaParsersVersion = "1.0.4"
+lazy val scalaTestVersion    = "3.0.1"
+lazy val scalaXmlVerson      = "1.0.6"
+lazy val shapelessVersion    = "2.3.2"
+lazy val slf4jVersion        = "1.7.25"
+lazy val tucoVersion         = "0.3.0-M2"
 
 enablePlugins(GitVersioning)
 
@@ -234,9 +233,9 @@ lazy val json = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "io.argonaut"                %% "argonaut"               % argonautVersion,
-      "io.argonaut"                %% "argonaut-scalaz"        % argonautVersion,
-      "com.github.alexarchambault" %% "argonaut-shapeless_6.2" % argonautShapelessVersion
+      "io.circe" %% "circe-core"    % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser"  % circeVersion
     )
   )
 
