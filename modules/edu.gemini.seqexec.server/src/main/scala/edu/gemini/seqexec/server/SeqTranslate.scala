@@ -170,10 +170,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def toInstrumentSys(inst: Resource.Instrument): TrySeq[Instrument] = inst match {
-    case Resource.F2   => TrySeq(Flamingos2(systems.flamingos2))
+    case Resource.F2     => TrySeq(Flamingos2(systems.flamingos2))
     case Resource.GMOS_S => TrySeq(GmosSouth(systems.gmosSouth))
     case Resource.GMOS_N => TrySeq(GmosNorth(systems.gmosNorth))
-    case _             => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case _               => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
   private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
@@ -204,13 +204,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def calcInstHeader(config: Config, inst: Resource.Instrument): TrySeq[Header] = inst match {
-    case Resource.F2   =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+    case Resource.F2      =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
-    case Resource.GMOS_S|Resource.GMOS_N =>
+    case Resource.GMOS_S |
+         Resource.GMOS_N  =>
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
       val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
       TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsReader))
-    case _             =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case _                =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
   private def commonHeaders(config: Config)(ctx: ActionMetadata): Header = new StandardHeader(systems.dhs,

@@ -186,7 +186,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     }
 
     cc match {
-      case cfg.BuiltInFPU(fpu)     => builtInFPU(fpu)
+      case cfg.BuiltInFPU(fpu) => builtInFPU(fpu)
       case CustomMaskFPU(name) => customFPU(name)
       case UnknownFPU          => SeqAction.void
       case _                   => SeqAction.fail(SeqexecFailure.Unexpected("Failed match on built-in FPU"))

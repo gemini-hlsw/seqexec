@@ -168,14 +168,15 @@ object TcsControllerEpics extends TcsController {
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
 
   private def getInstPort(inst: Resource.Instrument): Option[Int] = (inst match {
-    case Resource.GMOS_S|Resource.GMOS_N  => TcsEpics.instance.gmosPort
-    case Resource.GSAOI => TcsEpics.instance.gsaoiPort
-    case Resource.F2    => TcsEpics.instance.f2Port
-    case Resource.GPI   => TcsEpics.instance.gpiPort
-    case Resource.NIRI  => TcsEpics.instance.niriPort
-    case Resource.GNIRS => TcsEpics.instance.gnirsPort
-    case Resource.NIFS  => TcsEpics.instance.nifsPort
-    case _              => None
+    case Resource.GMOS_S |
+         Resource.GMOS_N  => TcsEpics.instance.gmosPort
+    case Resource.GSAOI   => TcsEpics.instance.gsaoiPort
+    case Resource.F2      => TcsEpics.instance.f2Port
+    case Resource.GPI     => TcsEpics.instance.gpiPort
+    case Resource.NIRI    => TcsEpics.instance.niriPort
+    case Resource.GNIRS   => TcsEpics.instance.gnirsPort
+    case Resource.NIFS    => TcsEpics.instance.nifsPort
+    case _                => None
   }).flatMap(p => if (p == 0) None else Some(p))
 
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an
