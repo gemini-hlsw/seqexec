@@ -42,7 +42,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       d <- dataId
       _ <- systems.odb.datasetStart(obsId, d, imageFileId)
     } yield ()
-
     def sendDataEnd(imageFileId: ImageFileId): SeqAction[Unit] = for {
       d <- dataId
       _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
@@ -56,7 +55,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       _ <- sendDataStart(id)
       _ <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
       _ <- inst.observe(config)(id)
-      _ <- headers(ctx).map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+      _ <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
       _ <- closeImage(id, systems.dhs)
       _ <- sendDataEnd(id)
     } yield ObserveResult(id)
@@ -109,6 +108,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       headers   <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
+
   }
 
   private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =

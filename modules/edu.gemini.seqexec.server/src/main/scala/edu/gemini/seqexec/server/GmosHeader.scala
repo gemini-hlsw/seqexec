@@ -19,8 +19,8 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
     sendKeywords(id, inst, hs, List(
       buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
       buildString(gmosReader.ccName, "GMOSCC"),
-      buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"),
-      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"))
+      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
+      buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"))
       // TODO NOD*
     )
   }
