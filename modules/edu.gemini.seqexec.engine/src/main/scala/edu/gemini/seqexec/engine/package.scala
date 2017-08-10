@@ -387,7 +387,7 @@ package object engine {
 
   // For debugging
   def printSequenceState(id: Sequence.Id): HandleP[Unit] =
-    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT]).void
+    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT]).void // scalastyle:ignore
 
   // The `Catchable` instance of `Handle`` needs to be manually written.
   // Without it it's not possible to use `Handle` as a scalaz-stream process effects.

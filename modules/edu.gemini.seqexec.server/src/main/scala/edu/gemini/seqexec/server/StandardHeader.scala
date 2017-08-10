@@ -216,48 +216,170 @@ class StandardHeader(
   import Header._
   import Header.Implicits._
 
+  val p: SeqAction[Option[Double]] = for {
+    xoffOpt <- tcsReader.getXOffset
+    yoffOpt <- tcsReader.getYOffset
+    iaaOpt <- tcsReader.getInstrumentAA
+  } yield for {
+    xoff <- xoffOpt
+    yoff <- yoffOpt
+    iaa <- iaaOpt
+  } yield -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
+
+  val q: SeqAction[Option[Double]] = for {
+    xoffOpt <- tcsReader.getXOffset
+    yoffOpt <- tcsReader.getYOffset
+    iaaOpt  <- tcsReader.getInstrumentAA
+  } yield for {
+    xoff <- xoffOpt
+    yoff <- yoffOpt
+    iaa  <- iaaOpt
+  } yield -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
+
+  val raoff: SeqAction[Option[Double]] = for {
+    poffOpt <- p
+    qoffOpt <- q
+    ipaOpt  <- tcsReader.getInstrumentPA
+  } yield for {
+    poff <- poffOpt
+    qoff <- qoffOpt
+    ipa  <- ipaOpt
+  } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
+
+  val decoff: SeqAction[Option[Double]] = for {
+    poffOpt <- p
+    qoffOpt <- q
+    ipaOpt  <- tcsReader.getInstrumentPA
+  } yield for {
+    poff <- poffOpt
+    qoff <- qoffOpt
+    ipa  <- ipaOpt
+  } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
+
+
+  val obsObject: SeqAction[Option[String]] = for {
+    obsType   <- obsReader.getObsType
+    obsObject <- obsReader.getObsObject
+    tcsObject <- tcsReader.getSourceATarget.getObjectName
+  } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
+          else Some(obsObject)
+
+  private def decodeGuide(v: StandardGuideOptions.Value): String = v match {
+    case StandardGuideOptions.Value.park   => "parked"
+    case StandardGuideOptions.Value.guide  => "guiding"
+    case StandardGuideOptions.Value.freeze => "frozen"
+  }
+
+  val baseKeywords = List(
+    buildString(obsObject.orDefault, "OBJECT"),
+    buildString(obsReader.getObsType, "OBSTYPE"),
+    buildString(obsReader.getObsClass, "OBSCLASS"),
+    buildString(obsReader.getGemPrgId, "GEMPRGID"),
+    buildString(obsReader.getObsId, "obsid"),
+    buildString(obsReader.getDataLabel, "DATALAB"),
+    buildString(stateReader.getObserverName, "OBSERVER"),
+    buildString(obsReader.getObservatory, "OBSERVAT"),
+    buildString(obsReader.getTelescope, "telescope"),
+    buildDouble(tcsReader.getSourceATarget.getParallax.orDefault, "PARALLAX"),
+    buildDouble(tcsReader.getSourceATarget.getRadialVelocity.orDefault, "RADVEL"),
+    buildDouble(tcsReader.getSourceATarget.getEpoch.orDefault, "EPOCH"),
+    buildDouble(tcsReader.getSourceATarget.getEquinox.orDefault, "EQUINOX"),
+    buildDouble(tcsReader.getTrackingEquinox.orDefault, "TRKEQUIN"),
+    buildString(stateReader.getOperatorName, "SSA"),
+    buildDouble(tcsReader.getSourceATarget.getRA.orDefault, "RA"),
+    buildDouble(tcsReader.getSourceATarget.getDec.orDefault, "DEC"),
+    buildDouble(tcsReader.getElevation.orDefault, "ELEVATIO"),
+    buildDouble(tcsReader.getAzimuth.orDefault, "AZIMUTH"),
+    buildDouble(tcsReader.getCRPositionAngle.orDefault, "CRPA"),
+    buildString(tcsReader.getHourAngle.orDefault, "HA"),
+    buildString(tcsReader.getLocalTime.orDefault, "LT"),
+    buildString(tcsReader.getTrackingFrame.orDefault, "TRKFRAME"),
+    buildDouble(tcsReader.getTrackingDec.orDefault, "DECTRACK"),
+    buildDouble(tcsReader.getTrackingEpoch.orDefault, "TRKEPOCH"),
+    buildDouble(tcsReader.getTrackingRA.orDefault, "RATRACK"),
+    buildString(tcsReader.getSourceATarget.getFrame.orDefault, "FRAME"),
+    buildDouble(tcsReader.getSourceATarget.getProperMotionDec.orDefault, "PMDEC"),
+    buildDouble(tcsReader.getSourceATarget.getProperMotionRA.orDefault, "PMRA"),
+    {
+      val x = tcsReader.getSourceATarget.getWavelength.map(_.map(_.length.toAngstroms))
+      buildDouble(x.orDefault, "WAVELENG")
+    },
+    buildString(stateReader.getRawImageQuality, "RAWIQ"),
+    buildString(stateReader.getRawCloudCover, "RAWCC"),
+    buildString(stateReader.getRawWaterVapor, "RAWWV"),
+    buildString(stateReader.getRawBackgroundLight, "RAWBG"),
+    buildString(obsReader.getPIReq, "RAWPIREQ"),
+    buildString(obsReader.getGeminiQA, "RAWGEMQA"),
+    buildString(tcsReader.getCarouselMode.orDefault, "CGUIDMOD"),
+    buildString(tcsReader.getUT.orDefault, "UT"),
+    buildString(tcsReader.getDate.orDefault, "DATE"),
+    buildString(tcsReader.getM2Baffle.orDefault, "M2BAFFLE"),
+    buildString(tcsReader.getM2CentralBaffle.orDefault, "M2CENBAF"),
+    buildString(tcsReader.getST.orDefault, "ST"),
+    buildDouble(tcsReader.getXOffset.orDefault, "XOFFSET"),
+    buildDouble(tcsReader.getYOffset.orDefault, "YOFFSET"),
+    buildDouble(p.orDefault, "POFFSET"),
+    buildDouble(q.orDefault, "QOFFSET"),
+    buildDouble(raoff.orDefault, "RAOFFSET"),
+    buildDouble(decoff.orDefault, "DECOFFSE"),
+    buildDouble(tcsReader.getTrackingRAOffset.orDefault, "RATRGOFF"),
+    buildDouble(tcsReader.getTrackingDecOffset.orDefault, "DECTRGOF"),
+    buildDouble(tcsReader.getInstrumentPA.orDefault, "PA"),
+    buildDouble(tcsReader.getInstrumentAA.orDefault, "IAA"),
+    buildDouble(tcsReader.getSFRotation.orDefault, "SFRT2"),
+    buildDouble(tcsReader.getSFTilt.orDefault, "SFTILT"),
+    buildDouble(tcsReader.getSFLinear.orDefault, "SFLINEAR"),
+    buildString(tcsReader.getAOFoldName.orDefault, "AOFOLD"),
+    buildString(obsReader.getPwfs1Guide.map(decodeGuide), "PWFS1_ST"),
+    buildString(obsReader.getPwfs2Guide.map(decodeGuide), "PWFS2_ST"),
+    buildString(obsReader.getOiwfsGuide.map(decodeGuide), "OIWFS_ST"),
+    buildString(obsReader.getAowfsGuide.map(decodeGuide), "AOWFS_ST"),
+    buildInt32(obsReader.getSciBand.orDefault, "SCIBAND")
+  )
+
+  def timinigWindows(id: ImageFileId, inst: String): SeqAction[Unit] = {
+    val timingWindows = obsReader.getTimingWindows
+    val windows = timingWindows.flatMap {
+      case (i, tw) =>
+        List(
+          buildString(tw.start,    f"REQTWS${i + 1}%02d"),
+          buildDouble(tw.duration, f"REQTWD${i + 1}%02d"),
+          buildInt32(tw.repeat,    f"REQTWN${i + 1}%02d"),
+          buildDouble(tw.period,   f"REQTWP${i + 1}%02d"))
+    }
+    val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
+    sendKeywords(id, inst, hs, windowsCount :: windows)
+  }
+
+  def requestedConditions(id: ImageFileId, inst: String): SeqAction[Unit] = {
+    import ObsKeywordsReader._
+    val keys = List(
+      "REQIQ" -> IQ,
+      "REQCC" -> CC,
+      "REQBG" -> SB,
+      "REQWV" -> WV)
+    val requested = keys.flatMap {
+      case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
+    }
+    sendKeywords(id, inst, hs, requested)
+  }
+
+  def requestedAirMassAngle(id: ImageFileId, inst: String): SeqAction[Unit] = {
+    import ObsKeywordsReader._
+    val keys = List(
+      "REQMAXAM" -> MAX_AIRMASS,
+      "REQMAXHA" -> MAX_HOUR_ANGLE,
+      "REQMINAM" -> MIN_AIRMASS,
+      "REQMINHA" -> MIN_HOUR_ANGLE)
+    val requested = keys.flatMap {
+      case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
+    }
+    if (!requested.isEmpty) sendKeywords(id, inst, hs, requested)
+    else SeqAction(())
+  }
+
+  // scalastyle:of
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
-
-    val p: SeqAction[Option[Double]] = for {
-      xoffOpt <- tcsReader.getXOffset
-      yoffOpt <- tcsReader.getYOffset
-      iaaOpt <- tcsReader.getInstrumentAA
-    } yield for {
-      xoff <- xoffOpt
-      yoff <- yoffOpt
-      iaa <- iaaOpt
-    } yield -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
-
-    val q: SeqAction[Option[Double]] = for {
-      xoffOpt <- tcsReader.getXOffset
-      yoffOpt <- tcsReader.getYOffset
-      iaaOpt <- tcsReader.getInstrumentAA
-    } yield for {
-      xoff <- xoffOpt
-      yoff <- yoffOpt
-      iaa <- iaaOpt
-    } yield -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
-
-    val raoff: SeqAction[Option[Double]] = for {
-      poffOpt <- p
-      qoffOpt <- q
-      ipaOpt <- tcsReader.getInstrumentPA
-    } yield for {
-      poff <- poffOpt
-      qoff <- qoffOpt
-      ipa <- ipaOpt
-    } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
-
-    val decoff: SeqAction[Option[Double]] = for {
-      poffOpt <- p
-      qoffOpt <- q
-      ipaOpt <- tcsReader.getInstrumentPA
-    } yield for {
-      poff <- poffOpt
-      qoff <- qoffOpt
-      ipa <- ipaOpt
-    } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
-
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
                        extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
       if (g == StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
@@ -282,6 +404,9 @@ class StandardHeader(
                                target: TargetKeywordsReader, extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] =
       guiderKeywords(guideWith, baseName, target, List(buildDouble(tcsReader.getM2UserFocusOffset.orDefault, baseName + "FOCUS")) ++ extras)
 
+    val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
+      List(buildDouble(tcsReader.getOiwfsFreq.orDefault, "OIFREQ")))
+
     val pwfs1Keywords = standardGuiderKeywords(obsReader.getPwfs1Guide, "P1", tcsReader.getPwfs1Target,
       List(buildDouble(tcsReader.getPwfs1Freq.orDefault, "P1FREQ")))
 
@@ -290,137 +415,16 @@ class StandardHeader(
 
     val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, List())
 
-    val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
-      List(buildDouble(tcsReader.getOiwfsFreq.orDefault, "OIFREQ")))
-
-    val obsObject: SeqAction[Option[String]] = for {
-      obsType   <- obsReader.getObsType
-      obsObject <- obsReader.getObsObject
-      tcsObject <- tcsReader.getSourceATarget.getObjectName
-    } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
-            else Some(obsObject)
-
-    val requestedAirMassAngle: SeqAction[Unit] = {
-      import ObsKeywordsReader._
-      val keys = List(
-        "REQMAXAM" -> MAX_AIRMASS,
-        "REQMAXHA" -> MAX_HOUR_ANGLE,
-        "REQMINAM" -> MIN_AIRMASS,
-        "REQMINHA" -> MIN_HOUR_ANGLE)
-      val requested = keys.flatMap {
-        case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
-      }
-      if(!requested.isEmpty) sendKeywords(id, inst, hs, requested)
-      else SeqAction(())
-    }
-
-    val requestedConditions: SeqAction[Unit] = {
-      import ObsKeywordsReader._
-      val keys = List(
-        "REQIQ" -> IQ,
-        "REQCC" -> CC,
-        "REQBG" -> SB,
-        "REQWV" -> WV)
-      val requested = keys.flatMap {
-        case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
-      }
-      sendKeywords(id, inst, hs, requested)
-    }
-
-    val timinigWindows: SeqAction[Unit] = {
-      val timingWindows = obsReader.getTimingWindows
-      val windows = timingWindows.flatMap {
-        case (i, tw) =>
-          List(
-            buildString(tw.start,    f"REQTWS${i + 1}%02d"),
-            buildDouble(tw.duration, f"REQTWD${i + 1}%02d"),
-            buildInt32(tw.repeat,    f"REQTWN${i + 1}%02d"),
-            buildDouble(tw.period,   f"REQTWP${i + 1}%02d"))
-      }
-      val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
-      sendKeywords(id, inst, hs, windowsCount :: windows)
-    }
-
-    def decodeGuide(v: StandardGuideOptions.Value): String = v match {
-      case StandardGuideOptions.Value.park   => "parked"
-      case StandardGuideOptions.Value.guide  => "guiding"
-      case StandardGuideOptions.Value.freeze => "frozen"
-    }
-
-    sendKeywords(id, inst, hs, List(
-      buildString(obsObject.orDefault, "OBJECT"),
-      buildString(obsReader.getObsType, "OBSTYPE"),
-      buildString(obsReader.getObsClass, "OBSCLASS"),
-      buildString(obsReader.getGemPrgId, "GEMPRGID"),
-      buildString(obsReader.getObsId, "obsid"),
-      buildString(obsReader.getDataLabel, "DATALAB"),
-      buildString(stateReader.getObserverName, "OBSERVER"),
-      buildString(obsReader.getObservatory, "OBSERVAT"),
-      buildString(obsReader.getTelescope, "telescope"),
-      buildDouble(tcsReader.getSourceATarget.getParallax.orDefault, "PARALLAX"),
-      buildDouble(tcsReader.getSourceATarget.getRadialVelocity.orDefault, "RADVEL"),
-      buildDouble(tcsReader.getSourceATarget.getEpoch.orDefault, "EPOCH"),
-      buildDouble(tcsReader.getSourceATarget.getEquinox.orDefault, "EQUINOX"),
-      buildDouble(tcsReader.getTrackingEquinox.orDefault, "TRKEQUIN"),
-      buildString(stateReader.getOperatorName, "SSA"),
-      buildDouble(tcsReader.getSourceATarget.getRA.orDefault, "RA"),
-      buildDouble(tcsReader.getSourceATarget.getDec.orDefault, "DEC"),
-      buildDouble(tcsReader.getElevation.orDefault, "ELEVATIO"),
-      buildDouble(tcsReader.getAzimuth.orDefault, "AZIMUTH"),
-      buildDouble(tcsReader.getCRPositionAngle.orDefault, "CRPA"),
-      buildString(tcsReader.getHourAngle.orDefault, "HA"),
-      buildString(tcsReader.getLocalTime.orDefault, "LT"),
-      buildString(tcsReader.getTrackingFrame.orDefault, "TRKFRAME"),
-      buildDouble(tcsReader.getTrackingDec.orDefault, "DECTRACK"),
-      buildDouble(tcsReader.getTrackingEpoch.orDefault, "TRKEPOCH"),
-      buildDouble(tcsReader.getTrackingRA.orDefault, "RATRACK"),
-      buildString(tcsReader.getSourceATarget.getFrame.orDefault, "FRAME"),
-      buildDouble(tcsReader.getSourceATarget.getProperMotionDec.orDefault, "PMDEC"),
-      buildDouble(tcsReader.getSourceATarget.getProperMotionRA.orDefault, "PMRA"),
-      {
-        val x = tcsReader.getSourceATarget.getWavelength.map(_.map(_.length.toAngstroms))
-        buildDouble(x.orDefault, "WAVELENG")
-      },
-      buildString(stateReader.getRawImageQuality, "RAWIQ"),
-      buildString(stateReader.getRawCloudCover, "RAWCC"),
-      buildString(stateReader.getRawWaterVapor, "RAWWV"),
-      buildString(stateReader.getRawBackgroundLight, "RAWBG"),
-      buildString(obsReader.getPIReq, "RAWPIREQ"),
-      buildString(obsReader.getGeminiQA, "RAWGEMQA"),
-      buildString(tcsReader.getCarouselMode.orDefault, "CGUIDMOD"),
-      buildString(tcsReader.getUT.orDefault, "UT"),
-      buildString(tcsReader.getDate.orDefault, "DATE"),
-      buildString(tcsReader.getM2Baffle.orDefault, "M2BAFFLE"),
-      buildString(tcsReader.getM2CentralBaffle.orDefault, "M2CENBAF"),
-      buildString(tcsReader.getST.orDefault, "ST"),
-      buildDouble(tcsReader.getXOffset.orDefault, "XOFFSET"),
-      buildDouble(tcsReader.getYOffset.orDefault, "YOFFSET"),
-      buildDouble(p.orDefault, "POFFSET"),
-      buildDouble(q.orDefault, "QOFFSET"),
-      buildDouble(raoff.orDefault, "RAOFFSET"),
-      buildDouble(decoff.orDefault, "DECOFFSE"),
-      buildDouble(tcsReader.getTrackingRAOffset.orDefault, "RATRGOFF"),
-      buildDouble(tcsReader.getTrackingDecOffset.orDefault, "DECTRGOF"),
-      buildDouble(tcsReader.getInstrumentPA.orDefault, "PA"),
-      buildDouble(tcsReader.getInstrumentAA.orDefault, "IAA"),
-      buildDouble(tcsReader.getSFRotation.orDefault, "SFRT2"),
-      buildDouble(tcsReader.getSFTilt.orDefault, "SFTILT"),
-      buildDouble(tcsReader.getSFLinear.orDefault, "SFLINEAR"),
-      buildString(tcsReader.getAOFoldName.orDefault, "AOFOLD"),
-      buildString(obsReader.getPwfs1Guide.map(decodeGuide), "PWFS1_ST"),
-      buildString(obsReader.getPwfs2Guide.map(decodeGuide), "PWFS2_ST"),
-      buildString(obsReader.getOiwfsGuide.map(decodeGuide), "OIWFS_ST"),
-      buildString(obsReader.getAowfsGuide.map(decodeGuide), "AOWFS_ST"),
-      buildInt32(obsReader.getSciBand.orDefault, "SCIBAND")
-    )) *>
-    requestedConditions *>
-    requestedAirMassAngle *>
-    timinigWindows *>
+    sendKeywords(id, inst, hs, baseKeywords) *>
+    requestedConditions(id, inst) *>
+    requestedAirMassAngle(id, inst) *>
+    timinigWindows(id, inst) *>
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
     aowfsKeywords
   }
+  // scalastyle:on
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
     List(

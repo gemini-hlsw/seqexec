@@ -10,9 +10,9 @@ object log {
 
     override def publish(record: LogRecord): Unit = {
       if (record.getLevel == Level.SEVERE) {
-        System.err.println(getFormatter.format(record))
+        System.err.println(getFormatter.format(record)) // scalastyle:ignore
       } else {
-        println(getFormatter.format(record))
+        println(getFormatter.format(record)) // scalastyle:ignore
       }
     }
 

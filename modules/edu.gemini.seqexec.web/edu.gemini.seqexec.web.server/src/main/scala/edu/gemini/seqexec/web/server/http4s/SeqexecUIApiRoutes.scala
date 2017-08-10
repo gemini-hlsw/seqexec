@@ -42,7 +42,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
-  def pingProcess = {
+  private def pingProcess: Process[Task, Ping] = {
     import scalaz.stream.DefaultScheduler
     import scalaz.stream.time.awakeEvery
     import scalaz.concurrent.Strategy

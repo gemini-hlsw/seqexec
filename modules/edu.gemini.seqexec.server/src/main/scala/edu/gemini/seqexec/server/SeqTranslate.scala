@@ -34,42 +34,36 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
 
-  private def step(
-    obsId: SPObservationID,
-    i: Int,
-    config: Config,
-    last: Boolean
-  ): TrySeq[Step[Action \/ Result]] = {
+  private def observe(config: Config, obsId: SPObservationID, inst: Instrument, headers: Reader[ActionMetadata,List[Header]])(ctx: ActionMetadata): SeqAction[ObserveResult] = {
+    val dataId: SeqAction[String] = EitherT(Task(config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
+    def sendDataStart(imageFileId: ImageFileId): SeqAction[Unit] = for {
+      d <- dataId
+      _ <- systems.odb.datasetStart(obsId, d, imageFileId)
+    } yield ()
+
+    def sendDataEnd(imageFileId: ImageFileId): SeqAction[Unit] = for {
+      d <- dataId
+      _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
+    } yield ()
+
+    def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
+      client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
+
+    for {
+      id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
+      _ <- sendDataStart(id)
+      _ <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
+      _ <- inst.observe(config)(id)
+      _ <- headers(ctx).map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+      _ <- closeImage(id, systems.dhs)
+      _ <- sendDataEnd(id)
+    } yield ObserveResult(id)
+  }
+
+  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: Instrument, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
-
-      def observe(config: Config)(ctx: ActionMetadata): SeqAction[ObserveResult] = {
-        val dataId: SeqAction[String] = EitherT(Task(config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
-          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
-
-        def sendDataStart(imageFileId: ImageFileId): SeqAction[Unit] = for {
-          d <- dataId
-          _ <- systems.odb.datasetStart(obsId, d, imageFileId)
-        } yield ()
-        def sendDataEnd(imageFileId: ImageFileId): SeqAction[Unit] = for {
-          d <- dataId
-          _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
-        } yield ()
-
-        def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
-          client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
-
-        for {
-          id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
-          _ <- sendDataStart(id)
-          _ <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
-          _ <- inst.observe(config)(id)
-          _ <- headers(ctx).map(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
-          _ <- closeImage(id, systems.dhs)
-          _ <- sendDataEnd(id)
-        } yield ObserveResult(id)
-      }
-
       extractStatus(config) match {
         case StepState.Pending =>
           Step(
@@ -84,7 +78,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             ++
             List(
               sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-              List(new Action(ctx => observe(config)(ctx).map(x => Result.Observed(x.dataId)).run.map(toResult)))
+              List(new Action(ctx => observe(config, obsId, inst, headers)(ctx).map(x => Result.Observed(x.dataId)).run.map(toResult)))
             )
             ++
             (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
@@ -115,7 +109,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       headers   <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
-
   }
 
   private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =
@@ -238,7 +231,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: Settings) = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   case class Systems(
                       odb: ODBProxy,

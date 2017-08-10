@@ -26,7 +26,7 @@ object UnknownInstrument extends Instrument {
   override val contributorName: String = "unknown"
   override val dhsInstrumentName: String = "UNKNOWN"
 
-  var imageCount = 0
+  private var imageCount = 0 // scalastyle:ignore
 
   override def configure(config: Config): SeqAction[ConfigResult] = EitherT ( Task {
     TrySeq(ConfigResult(this))

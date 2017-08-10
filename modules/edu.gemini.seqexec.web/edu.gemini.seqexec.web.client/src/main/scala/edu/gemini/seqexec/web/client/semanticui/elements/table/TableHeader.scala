@@ -16,7 +16,7 @@ object TableHeader {
   )
 
   object Props {
-    def zero = Props()
+    def zero: Props = Props()
   }
 
   private val component = ScalaComponent.builder[Props]("th")

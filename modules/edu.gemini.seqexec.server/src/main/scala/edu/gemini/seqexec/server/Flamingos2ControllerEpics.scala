@@ -19,7 +19,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
 
   import EpicsCodex._
 
-  override def getConfig: SeqAction[Flamingos2Config] = ???
+  override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue((a: ReadoutMode)
     => a match {

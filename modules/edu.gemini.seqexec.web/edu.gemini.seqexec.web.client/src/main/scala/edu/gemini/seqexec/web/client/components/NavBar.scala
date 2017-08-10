@@ -103,5 +103,5 @@ object ConnectionState {
     )
     .build
 
-  def apply(u: ModelProxy[WebSocketConnection]) = component(Props(u()))
+  def apply(u: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(u()))
 }

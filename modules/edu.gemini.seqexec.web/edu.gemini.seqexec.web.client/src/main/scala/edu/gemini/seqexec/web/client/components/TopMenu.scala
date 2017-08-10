@@ -6,7 +6,7 @@ import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconSignOut
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
 import scalacss.ScalaCssReact._
@@ -18,13 +18,13 @@ object TopMenu {
 
   case class Props(status: ModelProxy[ClientStatus])
 
-  def openLogin[A](proxy: ModelProxy[A]) = japgolly.scalajs.react.Callback.log("Login")>>proxy.dispatchCB(OpenLoginBox)
-  def logout[A](proxy: ModelProxy[A]) = proxy.dispatchCB(Logout)
+  def openLogin[A](proxy: ModelProxy[A]): Callback = japgolly.scalajs.react.Callback.log("Login") >> proxy.dispatchCB(OpenLoginBox)
+  def logout[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(Logout)
 
-  def loginButton[A](proxy: ModelProxy[A], enabled: Boolean) =
+  private def loginButton[A](proxy: ModelProxy[A], enabled: Boolean) =
     Button(Button.Props(size = Size.Medium, onClick = openLogin(proxy), disabled = !enabled), "Login")
 
-  def logoutButton[A](proxy: ModelProxy[A], text: String, enabled: Boolean) =
+  private def logoutButton[A](proxy: ModelProxy[A], text: String, enabled: Boolean) =
     Button(Button.Props(size = Size.Medium, onClick = logout(proxy), icon = Some(IconSignOut), disabled = !enabled), text)
 
   private val component = ScalaComponent.builder[Props]("SeqexecTopMenu")

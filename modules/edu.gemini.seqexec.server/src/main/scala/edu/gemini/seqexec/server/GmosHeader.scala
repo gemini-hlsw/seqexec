@@ -25,32 +25,31 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
     )
   }
 
+  private val adcKeywords =
+    if (gmosReader.isADCInUse) {
+      List(
+        buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+        buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
+        buildDouble(gmosReader.adcPrismEntMe, "ADCENPME"),
+        buildDouble(gmosReader.adcPrismExtSt, "ADCEXPST"),
+        buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
+        buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
+        buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
+        buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
+      )
+    } else Nil
+
+  private val roiKeywords = gmosReader.roiValues.map {
+    case (i, rv) =>
+      List(
+        buildInt32(rv.xStart, s"DETRO${i}X"),
+        buildInt32(rv.xSize, s"DETRO${i}XS"),
+        buildInt32(rv.yStart, s"DETRO${i}Y"),
+        buildInt32(rv.ySize, s"DETRO${i}YS")
+      )
+  }.toList
+
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = {
-    val adcKeywords = {
-      if (gmosReader.isADCInUse) {
-        List(
-          buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
-          buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
-          buildDouble(gmosReader.adcPrismEntMe, "ADCENPME"),
-          buildDouble(gmosReader.adcPrismExtSt, "ADCEXPST"),
-          buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
-          buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
-          buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
-          buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
-        )
-      } else Nil
-    }
-
-    val roiKeywords = gmosReader.roiValues.map {
-      case (i, rv) =>
-        List(
-          buildInt32(rv.xStart, s"DETRO${i}X"),
-          buildInt32(rv.xSize, s"DETRO${i}XS"),
-          buildInt32(rv.yStart, s"DETRO${i}Y"),
-          buildInt32(rv.ySize, s"DETRO${i}YS")
-        )
-    }.toList
-
     sendKeywords(id, inst, hs, List(
       buildInt32(gmosReader.maskId, "MASKID"),
       buildString(gmosReader.maskName, "MASKNAME"),

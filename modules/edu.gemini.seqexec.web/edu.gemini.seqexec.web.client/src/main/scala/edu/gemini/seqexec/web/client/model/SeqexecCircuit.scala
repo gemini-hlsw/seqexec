@@ -299,8 +299,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     def onMessage(e: MessageEvent): Unit = {
       val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
       \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-        case \/-(event) => println(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
-        case -\/(t)     => println(s"Error decoding event ${t.getMessage}")
+        case \/-(event) => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
+        case -\/(t)     => logger.warning(s"Error decoding event ${t.getMessage}")
       }
     }
 
@@ -362,6 +362,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       case SequenceView(_, metadata, _, _, _) => value.site.instruments.list.toList.contains(metadata.instrument)
     })
 
+  // scalastyle:off
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(user = u))
@@ -422,6 +423,7 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       // Ignore unknown events
       noChange
   }
+  // scalastyle:on
 }
 
 /**
@@ -462,9 +464,6 @@ case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control
 object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
   type SearchResults = SequencesQueue[SequenceId]
   private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
-
-  def appendToLogE(s: String) =
-    Effect(Future(AppendToLog(s)))
 
   // Model read-writers
   val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =

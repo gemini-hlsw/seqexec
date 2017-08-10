@@ -60,6 +60,36 @@ object LoginBox {
       )
     }
 
+    private def toolbar(s: State) =
+      <.div(
+        ^.cls := "ui actions",
+        <.div(
+          ^.cls := "ui grid",
+          <.div(
+            ^.cls := "middle aligned row",
+            s.progressMsg.map( m =>
+              <.div(
+                ^.cls := "left floated left aligned six wide column",
+                IconCircleNotched.copyIcon(loading = true),
+                m
+              )
+            ).whenDefined,
+            s.errorMsg.map( m =>
+              <.div(
+                ^.cls := "left floated left aligned six wide column red",
+                IconAttention,
+                m
+              )
+            ).whenDefined,
+            <.div(
+              ^.cls := "right floated right aligned ten wide column",
+              Button(Button.Props(onClick = closeBox), "Cancel"),
+              Button(Button.Props(onClick = attemptLogin, buttonType = Button.SubmitType, form = Some(formId)), "Login")
+            )
+          )
+        )
+      )
+
     def render(s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
@@ -108,34 +138,7 @@ object LoginBox {
             )
           )
         ),
-        <.div(
-          ^.cls := "ui actions",
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "middle aligned row",
-              s.progressMsg.map( m =>
-                <.div(
-                  ^.cls := "left floated left aligned six wide column",
-                  IconCircleNotched.copyIcon(loading = true),
-                  m
-                )
-              ).whenDefined,
-              s.errorMsg.map( m =>
-                <.div(
-                  ^.cls := "left floated left aligned six wide column red",
-                  IconAttention,
-                  m
-                )
-              ).whenDefined,
-              <.div(
-                ^.cls := "right floated right aligned ten wide column",
-                Button(Button.Props(onClick = closeBox), "Cancel"),
-                Button(Button.Props(onClick = attemptLogin, buttonType = Button.SubmitType, form = Some(formId)), "Login")
-              )
-            )
-          )
-        )
+        toolbar(s)
       )
   }
 
@@ -146,7 +149,7 @@ object LoginBox {
       Callback {
         // To properly handle the model we need to do updates with jQuery and
         // the Semantic UI javascript library
-        // The calls below use a custom scala.js facade for SemantiUI
+        // The calls below use a custom scala.js facade for SemanticUI
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
@@ -154,7 +157,7 @@ object LoginBox {
           $(ctx.getDOMNode).modal("hide")
         }
         if (ctx.currentProps.visible() === SectionOpen) {
-          // Configure the modal to autofoucs and to act properly on closing
+          // Configure the modal to autofocus and to act properly on closing
           $(ctx.getDOMNode).modal(
             JsModalOptions
               .autofocus(true)

@@ -91,5 +91,4 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
   }
 }
 
-object GmosNorthControllerEpics extends GmosControllerEpics[NorthTypes](GmosNorthEncoders)(northConfigTypes) {
-}
+object GmosNorthControllerEpics extends GmosControllerEpics[NorthTypes](GmosNorthEncoders)(northConfigTypes)

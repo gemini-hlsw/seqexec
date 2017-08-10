@@ -9,3 +9,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
 
 // Support making distributions
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0-M7")
+
+// Check the style with scalastyle
+addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
