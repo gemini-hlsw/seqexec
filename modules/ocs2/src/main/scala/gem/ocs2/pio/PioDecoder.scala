@@ -3,25 +3,23 @@
 
 package gem.ocs2.pio
 
-import PioError._
-
+import cats.Functor
 import java.time.Instant
-
 import shapeless.Typeable
 import scala.xml.Node
-import scalaz.Scalaz._
-import scalaz._
+
+import PioError._
 
 /** Typeclass for decoders of PIO-ish XML exported from an OCS2 database.
   */
 trait PioDecoder[A] {
-  def decode(n: Node): PioError \/ A
+  def decode(n: Node): Either[PioError, A]
 }
 
 object PioDecoder {
 
   // N.B. as of 2.12 we can also us this method to *construct* a decoder by passing a
-  // `Node => PioError \/ A)` which conforms with SAM interface PioDecoder[A] (!)
+  // `Node => Either[PioError, A])` which conforms with SAM interface PioDecoder[A] (!)
   def apply[A](implicit ev: PioDecoder[A]): PioDecoder[A] = ev
 
   def enum[A: Typeable](m: (String, A)*): PioDecoder[A] =
@@ -32,8 +30,8 @@ object PioDecoder {
 
   def fromParseFunction[A](parse: String => Option[A])(implicit ev: Typeable[A]): PioDecoder[A] =
     new PioDecoder[A] {
-      def decode(n: Node): PioError \/ A =
-        parse(n.text) \/> ParseError(n.text, ev.describe)
+      def decode(n: Node): Either[PioError, A] =
+        parse(n.text) toRight ParseError(n.text, ev.describe)
     }
 
   implicit val FunctorPioDecoder: Functor[PioDecoder] =

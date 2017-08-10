@@ -3,6 +3,7 @@
 
 package gem.ocs2
 
+import cats.implicits._
 import gem._
 import gem.config._
 import gem.enum._
@@ -12,26 +13,24 @@ import gem.ocs2.pio._
 import java.time.Duration
 
 import scala.xml.Node
-import scalaz._
-import Scalaz._
 
 /** Decoder for the OCS2 sequence XML.
   */
 object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
 
-  def decode(n: Node): PioError \/ List[Step[DynamicConfig]] =
+  def decode(n: Node): Either[PioError, List[Step[DynamicConfig]]] =
     (n \ "step").toList.scanLeft(EmptyConfigMap) { (m, stepNode) =>
       stepNode.addStepConfig(m)
-    }.drop(1).traverseU(parseStep)
+    }.drop(1).traverse(parseStep)
 
-  private def parseStep(cm: ConfigMap): PioError \/ Step[DynamicConfig] = {
-    def go(observeType: String, instrument: DynamicConfig): PioError \/ Step[DynamicConfig] =
+  private def parseStep(cm: ConfigMap): Either[PioError, Step[DynamicConfig]] = {
+    def go(observeType: String, instrument: DynamicConfig): Either[PioError, Step[DynamicConfig]] =
       observeType match {
         case "BIAS" =>
-          Step.Bias(instrument).right
+          Step.Bias(instrument).asRight
 
         case "DARK" =>
-          Step.Dark(instrument).right
+          Step.Dark(instrument).asRight
 
         case "OBJECT" | "CAL" =>
           for {
@@ -51,7 +50,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
           } yield Step.Gcal(instrument, GcalConfig(l, f, d, s, e, c.toShort))
 
         case x =>
-          PioError.parseError(x, "ObserveType").left
+          PioError.parseError(x, "ObserveType").asLeft
       }
 
     for {
@@ -62,29 +61,29 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     } yield s
   }
 
-  private def parseInstConfig(i: Instrument, cm: ConfigMap): PioError \/ DynamicConfig =
+  private def parseInstConfig(i: Instrument, cm: ConfigMap): Either[PioError, DynamicConfig] =
     i match {
-      case Instrument.AcqCam     => DynamicConfig.AcqCam()         .right
-      case Instrument.Bhros      => DynamicConfig.Bhros()          .right
+      case Instrument.AcqCam     => DynamicConfig.AcqCam()         .asRight
+      case Instrument.Bhros      => DynamicConfig.Bhros()          .asRight
 
       case Instrument.Flamingos2 => Flamingos2.parse(cm)
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
 
-      case Instrument.Gnirs      => DynamicConfig.Gnirs()          .right
-      case Instrument.Gpi        => DynamicConfig.Gpi()            .right
-      case Instrument.Gsaoi      => DynamicConfig.Gsaoi()          .right
-      case Instrument.Michelle   => DynamicConfig.Michelle()       .right
-      case Instrument.Nici       => DynamicConfig.Nici()           .right
-      case Instrument.Nifs       => DynamicConfig.Nifs()           .right
-      case Instrument.Niri       => DynamicConfig.Niri()           .right
-      case Instrument.Phoenix    => DynamicConfig.Phoenix()        .right
-      case Instrument.Trecs      => DynamicConfig.Trecs()          .right
-      case Instrument.Visitor    => DynamicConfig.Visitor()        .right
+      case Instrument.Gnirs      => DynamicConfig.Gnirs()          .asRight
+      case Instrument.Gpi        => DynamicConfig.Gpi()            .asRight
+      case Instrument.Gsaoi      => DynamicConfig.Gsaoi()          .asRight
+      case Instrument.Michelle   => DynamicConfig.Michelle()       .asRight
+      case Instrument.Nici       => DynamicConfig.Nici()           .asRight
+      case Instrument.Nifs       => DynamicConfig.Nifs()           .asRight
+      case Instrument.Niri       => DynamicConfig.Niri()           .asRight
+      case Instrument.Phoenix    => DynamicConfig.Phoenix()        .asRight
+      case Instrument.Trecs      => DynamicConfig.Trecs()          .asRight
+      case Instrument.Visitor    => DynamicConfig.Visitor()        .asRight
     }
 
   private object Flamingos2 {
-    def parse(cm: ConfigMap): PioError \/ DynamicConfig = {
+    def parse(cm: ConfigMap): Either[PioError, DynamicConfig] = {
       import Legacy.Instrument.Flamingos2._
       for {
         d <- Disperser.parse(cm)
@@ -102,7 +101,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     import gem.config.GmosConfig.{ GmosCcdReadout, GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
     import DynamicConfig.{ GmosNorth, GmosSouth }
 
-    def common(cm: ConfigMap): PioError \/ GmosCommonDynamicConfig = {
+    def common(cm: ConfigMap): Either[PioError, GmosCommonDynamicConfig] = {
       import Legacy.Instrument.Gmos._
 
       for {
@@ -117,25 +116,25 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       } yield GmosCommonDynamicConfig(GmosCcdReadout(x, y, ac, ag, ar), dx, e, r)
     }
 
-    def customMask(cm: ConfigMap): PioError \/ Option[GmosCustomMask] = {
+    def customMask(cm: ConfigMap): Either[PioError, Option[GmosCustomMask]] = {
       import gem.ocs2.Legacy.Instrument.Gmos.{CustomMaskMdf, CustomSlitWidth}
 
       (for {
         f <- CustomMaskMdf.oparse(cm)
         s <- PioOptional(CustomSlitWidth.parse(cm))
-      } yield GmosCustomMask(f, s)).run
+      } yield GmosCustomMask(f, s)).value
     }
 
-    def parseNorth(cm: ConfigMap): PioError \/ DynamicConfig = {
+    def parseNorth(cm: ConfigMap): Either[PioError, DynamicConfig] = {
       import Legacy.Instrument.Gmos._
       import Legacy.Instrument.GmosNorth._
 
-      val grating: PioError \/ Option[GmosGrating[GmosNorthDisperser]] =
+      val grating: Either[PioError, Option[GmosGrating[GmosNorthDisperser]]] =
         (for {
           d <- PioOptional(Disperser.parse(cm))
           o <- DisperserOrder.oparse(cm)
           w <- DisperserLambda.oparse(cm)
-        } yield GmosGrating(d, o, w)).run
+        } yield GmosGrating(d, o, w)).value
 
       for {
         c <- common(cm)
@@ -143,20 +142,20 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
         f <- Filter.parse(cm)
         u <- Fpu.cparse(cm).map(_.flatten)
         m <- customMask(cm)
-        fpu = u.map(_.right[GmosCustomMask]) orElse m.map(_.left[GmosNorthFpu])
+        fpu = u.map(_.asRight[GmosCustomMask]) orElse m.map(_.asLeft[GmosNorthFpu])
       } yield GmosNorth(c, g, f, fpu)
     }
 
-    def parseSouth(cm: ConfigMap): PioError \/ DynamicConfig = {
+    def parseSouth(cm: ConfigMap): Either[PioError, DynamicConfig] = {
       import Legacy.Instrument.Gmos._
       import Legacy.Instrument.GmosSouth._
 
-      val grating: PioError \/ Option[GmosGrating[GmosSouthDisperser]] =
+      val grating: Either[PioError, Option[GmosGrating[GmosSouthDisperser]]] =
         (for {
           d <- PioOptional(Disperser.parse(cm))
           o <- DisperserOrder.oparse(cm)
           w <- DisperserLambda.oparse(cm)
-        } yield GmosGrating(d, o, w)).run
+        } yield GmosGrating(d, o, w)).value
 
       for {
         c <- common(cm)
@@ -164,7 +163,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
         f <- Filter.parse(cm)
         u <- Fpu.cparse(cm).map(_.flatten)
         m <- customMask(cm)
-        fpu = u.map(_.right[GmosCustomMask]) orElse m.map(_.left[GmosSouthFpu])
+        fpu = u.map(_.asRight[GmosCustomMask]) orElse m.map(_.asLeft[GmosSouthFpu])
       } yield GmosSouth(c, g, f, fpu)
     }
   }

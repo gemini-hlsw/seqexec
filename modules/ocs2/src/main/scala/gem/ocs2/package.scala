@@ -3,15 +3,14 @@
 
 package gem
 
+import scala.collection.immutable.TreeMap
 import scala.xml.Node
-import scalaz._
-import Scalaz._
 
 package object ocs2 {
-  type ConfigMap = String ==>> String
+  type ConfigMap = TreeMap[String, String]
 
-  val EmptyConfigMap: String ==>> String =
-    ==>>.empty
+  val EmptyConfigMap: TreeMap[String, String] =
+    TreeMap.empty
 
   /** Adds support for parsing steps into ConfigMap.  This is required by the
     * SequenceDecoder and the StaticDecoder.

@@ -9,7 +9,8 @@ lazy val catsVersion              = "1.0.0-MF"
 lazy val declineVersion           = "0.4.0-M1"
 lazy val doobieVersion            = "0.5.0-M2"
 lazy val flywayVersion            = "4.0.3"
-lazy val http4sVersion            = "0.16.0a-M3"
+lazy val fs2Version               = "0.10.0-M5"
+lazy val http4sVersion            = "0.18.0-SNAPSHOT"
 lazy val jwtVersion               = "0.14.0"
 lazy val kpVersion                = "0.9.3"
 lazy val mouseVersion             = "0.10-MF"
@@ -259,6 +260,7 @@ lazy val ocs2 = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
+      "co.fs2"                 %% "fs2-io"                   % fs2Version,
       "org.scala-lang.modules" %% "scala-xml"                % scalaXmlVerson,
       "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersVersion,
       "org.http4s"             %% "http4s-dsl"               % http4sVersion,

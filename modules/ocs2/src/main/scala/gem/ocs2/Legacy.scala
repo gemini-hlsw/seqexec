@@ -3,13 +3,11 @@
 
 package gem.ocs2
 
+import cats.implicits._
 import gem.ocs2.pio.PioError._
 import gem.ocs2.pio.{PioError, PioOptional, PioParse}
 
 import scala.reflect.runtime.universe.TypeTag
-
-import scalaz._
-import Scalaz._
 
 
 /** Legacy system (telescope, instrument, observe, calibration) key and parser
@@ -26,20 +24,20 @@ object Legacy {
       @SuppressWarnings(Array("org.wartremover.warts.ToString"))
       val tpe:  String = Key.clean(ev.tpe.toString)
 
-      def rawValue(cm: ConfigMap): PioError \/ String =
-        cm.lookup(path) \/> missingKey(name)
+      def rawValue(cm: ConfigMap): Either[PioError, String] =
+        cm.get(path) toRight missingKey(name)
 
-      def parse(cm: ConfigMap): PioError \/ A =
-        rawValue(cm).flatMap { s => parseString(s) \/> parseError(s, tpe) }
+      def parse(cm: ConfigMap): Either[PioError, A] =
+        rawValue(cm).flatMap { s => parseString(s) toRight parseError(s, tpe) }
 
-      def cparse(cm: ConfigMap): PioError \/ Option[A] =
+      def cparse(cm: ConfigMap): Either[PioError, Option[A]] =
         parse(cm) match {
-          case -\/(MissingKey(_)) => None.right
-          case -\/(err)           => err.left
-          case \/-(a)             => Some(a).right
+          case Left(MissingKey(_)) => None.asRight
+          case Left(err)           => err.asLeft
+          case Right(a)            => Some(a).asRight
         }
 
-      def cparseOrElse(cm: ConfigMap, a: => A): PioError \/ A =
+      def cparseOrElse(cm: ConfigMap, a: => A): Either[PioError, A] =
         cparse(cm).map { _.getOrElse(a) }
 
       def oparse(cm: ConfigMap): PioOptional[A] =

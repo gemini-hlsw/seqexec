@@ -3,6 +3,8 @@
 
 package gem.ocs2
 
+import cats.implicits._
+
 import gem.config._
 import gem.enum._
 import gem.math.Offset
@@ -10,44 +12,42 @@ import gem.ocs2.pio._
 import gem.ocs2.pio.PioError.missingKey
 
 import scala.xml.Node
-import scalaz._
-import Scalaz._
 
 /** Decoder for the OCS2 static configuration XML.
   */
 object StaticDecoder extends PioDecoder[StaticConfig] {
 
-  def decode(n: Node): PioError \/ StaticConfig =
+  def decode(n: Node): Either[PioError, StaticConfig] =
     for {
-      cm <- ((n \ "step").headOption \/> missingKey("step")).map(_.toStepConfig)
+      cm <- ((n \ "step").headOption toRight missingKey("step")).map(_.toStepConfig)
       i  <- Legacy.Instrument.Instrument.parse(cm)
       sc <- parseStaticConfig(i, cm)
     } yield sc
 
 
-  private def parseStaticConfig(i: Instrument, cm: ConfigMap): PioError \/ StaticConfig =
+  private def parseStaticConfig(i: Instrument, cm: ConfigMap): Either[PioError, StaticConfig] =
     i match {
-      case Instrument.AcqCam     => StaticConfig.AcqCam().right
-      case Instrument.Bhros      => StaticConfig.Bhros().right
+      case Instrument.AcqCam     => StaticConfig.AcqCam().asRight
+      case Instrument.Bhros      => StaticConfig.Bhros().asRight
 
       case Instrument.Flamingos2 => Flamingos2.parse(cm)
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
 
-      case Instrument.Gnirs      => StaticConfig.Gnirs()          .right
-      case Instrument.Gpi        => StaticConfig.Gpi()            .right
-      case Instrument.Gsaoi      => StaticConfig.Gsaoi()          .right
-      case Instrument.Michelle   => StaticConfig.Michelle()       .right
-      case Instrument.Nici       => StaticConfig.Nici()           .right
-      case Instrument.Nifs       => StaticConfig.Nifs()           .right
-      case Instrument.Niri       => StaticConfig.Niri()           .right
-      case Instrument.Phoenix    => StaticConfig.Phoenix()        .right
-      case Instrument.Trecs      => StaticConfig.Trecs()          .right
-      case Instrument.Visitor    => StaticConfig.Visitor()        .right
+      case Instrument.Gnirs      => StaticConfig.Gnirs()          .asRight
+      case Instrument.Gpi        => StaticConfig.Gpi()            .asRight
+      case Instrument.Gsaoi      => StaticConfig.Gsaoi()          .asRight
+      case Instrument.Michelle   => StaticConfig.Michelle()       .asRight
+      case Instrument.Nici       => StaticConfig.Nici()           .asRight
+      case Instrument.Nifs       => StaticConfig.Nifs()           .asRight
+      case Instrument.Niri       => StaticConfig.Niri()           .asRight
+      case Instrument.Phoenix    => StaticConfig.Phoenix()        .asRight
+      case Instrument.Trecs      => StaticConfig.Trecs()          .asRight
+      case Instrument.Visitor    => StaticConfig.Visitor()        .asRight
     }
 
   private object Flamingos2 {
-    def parse(cm: ConfigMap): PioError \/ StaticConfig =
+    def parse(cm: ConfigMap): Either[PioError, StaticConfig] =
       Legacy.Instrument.MosPreImaging.parse(cm).map(StaticConfig.F2(_))
   }
 
@@ -55,7 +55,7 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
     import gem.config.GmosConfig.{ GmosCommonStaticConfig, GmosCustomRoiEntry, GmosNodAndShuffle }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
-    def parseCustomRoiEntry(cm: ConfigMap, index: Int): PioError \/ Option[GmosCustomRoiEntry] = {
+    def parseCustomRoiEntry(cm: ConfigMap, index: Int): Either[PioError, Option[GmosCustomRoiEntry]] = {
       import Legacy.Instrument.Gmos._
 
       (for {
@@ -63,13 +63,13 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
         yMin <- roiYMin(index).oparse(cm)
         xRng <- roiXRange(index).oparse(cm)
         yRng <- roiYRange(index).oparse(cm)
-      } yield GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)).run
+      } yield GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)).value
     }
 
-    def parseCustomRoiEntries(cm: ConfigMap): PioError \/ Set[GmosCustomRoiEntry] =
+    def parseCustomRoiEntries(cm: ConfigMap): Either[PioError, Set[GmosCustomRoiEntry]] =
       (1 to 5).toList.traverseU(parseCustomRoiEntry(cm, _)).map(_.flatMap(_.toList).toSet)
 
-    def parseNodAndShuffle(cm: ConfigMap): PioError \/ Option[GmosNodAndShuffle] = {
+    def parseNodAndShuffle(cm: ConfigMap): Either[PioError, Option[GmosNodAndShuffle]] = {
       import Legacy.Instrument.Gmos._
 
       (for {
@@ -80,10 +80,10 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
         eo <- EOffsetting.oparse(cm)
         sf <- NsShuffle.oparse(cm)
         cy <- NsCycles.oparse(cm)
-      } yield GmosNodAndShuffle(Offset(ap, aq), Offset(bp, bq), eo, sf, cy)).run
+      } yield GmosNodAndShuffle(Offset(ap, aq), Offset(bp, bq), eo, sf, cy)).value
     }
 
-    def parseCommonStatic(cm: ConfigMap): PioError \/ GmosCommonStaticConfig =
+    def parseCommonStatic(cm: ConfigMap): Either[PioError, GmosCommonStaticConfig] =
       for {
         d <- Legacy.Instrument.Gmos.Detector.parse(cm)
         m <- Legacy.Instrument.MosPreImaging.parse(cm)
@@ -91,13 +91,13 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
         r <- parseCustomRoiEntries(cm)
       } yield GmosCommonStaticConfig(d, m, n, r)
 
-    def parseNorth(cm: ConfigMap): PioError \/ StaticConfig =
+    def parseNorth(cm: ConfigMap): Either[PioError, StaticConfig] =
       for {
         c <- parseCommonStatic(cm)
         s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
       } yield GmosNorth(c, s)
 
-    def parseSouth(cm: ConfigMap): PioError \/ StaticConfig =
+    def parseSouth(cm: ConfigMap): Either[PioError, StaticConfig] =
       for {
         c <- parseCommonStatic(cm)
         s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)

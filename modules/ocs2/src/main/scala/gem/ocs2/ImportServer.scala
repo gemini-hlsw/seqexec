@@ -5,17 +5,20 @@ package gem.ocs2
 
 import Decoders._
 
+import cats._, cats.effect.IO, cats.implicits._
+
 import gem.{Dataset, Observation, Program, Step }
 import gem.config.{ StaticConfig, DynamicConfig }
 import gem.ocs2.pio.{PioDecoder, PioError}
 import gem.ocs2.pio.PioError._
-import org.http4s.{EntityEncoder, HttpService, Response, Status}
-import org.http4s.Status.{BadRequest, InternalServerError, Ok}
-import org.http4s.client.blaze.PooledHttp1Client
+
+import fs2.Stream
+
+import org.http4s._
 import org.http4s.dsl._
-import org.http4s.headers.`Content-Length`
+import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.util.ProcessApp
+import org.http4s.util.StreamApp
 import org.http4s.scalaxml.xml
 
 import java.net.URLEncoder
@@ -24,11 +27,6 @@ import java.util.logging.Logger
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.xml.{Elem, Node}
-
-import scalaz._
-import Scalaz._
-import scalaz.concurrent.Task
-import scalaz.stream.Process
 
 /** A server that accepts HTTP requests to import observations or programs from
   * an OCS2 ODB.  If the corresponding observation or program has already been
@@ -39,40 +37,44 @@ final class ImportServer(ocsHost: String) {
 
   import ImportServer._
 
-  private val client = PooledHttp1Client()
+  private val client = PooledHttp1Client[IO]()
 
   private def uri(id: String): String =
     s"${fetchServiceUrl(ocsHost)}/${URLEncoder.encode(id, "UTF-8")}"
 
-  private def badRequest(id: String, idType: String): ServerResponse =
-    ServerResponse(BadRequest, s"Could not parse $idType id '$id'")
+  private def badRequest(id: String, idType: String): IO[Response[IO]] =
+    BadRequest(s"Could not parse $idType id '$id'")
 
-  private def fetchDecodeAndStore[A](id: String, f: (A, List[Dataset]) => Task[Unit])(implicit ev: PioDecoder[A]): ServerResponse = {
-    def decodeAndStore(xml: Node): Task[ServerResponse] =
-      PioDecoder[(A, List[Dataset])].decode(xml).leftMap(_.toResponse(id)).traverseU { case (a, ds) =>
-        f(a, ds).as(ServerResponse(Ok, s"Imported $id"))
-      }.map(_.merge)
+  private def fetchDecodeAndStore[A](id: String, f: (A, List[Dataset]) => IO[Unit])(implicit ev: PioDecoder[A]): IO[Response[IO]] = {
+    def decodeAndStore(xml: Node): IO[Response[IO]] =
+      PioDecoder[(A, List[Dataset])].decode(xml).leftMap(_.toResponse(id)).traverse { case (a, ds) =>
+        f(a, ds).as(Ok(s"Imported $id"))
+      }.flatMap(_.merge)
 
+    // TODO: add timeout
     client.expect[Elem](uri(id))
           .flatMap(decodeAndStore)
-          .unsafePerformSyncAttemptFor(timeout)
-          .leftMap { ex => ServerResponse(InternalServerError, s"Problem importing '$id': ${ex.getMessage}") }
-          .merge
+          .attempt
+          .unsafeRunSync match {
+      case Right(r) => IO.pure(r)
+      case Left(ex) => InternalServerError(s"Problem importing '$id': ${ex.getMessage}")
+    }
+
   }
 
-  def importObservation(obsIdStr: String): ServerResponse = {
-    val checkId = Observation.Id.fromString(obsIdStr) \/> badRequest(obsIdStr, "observation")
+  def importObservation(obsIdStr: String): IO[Response[IO]] = {
+    val checkId = Observation.Id.fromString(obsIdStr) toRight badRequest(obsIdStr, "observation")
     checkId.as { fetchDecodeAndStore[Obs](obsIdStr, Importer.importObservation) }.merge
   }
 
-  def importProgram(pidStr: String): ServerResponse = {
-    val checkId = \/.fromTryCatchNonFatal(Program.Id.unsafeFromString(pidStr))
+  def importProgram(pidStr: String): IO[Response[IO]] = {
+    val checkId = MonadError[Either[Throwable, ?], Throwable].catchNonFatal(Program.Id.unsafeFromString(pidStr))
                     .leftMap(_ => badRequest(pidStr, "program"))
     checkId.as { fetchDecodeAndStore[Prog](pidStr, Importer.importProgram) }.merge
   }
 }
 
-object ImportServer extends ProcessApp {
+object ImportServer extends StreamApp[IO] {
   private val Log = Logger.getLogger(ImportServer.getClass.getName)
 
   // Port where our http service will run.
@@ -87,31 +89,19 @@ object ImportServer extends ProcessApp {
   type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
   type Prog = Program[Obs]
 
-  final case class ServerResponse(status: Status, msg: String) {
-
-    // Convert to Task[Response] as required by http4s.
-    @SuppressWarnings(Array("org.wartremover.warts.Var"))
-    def send: Task[Response] = {
-      val enc = EntityEncoder[String]
-      var h = enc.headers
-      enc.toEntity(msg).flatMap { case EntityEncoder.Entity(proc, len) =>
-        len.foreach { l => h = h.put(`Content-Length`(l)) }
-        Task.now(Response(status = status, headers = h, body = proc))
-      }
-    }
-  }
-
   implicit class PioErrorSyntax(e: PioError) {
-    def toResponse(id: String): ServerResponse = {
+    def toResponse(id: String): IO[Response[IO]] = {
       val msg = e match {
         case MissingKey(name)            => s"missing '$name'"
         case ParseError(value, dataType) => s"could not parse '$value' as '$dataType'"
       }
-      ServerResponse(InternalServerError, s"Error parsing $id: $msg")
+      InternalServerError(s"Error parsing $id: $msg")
     }
   }
 
-  override def process(args: List[String]): Process[Task, Nothing] = {
+
+  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, Nothing] = {
+
     val hostName = args match {
       case Nil       => "localhost"
       case host :: _ => host
@@ -121,17 +111,18 @@ object ImportServer extends ProcessApp {
 
     val importServer = new ImportServer(hostName)
 
-    val service = HttpService {
+    val service = HttpService[IO] {
       case GET -> Root / "obs" / obsId =>
-        importServer.importObservation(obsId).send
+        importServer.importObservation(obsId)
 
       case GET -> Root / "prog" / progId =>
-        importServer.importProgram(progId).send
+        importServer.importProgram(progId)
     }
 
-    BlazeBuilder
-        .bindHttp(8989, "localhost")
-        .mountService(service, "/import")
-        .serve
+    BlazeBuilder[IO]
+      .bindHttp(8989, "localhost")
+      .mountService(service, "/import")
+      .serve
+      
   }
 }

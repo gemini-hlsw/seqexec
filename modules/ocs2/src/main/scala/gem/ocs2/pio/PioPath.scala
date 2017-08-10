@@ -3,11 +3,11 @@
 
 package gem.ocs2.pio
 
+import cats.Monoid
+import cats.implicits._
 import gem.ocs2.pio.PioError._
 
 import scala.xml.{Node, NodeSeq}
-import scalaz.Scalaz._
-import scalaz._
 
 /** PioPath provides a simplistic DSL for working with the OCS3 export format
   * for OCS2 data. The language consists of an operator:
@@ -41,7 +41,7 @@ import scalaz._
 object PioPath {
 
   implicit class NodeOps(n: Node) {
-    def decode[A](implicit ev: PioDecoder[A]): PioError \/ A =
+    def decode[A](implicit ev: PioDecoder[A]): Either[PioError, A] =
       ev.decode(n)
 
     def attr(name: String): Option[Node] =
@@ -80,7 +80,7 @@ object PioPath {
     def deepParamsets(name: String): List[Node] =
       filterByName(n \\ "paramset", name)
 
-    private val root: Required = Required(EmptySearchPath, n.right)
+    private val root: Required = Required(EmptySearchPath, n.asRight)
 
     def \!  (matchString: String): Required  = root \!  matchString
     def \?  (matchString: String): Optional  = root \?  matchString
@@ -154,15 +154,15 @@ object PioPath {
     def deepList: Node => List[Node]   = n => (n \\ name).toList
   }
 
-  final case class Required(path: SearchPath, node: PioError \/ Node) {
+  final case class Required(path: SearchPath, node: Either[PioError, Node]) {
 
-    def decode[A](implicit ev: PioDecoder[A]): PioError \/ A =
+    def decode[A](implicit ev: PioDecoder[A]): Either[PioError, A] =
       node.flatMap(ev.decode)
 
     def \! (matchString: String): Required = {
       val pathʹ = path \! matchString
       val nodeʹ = node.flatMap { n =>
-        Lookup(matchString).optional(n) \/> missingKey(pathʹ.toString)
+        Lookup(matchString).optional(n) toRight missingKey(pathʹ.toString)
       }
       Required(pathʹ, nodeʹ)
     }
@@ -189,19 +189,19 @@ object PioPath {
 
   final case class Optional(path: SearchPath, node: PioOptional[Node]) {
 
-    def decode[A](implicit ev: PioDecoder[A]): PioError \/ Option[A] =
-      node.flatMapF(ev.decode).run
+    def decode[A](implicit ev: PioDecoder[A]): Either[PioError, Option[A]] =
+      node.semiflatMap(ev.decode).value
 
-    def decodeOrZero[A : PioDecoder : Monoid]: PioError \/ A =
-      decode[A].map { _.orZero }
+    def decodeOrZero[A : PioDecoder : Monoid]: Either[PioError, A] =
+      decode[A].map { _.orEmpty }
 
-    def decodeOrElse[A](a: => A)(implicit ev: PioDecoder[A]): PioError \/ A =
+    def decodeOrElse[A](a: => A)(implicit ev: PioDecoder[A]): Either[PioError, A] =
       decode[A].map { _.getOrElse(a) }
 
     def \! (matchString: String): Optional = {
       val pathʹ = path \! matchString
-      val nodeʹ = node.flatMapF { n =>
-        Lookup(matchString).optional(n) \/> missingKey(pathʹ.toString)
+      val nodeʹ = node.semiflatMap { n =>
+        Lookup(matchString).optional(n) toRight missingKey(pathʹ.toString)
       }
       Optional(pathʹ, nodeʹ)
     }
@@ -214,8 +214,8 @@ object PioPath {
       Optional(pathʹ, nodeʹ)
     }
 
-    private def listing(f: Node => List[Node]): PioError \/ List[Node] =
-      node.run.map(_.toList.flatMap(f))
+    private def listing(f: Node => List[Node]): Either[PioError, List[Node]] =
+      node.value.map(_.toList.flatMap(f))
 
     def \* (matchString: String): Listing = {
       val pathʹ = path \* matchString
@@ -231,19 +231,19 @@ object PioPath {
   }
 
 
-  final case class Listing(path: SearchPath, node: PioError \/ List[Node]) {
+  final case class Listing(path: SearchPath, node: Either[PioError, List[Node]]) {
 
-    def decode[A](implicit ev: PioDecoder[A]): PioError \/ List[A] =
-      node.flatMap { _.traverseU(ev.decode) }
+    def decode[A](implicit ev: PioDecoder[A]): Either[PioError, List[A]] =
+      node.flatMap { _.traverse(ev.decode) }
 
     def \! (matchString: String): Listing = {
       val pathʹ = path \! matchString
-      val f     = (n: Node) => Lookup(matchString).optional(n) \/> missingKey(pathʹ.toString)
-      val nodeʹ = node.flatMap { _.traverseU(f) }
+      val f     = (n: Node) => Lookup(matchString).optional(n) toRight missingKey(pathʹ.toString)
+      val nodeʹ = node.flatMap { _.traverse(f) }
       Listing(pathʹ, nodeʹ)
     }
 
-    private def listing(f: Node => List[Node]): PioError \/ List[Node] =
+    private def listing(f: Node => List[Node]): Either[PioError, List[Node]] =
       node.map { _.flatMap(f) }
 
     def \? (matchString: String): Listing = {
