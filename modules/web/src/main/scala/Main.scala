@@ -4,29 +4,32 @@
 package gem
 package web
 
+import cats.effect.IO
 import org.http4s.HttpService
 import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeBuilder
-import scalaz.concurrent.{ Task, TaskApp }
 
-object Main extends TaskApp {
+object Main {
 
   /** Create a new server with the given config, mounting the given root service. */
-  def newServer(cfg: Configuration.WebServer, root: HttpService): Task[Server] =
-    BlazeBuilder
+  def newServer(cfg: Configuration.WebServer, root: HttpService[IO]): IO[Server[IO]] =
+    BlazeBuilder[IO]
       .bindHttp(cfg.port, cfg.host)
       .mountService(root, "/")
       .start
 
   /** Entry point. Run the server with a test config, until someone stops it. */
-  override def runc: Task[Unit] =
+  def runc: IO[Unit] =
     for {
       env <- Environment.quicken(Configuration.forTesting)
       svr <- newServer(env.config.webServer, Gatekeeper(env)(Application.service))
-      _   <- Task.delay(Console.println("Press a key to exit.")) // scalastyle:off
-      _   <- Task.delay(io.StdIn.readLine())
+      _   <- IO(Console.println("Press a key to exit.")) // scalastyle:off
+      _   <- IO(scala.io.StdIn.readLine())
       _   <- svr.shutdown
       _   <- env.shutdown
     } yield ()
+
+  def main(args: Array[String]): Unit =
+    runc.unsafeRunSync()
 
 }

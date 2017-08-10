@@ -4,15 +4,17 @@
 package gem
 package web
 
-import argonaut._, Argonaut._
+import cats.implicits._
+import cats.effect.IO
 import doobie.imports.Transactor
 import gem.{ Service => GemService }
+import io.circe._
+import io.circe.parser.decode
+import io.circe.syntax._
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 import pdi.jwt.Jwt
 import pdi.jwt.algorithms.JwtHmacAlgorithm
-import cats._, cats.data._, cats.implicits._
-import scalaz.concurrent.Task
 
 /**
  * The runtime environment for the web server, providing access to required services. You can think
@@ -24,33 +26,33 @@ import scalaz.concurrent.Task
 abstract class Environment(val config: Configuration) {
 
   /** A logger that goes to the database, cc:'d to JDK logging. */
-  def log: Log[Task]
+  def log: Log[IO]
 
   /** A source of database connections. */
-  def transactor: Transactor[Task]
+  def transactor: Transactor[IO]
 
   /**
    * Encode a JWT claim, which is an arbitrary JSON object with some well-known fields. The result
    * here is the three-part encoding described at https://jwt.io/
    */
-  def encodeJwt[A: EncodeJson](claim: A): String
+  def encodeJwt[A: Encoder](claim: A): String
 
   /**
-   * Decode and validate a JWT claim, if possible. This must be in Task because validation depends
+   * Decode and validate a JWT claim, if possible. This must be in IO because validation depends
    * on clock time.
    */
-  def decodeJwt[A: DecodeJson](value: String): Task[Either[String, A]]
+  def decodeJwt[A: Decoder](value: String): IO[Either[String, A]]
 
   /** Attempt to log in, yielding a Service value tied to this Environment's log and transactor. */
-  def tryLogin(userId: String, password: String): Task[Option[GemService[Task]]] =
+  def tryLogin(userId: String, password: String): IO[Option[GemService[IO]]] =
     GemService.tryLogin(userId, password, transactor, log)
 
   /** Like tryLogin, but for prevoiusly authenticated users. */
-  def service(userId: String): Task[Option[GemService[Task]]] =
+  def service(userId: String): IO[Option[GemService[IO]]] =
     GemService.service(userId, transactor, log)
 
   /** Shut down this environment, releasing any held resources. */
-  def shutdown: Task[Unit] =
+  def shutdown: IO[Unit] =
     log.shutdown(config.log.shutdownTimeout)
 
 }
@@ -60,32 +62,32 @@ object Environment {
   // Right now we'll just create a key on startup, which means sessions can't survive server
   // re-start. We could also write it to a file and try to read it on startup, or use a shared
   // keychain to support single sign-on. But for now keep it simple.
-  private def randomSecretKey(algorithm: JwtHmacAlgorithm): Task[SecretKey] =
-    Task.delay {
+  private def randomSecretKey(algorithm: JwtHmacAlgorithm): IO[SecretKey] =
+    IO {
       val bytes = new Array[Byte](128)
       scala.util.Random.nextBytes(bytes)
       new SecretKeySpec(bytes, algorithm.fullName)
     }
 
   /** Realize a "living" server environment from a static configuration. */
-  def quicken(cfg: Configuration): Task[Environment] = {
+  def quicken(cfg: Configuration): IO[Environment] = {
 
     // TODO: hikari
-    val xa = Transactor.fromDriverManager[Task](
+    val xa = Transactor.fromDriverManager[IO](
       cfg.database.driver,
       cfg.database.connectUrl,
       cfg.database.userName,
       cfg.database.password
     )
 
-    (randomSecretKey(cfg.jwt.algorithm) |@| Log.newLog[Task](cfg.log.name, xa)) { (sk, lg) =>
+    (randomSecretKey(cfg.jwt.algorithm), Log.newLog[IO](cfg.log.name, xa)).mapN { (sk, lg) =>
       new Environment(cfg) {
         override def log = lg
         override def transactor = xa
-        override def encodeJwt[A: EncodeJson](claim: A) =
-          Jwt.encode(claim.asJson.nospaces, sk, cfg.jwt.algorithm)
-        override def decodeJwt[A: DecodeJson](value: String) =
-          Task.delay(Jwt.decode(value, sk).toEither.leftMap(_.getMessage).flatMap(Parse.decodeEither[A]))
+        override def encodeJwt[A: Encoder](claim: A) =
+          Jwt.encode(claim.asJson.noSpaces, sk, cfg.jwt.algorithm)
+        override def decodeJwt[A: Decoder](value: String) =
+          IO(Jwt.decode(value, sk).toEither.leftMap(_.getMessage).flatMap(decode[A](_).leftMap(_.getMessage)))
       }
     }
 

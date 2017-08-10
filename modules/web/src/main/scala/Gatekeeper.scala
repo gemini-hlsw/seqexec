@@ -4,18 +4,19 @@
 package gem
 package web
 
-import argonaut._, Argonaut._, ArgonautShapeless._
+import cats.effect.IO
 import gem.json._
 import gem.{ Service => GemService }
+import io.circe.generic.auto._
 import java.time.Instant
 import org.http4s._
+import org.http4s.circe._
 import org.http4s.dsl._
 import org.http4s.server._
-import scalaz.concurrent.Task
 
 /**
  * A middleware that provides a login endpoint and implements JWT-based authorization, lifting
- * authenticated services that rely on a GemService[Task] (as our main app service does).
+ * authenticated services that rely on a GemService[IO] (as our main app service does).
  */
 object Gatekeeper {
 
@@ -33,8 +34,8 @@ object Gatekeeper {
   object GemToken {
 
     /** Construct a token, issued now and valid for `expiresIn` seconds. */
-    def create(user: User[_], expiresIn: Long): Task[GemToken] =
-      Task.delay {
+    def create(user: User[_], expiresIn: Long): IO[GemToken] =
+      IO {
         val now = Instant.now()
         new GemToken(
           iat = now.getEpochSecond,
@@ -47,28 +48,30 @@ object Gatekeeper {
      * Construct a token using the TTL defined in the envronment, and encode/sign it using the
      * algorithm and secret key also defined in the environment.
      */
-    def encode(env: Environment, user: User[_]): Task[String] =
+    @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+    def encode(env: Environment, user: User[_]): IO[String] =
       create(user, env.config.jwt.ttlSeconds).map(env.encodeJwt(_))
 
     /**
      * Like `encode`, but embeds the encoded JWT in a cooke with environment-specified
      * name.
      */
-    def cookie(env: Environment, user: User[_]): Task[Cookie] =
+    def cookie(env: Environment, user: User[_]): IO[Cookie] =
       encode(env, user).map(Cookie(env.config.jwt.cookieName, _))
 
     /**
      * Decode an encoded GemToken if possible, otherwise return an error string to be included
      * in the Forbidden() body.
      */
-    def decode(env: Environment, encoded: String): Task[Either[String, GemToken]] =
+    @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+    def decode(env: Environment, encoded: String): IO[Either[String, GemToken]] =
       env.decodeJwt[GemToken](encoded)
 
     /** Like `decode`, but pulls the encoded value from the envronment-defined cookie. */
-    def decodeFromCookie(env: Environment, req: Request): Task[Either[String, GemToken]] =
+    def decodeFromCookie(env: Environment, req: Request[IO]): IO[Either[String, GemToken]] =
       req.findCookie(env.config.jwt.cookieName) match {
         case Some(c) => GemToken.decode(env, c.content)
-        case None    => Task.now(Left(s"Cookie ${env.config.jwt.cookieName} not present."))
+        case None    => IO.pure(Left(s"Cookie ${env.config.jwt.cookieName} not present."))
       }
 
   }
@@ -76,16 +79,19 @@ object Gatekeeper {
   // A data type for login requests.
   final case class LoginRequest(uid: String, pass: String)
 
+
   /**
    * Construct the gatekeeper middleware. We need a server environment to figure out how to do
    * do this because we need a way to encode/decode tokens, as well as way to log users in.
    */
-  def apply(env: Environment): AuthMiddleware[GemService[Task]] = authed =>
-    HttpService.lift {
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  def apply(env: Environment): AuthMiddleware[IO, GemService[IO]] = authed =>
+    HttpService.lift[IO] {
 
       // curl -i -d '{ "uid": "bobdole", "pass": "banana" }' localhost:8080/login
       case req @ POST -> Root / "login" =>
-        req.as[LoginRequest].flatMap { case LoginRequest(u, p) =>
+        // this is gross, hopefully will improve before 0.18 ships
+        req.as(implicitly, jsonOf[IO, LoginRequest]).flatMap { case LoginRequest(u, p) =>
           env.tryLogin(u, p).flatMap {
             case None      => Forbidden("Login failed.")
             case Some(svc) => GemToken.cookie(env, svc.user).flatMap(Ok("Logged in.").addCookie)
@@ -102,7 +108,7 @@ object Gatekeeper {
               case Some(svc) =>
                 // Delegate to `authed` and refresh our cookie as the response comes back.
                 authed.run(AuthedRequest(svc, req)).flatMap { res =>
-                  res.cata(r => GemToken.cookie(env, svc.user).map(r.addCookie), Pass.now)
+                  res.cata(r => GemToken.cookie(env, svc.user).map(r.addCookie), Pass.pure[IO])
                 }
             }
         }

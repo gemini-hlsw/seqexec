@@ -302,7 +302,7 @@ lazy val web = project
   .settings(
     libraryDependencies ++= Seq(
       "org.slf4j"      % "slf4j-jdk14"         % slf4jVersion,
-      "org.http4s"    %% "http4s-argonaut"     % http4sVersion,
+      "org.http4s"    %% "http4s-circe"        % http4sVersion,
       "org.http4s"    %% "http4s-dsl"          % http4sVersion,
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
       "com.pauldijou" %% "jwt-core"            % jwtVersion

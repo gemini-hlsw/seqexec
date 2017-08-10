@@ -9,8 +9,6 @@ import gem.config.GcalConfig.GcalArcs
 import gem.config.Gmos._
 import gem.math.{ Angle, Offset, Wavelength }
 import io.circe._
-// import io.circe.generic.auto._
-// import io.circe.parser._
 import io.circe.syntax._
 import java.time.Duration
 
