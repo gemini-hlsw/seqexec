@@ -51,9 +51,9 @@ object DynamicConfig {
   object SmartGcalKey {
 
     final case class F2(
-      disperser: F2Disperser,
+      disperser: Option[F2Disperser],
       filter:    F2Filter,
-      fpu:       F2FpUnit
+      fpu:       Option[F2Fpu]
     ) extends SmartGcalSearchKey with SmartGcalDefinitionKey
 
     final case class GmosCommon[D, F, U](
@@ -105,12 +105,14 @@ object DynamicConfig {
   /** @group Constructors */ final case class Visitor()  extends DynamicConfig.Impl(Instrument.Visitor)
 
 
+  import F2Config.F2FpuChoice
+
   /** @group Constructors */
   final case class F2(
-    disperser:     F2Disperser,
+    disperser:     Option[F2Disperser],
     exposureTime:  Duration,
     filter:        F2Filter,
-    fpu:           F2FpUnit,
+    fpu:           Option[F2FpuChoice],
     lyotWheel:     F2LyotWheel,
     readMode:      F2ReadMode,
     windowCover:   F2WindowCover
@@ -118,16 +120,16 @@ object DynamicConfig {
 
     /** Returns the smart gcal search key for this F2 configuration. */
     def key: SmartGcalKey.F2 =
-      SmartGcalKey.F2(disperser, filter, fpu)
+      SmartGcalKey.F2(disperser, filter, fpu.flatMap(_.toBuiltin))
   }
 
   object F2 {
     val Default: F2 =
-      F2(F2Disperser.NoDisperser, java.time.Duration.ZERO, F2Filter.Open,
-         F2FpUnit.None, F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
+      F2(None, java.time.Duration.ZERO, F2Filter.Open,
+         None, F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
   }
 
-  import Gmos._
+  import GmosConfig._
 
   /** @group Constructors */
   final case class GmosNorth(

@@ -6,6 +6,7 @@ package gem.dao
 import gem._
 import gem.SmartGcal._
 import gem.config._
+import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 import GcalLampType.{Arc, Flat}
@@ -125,10 +126,10 @@ object SmartGcalSpec {
 
   private val f2: DynamicConfig.F2 =
     DynamicConfig.F2(
-      /* Disperser             */ F2Disperser.R1200JH,
+      /* Disperser             */ Some(F2Disperser.R1200JH),
       Duration.ofMillis(1000),
       /* Filter                */ F2Filter.JH,
-      /* FPU                   */ F2FpUnit.LongSlit1,
+      /* FPU                   */ Some(Builtin(F2Fpu.LongSlit1)),
       F2LyotWheel.F16,
       F2ReadMode.Bright,
       F2WindowCover.Open)

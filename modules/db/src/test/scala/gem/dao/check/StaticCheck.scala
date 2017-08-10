@@ -6,7 +6,7 @@ package check
 
 import gem.enum.Instrument.{ Flamingos2, GmosN }
 import gem.config.StaticConfig
-import gem.config.Gmos.GmosNodAndShuffle
+import gem.config.GmosConfig.GmosNodAndShuffle
 
 class StaticCheck extends Check {
   import StaticConfigDao.Statements._

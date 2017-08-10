@@ -46,7 +46,7 @@ object StaticConfig {
       F2(MosPreImaging.IsNotMosPreImaging)
   }
 
-  import Gmos._
+  import GmosConfig._
 
   final case class GmosNorth(
     common:    GmosCommonStaticConfig,

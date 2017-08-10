@@ -69,7 +69,7 @@ object StaticConfigDao {
     */
   private object Gmos {
 
-    import gem.config.Gmos.{ GmosCustomRoiEntry, GmosNodAndShuffle }
+    import gem.config.GmosConfig.{ GmosCustomRoiEntry, GmosNodAndShuffle }
     import gem.enum.Instrument.{ GmosN, GmosS }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
@@ -138,7 +138,7 @@ object StaticConfigDao {
     /** GMOS Statements. */
     object Gmos {
 
-      import gem.config.Gmos.{ GmosCommonStaticConfig => GmosCommonSC, GmosCustomRoiEntry, GmosNodAndShuffle, GmosShuffleCycles, GmosShuffleOffset }
+      import gem.config.GmosConfig.{ GmosCommonStaticConfig => GmosCommonSC, GmosCustomRoiEntry, GmosNodAndShuffle, GmosShuffleCycles, GmosShuffleOffset }
       import gem.enum.Instrument.{ GmosN, GmosS }
       import StaticConfig.{ GmosNorth, GmosSouth }
 

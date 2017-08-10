@@ -135,11 +135,11 @@ object Parsers {
 
     import F2Disperser._
 
-    val disperser: PioParse[F2Disperser] = enum(
-      "NONE"    -> NoDisperser,
-      "R1200HK" -> R1200HK,
-      "R1200JH" -> R1200JH,
-      "R3000"   -> R3000
+    val disperser: PioParse[Option[F2Disperser]] = enum(
+      "NONE"    -> None,
+      "R1200HK" -> Some(R1200HK),
+      "R1200JH" -> Some(R1200JH),
+      "R3000"   -> Some(R3000)
     )
 
 
@@ -162,19 +162,21 @@ object Parsers {
       "Y"       -> Y
     )
 
-    import F2FpUnit._
+    import F2Fpu._
+    import gem.config.F2Config.F2FpuChoice
+    import gem.config.F2Config.F2FpuChoice.{ Builtin, Custom }
 
-    val fpu: PioParse[F2FpUnit] = enum(
-      "PINHOLE"         -> Pinhole,
-      "SUBPIX_PINHOLE"  -> SubPixPinhole,
+    val fpu: PioParse[Option[F2FpuChoice]] = enum(
+      "PINHOLE"         -> Some(Builtin(Pinhole)),
+      "SUBPIX_PINHOLE"  -> Some(Builtin(SubPixPinhole)),
       "FPU_NONE"        -> None,
-      "CUSTOM_MASK"     -> Custom,
-      "LONGSLIT_1"      -> LongSlit1,
-      "LONGSLIT_2"      -> LongSlit2,
-      "LONGSLIT_3"      -> LongSlit3,
-      "LONGSLIT_4"      -> LongSlit4,
-      "LONGSLIT_6"      -> LongSlit6,
-      "LONGSLIT_8"      -> LongSlit8
+      "CUSTOM_MASK"     -> Some(Custom),
+      "LONGSLIT_1"      -> Some(Builtin(LongSlit1)),
+      "LONGSLIT_2"      -> Some(Builtin(LongSlit2)),
+      "LONGSLIT_3"      -> Some(Builtin(LongSlit3)),
+      "LONGSLIT_4"      -> Some(Builtin(LongSlit4)),
+      "LONGSLIT_6"      -> Some(Builtin(LongSlit6)),
+      "LONGSLIT_8"      -> Some(Builtin(LongSlit8))
     )
 
     import F2LyotWheel._
@@ -285,12 +287,12 @@ object Parsers {
       "false" -> GmosEOffsetting.Off
     )
 
-    import gem.config.Gmos.GmosShuffleOffset
+    import gem.config.GmosConfig.GmosShuffleOffset
 
     val nsShuffle: PioParse[GmosShuffleOffset] =
       positiveInt.map(GmosShuffleOffset.unsafeFromRowCount)
 
-    import gem.config.Gmos.GmosShuffleCycles
+    import gem.config.GmosConfig.GmosShuffleCycles
 
     val nsCycles: PioParse[GmosShuffleCycles] =
       positiveInt.map(GmosShuffleCycles.unsafeFromCycleCount)

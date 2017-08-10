@@ -15,26 +15,26 @@ sealed abstract class F2Filter(
   val tag: String,
   val shortName: String,
   val longName: String,
-  val wavelength: Option[Double],
+  val wavelength: Option[gem.math.Wavelength],
   val obsolete: Boolean
 )
 
 object F2Filter {
 
-  /** @group Constructors */ case object Y extends F2Filter("Y", "Y", "Y (1.02 um)", Some(1.02), false)
-  /** @group Constructors */ case object F1056 extends F2Filter("F1056", "F1056", "F1056 (1.056 um)", Some(1.056), false)
-  /** @group Constructors */ case object J extends F2Filter("J", "J", "J (1.25 um)", Some(1.25), false)
-  /** @group Constructors */ case object H extends F2Filter("H", "H", "H (1.65 um)", Some(1.65), false)
-  /** @group Constructors */ case object JH extends F2Filter("JH", "JH", "JH (spectroscopic)", Some(1.39), false)
-  /** @group Constructors */ case object HK extends F2Filter("HK", "HK", "HK (spectroscopic)", Some(1.871), false)
-  /** @group Constructors */ case object JLow extends F2Filter("JLow", "J-low", "J-low (1.15 um)", Some(1.15), false)
-  /** @group Constructors */ case object KLong extends F2Filter("KLong", "K-long", "K-long (2.20 um)", Some(2.2), false)
-  /** @group Constructors */ case object KShort extends F2Filter("KShort", "K-short", "K-short (2.15 um)", Some(2.15), false)
-  /** @group Constructors */ case object F1063 extends F2Filter("F1063", "F1063", "F1063 (1.063 um)", Some(1.063), false)
-  /** @group Constructors */ case object KBlue extends F2Filter("KBlue", "K-blue", "K-blue (2.06 um)", Some(2.06), false)
-  /** @group Constructors */ case object KRed extends F2Filter("KRed", "K-red", "K-red (2.31 um)", Some(2.31), false)
-  /** @group Constructors */ case object Open extends F2Filter("Open", "Open", "Open", Some(1.6), true)
-  /** @group Constructors */ case object Dark extends F2Filter("Dark", "Dark", "Dark", None, true)
+  /** @group Constructors */ case object Y extends F2Filter("Y", "Y", "Y (1.02 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(10200)), false)
+  /** @group Constructors */ case object F1056 extends F2Filter("F1056", "F1056", "F1056 (1.056 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(10560)), false)
+  /** @group Constructors */ case object J extends F2Filter("J", "J", "J (1.25 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(12500)), false)
+  /** @group Constructors */ case object H extends F2Filter("H", "H", "H (1.65 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(16500)), false)
+  /** @group Constructors */ case object JH extends F2Filter("JH", "JH", "JH (spectroscopic)", Some(gem.math.Wavelength.unsafeFromAngstroms(13900)), false)
+  /** @group Constructors */ case object HK extends F2Filter("HK", "HK", "HK (spectroscopic)", Some(gem.math.Wavelength.unsafeFromAngstroms(18710)), false)
+  /** @group Constructors */ case object JLow extends F2Filter("JLow", "J-low", "J-low (1.15 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(11500)), false)
+  /** @group Constructors */ case object KLong extends F2Filter("KLong", "K-long", "K-long (2.20 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(22000)), false)
+  /** @group Constructors */ case object KShort extends F2Filter("KShort", "K-short", "K-short (2.15 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(21500)), false)
+  /** @group Constructors */ case object F1063 extends F2Filter("F1063", "F1063", "F1063 (1.063 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(10630)), false)
+  /** @group Constructors */ case object KBlue extends F2Filter("KBlue", "K-blue", "K-blue (2.06 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(20600)), false)
+  /** @group Constructors */ case object KRed extends F2Filter("KRed", "K-red", "K-red (2.31 um)", Some(gem.math.Wavelength.unsafeFromAngstroms(23100)), false)
+  /** @group Constructors */ case object Open extends F2Filter("Open", "Open", "Open", Some(gem.math.Wavelength.unsafeFromAngstroms(16000)), true)
+  /** @group Constructors */ case object Dark extends F2Filter("Dark", "Dark", "Dark", Option.empty[gem.math.Wavelength], true)
 
   /** All members of F2Filter, in canonical order. */
   val all: List[F2Filter] =

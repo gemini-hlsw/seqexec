@@ -306,6 +306,26 @@ object StepDao {
       """.update
 
     object F2 {
+      import F2Config.F2FpuChoice
+      import F2Config.F2FpuChoice._
+
+      final case class F2FpuBuilder(fpu: Option[F2Fpu], customMask: Boolean) {
+        def toFpuChoice: Option[F2FpuChoice] =
+          if (customMask) Some(Custom) else fpu.map(Builtin(_))
+      }
+
+      final case class F2Builder(
+        disperser:     Option[F2Disperser],
+        exposureTime:  Duration,
+        filter:        F2Filter,
+        fpuBuilder:    F2FpuBuilder,
+        lyotWheel:     F2LyotWheel,
+        readMode:      F2ReadMode,
+        windowCover:   F2WindowCover
+      ) {
+        def toF2: DynamicConfig.F2 =
+          DynamicConfig.F2(disperser, exposureTime, filter, fpuBuilder.toFpuChoice, lyotWheel, readMode, windowCover)
+      }
 
       def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.F2)] =
         sql"""
@@ -314,6 +334,7 @@ object StepDao {
                  i.exposure_time,
                  i.filter,
                  i.fpu,
+                 i.custom_mask,
                  i.lyot_wheel,
                  i.read_mode,
                  i.window_cover
@@ -321,7 +342,7 @@ object StepDao {
                  LEFT OUTER JOIN step_f2 i
                    ON i.step_f2_id = s.step_id
            WHERE s.observation_id = $oid
-        """.query[(Loc, DynamicConfig.F2)]
+        """.query[(Loc, F2Builder)].map(_.map(_.toF2))
 
       def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.F2] =
         sql"""
@@ -329,6 +350,7 @@ object StepDao {
                  i.exposure_time,
                  i.filter,
                  i.fpu,
+                 i.custom_mask,
                  i.lyot_wheel,
                  i.read_mode,
                  i.window_cover
@@ -336,20 +358,21 @@ object StepDao {
                  LEFT OUTER JOIN step_f2 i
                    ON i.step_f2_id = s.step_id
            WHERE s.observation_id = $oid AND s.location = $loc
-        """.query[DynamicConfig.F2]
+        """.query[F2Builder].map(_.toF2)
 
       def insert(id: Int, f2: DynamicConfig.F2): Update0 =
         sql"""
           INSERT INTO step_f2 (
             step_f2_id,
-            disperser, exposure_time, filter, fpu, lyot_wheel, read_mode, window_cover
+            disperser, exposure_time, filter, fpu, custom_mask, lyot_wheel, read_mode, window_cover
           )
           VALUES (
             $id,
             ${f2.disperser},
             ${f2.exposureTime},
             ${f2.filter},
-            ${f2.fpu},
+            ${f2.fpu.flatMap(_.toBuiltin)},
+            ${f2.fpu.contains(Custom)},
             ${f2.lyotWheel},
             ${f2.readMode},
             ${f2.windowCover})
@@ -358,7 +381,7 @@ object StepDao {
 
     object Gmos {
 
-      import gem.config.Gmos.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
+      import gem.config.GmosConfig.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
       import DynamicConfig.{ GmosNorth, GmosSouth }
 
       final case class GmosGratingBuilder[D](

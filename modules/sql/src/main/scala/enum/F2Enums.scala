@@ -14,18 +14,18 @@ object F2Enums {
     List(
 
       EnumDef.fromQuery("F2Disperser", "Flamingos2 dispersers") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Double]`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Wavelength.Um`.T
         sql"SELECT id, id tag, short_name, long_name, wavelength FROM e_f2_disperser".query[(String, R)]
       },
 
       EnumDef.fromQuery("F2Filter", "Flamingos2 filters") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Double], 'obsolete -> Boolean`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Option[Wavelength.Um], 'obsolete -> Boolean`.T
         sql"SELECT id, id tag, short_name, long_name, wavelength, obsolete FROM e_f2_filter".query[(String, R)]
       },
 
-      EnumDef.fromQuery("F2FpUnit", "Flamingos2 focal plane units") {
+      EnumDef.fromQuery("F2Fpu", "Flamingos2 focal plane units") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Int, 'decker -> String, 'obsolete -> Boolean`.T
-        sql"SELECT id, id tag, short_name, long_name, slit_width, decker, obsolete FROM e_f2_fpunit".query[(String, R)]
+        sql"SELECT id, id tag, short_name, long_name, slit_width, decker, obsolete FROM e_f2_fpu".query[(String, R)]
       },
 
       EnumDef.fromQuery("F2LyotWheel", "Flamingos2 Lyot wheel") {
