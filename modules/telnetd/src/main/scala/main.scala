@@ -41,7 +41,7 @@ object Main {
       url  <- getEnv(ENV_GEM_DB_URL,  "jdbc:postgresql:gem")
       user <- getEnv(ENV_GEM_DB_USER, "postgres")
       pass <- getEnv(ENV_GEM_DB_PASS,  "")
-      _    <- IO(Console.println(s"Connecting with URL $url, user $user, pass «hidden»"))
+      _    <- IO(Console.println(s"Connecting with URL $url, user $user, pass «hidden»")) // scalastyle:off console.io
       _    <- migrate(url, user, pass)
       sxa  = xa[SessionIO](url, user, pass)
       txa  = xa[IO](url, user, pass)

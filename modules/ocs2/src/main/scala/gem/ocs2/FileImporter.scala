@@ -73,7 +73,7 @@ object FileImporter extends DoobieClient {
       _ <- clean
       _ <- readAndInsertAll(u, n, l)
       _ <- l.shutdown(5 * 1000).transact(xa) // if we're not done soon something is wrong
-      _ <- IO(Console.println("Done."))
+      _ <- IO(Console.println("Done.")) // scalastyle:off console.io
     } yield ()
 
   def main(args: Array[String]): Unit =
