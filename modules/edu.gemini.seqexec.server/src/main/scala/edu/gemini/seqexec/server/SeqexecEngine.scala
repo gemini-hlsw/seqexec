@@ -47,7 +47,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       if (settings.instForceError) Flamingos2ControllerSimBad
       else Flamingos2ControllerSim
     } else Flamingos2ControllerEpics,
-    if (settings.instSim) GmosSouthControllerSim else GmosControllerEpics
+    if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
+    if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics
   )
 
   val translatorSettings = SeqTranslate.Settings(

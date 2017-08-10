@@ -33,8 +33,8 @@ object TcsControllerEpics extends TcsController {
       case "PWFS1" => M1Source.PWFS1
       case "PWFS2" => M1Source.PWFS2
       case "OIWFS" => M1Source.OIWFS
-      case "GAOS" => M1Source.GAOS
-      case _ => M1Source.PWFS1
+      case "GAOS"  => M1Source.GAOS
+      case _       => M1Source.PWFS1
     })
 
   private def decodeM1Guide(r: BinaryOnOff, s: M1Source): M1GuideConfig =
@@ -168,14 +168,15 @@ object TcsControllerEpics extends TcsController {
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
 
   private def getInstPort(inst: Resource.Instrument): Option[Int] = (inst match {
-    case Resource.GMOS  => TcsEpics.instance.gmosPort
-    case Resource.GSAOI => TcsEpics.instance.gsaoiPort
-    case Resource.F2    => TcsEpics.instance.f2Port
-    case Resource.GPI   => TcsEpics.instance.gpiPort
-    case Resource.NIRI  => TcsEpics.instance.niriPort
-    case Resource.GNIRS => TcsEpics.instance.gnirsPort
-    case Resource.NIFS  => TcsEpics.instance.nifsPort
-    case _              => None
+    case Resource.GMOS_S |
+         Resource.GMOS_N  => TcsEpics.instance.gmosPort
+    case Resource.GSAOI   => TcsEpics.instance.gsaoiPort
+    case Resource.F2      => TcsEpics.instance.f2Port
+    case Resource.GPI     => TcsEpics.instance.gpiPort
+    case Resource.NIRI    => TcsEpics.instance.niriPort
+    case Resource.GNIRS   => TcsEpics.instance.gnirsPort
+    case Resource.NIFS    => TcsEpics.instance.nifsPort
+    case _                => None
   }).flatMap(p => if (p == 0) None else Some(p))
 
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an
@@ -196,10 +197,11 @@ object TcsControllerEpics extends TcsController {
     }
 
     val instNameMap: Map[Resource.Instrument, SFInstName] = Map(
-      Resource.GMOS  -> SFInstName("gmos"),
-      Resource.GSAOI -> SFInstName("gsaoi"),
-      Resource.F2    -> SFInstName("f2"),
-      Resource.GPI   -> SFInstName("gpi")
+      Resource.GMOS_S -> SFInstName("gmos"),
+      Resource.GMOS_N -> SFInstName("gmos"),
+      Resource.GSAOI  -> SFInstName("gsaoi"),
+      Resource.F2     -> SFInstName("f2"),
+      Resource.GPI    -> SFInstName("gpi")
     )
 
     private def findInstrument(str: String): Option[Resource.Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)

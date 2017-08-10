@@ -3,17 +3,14 @@ package edu.gemini.seqexec.server
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
-import edu.gemini.seqexec.server.GmosSouthController._
+import edu.gemini.seqexec.server.EpicsCodex._
+import edu.gemini.seqexec.server.GmosController.Config.{Beam, InBeam, OutOfBeam}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FPUnitSouth => FPU}
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{StageModeSouth => StageMode}
-
 import squants.Length
 
 import scalaz._
@@ -21,15 +18,17 @@ import scalaz.Scalaz._
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-object GmosControllerEpics extends GmosSouthController {
+class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
   private val Log = Logger.getLogger(getClass.getName)
 
+  import GmosControllerEpics._
+  import GmosController.Config._
   import EpicsCodex._
 
   val CC = GmosEpics.instance.configCmd
   val DC = GmosEpics.instance.configDCCmd
 
-  override def getConfig: SeqAction[GmosSouthConfig] = ???
+  override def getConfig: SeqAction[GmosController.GmosConfig[T]] = ???
 
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
     case AmpReadMode.SLOW => "SLOW"
@@ -53,23 +52,9 @@ object GmosControllerEpics extends GmosSouthController {
 
   implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue }
 
-  implicit val disperserEncoder: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue(_.sequenceValue)
-
   implicit val disperserOrderEncoder: EncodeEpicsValue[DisperserOrder, String] = EncodeEpicsValue(_.sequenceValue)
 
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, String] = EncodeEpicsValue((l: Length) => l.toNanometers.toString)
-
-  implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
-    case OutOfBeam => "OUT-OF-BEAM"
-    case InBeam    => "IN-BEAM"
-  }
-
-  implicit val stageModeEncoder: EncodeEpicsValue[StageMode, String] = EncodeEpicsValue {
-    case StageMode.NO_FOLLOW     => "MOVE"
-    case StageMode.FOLLOW_XYZ    => "FOLLOW"
-    case StageMode.FOLLOW_XY     => "FOLLOW-XY"
-    case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
-  }
 
   implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
 
@@ -167,93 +152,28 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- DC.setCcdYBinning(encode(dc.bi.y))
   } yield ()
 
-  def setFilters(f: Filter): SeqAction[Unit] = {
-    val (filter1, filter2) = f match {
-      case Filter.Z_G0343       => ("Z_G0343", "open2-8")
-      case Filter.Y_G0344       => ("Y_G0344", "open2-8")
-      case Filter.HeII_G0340    => ("HeII_G0340", "open2-8")
-      case Filter.HeIIC_G0341   => ("HeIIC_G0341", "open2-8")
-      case Filter.SII_G0335     => ("open1-6", "SII_G0335")
-      case Filter.Ha_G0336      => ("open1-6", "Ha_G0336")
-      case Filter.HaC_G0337     => ("open1-6", "HaC_G0337")
-      case Filter.OIII_G0338    => ("open1-6", "OIII_G0338")
-      case Filter.OIIIC_G0339   => ("open1-6", "OIIIC_G0339")
-      case Filter.u_G0332       => ("open1-6", "u_G0332")
-      case Filter.g_G0325       => ("open1-6", "g_G0325")
-      case Filter.r_G0326       => ("open1-6", "r_G0326")
-      case Filter.i_G0327       => ("open1-6", "i_G0327")
-      case Filter.z_G0328       => ("open1-6", "z_G0328")
-      case Filter.GG455_G0329   => ("GG455_G0329", "open2-8")
-      case Filter.OG515_G0330   => ("OG515_G0330", "open2-8")
-      case Filter.RG610_G0331   => ("RG610_G0331", "open2-8")
-      case Filter.CaT_G0333     => ("CaT_G0333", "open2-8")
-      case Filter.HartmannA_G0337_r_G0326 => ("HartmannA_G0337", "r_G0326")
-      case Filter.HartmannB_G0338_r_G0326 => ("HartmannB_G0338", "r_G0326")
-      case Filter.g_G0325_GG455_G0329     => ("GG455_G0329", "g_G0325")
-      case Filter.g_G0325_OG515_G0330     => ("OG515_G0330", "g_G0325")
-      case Filter.r_G0326_RG610_G0331     => ("RG610_G0331", "r_G0326")
-      case Filter.i_G0327_CaT_G0333       => ("CaT_G0333", "i_G0327")
-      case Filter.i_G0327_RG780_G0334     => ("CaT_G0333", "i_G0327")
-      case Filter.z_G0328_CaT_G0333       => ("RG780_G0334", "i_G0327")
-      case Filter.RG780_G0334    => ("RG780_G0334", "open2-8")
-      case Filter.Lya395_G0342   => ("open1-6", "Lya395_G0342")
-      case Filter.NONE           => ("open1-6", "open2-8")
-    }
 
-    for {
-      _ <- CC.setFilter1(filter1)
-      _ <- CC.setFilter2(filter2)
-    } yield ()
+
+  def setFilters(f: T#Filter): SeqAction[Unit] = {
+    val (filter1, filter2) = encoders.filter.encode(f)
+
+    CC.setFilter1(filter1) *> CC.setFilter2(filter2)
   }
 
-  def setDisperser(d: GmosDisperser): SeqAction[Unit] = {
-    val disperser = d.disperser match {
-      case Disperser.MIRROR      => "mirror"
-      case Disperser.B1200_G5321 => "B1200+_G5321"
-      case Disperser.R831_G5322  => "R831+_G5322"
-      case Disperser.B600_G5323  => "B600+_G5323"
-      case Disperser.R600_G5324  => "R600+_G5324"
-      case Disperser.R400_G5325  => "R400+_G5325"
-      case Disperser.R150_G5326  => "R150+_G5326"
-    }
+  def setDisperser(d: GmosController.Config[T]#GmosDisperser): SeqAction[Unit] = {
     val disperserMode = "Select Grating and Tilt"
-    for {
-      _ <- CC.setDisperser(disperser)
-      _ <- CC.setDisperserMode(disperserMode)
-      _ <- d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
-      _ <- d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.contains(Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
-    } yield ()
+    CC.setDisperser(encoders.disperser.encode(d.disperser)) *>
+      CC.setDisperserMode(disperserMode) *>
+      d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o))) *>
+      d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.contains(Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
   }
 
   def setFPU(cc: GmosFPU): SeqAction[Unit] = {
-    def builtInFPU(fpu: FPU): SeqAction[Unit] = {
-      val (fpuName, beam: Option[Beam]) = fpu match {
-        case FPU.FPU_NONE    => (none, OutOfBeam.some)
-        case FPU.LONGSLIT_1  => ("0.25arcsec".some, InBeam.some)
-        case FPU.LONGSLIT_2  => ("0.5arcsec".some, InBeam.some)
-        case FPU.LONGSLIT_3  => ("0.75arcsec".some, InBeam.some)
-        case FPU.LONGSLIT_4  => ("1.0arcsec".some, InBeam.some)
-        case FPU.LONGSLIT_5  => ("1.5arcsec".some, InBeam.some)
-        case FPU.LONGSLIT_6  => ("2.0arcsec".some, InBeam.some)
-        case FPU.LONGSLIT_7  => ("5.0arcsec".some, InBeam.some)
-        case FPU.IFU_1       => ("IFU-2".some, InBeam.some)
-        case FPU.IFU_2       => ("IFU-B".some, InBeam.some)
-        case FPU.IFU_3       => ("IFU-R".some, InBeam.some)
-        case FPU.BHROS       => (none, none)
-        case FPU.IFU_N       => ("IFU-NS-2".some, InBeam.some)
-        case FPU.IFU_N_B     => ("IFU-NS-B".some, InBeam.some)
-        case FPU.IFU_N_R     => ("IFU-NS-R".some, InBeam.some)
-        case FPU.NS_1        => ("NS0.5arcsec".some, InBeam.some)
-        case FPU.NS_2        => ("NS0.75arcsec".some, InBeam.some)
-        case FPU.NS_3        => ("NS1.0arcsec".some, InBeam.some)
-        case FPU.NS_4        => ("NS1.5arcsec".some, InBeam.some)
-        case FPU.NS_5        => ("NS2.0arcsec".some, InBeam.some)
-        case FPU.CUSTOM_MASK => (none, none)
-      }
-      for {
-        _ <- fpuName.fold(SeqAction.void)(CC.setFpu)
-        _ <- beam.fold(SeqAction.void)(b => CC.setInBeam(encode(b)))
-      } yield ()
+    def builtInFPU(fpu: T#FPU): SeqAction[Unit] = {
+      val (fpuName, beam) = encoders.fpu.encode(fpu)
+
+      fpuName.fold(SeqAction.void)(CC.setFpu) *>
+        beam.fold(SeqAction.void)(CC.setInBeam)
     }
 
     def customFPU(name: String): SeqAction[Unit] = {
@@ -261,31 +181,30 @@ object GmosControllerEpics extends GmosSouthController {
         case "None" => (none, none)
         case _      => (name.some, InBeam.some)
       }
-      for {
-        _ <- fpuName.fold(SeqAction.void)(CC.setFpu)
-        _ <- beam.fold(SeqAction.void)(b => CC.setInBeam(encode(b)))
-      } yield ()
+      fpuName.fold(SeqAction.void)(CC.setFpu) *>
+        beam.fold(SeqAction.void)(b => CC.setInBeam(beamEncoder.encode(b)))
     }
 
     cc match {
-      case UnknownFPU          => SeqAction.void
-      case BuiltInFPU(fpu)     => builtInFPU(fpu)
+      case cfg.BuiltInFPU(fpu) => builtInFPU(fpu)
       case CustomMaskFPU(name) => customFPU(name)
+      case UnknownFPU          => SeqAction.void
+      case _                   => SeqAction.fail(SeqexecFailure.Unexpected("Failed match on built-in FPU"))
     }
   }
 
   val PixelsToMicrons = 15.0
 
-  def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
+  def setCCConfig(cc: GmosController.Config[T]#CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)
     _ <- setDisperser(cc.disperser)
     _ <- setFPU(cc.fpu)
-    _ <- CC.setStageMode(encode(cc.stage))
+    _ <- CC.setStageMode(encoders.stageMode.encode(cc.stage))
     _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble*PixelsToMicrons)
     _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
   } yield ()
 
-  override def applyConfig(config: GmosSouthConfig): SeqAction[Unit] = for {
+  override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
@@ -299,4 +218,19 @@ object GmosControllerEpics extends GmosSouthController {
     _ <- GmosEpics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
   } yield obsid
+}
+
+object GmosControllerEpics {
+  trait Encoders[T<:GmosController.SiteDependentTypes] {
+    val filter: EncodeEpicsValue[T#Filter, (String, String)]
+    val fpu: EncodeEpicsValue[T#FPU, (Option[String], Option[String])]
+    val stageMode: EncodeEpicsValue[T#GmosStageMode, String]
+    val disperser: EncodeEpicsValue[T#Disperser, String]
+  }
+
+  implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
+    case OutOfBeam => "OUT-OF-BEAM"
+    case InBeam    => "IN-BEAM"
+  }
+
 }
