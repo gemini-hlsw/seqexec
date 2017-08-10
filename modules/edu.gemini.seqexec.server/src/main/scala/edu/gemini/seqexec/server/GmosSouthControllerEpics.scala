@@ -15,7 +15,7 @@ import scalaz.syntax.std.option._
   * Created by jluhrs on 8/3/17.
   */
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
-  override val disperser: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue{
+  override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue{
     case Disperser.MIRROR      => "mirror"
     case Disperser.B1200_G5321 => "B1200+_G5321"
     case Disperser.R831_G5322  => "R831+_G5322"

@@ -2,7 +2,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.Gmos.SiteSpecifics
-import edu.gemini.seqexec.server.GmosController.{SouthTypes, southConfigTypes}
+import edu.gemini.seqexec.server.GmosController.{GmosSouthController, SouthTypes, southConfigTypes}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosSouthType
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
@@ -12,7 +12,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosCommon.{FPU_PROP_NAME, STAGE_MODE_
 
 import scalaz.\/
 
-final class GmosSouth(c: GmosController[SouthTypes]) extends Gmos[SouthTypes](c,
+final class GmosSouth(c: GmosSouthController) extends Gmos[SouthTypes](c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     override def extractFilter(config: Config): \/[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] = config.extract(INSTRUMENT_KEY / FILTER_PROP).as[SouthTypes#Filter]

@@ -19,7 +19,8 @@ object Resource {
   case object Gems extends Resource
   case object Altair extends Resource
   trait Instrument extends Resource
-  case object GMOS extends Instrument
+  case object GMOS_S extends Instrument
+  case object GMOS_N extends Instrument
   case object F2 extends Instrument
   case object GSAOI extends Instrument
   case object GPI extends Instrument

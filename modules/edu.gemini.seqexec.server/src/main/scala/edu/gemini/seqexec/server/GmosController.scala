@@ -28,7 +28,7 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
 object GmosController {
 
-  case class Config[T<:SiteDependentTypes](sd: T) {
+  final class Config[T<:SiteDependentTypes] {
     import Config._
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
 
@@ -133,10 +133,9 @@ object GmosController {
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
     override type Disperser = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
   }
-  private val southTypes = new SouthTypes
 
   type SouthConfigTypes = Config[SouthTypes]
-  val southConfigTypes = new SouthConfigTypes(southTypes)
+  val southConfigTypes = new SouthConfigTypes
 
   final class NorthTypes extends SiteDependentTypes {
     override type Filter = edu.gemini.spModel.gemini.gmos.GmosNorthType.FilterNorth
@@ -144,12 +143,11 @@ object GmosController {
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosNorthType.StageModeNorth
     override type Disperser = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth
   }
-  private val northTypes = new NorthTypes
 
   type NorthConfigTypes = Config[NorthTypes]
-  val northConfigTypes = new NorthConfigTypes(northTypes)
+  val northConfigTypes = new NorthConfigTypes
 
-  // This is a trick to allow using a type from a class parameter define th etype of another type parameter
+  // This is a trick to allow using a type from a class parameter define the type of another type parameter
   class GmosConfig[T<:SiteDependentTypes](val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T]) {
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig) = this(cc, dc, c)
   }

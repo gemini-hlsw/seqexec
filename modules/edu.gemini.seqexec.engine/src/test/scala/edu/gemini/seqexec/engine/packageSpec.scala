@@ -99,7 +99,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS),
+            Set(Resource.GMOS_S),
             breakpoint = false,
             skip = false,
             List(
@@ -191,7 +191,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS),
+            Set(Resource.GMOS_S),
             breakpoint = false,
             skip = false,
             List(
@@ -228,7 +228,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS),
+            Set(Resource.GMOS_S),
             breakpoint = false,
             skip = false,
             List(
@@ -261,7 +261,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS),
+            Set(Resource.GMOS_S),
             breakpoint = false,
             skip = false,
             List(
