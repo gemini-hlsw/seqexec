@@ -1,5 +1,8 @@
 package edu.gemini.seqexec.server
 
+import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
+import edu.gemini.seqexec.server.GmosController.Config.{InBeam, OutOfBeam}
+import edu.gemini.seqexec.server.GmosController.{SouthTypes, southConfigTypes}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FPUnitSouth => FPU}
@@ -11,11 +14,8 @@ import scalaz.syntax.std.option._
 /**
   * Created by jluhrs on 8/3/17.
   */
-object GmosSouthControllerEpics extends GmosControllerEpics with GmosSouthController {
-  import EpicsCodex._
-  import GmosController._
-
-  override implicit val disperserEncoder: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue{
+object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
+  override val disperser: EncodeEpicsValue[Disperser, String] = EncodeEpicsValue{
     case Disperser.MIRROR      => "mirror"
     case Disperser.B1200_G5321 => "B1200+_G5321"
     case Disperser.R831_G5322  => "R831+_G5322"
@@ -25,7 +25,7 @@ object GmosSouthControllerEpics extends GmosControllerEpics with GmosSouthContro
     case Disperser.R150_G5326  => "R150+_G5326"
   }
 
-  override implicit val fpuEncoder: EncodeEpicsValue[GmosSouthControllerEpics.FPU, (Option[String], Option[String])] = EncodeEpicsValue{ a => {
+  override val fpu: EncodeEpicsValue[SouthTypes#FPU, (Option[String], Option[String])] = EncodeEpicsValue{ a => {
     val r = a match {
       case FPU.FPU_NONE    => (none, OutOfBeam.some)
       case FPU.LONGSLIT_1  => ("0.25arcsec".some, InBeam.some)
@@ -49,10 +49,10 @@ object GmosSouthControllerEpics extends GmosControllerEpics with GmosSouthContro
       case FPU.NS_5        => ("NS2.0arcsec".some, InBeam.some)
       case FPU.CUSTOM_MASK => (none, none)
     }
-    (r._1, r._2.map(beamEncoder.encode))
+    (r._1, r._2.map(GmosControllerEpics.beamEncoder.encode))
   } }
 
-  override implicit val filterEncoder: EncodeEpicsValue[GmosSouthControllerEpics.Filter, (String, String)] = EncodeEpicsValue{
+  override val filter: EncodeEpicsValue[SouthTypes#Filter, (String, String)] = EncodeEpicsValue{
     case Filter.Z_G0343       => ("Z_G0343", "open2-8")
     case Filter.Y_G0344       => ("Y_G0344", "open2-8")
     case Filter.HeII_G0340    => ("HeII_G0340", "open2-8")
@@ -79,17 +79,19 @@ object GmosSouthControllerEpics extends GmosControllerEpics with GmosSouthContro
     case Filter.i_G0327_CaT_G0333       => ("CaT_G0333", "i_G0327")
     case Filter.i_G0327_RG780_G0334     => ("CaT_G0333", "i_G0327")
     case Filter.z_G0328_CaT_G0333       => ("RG780_G0334", "i_G0327")
-    case Filter.RG780_G0334    => ("RG780_G0334", "open2-8")
-    case Filter.Lya395_G0342   => ("open1-6", "Lya395_G0342")
-    case Filter.NONE           => ("open1-6", "open2-8")
+    case Filter.RG780_G0334   => ("RG780_G0334", "open2-8")
+    case Filter.Lya395_G0342  => ("open1-6", "Lya395_G0342")
+    case Filter.NONE          => ("open1-6", "open2-8")
   }
 
-  override implicit val stageModeEncoder: EncodeEpicsValue[GmosStageMode, String] = EncodeEpicsValue {
+  override val stageMode: EncodeEpicsValue[SouthTypes#GmosStageMode, String] = EncodeEpicsValue {
     case StageMode.NO_FOLLOW     => "MOVE"
     case StageMode.FOLLOW_XYZ    => "FOLLOW"
     case StageMode.FOLLOW_XY     => "FOLLOW-XY"
     case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
   }
 
+}
 
+object GmosSouthControllerEpics extends GmosControllerEpics[SouthTypes](GmosSouthEncoders)(southConfigTypes) {
 }

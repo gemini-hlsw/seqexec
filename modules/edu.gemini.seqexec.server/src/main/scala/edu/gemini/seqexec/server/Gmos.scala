@@ -4,8 +4,10 @@ import java.util.logging.Logger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps.{ContentError, ConversionError}
-import edu.gemini.seqexec.server.GmosController.{ADC, DTAX, DisperserOrder, GmosFPU, UseElectronicOffset}
 import edu.gemini.seqexec.server.ConfigUtilOps._
+import edu.gemini.seqexec.server.Gmos.SiteSpecifics
+import edu.gemini.seqexec.server.GmosController.Config._
+import edu.gemini.seqexec.server.GmosController.SiteDependentTypes
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
@@ -22,7 +24,7 @@ import scala.concurrent.duration._
 /**
   * Created by jluhrs on 8/3/17.
   */
-abstract class Gmos[T<:GmosController](val controller: T) extends Instrument {
+abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(val configTypes: GmosController.Config[T]) extends Instrument {
   import Gmos._
 
   override val sfName: String = "gmos"
@@ -31,36 +33,34 @@ abstract class Gmos[T<:GmosController](val controller: T) extends Instrument {
 
   val Log = Logger.getLogger(getClass.getName)
 
-  protected def fpuFromFPUnit(n: Option[controller.FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU
+  protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
+      case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
+      case FPUnitMode.CUSTOM_MASK => m match {
+        case Some(u) => GmosController.Config.CustomMaskFPU(u)
+        case _       => GmosController.Config.UnknownFPU
+      }
+    }
 
-  protected def extractFilter(config: Config): ExtractFailure\/controller.Filter
-
-  protected def extractDisperser(config: Config): ExtractFailure\/controller.Disperser
-
-  protected def extractFPU(config: Config): ExtractFailure\/controller.FPU
-
-  protected def extractStageMode(config: Config): ExtractFailure\/controller.GmosStageMode
-
-  private def ccConfigFromSequenceConfig(config: Config): TrySeq[controller.CCConfig] =
+  private def ccConfigFromSequenceConfig(config: Config): TrySeq[configTypes.CCConfig] =
     (for {
-      filter           <- extractFilter(config)
-      disp             <- extractDisperser(config)
+      filter           <- ss.extractFilter(config)
+      disp             <- ss.extractDisperser(config)
       disperserOrder   =  config.extract(INSTRUMENT_KEY / DISPERSER_ORDER_PROP).as[DisperserOrder]
       disperserLambda  =  config.extract(INSTRUMENT_KEY / DISPERSER_LAMBDA_PROP).as[java.lang.Double].map(_.toDouble.nanometers)
-      fpuName          =  extractFPU(config)
+      fpuName          =  ss.extractFPU(config)
       fpuMask          =  config.extract(INSTRUMENT_KEY / FPU_MASK_PROP).as[String]
       fpu              <- config.extract(INSTRUMENT_KEY / FPU_MODE_PROP).as[FPUnitMode].map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption))
-      stageMode        <- extractStageMode(config)
+      stageMode        <- ss.extractStageMode(config)
       dtax             <- config.extract(INSTRUMENT_KEY / DTAX_OFFSET_PROP).as[DTAX]
       adc              <- config.extract(INSTRUMENT_KEY / ADC_PROP).as[ADC]
       electronicOffset =  config.extract(INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP).as[UseElectronicOffset]
-      disperser = controller.GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-    } yield controller.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      disperser = configTypes.GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
+    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def fromSequenceConfig(config: Config): SeqAction[controller.GmosConfig] = EitherT( Task ( for {
+  private def fromSequenceConfig(config: Config): SeqAction[GmosController.GmosConfig[T]] = EitherT( Task ( for {
       cc <- ccConfigFromSequenceConfig(config)
       dc <- dcConfigFromSequenceConfig(config)
-    } yield controller.GmosConfig(cc, dc)
+    } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
   ) )
 
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader {
@@ -74,7 +74,17 @@ abstract class Gmos[T<:GmosController](val controller: T) extends Instrument {
 object Gmos {
   val name: String = INSTRUMENT_NAME_PROP
 
-  import GmosController._
+  trait SiteSpecifics[T<:SiteDependentTypes] {
+    def extractFilter(config: Config): ExtractFailure\/T#Filter
+
+    def extractDisperser(config: Config): ExtractFailure\/T#Disperser
+
+    def extractFPU(config: Config): ExtractFailure\/T#FPU
+
+    def extractStageMode(config: Config): ExtractFailure\/T#GmosStageMode
+
+    val fpuDefault: T#FPU
+  }
 
   // It seems this is unused but it shows up on the DC apply config
   private def biasTimeObserveType(observeType: String): BiasTime = observeType match {

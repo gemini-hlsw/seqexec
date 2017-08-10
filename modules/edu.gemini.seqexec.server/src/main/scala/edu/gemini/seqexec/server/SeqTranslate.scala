@@ -243,7 +243,7 @@ object SeqTranslate {
                       tcs: TcsController,
                       gcal: GcalController,
                       flamingos2: Flamingos2Controller,
-                      gmosSouth: GmosSouthController
+                      gmosSouth: GmosController.GmosSouthController
                     )
 
   case class Settings(

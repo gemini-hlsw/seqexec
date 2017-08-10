@@ -3,13 +3,14 @@ package edu.gemini.seqexec.server
 import java.util.logging.Logger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
+import edu.gemini.seqexec.server.EpicsCodex._
+import edu.gemini.seqexec.server.GmosController.Config.{Beam, InBeam, OutOfBeam}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
-
 import squants.Length
 
 import scalaz._
@@ -17,16 +18,17 @@ import scalaz.Scalaz._
 import scalaz.EitherT
 import scalaz.concurrent.Task
 
-abstract class GmosControllerEpics extends GmosController {
+class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
   private val Log = Logger.getLogger(getClass.getName)
 
-  import GmosController._
+  import GmosControllerEpics._
+  import GmosController.Config._
   import EpicsCodex._
 
   val CC = GmosEpics.instance.configCmd
   val DC = GmosEpics.instance.configDCCmd
 
-  override def getConfig: SeqAction[GmosConfig] = ???
+  override def getConfig: SeqAction[GmosController.GmosConfig[T]] = ???
 
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
     case AmpReadMode.SLOW => "SLOW"
@@ -50,22 +52,9 @@ abstract class GmosControllerEpics extends GmosController {
 
   implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue { b => b.getValue }
 
-  implicit val disperserEncoder: EncodeEpicsValue[Disperser, String]
-
   implicit val disperserOrderEncoder: EncodeEpicsValue[DisperserOrder, String] = EncodeEpicsValue(_.sequenceValue)
 
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, String] = EncodeEpicsValue((l: Length) => l.toNanometers.toString)
-
-  implicit val fpuEncoder: EncodeEpicsValue[FPU, (Option[String], Option[String])]
-
-  implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
-    case OutOfBeam => "OUT-OF-BEAM"
-    case InBeam    => "IN-BEAM"
-  }
-
-  implicit val filterEncoder: EncodeEpicsValue[Filter, (String, String)]
-
-  implicit val stageModeEncoder: EncodeEpicsValue[GmosStageMode, String]
 
   implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
 
@@ -165,23 +154,23 @@ abstract class GmosControllerEpics extends GmosController {
 
 
 
-  def setFilters(f: Filter): SeqAction[Unit] = {
-    val (filter1, filter2) = encode(f)
+  def setFilters(f: T#Filter): SeqAction[Unit] = {
+    val (filter1, filter2) = encoders.filter.encode(f)
 
     CC.setFilter1(filter1) *> CC.setFilter2(filter2)
   }
 
-  def setDisperser(d: GmosDisperser): SeqAction[Unit] = {
+  def setDisperser(d: GmosController.Config[T]#GmosDisperser): SeqAction[Unit] = {
     val disperserMode = "Select Grating and Tilt"
-    CC.setDisperser(encode(d.disperser)) *>
+    CC.setDisperser(encoders.disperser.encode(d.disperser)) *>
       CC.setDisperserMode(disperserMode) *>
       d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o))) *>
       d.lambda.filter(_ => d.disperser != Disperser.MIRROR && d.order.contains(Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o)))
   }
 
   def setFPU(cc: GmosFPU): SeqAction[Unit] = {
-    def builtInFPU(fpu: this.FPU): SeqAction[Unit] = {
-      val (fpuName, beam) = encode(fpu)
+    def builtInFPU(fpu: T#FPU): SeqAction[Unit] = {
+      val (fpuName, beam) = encoders.fpu.encode(fpu)
 
       fpuName.fold(SeqAction.void)(CC.setFpu) *>
         beam.fold(SeqAction.void)(CC.setInBeam)
@@ -193,11 +182,11 @@ abstract class GmosControllerEpics extends GmosController {
         case _      => (name.some, InBeam.some)
       }
       fpuName.fold(SeqAction.void)(CC.setFpu) *>
-        beam.fold(SeqAction.void)(b => CC.setInBeam(encode(b)))
+        beam.fold(SeqAction.void)(b => CC.setInBeam(beamEncoder.encode(b)))
     }
 
     cc match {
-      case this.BuiltInFPU(fpu)     => builtInFPU(fpu)
+      case cfg.BuiltInFPU(fpu)     => builtInFPU(fpu)
       case CustomMaskFPU(name) => customFPU(name)
       case UnknownFPU          => SeqAction.void
       case _                   => SeqAction.fail(SeqexecFailure.Unexpected("Failed match on built-in FPU"))
@@ -206,16 +195,16 @@ abstract class GmosControllerEpics extends GmosController {
 
   val PixelsToMicrons = 15.0
 
-  def setCCConfig(cc: CCConfig): SeqAction[Unit] = for {
+  def setCCConfig(cc: GmosController.Config[T]#CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)
     _ <- setDisperser(cc.disperser)
     _ <- setFPU(cc.fpu)
-    _ <- CC.setStageMode(encode(cc.stage))
+    _ <- CC.setStageMode(encoders.stageMode.encode(cc.stage))
     _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble*PixelsToMicrons)
     _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
   } yield ()
 
-  override def applyConfig(config: GmosConfig): SeqAction[Unit] = for {
+  override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
@@ -229,4 +218,19 @@ abstract class GmosControllerEpics extends GmosController {
     _ <- GmosEpics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
   } yield obsid
+}
+
+object GmosControllerEpics {
+  trait Encoders[T<:GmosController.SiteDependentTypes] {
+    val filter: EncodeEpicsValue[T#Filter, (String, String)]
+    val fpu: EncodeEpicsValue[T#FPU, (Option[String], Option[String])]
+    val stageMode: EncodeEpicsValue[T#GmosStageMode, String]
+    val disperser: EncodeEpicsValue[T#Disperser, String]
+  }
+
+  implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
+    case OutOfBeam => "OUT-OF-BEAM"
+    case InBeam    => "IN-BEAM"
+  }
+
 }
