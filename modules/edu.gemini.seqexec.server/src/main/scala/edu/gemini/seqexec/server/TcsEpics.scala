@@ -201,6 +201,14 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
     def setScfold(v: String): SeqAction[Unit] = setParameter(scfold, v)
   }
 
+  object observe extends EpicsCommand {
+    override val cs = Option(epicsService.getCommandSender("tcs::observe"))
+  }
+
+  object endObserve extends EpicsCommand {
+    override val cs = Option(epicsService.getCommandSender("tcs::endObserve"))
+  }
+
   val tcsState = epicsService.getStatusAcceptor("tcsstate")
 
   def absorbTipTilt: Option[Integer] = Option(tcsState.getIntegerAttribute("absorbTipTilt").value)

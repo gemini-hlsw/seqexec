@@ -86,6 +86,9 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
 
   override def configure(config: Config): SeqAction[ConfigResult] = tcsController.getConfig.flatMap(configure(config, _))
 
+  override def notifyObserveStart = tcsController.notifyObserveStart
+
+  override def notifyObserveEnd = tcsController.notifyObserveEnd
 }
 
 object Tcs {
