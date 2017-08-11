@@ -60,4 +60,7 @@ object TcsControllerSim extends TcsController {
       } yield TrySeq(())
     )
 
+  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+
+  override def notifyObserveEnd: SeqAction[Unit] = SeqAction.void
 }

@@ -12,6 +12,10 @@ trait System {
     * Called to configure a system, returns a Task[SeqexecFailure \/ ConfigResult]
     */
   def configure(config: Config): SeqAction[ConfigResult]
+
+  def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+
+  def notifyObserveEnd: SeqAction[Unit] = SeqAction.void
 }
 
 //Placeholder for config response

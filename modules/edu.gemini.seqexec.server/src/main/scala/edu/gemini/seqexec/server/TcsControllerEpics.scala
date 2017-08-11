@@ -410,4 +410,7 @@ object TcsControllerEpics extends TcsController {
     _ <- EitherT(Task(Log.info("TCS guide command post").right))
   } yield ()
 
+  override def notifyObserveStart: SeqAction[Unit] = ???
+
+  override def notifyObserveEnd: SeqAction[Unit] = ???
 }
