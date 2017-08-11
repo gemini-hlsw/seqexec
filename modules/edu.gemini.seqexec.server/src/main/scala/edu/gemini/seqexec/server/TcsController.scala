@@ -25,6 +25,10 @@ trait TcsController {
   def guide(gc: GuideConfig): SeqAction[Unit]
 
   def applyConfig(subsystems: NonEmptyList[Subsystem], tc: TcsConfig): SeqAction[Unit]
+
+  def notifyObserveStart: SeqAction[Unit]
+
+  def notifyObserveEnd: SeqAction[Unit]
 }
 
 // scalastyle:off

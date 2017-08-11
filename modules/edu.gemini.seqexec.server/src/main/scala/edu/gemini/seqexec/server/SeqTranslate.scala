@@ -37,8 +37,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
 
-  private def observe(config: Config, obsId: SPObservationID, inst: Instrument, headers: Reader[ActionMetadata,List[Header]])(ctx: ActionMetadata): SeqAction[ObserveResult] = {
-    val dataId: SeqAction[String] = EitherT(Task(config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
+  private def observe(config: Config, obsId: SPObservationID, inst: Instrument,
+                      otherSys: List[System], headers: Reader[ActionMetadata,List[Header]])
+                     (ctx: ActionMetadata): SeqAction[ObserveResult] = {
+    val dataId: SeqAction[String] = EitherT(Task(
+      config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
     def sendDataStart(imageFileId: ImageFileId): SeqAction[Unit] = for {
@@ -49,6 +52,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       d <- dataId
       _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
     } yield ()
+    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_=>())
+    def notifyObserveEnd: SeqAction[Unit] = otherSys.map(_.notifyObserveEnd).sequenceU.map(_=>())
 
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
@@ -56,8 +61,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     for {
       id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
       _ <- sendDataStart(id)
+      _ <- notifyObserveStart
       _ <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
       _ <- inst.observe(config)(id)
+      _ <- notifyObserveEnd
       _ <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
       _ <- closeImage(id, systems.dhs)
       _ <- sendDataEnd(id)
@@ -80,7 +87,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             ++
             List(
               sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-              List(new Action(ctx => observe(config, obsId, inst, headers)(ctx).map(x => Result.Observed(x.dataId)).run.map(toResult)))
+              List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).map(x => Result.Observed(x.dataId)).run.map(toResult)))
             )
             ++
             (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
