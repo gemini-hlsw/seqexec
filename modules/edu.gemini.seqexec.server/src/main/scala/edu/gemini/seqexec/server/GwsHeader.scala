@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.Header._
