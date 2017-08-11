@@ -1,6 +1,7 @@
 import Settings.Libraries._
 import sbt.Keys._
 import sbt.{file, Compile, ModuleID, project}
+import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 
 /**
   * Define tasks and settings used by module definitions
@@ -14,6 +15,13 @@ object Common {
       "-Xfatal-warnings",
       "-Ywarn-unused:imports"
     ))),
+    // These sbt-header settings can't be set in ThisBuild for some reason
+    headerMappings := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.CppStyleLineComment),
+    headerLicense  := Some(HeaderLicense.Custom(
+      """|Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
+         |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+         |""".stripMargin
+    )),
 
     // Common libraries
     libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value
