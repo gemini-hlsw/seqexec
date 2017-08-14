@@ -318,6 +318,24 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
     applicationConfSite := DeploymentSite.GS
   ).dependsOn(seqexec_server)
 
+/**
+  * Project for the GN seqexec server app for production on Linux 64
+  */
+lazy val seqexec_server_gn = preventPublication(project.in(file("app/seqexec-server-gn")))
+  .dependsOn(edu_gemini_seqexec_web_server)
+  .aggregate(edu_gemini_seqexec_web_server)
+  .enablePlugins(LinuxPlugin, RpmPlugin)
+  .enablePlugins(JavaServerAppPackaging)
+  .settings(seqexecCommonSettings: _*)
+  .settings(seqexecRPMSettings: _*)
+  .settings(deployedAppMappings: _*)
+  .settings(embeddedJreSettingsLinux64: _*)
+  .settings(
+    description := "Seqexec Gemini North server production",
+    applicationConfName := "seqexec",
+    applicationConfSite := DeploymentSite.GN
+  ).dependsOn(seqexec_server)
+
 // Root web project
 lazy val edu_gemini_p1backend = project.in(file("modules/edu.gemini.p1backend"))
   .settings(commonSettings: _*)
