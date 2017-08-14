@@ -6,7 +6,7 @@ package gem.ocs2.pio
 import cats.Functor
 import cats.implicits._
 import java.time.{ Duration, Instant }
-import scala.util.Try
+import mouse.all._
 
 final case class PioParse[A](run: String => Option[A]) {
   def apply(s: String): Option[A] = run(s)
@@ -26,28 +26,28 @@ object PioParse {
   // ********  Primitives
 
   val bigDecimal: PioParse[BigDecimal] =
-    PioParse(s => Try(BigDecimal(s)).toOption)
+    PioParse(s => Either.catchOnly[NumberFormatException](BigDecimal(s)).toOption)
 
   val boolean: PioParse[Boolean] =
-    PioParse(s => Try(s.toBoolean).toOption)
+    PioParse(_.parseBoolean.toOption)
 
   val double: PioParse[Double] =
-    PioParse(s => Try(s.toDouble).toOption)
+    PioParse(_.parseDouble.toOption)
 
   val short: PioParse[Short] =
-    PioParse(s => Try(s.toShort).toOption)
+    PioParse(_.parseShort.toOption)
 
   val int: PioParse[Int] =
-    PioParse(s => Try(s.toInt).toOption)
+    PioParse(_.parseInt.toOption)
 
   val positiveInt: PioParse[Int] =
-    PioParse(s => Try(s.toInt).toOption.filter(_ > 0))
+    PioParse(_.parseInt.toOption.filter(_ > 0))
 
   val positiveShort: PioParse[Short] =
-    PioParse(s => Try(s.toShort).toOption.filter(_ > 0))
+    PioParse(_.parseShort.toOption.filter(_ > 0))
 
   val long: PioParse[Long] =
-    PioParse(s => Try(s.toLong).toOption)
+    PioParse(_.parseLong.toOption)
 
   val string: PioParse[String] =
     PioParse(_.pure[Option])
