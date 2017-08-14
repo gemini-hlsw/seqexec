@@ -3,11 +3,9 @@
 
 package gem
 
-import argonaut._
+import cats._, cats.implicits._
 import org.http4s._
-import org.http4s.argonaut._
 import org.http4s.dsl._
-import scalaz._, Scalaz._
 
 package object web {
 
@@ -24,13 +22,9 @@ package object web {
       new OptionalQueryParamDecoderMatcher[A](key)(fa) {}
   }
 
-  implicit class RequestOps(val req: Request) extends AnyVal {
+  implicit class RequestOps[F[_]](val req: Request[F]) extends AnyVal {
     def findCookie(name: String): Option[Cookie] =
-      headers.Cookie.from(req.headers).flatMap(cs => cs.values.list.find(_.name === name))
+      headers.Cookie.from(req.headers).flatMap(cs => cs.values.toList.find(_.name === name))
   }
-
-  // Anything that can be swizzled with Json can be sent or received.
-  implicit def automaticJsonDecoderOf[A: DecodeJson]: EntityDecoder[A] = jsonOf
-  implicit def automaticJsonEncoderOf[A: EncodeJson]: EntityEncoder[A] = jsonEncoderOf
 
 }

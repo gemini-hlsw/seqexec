@@ -3,15 +3,11 @@
 
 package gem.ocs2
 
-import doobie.postgres.imports._
+import cats.effect.IO, cats.implicits._
 import doobie.imports._
-
-import java.util.logging.{Level, Logger}
-
-import scalaz._
-import Scalaz._
-import scalaz.concurrent.Task
-import scalaz.effect.IO
+import doobie.util.monaderror._
+import doobie.postgres.imports._
+import java.util.logging.{ Level, Logger }
 
 /** Shared support for import applications using Doobie. */
 trait DoobieClient {
@@ -24,7 +20,7 @@ trait DoobieClient {
     "org.postgresql.Driver", Url, User, Pass
   )
 
-  val lxa = Transactor.fromDriverManager[Task](
+  val lxa = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", Url, User, Pass
   )
 
@@ -35,7 +31,7 @@ trait DoobieClient {
   def ignoreUniqueViolation(fa: ConnectionIO[Int]): ConnectionIO[Int] =
     for {
       s <- HC.setSavepoint
-      n <- fa.onUniqueViolation(HC.rollback(s).as(0)) ensuring HC.releaseSavepoint(s)
+      n <- fa.onUniqueViolation(HC.rollback(s).as(0)) guarantee HC.releaseSavepoint(s)
     } yield n
 
 }

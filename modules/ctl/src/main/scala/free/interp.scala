@@ -4,8 +4,8 @@
 package gem.ctl
 package free
 
-import scalaz._, Scalaz._
-import scalaz.effect._
+import cats._, cats.data._, cats.implicits._
+import cats.effect._
 
 import gem.ctl.low.io._
 import gem.ctl.free.ctl._
@@ -45,11 +45,11 @@ object interpreter {
           }
 
         case Server.Remote(Host.Network(h), u) =>
-          doRemoteShell(u.foldRight(h)((u, h) => s"$u@$h"), cmd, c, state)
+          doRemoteShell(u.map(u =>  s"$u@$h").getOrElse(h), cmd, c, state)
 
       }
-    case CtlOp.Exit(exitCode)    => EitherT.left(exitCode.point[IO])
-    case CtlOp.GetConfig         => c.point[EitherT[IO, Int, ?]]
+    case CtlOp.Exit(exitCode)    => EitherT.left(exitCode.pure[IO])
+    case CtlOp.GetConfig         => c.pure[EitherT[IO, Int, ?]]
     case CtlOp.Gosub(level, msg, fa) =>
       for {
         _ <- doLog(level, msg, state)
@@ -75,7 +75,7 @@ object interpreter {
     val messageColor = color // if (level == Shell) color else Console.BLUE
     for {
       i <- state.read.map(_.indentation).map("  " * _)
-      _ <- IO.putStrLn(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")
+      _ <- IO(Console.println(f"$color$pre%-7s $messageColor$i$msg${Console.RESET}")) // scalastyle:ignore
     } yield ()
   }
 
@@ -89,9 +89,9 @@ object interpreter {
   /** Machine name to IP-address. */
   private def machineHost(machine: Host.Machine, verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, String] =
     EitherT.right(state.read.map(_.machineHostCache.get(machine))).flatMap {
-      case Some(s) => s.point[EitherT[IO, Int, ?]]
+      case Some(s) => s.pure[EitherT[IO, Int, ?]]
       case None =>
-        doShell(List("docker-machine", "ip", machine.name).right, verbose, state).flatMap {
+        doShell(Right(List("docker-machine", "ip", machine.name)), verbose, state).flatMap {
           case Output(0, s :: Nil) =>
             doLog(Level.Info, s"Address of docker machine '${machine.name}' is $s." , state) *>
             EitherT.right {
@@ -99,28 +99,29 @@ object interpreter {
             }
           case _ =>
             doLog(Level.Error, "couldn't get ip-address for machine ", state) *>
-            EitherT.left(-1.point[IO])
+            EitherT.left(-1.pure[IO])
         }
     }
 
-  private def doRemoteShell(uh: String, cmd: String \/ List[String], c: Config, state: IORef[InterpreterState]): EitherT[IO, Int, Output] =
+  private def doRemoteShell(uh: String, cmd: Either[String, List[String]], c: Config, state: IORef[InterpreterState]): EitherT[IO, Int, Output] =
     doShell(cmd.bimap(s => s"ssh $uh $s", "ssh" :: uh :: _), c.verbose, state)
 
   /**
    * Construct a program to perform a shell operation, optionally logging the output (if verbose),
    * and gathering the result as an `Output`.
    */
-  private def doShell(cmd: String \/ List[String], verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, Output] = {
+  private def doShell(cmd: Either[String, List[String]], verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, Output] = {
 
     def handler(s: String): IO[Unit] =
       if (verbose) doLogʹ(Level.Shell, s, state)
-      else IO.putStr(".")
+      else IO(Console.print("."))
 
     for {
-      _ <- verbose.whenM(doLog(Level.Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", state))
+      // N.B. unlessA and whenA are merged and will be available post 0.9.0
+      _ <- if (verbose) doLog(Level.Shell, s"$$ ${cmd.fold(identity, _.mkString(" "))}", state) else ().pure[EitherT[IO, Int, ?]]
       o <- EitherT.right(exec(cmd, handler))
-      _ <- verbose.whenM(doLog(Level.Shell, s"exit(${o.exitCode})", state))
-      - <- verbose.unlessM(EitherT.right[IO, Int, Unit](IO.putStr("\u001B[1G\u001B[K")))
+      _ <- if (verbose) doLog(Level.Shell, s"exit(${o.exitCode})", state) else ().pure[EitherT[IO, Int, ?]]
+      - <- if (!verbose) EitherT.right[Int](IO(Console.print("\u001B[1G\u001B[K"))) else ().pure[EitherT[IO, Int, ?]]
     } yield o
 
   }

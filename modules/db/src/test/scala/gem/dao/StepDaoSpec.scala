@@ -49,7 +49,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
 
     // We should be able to round=trip the program.
     import ProgramDao._
-    val rted = (insert(orig) >>= selectFull).transact(xa).unsafePerformIO
+    val rted = (insert(orig) flatMap selectFull).transact(xa).unsafeRunSync
     rted shouldEqual Some(orig)
 
   }

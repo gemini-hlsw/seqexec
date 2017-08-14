@@ -3,10 +3,9 @@
 
 package gem.dao
 
+import cats.effect.IO
 import doobie.imports._
-import gem.{Program, Step}
-
-import scalaz.effect.IO
+import gem.{ Program, Step }
 
 /** Base trait for DAO test cases.
   */
@@ -27,5 +26,6 @@ trait DaoTest extends gem.Arbitraries {
     (for {
       _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", List.empty[Step[Nothing]]))
       a <- test
-    } yield a).transact(xa).unsafePerformIO()
+    } yield a).transact(xa).unsafeRunSync()
+    
 }

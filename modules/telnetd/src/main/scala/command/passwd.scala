@@ -5,8 +5,9 @@ package gem
 package telnetd
 package command
 
-import net.bmjames.opts.types._
-import tuco._, Tuco._
+import cats.Applicative
+import com.monovore.decline.{ Command => _, _ }
+import tuco._, Tuco._, tuco.shell._
 
 /** A command for changing passwords. */
 object passwd {
@@ -14,7 +15,7 @@ object passwd {
   val command: GemCommand =
     shellCommand[GemState](
       "passwd", "Change password.",
-      Parser.pure { s =>
+      Applicative[Opts].pure { s =>
         for {
           o <- readLn("Old password: ", mask = Some('*'))
           n <- readLn("New password: ", mask = Some('*'))

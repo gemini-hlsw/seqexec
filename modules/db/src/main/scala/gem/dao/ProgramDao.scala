@@ -8,7 +8,7 @@ import gem.config.{DynamicConfig, StaticConfig}
 
 import doobie.imports._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 object ProgramDao {
 

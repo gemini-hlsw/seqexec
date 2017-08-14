@@ -5,8 +5,7 @@ package gem
 package config
 
 import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
-
-import scalaz._
+import gem.util.Lens, Lens._
 
 /**
  * Instrument configuration that is specified once per [[gem.Observation Observation]] and is thus
@@ -63,7 +62,7 @@ object StaticConfig {
 
   trait GmosNorthLenses {
     val Common: GmosNorth @> GmosCommonStaticConfig =
-      Lens.lensu((a, b) => a.copy(common = b), _.common)
+      Lens((a, b) => a.copy(common = b), _.common)
 
     val CustomRois: GmosNorth @> Set[GmosCustomRoiEntry] =
       Common >=> GmosCommonStaticConfig.CustomRois
@@ -87,7 +86,7 @@ object StaticConfig {
 
   trait GmosSouthLenses {
     val Common: GmosSouth @> GmosCommonStaticConfig =
-      Lens.lensu((a, b) => a.copy(common = b), _.common)
+      Lens((a, b) => a.copy(common = b), _.common)
 
     val CustomRois: GmosSouth @> Set[GmosCustomRoiEntry] =
       Common >=> GmosCommonStaticConfig.CustomRois

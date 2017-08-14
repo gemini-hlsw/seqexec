@@ -3,6 +3,7 @@
 
 package gem
 
+import cats.implicits._
 import gem.arb._
 import gem.config.{DynamicConfig, GcalConfig, StaticConfig, TelescopeConfig}
 import gem.enum.{Instrument, SmartGcalType}
@@ -10,9 +11,6 @@ import gem.math.Offset
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
-
-import scalaz._
-import Scalaz._
 
 trait Arbitraries extends gem.config.Arbitraries  {
   import ArbEnumerated._
@@ -102,6 +100,6 @@ trait Arbitraries extends gem.config.Arbitraries  {
     for {
       count   <- Gen.choose(0, limit)
       obsIds  <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(i => Observation.Id(pid, i)))
-      obsList <- obsIds.traverseU(genObservation)
+      obsList <- obsIds.traverse(genObservation)
     } yield obsList
 }

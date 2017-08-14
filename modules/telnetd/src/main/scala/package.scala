@@ -3,15 +3,14 @@
 
 package gem
 
-import doobie.util.capture.Capture
-import tuco._, Tuco._
-
 package object telnetd {
 
-  /** Capture instance for SessionIO allows us to embed doobie programs. */
-  implicit val ConectionIODoobieCapture: Capture[SessionIO] =
-    new Capture[SessionIO] {
-      def apply[A](a: => A) = SessionIO.delay(a)
-    }
+  // implicit conversion from gem lens to tuco lens … all goes away with monocle
+  import gem .util.{ Lens => GLens }
+  import tuco.util.{ Lens => TLens }
+  implicit class gemToTuco[A, B](g: GLens[A, B]) {
+    def toTucoLens: TLens[A, B] =
+      TLens(g.get, g.set)
+  }
 
 }

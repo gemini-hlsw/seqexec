@@ -3,29 +3,23 @@
 
 package gem.ocs2
 
+import cats.effect.IO, cats.implicits._
 import doobie.imports._
-import gem.{Dataset, Log, Observation, Program, Step, User}
+import gem.{ Dataset, Log, Observation, Program, Step, User }
 import gem.config.{ StaticConfig, DynamicConfig }
 import gem.dao.UserDao
 import gem.ocs2.Decoders._
 import gem.ocs2.pio.PioDecoder
-
-import org.flywaydb.core.Flyway
-
 import java.io.File
-
+import org.flywaydb.core.Flyway
 import scala.xml.{XML, Elem}
-
-import scalaz._
-import Scalaz._
-import scalaz.effect._
 
 
 /** Imports OCS2 program files exported to the same format sent by the
   * Ocs3ExportServlet at http://g[ns]odb:8442/ocs3/fetch/programId or
   * by using the OSGi shell command "exportOcs3" from the ODB shell.
   */
-object FileImporter extends SafeApp with DoobieClient {
+object FileImporter extends DoobieClient {
 
   type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
   type Prog = Program[Obs]
@@ -34,11 +28,11 @@ object FileImporter extends SafeApp with DoobieClient {
 
   val checkArchive: IO[Unit] =
     IO(dir.isDirectory).flatMap { b =>
-      b.unlessM(IO(sys.error("""
+      IO(if (b) () else sys.error("""
         |
         |** Root of project needs an archive/ dir with program xml files in it.
         |** Try ln -s /path/to/some/stuff archive
-        |""".stripMargin)))
+        |""".stripMargin))
     }
 
   val clean: IO[Int] =
@@ -58,10 +52,10 @@ object FileImporter extends SafeApp with DoobieClient {
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =
     read(f).flatMap { elem =>
       PioDecoder[(Prog, List[Dataset])].decode(elem) match {
-        case -\/(err)     => sys.error(s"Problem parsing ${f.getName}: $err")
-        case \/-((p, ds)) => log.log(u, s"insert ${p.id}")(insert(u, p, ds, log)).transact(xa)
+        case Left(err)     => sys.error(s"Problem parsing ${f.getName}: $err")
+        case Right((p, ds)) => log.log(u, s"insert ${p.id}")(insert(u, p, ds, log)).transact(xa)
       }
-    }.except(e => IO(e.printStackTrace))
+    }.handleErrorWith(e => IO(e.printStackTrace))
 
   def xmlFiles(num: Int): IO[List[File]] =
     IO(dir.listFiles.toList.filter(_.getName.toLowerCase.endsWith(".xml"))).map(_.take(num))
@@ -69,7 +63,7 @@ object FileImporter extends SafeApp with DoobieClient {
   def readAndInsertAll(u: User[_], num: Int, log: Log[ConnectionIO]): IO[Unit] =
     xmlFiles(num).flatMap(_.traverse_(readAndInsert(u, _, log)))
 
-  override def runl(args: List[String]): IO[Unit] =
+  def runl(args: List[String]): IO[Unit] =
     for {
       u <- UserDao.selectRootUser.transact(xa)
       l <- Log.newLog[ConnectionIO]("importer", lxa).transact(xa)
@@ -79,7 +73,10 @@ object FileImporter extends SafeApp with DoobieClient {
       _ <- clean
       _ <- readAndInsertAll(u, n, l)
       _ <- l.shutdown(5 * 1000).transact(xa) // if we're not done soon something is wrong
-      _ <- IO.putStrLn("Done.")
+      _ <- IO(Console.println("Done.")) // scalastyle:off console.io
     } yield ()
+
+  def main(args: Array[String]): Unit =
+    runl(args.toList).unsafeRunSync
 
 }

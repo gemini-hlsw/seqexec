@@ -3,17 +3,16 @@
 
 package gem.dao
 
+import cats.implicits._
+import doobie.imports._
 import gem._
 import gem.SmartGcal._
 import gem.config._
 import gem.config.DynamicConfig.{ SmartGcalKey, SmartGcalSearchKey }
 import gem.enum._
 import gem.math.Wavelength
-import doobie.imports._
-
-import scalaz._
-import Scalaz._
-import scalaz.stream.Process
+import fs2.Stream
+import scala.collection.immutable.TreeMap
 
 object SmartGcalDao {
 
@@ -24,7 +23,7 @@ object SmartGcalDao {
                case gn: SmartGcalKey.GmosNorthSearch => selectGmosNorth(gn, t)
                case gs: SmartGcalKey.GmosSouthSearch => selectGmosSouth(gs, t)
              }
-      gcs <- ids.traverseU { GcalDao.selectSmartGcal }.map(_.collect { case Some(a) => a })
+      gcs <- ids.traverse { GcalDao.selectSmartGcal }.map(_.collect { case Some(a) => a })
     } yield gcs
 
   def selectF2(k: SmartGcalKey.F2, t: SmartGcalType): ConnectionIO[List[Int]] =
@@ -54,23 +53,23 @@ object SmartGcalDao {
   val dropIndexGmosSouth: ConnectionIO[Int] =
     Statements.dropIndexGmosSouth.run
 
-  def bulkInsertF2(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.F2, GcalConfig)]): scalaz.stream.Process[ConnectionIO, Int] =
+  def bulkInsertF2(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.F2, GcalConfig)]): Stream[ConnectionIO, Int] =
     bulkInsert(Statements.bulkInsertF2, entries)
 
-  def bulkInsertGmosNorth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosNorthDefinition, GcalConfig)]): scalaz.stream.Process[ConnectionIO, Int] =
+  def bulkInsertGmosNorth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosNorthDefinition, GcalConfig)]): Stream[ConnectionIO, Int] =
     bulkInsert[SmartGcalKey.GmosNorthDefinition](Statements.bulkInsertGmosNorth, entries)
 
-  def bulkInsertGmosSouth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosSouthDefinition, GcalConfig)]): scalaz.stream.Process[ConnectionIO, Int] =
+  def bulkInsertGmosSouth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosSouthDefinition, GcalConfig)]): Stream[ConnectionIO, Int] =
     bulkInsert[SmartGcalKey.GmosSouthDefinition](Statements.bulkInsertGmosSouth, entries)
 
   private def bulkInsert[K](
                 update:  Update[((GcalLampType, GcalBaselineType, K), Int)],
-                entries: Vector[(GcalLampType, GcalBaselineType, K, GcalConfig)]): scalaz.stream.Process[ConnectionIO, Int] =
+                entries: Vector[(GcalLampType, GcalBaselineType, K, GcalConfig)]): Stream[ConnectionIO, Int] =
 
-    Process.emitAll(entries.map(t => (t._1, t._2, t._3)))        // Process[ConnectionIO, (Lamp, Baseline, Key)]
-      .zip(GcalDao.bulkInsertSmartGcal(entries.map(_._4)))       // Process[ConnectionIO, ((Lamp, Baseline, Key), Id)]
-      .chunk(4096)                                               // Process[ConnectionIO, Vector[((Lamp, Baseline, Key), Id)]]
-      .flatMap { rows => Process.eval(update.updateMany(rows)) } // Process[ConnectionIO, Int]
+    Stream.emits(entries.map(t => (t._1, t._2, t._3)))          // Stream[Pure, (Lamp, Baseline, Key)]
+      .zip(GcalDao.bulkInsertSmartGcal(entries.map(_._4)))      // Stream[ConnectionIO, ((Lamp, Baseline, Key), Id)]
+      .segmentN(4096)                                           // Stream[ConnectionIO, Segment[((Lamp, Baseline, Key), Id)]]
+      .flatMap { rows => Stream.eval(update.updateMany(rows.toVector)) } // Stream[ConnectionIO, Int]
 
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
@@ -91,7 +90,7 @@ object SmartGcalDao {
         c <- s match {
                case Step.SmartGcal(i, t) =>
                  EitherConnectionIO.fromDisjunction {
-                   (i.smartGcalKey \/> noMappingDefined).map { k => (k, t, i) }
+                   (i.smartGcalKey.toRight(noMappingDefined)).map { k => (k, t, i) }
                  }
                case _                    =>
                  EitherConnectionIO.pointLeft(notSmartGcal)
@@ -104,8 +103,8 @@ object SmartGcalDao {
       kti  <- context
       (k, t, i) = kti
       gcal <- EitherConnectionIO(select(k, t).map {
-                case Nil => noMappingDefined.left
-                case cs  => cs.map(Step.Gcal(i, _)).right
+                case Nil => Left(noMappingDefined)
+                case cs  => Right(cs.map(Step.Gcal(i, _)))
               })
     } yield gcal
   }
@@ -139,22 +138,22 @@ object SmartGcalDao {
     // Find the previous and next location for the smart gcal step that we are
     // replacing.  This is needed to generate locations for the steps that will
     // be inserted.
-    def bounds(steps: Location.Middle ==>> Step[DynamicConfig]): (Location, Location) =
-      steps.split(loc) match {
-        case (prev, next) => (prev.findMax.map(_._1).widen[Location] | Location.beginning,
-                              next.findMin.map(_._1).widen[Location] | Location.end)
+    def bounds(steps: TreeMap[Location.Middle, Step[DynamicConfig]]): (Location, Location) =
+      steps.span { case (k, _) => k < loc } match {
+        case (prev, next) => (prev.lastOption.map(_._1).widen[Location] getOrElse Location.beginning,
+                              next.headOption.map(_._1).widen[Location] getOrElse Location.end)
       }
 
     // Inserts manual gcal steps between `before` and `after` locations.
     def insert(before: Location, gcal: ExpandedSteps, after: Location): ConnectionIO[Unit] =
-      Location.find(gcal.size, before, after).toList.zip(gcal).traverseU { case (l, s) =>
+      Location.find(gcal.size, before, after).toList.zip(gcal).traverse { case (l, s) =>
         StepDao.insert(oid, l, s)
       }.void
 
     for {
       steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
-      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.lookup(loc)), loc)
+      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc)
       // replaces the smart gcal step with the expanded manual gcal steps
       _     <- StepDao.deleteAtLocation(oid, loc).injectRight
       _     <- insert(locBefore, gcal, locAfter).injectRight

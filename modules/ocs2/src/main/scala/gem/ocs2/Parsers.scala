@@ -3,13 +3,11 @@
 
 package gem.ocs2
 
+import cats.implicits._
 import gem.{Dataset, Observation, Program}
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
 import gem.math.{ Angle, Offset, Wavelength }
-
-import scalaz._
-import Scalaz._
 
 /** String parsers for our model types.
   */
@@ -97,7 +95,7 @@ object Parsers {
             val as2 = lampToArc(s).fold(as) { _ :: as }
             (cs2, as2)
         }
-        GcalLamp.fromConfig(continuum.headOption, arc.strengthR(true): _*)
+        GcalLamp.fromConfig(continuum.headOption, arc.tupleRight(true): _*)
       })
     }
 

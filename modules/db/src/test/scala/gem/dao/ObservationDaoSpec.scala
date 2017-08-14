@@ -3,13 +3,12 @@
 
 package gem.dao
 
+import cats.implicits._
+import doobie.imports._
 import gem.Observation
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
-
-import scalaz._
-import Scalaz._
 
 class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
@@ -17,7 +16,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservationList(pid, limit = 50)) { obsList =>
       val oids = withProgram {
         for {
-          _ <- obsList.traverseU(ObservationDao.insert)
+          _ <- obsList.traverse(ObservationDao.insert)
           o <- ObservationDao.selectIds(pid)
         } yield o
       }
@@ -75,7 +74,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservationList(pid, limit = 50)) { obsListIn =>
       val obsListOut = withProgram {
         for {
-          _ <- obsListIn.traverseU(ObservationDao.insert)
+          _ <- obsListIn.traverse(ObservationDao.insert)
           o <- ObservationDao.selectAll(pid)
         } yield o
       }

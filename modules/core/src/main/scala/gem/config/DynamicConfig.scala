@@ -6,10 +6,7 @@ package config
 
 import gem.enum._
 import gem.math.Wavelength
-
 import java.time.Duration
-
-import scalaz._
 
 /**
  * Instrument configuration that is specified for each [[gem.Step Step]].
@@ -136,7 +133,7 @@ object DynamicConfig {
     common:  GmosCommonDynamicConfig,
     grating: Option[GmosGrating[GmosNorthDisperser]],
     filter:  Option[GmosNorthFilter],
-    fpu:     Option[GmosCustomMask \/ GmosNorthFpu]
+    fpu:     Option[Either[GmosCustomMask, GmosNorthFpu]]
   ) extends DynamicConfig.Impl(Instrument.GmosN) {
 
     /** Returns the smart gcal search key for this GMOS-N configuration. */
@@ -165,7 +162,7 @@ object DynamicConfig {
     common:  GmosCommonDynamicConfig,
     grating: Option[GmosGrating[GmosSouthDisperser]],
     filter:  Option[GmosSouthFilter],
-    fpu:     Option[GmosCustomMask \/ GmosSouthFpu]
+    fpu:     Option[Either[GmosCustomMask, GmosSouthFpu]]
   ) extends DynamicConfig.Impl(Instrument.GmosS) {
 
     /** Returns the smart gcal search key for this GMOS-S configuration. */

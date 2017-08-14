@@ -3,15 +3,13 @@
 
 package gem.dao
 
-import gem.{Location, Observation, Step}
-import gem.config.DynamicConfig
-
 import doobie.imports._
-
-import scalaz.==>>
+import gem.{ Location, Observation, Step }
+import gem.config.DynamicConfig
+import scala.collection.immutable.TreeMap
 
 object StepDaoSample extends TimedSample {
-  type Result = Location.Middle ==>> Step[DynamicConfig]
+  type Result = TreeMap[Location.Middle, Step[DynamicConfig]]
 
   val oid: Observation.Id = Observation.Id.unsafeFromString("GS-2016A-Q-102-108")
 
@@ -19,5 +17,5 @@ object StepDaoSample extends TimedSample {
     StepDao.selectAll(oid)
 
   override def format(r: Result): String =
-    r.toAscList.map { case (l, s) => f"$l%10s -> $s" }.mkString(", \n")
+    r.toList.map { case (l, s) => f"$l%10s -> $s" }.mkString(", \n")
 }

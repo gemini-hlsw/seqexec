@@ -4,9 +4,9 @@
 package gem
 package telnetd
 
-import net.bmjames.opts.types.Parser
-import scalaz._, Scalaz._
-import tuco._, Tuco._
+import cats.implicits._
+import com.monovore.decline.{ Command => _, _ }
+import tuco._, Tuco._, tuco.shell._
 
 package object command {
 
@@ -30,14 +30,14 @@ package object command {
   def shellCommand[A](
     name: String,
     desc: String,
-    parser: Parser[A => SessionIO[A]]
+    parser: Opts[A => SessionIO[A]]
   ): Command[SessionIO, A] =
-    shellCommandWithCompleter(name, desc, parser, (_, _) => nil[String].point[SessionIO])
+    shellCommandWithCompleter(name, desc, parser, (_, _) => List.empty[String].pure[SessionIO])
 
   def shellCommandWithCompleter[A](
     name: String,
     desc: String,
-    parser: Parser[A => SessionIO[A]],
+    parser: Opts[A => SessionIO[A]],
     complete: (A, String) => SessionIO[List[String]]
   ): Command[SessionIO, A] =
     Command(name, desc, parser, complete)

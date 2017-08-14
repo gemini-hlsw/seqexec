@@ -3,13 +3,12 @@
 
 package gem.dao
 
+import doobie.imports._
 import gem.{Event, Observation}
 import gem.Event._
 import gem.enum.EventType
 import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew, EndVisit, Pause, StartIntegration, StartSequence, StartSlew, StartVisit, Stop}
-
 import java.time.Instant
-import doobie.imports._
 
 
 object EventLogDao {

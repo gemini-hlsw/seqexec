@@ -5,7 +5,7 @@ package gem
 
 import java.time.Month
 import java.time.Month._
-import scalaz.Scalaz._
+import cats.implicits._
 
 // The members of this package are generated from database tables, which are the source of truth.
 // See project/gen2.scala for details. Associations with other model types, as needed, are provided

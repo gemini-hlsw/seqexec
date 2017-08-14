@@ -3,9 +3,9 @@
 
 package gem.math
 
-import scalaz.{ Order, Show }
-import scalaz.std.anyVal.intInstance
-import scalaz.syntax.equal._
+import cats.{ Order, Show }
+import cats.instances.int._
+import cats.syntax.eq._
 
 /**
  * Exact wavelengths represented as unsigned integral angstroms in the range [0 .. Int.MaxValue]
@@ -48,10 +48,10 @@ object Wavelength {
 
   /** @group Typeclass Instances */
   implicit val WavelengthShow: Show[Wavelength] =
-    Show.showA
+    Show.fromToString
 
   /** @group Typeclass Instances */
   implicit val WavelengthOrd: Order[Wavelength] =
-    Order.orderBy(_.toAngstroms)
+    Order.by(_.toAngstroms)
 
 }

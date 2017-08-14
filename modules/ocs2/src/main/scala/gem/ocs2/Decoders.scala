@@ -3,6 +3,7 @@
 
 package gem.ocs2
 
+import cats.implicits._
 import gem.{Dataset, Observation, Program, Step}
 import gem.config._
 import gem.enum.Instrument
@@ -11,9 +12,6 @@ import gem.ocs2.pio.PioDecoder
 import gem.ocs2.pio.PioDecoder.fromParse
 
 import java.time.Instant
-
-import scalaz._
-import Scalaz._
 
 /** `PioDecoder` instances for our model types.
   */

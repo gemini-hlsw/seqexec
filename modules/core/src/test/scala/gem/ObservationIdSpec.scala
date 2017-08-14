@@ -3,11 +3,11 @@
 
 package gem
 
+import cats.{ Eq, Show }
+import cats.implicits._
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-import scalaz.{ Equal, Show }
-import scalaz.std.anyVal._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class ObservationIdSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -15,20 +15,20 @@ class ObservationIdSpec extends FlatSpec with Matchers with PropertyChecks {
 
   "Equality" must "be natural" in {
     forAll { (a: Observation.Id, b: Observation.Id) =>
-      a.equals(b) shouldEqual Equal[Observation.Id].equal(a, b)
+      a.equals(b) shouldEqual Eq[Observation.Id].eqv(a, b)
     }
   }
 
   it must "act pairwise" in {
     forAll { (a: Observation.Id, b: Observation.Id) =>
-      Equal[Program.Id].equal(a.pid, b.pid) &&
-      Equal[Int].equal(a.index, b.index) shouldEqual Equal[Observation.Id].equal(a, b)
+      Eq[Program.Id].eqv(a.pid, b.pid) &&
+      Eq[Int].eqv(a.index, b.index) shouldEqual Eq[Observation.Id].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Observation.Id) =>
-      a.toString shouldEqual Show[Observation.Id].shows(a)
+      a.toString shouldEqual Show[Observation.Id].show(a)
     }
   }
 

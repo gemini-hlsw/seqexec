@@ -3,22 +3,22 @@
 
 package gem.ocs2
 
-import scalaz._, Scalaz._
+import cats.data._, cats.implicits._
 
 package object pio {
-  type PioOptional[A] = OptionT[PioError \/ ?, A]
+  type PioOptional[A] = OptionT[Either[PioError, ?], A]
 
   object PioOptional {
-    def apply[A](a: PioError \/ Option[A]): PioOptional[A] =
-      OptionT[PioError \/ ?, A](a)
+    def apply[A](a: Either[PioError, Option[A]]): PioOptional[A] =
+      OptionT[Either[PioError, ?], A](a)
 
     def fromOption[A](oa: Option[A]): PioOptional[A] =
-      OptionT[PioError \/ ?, A](oa.right)
+      OptionT[Either[PioError, ?], A](oa.asRight)
 
     def none[A]: PioOptional[A] =
-      OptionT.none[PioError \/ ?, A]
+      OptionT.none[Either[PioError, ?], A]
 
     def some[A](a: A): PioOptional[A] =
-      OptionT.some[PioError \/ ?, A](a)
+      OptionT.some[Either[PioError, ?]](a)
   }
 }

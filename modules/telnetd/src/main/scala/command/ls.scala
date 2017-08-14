@@ -5,43 +5,40 @@ package gem
 package telnetd
 package command
 
-import net.bmjames.opts.{ intOption, help, metavar, short, long, value, strArgument }
-import net.bmjames.opts.types.Parser
-import tuco._, Tuco._
-import scalaz._, Scalaz._
+import cats.implicits._
+import com.monovore.decline.{ Command => _, _ }
+import tuco._, Tuco._, tuco.shell._
 
 /** A command that lists programs with matching program id and/or title. */
 object ls {
 
-  val num: Parser[Int] = {
-    val defaultMax = 100
-    intOption(
-      help(s"Maximum number of programs to display (default $defaultMax)."),
-      metavar("<int>"),
-      short('n'),
-      long("number"),
-      value(defaultMax)
-    )
-  }
+  val defaultMax: Int = 100
 
-  val pat: Parser[String] =
-    strArgument(
-      help("A glob-style pattern"),
-      metavar("<pattern>"),
-      value("*")
-    ).map(_.replaceAll("\\*", "%")
+  val num: Opts[Int] =
+    Opts.option[Int](
+      help    = s"Maximum number of programs to display (default $defaultMax).",
+      metavar = "int",
+      short   = "n",
+      long    = "number"
+    ).withDefault(defaultMax)
+
+  val pat: Opts[String] =
+    Opts.argument[String](
+      metavar = "pattern"
+    ).withDefault("*")
+     .map(_.replaceAll("\\*", "%")
            .replaceAll("\\.", "?"))
 
   val command: GemCommand =
-    shellCommand[GemState](
+    Command(
       "ls", "List all visible with ids or titles matching the given pattern.",
-      (num |@| pat) { (n, p) => d =>
+      (num, pat).mapN { (n: Int, p: String) => (d: GemState) =>
          for {
            progs  <- d.queryProgramsByName(p, n + 1)
            (h, t)  = progs.splitAt(n)
            cols   <- getColumns
-           _      <- formatProgs(h, cols).traverseU(writeLn(_))
-           _      <- (t.nonEmpty).whenM(writeLn(s"--Limit reached. ($n)--"))
+           _      <- formatProgs(h, cols).traverse(writeLn(_))
+           _      <- writeLn(s"--Limit reached. ($n)--").whenA(t.nonEmpty)
          } yield d
       }
     ).zoom(Session.L.data[GemState])

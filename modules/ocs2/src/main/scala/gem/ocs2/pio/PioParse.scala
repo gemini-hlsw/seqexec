@@ -3,10 +3,10 @@
 
 package gem.ocs2.pio
 
-import java.time.{Duration, Instant}
-
-import scalaz._
-import Scalaz._
+import cats.Functor
+import cats.implicits._
+import java.time.{ Duration, Instant }
+import mouse.all._
 
 final case class PioParse[A](run: String => Option[A]) {
   def apply(s: String): Option[A] = run(s)
@@ -26,7 +26,7 @@ object PioParse {
   // ********  Primitives
 
   val bigDecimal: PioParse[BigDecimal] =
-    PioParse(_.parseBigDecimal.toOption)
+    PioParse(s => Either.catchOnly[NumberFormatException](BigDecimal(s)).toOption)
 
   val boolean: PioParse[Boolean] =
     PioParse(_.parseBoolean.toOption)

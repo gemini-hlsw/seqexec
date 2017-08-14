@@ -4,8 +4,8 @@
 package gem
 package enum
 
-import scalaz.syntax.equal._
-import scalaz.std.string._
+import cats.syntax.eq._
+import cats.instances.string._
 
 /**
  * Enumerated type for the subset of [[ProgramType]] allowed for daily science programs.

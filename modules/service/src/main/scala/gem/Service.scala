@@ -3,12 +3,13 @@
 
 package gem
 
+import cats._
+import cats.implicits._
+import cats.effect.Sync
 import doobie.imports._
-
 import gem.dao._
 import gem.enum._
-
-import scalaz._, Scalaz._
+import gem.util.Lens, Lens._
 
 final class Service[M[_]: Monad] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 
@@ -34,7 +35,7 @@ final class Service[M[_]: Monad] private (private val xa: Transactor[M], val log
 object Service {
 
   object L {
-    def user[M[_]: Monad]: Service[M] @> User[ProgramRole] = Lens.lensu((a, b) => new Service(a.xa, a.log, b), _.user)
+    def user[M[_]: Monad]: Service[M] @> User[ProgramRole] = Lens((a, b) => new Service(a.xa, a.log, b), _.user)
   }
 
   def apply[M[_]: Monad](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
@@ -43,7 +44,7 @@ object Service {
   /**
    * Construct a program that verifies a user's id and password and returns a `Service`.
    */
-  def tryLogin[M[_]: Monad: Catchable: Capture](
+  def tryLogin[M[_]: Sync](
     user: User.Id, pass: String, xa: Transactor[M], log: Log[M]
   ): M[Option[Service[M]]] =
     xa.trans.apply(UserDao.selectUserʹ(user, pass)).map {
@@ -54,7 +55,7 @@ object Service {
   /**
    * Like `tryLogin`, but for previously-authenticated users.
    */
-  def service[M[_]: Monad: Catchable: Capture](
+  def service[M[_]: Sync](
     user: User.Id, xa: Transactor[M], log: Log[M]
   ): M[Option[Service[M]]] =
     xa.trans.apply(UserDao.selectUser(user)).map {

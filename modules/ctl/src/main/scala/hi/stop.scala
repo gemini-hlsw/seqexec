@@ -6,7 +6,7 @@ package gem.ctl.hi
 import gem.ctl.free.ctl._
 import gem.ctl.low.docker._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Constructors for `CtlIO` operations related to the `stop` command. */
 object stop {
@@ -15,7 +15,7 @@ object stop {
     gosub("Shutting down Gem deployment.") {
       for {
         ks <- findRunningContainersWithLabel("edu.gemini.commit")
-        _  <- ks.traverseU(stopOne)
+        _  <- ks.traverse(stopOne)
       } yield ()
     }
 

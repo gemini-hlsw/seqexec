@@ -3,12 +3,12 @@
 
 package gem
 
+import cats.{ Eq, Show }
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
 import java.time._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-import scalaz.{ Equal, Show }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -19,13 +19,13 @@ class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
 
   "Equality" must "be natural" in {
     forAll { (a: ProgramId, b: ProgramId) =>
-      a.equals(b) shouldEqual Equal[ProgramId].equal(a, b)
+      a.equals(b) shouldEqual Eq[ProgramId].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: ProgramId) =>
-      a.toString shouldEqual Show[ProgramId].shows(a)
+      a.toString shouldEqual Show[ProgramId].show(a)
     }
   }
 

@@ -3,14 +3,14 @@
 
 package gem
 
+import cats.data.OneAnd
 import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
-import gem.config.GmosConfig
+import gem.config.GmosConfig._
 import gem.math.{ Angle, Offset, Wavelength }
-
+import io.circe._
+import io.circe.syntax._
 import java.time.Duration
-import argonaut._, Argonaut._, ArgonautShapeless._
-import scalaz.{ ISet, OneAnd, Order }
 
 // These json codecs are provided for primitive types that have no natural mapping that would
 // otherwise be inferred via argonaut-shapeless. For now we'll treat the JSON format as an
@@ -19,79 +19,73 @@ import scalaz.{ ISet, OneAnd, Order }
 // will cause the serial format to change.
 package object json {
 
+  private implicit class MoreAngleOps(a: Angle) {
+    def toSignedArcseconds: BigDecimal =
+      new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(6)
+  }
+  private implicit class MoreAngleCompanionOps(comp: Angle.type) {
+    def fromSignedArcseconds(b: BigDecimal): Angle =
+      comp.fromMicroarcseconds(b.underlying.movePointLeft(6).longValue)
+  }
+
   // Angle mapping to signed arcseconds. NOT implicit.
-  val AngleMetaAsSignedArcseconds: CodecJson[Angle] =
-    CodecJson.derived[BigDecimal]
-      .xmap[Angle](
-        b => Angle.fromMicroarcseconds(b.underlying.movePointLeft(6).longValue))(
-        a => BigDecimal(new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(6)))
+  val AngleAsSignedArcsecondsEncoder: Encoder[Angle] = Encoder[BigDecimal].contramap(_.toSignedArcseconds)
+  val AngleAsSignedArcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedArcseconds)
 
   // Wavelength mapping to integral Angstroms.
-  implicit val WavelengthCodec: CodecJson[Wavelength] =
-    CodecJson.derived[Int].xmap(Wavelength.unsafeFromAngstroms)(_.toAngstroms)
+  implicit val WavelengthEncoder: Encoder[Wavelength] = Encoder[Int].contramap(_.toAngstroms)
+  implicit val WavelengthDecoder: Decoder[Wavelength] = Decoder[Int].map(Wavelength.unsafeFromAngstroms)
 
-  implicit val durationCodec: CodecJson[Duration] =
-    CodecJson(
-      d => Json("seconds" := d.getSeconds, "nanoseconds" := d.getNano),
-      c => for {
-             ss <- (c --\ "seconds").as[Long]
-             ns <- (c --\ "nanoseconds").as[Long]
-           } yield Duration.ofSeconds(ss, ns)
+  // Duration as a record with seconds and nanoseconds
+  implicit val DurationEncoder: Encoder[Duration] = d =>
+    Json.obj(
+      "seconds"     -> d.getSeconds.asJson,
+      "nanoseconds" -> d.getNano.asJson
     )
+  implicit val DurationDecoder: Decoder[Duration] = c =>
+    for {
+      ss <- c.downField("seconds")    .as[Long]
+      ns <- c.downField("nanoseconds").as[Long]
+    } yield Duration.ofSeconds(ss, ns)
 
-  implicit def enumeratedCodec[A](implicit ev: Enumerated[A]): CodecJson[A] =
-    CodecJson.derived[String].xmap(ev.unsafeFromTag)(ev.tag)
+  // Enumerated as a tag
+  implicit def enumeratedEncoder[A](implicit ev: Enumerated[A]): Encoder[A] = Encoder[String].contramap(ev.tag)
+  implicit def enumeratedDecoder[A](implicit ev: Enumerated[A]): Decoder[A] = Decoder[String].map(ev.unsafeFromTag)
 
-  implicit val programIdCodec: CodecJson[Program.Id] =
-    CodecJson.derived[String].xmap(Program.Id.unsafeFromString)(_.format)
+  // Program ID in canonical form
+  implicit val ProgramIdEncoder: Encoder[Program.Id] = Encoder[String].contramap(_.format)
+  implicit val ProgramIdDecoder: Decoder[Program.Id] = Decoder[String].map(Program.Id.unsafeFromString)
 
-  implicit val observationIdCodec: CodecJson[Observation.Id] =
-    casecodec2(Observation.Id.apply, Observation.Id.unapply)("program-id", "index")
+  // Offset.P maps to a signed angle in arcseconds
+  implicit val OffsetPEncoder: Encoder[Offset.P] = AngleAsSignedArcsecondsEncoder.contramap(_.toAngle)
+  implicit val OffsetPDecoder: Decoder[Offset.P] = AngleAsSignedArcsecondsDecoder.map(Offset.P.apply)
 
-  // OffsetP maps to a signed angle in arcseconds
-  implicit val OffsetPCodec: CodecJson[Offset.P] =
-    AngleMetaAsSignedArcseconds.xmap(Offset.P(_))(_.toAngle)
-
-  // OffsetQ maps to a signed angle in arcseconds
-  implicit val OffsetQCodec: CodecJson[Offset.Q] =
-    AngleMetaAsSignedArcseconds.xmap(Offset.Q(_))(_.toAngle)
-
-  // Codec for ISet
-  implicit def isetCodec[A: CodecJson: Order]: CodecJson[ISet[A]] =
-    CodecJson.derived[List[A]].xmap(ISet.fromList(_))(_.toList)
-
-  // Codec for OneAnd
-  implicit def oneAndCodec[F[_], A: CodecJson](implicit ev: CodecJson[F[A]]): CodecJson[OneAnd[F, A]] =
-    CodecJson.derived[(A, F[A])].xmap { case (a, fa) => OneAnd(a, fa) } { oa => (oa.head, oa.tail) }
+  // Offset.Q maps to a signed angle in arcseconds
+  implicit val OffsetQEncoder: Encoder[Offset.Q] = AngleAsSignedArcsecondsEncoder.contramap(_.toAngle)
+  implicit val OffsetQDecoder: Decoder[Offset.Q] = AngleAsSignedArcsecondsDecoder.map(Offset.Q.apply)
 
   // Codec for GcalArcs
-  implicit def gcalArcsCodec: CodecJson[GcalArcs] =
-    CodecJson.derived[OneAnd[ISet, GcalArc]].xmap(oa => GcalArcs(oa.head, oa.tail.toList))(_.arcs)
+  implicit val GcalArcsEncoder: Encoder[GcalArcs] = Encoder[OneAnd[Set, GcalArc]].contramap(_.arcs)
+  implicit val GcalArcsDecoder: Decoder[GcalArcs] = Decoder[OneAnd[Set, GcalArc]].map(oa => GcalArcs(oa.head, oa.tail.toList))
 
-  // Codec for role maps
-  implicit def programIdKeyedMapCodec[A: CodecJson]: CodecJson[Map[Program.Id, A]] =
-    CodecJson.derived[Map[String, A]].xmap(
-      m => m.map { case (k, v) => (Program.Id.unsafeFromString(k), v) })(
-      m => m.map { case (k, v) => (k.format, v) }
-    )
+  // Codec for maps keyed by Program.Id
+  implicit def programIdKeyedMapEncoder[A: Encoder]: Encoder[Map[Program.Id, A]] =
+    Encoder[Map[String, A]].contramap(_.map { case (k, v) => (k.format, v) })
+  implicit def programIdKeyedMapDecoder[A: Decoder]: Decoder[Map[Program.Id, A]] =
+    Decoder[Map[String, A]].map(_.map { case (k, v) => (Program.Id.unsafeFromString(k), v) })
 
-  // Codec for sets
-  implicit def setCodec[A: CodecJson]: CodecJson[Set[A]] =
-    CodecJson.derived[List[A]].xmap(_.toSet)(_.toList)
+  // GmosCustomRoiEntry as a quad of shorts
+  implicit val GmosCustomRoiEntryEncoder: Encoder[GmosCustomRoiEntry] =
+    Encoder[(Short, Short, Short, Short)].contramap(r => (r.xMin, r.yMin, r.xRange, r.yRange))
+  implicit val GmosCustomRoiEntryDecoder: Decoder[GmosCustomRoiEntry] =
+    Decoder[(Short, Short, Short, Short)].map((GmosCustomRoiEntry.unsafeFromDescription _).tupled)
 
-  // Codec for GmosCustomRoiEntry
-  implicit def gmosCustomRoiEntryCodec: CodecJson[GmosConfig.GmosCustomRoiEntry] =
-    CodecJson.derived[(Short, Short, Short, Short)].xmap(
-      t => GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))(
-      r => (r.xMin, r.yMin, r.xRange, r.yRange)
-    )
+  // GmosShuffleOffset as integer detector rows
+  implicit def GmosShuffleOffsetEncoder: Encoder[GmosShuffleOffset] = Encoder[Int].contramap(_.detectorRows)
+  implicit def GmosShuffleOffsetDecoder: Decoder[GmosShuffleOffset] = Decoder[Int].map(GmosShuffleOffset.unsafeFromRowCount)
 
-  // Codec for GmosShuffleOffset
-  implicit def gmosShuffleOffsetCodec: CodecJson[GmosConfig.GmosShuffleOffset] =
-    CodecJson.derived[Int].xmap(GmosConfig.GmosShuffleOffset.unsafeFromRowCount)(_.detectorRows)
-
-  // Codec for GmosShuffleCycles
-  implicit def gmosShuffleCyclesCodec: CodecJson[GmosConfig.GmosShuffleCycles] =
-    CodecJson.derived[Int].xmap(GmosConfig.GmosShuffleCycles.unsafeFromCycleCount)(_.toInt)
+  // GmosShuffleCycles as integer cycle count
+  implicit def GmosShuffleCyclesEncoder: Encoder[GmosShuffleCycles] = Encoder[Int].contramap(_.toInt)
+  implicit def GmosShuffleCyclesDecoder: Decoder[GmosShuffleCycles] = Decoder[Int].map(GmosShuffleCycles.unsafeFromCycleCount)
 
 }

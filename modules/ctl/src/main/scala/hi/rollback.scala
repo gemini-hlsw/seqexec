@@ -8,7 +8,7 @@ import gem.ctl.low.docker._
 import gem.ctl.hi.common._
 import gem.ctl.hi.deploy._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 
 /** Constructors for `CtlIO` operations related to the `rollback` command. */
 object rollback {

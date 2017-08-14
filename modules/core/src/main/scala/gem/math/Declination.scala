@@ -3,8 +3,8 @@
 
 package gem.math
 
-import scalaz.{ Order, Show }
-import scalaz.std.anyVal._
+import cats.{ Order, Show }
+import cats.instances.long._
 
 /**
  * Celestial latitude, measured in angular distance from the celestial equator. Points north of the
@@ -83,9 +83,9 @@ object Declination {
    * @group Typeclass Instances
    */
   implicit val DeclinationOrder: Order[Declination] =
-    Order.orderBy(_.toAngle.toSignedMicroarcseconds)
+    Order.by(_.toAngle.toSignedMicroarcseconds)
 
   implicit val DeclinationShow: Show[Declination] =
-    Show.showA
+    Show.fromToString
 
 }

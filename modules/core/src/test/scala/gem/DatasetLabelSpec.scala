@@ -3,11 +3,11 @@
 
 package gem
 
+import cats.{ Eq, Order, Show }
+import cats.implicits._
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-import scalaz.{ Equal, Order, Show }
-import scalaz.std.anyVal._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
 class DatasetLabelSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -19,20 +19,20 @@ class DatasetLabelSpec extends FlatSpec with Matchers with PropertyChecks {
 
   "Equality" must "be natural" in {
     forAll { (a: Dataset.Label, b: Dataset.Label) =>
-      a.equals(b) shouldEqual Equal[Dataset.Label].equal(a, b)
+      a.equals(b) shouldEqual Eq[Dataset.Label].eqv(a, b)
     }
   }
 
   it must "operate pairwise" in {
     forAll { (a: Dataset.Label, b: Dataset.Label) =>
-      Equal[Observation.Id].equal(a.observationId, b.observationId) &&
-      Equal[Int].equal(a.index, b.index) shouldEqual Equal[Dataset.Label].equal(a, b)
+      Eq[Observation.Id].eqv(a.observationId, b.observationId) &&
+      Eq[Int].eqv(a.index, b.index) shouldEqual Eq[Dataset.Label].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Dataset.Label) =>
-      a.toString shouldEqual Show[Dataset.Label].shows(a)
+      a.toString shouldEqual Show[Dataset.Label].show(a)
     }
   }
 

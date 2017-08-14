@@ -3,11 +3,10 @@
 
 package gem.math
 
+import cats.{ Eq, Show, Monoid }
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-
-import scalaz.{ Equal, Show, Monoid }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class OffsetQSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -16,23 +15,23 @@ class OffsetQSpec extends FlatSpec with Matchers with PropertyChecks {
   // Compilation test
   protected val a0 = implicitly[Monoid[Offset.Q]]
   protected val a1 = implicitly[Show[Offset.Q]]
-  protected val a2 = implicitly[Equal[Offset.Q]]
+  protected val a2 = implicitly[Eq[Offset.Q]]
 
   "Equality" must "be natural" in {
     forAll { (a: Offset.Q, b: Offset.Q) =>
-      a.equals(b) shouldEqual Equal[Offset.Q].equal(a, b)
+      a.equals(b) shouldEqual Eq[Offset.Q].eqv(a, b)
     }
   }
 
   it must "be consistent with .toAngle" in {
     forAll { (a: Offset.Q, b: Offset.Q) =>
-      Equal[Angle].equal(a.toAngle, b.toAngle) shouldEqual Equal[Offset.Q].equal(a, b)
+      Eq[Angle].eqv(a.toAngle, b.toAngle) shouldEqual Eq[Offset.Q].eqv(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Offset.Q) =>
-      a.toString shouldEqual Show[Offset.Q].shows(a)
+      a.toString shouldEqual Show[Offset.Q].show(a)
     }
   }
 

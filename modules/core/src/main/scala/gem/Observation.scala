@@ -3,7 +3,8 @@
 
 package gem
 
-import scalaz._, Scalaz._
+import cats.{ Applicative, ApplicativeError, Eval, Order, Show, Bitraverse }
+import cats.implicits._
 
 /**
  * An observation, parameterized over the types of its static config and steps (typically
@@ -32,7 +33,7 @@ object Observation {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          b.drop(1).parseInt.toOption.flatMap { n =>
+          ApplicativeError[Either[Throwable, ?], Throwable].catchNonFatal(b.drop(1).toInt).toOption.flatMap { n =>
             Program.Id.fromString(a).map(Observation.Id(_, n))
           }
       }
@@ -42,22 +43,26 @@ object Observation {
 
     /** Observations are ordered by program id and index. */
     implicit val OrderId: Order[Id] =
-      Order[Program.Id].contramap[Id](_.pid)   |+|
+      Order[Program.Id].contramap[Id](_.pid)   whenEqual
       Order[Int]       .contramap[Id](_.index)
 
     implicit val OrderingId: scala.math.Ordering[Id] =
-      OrderId.toScalaOrdering
+      OrderId.toOrdering
 
     implicit val showId: Show[Id] =
-      Show.showA
+      Show.fromToString
 
   }
 
   /** Observation is a bitraversable functor. */
   implicit val ObservationBitraverse: Bitraverse[Observation] =
     new Bitraverse[Observation] {
-      def bitraverseImpl[G[_]: Applicative, A, B, C, D](fab: Observation[A,B])(f: A => G[C], g: B => G[D]): G[Observation[C,D]] =
-        (f(fab.staticConfig) |@| fab.steps.traverse(g))((c, d) => fab.copy(staticConfig = c, steps = d))
+      def bifoldLeft[A, B, C](fab: Observation[A,B], c: C)(f: (C, A) => C, g: (C, B) => C): C =
+        fab.steps.foldLeft(f(c, fab.staticConfig))(g)
+      def bifoldRight[A, B, C](fab: Observation[A,B], c: Eval[C])(f: (A, Eval[C]) => Eval[C], g: (B, Eval[C]) => Eval[C]): Eval[C] =
+        fab.steps.foldRight(f(fab.staticConfig, c))(g)
+      def bitraverse[G[_]: Applicative, A, B, C, D](fab: Observation[A, B])(f: A => G[C], g: B => G[D]): G[Observation[C,D]] =
+        (f(fab.staticConfig), fab.steps.traverse(g)).mapN((c, d) => fab.copy(staticConfig = c, steps = d))
     }
 
 }

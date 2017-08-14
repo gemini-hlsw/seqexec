@@ -3,6 +3,9 @@
 
 package gem.ocs2
 
+import cats.effect.IO, cats.implicits._
+import fs2.Stream
+import fs2.{io, text}
 import gem.Log
 import gem.config.GcalConfig
 import gem.config.DynamicConfig.SmartGcalKey
@@ -16,17 +19,13 @@ import java.time.Duration
 import doobie.imports._
 
 import scala.reflect.runtime.universe._
-import scalaz._
-import Scalaz._
-import scalaz.concurrent.{Task, TaskApp}
-import scalaz.stream.Process
 
 
 /** Importer for SmartGcal CSV files.  Note, these files use display values in
   * some cases instead of the seqexec values since they were meant to be edited
   * by science staff.
   */
-object SmartGcalImporter extends TaskApp with DoobieClient {
+object SmartGcalImporter extends DoobieClient {
 
   implicit class ParseOps(s: String) {
     def parseAs[A: TypeTag](parse: PioParse[A]): A =
@@ -40,13 +39,13 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
   // entries.
   type KeyParser[K]       = (List[String]) => (K, List[String])
   type SmartGcalLine[K]   = (GcalLampType, GcalBaselineType, K, GcalConfig)
-  type SmartGcalWriter[K] = (Vector[SmartGcalLine[K]]) => Process[ConnectionIO, Int]
+  type SmartGcalWriter[K] = (Vector[SmartGcalLine[K]]) => Stream[ConnectionIO, Int]
 
   // --------------------------------------------------------------------------
   // Add your instruments here.
   // --------------------------------------------------------------------------
 
-  def importAllInst: Task[Unit] = {
+  def importAllInst: IO[Unit] = {
     import SmartGcalDao._
 
     for {
@@ -127,14 +126,14 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
   def fileName(prefix: String, lampType: GcalLampType): String =
     s"${prefix}_${lampType.tag.toUpperCase}.csv"
 
-  val checkSmartDir: Task[Unit] =
-    Task.delay(dir.isDirectory).flatMap { b =>
-      b.unlessM(Task.delay(sys.error(
+  val checkSmartDir: IO[Unit] =
+    IO(dir.isDirectory).flatMap { b =>
+      IO(if (b) () else sys.error(
         """
           |** Root of project needs a "smartgcal/" dir with smart gcal config files in it.
           |** Try ln -s /path/to/some/smart/gcal smartgcal
           |** (for example ~/.ocs15/Gemini\ OT\ 2017A.1.1.1_mac/data/jsky.app.ot/smartgcal)
-        """.stripMargin)))
+        """.stripMargin))
     }
 
   /** Truncates all the smart gcal tables. */
@@ -175,35 +174,41 @@ object SmartGcalImporter extends TaskApp with DoobieClient {
                     parser:         KeyParser[K],
                     unindexer:      ConnectionIO[Int],
                     writer:         SmartGcalWriter[K],
-                    indexer:        ConnectionIO[Int]): Task[Unit] = {
+                    indexer:        ConnectionIO[Int]): IO[Unit] = {
 
-    def lines(l: GcalLampType): Process[Task, SmartGcalLine[K]] =
-      scalaz.stream.io
-          .linesR(new File(dir, fileName(instFilePrefix, l)).getPath)
+    def lines(l: GcalLampType): Stream[IO, SmartGcalLine[K]] =
+      io.file.readAll[IO](new File(dir, fileName(instFilePrefix, l)).toPath, 4096)
+          .through(text.utf8Decode)
+          .through(text.lines)
+          .filter(_.trim.nonEmpty)
           .map(_.split(',').map(_.trim).toList)
           .map(parseLine(_, l, parser))
 
     val prog = (lines(GcalLampType.Arc) ++ lines(GcalLampType.Flat))
-      .chunk(4096)
-      .flatMap { v => writer(v).void.transact(lxa) }
+      .segmentN(4096)
+      .flatMap { v => writer(v.toVector).transact(lxa) }
 
     for {
-      _ <- Task.delay(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore
+      _ <- IO(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore
       _ <- unindexer.transact(lxa)
       _ <- prog.run
       _ <- indexer.transact(lxa)
     } yield ()
   }
 
-  override def runl(args: List[String]): Task[Unit] =
+  def runc: IO[Unit] =
     for {
       u <- UserDao.selectRootUser.transact(lxa)
-      l <- Log.newLog[Task]("smartgcal importer", lxa)
+      l <- Log.newLog[IO]("smartgcal importer", lxa)
       _ <- checkSmartDir
-      _ <- Task.delay(configureLogging)
+      _ <- IO(configureLogging)
       _ <- clean.transact(lxa)
       _ <- importAllInst
       _ <- l.shutdown(5 * 1000)
-      _ <- Task.delay(println("Done.")) // scalastyle:ignore
+      _ <- IO(println("Done.")) // scalastyle:ignore
     } yield ()
+
+  def main(args: Array[String]): Unit =
+    runc.unsafeRunSync
+
 }

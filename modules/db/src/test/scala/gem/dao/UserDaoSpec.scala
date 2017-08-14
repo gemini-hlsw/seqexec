@@ -3,12 +3,12 @@
 
 package gem.dao
 
+import cats.implicits._
 import doobie.imports._
 import doobie.postgres.imports._
 import gem._
 import gem.enum.ProgramRole
 import org.scalatest._
-import scalaz._, Scalaz._
 
 class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
 
@@ -30,7 +30,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
     User[ProgramRole]("homer", "Homer", "Simpson", "chunkylover53@aol.com", false, Map.empty)
 
   "UserDao" should "select the root user" in {
-    val r = UserDao.selectRootUser.transact(xa).unsafePerformIO
+    val r = UserDao.selectRootUser.transact(xa).unsafeRunSync
     r.id shouldEqual User.Id.Root
   }
 
@@ -42,7 +42,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.insertUser(user1, "pass")
         u <- UserDao.selectUserʹ(user1.id, "pass")
       } yield u
-    prog.transact(xa).unsafePerformIO shouldEqual Some(user1)
+    prog.transact(xa).unsafeRunSync shouldEqual Some(user1)
   }
 
   it should "set roles" in {
@@ -54,7 +54,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.setRole(user2.id, prog1.id, ProgramRole.GEM)
         u <- UserDao.selectUserʹ(user2.id, "pass")
       } yield u
-    prog.transact(xa).unsafePerformIO.flatMap(_.roles.get(prog1.id))
+    prog.transact(xa).unsafeRunSync.flatMap(_.roles.get(prog1.id))
       .shouldEqual(Some(Set(ProgramRole.PI, ProgramRole.GEM)))
   }
 
@@ -67,7 +67,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.unsetRole(user1.id, prog1.id, ProgramRole.GEM)
         u <- UserDao.selectUserʹ(user1.id, "pass")
       } yield u
-    prog.transact(xa).unsafePerformIO.flatMap(_.roles.get(prog1.id))
+    prog.transact(xa).unsafeRunSync.flatMap(_.roles.get(prog1.id))
       .shouldEqual(Some(Set(ProgramRole.PI)))
   }
 
@@ -77,7 +77,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.insertUser(user2, "pass")
         u <- UserDao.selectUserʹ(user2.id, "banana")
       } yield u
-    prog.transact(xa).unsafePerformIO shouldEqual None
+    prog.transact(xa).unsafeRunSync shouldEqual None
   }
 
   it should "change password if correct original password is specified" in {
@@ -86,7 +86,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.insertUser(user2, "pass")
         b <- UserDao.changePassword(user2.id, "pass", "eskimo")
       } yield b
-    prog.transact(xa).unsafePerformIO shouldEqual true
+    prog.transact(xa).unsafeRunSync shouldEqual true
   }
 
   it should "fail to change password if incorrect original password is specified" in {
@@ -95,7 +95,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.insertUser(user2, "pass")
         b <- UserDao.changePassword(user2.id, "banana", "eskimo")
       } yield b
-    prog.transact(xa).unsafePerformIO shouldEqual false
+    prog.transact(xa).unsafeRunSync shouldEqual false
   }
 
   it should "raise a key violation on duplicate id" in {
@@ -104,7 +104,7 @@ class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
         _ <- UserDao.insertUser(user2, "pass1")
         _ <- UserDao.insertUser(user2, "pass2")
       } yield true
-    prog.onUniqueViolation(false.point[ConnectionIO]).transact(xa).unsafePerformIO shouldEqual false
+    prog.onUniqueViolation(false.pure[ConnectionIO]).transact(xa).unsafeRunSync shouldEqual false
   }
 
 }

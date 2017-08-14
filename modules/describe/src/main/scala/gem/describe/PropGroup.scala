@@ -4,7 +4,7 @@
 // import gem.config._
 // import gem.Step.{Gcal, Science, Smart}
 
-// import scalaz._, Scalaz._
+// import cats._, cats.data._, cats.implicits._
 
 // /** Groups a collection of properties for some Describe-able type A.  Provides
 //   * access to `StepLens`es for getting and setting property values across a

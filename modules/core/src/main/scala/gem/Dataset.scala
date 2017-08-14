@@ -3,9 +3,11 @@
 
 package gem
 
+import cats.{ Order, Show }
+import cats.implicits._
 import gem.imp.TimeInstances._
 import java.time.Instant
-import scalaz._, Scalaz._
+import mouse.all._
 
 /**
  * A labeled, timestamped data file.
@@ -49,12 +51,12 @@ object Dataset {
      * @group Typeclass Instances
      */
     implicit val LabelOrder: Order[Label] =
-      Order[Observation.Id].contramap[Label](_.observationId) |+|
+      Order[Observation.Id].contramap[Label](_.observationId) whenEqual
       Order[Int]           .contramap[Label](_.index)
 
     /** @group Typeclass Instances */
     implicit val LabelShow: Show[Label] =
-      Show.showA
+      Show.fromToString
 
   }
 
@@ -64,12 +66,12 @@ object Dataset {
    * @group Typeclass Instances
    */
   implicit val DatasetOrder: Order[Dataset] =
-    Order[Label]  .contramap[Dataset](_.label)     |+|
-    Order[Instant].contramap[Dataset](_.timestamp) |+|
+    Order[Label]  .contramap[Dataset](_.label)     whenEqual
+    Order[Instant].contramap[Dataset](_.timestamp) whenEqual
     Order[String] .contramap[Dataset](_.filename)
 
   /** @group Typeclass Instances */
   implicit val DatasetShow: Show[Dataset] =
-    Show.showA
+    Show.fromToString
 
 }

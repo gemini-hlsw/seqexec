@@ -3,15 +3,13 @@
 
 package gem.dao
 
+import cats.effect.IO
 import doobie.imports._
 import gem._
-import EventLogDao._
-
 import java.time.Instant
 
-import scalaz.effect.{IO, SafeApp}
-
-object EventLogDaoSample extends SafeApp {
+object EventLogDaoSample {
+  import EventLogDao._
 
   val xa: Transactor[IO] =
     Transactor.fromDriverManager[IO](
@@ -36,11 +34,14 @@ object EventLogDaoSample extends SafeApp {
       l <- selectAll(Instant.now().minusSeconds(10), Instant.now().plusSeconds(10))
     } yield l
 
-  override def runl(args: List[String]): IO[Unit] =
+  val run: IO[Unit] =
     for {
       l <- insertEvents.transact(xa)
-      _ <- IO.putStrLn(l.mkString(",\n"))
-      _ <- IO.putStrLn("Done.")
+      _ <- IO(Console.println(l.mkString(",\n")))
+      _ <- IO(Console.println("Done."))
     } yield ()
+
+  def main(args: Array[String]): Unit =
+    run.unsafeRunSync
 
 }

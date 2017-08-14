@@ -9,8 +9,9 @@ import gem.ctl.low.git._
 import gem.ctl.low.docker._
 import gem.ctl.hi.common._
 
-import scalaz._, Scalaz._
+import cats.implicits._
 import scala.util.matching.Regex
+import mouse.all._
 
 /** Constructors for `CtlIO` operations related to the `deploy` command. */
 object deploy {
@@ -27,7 +28,11 @@ object deploy {
     gosub(s"Verifying $PrivateNetwork network.") {
       findNetwork(PrivateNetwork).flatMap {
         case Some(n) => info(s"Using existing network ${n.hash}.").as(n)
-        case None    => createNetwork(PrivateNetwork) >>! { n => info(s"Created network ${n.hash}.") }
+        case None    =>
+          for {
+            n <- createNetwork(PrivateNetwork)
+            _ <- info(s"Created network ${n.hash}.")
+          } yield n
       }
     }
 
@@ -37,7 +42,7 @@ object deploy {
         c <- info(s"Using $rev.") *> commitForRevision(rev)
         _ <- info(s"Commit is ${c.hash}")
         u <- uncommittedChanges.map(_ && rev === "HEAD")
-        _ <- u.whenM(warn("There are uncommitted changes. This is a UNCOMMITTED deployment."))
+        _ <- if (u) warn("There are uncommitted changes. This is a UNCOMMITTED deployment.") else ().pure[CtlIO]
       } yield DeployCommit(c, u)
     }
 

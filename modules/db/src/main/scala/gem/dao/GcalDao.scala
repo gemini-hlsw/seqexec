@@ -3,14 +3,12 @@
 
 package gem.dao
 
+import cats.implicits._
 import gem.config.GcalConfig
 import gem.config.GcalConfig.GcalLamp
 import doobie.imports._
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
-
-import scalaz._, Scalaz._
-
 import java.time.Duration
 
 /** DAO support for inserting [[gem.config.GcalConfig]] in either step_gcal or
@@ -20,7 +18,7 @@ object GcalDao {
   def insertStepGcal(stepId: Int, gcal: GcalConfig): ConnectionIO[Int] =
     Statements.insertStepGcal(stepId, gcal).run
 
-  def bulkInsertSmartGcal(gs: Vector[GcalConfig]): scalaz.stream.Process[ConnectionIO, Int] =
+  def bulkInsertSmartGcal(gs: Vector[GcalConfig]): fs2.Stream[ConnectionIO, Int] =
     Statements.bulkInsertSmartGcal.updateManyWithGeneratedKeys[Int]("gcal_id")(gs.map(Statements.GcalRow.fromGcalConfig))
 
   def selectStepGcal(stepId: Int): ConnectionIO[Option[GcalConfig]] =
@@ -60,7 +58,7 @@ object GcalDao {
     object GcalRow {
       def fromGcalConfig(c: GcalConfig): GcalRow = {
         val arcs: GcalArc => Boolean =
-          c.arcs.member
+          c.arcs
 
         GcalRow(c.continuum, arcs(ArArc), arcs(CuArArc), arcs(ThArArc), arcs(XeArc), c.filter, c.diffuser, c.shutter, c.exposureTime, CoAdds(c.coadds))
       }
@@ -85,7 +83,7 @@ object GcalDao {
     }
 
     def insertStepGcal(stepId: Int, gcal: GcalConfig): Update0 = {
-      val arcs: GcalArc => Boolean = gcal.arcs.member
+      val arcs: GcalArc => Boolean = gcal.arcs
       sql"""INSERT INTO step_gcal (step_gcal_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
             VALUES ($stepId, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
          """.update

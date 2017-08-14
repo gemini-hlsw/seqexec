@@ -4,23 +4,22 @@
 package gem.dao
 package check
 
+import cats.effect.IO
+import doobie.imports._
+import doobie.scalatest.imports._
 import gem._
 import gem.enum._
 import gem.config._
 import gem.config.DynamicConfig.SmartGcalKey
 import gem.math.{ Offset, Wavelength }
-
-import doobie.imports._
-import doobie.scalatest.imports._
 import java.time.LocalDate
 import org.scalatest._
 
-import scalaz._, Scalaz._
 
 /** Trait for tests that check statement syntax and mappings. */
-trait Check extends FlatSpec with Matchers with IOLiteChecker {
+trait Check extends FlatSpec with Matchers with IOChecker {
 
-  def transactor = Transactor.fromDriverManager[IOLite](
+  def transactor = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver",
     "jdbc:postgresql:gem",
     "postgres",
@@ -45,7 +44,7 @@ trait Check extends FlatSpec with Matchers with IOLiteChecker {
     val datasetLabel     = Dataset.Label(observationId, 0)
     val dataset          = Dataset(datasetLabel, "", instant)
     val eventType        = EventType.Abort
-    val gcalLamp         = GcalContinuum.IrGreyBodyLow.left
+    val gcalLamp         = Left(GcalContinuum.IrGreyBodyLow)
     val gcalFilter       = GcalFilter.None
     val gcalDiffuser     = GcalDiffuser.Ir
     val gcalShutter      = GcalShutter.Open

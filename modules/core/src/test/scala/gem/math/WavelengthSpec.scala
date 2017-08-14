@@ -3,12 +3,11 @@
 
 package gem.math
 
+import cats.{ Eq, Order, Show }
+import cats.implicits._
 import gem.arb._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ FlatSpec, Matchers }
-
-import scalaz.{ Equal, Order, Show }
-import scalaz.std.anyVal._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 class WavelengthSpec extends FlatSpec with Matchers with PropertyChecks {
@@ -16,20 +15,20 @@ class WavelengthSpec extends FlatSpec with Matchers with PropertyChecks {
 
   "Equality" must "be natural" in {
     forAll { (a: Wavelength, b: Wavelength) =>
-      a.equals(b) shouldEqual Equal[Wavelength].equal(a, b)
+      a.equals(b) shouldEqual Eq[Wavelength].eqv(a, b)
     }
   }
 
   "Order" must "be consistent with .toAngstroms" in {
     forAll { (a: Wavelength, b: Wavelength) =>
-      Order[Int].order(a.toAngstroms, b.toAngstroms) shouldEqual
-      Order[Wavelength].order(a, b)
+      Order[Int].comparison(a.toAngstroms, b.toAngstroms) shouldEqual
+      Order[Wavelength].comparison(a, b)
     }
   }
 
   "Show" must "be natural" in {
     forAll { (a: Wavelength) =>
-      a.toString shouldEqual Show[Wavelength].shows(a)
+      a.toString shouldEqual Show[Wavelength].show(a)
     }
   }
 

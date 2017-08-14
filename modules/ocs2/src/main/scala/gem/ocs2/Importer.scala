@@ -3,15 +3,12 @@
 
 package gem.ocs2
 
+import cats.effect.IO
+import cats.implicits._
 import doobie.imports._
-
 import gem.dao._
-
 import gem.{Dataset, Log, Observation, Program, Step, User}
 import gem.config.{ StaticConfig, DynamicConfig }
-
-import scalaz.Scalaz._
-import scalaz.concurrent.Task
 
 /** Support for writing programs and observations to the database.
   */
@@ -33,7 +30,7 @@ object Importer extends DoobieClient {
     val writeDatasets: ConnectionIO[Unit] =
       for {
         sids <- lookupStepIds
-        _    <- datasetTuples(sids).traverseU { case (sid, d) => DatasetDao.insert(sid, d) }.void
+        _    <- datasetTuples(sids).traverse { case (sid, d) => DatasetDao.insert(sid, d) }.void
       } yield ()
 
     (u: User[_], l: Log[ConnectionIO]) =>
@@ -55,22 +52,22 @@ object Importer extends DoobieClient {
       for {
         _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
         _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
-        _ <- p.observations.traverseU(o => writeObservation(o, dsMap(o.id))(u, l))
+        _ <- p.observations.traverse(o => writeObservation(o, dsMap(o.id))(u, l))
       } yield ()
   }
 
-  def doImport(write: (User[_], Log[ConnectionIO]) => ConnectionIO[Unit]): Task[Unit] =
+  def doImport(write: (User[_], Log[ConnectionIO]) => ConnectionIO[Unit]): IO[Unit] =
     for {
       u <- UserDao.selectRootUser.transact(lxa)
       l <- Log.newLog[ConnectionIO]("importer", lxa).transact(lxa)
-      _ <- Task.delay(configureLogging)
+      _ <- IO(configureLogging)
       _ <- write(u, l).transact(lxa)
       _ <- l.shutdown(5 * 1000).transact(lxa) // if we're not done soon something is wrong
     } yield ()
 
-  def importObservation(o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): Task[Unit] =
+  def importObservation(o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): IO[Unit] =
     doImport(writeObservation(o, ds))
 
-  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): Task[Unit] =
+  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): IO[Unit] =
     doImport(writeProgram(p, ds))
 }

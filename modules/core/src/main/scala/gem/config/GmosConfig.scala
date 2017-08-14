@@ -3,12 +3,11 @@
 
 package gem.config
 
+import cats.Eq
 import gem.enum._
 import gem.math.{ Offset, Wavelength }
+import gem.util.Lens, Lens._
 import java.time.Duration
-
-import scalaz._
-import Scalaz._
 
 /**
  * Additional type hierarchy over the low-level GMOS enums.
@@ -34,7 +33,7 @@ object GmosConfig {
       *         `None` otherwise
       */
     def fromRowCount(rows: Int): Option[GmosShuffleOffset] =
-      (rows > 0) option new GmosShuffleOffset(rows) {}
+      if (rows > 0) Some(new GmosShuffleOffset(rows) {}) else None
 
     /** Constructs the shuffle offset with the given number of detector rows
       * provided `rows` is positive, or throws an exception if zero or negative.
@@ -48,8 +47,8 @@ object GmosConfig {
     def defaultFromDetector(detector: GmosDetector): GmosShuffleOffset =
       fromRowCount(detector.shuffleOffset).getOrElse(sys.error(s"Misconfigured GmosDetector $detector"))
 
-    implicit val EqualGmosShuffleOffset: Equal[GmosShuffleOffset] =
-      Equal.equalA
+    implicit val EqualGmosShuffleOffset: Eq[GmosShuffleOffset] =
+      Eq.fromUniversalEquals
   }
 
   /** The number of nod-and-shuffle cycles, which must be at least 1. This class
@@ -73,7 +72,7 @@ object GmosConfig {
       *         `None` otherwise
       */
     def fromCycleCount(cycles: Int): Option[GmosShuffleCycles] =
-      (cycles > 0) option new GmosShuffleCycles(cycles) {}
+      if (cycles > 0) Some(new GmosShuffleCycles(cycles) {}) else None
 
     /** Constructs the shuffle cycles with the given `cycles` count provided it
       * is positive, or else throws an exception if 0 or negative.
@@ -81,8 +80,8 @@ object GmosConfig {
     def unsafeFromCycleCount(cycles: Int): GmosShuffleCycles =
       fromCycleCount(cycles).getOrElse(sys.error(s"Expecting positive shuffle cycles, not $cycles"))
 
-    implicit val EqualGmosShuffleCycles: Equal[GmosShuffleCycles] =
-      Equal.equalA
+    implicit val EqualGmosShuffleCycles: Eq[GmosShuffleCycles] =
+      Eq.fromUniversalEquals
   }
 
   // TODO: there are many ways to misconfigure Nod And Shuffle.  Some of these
@@ -113,8 +112,8 @@ object GmosConfig {
         GmosShuffleCycles.Default
       )
 
-    implicit val EqualGmosNodAndShuffle: Equal[GmosNodAndShuffle] =
-      Equal.equalA
+    implicit val EqualGmosNodAndShuffle: Eq[GmosNodAndShuffle] =
+      Eq.fromUniversalEquals
   }
 
   /** GMOS custom ROI entry definition. */
@@ -166,14 +165,17 @@ object GmosConfig {
   object GmosCustomRoiEntry {
 
     def fromDescription(xMin: Short, yMin: Short, xRange: Short, yRange: Short): Option[GmosCustomRoiEntry] =
-      ((xMin > 0) && (yMin > 0) && (xRange > 0) && (yRange > 0)) option new GmosCustomRoiEntry(xMin, yMin, xRange, yRange) {}
+      if ((xMin > 0) && (yMin > 0) && (xRange > 0) && (yRange > 0))
+        Some(new GmosCustomRoiEntry(xMin, yMin, xRange, yRange) {})
+      else
+        None
 
     def unsafeFromDescription(xMin: Short, yMin: Short, xRange: Short, yRange: Short): GmosCustomRoiEntry =
       fromDescription(xMin, yMin, xRange, yRange)
         .getOrElse(sys.error(s"All custom ROI fields must be > 0 in GmosCustomRoi.unsafeFromDefinition($xMin, $yMin, $xRange, $yRange)"))
 
-    implicit val EqualGmosCustomRoiEntry: Equal[GmosCustomRoiEntry] =
-      Equal.equalA
+    implicit val EqualGmosCustomRoiEntry: Eq[GmosCustomRoiEntry] =
+      Eq.fromUniversalEquals
   }
 
   /** Shared static configuration for both GMOS-N and GMOS-S.
@@ -197,10 +199,10 @@ object GmosConfig {
 
   trait GmosCommonStaticConfigLenses {
     val CustomRois: GmosCommonStaticConfig @> Set[GmosCustomRoiEntry] =
-      Lens.lensu((a, b) => a.copy(customRois = b), _.customRois)
+      Lens((a, b) => a.copy(customRois = b), _.customRois)
 
     val NodAndShuffle: GmosCommonStaticConfig @> Option[GmosNodAndShuffle] =
-      Lens.lensu((a, b) => a.copy(nodAndShuffle = b), _.nodAndShuffle)
+      Lens((a, b) => a.copy(nodAndShuffle = b), _.nodAndShuffle)
   }
 
   /** Parameters that determine GMOS CCD readout.
