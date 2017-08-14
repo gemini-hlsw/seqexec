@@ -180,6 +180,7 @@ object SmartGcalImporter extends DoobieClient {
       io.file.readAll[IO](new File(dir, fileName(instFilePrefix, l)).toPath, 4096)
           .through(text.utf8Decode)
           .through(text.lines)
+          .filter(_.trim.nonEmpty)
           .map(_.split(',').map(_.trim).toList)
           .map(parseLine(_, l, parser))
 
