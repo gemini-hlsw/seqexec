@@ -104,7 +104,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     */
   def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val logger = Logger.getLogger(getClass.getName)
-    logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
+    logger.info(s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode")
 
     val builder = BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
