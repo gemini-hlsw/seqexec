@@ -5,7 +5,7 @@ package gem.ocs2
 
 import Decoders._
 
-import cats._, cats.effect.IO, cats.implicits._
+import cats.effect.IO, cats.implicits._
 
 import gem.{Dataset, Observation, Program, Step }
 import gem.config.{ StaticConfig, DynamicConfig }
@@ -68,7 +68,7 @@ final class ImportServer(ocsHost: String) {
   }
 
   def importProgram(pidStr: String): IO[Response[IO]] = {
-    val checkId = MonadError[Either[Throwable, ?], Throwable].catchNonFatal(Program.Id.unsafeFromString(pidStr))
+    val checkId = Either.catchOnly[IllegalArgumentException](Program.Id.unsafeFromString(pidStr))
                     .leftMap(_ => badRequest(pidStr, "program"))
     checkId.as { fetchDecodeAndStore[Prog](pidStr, Importer.importProgram) }.merge
   }

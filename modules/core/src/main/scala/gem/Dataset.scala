@@ -3,10 +3,11 @@
 
 package gem
 
-import cats.{ MonadError, Order, Show }
+import cats.{ Order, Show }
 import cats.implicits._
 import gem.imp.TimeInstances._
 import java.time.Instant
+import mouse.all._
 
 /**
  * A labeled, timestamped data file.
@@ -36,7 +37,7 @@ object Dataset {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          MonadError[Either[Throwable, ?], Throwable].catchNonFatal(b.drop(1).toInt).toOption.flatMap { n =>
+          b.drop(1).parseInt.toOption.flatMap { n =>
             Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
           }
       }
