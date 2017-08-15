@@ -4,35 +4,37 @@
 package gem
 
 import cats.{ Eq, Show }
-import cats.implicits._
+import cats.kernel.laws._
+import cats.tests.CatsSuite
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class ObservationIdSpec extends FlatSpec with Matchers with PropertyChecks {
+final class ObservationIdSpec extends CatsSuite {
   import ArbObservation._
 
-  "Equality" must "be natural" in {
+  // Laws
+  checkAll("Observation.Id", OrderLaws[Observation.Id].order)
+
+  test("Equality must be natural") {
     forAll { (a: Observation.Id, b: Observation.Id) =>
       a.equals(b) shouldEqual Eq[Observation.Id].eqv(a, b)
     }
   }
 
-  it must "act pairwise" in {
+  test("Equalty must act pairwise") {
     forAll { (a: Observation.Id, b: Observation.Id) =>
       Eq[Program.Id].eqv(a.pid, b.pid) &&
       Eq[Int].eqv(a.index, b.index) shouldEqual Eq[Observation.Id].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: Observation.Id) =>
       a.toString shouldEqual Show[Observation.Id].show(a)
     }
   }
 
-  ".format" should "reparse" in {
+  test(".format must reparse") {
     forAll { (a: Observation.Id) =>
       Observation.Id.fromString(a.format) shouldEqual Some(a)
     }
