@@ -9,7 +9,7 @@ import cats.instances.long._
 import cats.syntax.eq._
 
 /**
- * Exact angles represented as integral microarcseconds. These values form an Abelian group over
+ * Exact angles represented as integral microarcseconds. These values form a commutative group over
  * addition, where the inverse is reflection around the 0-180° axis. The subgroup of angles where
  * integral microarcseconds correspond with clock microseconds (i.e., where they are evenly
  * divisible by 15 microarcseconds) is represented by the HourAgle subtype.
@@ -209,8 +209,8 @@ object Angle {
 
 
 /**
- * Exact hour angles represented as integral microseconds. These values form an Abelian group over
- * addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
+ * Exact hour angles represented as integral microseconds. These values form a commutative group
+ * over addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
  * integral Angles where microarcseconds are evenly divisible by 15.
  * @see The helpful [[https://en.wikipedia.org/wiki/Hour_angle Wikipedia]] article.
  */
