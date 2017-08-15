@@ -7,8 +7,11 @@ package arb
 import gem.math.{ Angle, Offset }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbOffset {
+  import ArbAngle._
+
   implicit val arbOffsetP: Arbitrary[Offset.P] =
     Arbitrary(
       Gen.chooseNum(0, 10000).map(mas => Offset.P(Angle.fromMilliarcseconds(mas)))
@@ -26,6 +29,15 @@ trait ArbOffset {
         q <- arbitrary[Offset.Q]
       } yield Offset(p, q)
     }
+
+  implicit val cogOffsetP: Cogen[Offset.P] =
+    Cogen[Angle].contramap(_.toAngle)
+
+  implicit val cogOffsetQ: Cogen[Offset.Q] =
+    Cogen[Angle].contramap(_.toAngle)
+
+  implicit val cogOffset: Cogen[Offset] =
+    Cogen[(Offset.P, Offset.Q)].contramap(o => (o.p, o.q))
 
 }
 object ArbOffset extends ArbOffset

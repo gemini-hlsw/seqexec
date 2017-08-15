@@ -3,42 +3,44 @@
 
 package gem.math
 
-import cats.{ Eq, Order, Show }
-import cats.implicits._
+import cats.tests.CatsSuite
+import cats.{ Eq, Show, Order }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class WavelengthSpec extends FlatSpec with Matchers with PropertyChecks {
+final class WavelengthSpec extends CatsSuite {
   import ArbWavelength._
 
-  "Equality" must "be natural" in {
+  // Laws
+  checkAll("Wavelength", OrderLaws[Wavelength].eqv)
+
+  test("Equality must be natural") {
     forAll { (a: Wavelength, b: Wavelength) =>
       a.equals(b) shouldEqual Eq[Wavelength].eqv(a, b)
     }
   }
 
-  "Order" must "be consistent with .toAngstroms" in {
+  test("Order must be consistent with .toAngstroms") {
     forAll { (a: Wavelength, b: Wavelength) =>
       Order[Int].comparison(a.toAngstroms, b.toAngstroms) shouldEqual
       Order[Wavelength].comparison(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: Wavelength) =>
       a.toString shouldEqual Show[Wavelength].show(a)
     }
   }
 
-  "Conversion to angstroms" must "be invertable" in {
+  test("Conversion to angstroms must be invertable") {
     forAll { (a: Wavelength) =>
       Wavelength.fromAngstroms(a.toAngstroms) shouldEqual Some(a)
     }
   }
 
-  "Construction from an arbitrary Int" must "not allow negative values" in {
+  test("Construction from an arbitrary Int must not allow negative values") {
     forAll { (n: Int) =>
       Wavelength.fromAngstroms(n).isDefined shouldEqual n >= 0
     }
