@@ -19,5 +19,8 @@ trait ArbObservation {
       } yield Observation.Id(pid, num)
     }
 
+  implicit val cogObservationId: Cogen[Observation.Id] =
+    Cogen[(ProgramId, Int)].contramap(oid => (oid.pid, oid.index))
+
 }
 object ArbObservation extends ArbObservation

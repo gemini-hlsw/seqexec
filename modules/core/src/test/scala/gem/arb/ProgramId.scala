@@ -62,5 +62,8 @@ trait ArbProgramId {
       )
     }
 
+  implicit val cogProgramId: Cogen[ProgramId] =
+    Cogen[String].contramap(_.format)
+
 }
 object ArbProgramId extends ArbProgramId
