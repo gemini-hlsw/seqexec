@@ -3,7 +3,8 @@
 
 package gem.math
 
-import cats.{ Eq, Monoid, Show }
+import cats.{ Eq, Show }
+import cats.kernel.CommutativeGroup
 import cats.instances.long._
 import cats.syntax.eq._
 
@@ -143,11 +144,12 @@ object Angle {
   def fromDoubleRadians(rad: Double): Angle =
     fromDoubleDegrees(rad.toDegrees)
 
-  /** Angle is an Abelian group, but monoid is the best we can do for now. */
-  implicit val AngleMonoid: Monoid[Angle] =
-    new Monoid[Angle] {
+  /** Angle forms a commutative group. */
+  implicit val AngleCommutativeGroup: CommutativeGroup[Angle] =
+    new CommutativeGroup[Angle] {
       val empty: Angle = Angle0
       def combine(a: Angle, b: Angle) = a + b
+      def inverse(a: Angle) = -a
     }
 
   implicit val AngleShow: Show[Angle] =
@@ -307,11 +309,12 @@ object HourAngle {
       hours.toLong        * 1000L * 1000L * 60L * 60L
     )
 
-  /** HourAngle is an Abelian group (a subgroup of Angle), but monoid is the best we can do for now. */
-  implicit val HourAngleMonoid: Monoid[HourAngle] =
-    new Monoid[HourAngle] {
+  /** HourAngle forms a commutative group. */
+  implicit val AngleCommutativeGroup: CommutativeGroup[HourAngle] =
+    new CommutativeGroup[HourAngle] {
       val empty: HourAngle = HourAngle0
       def combine(a: HourAngle, b: HourAngle) = a + b
+      def inverse(a: HourAngle) = -a
     }
 
   implicit val HourAngleShow: Show[HourAngle] =

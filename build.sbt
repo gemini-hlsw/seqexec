@@ -180,10 +180,11 @@ lazy val core = crossProject
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel"           %%% "cats-core" % catsVersion,
-      "com.chuusai"             %%% "shapeless" % shapelessVersion,
-      "org.tpolecat"            %%% "atto-core" % attoVersion,
-      "com.github.benhutchison" %%% "mouse"     % mouseVersion
+      "org.typelevel"           %%% "cats-core"    % catsVersion,
+      "org.typelevel"           %%% "cats-testkit" % catsVersion % "test",
+      "com.chuusai"             %%% "shapeless"    % shapelessVersion,
+      "org.tpolecat"            %%% "atto-core"    % attoVersion,
+      "com.github.benhutchison" %%% "mouse"        % mouseVersion
     )
   )
   .jsSettings(
