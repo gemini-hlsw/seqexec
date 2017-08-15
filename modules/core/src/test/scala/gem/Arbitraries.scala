@@ -32,6 +32,9 @@ trait Arbitraries extends gem.config.Arbitraries  {
       )
     }
 
+  implicit val cogLocation: Cogen[Location] =
+    Cogen[String].contramap(_.toString)
+
   // Generator of valid observation/program titles.  The schema doesn't support
   // titles longer than 255 characters and postgres doesn't want to see char 0.
   val genTitle: Gen[String] =
