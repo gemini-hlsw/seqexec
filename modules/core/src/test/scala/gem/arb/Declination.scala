@@ -7,12 +7,16 @@ package arb
 import gem.math.{ Angle, Declination }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbDeclination {
   import ArbAngle._
 
   implicit val arbDeclination: Arbitrary[Declination] =
     Arbitrary(arbitrary[Angle].map(Declination.fromAngleWithCarry(_)._1))
+
+  implicit val cogDeclination: Cogen[Declination] =
+    Cogen[Angle].contramap(_.toAngle)
 
 }
 object ArbDeclination extends ArbDeclination
