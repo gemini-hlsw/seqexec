@@ -5,12 +5,8 @@ package gem
 
 import cats.{ Eq, Order }
 import cats.kernel.laws._
-import cats.tests.CatsSuite
-
-// import cats._, cats.implicits._
 import cats.kernel.Comparison.{ GreaterThan => GT, LessThan => LT, EqualTo => EQ }
-// import org.scalatest.prop.PropertyChecks
-// import org.scalatest.{FlatSpec, Matchers}
+import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 final class LocationSpec extends CatsSuite with Arbitraries {
