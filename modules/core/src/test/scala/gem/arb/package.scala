@@ -16,4 +16,8 @@ package object arb {
 
   }
 
+  // This isn't in scalacheck for whatever reason
+  implicit def mapCogen[A: Cogen, B: Cogen]: Cogen[Map[A, B]] =
+    Cogen[List[(A, B)]].contramap(_.toList)
+
 }

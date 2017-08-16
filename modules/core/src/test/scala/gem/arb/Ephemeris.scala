@@ -15,7 +15,7 @@ trait ArbEphemeris {
   import ArbTime._
   import Ephemeris.Element
 
-  implicit val ArbElement: Arbitrary[Element] =
+  implicit val arbElement: Arbitrary[Element] =
     Arbitrary {
       for {
         t  <- arbitrary[Instant]
@@ -23,13 +23,16 @@ trait ArbEphemeris {
       } yield (t, cs)
     }
 
-  implicit val ArbEphemeris: Arbitrary[Ephemeris] =
+  implicit val arbEphemeris: Arbitrary[Ephemeris] =
     Arbitrary {
       for {
         len <- choose(0, 100)
         es  <- listOfN(len, arbitrary[Element])
       } yield Ephemeris(es: _*)
     }
+
+  implicit val cogEphemeris: Cogen[Ephemeris] =
+    Cogen[Map[Instant, Coordinates]].contramap(_.toMap)
 
 }
 object ArbEphemeris extends ArbEphemeris
