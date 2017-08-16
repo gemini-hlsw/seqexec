@@ -201,14 +201,14 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       updated(value.copy(_1 = value._1.withSite(site), _3 = site))
 
     case ShowStep(s, i) =>
-      if (value._1.instrumentSequences.focus.sequence().exists(_.id === s)) {
+      if (value._1.instrumentSequences.focus.sequence.exists(_.id === s)) {
         updated(value.copy(_1 = value._1.showStep(i)))
       } else {
         noChange
       }
 
     case UnShowStep(instrument) =>
-      if (value._1.instrumentSequences.focus.sequence().exists(_.metadata.instrument == instrument)) {
+      if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
         updated(value.copy(_1 = value._1.unshowStep))
       } else {
         noChange
@@ -501,14 +501,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
     zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
-      case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence().map(s => (s.id, s.status)))
+      case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)))
     }
 
   private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
 
   def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
     statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndObserverFocus(status.isLogged, tab.sequence().map(_.metadata.name), i, tab.sequence().map(_.id), tab.sequence().flatMap(_.metadata.observer))
+      case (status, (tab, _)) => StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer))
     }
 
   def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
@@ -519,7 +519,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTableFocus])] =
     statusReader.zip(instrumentTab(i)).zoom {
       case (status, (tab, _)) =>
-        (status, tab.sequence().map { sequence =>
+        (status, tab.sequence.map { sequence =>
           StepsTableFocus(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
         })
     }
@@ -527,7 +527,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
     statusReader.zip(instrumentTab(i)).zoom {
       case (status, (tab, _)) =>
-        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence().map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
+        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
     }
 
   // Reader for a specific sequence if available
