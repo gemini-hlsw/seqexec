@@ -3,6 +3,7 @@
 
 package edu.gemini.seqexec.web.client.semanticui.elements.label
 
+import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -14,6 +15,7 @@ object Label {
     color  : Option[String] = None,
     tag    : Boolean = false,
     basic  : Boolean = false,
+    size   : Size = Size.NotSized,
     icon   : Option[Icon] = None)
 
   private val component = ScalaComponent.builder[Props]("Label")
@@ -22,8 +24,15 @@ object Label {
       <.label(
         ^.cls := "ui label",
         ^.classSet(
-          "basic" -> p.basic,
-          "tag"   -> p.tag
+          "basic"   -> p.basic,
+          "tag"     -> p.tag,
+          "tiny"    -> (p.size == Size.Tiny),
+          "mini"    -> (p.size == Size.Mini),
+          "small"   -> (p.size == Size.Small),
+          "large"   -> (p.size == Size.Large),
+          "big"     -> (p.size == Size.Big),
+          "huge"    -> (p.size == Size.Huge),
+          "massive" -> (p.size == Size.Massive)
         ),
         p.color.map(u => ^.cls := u).whenDefined,
         ^.htmlFor :=? p.htmlFor,
