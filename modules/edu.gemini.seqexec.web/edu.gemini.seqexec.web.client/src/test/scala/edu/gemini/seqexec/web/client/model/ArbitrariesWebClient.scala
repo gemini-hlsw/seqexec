@@ -33,14 +33,14 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
         i   <- arbitrary[Instrument]
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[Option[SequenceView]]
-      } yield SequenceTab(i, RefTo(new RootModelR(sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))))), idx)
+      } yield SequenceTab(i, RefTo(new RootModelR(sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))))), None, idx)
     }
 
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =
     Arbitrary {
       for {
         s <- Gen.nonEmptyListOf(arbitrary[SequenceTab])
-        if s.exists(_.sequence().isDefined)
+        if s.exists(_.sequence.isDefined)
       } yield {
         val sequences = NonEmptyList(s.head, s.tail: _*)
         SequencesOnDisplay(sequences.toZipper)

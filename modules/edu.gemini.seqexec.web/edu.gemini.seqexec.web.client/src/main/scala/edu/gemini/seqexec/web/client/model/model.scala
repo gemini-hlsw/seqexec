@@ -33,7 +33,7 @@ object SectionVisibilityState {
 
 case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
   // Returns the current sequence or if empty the last completed one
-  // This must be a def since it calls to deferrence RefTo
+  // This must be a def since it will do a call to dereference a RefTo
   def sequence: Option[SequenceView] = currentSequence().orElse(completedSequence)
 }
 
