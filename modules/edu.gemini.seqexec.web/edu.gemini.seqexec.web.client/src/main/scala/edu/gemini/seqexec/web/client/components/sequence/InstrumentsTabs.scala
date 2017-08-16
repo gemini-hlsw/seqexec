@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite}
-import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
@@ -69,8 +69,6 @@ object InstrumentTab {
             .onVisible { (x: String) =>
               val instrument = ctx.props.site.instruments.list.toList.find(_.shows === x)
               val updateModelCB = (ctx.props.t().idState, instrument) match {
-                case (Some((id, _)), Some(i)) =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, id.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
                 case (_, Some(i))             =>
                   ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
                 case _                        =>

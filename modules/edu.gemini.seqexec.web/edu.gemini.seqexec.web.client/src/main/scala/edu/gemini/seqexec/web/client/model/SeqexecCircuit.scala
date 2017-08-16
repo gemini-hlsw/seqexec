@@ -48,7 +48,7 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
       // the page maybe not in sync with the tabs. Let's fix that
       value match {
         case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
-          effectOnly(Effect(Future(SelectToDisplay(s))))
+          effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
         case _ =>
           noChange
       }
@@ -57,7 +57,7 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
       // We'll select the sequence currently running and show the correct url
       value match {
         case Root | InstrumentPage(_, None) =>
-          updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectToDisplay(s))))
+          updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
         case InstrumentPage(_, Some(id))    =>
           effectOnly(Effect(Future(SelectIdToDisplay(id))))
       }
@@ -193,10 +193,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       val seq = SeqexecCircuit.sequenceRef(id)
       updated(value.copy(_1 = value._1.focusOnSequence(seq)))
 
-    case SelectToDisplay(s) =>
-      val ref = SeqexecCircuit.sequenceRef(s.id)
-      updated(value.copy(_1 = value._1.focusOnSequence(ref)))
-
     case Initialize(site) =>
       updated(value.copy(_1 = value._1.withSite(site), _3 = site))
 
@@ -213,6 +209,9 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       } else {
         noChange
       }
+
+    case RememberCompleted(s) =>
+      updated(value.copy(_1 = value._1.markCompleted(s)))
 
   }
 }
@@ -373,7 +372,8 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
-      updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+      val rememberCompleted = Effect(Future(sv.queue.find(_.status == SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
+      updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
 
     case ServerMessage(s: ObserverUpdated) =>
       updated(value.copy(sequences = filterSequences(s.view)))

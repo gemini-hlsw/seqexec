@@ -55,7 +55,7 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
   def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
-    // Replace the sequence for the instrument and focus
+    // Replace the sequence for the instrument or the completed sequence
     val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s)))
     copy(instrumentSequences = q | instrumentSequences)
   }
@@ -75,6 +75,12 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def instrument(i: Instrument): (SequenceTab, Boolean) =
     // The getOrElse shouldn't be called as we have an element per instrument
     instrumentSequences.withFocus.toStream.find(_._1.instrument === i).getOrElse((SequenceTab.empty, false))
+
+  // We'll set the passed SequenceView as completed for the given instruments
+  def markCompleted(completed: SequenceView): SequencesOnDisplay = {
+    val q = instrumentSequences.findZ(s => s.instrument === completed.metadata.instrument).map(_.modify(_.copy(completedSequence = completed.some)))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
 }
 
 /**
