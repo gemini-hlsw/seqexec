@@ -62,7 +62,7 @@ object SequenceTabContent {
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val InstrumentStatusFocus(instrument, active, id) = p.p()
+      val InstrumentStatusFocus(instrument, active, id, _) = p.p()
       <.div(
         ^.cls := "ui bottom attached tab segment",
         ^.classSet(

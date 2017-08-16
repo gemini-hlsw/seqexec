@@ -37,6 +37,10 @@ object InstrumentTab {
       val hasError = status.exists(SequenceState.isError)
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
+      val tabTitle = tab.runningStep match {
+        case Some((current, total)) => s"${~sequenceId} - ${current + 1}/$total"
+        case _                      => ~sequenceId
+      }
       val icon = status.flatMap {
         case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
         case SequenceState.Completed => IconCheckmark.some
@@ -57,7 +61,7 @@ object InstrumentTab {
         SeqexecStyles.errorTab.when(hasError),
         dataTab := instrument.shows,
         IconAttention.copyIcon(color = Some("red")).when(hasError),
-        sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument.shows)
+        sequenceId.fold(instrument.shows: VdomNode){ _ => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(tabTitle, color = color, icon = icon)))}
       )
     }.componentDidMount(ctx =>
       Callback {

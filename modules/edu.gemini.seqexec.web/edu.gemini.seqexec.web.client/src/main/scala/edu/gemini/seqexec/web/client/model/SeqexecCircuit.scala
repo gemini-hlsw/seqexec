@@ -454,7 +454,7 @@ case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails]
 case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
 case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)]) extends UseValueEq
+case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
 case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
 case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
 case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
@@ -501,7 +501,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
     zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
-      case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)))
+      case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
     }
 
   private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
