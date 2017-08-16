@@ -7,12 +7,16 @@ package arb
 import gem.math.{ HourAngle, RightAscension }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbRightAscension {
   import ArbAngle._
 
   implicit val arbRightAscension: Arbitrary[RightAscension] =
     Arbitrary(arbitrary[HourAngle].map(RightAscension.fromHourAngle))
+
+  implicit val cogRightAscension: Cogen[RightAscension] =
+    Cogen[HourAngle].contramap(_.toHourAngle)
 
 }
 object ArbRightAscension extends ArbRightAscension

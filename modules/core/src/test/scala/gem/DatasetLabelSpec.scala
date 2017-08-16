@@ -3,40 +3,38 @@
 
 package gem
 
-import cats.{ Eq, Order, Show }
-import cats.implicits._
+import cats.tests.CatsSuite
+import cats.{ Eq, Show }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-class DatasetLabelSpec extends FlatSpec with Matchers with PropertyChecks {
+final class DatasetLabelSpec extends CatsSuite {
   import ArbDataset._
 
-  // Compilation test
-  protected val a1 = implicitly[Order[Dataset.Label]]
-  protected val a2 = implicitly[Show[Dataset.Label]]
+  // Laws
+  checkAll("DatasetLabel", OrderLaws[Dataset.Label].order)
 
-  "Equality" must "be natural" in {
+  test("Equality must be natural") {
     forAll { (a: Dataset.Label, b: Dataset.Label) =>
       a.equals(b) shouldEqual Eq[Dataset.Label].eqv(a, b)
     }
   }
 
-  it must "operate pairwise" in {
+  test("Equality must operate pairwise") {
     forAll { (a: Dataset.Label, b: Dataset.Label) =>
       Eq[Observation.Id].eqv(a.observationId, b.observationId) &&
       Eq[Int].eqv(a.index, b.index) shouldEqual Eq[Dataset.Label].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: Dataset.Label) =>
       a.toString shouldEqual Show[Dataset.Label].show(a)
     }
   }
 
-  ".format" should "reparse" in {
+  test(".format should reparse") {
     forAll { (a: Dataset.Label) =>
       Dataset.Label.fromString(a.format) shouldEqual Some(a)
     }

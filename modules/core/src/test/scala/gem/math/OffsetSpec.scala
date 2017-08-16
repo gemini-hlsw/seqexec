@@ -3,73 +3,42 @@
 
 package gem.math
 
-import cats.{ Eq, Show, Monoid }
+import cats.tests.CatsSuite
+import cats.{ Eq, Show }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class OffsetSpec extends FlatSpec with Matchers with PropertyChecks {
+final class OffsetSpec extends CatsSuite {
   import ArbOffset._
 
-  // Compilation test
-  protected val a0 = implicitly[Monoid[Offset]]
-  protected val a1 = implicitly[Show[Offset]]
-  protected val a2 = implicitly[Eq[Offset]]
+  // Laws
+  checkAll("Offset", GroupLaws[Offset].commutativeGroup)
+  checkAll("Offset", OrderLaws[Offset].eqv)
 
-  "Equality" must "be natural" in {
+  test("Equality must be natural") {
     forAll { (a: Offset, b: Offset) =>
       a.equals(b) shouldEqual Eq[Offset].eqv(a, b)
     }
   }
 
-  it must "operate pairwise" in {
+  test("it must operate pairwise") {
     forAll { (a: Offset, b: Offset) =>
       Eq[Offset.P].eqv(a.p, b.p) &&
       Eq[Offset.Q].eqv(a.q, b.q) shouldEqual Eq[Offset].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: Offset) =>
       a.toString shouldEqual Show[Offset].show(a)
     }
   }
 
-  "Conversion to components" must "be invertable" in {
+  test("Conversion to components must be invertable") {
     forAll { (o: Offset) =>
       val (p, q) = (o.p, o.q)
       Offset(p, q) shouldEqual o
-    }
-  }
-
-  "Offset forms an Abelian Group over addition. It" must "be associative" in {
-    forAll { (o: Offset, b: Offset, c: Offset) =>
-      (o + b) + c shouldEqual o + (b + c)
-    }
-  }
-
-  it must "be commutative" in {
-    forAll { (o: Offset, b: Offset) =>
-      o + b shouldEqual b + o
-    }
-  }
-
-  it must "have a left identity" in {
-    forAll { (o: Offset) =>
-      o + Offset.Zero shouldEqual o
-    }
-  }
-
-  it must "have a right identity" in {
-    forAll { (o: Offset) =>
-      Offset.Zero + o shouldEqual o
-    }
-  }
-
-  it must "have an inverse" in {
-    forAll { (o: Offset) =>
-      o + (-o) shouldEqual Offset.Zero
     }
   }
 

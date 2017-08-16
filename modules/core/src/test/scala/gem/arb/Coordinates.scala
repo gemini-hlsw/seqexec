@@ -7,6 +7,7 @@ package arb
 import gem.math.{ RightAscension, Declination, Coordinates }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbCoordinates {
   import ArbRightAscension._
@@ -19,6 +20,9 @@ trait ArbCoordinates {
         dec <- arbitrary[Declination]
       } yield Coordinates(ra, dec)
     }
+
+  implicit val cogCoordinates: Cogen[Coordinates] =
+    Cogen[(RightAscension, Declination)].contramap(cs => (cs.ra, cs.dec))
 
 }
 object ArbCoordinates extends ArbCoordinates

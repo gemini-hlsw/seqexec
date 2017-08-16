@@ -21,7 +21,7 @@ trait ArbDataset {
       } yield Dataset.Label(oid, idx)
     }
 
-  implicit val adbDataset: Arbitrary[Dataset] =
+  implicit val arbDataset: Arbitrary[Dataset] =
     Arbitrary {
       for {
         lab <- arbitrary[Dataset.Label]
@@ -29,6 +29,12 @@ trait ArbDataset {
         ts  <- arbitrary[Instant]
       } yield Dataset(lab, fn, ts)
     }
+
+  implicit val cogLabel: Cogen[Dataset.Label] =
+    Cogen[(Observation.Id, Int)].contramap(l => (l.observationId, l.index))
+
+  implicit val cogDataset: Cogen[Dataset] =
+    Cogen[(Dataset.Label, String, Instant)].contramap(ds => (ds.label, ds.filename, ds.timestamp))
 
 }
 object ArbDataset extends ArbDataset

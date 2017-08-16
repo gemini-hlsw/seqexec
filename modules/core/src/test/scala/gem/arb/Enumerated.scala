@@ -12,5 +12,8 @@ trait ArbEnumerated {
   implicit def arbEnumerated[A](implicit en: Enumerated[A]): Arbitrary[A] =
     Arbitrary(oneOf(en.all))
 
+  implicit def cogEnumerated[A](implicit en: Enumerated[A]): Cogen[A] =
+    Cogen[String].contramap(en.tag)
+
 }
 object ArbEnumerated extends ArbEnumerated

@@ -3,37 +3,40 @@
 
 package gem.math
 
+import cats.tests.CatsSuite
 import cats.{ Eq, Show }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
+final class CoordinatesSpec extends CatsSuite {
   import ArbCoordinates._
   import ArbRightAscension._
   import ArbDeclination._
   import ArbAngle._
 
-  "Equality" must "be natural" in {
+  // Laws
+  checkAll("Coordinates", OrderLaws[Coordinates].eqv)
+
+  test("Equality must be natural") {
     forAll { (a: Coordinates, b: Coordinates) =>
       a.equals(b) shouldEqual Eq[Coordinates].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: Coordinates) =>
       a.toString shouldEqual Show[Coordinates].show(a)
     }
   }
 
-  "offsetWithCarry" must "be consistent with offset" in {
+  test("offsetWithCarry must be consistent with offset") {
     forAll { (a: Coordinates, dRA: HourAngle, dDec: Angle) =>
       a.offset(dRA, dDec) shouldEqual a.offsetWithCarry(dRA, dDec)._1
     }
   }
 
-  it must "be invertable" in {
+  test("offsetWithCarry must be invertable") {
     forAll { (a: Coordinates, dRA: HourAngle, dDec: Angle) =>
       a.offsetWithCarry(dRA, dDec) match {
         case (cs, false) => cs.offset(-dRA, -dDec) shouldEqual a
@@ -42,40 +45,40 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  "diff" must "be consistent with offset" in {
+  test("diff must be consistent with offset") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val (dRA, dDec) = a diff b
       a.offset(dRA, dDec) shouldEqual b
     }
   }
 
-  it must "be consistent with offsetWithCarry, and never carry" in {
+  test("diff must be consistent with offsetWithCarry, and never carry") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val (dRA, dDec) = a diff b
       a.offsetWithCarry(dRA, dDec).shouldEqual((b, false))
     }
   }
 
-  "angularDistance" must "be in [0, 180°]" in {
+  test("angularDistance must be in [0, 180°]") {
     forAll { (a: Coordinates, b: Coordinates) =>
       a.angularDistance(b).toMicroarcseconds should be <= Angle.Angle180.toMicroarcseconds
     }
   }
 
-  it must "be zero between any point and itself" in {
+  test("angularDistance must be zero between any point and itself") {
     forAll { (c: Coordinates) =>
       c.angularDistance(c) shouldEqual Angle.Angle0
     }
   }
 
-  it must "be symmetric to within 1µas" in {
+  test("angularDistance must be symmetric to within 1µas") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = a.angularDistance(b) - b.angularDistance(a)
       Δ.toSignedMicroarcseconds.abs should be <= 1L
     }
   }
 
-  it must "be exactly 180° between the poles, regardless of RA" in {
+  test("angularDistance must be exactly 180° between the poles, regardless of RA") {
     forAll { (ra1: RA, ra2: RA) =>
       val s = Coordinates(ra1, Dec.Min)
       val n = Coordinates(ra2, Dec.Max)
@@ -83,7 +86,7 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  it must "be exactly 90° between either pole and any point on the equator, regardless of RA" in {
+  test("angularDistance must be exactly 90° between either pole and any point on the equator, regardless of RA") {
     forAll { (ra1: RA, ra2: RA, dec: Dec, b: Boolean) =>
       val pole  = Coordinates(ra1, if (b) Dec.Min else Dec.Max)
       val point = Coordinates(ra2, Dec.Zero)
@@ -92,7 +95,7 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  it must "equal any offset in declination from either pole, regardless of RA, to within 1µas" in {
+  test("angularDistance must equal any offset in declination from either pole, regardless of RA, to within 1µas") {
     forAll { (ra1: RA, ra2: RA, dec: Dec, b: Boolean) =>
       val pole = Coordinates(ra1, if (b) Dec.Min else Dec.Max)
       val Δdec = dec.toAngle + Angle.Angle90 // [0, 180]
@@ -102,7 +105,7 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
   }
 
 
-  it must "equal any offset in right ascension along the equator, to within 1µas" in {
+  test("angularDistance must equal any offset in right ascension along the equator, to within 1µas") {
     forAll { (ra: RA, ha: HourAngle) =>
       val a = Coordinates(ra, Dec.Zero)
       val b = a.offset(ha, Angle.Angle0)
@@ -112,21 +115,21 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  "interpolate" should "result in angular distance of 0° from `a` for factor 0.0, within 1µas" in {
+  test("interpolate should result in angular distance of 0° from `a` for factor 0.0, within 1µsec (15µas)") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = a.angularDistance(a.interpolate(b, 0.0))
-      Δ.toSignedMicroarcseconds.abs should be <= 1L
+      Δ.toSignedMicroarcseconds.abs should be <= 15L
     }
   }
 
-  it should "result in angular distance of 0° from `b` for factor 1.0, within 1µas" in {
+  test("interpolate should result in angular distance of 0° from `b` for factor 1.0, within 1µsec (15µas)") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = b.angularDistance(a.interpolate(b, 1.0))
-      Δ.toSignedMicroarcseconds.abs should be <= 1L
+      Δ.toSignedMicroarcseconds.abs should be <= 15L
     }
   }
 
-  it should "be consistent with fractional angular separation, to within 1µsec (15 µas)" in
+  test("interpolate should be consistent with fractional angular separation, to within 1µsec (15 µas)") {
     forAll { (c1: Coordinates, c2: Coordinates) =>
       val sep = c1.angularDistance(c2)
       val Δs  = (-1.0 to 2.0 by 0.1).map { f =>
@@ -135,5 +138,6 @@ class CoordinatesSpec extends FlatSpec with Matchers with PropertyChecks {
       }
       Δs.filter(_ > 15L) shouldBe empty
     }
+  }
 
 }

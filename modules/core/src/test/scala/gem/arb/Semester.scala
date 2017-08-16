@@ -21,5 +21,8 @@ trait ArbSemester {
       } yield Semester(year, half)
     }
 
+  implicit val cogSemester: Cogen[Semester] =
+    Cogen[(Year, Half)].contramap(s => (s.year, s.half))
+
 }
 object ArbSemester extends ArbSemester

@@ -3,22 +3,27 @@
 
 package gem
 
+import gem.arb._
 import gem.enum._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
+import cats.tests.CatsSuite
+import cats.kernel.laws._
 import scala.reflect.ClassTag
 
-class EnumeratedSpec extends FlatSpec with Matchers with PropertyChecks {
+final class EnumeratedSpec extends CatsSuite {
+  import ArbEnumerated._
 
   def checkEnumeration[A](
     implicit en: Enumerated[A],
              ct: ClassTag[A]
-  ): Unit =
-    s"Ordering for ${ct.runtimeClass.getName}" should "be canonical" in {
+  ): Unit = {
+    val name = ct.runtimeClass.getSimpleName
+    checkAll(name, OrderLaws[A].order)
+    test(s"$name.enumerated.canonical") {
       val sorted   = en.all
       val shuffled = scala.util.Random.shuffle(sorted)
       shuffled.sorted(en.toOrdering) shouldEqual sorted
     }
+  }
 
   // Check a handful of enums.
   checkEnumeration[EventType]

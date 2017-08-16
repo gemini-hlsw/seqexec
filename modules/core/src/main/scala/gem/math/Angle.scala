@@ -3,12 +3,13 @@
 
 package gem.math
 
-import cats.{ Eq, Monoid, Show }
+import cats.{ Eq, Show }
+import cats.kernel.CommutativeGroup
 import cats.instances.long._
 import cats.syntax.eq._
 
 /**
- * Exact angles represented as integral microarcseconds. These values form an Abelian group over
+ * Exact angles represented as integral microarcseconds. These values form a commutative group over
  * addition, where the inverse is reflection around the 0-180° axis. The subgroup of angles where
  * integral microarcseconds correspond with clock microseconds (i.e., where they are evenly
  * divisible by 15 microarcseconds) is represented by the HourAgle subtype.
@@ -143,11 +144,12 @@ object Angle {
   def fromDoubleRadians(rad: Double): Angle =
     fromDoubleDegrees(rad.toDegrees)
 
-  /** Angle is an Abelian group, but monoid is the best we can do for now. */
-  implicit val AngleMonoid: Monoid[Angle] =
-    new Monoid[Angle] {
+  /** Angle forms a commutative group. */
+  implicit val AngleCommutativeGroup: CommutativeGroup[Angle] =
+    new CommutativeGroup[Angle] {
       val empty: Angle = Angle0
       def combine(a: Angle, b: Angle) = a + b
+      def inverse(a: Angle) = -a
     }
 
   implicit val AngleShow: Show[Angle] =
@@ -207,8 +209,8 @@ object Angle {
 
 
 /**
- * Exact hour angles represented as integral microseconds. These values form an Abelian group over
- * addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
+ * Exact hour angles represented as integral microseconds. These values form a commutative group
+ * over addition, where the inverse is reflection around the 0-12h axis. This is a subgroup of the
  * integral Angles where microarcseconds are evenly divisible by 15.
  * @see The helpful [[https://en.wikipedia.org/wiki/Hour_angle Wikipedia]] article.
  */
@@ -307,11 +309,12 @@ object HourAngle {
       hours.toLong        * 1000L * 1000L * 60L * 60L
     )
 
-  /** HourAngle is an Abelian group (a subgroup of Angle), but monoid is the best we can do for now. */
-  implicit val HourAngleMonoid: Monoid[HourAngle] =
-    new Monoid[HourAngle] {
+  /** HourAngle forms a commutative group. */
+  implicit val AngleCommutativeGroup: CommutativeGroup[HourAngle] =
+    new CommutativeGroup[HourAngle] {
       val empty: HourAngle = HourAngle0
       def combine(a: HourAngle, b: HourAngle) = a + b
+      def inverse(a: HourAngle) = -a
     }
 
   implicit val HourAngleShow: Show[HourAngle] =

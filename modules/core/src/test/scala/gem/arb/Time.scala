@@ -60,5 +60,11 @@ trait ArbTime {
   implicit val arbInstant: Arbitrary[Instant] =
     Arbitrary(arbitrary[ZonedDateTime].map(_.toInstant))
 
+  implicit val cogInstant: Cogen[Instant] =
+    Cogen[(Long, Int)].contramap(t => (t.getEpochSecond, t.getNano))
+
+  implicit val cogYear: Cogen[Year] =
+    Cogen[Int].contramap(_.getValue)
+
 }
 object ArbTime extends ArbTime

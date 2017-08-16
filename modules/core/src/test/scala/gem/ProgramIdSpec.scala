@@ -4,56 +4,59 @@
 package gem
 
 import cats.{ Eq, Show }
+import cats.kernel.laws._
+import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
 import java.time._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
+final class ProgramIdSpec extends CatsSuite {
   import ProgramId._
   import ArbEnumerated._
   import ArbProgramId._
   import ArbTime._
 
-  "Equality" must "be natural" in {
+  // Laws
+  checkAll("Program.Id", OrderLaws[Program.Id].order)
+
+  test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>
       a.equals(b) shouldEqual Eq[ProgramId].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: ProgramId) =>
       a.toString shouldEqual Show[ProgramId].show(a)
     }
   }
 
-  "Science" should "reparse" in {
+  test("Science must reparse") {
     forAll { (sid: Science) =>
       Science.fromString(sid.format) shouldEqual Some(sid)
     }
   }
 
-  it should "never reparse into a Nonstandard, even if we try" in {
+  test("Science should never reparse into a Nonstandard, even if we try") {
     forAll { (sid: Science) =>
       Nonstandard.fromString(sid.format) shouldEqual None
     }
   }
 
-  "Daily" should "reparse" in {
+  test("Daily must reparse") {
     forAll { (did: Daily) =>
       Daily.fromString(did.format) shouldEqual Some(did)
     }
   }
 
-  it should "never reparse into a Nonstandard, even if we try" in {
+  test("Daily should never reparse into a Nonstandard, even if we try") {
     forAll { (did: Science) =>
       Daily.fromString(did.format) shouldEqual None
     }
   }
 
-  it should "find the correct observing day given a site and instant" in {
+  test("Daily should find the correct observing day given a site and instant") {
     forAll { (site: Site, ldt: LocalDateTime, dpt: DailyProgramType) =>
       val zdt = ZonedDateTime.of(ldt, site.timezone)
       val did = Daily.fromSiteAndInstant(site, zdt.toInstant, dpt)
@@ -63,37 +66,37 @@ class ProgramIdSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  it should "be consistent re: .start and .fromSiteAndInstant" in {
+  test("Daily should be consistent re: .start and .fromSiteAndInstant") {
     forAll { (did: Daily) =>
       Daily.fromSiteAndInstant(did.site, did.start.toInstant, did.dailyProgramType) shouldEqual did
     }
   }
 
-  it should "be consistent re: .end and .fromSiteAndInstant" in {
+  test("Daily should be consistent re: .end and .fromSiteAndInstant") {
     forAll { (did: Daily) =>
       Daily.fromSiteAndInstant(did.site, did.end.toInstant, did.dailyProgramType) shouldEqual did
     }
   }
 
-  it should "have a consistent program type and daily program type" in {
+  test("Daily should have a consistent program type and daily program type") {
     forAll { (did: Daily) =>
       did.dailyProgramType.toProgramType shouldEqual did.programType
     }
   }
 
-  it should "have a consistent date and semester" in {
+  test("Daily should have a consistent date and semester") {
     forAll { (did: Daily) =>
       Semester.fromLocalDate(did.localDate) shouldEqual did.semester
     }
   }
 
-  "Nonstandard" should "reparse" in {
+  test("Nonstandard must reparse") {
     forAll { (nid: Nonstandard) =>
       Nonstandard.fromString(nid.format) shouldEqual Some(nid)
     }
   }
 
-  "ProgramId" should "reparse" in {
+  test("ProgramId must reparse") {
     forAll { (pid: ProgramId) =>
       ProgramId.fromString(pid.format) shouldEqual Some(pid)
     }

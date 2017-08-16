@@ -3,36 +3,38 @@
 
 package gem.math
 
-import cats.{ Eq, Order, Show }
-import cats.implicits._
+import cats.tests.CatsSuite
+import cats.{ Eq, Show, Order }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class RightAscensionSpec extends FlatSpec with Matchers with PropertyChecks {
+final class RightAscensionSpec extends CatsSuite {
   import ArbRightAscension._
 
-  "Equality" must "be natural" in {
+  // Laws
+  checkAll("RightAscension", OrderLaws[RightAscension].order)
+
+  test("Equality must be natural") {
     forAll { (a: RightAscension, b: RightAscension) =>
       a.equals(b) shouldEqual Eq[RightAscension].eqv(a, b)
     }
   }
 
-  "Order" must "be consistent with .toHourAngle.toMicroarcseconds" in {
+  test("Order must be consistent with .toHourAngle.toMicroarcseconds") {
     forAll { (a: RightAscension, b: RightAscension) =>
       Order[Long].comparison(a.toHourAngle.toMicroarcseconds, b.toHourAngle.toMicroarcseconds) shouldEqual
       Order[RightAscension].comparison(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: RightAscension) =>
       a.toString shouldEqual Show[RightAscension].show(a)
     }
   }
 
-  "Conversion to HourAngle" must "be invertable" in {
+  test("Conversion to HourAngle must be invertable") {
     forAll { (a: RightAscension) =>
       RightAscension.fromHourAngle(a.toHourAngle) shouldEqual a
     }

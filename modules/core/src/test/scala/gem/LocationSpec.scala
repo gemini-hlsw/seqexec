@@ -3,25 +3,29 @@
 
 package gem
 
-import cats._, cats.implicits._
+import cats.{ Eq, Order }
+import cats.kernel.laws._
 import cats.kernel.Comparison.{ GreaterThan => GT, LessThan => LT, EqualTo => EQ }
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
-class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbitraries {
-  "Construction" should "trim trailing min values from Middle" in {
+final class LocationSpec extends CatsSuite with Arbitraries {
+
+  // Laws
+  checkAll("Location", OrderLaws[Location].order)
+
+  test("Construction should trim trailing min values from Middle") {
     forAll { (l: Location.Middle) =>
       val t = l.toList
       t shouldEqual t.reverse.dropWhile(_ == Int.MinValue).reverse
     }
   }
 
-  it should "produce Beginning if given an empty list" in {
+  test("Construction should produce Beginning if given an empty list") {
     Location.fromFoldable(List.empty[Int]) shouldEqual Location.Beginning
   }
 
-  it should "produce beginning if given all Int.MinValue" in {
+  test("Construction should produce beginning if given all Int.MinValue") {
     forAll { (i: Int) =>
       val count = (i % 10).abs
       val mins  = List.fill(count)(Int.MinValue)
@@ -29,19 +33,19 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  "EQ" should "agree with ==" in {
+  test("EQ should agree with ==") {
     forAll { (l0: Location, l1: Location) =>
       Order[Location].eqv(l0, l1) shouldEqual (l0 == l1)
     }
   }
 
-  "Find" should "return an empty list if the two positions are the same" in {
+  test("Find should return an empty list if the two positions are the same") {
     forAll { (l: Location) =>
       Location.find(10, l, l) shouldEqual List.empty[Location.Middle]
     }
   }
 
-  it should "return an empty list if the first position is >= the second" in {
+  test("Find should return an empty list if the first position is >= the second") {
     forAll { (l0: Location, l1: Location) =>
       val res = Order[Location].comparison(l0, l1) match {
         case LT => Location.find(10, l1, l0)
@@ -51,14 +55,14 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  it should "find nothing if asked for a negative or 0 count" in {
+  test("Find should find nothing if asked for a negative or 0 count") {
     forAll { (i: Int, l0: Location, l1: Location) =>
       val negOrZero = -(i.abs)
       Location.find(negOrZero, l0, l1) shouldEqual List.empty[Location.Middle]
     }
   }
 
-  it should "find an arbitrary number of Locations between unequal positions" in {
+  test("Find should find an arbitrary number of Locations between unequal positions") {
     forAll { (i: Int, l0: Location, l1: Location) =>
       val count = (i % 10000).abs + 1
       Order[Location].comparison(l0, l1) match {
@@ -69,7 +73,7 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  it should "produce a sorted list of Location.Middle" in {
+  test("Find should produce a sorted list of Location.Middle") {
     forAll { (i: Int, l0: Location, l1: Location) =>
       val count = (i % 10000).abs + 1
       val res   = Order[Location].comparison(l0, l1) match {
@@ -81,7 +85,7 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  it should "grow the position list if necessary" in {
+  test("Find should grow the position list if necessary") {
     Location.find(1, Location(1, 2), Location(1,3)) match {
       case res :: Nil =>
         res.toList match {
@@ -97,7 +101,7 @@ class LocationSpec extends FlatSpec with Matchers with PropertyChecks with Arbit
     }
   }
 
-  it should "evenly space values it finds" in {
+  test("Find should evenly space values it finds") {
     val Max   = BigInt(Int.MaxValue)
     val Min   = BigInt(Int.MinValue)
     val Radix = Max + Min.abs + BigInt(1)

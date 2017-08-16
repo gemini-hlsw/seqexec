@@ -133,7 +133,7 @@ object Semester {
    * `Ordering` instance for Scala standard library.
    * @see SemesterOrder
    */
-  implicit val SemesterOrding: scala.math.Ordering[Semester] =
+  implicit val SemesterOrdering: scala.math.Ordering[Semester] =
     SemesterOrder.toOrdering
 
   implicit val SemesterShow: Show[Semester] =

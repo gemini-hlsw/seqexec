@@ -3,71 +3,40 @@
 
 package gem.math
 
-import cats.{ Eq, Show, Monoid }
+import cats.tests.CatsSuite
+import cats.{ Eq, Show }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ FlatSpec, Matchers }
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class OffsetQSpec extends FlatSpec with Matchers with PropertyChecks {
+final class OffsetQSpec extends CatsSuite {
   import ArbOffset._
 
-  // Compilation test
-  protected val a0 = implicitly[Monoid[Offset.Q]]
-  protected val a1 = implicitly[Show[Offset.Q]]
-  protected val a2 = implicitly[Eq[Offset.Q]]
+  // Laws
+  checkAll("Offset.Q", GroupLaws[Offset.Q].commutativeGroup)
+  checkAll("Offset.Q", OrderLaws[Offset.Q].eqv)
 
-  "Equality" must "be natural" in {
+  test("Equality must be natural") {
     forAll { (a: Offset.Q, b: Offset.Q) =>
       a.equals(b) shouldEqual Eq[Offset.Q].eqv(a, b)
     }
   }
 
-  it must "be consistent with .toAngle" in {
+  test("Equality be consistent with .toAngle") {
     forAll { (a: Offset.Q, b: Offset.Q) =>
       Eq[Angle].eqv(a.toAngle, b.toAngle) shouldEqual Eq[Offset.Q].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: Offset.Q) =>
       a.toString shouldEqual Show[Offset.Q].show(a)
     }
   }
 
-  "Conversion to angle" must "be invertable" in {
-    forAll { (q: Offset.Q) =>
-      Offset.Q(q.toAngle) shouldEqual q
-    }
-  }
-
-  "Offset.Q forms an Abelian Group over addition. It" must "be associative" in {
-    forAll { (q: Offset.Q, b: Offset.Q, c: Offset.Q) =>
-      (q + b) + c shouldEqual q + (b + c)
-    }
-  }
-
-  it must "be commutative" in {
-    forAll { (q: Offset.Q, b: Offset.Q) =>
-      q + b shouldEqual b + q
-    }
-  }
-
-  it must "have a left identity" in {
-    forAll { (q: Offset.Q) =>
-      q + Offset.Q.Zero shouldEqual q
-    }
-  }
-
-  it must "have a right identity" in {
-    forAll { (q: Offset.Q) =>
-      Offset.Q.Zero + q shouldEqual q
-    }
-  }
-
-  it must "have an inverse" in {
-    forAll { (q: Offset.Q) =>
-      q + (-q) shouldEqual Offset.Q.Zero
+  test("Conversion to angle must be invertable") {
+    forAll { (p: Offset.Q) =>
+      Offset.Q(p.toAngle) shouldEqual p
     }
   }
 

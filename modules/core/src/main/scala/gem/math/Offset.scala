@@ -4,7 +4,8 @@
 package gem
 package math
 
-import cats.{ Eq, Monoid, Show }
+import cats.{ Eq, Show }
+import cats.kernel.CommutativeGroup
 import cats.implicits._
 
 /** Angular offset with P and Q components. */
@@ -26,11 +27,12 @@ object Offset {
   val Zero: Offset =
     Offset(P.Zero, Q.Zero)
 
-  /** Offset forms an Abelian group but Monoid is the best we can do right now. */
-  implicit val MonoidOffset: Monoid[Offset] =
-    new Monoid[Offset] {
+  /** Offset forms a commutative group. */
+  implicit val CommutativeGroupOffset: CommutativeGroup[Offset] =
+    new CommutativeGroup[Offset] {
       val empty: Offset = Zero
       def combine(a: Offset, b: Offset) = a + b
+      def inverse(a: Offset) = -a
     }
 
   implicit val ShowOffset: Show[Offset] =
@@ -59,11 +61,12 @@ object Offset {
     val Zero: P =
       P(Angle.Angle0)
 
-    /** P forms an Abelian group but Monoid is the best we can do right now. */
-    implicit val MonoidP: Monoid[P] =
-      new Monoid[P] {
+    /** P forms a commutative group. */
+    implicit val CommutativeGroupP: CommutativeGroup[P] =
+      new CommutativeGroup[P] {
         val empty: P = Zero
         def combine(a: P, b: P) = a + b
+        def inverse(a: P) = -a
       }
 
     implicit val ShowP: Show[P] =
@@ -93,11 +96,12 @@ object Offset {
     val Zero: Q =
       Q(Angle.Angle0)
 
-    /** Q forms an Abelian group but Monoid is the best we can do right now. */
-    implicit val MonoidQ: Monoid[Q] =
-      new Monoid[Q] {
+    /** Q forms a commutative group. */
+    implicit val CommutativeGroupQ: CommutativeGroup[Q] =
+      new CommutativeGroup[Q] {
         val empty: Q = Zero
         def combine(a: Q, b: Q) = a + b
+        def inverse(a: Q) = -a
       }
 
     implicit val ShowQ: Show[Q] =

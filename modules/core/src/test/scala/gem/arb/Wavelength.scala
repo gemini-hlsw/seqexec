@@ -7,11 +7,15 @@ package arb
 import gem.math.Wavelength
 import org.scalacheck._
 import org.scalacheck.Gen._
+import org.scalacheck.Cogen._
 
 trait ArbWavelength {
 
-  implicit def arbWavelength: Arbitrary[Wavelength] =
+  implicit val arbWavelength: Arbitrary[Wavelength] =
     Arbitrary(choose(0, Int.MaxValue).map(Wavelength.unsafeFromAngstroms(_)))
+
+  implicit val cogWavelength: Cogen[Wavelength] =
+    Cogen[Int].contramap(_.toAngstroms)
 
 }
 object ArbWavelength extends ArbWavelength

@@ -3,41 +3,39 @@
 
 package gem.math
 
-import cats.{ Eq, Monoid, Show }
-import cats.implicits._
+import cats.tests.CatsSuite
+import cats.{ Eq, Show }
+import cats.kernel.laws._
 import gem.arb._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
-class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks {
+final class HourAngleSpec extends CatsSuite {
   import ArbAngle._
 
-  // Compilation test
-  protected val a0 = implicitly[Monoid[HourAngle]]
-  protected val a1 = implicitly[Eq[HourAngle]]
-  protected val a2 = implicitly[Show[HourAngle]]
+  // Laws
+  checkAll("HourAngle", GroupLaws[HourAngle].commutativeGroup)
+  checkAll("HourAngle", OrderLaws[HourAngle].eqv)
 
-  "Equality" must "be natural" in {
+  test("Equality must be natural") {
     forAll { (a: HourAngle, b: HourAngle) =>
       a.equals(b) shouldEqual Eq[HourAngle].eqv(a, b)
     }
   }
 
-  it must "be consistent with .toMicroseconds" in {
+  test("Equality must be consistent with .toMicroseconds") {
     forAll { (a: HourAngle, b: HourAngle) =>
       Eq[Long].eqv(a.toMicroseconds, b.toMicroseconds) shouldEqual
       Eq[HourAngle].eqv(a, b)
     }
   }
 
-  "Show" must "be natural" in {
+  test("Show must be natural") {
     forAll { (a: HourAngle) =>
       a.toString shouldEqual Show[HourAngle].show(a)
     }
   }
 
-  "Conversion to HMS" must "be invertable" in {
+  test("Conversion to HMS must be invertable") {
     forAll { (a: HourAngle) =>
       val hms = a.toHMS
       HourAngle.fromHMS(
@@ -50,55 +48,25 @@ class HourAngleSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  "Widening to Angle" must "be invertable" in {
+  test("Widening to Angle must be invertable") {
     forAll { (a: HourAngle) =>
       a.toAngle.toHourAngle shouldEqual a
     }
   }
 
-  it must "also work for toHourAngleExact" in {
+  test("Widening to Angle must also work for toHourAngleExact") {
     forAll { (a: HourAngle) =>
       a.toAngle.toHourAngleExact shouldEqual Some(a)
     }
   }
 
-  "Flipping" must "be invertable" in {
+  test("Flipping must be invertable") {
     forAll { (a: HourAngle) =>
       a.flip.flip shouldEqual a
     }
   }
 
-  "HourAngle forms an Abelian Group over addition. It" must "be associative" in {
-    forAll { (a: HourAngle, b: HourAngle, c: HourAngle) =>
-      (a + b) + c shouldEqual a + (b + c)
-    }
-  }
-
-  it must "be commutative" in {
-    forAll { (a: HourAngle, b: HourAngle) =>
-      a + b shouldEqual b + a
-    }
-  }
-
-  it must "have a left identity" in {
-    forAll { (a: HourAngle) =>
-      a + HourAngle.HourAngle0 shouldEqual a
-    }
-  }
-
-  it must "have a right identity" in {
-    forAll { (a: HourAngle) =>
-      HourAngle.HourAngle0 + a shouldEqual a
-    }
-  }
-
-  it must "have an inverse" in {
-    forAll { (a: HourAngle) =>
-      a + (-a) shouldEqual HourAngle.HourAngle0
-    }
-  }
-
-  "Construction" must "normalize [non-pathological] angles" in {
+  test("Construction must normalize [non-pathological] angles") {
     forAll { (a: HourAngle, n: Int) =>
       val factor   = n % 10
       val msIn24 = 24L * 60L * 60L * 1000L * 1000L

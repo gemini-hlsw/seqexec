@@ -7,6 +7,7 @@ package arb
 import gem.math.{ Angle, HourAngle }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbAngle {
 
@@ -15,6 +16,12 @@ trait ArbAngle {
 
   implicit def arbHourAngle: Arbitrary[HourAngle] =
     Arbitrary(arbitrary[Double].map(HourAngle.fromDoubleHours))
+
+  implicit def cogAngle: Cogen[Angle] =
+    Cogen[Double].contramap(_.toDoubleDegrees)
+
+  implicit def cogHourAngle: Cogen[HourAngle] =
+    Cogen[Double].contramap(_.toDoubleDegrees)
 
 }
 object ArbAngle extends ArbAngle
