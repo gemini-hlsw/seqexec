@@ -65,7 +65,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaCommonVersion = "2.12.2"
+    val scalaCommonVersion = "2.12.3"
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
     val scalaJSVersion     = scalaCommonVersion
 
@@ -80,7 +80,7 @@ object Settings {
     val scalaJQuery  = "1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.13"
+    val scalaZ       = "7.2.15"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
@@ -89,7 +89,7 @@ object Settings {
     val argonaut     = "6.2"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
-    val jwt          = "0.12.1"
+    val jwt          = "0.14.0"
     val slf4j        = "1.7.25"
     val knobs        = "4.0.31-scalaz-7.2"
     val monocle      = "1.4.0"
@@ -97,7 +97,7 @@ object Settings {
     // test libraries
     val scalaTest             = "3.0.3"
     val scalaCheck            = "1.13.5"
-    val scalaCheckShapeless   = "1.1.5"
+    val scalaCheckShapeless   = "1.1.6"
 
     // Pure JS libraries
     val reactJS        = "15.5.4"
