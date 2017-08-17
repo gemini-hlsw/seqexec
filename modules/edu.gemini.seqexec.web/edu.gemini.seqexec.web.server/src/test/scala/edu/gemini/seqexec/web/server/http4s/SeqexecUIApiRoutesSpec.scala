@@ -73,7 +73,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
       // We cannot be that precise but let's assume expiration is further than 7 hours and less than 9 hours into the future
       val minExp = Instant.now().plus(7, ChronoUnit.HOURS)
       val maxExp = Instant.now().plus(9, ChronoUnit.HOURS)
-      cookieOpt.flatMap(_.cookie.expires).map(i => i.isAfter(minExp) && i.isBefore(maxExp)) shouldBe Some(true)
+      cookieOpt.flatMap(_.cookie.expires).map(i => i.toInstant.isAfter(minExp) && i.toInstant.isBefore(maxExp)) shouldBe Some(true)
     }
 
   "SeqexecUIApiRoutes logout" should
