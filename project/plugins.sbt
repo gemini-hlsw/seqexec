@@ -1,5 +1,8 @@
 // Gives support for Scala.js compilation
-addSbtPlugin("org.scala-js"      % "sbt-scalajs"            % "0.6.19")
+val scalaJSVersion =
+  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.19")
+
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion)
 
 // sbt revolver lets launching applications from the sbt console
 addSbtPlugin("io.spray"          % "sbt-revolver"           % "0.8.0")
