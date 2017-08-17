@@ -8,6 +8,7 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.semanticui.elements.label.{FormLabel, Label}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
@@ -174,10 +175,7 @@ object SequenceControl {
           val runContinueTooltip = s"${isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
           val runContinueButton = s"${isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
           List(
-            <.h3(
-              ^.cls := "ui green header",
-              "Sequence complete"
-            ).when(status === SequenceState.Completed),
+            Label(Label.Props("Sequence Complete", color = "green".some, icon = IconCheckmark.some, size = Size.Big)).when(status === SequenceState.Completed),
             // Sync button
             controlButton(IconRefresh, "purple", $.runState(requestSync(id)), !isLogged || !isConnected || s.runRequested || s.syncRequested, "Sync sequence", "Sync")
               .when(status === SequenceState.Idle),

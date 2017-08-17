@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite}
-import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.model.{InstrumentStatusFocus, NavigateTo, SelectInstrumentToDisplay}
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit
 import edu.gemini.seqexec.web.client.semanticui._
@@ -37,6 +37,10 @@ object InstrumentTab {
       val hasError = status.exists(SequenceState.isError)
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
+      val tabTitle = tab.runningStep match {
+        case Some((current, total)) => s"${~sequenceId} - ${current + 1}/$total"
+        case _                      => ~sequenceId
+      }
       val icon = status.flatMap {
         case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
         case SequenceState.Completed => IconCheckmark.some
@@ -57,7 +61,7 @@ object InstrumentTab {
         SeqexecStyles.errorTab.when(hasError),
         dataTab := instrument.shows,
         IconAttention.copyIcon(color = Some("red")).when(hasError),
-        sequenceId.map(id => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(id, color = color, icon = icon)))).getOrElse(instrument.shows)
+        sequenceId.fold(instrument.shows: VdomNode){ _ => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(tabTitle, color = color, icon = icon)))}
       )
     }.componentDidMount(ctx =>
       Callback {
@@ -69,8 +73,6 @@ object InstrumentTab {
             .onVisible { (x: String) =>
               val instrument = ctx.props.site.instruments.list.toList.find(_.shows === x)
               val updateModelCB = (ctx.props.t().idState, instrument) match {
-                case (Some((id, _)), Some(i)) =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, id.some))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
                 case (_, Some(i))             =>
                   ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
                 case _                        =>

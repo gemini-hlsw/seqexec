@@ -31,16 +31,20 @@ object SectionVisibilityState {
   implicit val eq = Equal.equalA[SectionVisibilityState]
 }
 
-case class SequenceTab(instrument: Instrument, sequence: RefTo[Option[SequenceView]], stepConfigDisplayed: Option[Int])
+case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
+  // Returns the current sequence or if empty the last completed one
+  // This must be a def since it will do a call to dereference a RefTo
+  def sequence: Option[SequenceView] = currentSequence().orElse(completedSequence)
+}
 
 object SequenceTab {
-  val empty = SequenceTab(F2, RefTo(new RootModelR(None)), None)
+  val empty = SequenceTab(F2, RefTo(new RootModelR(None)), None, None)
 }
 
 // Model for the tabbed area of sequences
 case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def withSite(site: SeqexecSite): SequencesOnDisplay =
-    SequencesOnDisplay(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None)).toZipper)
+    SequencesOnDisplay(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None)).toZipper)
 
   // Display a given step on the focused sequence
   def showStep(i: Int): SequencesOnDisplay =
@@ -51,8 +55,8 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
   def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
-    // Replace the sequence for the instrument and focus
-    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(sequence = s)))
+    // Replace the sequence for the instrument or the completed sequence
+    val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s)))
     copy(instrumentSequences = q | instrumentSequences)
   }
 
@@ -62,15 +66,21 @@ case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     copy(instrumentSequences = q | instrumentSequences)
   }
 
-  def isAnySelected: Boolean = instrumentSequences.toStream.exists(_.sequence().isDefined)
+  def isAnySelected: Boolean = instrumentSequences.toStream.exists(_.sequence.isDefined)
 
   // Is the id on the sequences area?
   def idDisplayed(id: SequenceId): Boolean =
-    instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence().exists(_.id === id)}.isDefined
+    instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence.exists(_.id === id)}.isDefined
 
   def instrument(i: Instrument): (SequenceTab, Boolean) =
     // The getOrElse shouldn't be called as we have an element per instrument
     instrumentSequences.withFocus.toStream.find(_._1.instrument === i).getOrElse((SequenceTab.empty, false))
+
+  // We'll set the passed SequenceView as completed for the given instruments
+  def markCompleted(completed: SequenceView): SequencesOnDisplay = {
+    val q = instrumentSequences.findZ(s => s.instrument === completed.metadata.instrument).map(_.modify(_.copy(completedSequence = completed.some)))
+    copy(instrumentSequences = q | instrumentSequences)
+  }
 }
 
 /**
@@ -80,7 +90,7 @@ object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
   // We need to initialize the model with some instruments but it will be shortly replaced by the actual list
-  val empty = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None)).toZipper)
+  val empty = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None, None)).toZipper)
 }
 
 case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)

@@ -28,7 +28,6 @@ case class LoggedIn(u: UserDetails) extends Action
 case object Logout extends Action
 
 // Action to select a sequence for display
-case class SelectToDisplay(s: SequenceView) extends Action
 case class SelectIdToDisplay(id: SequenceId) extends Action
 case class SelectInstrumentToDisplay(i: Instrument) extends Action
 
@@ -45,6 +44,7 @@ case class RunSyncFailed(s: SequenceId) extends Action
 
 case class ShowStep(s: SequenceId, i: Int) extends Action
 case class UnShowStep(i: Instrument) extends Action
+case class RememberCompleted(s: SequenceView) extends Action
 
 case class AppendToLog(s: String) extends Action
 
