@@ -25,6 +25,20 @@ parallelExecution in (ThisBuild, Test) := false
 
 cancelable in Global := true
 
+// Settings to use git to define the version of the project
+enablePlugins(GitVersioning)
+
+git.useGitDescribe := true
+
+git.formattedShaVersion := git.gitHeadCommit.value map { sha => s"v$sha" }
+
+git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
+
+enablePlugins(GitBranchPrompt)
+
+//////////////
+// Projects
+//////////////
 lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .settings(commonSettings: _*)
