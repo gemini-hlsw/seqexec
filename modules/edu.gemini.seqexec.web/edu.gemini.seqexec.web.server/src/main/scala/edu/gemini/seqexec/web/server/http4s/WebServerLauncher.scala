@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import java.io.File
-import java.util.logging.Logger
+import org.log4s._
 
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.server
@@ -103,7 +103,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     * Configures and builds the web server
     */
   def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
-    val logger = Logger.getLogger(getClass.getName)
+    val logger = getLogger
     logger.info(s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode")
 
     val builder = BlazeBuilder.bindHttp(conf.port, conf.host)

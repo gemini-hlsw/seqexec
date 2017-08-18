@@ -85,7 +85,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
 
     // Settings to optimize the use of sbt-revolver
 
@@ -373,7 +373,7 @@ lazy val edu_gemini_p1backend_server = project.in(file("modules/edu.gemini.p1bac
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(Slf4jJuli, Knobs) ++ Http4s,
+    libraryDependencies ++= Seq(Knobs) ++ Logging ++ Http4s,
 
     // Settings to optimize the use of sbt-revolver
 

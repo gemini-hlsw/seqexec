@@ -64,10 +64,9 @@ trait LogInitialization extends AppBaseDir {
       b <- baseDir
       f <- readConf(b)
       _ <- makeLogDir(f._1)
-    } yield {
+    } yield
       // Load updated configuration, note the configuration is in memory and not persisted to the file
       LogManager.getLogManager.readConfiguration(new ByteArrayInputStream(f._2.getBytes(Codec.UTF8.charSet)))
-    }
 
   private def initializeLogFromClasspath: Task[Unit] = Task.delay(
     LogManager.getLogManager.readConfiguration(getClass.getClassLoader.getResourceAsStream(loggingConfigurationFileName)))

@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.server.http4s
 
-import java.util.logging.Logger
+import org.log4s._
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server
@@ -35,7 +35,7 @@ import scalaz.stream.{Exchange, Process}
 class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
 
   // Logger for client messages
-  val clientLog = Logger.getLogger("clients")
+  private[this] val clientLog = getLogger("clients")
 
   // Handles authentication
   val httpAuthentication = new Http4sAuthentication(auth)
@@ -81,7 +81,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
     case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[LogMessage] { msg =>
         // This will use the server time for the logs
-        clientLog.log(msg.level, s"Client ${req.remoteAddr}: ${msg.msg}")
+        clientLog.info(s"Client ${req.remoteAddr}: ${msg.msg}")
         // Always return ok
         Ok()
       }
