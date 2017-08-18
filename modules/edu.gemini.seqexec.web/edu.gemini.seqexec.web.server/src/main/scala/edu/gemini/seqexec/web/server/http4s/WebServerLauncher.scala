@@ -29,7 +29,6 @@ import scalaz.stream.async
 import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ProcessApp with LogInitialization {
-
   case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
   /**
@@ -57,7 +56,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
     config.map { cfg =>
-      val site = cfg.require[String]("seqexec-engine.site")
+      val site            = cfg.require[String]("seqexec-engine.site")
       val host            = cfg.require[String]("web-server.host")
       val port            = cfg.require[Int]("web-server.port")
       val insecurePort    = cfg.require[Int]("web-server.insecurePort")
@@ -128,6 +127,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     */
   override def process(args: List[String]): Process[Task, Nothing] = {
     val engineTask = for {
+      _    <- configLog // Initialize log before the engine is setup
       c    <- config
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)
     } yield SeqexecEngine(seqc)
@@ -143,7 +143,6 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
           et.eventProcess(inq).to(out.publish).run,
           // Launch web server
           for {
-            _  <- configLog
             wc <- serverConf
             ac <- authConf.run(wc)
             as <- authService.run(ac)

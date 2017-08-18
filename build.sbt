@@ -43,7 +43,7 @@ lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s
+    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Logging ++ Http4s
   )
 
 lazy val edu_gemini_web_client_facades = project
