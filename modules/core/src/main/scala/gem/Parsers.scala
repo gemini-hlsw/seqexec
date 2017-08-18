@@ -6,6 +6,7 @@ package gem
 import cats.implicits._
 import atto._, Atto._
 import gem.enum.{ Half, Site, ProgramType, DailyProgramType }
+import gem.math.Epoch
 import java.time.{ DateTimeException, Year, Month, LocalDate }
 
 
@@ -124,5 +125,19 @@ object Parsers {
       } yield (os, om, op, t)
 
   }
+
+  /** Parser for an `Epoch.Scheme`. */
+  val epochScheme: Parser[Epoch.Scheme] =
+    char('B').as(Epoch.Besselian) |
+    char('J').as(Epoch.Julian)
+
+  /** Parser for an `Epoch`. */
+  val epoch: Parser[Epoch] =
+    for {
+      scheme <- epochScheme
+      year   <- int
+      _      <- char('.')
+      frac   <- intN(3)
+    } yield scheme.fromMilliyears(year * 1000 + frac)
 
 }
