@@ -65,8 +65,8 @@ trait CookiesService {
 
   def buildCookie(token: String): Task[Cookie] =
     Task.delay {
-      Instant.now().plusSeconds(ttl)
-    }.map { exp => Cookie(name, token, path = "/".some, expires = exp.some, secure = ssl, httpOnly = true) }
+      HttpDate.fromInstant(Instant.now().plusSeconds(ttl))
+    }.map { exp => Cookie(name, token, path = "/".some, expires = exp.toOption, secure = ssl, httpOnly = true) }
 
   def loginCookie(auth: AuthenticationService, user: UserDetails): Task[Cookie] =
     auth.buildToken(user) >>= buildCookie
@@ -79,4 +79,3 @@ object CookiesService {
     override val ttl = timeToLive
   }
 }
-

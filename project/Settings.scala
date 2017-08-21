@@ -65,31 +65,30 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaCommonVersion = "2.12.2"
+    val scalaCommonVersion = "2.12.3"
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
-    val scalaJSVersion     = scalaCommonVersion
 
     // ScalaJS libraries
-    val scalaDom     = "0.9.2"
-    val scalajsReact = "1.0.1"
+    val scalaDom     = "0.9.3"
+    val scalajsReact = "1.1.0"
     val scalaCSS     = "0.5.3"
     val booPickle    = "1.2.6"
     val diode        = "1.1.2"
-    val javaTimeJS   = "0.2.1"
-    val javaLogJS    = "0.1.1"
+    val javaTimeJS   = "0.2.2"
+    val javaLogJS    = "0.1.2"
     val scalaJQuery  = "1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.13"
+    val scalaZ       = "7.2.15"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
-    val http4s       = "0.16.0a-M3"
+    val http4s       = "0.16.0a-RC1"
     val squants      = "1.3.0"
     val argonaut     = "6.2"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
-    val jwt          = "0.12.1"
+    val jwt          = "0.14.0"
     val slf4j        = "1.7.25"
     val knobs        = "4.0.31-scalaz-7.2"
     val monocle      = "1.4.0"
@@ -97,12 +96,12 @@ object Settings {
     // test libraries
     val scalaTest             = "3.0.3"
     val scalaCheck            = "1.13.5"
-    val scalaCheckShapeless   = "1.1.5"
+    val scalaCheckShapeless   = "1.1.6"
 
     // Pure JS libraries
-    val reactJS        = "15.5.4"
+    val reactJS        = "15.6.1"
     val jQuery         = "3.2.1"
-    val semanticUI     = "2.2.7"
+    val semanticUI     = "2.2.10"
     val jQueryTerminal = "0.11.2"
     val ocsVersion     = "2017101.1.3"
 

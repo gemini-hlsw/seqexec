@@ -43,7 +43,7 @@ lazy val edu_gemini_web_client_facades = project
     ))),
     libraryDependencies += JQuery.value,
     // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
 
 // Root web project
@@ -59,7 +59,7 @@ lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure)
   .jsSettings(
     libraryDependencies += JavaLogJS.value,
     // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
@@ -140,7 +140,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       JavaLogJS.value
     ) ++ ReactScalaJS.value ++ Diode.value,
     // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -181,7 +181,7 @@ lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .jsSettings(commonJSSettings)
   .jsSettings(
     // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
 
 lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
@@ -347,7 +347,7 @@ lazy val edu_gemini_p1backend_shared = (crossProject.crossType(CrossType.Pure) i
   .jsSettings(commonJSSettings)
   .jsSettings(
     // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % "0.6.18" cross CrossVersion.patch)
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
 
 lazy val edu_gemini_p1backend_shared_JVM = edu_gemini_p1backend_shared.jvm

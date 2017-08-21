@@ -10,7 +10,7 @@ import org.scalacheck.Arbitrary._
 
 // Keep the arbitraries in a separate trait to improve caching
 object SharedModelArbitraries {
-  import org.scalacheck.Shapeless._
+  import org.scalacheck.ScalacheckShapeless._
   val maxListSize = 2
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
@@ -47,4 +47,3 @@ object SharedModelArbitraries {
   implicit val conArb = implicitly[Arbitrary[Conditions]]
   implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
 }
-
