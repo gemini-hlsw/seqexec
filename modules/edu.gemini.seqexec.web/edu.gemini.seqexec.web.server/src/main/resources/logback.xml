@@ -1,9 +1,14 @@
-<configuration debug="true">
+<configuration>
 
   <if condition='property("HOSTNAME").contains("seqexec")'>
     <then>
-      <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>${randomOutputDir}/conditional.log</file>
+      <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/home/software/seqexec-ng.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+          <fileNamePattern>/home/software/seqexec-ng.%d{yyyy-MM-dd}.log</fileNamePattern>
+          <maxHistory>90</maxHistory>
+          <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
         <encoder>
           <pattern>%d %-5level %logger{35} - %msg %n</pattern>
        </encoder>
@@ -13,15 +18,15 @@
          <appender-ref ref="FILE" />
       </root>
     </then>
+    <else>
       <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
           <pattern>%d %-5level %logger{35} - %msg %n</pattern>
         </encoder>
       </appender>
-      <root>
+      <root level="DEBUG">
         <appender-ref ref="STDOUT" />
       </root>
-    <else>
     </else>
   </if>
 
