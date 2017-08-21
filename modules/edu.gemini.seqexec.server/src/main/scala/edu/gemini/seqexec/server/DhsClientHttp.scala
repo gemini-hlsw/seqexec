@@ -6,6 +6,7 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.logging.Logger
 
 import argonaut._
 import Argonaut._
@@ -17,7 +18,7 @@ import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod,
 import scala.io.Source
 import scalaz.concurrent.Task
 import scalaz.EitherT
-import scalaz._
+import scalaz.syntax.either._
 
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
@@ -128,6 +129,7 @@ object DhsClientHttp {
   * Implementation of the Dhs client that simulates a dhs without external dependencies
   */
 class DhsClientSim(date: LocalDate) extends DhsClient {
+  import DhsClientSim.Log
   private val counter = new AtomicInteger(0)
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -137,10 +139,11 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
       TrySeq(f"S${date.format(format)}S${counter.incrementAndGet()}%04d")
     })
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = SeqAction(())
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = EitherT(Task(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", ")).right))
 
 }
 
 object DhsClientSim {
+  private val Log = Logger.getLogger(getClass.getName)
   def apply(date: LocalDate): DhsClient = new DhsClientSim(date)
 }

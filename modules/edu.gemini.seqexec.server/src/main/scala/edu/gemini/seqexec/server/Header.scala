@@ -30,7 +30,7 @@ object Header {
 
   private def bundleKeywords(inst: String, ks: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = {
     val z = SeqAction(KeywordBag(StringKeyword("instrument", inst)))
-    ks.foldRight(z) { case (a,b) => b.flatMap(a) }
+    ks.foldLeft(z) { case (a,b) => a.flatMap(b) }
   }
 
   def sendKeywords(id: ImageFileId, inst: String, hs: DhsClient, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
