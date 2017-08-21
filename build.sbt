@@ -1,7 +1,7 @@
 resolvers in ThisBuild +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-lazy val circeVersion        = "0.8.0" // TODO - 0.9.0-M1
+lazy val circeVersion        = "0.9.0-M1"
 lazy val attoVersion         = "0.6.1-M1"
 lazy val catsEffectVersion   = "0.4"
 lazy val catsVersion         = "1.0.0-MF"
