@@ -18,3 +18,9 @@ addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin" % "0.8.0")
 
 // add and check headers
 addSbtPlugin("de.heikoseeberger" % "sbt-header"             % "2.0.0")
+
+// Built the version out of git
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
+
+// Avoids a warning message when starting sbt-git
+libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
