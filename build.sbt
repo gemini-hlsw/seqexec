@@ -228,11 +228,14 @@ lazy val seqexecCommonSettings = Seq(
   makeBatScripts := Seq.empty,
   // Specify a different name for the config file
   bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
+  bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
   // Launch options
   javaOptions in Universal ++= Seq(
     // -J params will be added as jvm parameters
     "-J-Xmx512m",
-    "-J-Xms256m"
+    "-J-Xms256m",
+    // Logging configuration
+    "-Dlogback.configurationFil=${app_home}/../conf/logback.xml"
   )
 ) ++ commonSettings
 
@@ -268,10 +271,9 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   .settings(
     description := "Seqexec server for local testing",
 
-    // Generate a custom logging.properties for the application
-    // For staging the log uses files and console
+    // Copy logback.xml to let users customize it on site
     mappings in Universal += {
-      val f = generateLoggingConfigTask(LogType.ConsoleAndFiles).value
+      val f = (resourceDirectory in (edu_gemini_seqexec_web_server, Compile)).value / "logback.xml"
       f -> ("conf/" + f.getName)
     },
 

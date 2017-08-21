@@ -3,7 +3,6 @@
 
 package edu.gemini.seqexec.web.server.http4s
 
-import java.io.File
 import org.log4s._
 
 import edu.gemini.seqexec.engine
@@ -37,14 +36,14 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
-  val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
+  val configurationFile: Task[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
   val defaultConfig: Task[Config] =
     knobs.loadImmutable(ClassPathResource("app.conf").required :: Nil)
 
   val fileConfig: Task[Config] = configurationFile >>= { f =>
-    knobs.loadImmutable(FileResource(f).optional :: Nil)
+    knobs.loadImmutable(FileResource(f.toFile).optional :: Nil)
   }
 
   val config: Task[Config] =

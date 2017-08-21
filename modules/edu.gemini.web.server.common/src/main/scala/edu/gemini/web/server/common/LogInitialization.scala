@@ -4,12 +4,12 @@
 package edu.gemini.web.server.common
 
 import java.io.File
+import java.nio.file.Path
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.util.logging.LogManager
 
 // import scala.io.{Codec, Source}
 // import scalaz.syntax.bind._
-// import scalaz.syntax.std.boolean._
 import scalaz.concurrent.Task
 
 trait AppBaseDir {
@@ -17,7 +17,7 @@ trait AppBaseDir {
     * Calculates the base dir of the application based on the location of "this" class jar file
     * It will throw an exception if unable to find the base dir
     */
-  def baseDir: Task[File] = Task.delay {
+  def baseDir: Task[Path] = Task.delay {
     val clazz = this.getClass
     val fileName = clazz.getResource(s"/${clazz.getName.replace(".", System.getProperty("file.separator"))}.class").getFile
 
@@ -26,40 +26,20 @@ trait AppBaseDir {
       // Find the location of the basedir relative to this class
       // it assumes the jar is in a lib dir under base
       val jarFile = new File(f).getParentFile
-      jarFile.getParentFile
+      jarFile.getParentFile.toPath
     }.getOrElse(throw new RuntimeException("Fatal! Cannot calculate the app base dir"))
   }
 }
 
 trait LogInitialization extends AppBaseDir {
-  private val loggingConfigurationFileName = "logging.properties"
+  private val loggingConfigurationFileName = "logback.xml"
 
-  def loggingConfigurationFile(baseDir: File): Task[File] = Task.delay {
-    val confDir = new File(baseDir, "conf")
+  def loggingConfigurationFile(baseDir: Path): Task[Path] = Task.delay {
+    val confDir = baseDir.resolve("conf")
 
-    new File(confDir, loggingConfigurationFileName)
+    confDir.resolve(loggingConfigurationFileName)
   }
 
-  // private def readConf(baseDir: File): Task[(File, String)] = {
-  //   def replaceLogDir(loggingConfig: File): Task[(File, String)] = Task.delay {
-  //       loggingConfig.exists.fold({
-  //         val logDir = new File(baseDir, "log")
-  //         // Replace base dir
-  //         val src = for {
-  //           l <- Source.fromFile(loggingConfig)(Codec.UTF8).getLines
-  //         } yield l.replace("{{log.dir}}", logDir.getAbsolutePath)
-  //
-  //         (logDir, src.toList.mkString("\n"))
-  //       }, throw new RuntimeException("Cannot read the logging configuration file"))
-  //     }
-  //
-  //   loggingConfigurationFile(baseDir) >>= replaceLogDir
-  // }
-  //
-  // private def makeLogDir(logDir: File): Task[Unit] = Task.delay {
-  //   (logDir.exists() || logDir.mkdirs()).fold((), throw new RuntimeException(s"Cannot create logging dir $logDir"))
-  // }
-  //
   // Send logs from JULI (e.g. ocs) to SLF4J
   private def sendJuliToSLF4J: Task[Unit] = Task.delay {
     LogManager.getLogManager().reset()
@@ -70,8 +50,8 @@ trait LogInitialization extends AppBaseDir {
   private def initializeLogFromConf: Task[Unit] =
     for {
       _ <- sendJuliToSLF4J
-      // b <- baseDir
-      // f <- readConf(b)
+      b <- baseDir
+      f <- loggingConfigurationFile(b)
       // _ <- makeLogDir(f._1)
     } yield
       // Load updated configuration, note the configuration is in memory and not persisted to the file
@@ -90,5 +70,5 @@ trait LogInitialization extends AppBaseDir {
     * try to create a dir for log files
     * It will attempt several strategies to get a usable configuration if errors are detected
     */
-  def configLog: Task[Unit] = initializeLogFromConf.or(initializeLogFromClasspath).or(defaultInitialization)
+  def configLog: Task[Unit] = initializeLogFromConf//.or(initializeLogFromClasspath).or(defaultInitialization)
 }

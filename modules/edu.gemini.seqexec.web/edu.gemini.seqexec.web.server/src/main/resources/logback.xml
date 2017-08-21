@@ -1,0 +1,28 @@
+<configuration debug="true">
+
+  <if condition='property("HOSTNAME").contains("seqexec")'>
+    <then>
+      <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${randomOutputDir}/conditional.log</file>
+        <encoder>
+          <pattern>%d %-5level %logger{35} - %msg %n</pattern>
+       </encoder>
+      </appender>
+
+      <root level="INFO">
+         <appender-ref ref="FILE" />
+      </root>
+    </then>
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%d %-5level %logger{35} - %msg %n</pattern>
+        </encoder>
+      </appender>
+      <root>
+        <appender-ref ref="STDOUT" />
+      </root>
+    <else>
+    </else>
+  </if>
+
+</configuration>

@@ -41,34 +41,9 @@ object AppsCommon {
   }
 
   /**
-    * Task to generate a logging configuration file from a template
-    */
-  def generateLoggingConfigTask(logType: LogType) = Def.task {
-    val loggingConfDestName = "logging.properties"
-    val loggingConfSrcName = logType match {
-      case LogType.Files           => "logging.files.template"
-      case LogType.ConsoleAndFiles => "logging.console_files.template"
-    }
-
-    val loggingTemplate = (baseDirectory in ThisBuild).value / "project" / "resources" / loggingConfSrcName
-    val config = IO.read(loggingTemplate).replace("{{app.name}}", name.value)
-    target.value.mkdirs()
-    val destFile = target.value / loggingConfDestName
-    println(s"Generating configuration of type $logType to ${destFile.getPath}")
-    IO.write(destFile, config)
-    destFile
-  }
-
-  /**
     * Mappings common to applications, including configuration and logging conf
     */
   lazy val deployedAppMappings = Seq(
-    // The distribution uses only log files, no console
-    mappings in Universal in packageZipTarball += {
-      val f = generateLoggingConfigTask(LogType.Files).value
-      f -> ("conf/" + f.getName)
-    },
-
     // Don't include the configuration on the jar. Instead we copy it to the conf dir
     mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) },
 
