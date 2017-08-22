@@ -122,15 +122,15 @@ final class AngleSpec extends CatsSuite {
     }
   }
 
-  test("formatDMS and unformatDMS must round-trip") {
+  test("formatDMS and parseDMS must round-trip") {
     forAll { (a: Angle) =>
-      Angle.unformatDMS(a.formatDMS) shouldEqual Some(a)
+      Angle.parseDMS(a.formatDMS) shouldEqual Some(a)
     }
   }
 
-  test("formatSignedDMS and unformatSignedDMS must round-trip") {
+  test("formatSignedDMS and parseSignedDMS must round-trip") {
     forAll { (a: Angle) =>
-      Angle.unformatSignedDMS(a.formatSignedDMS) shouldEqual Some(a)
+      Angle.parseSignedDMS(a.formatSignedDMS) shouldEqual Some(a)
     }
   }
 

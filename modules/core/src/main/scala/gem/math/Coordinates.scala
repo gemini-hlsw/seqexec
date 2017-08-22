@@ -83,7 +83,7 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
 
   /**
    * Format these [[Coordinates]] as a standard human-readable string. Invertable via
-   * `Coordinates.unformat`.
+   * `Coordinates.parse`.
    */
   def format: String =
     s"${ra.format} ${dec.format}"
@@ -100,7 +100,7 @@ object Coordinates {
   /* @group Constructors */ val NorthPole: Coordinates = Coordinates(RA.Zero, Dec.Max)
 
   /** Attempt to parse `Coordinates` from a `format`-formatted string. */
-  def unformat(s: String): Option[Coordinates] =
+  def parse(s: String): Option[Coordinates] =
     CoordinateParsers.coordinates.parseExact(s)
 
   /** @group Typeclass Instances */

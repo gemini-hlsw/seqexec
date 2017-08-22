@@ -103,13 +103,13 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
   override final def hashCode =
     toMicroarcseconds.toInt
 
-  /** Format this angle as a human-readable DMS string. Invertable via `Angle.unformatDMS`. */
+  /** Format this angle as a human-readable DMS string. Invertable via `Angle.parseDMS`. */
   def formatDMS: String =
     toDMS.format
 
   /**
    * Format this angle as a human-readable signed [180°, 180°) DMS string. Invertable via
-   * `Angle.unformatSignedDMS`.
+   * `Angle.parseSignedDMS`.
    */
   def formatSignedDMS: String =
     if (toSignedMicroarcseconds < 0) "-" + unary_-.formatDMS
@@ -160,11 +160,11 @@ object Angle {
     fromDoubleDegrees(rad.toDegrees)
 
   /** Attempt to parse an [[Angle]] from a `.formatDMS`-formatted string. */
-  def unformatDMS(s: String): Option[Angle] =
+  def parseDMS(s: String): Option[Angle] =
     AngleParsers.dms.parseExact(s) // N.B. this parser is too lenient; it should reject signed angles
 
   /** Attempt to parse an [[Angle]] from a `.formatSignedDMS`-formatted string. */
-  def unformatSignedDMS(s: String): Option[Angle] =
+  def parseSignedDMS(s: String): Option[Angle] =
     AngleParsers.dms.parseExact(s)
 
   /** Angle forms a commutative group. */
@@ -282,7 +282,7 @@ final class HourAngle private (µas: Long) extends Angle(µas) {
   def -(ha: HourAngle): HourAngle =
     HourAngle.fromMicroseconds(toMicroseconds.toLong - ha.toMicroseconds.toLong)
 
-  /** Format this angle as a human-readable HMS string. Invertable via `Angle.unformatDMS`. */
+  /** Format this angle as a human-readable HMS string. Invertable via `Angle.parseDMS`. */
   def formatHMS: String =
     toHMS.format
 
@@ -338,7 +338,7 @@ object HourAngle {
 
 
   /** Attempt to parse an [[HourAngle]] from a `.formatHMS`-formatted string. */
-  def unformatHMS(s: String): Option[HourAngle] =
+  def parseHMS(s: String): Option[HourAngle] =
     AngleParsers.hms.parseExact(s)
 
   /** HourAngle forms a commutative group. */

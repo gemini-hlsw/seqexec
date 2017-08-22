@@ -140,9 +140,9 @@ final class CoordinatesSpec extends CatsSuite {
     }
   }
 
-  test("format and unformat must round-trip") {
+  test("format and parse must round-trip") {
     forAll { (a: Coordinates) =>
-      Coordinates.unformat(a.format) shouldEqual Some(a)
+      Coordinates.parse(a.format) shouldEqual Some(a)
     }
   }
 

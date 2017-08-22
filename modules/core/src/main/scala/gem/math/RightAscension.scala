@@ -38,7 +38,7 @@ final case class RightAscension(toHourAngle: HourAngle) {
 
   /**
    * Format this [[RightAscension]] as a standard human-readable string. Invertable via
-   * `RightAscension.unformat`.
+   * `RightAscension.parse`.
    */
   def format: String =
     toHourAngle.formatHMS
@@ -58,7 +58,7 @@ object RightAscension {
     apply(ha)
 
   /** Attempt to parse a `RightAscension` from a `format`-formatted string. */
-  def unformat(s: String): Option[RightAscension] =
+  def parse(s: String): Option[RightAscension] =
     CoordinateParsers.ra.parseExact(s)
 
   /**

@@ -66,9 +66,9 @@ final class DeclinationSpec extends CatsSuite {
     }
   }
 
-  test("format and unformat must round-trip") {
+  test("format and parse must round-trip") {
     forAll { (a: Declination) =>
-      Declination.unformat(a.format) shouldEqual Some(a)
+      Declination.parse(a.format) shouldEqual Some(a)
     }
   }
 

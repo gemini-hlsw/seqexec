@@ -38,7 +38,7 @@ sealed abstract case class Declination private (toAngle: Angle) {
 
   /**
    * Format this [[Declination]] as a standard human-readable string. Invertable via
-   * `Declination.unformat`.
+   * `Declination.parse`.
    */
   def format: String =
     toAngle.formatSignedDMS
@@ -85,7 +85,7 @@ object Declination {
     fromAngle(a).getOrElse(sys.error(s"Declination out of range: $a"))
 
   /** Attempt to parse a `Declination` from a `format`-formatted string. */
-  def unformat(s: String): Option[Declination] =
+  def parse(s: String): Option[Declination] =
     CoordinateParsers.dec.parseExact(s)
 
   /**
