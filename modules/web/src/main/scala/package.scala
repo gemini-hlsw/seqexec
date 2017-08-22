@@ -3,17 +3,11 @@
 
 package gem
 
-import cats._, cats.implicits._
+import cats.implicits._
 import org.http4s._
 import org.http4s.dsl._
 
 package object web {
-
-  implicit val FunctorQueryParamDecoder: Functor[QueryParamDecoder] =
-    new Functor[QueryParamDecoder] {
-      def map[A, B](fa: QueryParamDecoder[A])(f: A => B): QueryParamDecoder[B] =
-        QueryParamDecoder.decodeBy(f)(fa)
-    }
 
   implicit class QueryParamDecoderOps[A](fa: QueryParamDecoder[A]) {
     def matcher(key: String): QueryParamDecoderMatcher[A] =
