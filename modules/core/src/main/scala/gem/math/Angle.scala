@@ -8,6 +8,8 @@ import cats.{ Eq, Show }
 import cats.kernel.CommutativeGroup
 import cats.instances.long._
 import cats.syntax.eq._
+import gem.parser.AngleParsers
+import gem.syntax.parser._
 
 /**
  * Exact angles represented as integral microarcseconds. These values form a commutative group over
@@ -159,11 +161,11 @@ object Angle {
 
   /** Attempt to parse an [[Angle]] from a `.formatDMS`-formatted string. */
   def unformatDMS(s: String): Option[Angle] =
-    Parsers.parseExact(Parsers.angle.hms)(s) // N.B. this parser is too lenient; it should reject signed angles
+    AngleParsers.hms.parseExact(s) // N.B. this parser is too lenient; it should reject signed angles
 
   /** Attempt to parse an [[Angle]] from a `.formatSignedDMS`-formatted string. */
   def unformatSignedDMS(s: String): Option[Angle] =
-    Parsers.parseExact(Parsers.angle.hms)(s)
+    AngleParsers.hms.parseExact(s)
 
   /** Angle forms a commutative group. */
   implicit val AngleCommutativeGroup: CommutativeGroup[Angle] =
@@ -337,7 +339,7 @@ object HourAngle {
 
   /** Attempt to parse an [[HourAngle]] from a `.formatHMS`-formatted string. */
   def unformatHMS(s: String): Option[HourAngle] =
-    Parsers.parseExact(Parsers.angle.hms)(s)
+    AngleParsers.hms.parseExact(s)
 
   /** HourAngle forms a commutative group. */
   implicit val AngleCommutativeGroup: CommutativeGroup[HourAngle] =

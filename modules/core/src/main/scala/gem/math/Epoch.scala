@@ -6,6 +6,8 @@ package math
 
 import cats.{ Eq, Show }
 import cats.implicits._
+import gem.parser.EpochParsers
+import gem.syntax.parser._
 import java.time._
 import scala.math.floor
 
@@ -139,7 +141,7 @@ object Epoch {
    * @group Constructors
    */
   def fromString(s: String): Option[Epoch] =
-    Parsers.parseExact(Parsers.epoch)(s)
+    EpochParsers.epoch.parseExact(s)
 
   /**
    * Parse an `Epoch` in canonical format, raising an exception on failure.

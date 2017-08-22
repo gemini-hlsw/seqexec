@@ -6,6 +6,8 @@ package math
 
 import cats.{ Order, Show }
 import cats.instances.long._
+import gem.parser.CoordinateParsers
+import gem.syntax.parser._
 
 /**
  * Celestial latitude, measured in angular distance from the celestial equator. Points north of the
@@ -84,7 +86,7 @@ object Declination {
 
   /** Attempt to parse a `Declination` from a `format`-formatted string. */
   def unformat(s: String): Option[Declination] =
-    Parsers.parseExact(Parsers.dec)(s)
+    CoordinateParsers.dec.parseExact(s)
 
   /**
    * Declinations are ordered from south to north.

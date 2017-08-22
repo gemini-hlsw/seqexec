@@ -6,6 +6,8 @@ package math
 
 import cats.{ Order, Show }
 import cats.instances.long._
+import gem.parser.CoordinateParsers
+import gem.syntax.parser._
 
 /**
  * Celestial longitude, measured eastward along the celestial equator from the vernal equinox to the
@@ -57,7 +59,7 @@ object RightAscension {
 
   /** Attempt to parse a `RightAscension` from a `format`-formatted string. */
   def unformat(s: String): Option[RightAscension] =
-    Parsers.parseExact(Parsers.ra)(s)
+    CoordinateParsers.ra.parseExact(s)
 
   /**
    * The `RightAscension` at zero degrees.

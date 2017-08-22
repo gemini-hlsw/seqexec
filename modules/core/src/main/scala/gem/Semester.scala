@@ -3,11 +3,12 @@
 
 package gem
 
-import atto._, Atto._
 import cats.{ Order, Show }
 import cats.implicits._
 import gem.enum.{ Half, Site }
 import gem.imp.TimeInstances._
+import gem.parser.SemesterParsers
+import gem.syntax.parser._
 import java.time._
 import java.time.Month._
 
@@ -118,7 +119,7 @@ object Semester {
 
   /** Parse a full-year Semester like `2009A` from a String, if possible. */
   def fromString(s: String): Option[Semester] =
-    (Parsers.semester <~ endOfInput).parseOnly(s).option
+    SemesterParsers.semester.parseExact(s)
 
   /** Parse a full-year Semester like `2009A` from a String, throwing on failure. */
   def unsafeFromString(s: String): Semester =

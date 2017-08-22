@@ -4,8 +4,10 @@
 package gem
 package math
 
-import scala.math._
 import cats._, cats.implicits._
+import gem.parser.CoordinateParsers
+import gem.syntax.parser._
+import scala.math.{ sin, cos, atan2, sqrt }
 
 /** A point in the sky, given right ascension and declination. */
 final case class Coordinates(ra: RightAscension, dec: Declination) {
@@ -99,7 +101,7 @@ object Coordinates {
 
   /** Attempt to parse `Coordinates` from a `format`-formatted string. */
   def unformat(s: String): Option[Coordinates] =
-    Parsers.parseExact(Parsers.coordinates)(s)
+    CoordinateParsers.coordinates.parseExact(s)
 
   /** @group Typeclass Instances */
   implicit val CoordinatesEqual: Eq[Coordinates] =
