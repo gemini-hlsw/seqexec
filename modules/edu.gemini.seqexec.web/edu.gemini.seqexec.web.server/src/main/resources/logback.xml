@@ -1,32 +1,53 @@
-<configuration>
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Configuration of logging for seqexec for test
+ and production. It will select the file location
+ based on the host name
+
+ File based logs are rotated daily up to 90 days
+
+ It supports auto reloading scanning every 60s
+-->
+<configuration scan="true" scanPeriod="60 seconds">
 
   <if condition='property("HOSTNAME").contains("seqexec")'>
+    <!-- Configuration when running on the test or production servers -->
     <then>
-      <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/home/software/seqexec-ng.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-          <fileNamePattern>/home/software/seqexec-ng.%d{yyyy-MM-dd}.log</fileNamePattern>
-          <maxHistory>90</maxHistory>
-          <totalSizeCap>3GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder>
-          <pattern>%d %-5level %logger{35} - %msg %n</pattern>
-       </encoder>
-      </appender>
+        <!-- Files are rotated daily for up to 90 days -->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>/gemsoft/var/log/seqexec-ng/seqexec-ng.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>/gemsoft/var/log/seqexec-ng/seqexec-ng.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>90</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+              <pattern>%d [%thread] %-5level %logger{35} - %msg %n</pattern>
+            </encoder>
+        </appender>
 
-      <root level="INFO">
-         <appender-ref ref="FILE" />
-      </root>
+        <!-- Intermediate async appender for improved performance -->
+        <appender name="ASYNC500" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>500</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <appender-ref ref="FILE" />
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="ASYNC500" />
+        </root>
     </then>
     <else>
-      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-          <pattern>%d %-5level %logger{35} - %msg %n</pattern>
-        </encoder>
-      </appender>
-      <root level="DEBUG">
-        <appender-ref ref="STDOUT" />
-      </root>
+        <!-- Configuration for development and local deployment -->
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d [%thread] %-5level %logger{35} - %msg %n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="DEBUG">
+            <appender-ref ref="STDOUT" />
+        </root>
     </else>
   </if>
 

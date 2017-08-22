@@ -35,7 +35,7 @@ import scalaz.stream.{Exchange, Process}
 class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
 
   // Logger for client messages
-  private[this] val clientLog = getLogger("clients")
+  private[this] val clientLog = getLogger
 
   // Handles authentication
   val httpAuthentication = new Http4sAuthentication(auth)
@@ -81,8 +81,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
     case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[LogMessage] { msg =>
         // Always return ok
-        Task.delay(clientLog.info(s"Client ${req.remoteAddr}: ${msg.msg}")) >>
-        Ok()
+        Task.delay(clientLog.info(s"Client ${req.remoteAddr}: ${msg.msg}")) *> Ok()
       }
   }
   val protectedServices: AuthedService[AuthResult] =
