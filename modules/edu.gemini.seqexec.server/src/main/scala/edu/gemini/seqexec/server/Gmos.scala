@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps.{ContentError, ConversionError}
@@ -34,7 +34,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override val contributorName = "gmosdc"
 
-  val Log = Logger.getLogger(getClass.getName)
+  val Log = getLogger
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
       case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))

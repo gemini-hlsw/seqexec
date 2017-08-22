@@ -43,7 +43,7 @@ lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Logging ++ Http4s
+    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s ++ Logging
   )
 
 lazy val edu_gemini_web_client_facades = project
@@ -180,7 +180,8 @@ lazy val edu_gemini_seqexec_server = project
           POT,
           EpicsACM,
           Knobs,
-          OpenCSV
+          OpenCSV,
+          Log4s
       ) ++ SeqexecOdb ++ WDBAClient ++ Http4sClient ++ TestLibs.value
   ).settings(
     sources in (Compile,doc) := Seq.empty
@@ -206,7 +207,7 @@ lazy val edu_gemini_seqexec_engine = project
   .in(file("modules/edu.gemini.seqexec.engine"))
   .dependsOn(edu_gemini_seqexec_model_JVM)
   .settings(commonSettings: _*)
-  .settings(libraryDependencies += ScalaZStream)
+  .settings(libraryDependencies ++= Seq(ScalaZStream, Log4s))
 
 /**
   * Common settings for the Seqexec instances

@@ -80,9 +80,8 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
   val logService: HttpService = HttpService {
     case req @ POST -> Root / "seqexec" / "log" =>
       req.decode[LogMessage] { msg =>
-        // This will use the server time for the logs
-        clientLog.info(s"Client ${req.remoteAddr}: ${msg.msg}")
         // Always return ok
+        Task.delay(clientLog.info(s"Client ${req.remoteAddr}: ${msg.msg}")) >>
         Ok()
       }
   }

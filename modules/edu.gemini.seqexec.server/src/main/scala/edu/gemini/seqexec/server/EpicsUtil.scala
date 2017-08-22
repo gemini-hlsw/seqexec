@@ -3,11 +3,10 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
-
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 
+import org.log4s._
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -68,8 +67,7 @@ trait EpicsSystem[T] {
 
     } catch {
       case c: Throwable =>
-        Log.warning(s"$className: Problem initializing EPICS service: " + c.getMessage + "\n"
-          + c.getStackTrace.mkString("\n"))
+        Log.warn(c)(s"$className: Problem initializing EPICS service: ${c.getMessage}")
         TrySeq.fail(SeqexecFailure.SeqexecException(c))
     }
   }

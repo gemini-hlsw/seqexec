@@ -28,6 +28,8 @@ import scalaz.stream.async
 import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ProcessApp with LogInitialization {
+  val logger = getLogger
+
   case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
   /**
@@ -101,9 +103,6 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     * Configures and builds the web server
     */
   def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
-    val logger = getLogger
-    logger.info(s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode")
-
     val builder = BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
@@ -119,6 +118,11 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     val builder = BlazeBuilder.bindHttp(conf.insecurePort, conf.host)
       .mountService(RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
     builder.start
+  }
+
+  def logStart: Kleisli[Task, WebServerConfiguration, Unit] = Kleisli { conf =>
+    val msg = s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode"
+    Task.delay { logger.info(msg) }
   }
 
   /**
@@ -146,6 +150,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
             ac <- authConf.run(wc)
             as <- authService.run(ac)
             rd <- redirectWebServer.run(wc)
+            _  <- logStart.run(wc)
             ws <- webServer(as, (inq, out), et).run(wc)
           } yield (ws, rd)
         )

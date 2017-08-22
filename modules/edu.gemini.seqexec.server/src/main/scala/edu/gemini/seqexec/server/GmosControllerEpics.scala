@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.EpicsCodex._
@@ -22,7 +22,7 @@ import scalaz.EitherT
 import scalaz.concurrent.Task
 
 class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   import GmosControllerEpics._
   import GmosController.Config._

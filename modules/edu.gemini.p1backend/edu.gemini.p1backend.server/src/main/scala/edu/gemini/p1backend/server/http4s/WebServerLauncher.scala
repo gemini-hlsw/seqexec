@@ -3,9 +3,6 @@
 
 package edu.gemini.p1backend.server.http4s
 
-import java.io.File
-import java.util.logging.Logger
-
 import edu.gemini.p1backend.server.OcsBuildInfo
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes}
 import knobs._
@@ -26,14 +23,14 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
 
   // Attempt to get the configuration file relative to the base dir
-  val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
+  val configurationFile: Task[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
   val defaultConfig: Task[Config] =
     knobs.loadImmutable(ClassPathResource("app.conf").required :: Nil)
 
   val fileConfig: Task[Config] = configurationFile >>= { f =>
-    knobs.loadImmutable(FileResource(f).optional :: Nil)
+    knobs.loadImmutable(FileResource(f.toFile).optional :: Nil)
   }
 
   val config: Task[Config] =
@@ -55,9 +52,6 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     * Configures and builds the web server
     */
   def webServer: Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
-    val logger = Logger.getLogger(getClass.getName)
-    logger.info(s"Start server on ${conf.devMode ? "dev" | "production"} mode")
-
     BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")

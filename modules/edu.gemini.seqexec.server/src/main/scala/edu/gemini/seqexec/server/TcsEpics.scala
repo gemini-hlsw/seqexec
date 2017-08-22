@@ -7,7 +7,7 @@ import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import java.util.{Timer, TimerTask}
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.server.EpicsCommand._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
@@ -541,7 +541,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 object TcsEpics extends EpicsSystem[TcsEpics] {
 
   override val className = getClass.getName
-  override val Log = Logger.getLogger(className)
+  override val Log = getLogger
   override val CA_CONFIG_FILE = "/Tcs.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new TcsEpics(service, tops)

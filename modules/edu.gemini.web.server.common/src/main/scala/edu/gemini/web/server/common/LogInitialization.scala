@@ -8,8 +8,6 @@ import java.nio.file.Path
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.util.logging.LogManager
 
-// import scala.io.{Codec, Source}
-// import scalaz.syntax.bind._
 import scalaz.concurrent.Task
 
 trait AppBaseDir {
@@ -32,14 +30,6 @@ trait AppBaseDir {
 }
 
 trait LogInitialization extends AppBaseDir {
-  private val loggingConfigurationFileName = "logback.xml"
-
-  def loggingConfigurationFile(baseDir: Path): Task[Path] = Task.delay {
-    val confDir = baseDir.resolve("conf")
-
-    confDir.resolve(loggingConfigurationFileName)
-  }
-
   // Send logs from JULI (e.g. ocs) to SLF4J
   private def sendJuliToSLF4J: Task[Unit] = Task.delay {
     LogManager.getLogManager().reset()
@@ -47,28 +37,5 @@ trait LogInitialization extends AppBaseDir {
     SLF4JBridgeHandler.install()
   }
 
-  private def initializeLogFromConf: Task[Unit] =
-    for {
-      _ <- sendJuliToSLF4J
-      b <- baseDir
-      f <- loggingConfigurationFile(b)
-      // _ <- makeLogDir(f._1)
-    } yield
-      // Load updated configuration, note the configuration is in memory and not persisted to the file
-      ()
-      // LogManager.getLogManager.readConfiguration(new ByteArrayInputStream(f._2.getBytes(Codec.UTF8.charSet)))
-
-  // private def initializeLogFromClasspath: Task[Unit] = Task.delay{
-  //   LogManager.getLogManager.readConfiguration(getClass.getClassLoader.getResourceAsStream(loggingConfigurationFileName))}
-  //
-  // private def defaultInitialization: Task[Unit] = Task.delay{
-  //   LogManager.getLogManager.readConfiguration()}
-  //
-  /**
-    * Attempts to load and set the configuration of the java.util.logging subsystem assuming
-    * that a configuration will be at {{app.home}}/conf/logging.properties and will
-    * try to create a dir for log files
-    * It will attempt several strategies to get a usable configuration if errors are detected
-    */
-  def configLog: Task[Unit] = initializeLogFromConf//.or(initializeLogFromClasspath).or(defaultInitialization)
+  def configLog: Task[Unit] = sendJuliToSLF4J
 }

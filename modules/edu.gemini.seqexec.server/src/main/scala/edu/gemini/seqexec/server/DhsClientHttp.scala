@@ -6,7 +6,7 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.logging.Logger
+import org.log4s._
 
 import argonaut._
 import Argonaut._
@@ -144,6 +144,6 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
 }
 
 object DhsClientSim {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
   def apply(date: LocalDate): DhsClient = new DhsClientSim(date)
 }

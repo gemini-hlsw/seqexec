@@ -6,7 +6,7 @@ package edu.gemini.seqexec
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor, Operator, Observer}
-import java.util.logging.{Logger => JLogger}
+import org.log4s.getLogger
 
 import scalaz._
 import Scalaz._
@@ -276,7 +276,7 @@ package object engine {
   // import: `engine.Logger`
   object Logger {
 
-    private val logger = JLogger.getLogger(getClass.getName)
+    private val logger = getLogger
 
     /**
       * Log info lifted into Handle.
@@ -286,7 +286,7 @@ package object engine {
     /**
       * Log warning lifted into Handle.
       */
-    def warning(msg: String): HandleP[Unit] = pure((logger.warning(msg), None)).void
+    def warning(msg: String): HandleP[Unit] = pure((logger.warn(msg), None)).void
   }
 
   /**

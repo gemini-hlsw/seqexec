@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.epics.acm.{CaAttribute, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
@@ -110,7 +110,7 @@ class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
 object GcalEpics extends EpicsSystem[GcalEpics] {
 
   override val className = getClass.getName
-  override val Log = Logger.getLogger(className)
+  override val Log = getLogger
   override val CA_CONFIG_FILE = "/Gcal.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GcalEpics(service, tops)

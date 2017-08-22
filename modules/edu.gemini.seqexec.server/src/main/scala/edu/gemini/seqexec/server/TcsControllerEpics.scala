@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import squants.time.Seconds
@@ -21,7 +21,7 @@ import scalaz.concurrent.Task
  * Created by jluhrs on 9/7/15.
  */
 object TcsControllerEpics extends TcsController {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   import EpicsCodex._
   import FollowOption._

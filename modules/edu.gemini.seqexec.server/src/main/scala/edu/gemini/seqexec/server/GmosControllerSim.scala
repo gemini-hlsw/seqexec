@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s._
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import GmosController.{GmosConfig, NorthTypes, SiteDependentTypes, SouthTypes}
@@ -12,7 +12,7 @@ import scalaz.EitherT
 import scalaz.concurrent.Task
 
 private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends GmosController[T] {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   override def getConfig: SeqAction[GmosConfig[T]] = ??? // scalastyle:ignore
 
