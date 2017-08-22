@@ -1,7 +1,8 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.math
+package gem
+package math
 
 import cats.{ Order, Show }
 import cats.instances.long._
@@ -33,12 +34,15 @@ sealed abstract case class Declination private (toAngle: Angle) {
   def offset(a: Angle): (Declination, Boolean) =
     Declination.fromAngleWithCarry(toAngle + a)
 
-  // override to show signed angle
-  final override def toString: String = {
-    val dms = toAngle.toDMS; import dms._
-    val signedDegrees = if (degrees > 180) degrees - 360 else degrees
-    f"Dec($signedDegrees:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d)"
-  }
+  /**
+   * Format this [[Declination]] as a standard human-readable string. Invertable via
+   * `Declination.unformat`.
+   */
+  def format: String =
+    toAngle.formatSignedDMS
+
+  final override def toString: String =
+    s"Dec($format)"
 
 }
 
@@ -77,6 +81,10 @@ object Declination {
    */
   def unsafeFromAngle(a: Angle): Declination =
     fromAngle(a).getOrElse(sys.error(s"Declination out of range: $a"))
+
+  /** Attempt to parse a `Declination` from a `format`-formatted string. */
+  def unformat(s: String): Option[Declination] =
+    Parsers.parseExact(Parsers.dec)(s)
 
   /**
    * Declinations are ordered from south to north.

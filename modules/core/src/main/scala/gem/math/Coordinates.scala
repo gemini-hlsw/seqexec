@@ -1,7 +1,8 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.math
+package gem
+package math
 
 import scala.math._
 import cats._, cats.implicits._
@@ -78,7 +79,15 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
     }
   }
 
-  // the default N.B. toString, equals, and hashCode are fine
+  /**
+   * Format these [[Coordinates]] as a standard human-readable string. Invertable via
+   * `Coordinates.unformat`.
+   */
+  def format: String =
+    s"${ra.format} ${dec.format}"
+
+  override def toString =
+    s"Coordinates($format)"
 
 }
 
@@ -87,6 +96,10 @@ object Coordinates {
   /* @group Constructors */ val Zero:      Coordinates = Coordinates(RA.Zero, Dec.Zero)
   /* @group Constructors */ val SouthPole: Coordinates = Coordinates(RA.Zero, Dec.Min)
   /* @group Constructors */ val NorthPole: Coordinates = Coordinates(RA.Zero, Dec.Max)
+
+  /** Attempt to parse `Coordinates` from a `format`-formatted string. */
+  def unformat(s: String): Option[Coordinates] =
+    Parsers.parseExact(Parsers.coordinates)(s)
 
   /** @group Typeclass Instances */
   implicit val CoordinatesEqual: Eq[Coordinates] =

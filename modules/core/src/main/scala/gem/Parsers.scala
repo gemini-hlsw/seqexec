@@ -6,7 +6,7 @@ package gem
 import cats.implicits._
 import atto._, Atto._
 import gem.enum.{ Half, Site, ProgramType, DailyProgramType }
-import gem.math.Epoch
+import gem.math._
 import java.time.{ DateTimeException, Year, Month, LocalDate }
 
 
@@ -27,7 +27,11 @@ object Parsers {
 
   /** Parser for a hyphen. */
   val hyphen: Parser[Unit] =
-    char('-').map(_ => ())
+    char('-').void
+
+  /** Parser for one or more spaces. */
+  val spaces1: Parser[Unit] =
+    skipMany1(char(' '))
 
   /** Parser for a non-whitespace string. */
   val nonWhitespace: Parser[String] =
@@ -139,5 +143,104 @@ object Parsers {
       _      <- char('.')
       frac   <- intN(3)
     } yield scheme.fromMilliyears(year * 1000 + frac)
+
+  /** Module of parsers for angles. */
+  object angle {
+
+    // Integral exponentiation
+    implicit class MoreIntOps(n: Int) {
+      def **(e: Int): Int =
+        if (e < 1) 1 else n * (** (e - 1))
+    }
+
+    // An optional signum, here represented as a boolean indicating whether to negate.
+    val neg: Parser[Boolean] =
+      opt(char('-').void || char('+').void).map {
+        case Some(Left(()))  => true
+        case Some(Right(())) => false
+        case None            => false
+      }
+
+    /**
+     * Fractional portion of a decimal value, with up to N places given. So frac(3) parsing "12"
+     * yields 120. Mind the overflow, this only works for small N.
+     */
+    def frac(n: Int): Parser[Int] =
+      if (n < 1) ok(0)
+      else opt(digit.map(_ - '0')) flatMap {
+        case None    => ok(0)
+        case Some(d) => frac(n - 1).map(_ + d * (10 ** (n - 1)))
+      }
+
+    /**
+     * Generic parser for the components of an angle in "11 22 33.444555" format, with at least 1
+     * and at most 6 digits following the decimal point, and terminal parsers for each segment.
+     */
+    def genAngle(t1: Parser[_], t2: Parser[_], t3: Parser[_]): Parser[(Int, Int, Int, Int, Int)] =
+      for {
+        h  <- int <~ t1
+        m  <- int <~ t2
+        s  <- int <~ char('.')
+        µs <- frac(6)
+        _  <- t3
+      } yield (h, m, s, µs / 1000, µs % 1000)
+
+    /** Generic parser for the components of an HourAngle; see `genAngle`. */
+    def genHMS(t1: Parser[_], t2: Parser[_], t3: Parser[_]): Parser[HourAngle] =
+      genAngle(t1, t2, t3).map((HourAngle.fromHMS _).tupled)
+
+    /** 00:00:00.000000 */
+    val hms1: Parser[HourAngle] =
+      genHMS(char(':'), char(':'), ok(()))
+
+    /** 00 00 00.000000 */
+    val hms2: Parser[HourAngle] =
+      genHMS(spaces1, spaces1, ok(()))
+
+    /** 00h 00m 00.000000s */
+    val hms3: Parser[HourAngle] =
+      genHMS(token(char('h')), token(char('m')), char('s'))
+
+    val hms = hms1 | hms2 | hms3
+
+    /** Generic parser for the components of an HourAngle; see `genAngle`. */
+    private def genDMS(t1: Parser[_], t2: Parser[_], t3: Parser[_]): Parser[Angle] =
+      for {
+        n <- neg
+        a <- genAngle(t1, t2, t3).map((Angle.fromDMS _).tupled)
+      } yield {
+        if (n) -a else a
+      }
+
+    /** +00:00:00.000000 */
+    val dms1: Parser[Angle] =
+      genDMS(char(':'), char(':'), ok(()))
+
+    /** +00 00 00.000000 */
+    val dms2: Parser[Angle] =
+      genDMS(spaces1, spaces1, ok(()))
+
+    /** +04° 41′ 36.2072″ */
+    val dms3: Parser[Angle] =
+      genDMS(token(char('°')), token(char('′')), token(char('″')))
+
+    val dms = dms1 | dms2 | dms3
+
+  }
+
+  /** Parser for a RightAscension, always a positive angle in HMS. */
+  val ra: Parser[RightAscension] =
+    angle.hms.map(RightAscension(_))
+
+  /** Parser for a RightAscension, always a positive angle in HMS. */
+  val dec: Parser[Declination] =
+    angle.dms.map(Declination.fromAngle).flatMap {
+      case Some(ra) => ok(ra)
+      case None     => err("Invalid Declination")
+    }
+
+  /** Parser for coordinates: HMS and DMS separated by spaces. */
+  val coordinates: Parser[Coordinates] =
+    (token(ra), dec).mapN(Coordinates(_, _))
 
 }
