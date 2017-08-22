@@ -140,7 +140,7 @@ object Epoch {
    * Parse an `Epoch` in canonical format.
    * @group Constructors
    */
-  def fromString(s: String): Option[Epoch] =
+  def unformat(s: String): Option[Epoch] =
     EpochParsers.epoch.parseExact(s)
 
   /**
@@ -148,7 +148,7 @@ object Epoch {
    * @group Constructors
    */
   def unsafeFromString(s: String): Epoch =
-    fromString(s).getOrElse(sys.error(s"invalid epoch: $s"))
+    unformat(s).getOrElse(sys.error(s"invalid epoch: $s"))
 
   implicit val EpochEq: Eq[Epoch] =
     Eq.fromUniversalEquals

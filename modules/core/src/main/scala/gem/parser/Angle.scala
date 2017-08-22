@@ -61,7 +61,7 @@ trait AngleParsers {
 
   /** +04° 41′ 36.2072″ */
   val dms3: Parser[Angle] =
-    genDMS(token(char('°')), token(char('′')), token(char('″')))
+    genDMS(token(char('°')), token(char('′')), char('″'))
 
   val dms = dms1 | dms2 | dms3
 

@@ -161,11 +161,11 @@ object Angle {
 
   /** Attempt to parse an [[Angle]] from a `.formatDMS`-formatted string. */
   def unformatDMS(s: String): Option[Angle] =
-    AngleParsers.hms.parseExact(s) // N.B. this parser is too lenient; it should reject signed angles
+    AngleParsers.dms.parseExact(s) // N.B. this parser is too lenient; it should reject signed angles
 
   /** Attempt to parse an [[Angle]] from a `.formatSignedDMS`-formatted string. */
   def unformatSignedDMS(s: String): Option[Angle] =
-    AngleParsers.hms.parseExact(s)
+    AngleParsers.dms.parseExact(s)
 
   /** Angle forms a commutative group. */
   implicit val AngleCommutativeGroup: CommutativeGroup[Angle] =
