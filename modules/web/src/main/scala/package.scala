@@ -12,7 +12,7 @@ package object web {
   implicit val FunctorQueryParamDecoder: Functor[QueryParamDecoder] =
     new Functor[QueryParamDecoder] {
       def map[A, B](fa: QueryParamDecoder[A])(f: A => B): QueryParamDecoder[B] =
-        QueryParamDecoder.decodeBy(f)(fa)
+        fa.map(f)
     }
 
   implicit class QueryParamDecoderOps[A](fa: QueryParamDecoder[A]) {
