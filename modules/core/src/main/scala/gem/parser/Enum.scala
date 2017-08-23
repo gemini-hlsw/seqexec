@@ -12,7 +12,7 @@ trait EnumParsers {
 
   /** Parser for an `Enumerated` type, based on some string property. */
   def enumBy[A](f: A => String)(implicit ev: Enumerated[A]): Parser[A] =
-    choice(ev.all.map(a => string(f(a)).as(a)))
+    choice(ev.all.map(a => string(f(a)).as(a))) named "enumBy(...)"
 
   /** Parser for `Site` based on `shortName` like `GS`. */
   val site: Parser[Site] =

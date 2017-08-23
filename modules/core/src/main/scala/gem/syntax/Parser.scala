@@ -9,7 +9,7 @@ final class ParserOps[A](val self: Parser[A]) extends AnyVal {
 
   /** Parse entire input into an Option. */
   def parseExact(s: String): Option[A] =
-    (self <~ endOfInput).parseOnly(s).option
+    phrase(self).parseOnly(s).option
 
   /** Parse into an Option, discarding unused input. */
   def parse(s: String): Option[A] =

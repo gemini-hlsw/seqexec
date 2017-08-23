@@ -5,7 +5,7 @@ package gem
 package parser
 
 import cats.implicits._
-import atto._
+import atto._, Atto._
 
 /** Parser for [[gem.Semester]]. */
 trait SemesterParsers {
@@ -14,7 +14,7 @@ trait SemesterParsers {
 
   /** Parser for a full-year `Semester` like `2015A`. */
   val semester: Parser[Semester] =
-    (year4, half).mapN(Semester.apply)
+    (year4, half).mapN(Semester.apply) named "semester"
 
 }
 object SemesterParsers extends SemesterParsers

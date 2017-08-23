@@ -14,18 +14,18 @@ trait CoordinateParsers {
 
   /** Parser for a RightAscension, always a positive angle in HMS. */
   val ra: Parser[RightAscension] =
-    hms.map(RightAscension(_))
+    hms.map(RightAscension(_)) named "ra"
 
   /** Parser for a RightAscension, always a positive angle in HMS. */
   val dec: Parser[Declination] =
     dms.map(Declination.fromAngle).flatMap {
       case Some(ra) => ok(ra)
-      case None     => err("Invalid Declination")
-    }
+      case None     => err[Declination]("Invalid Declination")
+    } named "dec"
 
   /** Parser for coordinates: HMS and DMS separated by spaces. */
   val coordinates: Parser[Coordinates] =
-    (ra <~ spaces1, dec).mapN(Coordinates(_, _))
+    (ra <~ spaces1, dec).mapN(Coordinates(_, _)) named "coordinates"
 
 }
 object CoordinateParsers extends CoordinateParsers

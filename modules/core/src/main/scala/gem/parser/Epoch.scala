@@ -11,19 +11,21 @@ import gem.math.Epoch
 trait EpochParsers {
   import MiscParsers.intN
 
+  val besselian: Parser[Epoch.Scheme] =
+    char('B').as[Epoch.Scheme](Epoch.Besselian) named "besselian"
+
+  val julian: Parser[Epoch.Scheme] =
+    char('J').as[Epoch.Scheme](Epoch.Julian) named "julian"
+
   /** Parser for an `Epoch.Scheme`. */
   val epochScheme: Parser[Epoch.Scheme] =
-    char('B').as(Epoch.Besselian) |
-    char('J').as(Epoch.Julian)
+    (besselian | julian) named "epochScheme"
 
   /** Parser for an `Epoch`. */
   val epoch: Parser[Epoch] =
-    for {
-      scheme <- epochScheme
-      year   <- int
-      _      <- char('.')
-      frac   <- intN(3)
-    } yield scheme.fromMilliyears(year * 1000 + frac)
+    (epochScheme, int <~ char('.'), intN(3)) mapN { (s, y, f) =>
+      s.fromMilliyears(y * 1000 + f)
+    } named "epoch"
 
 }
 object EpochParsers extends EpochParsers

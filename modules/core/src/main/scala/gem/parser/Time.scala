@@ -16,20 +16,20 @@ trait TimeParsers {
 
   /** Parser for 4 consecutive digits, parsed as a `Year`. */
   val year4: Parser[Year] =
-    intN(4).flatMap(catchDTE(Year.of)) namedOpaque "Year"
+    intN(4).flatMap(catchDTE(Year.of)) namedOpaque "year4"
 
   /** Parser for 2 consecutive digits, parsed as a `Month`. */
   val month2: Parser[Month] =
-    intN(2).flatMap(catchDTE(Month.of)) namedOpaque "Month"
+    intN(2).flatMap(catchDTE(Month.of)) namedOpaque "month2"
 
   /** Parser for a `LocalDate` in the form `20151107`. */
   def yyyymmdd: Parser[LocalDate] =
-    for {
+    (for {
       y <- year4
       m <- month2
       d <- intN(2) namedOpaque "2-digit day of month"
       a <- catchDTE((d: Int) => LocalDate.of(y.getValue, m, d))(d)
-    } yield a
+    } yield a) named "yyyymmdd"
 
 }
 object TimeParsers extends TimeParsers

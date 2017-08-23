@@ -9,17 +9,21 @@ import scala.annotation.tailrec
 /** General-purpose parsers and combinators that aren't provided by atto. */
 trait MiscParsers {
 
+  /** Parser that always succeeds without consuming any input. */
+  val void: Parser[Unit] =
+    ok(()) namedOpaque "void"
+
   /** Parser for a hyphen. */
   val hyphen: Parser[Unit] =
-    char('-').void
+    char('-').void namedOpaque "hyphen"
 
   /** Parser for one or more spaces. */
   val spaces1: Parser[Unit] =
-    skipMany1(char(' '))
+    skipMany1(char(' ')) namedOpaque "spaces1"
 
   /** Parser for a non-whitespace string. */
   val nonWhitespace: Parser[String] =
-    stringOf(elem(c => !c.isWhitespace))
+    takeWhile(c => !c.isWhitespace) namedOpaque "nonWhitespace"
 
   /** Catch a `NumberFormatException`, useful for flatMap. */
   def catchNFE[A, B](f: A => B): A => Parser[B] = a =>
@@ -27,11 +31,11 @@ trait MiscParsers {
 
   /** Parser for `n` consecutive digits, parsed as an `Int`. */
   def intN(n:Int): Parser[Int] =
-    count(n, digit).map(_.mkString).flatMap(catchNFE(_.toInt)) namedOpaque s"$n-digit int"
+    count(n, digit).map(_.mkString).flatMap(catchNFE(_.toInt)) namedOpaque s"intN($n)"
 
   /** Parser for a positive `Int`. */
   val positiveInt: Parser[Int] =
-    int.filter(_ > 0) namedOpaque "Positive Int"
+    int.filter(_ > 0) namedOpaque "positiveInt"
 
   /** Parser for an optional sign (+ or -), returned as a boolean indicating whether to negate. */
   val neg: Parser[Boolean] =
@@ -39,7 +43,7 @@ trait MiscParsers {
       case Some(Left(()))  => true
       case Some(Right(())) => false
       case None            => false
-    }
+    } namedOpaque "neg"
 
   /**
    * Fractional portion of a decimal value, with up to N places given. So frac(3) parsing "12"
@@ -59,7 +63,7 @@ trait MiscParsers {
       case Some(d) => frac(n - 1).map(_ + d * nexp(10, n - 1))
     }
 
-  }
+  } namedOpaque s"frac($n)"
 
 }
 object MiscParsers extends MiscParsers
