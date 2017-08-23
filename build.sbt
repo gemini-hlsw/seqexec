@@ -245,15 +245,18 @@ lazy val seqexecCommonSettings = Seq(
     // -J params will be added as jvm parameters
     "-J-Xmx512m",
     "-J-Xms256m",
-    "-J-Xms256m",
+    // Support remote JMX access
     "-J-Dcom.sun.management.jmxremote",
     "-J-Dcom.sun.management.jmxremote.authenticate=false",
     "-J-Dcom.sun.management.jmxremote.port=2407",
     "-J-Dcom.sun.management.jmxremote.ssl=false",
-    "-J-Djava.net.preferIPv4Stack=true",
-    "-J-Dnetworkaddress.cache.ttl=60",
+    // Ensure the local is correctly set
     "-J-Duser.language=en",
-    "-J-Duser.country=US"
+    "-J-Duser.country=US",
+    // Support remote debugging
+    "-J-Xdebug",
+    "-J-Xnoagent",
+    "-J-Xrunjdwp:transport=dt_socket,address=8457,server=y,suspend=n"
   )
 ) ++ commonSettings
 
