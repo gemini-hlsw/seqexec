@@ -1,12 +1,15 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.math
+package gem
+package math
 
 import cats.{ Eq, Show }
 import cats.kernel.CommutativeGroup
 import cats.instances.long._
 import cats.syntax.eq._
+import gem.parser.AngleParsers
+import gem.syntax.parser._
 
 /**
  * Exact angles represented as integral microarcseconds. These values form a commutative group over
@@ -100,6 +103,18 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
   override final def hashCode =
     toMicroarcseconds.toInt
 
+  /** Format this angle as a human-readable DMS string. Invertable via `Angle.parseDMS`. */
+  def formatDMS: String =
+    toDMS.format
+
+  /**
+   * Format this angle as a human-readable signed [180°, 180°) DMS string. Invertable via
+   * `Angle.parseSignedDMS`.
+   */
+  def formatSignedDMS: String =
+    if (toSignedMicroarcseconds < 0) "-" + unary_-.formatDMS
+    else  "+" + formatDMS
+
 }
 
 object Angle {
@@ -144,6 +159,14 @@ object Angle {
   def fromDoubleRadians(rad: Double): Angle =
     fromDoubleDegrees(rad.toDegrees)
 
+  /** Attempt to parse an [[Angle]] from a `.formatDMS`-formatted string. */
+  def parseDMS(s: String): Option[Angle] =
+    AngleParsers.dms.parseExact(s) // N.B. this parser is too lenient; it should reject signed angles
+
+  /** Attempt to parse an [[Angle]] from a `.formatSignedDMS`-formatted string. */
+  def parseSignedDMS(s: String): Option[Angle] =
+    AngleParsers.dms.parseExact(s)
+
   /** Angle forms a commutative group. */
   implicit val AngleCommutativeGroup: CommutativeGroup[Angle] =
     new CommutativeGroup[Angle] {
@@ -181,8 +204,8 @@ object Angle {
       milliarcseconds: Int,
       microarcseconds: Int
     ) = Angle.toMicrosexigesimal(toAngle.toMicroarcseconds)
-    override final def toString =
-      f"$degrees:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d"
+    def format: String = f"$degrees° $arcminutes%02d′ $arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d″"
+    override final def toString = s"DMS($format)"
   }
 
   /**
@@ -259,9 +282,13 @@ final class HourAngle private (µas: Long) extends Angle(µas) {
   def -(ha: HourAngle): HourAngle =
     HourAngle.fromMicroseconds(toMicroseconds.toLong - ha.toMicroseconds.toLong)
 
+  /** Format this angle as a human-readable HMS string. Invertable via `Angle.parseDMS`. */
+  def formatHMS: String =
+    toHMS.format
+
   /** String representation of this HourAngle, for debugging purposes only. */
   override def toString =
-    f"HourAngle($toDMS, $toHMS, $toDoubleDegrees%1.9f°)"
+    f"HourAngle($formatHMS)"
 
 }
 
@@ -309,6 +336,11 @@ object HourAngle {
       hours.toLong        * 1000L * 1000L * 60L * 60L
     )
 
+
+  /** Attempt to parse an [[HourAngle]] from a `.formatHMS`-formatted string. */
+  def parseHMS(s: String): Option[HourAngle] =
+    AngleParsers.hms.parseExact(s)
+
   /** HourAngle forms a commutative group. */
   implicit val AngleCommutativeGroup: CommutativeGroup[HourAngle] =
     new CommutativeGroup[HourAngle] {
@@ -337,8 +369,8 @@ object HourAngle {
       milliseconds: Int,
       microseconds: Int
     ) = Angle.toMicrosexigesimal(toHourAngle.toMicroseconds)
-    override final def toString =
-      f"$hours:$minutes%02d:$seconds%02d.$milliseconds%03d$microseconds%03d"
+    def format: String = f"${hours}h $minutes%02dm $seconds%02d.$milliseconds%03d$microseconds%03ds"
+    override final def toString = format
   }
 
 }

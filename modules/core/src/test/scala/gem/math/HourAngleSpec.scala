@@ -76,4 +76,10 @@ final class HourAngleSpec extends CatsSuite {
     }
   }
 
+  test("formatHMS and parseHMS must round-trip") {
+    forAll { (a: HourAngle) =>
+      HourAngle.parseHMS(a.formatHMS) shouldEqual Some(a)
+    }
+  }
+
 }

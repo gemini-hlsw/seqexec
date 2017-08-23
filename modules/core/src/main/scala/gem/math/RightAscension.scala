@@ -1,10 +1,13 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.math
+package gem
+package math
 
 import cats.{ Order, Show }
 import cats.instances.long._
+import gem.parser.CoordinateParsers
+import gem.syntax.parser._
 
 /**
  * Celestial longitude, measured eastward along the celestial equator from the vernal equinox to the
@@ -33,8 +36,15 @@ final case class RightAscension(toHourAngle: HourAngle) {
   def toAngle: Angle =
     toHourAngle
 
+  /**
+   * Format this [[RightAscension]] as a standard human-readable string. Invertable via
+   * `RightAscension.parse`.
+   */
+  def format: String =
+    toHourAngle.formatHMS
+
   override def toString =
-    s"RA(${toHourAngle.toHMS})"
+    s"RA($format)"
 
 }
 
@@ -46,6 +56,10 @@ object RightAscension {
    */
   def fromHourAngle(ha: HourAngle): RightAscension =
     apply(ha)
+
+  /** Attempt to parse a `RightAscension` from a `format`-formatted string. */
+  def parse(s: String): Option[RightAscension] =
+    CoordinateParsers.ra.parseExact(s)
 
   /**
    * The `RightAscension` at zero degrees.

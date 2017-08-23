@@ -40,4 +40,10 @@ final class RightAscensionSpec extends CatsSuite {
     }
   }
 
+  test("format and parse must round-trip") {
+    forAll { (a: RightAscension) =>
+      RightAscension.parse(a.format) shouldEqual Some(a)
+    }
+  }
+
 }

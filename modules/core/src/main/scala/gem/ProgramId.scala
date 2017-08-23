@@ -9,6 +9,8 @@ import java.time._
 import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.imp.TimeInstances._
+import gem.parser.ProgramIdParsers
+import gem.syntax.parser._
 
 /**
  * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
@@ -82,7 +84,7 @@ object ProgramId {
 
     /** Parse a `Science` program id from a string, if possible. */
     def fromString(s: String): Option[ProgramId] =
-      Parsers.parseExact(Parsers.programId.science)(s)
+      ProgramIdParsers.science.parseExact(s)
 
     /** `Science` program ids are ordered pairwise by their data members. */
     implicit val ScienceOrder: Order[Science] =
@@ -147,7 +149,7 @@ object ProgramId {
 
     /** Parse a `Daily` program id from a string, if possible. */
     def fromString(s: String): Option[Daily] =
-      Parsers.parseExact(Parsers.programId.daily)(s)
+      ProgramIdParsers.daily.parseExact(s)
 
     /** `Daily` program ids are ordered pairwise by their data members. */
     implicit val DailyOrder: Order[Daily] =
@@ -215,7 +217,7 @@ object ProgramId {
     Daily  .fromString(s) orElse
     // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
     // that can be formatted and re-parsed as a Science or Daily program id. This is important.
-    Parsers.parseExact(Parsers.programId.nonstandard)(s).map {
+    ProgramIdParsers.nonstandard.parseExact(s).map {
       case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
     }
 

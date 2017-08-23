@@ -55,4 +55,10 @@ final class EpochSpec extends CatsSuite {
     }
   }
 
+  test("format and parse must round-trip") {
+    forAll { (a: Epoch) =>
+      Epoch.parse(a.format) shouldEqual Some(a)
+    }
+  }
+
 }
