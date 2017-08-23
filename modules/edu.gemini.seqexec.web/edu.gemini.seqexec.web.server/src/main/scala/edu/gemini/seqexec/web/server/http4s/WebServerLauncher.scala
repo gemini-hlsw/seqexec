@@ -11,6 +11,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
+import edu.gemini.seqexec.web.server.logging.AppenderForClients
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes, RedirectToHttpsRoutes}
 import knobs._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
@@ -125,6 +126,24 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     Task.delay { logger.info(msg) }
   }
 
+  def logToClients: Task[Unit] = Task.delay {
+    import org.slf4j.LoggerFactory
+    import ch.qos.logback.classic.LoggerContext
+    import ch.qos.logback.classic.Logger
+
+    val appender = new AppenderForClients
+    Option(LoggerFactory.getILoggerFactory()).collect {
+      case lc: LoggerContext => lc
+    }.foreach(appender.setContext)
+
+    Option(LoggerFactory.getLogger("edu.gemini.seqexec")).collect {
+      case l: Logger => l
+    }.foreach { l =>
+      l.addAppender(appender)
+      appender.start()
+    }
+  }
+
   /**
     * Reads the configuration and launches the web server
     */
@@ -151,6 +170,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
             as <- authService.run(ac)
             rd <- redirectWebServer.run(wc)
             _  <- logStart.run(wc)
+            _  <- logToClients
             ws <- webServer(as, (inq, out), et).run(wc)
           } yield (ws, rd)
         )
