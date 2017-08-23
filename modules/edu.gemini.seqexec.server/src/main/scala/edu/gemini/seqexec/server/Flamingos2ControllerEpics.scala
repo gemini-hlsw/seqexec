@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.Flamingos2Controller._
@@ -18,7 +18,7 @@ import scalaz.EitherT
 import scalaz.concurrent.Task
 
 object Flamingos2ControllerEpics extends Flamingos2Controller {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   import EpicsCodex._
 

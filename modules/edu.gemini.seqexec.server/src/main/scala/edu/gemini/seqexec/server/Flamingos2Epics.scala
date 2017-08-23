@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.epics.acm.{CaParameter, CaService}
 
@@ -106,7 +106,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 object Flamingos2Epics extends EpicsSystem[Flamingos2Epics] {
 
   override val className: String = getClass.getName
-  override val Log = Logger.getLogger(className)
+  override val Log = getLogger
   override val CA_CONFIG_FILE = "/Flamingos2.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new Flamingos2Epics(service, tops)

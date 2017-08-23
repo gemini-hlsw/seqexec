@@ -43,7 +43,7 @@ lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s
+    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s ++ Logging
   )
 
 lazy val edu_gemini_web_client_facades = project
@@ -85,7 +85,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Slf4jJuli, Knobs) ++ Http4s,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
 
     // Settings to optimize the use of sbt-revolver
 
@@ -180,7 +180,8 @@ lazy val edu_gemini_seqexec_server = project
           POT,
           EpicsACM,
           Knobs,
-          OpenCSV
+          OpenCSV,
+          Log4s
       ) ++ SeqexecOdb ++ WDBAClient ++ Http4sClient ++ TestLibs.value
   ).settings(
     sources in (Compile,doc) := Seq.empty
@@ -206,7 +207,7 @@ lazy val edu_gemini_seqexec_engine = project
   .in(file("modules/edu.gemini.seqexec.engine"))
   .dependsOn(edu_gemini_seqexec_model_JVM)
   .settings(commonSettings: _*)
-  .settings(libraryDependencies += ScalaZStream)
+  .settings(libraryDependencies ++= Seq(ScalaZStream, Log4s))
 
 /**
   * Common settings for the Seqexec instances
@@ -228,11 +229,14 @@ lazy val seqexecCommonSettings = Seq(
   makeBatScripts := Seq.empty,
   // Specify a different name for the config file
   bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
+  bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
   // Launch options
   javaOptions in Universal ++= Seq(
     // -J params will be added as jvm parameters
     "-J-Xmx512m",
-    "-J-Xms256m"
+    "-J-Xms256m",
+    // Logging configuration
+    "-Dlogback.configurationFil=${app_home}/../conf/logback.xml"
   )
 ) ++ commonSettings
 
@@ -268,10 +272,9 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   .settings(
     description := "Seqexec server for local testing",
 
-    // Generate a custom logging.properties for the application
-    // For staging the log uses files and console
+    // Copy logback.xml to let users customize it on site
     mappings in Universal += {
-      val f = generateLoggingConfigTask(LogType.ConsoleAndFiles).value
+      val f = (resourceDirectory in (edu_gemini_seqexec_web_server, Compile)).value / "logback.xml"
       f -> ("conf/" + f.getName)
     },
 
@@ -373,7 +376,7 @@ lazy val edu_gemini_p1backend_server = project.in(file("modules/edu.gemini.p1bac
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(Slf4jJuli, Knobs) ++ Http4s,
+    libraryDependencies ++= Seq(Knobs) ++ Logging ++ Http4s,
 
     // Settings to optimize the use of sbt-revolver
 

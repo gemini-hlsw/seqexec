@@ -90,6 +90,9 @@ object Settings {
     val unboundId    = "3.2.1"
     val jwt          = "0.14.0"
     val slf4j        = "1.7.25"
+    val log4s        = "1.3.5"
+    val logback      = "1.2.3"
+    val janino       = "3.0.6"
     val knobs        = "4.0.31-scalaz-7.2"
     val monocle      = "1.4.0"
 
@@ -128,7 +131,14 @@ object Settings {
     val CommonsHttp = "commons-httpclient" %  "commons-httpclient"                % LibraryVersions.commonsHttp
     val UnboundId   = "com.unboundid"      %  "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
     val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
-    val Slf4jJuli   = "org.slf4j"          %  "slf4j-jdk14"                       % LibraryVersions.slf4j
+    val JuliSlf4j   = "org.slf4j"          %  "jul-to-slf4j"                      % LibraryVersions.slf4j
+    val Logback     = Seq(
+      "ch.qos.logback"      % "logback-core"    % LibraryVersions.logback,
+      "ch.qos.logback"      % "logback-classic" % LibraryVersions.logback,
+      "org.codehaus.janino" % "janino"          % LibraryVersions.janino
+    )
+    val Log4s       = "org.log4s"          %% "log4s"                             % LibraryVersions.log4s
+    val Logging     = Seq(JuliSlf4j, Log4s) ++ Logback
     val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
     val OpenCSV     = "net.sf.opencsv"     %  "opencsv"                           % LibraryVersions.opencsv
 

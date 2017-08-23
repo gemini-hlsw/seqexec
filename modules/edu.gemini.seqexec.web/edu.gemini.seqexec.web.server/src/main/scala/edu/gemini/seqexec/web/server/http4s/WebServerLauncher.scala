@@ -3,8 +3,7 @@
 
 package edu.gemini.seqexec.web.server.http4s
 
-import java.io.File
-import java.util.logging.Logger
+import org.log4s._
 
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.server
@@ -29,6 +28,7 @@ import scalaz.stream.async
 import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ProcessApp with LogInitialization {
+  val logger = getLogger
 
   case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
@@ -38,14 +38,14 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
-  val configurationFile: Task[File] = baseDir.map(f => new File(new File(f, "conf"), "app.conf"))
+  val configurationFile: Task[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
   val defaultConfig: Task[Config] =
     knobs.loadImmutable(ClassPathResource("app.conf").required :: Nil)
 
   val fileConfig: Task[Config] = configurationFile >>= { f =>
-    knobs.loadImmutable(FileResource(f).optional :: Nil)
+    knobs.loadImmutable(FileResource(f.toFile).optional :: Nil)
   }
 
   val config: Task[Config] =
@@ -57,7 +57,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   // configuration specific to the web server
   val serverConf: Task[WebServerConfiguration] =
     config.map { cfg =>
-      val site = cfg.require[String]("seqexec-engine.site")
+      val site            = cfg.require[String]("seqexec-engine.site")
       val host            = cfg.require[String]("web-server.host")
       val port            = cfg.require[Int]("web-server.port")
       val insecurePort    = cfg.require[Int]("web-server.insecurePort")
@@ -103,9 +103,6 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     * Configures and builds the web server
     */
   def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
-    val logger = Logger.getLogger(getClass.getName)
-    logger.info(s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode")
-
     val builder = BlazeBuilder.bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
@@ -123,11 +120,17 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     builder.start
   }
 
+  def logStart: Kleisli[Task, WebServerConfiguration, Unit] = Kleisli { conf =>
+    val msg = s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode"
+    Task.delay { logger.info(msg) }
+  }
+
   /**
     * Reads the configuration and launches the web server
     */
   override def process(args: List[String]): Process[Task, Nothing] = {
     val engineTask = for {
+      _    <- configLog // Initialize log before the engine is setup
       c    <- config
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)
     } yield SeqexecEngine(seqc)
@@ -143,11 +146,11 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
           et.eventProcess(inq).to(out.publish).run,
           // Launch web server
           for {
-            _  <- configLog
             wc <- serverConf
             ac <- authConf.run(wc)
             as <- authService.run(ac)
             rd <- redirectWebServer.run(wc)
+            _  <- logStart.run(wc)
             ws <- webServer(as, (inq, out), et).run(wc)
           } yield (ws, rd)
         )

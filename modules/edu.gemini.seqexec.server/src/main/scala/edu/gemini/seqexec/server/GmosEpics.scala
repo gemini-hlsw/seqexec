@@ -3,13 +3,13 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
 import java.lang.{Double => JDouble}
 
 import edu.gemini.epics.acm.{CaCommandSender, CaParameter, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
 import edu.gemini.seqexec.server.GmosEpics.{RoiParameters, RoiStatus}
 
+import org.log4s.getLogger
 import scala.concurrent.duration._
 import scala.collection.breakOut
 
@@ -247,7 +247,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 object GmosEpics extends EpicsSystem[GmosEpics] {
 
   override val className = getClass.getName
-  override val Log = Logger.getLogger(className)
+  override val Log = getLogger
   override val CA_CONFIG_FILE = "/Gmos.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)

@@ -2,7 +2,8 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package edu.gemini.seqexec.server
-import java.util.logging.Logger
+
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.server.GcalController.GcalConfig
 
@@ -10,7 +11,7 @@ import edu.gemini.seqexec.server.GcalController.GcalConfig
   * Created by jluhrs on 3/15/17.
   */
 object GcalControllerSim extends GcalController {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   override def getConfig: SeqAction[GcalConfig] = SeqAction(GcalController.GcalConfig.allOff)
 
@@ -26,7 +27,7 @@ object GcalControllerSim extends GcalController {
     "diffuser = " + config.diffuser
     )
 
-  override def applyConfig(config: GcalConfig): SeqAction[Unit] = SeqAction.either{
+  override def applyConfig(config: GcalConfig): SeqAction[Unit] = SeqAction.either {
     Log.info("applyConfig: config is\n" + printConfig(config).mkString("\n"))
     TrySeq(())
   }

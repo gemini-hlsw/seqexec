@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.server.security
 
-import java.util.logging.Logger
+import org.log4s._
 
 import com.unboundid.ldap.sdk._
 import edu.gemini.seqexec.model.UserDetails
@@ -92,7 +92,7 @@ object FreeLDAPAuthenticationService {
 class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthService {
   import FreeLDAPAuthenticationService._
 
-  val Log = Logger.getLogger(FreeLDAPAuthenticationService.getClass.getSimpleName)
+  val Log = getLogger
 
   val MaxConnections = 20
   // Shorten the default timeout
@@ -119,13 +119,13 @@ class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthServ
         .ensuring(IO(c.close())).unsafePerformIO()
     }.leftMap {
       case e: LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
-        Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
+        Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         BadCredentials(username)
       case e: LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
-        Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
+        Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         UserNotFound(username)
       case e: LDAPException =>
-        Log.severe(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
+        Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         GenericFailure("LDAP Authentication error")
       case e: Throwable =>
         GenericFailure(e.getMessage)

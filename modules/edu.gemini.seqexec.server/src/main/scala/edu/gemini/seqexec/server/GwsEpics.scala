@@ -3,13 +3,13 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
-
+import org.log4s.getLogger
 import squants.MetricSystem.Milli
 import squants.motion.{Bars, MetersPerSecond, Pressure}
 import squants.space.{Angle, Degrees}
 import squants.thermal.Celsius
 import squants.{Temperature, Velocity}
+
 import edu.gemini.epics.acm.CaService
 
 /**
@@ -33,7 +33,7 @@ final class GwsEpics private (epicsService: CaService) {
 
 object GwsEpics extends EpicsSystem[GwsEpics] {
   override val className: String = getClass.getName
-  override val Log = Logger.getLogger(className)
+  override val Log = getLogger
   override val CA_CONFIG_FILE = "/Gws.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GwsEpics(service)

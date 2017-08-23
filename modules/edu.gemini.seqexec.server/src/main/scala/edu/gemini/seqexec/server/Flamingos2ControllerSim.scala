@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.Flamingos2Controller.Flamingos2Config
@@ -13,7 +13,7 @@ import scalaz.EitherT
 import scalaz.concurrent.Task
 
 object Flamingos2ControllerSim extends Flamingos2Controller {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
@@ -31,7 +31,7 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
 }
 
 object Flamingos2ControllerSimBad extends Flamingos2Controller {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 

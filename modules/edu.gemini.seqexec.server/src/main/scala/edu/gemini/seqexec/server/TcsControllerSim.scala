@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.{Level, Logger}
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.server.TcsController._
 import edu.gemini.spModel.core.Wavelength
@@ -19,7 +19,7 @@ import scalaz.concurrent.Task
 object TcsControllerSim extends TcsController {
   import MountGuideOption._
 
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   override def getConfig: SeqAction[TcsConfig] = SeqAction(TcsConfig(
     GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff),
@@ -45,7 +45,7 @@ object TcsControllerSim extends TcsController {
   ))
 
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tc: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem): Task[Unit] = Task.delay(Log.info("Applying " + subsystem + " configuration."))
+    def configSubsystem(subsystem: Subsystem): Task[Unit] = Task.delay(Log.info(s"Applying $subsystem configuration."))
 
     EitherT(
       (subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a))).map(TrySeq(_)))
@@ -54,7 +54,7 @@ object TcsControllerSim extends TcsController {
   override def guide(gc: GuideConfig): SeqAction[Unit] =
     EitherT ( for {
         _ <- Task {
-          Log.log(Level.INFO, "Applying guiding configuration")
+          Log.info("Applying guiding configuration")
           Thread.sleep(1000)
         }
       } yield TrySeq(())

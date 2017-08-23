@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.logging.Logger
+import org.log4s.getLogger
 
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.TcsController._
@@ -92,7 +92,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
 }
 
 object Tcs {
-  private val Log = Logger.getLogger(getClass.getName)
+  private val Log = getLogger
 
   // Shouldn't these be defined somewhere ?
   val GUIDE_WITH_PWFS1_PROP = "guideWithPWFS1"
@@ -159,4 +159,3 @@ object Tcs {
     ).suml.apply(s0)
 
 }
-
