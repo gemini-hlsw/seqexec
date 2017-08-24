@@ -10,7 +10,7 @@ import edu.gemini.seqexec.model.Model.{Conditions, Operator}
 /**
   * A Map of `Sequence`s.
   */
-case class Engine[+A](sequences: Map[Sequence.Id, Sequence[A]])
+final case class Engine[+A](sequences: Map[Sequence.Id, Sequence[A]])
 
 object Engine {
 
@@ -27,7 +27,7 @@ object Engine {
 //      Engine(q.sequences.mapValues(_.map(f)))
 //  }
 
-  case class State(conditions: Conditions, operator: Option[Operator], sequences: Map[Sequence.Id, Sequence.State])
+  final case class State(conditions: Conditions, operator: Option[Operator], sequences: Map[Sequence.Id, Sequence.State])
 
   object State {
 

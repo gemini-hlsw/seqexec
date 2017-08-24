@@ -35,15 +35,15 @@ object GcalKeywordsReaderImpl extends GcalKeywordReader {
   def getFilter: SeqAction[Option[String]] = GcalEpics.instance.filter
 
   def getLamp: SeqAction[Option[String]] = {
-    val ar   = GcalEpics.instance.lampAr().filter(_ == BinaryOnOff.ON) *> "Ar".some
-    val cuAr = GcalEpics.instance.lampCuAr().filter(_ == BinaryOnOff.ON) *> "CuAr".some
+    val ar   = GcalEpics.instance.lampAr().filter(_ === BinaryOnOff.ON) *> "Ar".some
+    val cuAr = GcalEpics.instance.lampCuAr().filter(_ === BinaryOnOff.ON) *> "CuAr".some
     val ir   = GcalEpics.instance.lampIr().map{
       case BinaryOnOff.ON => "IRhigh"
       case _              => "IRlow"
     }
-    val qh   = GcalEpics.instance.lampQH().filter(_ == BinaryOnOff.ON) *> "QH".some
-    val thAr = GcalEpics.instance.lampThAr().filter(_ == BinaryOnOff.ON) *> "ThAr".some
-    val xe   = GcalEpics.instance.lampXe().filter(_ == BinaryOnOff.ON) *> "Xe".some
+    val qh   = GcalEpics.instance.lampQH().filter(_ === BinaryOnOff.ON) *> "QH".some
+    val thAr = GcalEpics.instance.lampThAr().filter(_ === BinaryOnOff.ON) *> "ThAr".some
+    val xe   = GcalEpics.instance.lampXe().filter(_ === BinaryOnOff.ON) *> "Xe".some
 
     ar.orElse(xe).orElse(cuAr).orElse(thAr).orElse(qh).orElse(ir)
   }

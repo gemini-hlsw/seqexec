@@ -35,13 +35,13 @@ import knobs.Config
   */
 class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
-  val odbProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
+  val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  val odbClient = ODBClient(ODBClientConfig(settings.odbHost, ODBClient.DefaultODBBrowserPort))
+  private val odbClient = ODBClient(ODBClientConfig(settings.odbHost, ODBClient.DefaultODBBrowserPort))
 
-  val systems = SeqTranslate.Systems(
+  private val systems = SeqTranslate.Systems(
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
@@ -54,14 +54,14 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics
   )
 
-  val translatorSettings = SeqTranslate.Settings(
+  private val translatorSettings = SeqTranslate.Settings(
     tcsKeywords = settings.tcsKeywords,
     f2Keywords = settings.f2Keywords,
     gwsKeywords = settings.gwsKeywords,
     gcalKeywords = settings.gcalKeywords,
     gmosKeywords = settings.gmosKeywords)
 
-  val translator = SeqTranslate(settings.site, systems, translatorSettings)
+  private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
   def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.right)).run
 
@@ -255,7 +255,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 // Configuration stuff
 object SeqexecEngine {
 
-  case class Settings(site: Site,
+  final case class Settings(site: Site,
                       odbHost: String,
                       date: LocalDate,
                       dhsURI: String,
@@ -271,23 +271,6 @@ object SeqexecEngine {
                       gcalKeywords: Boolean,
                       instForceError: Boolean,
                       odbQueuePollingInterval: Duration)
-  val defaultSettings = Settings(Site.GS,
-    "localhost",
-    LocalDate.of(2017, 1, 1),
-    "http://localhost/",
-    dhsSim = true,
-    tcsSim = true,
-    instSim = true,
-    gcalSim = true,
-    odbNotifications = false,
-    tcsKeywords = false,
-    f2Keywords = false,
-    gmosKeywords = false,
-    gwsKeywords = false,
-    gcalKeywords = false,
-    instForceError = false,
-    10.seconds)
-
   def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
 
   private def decodeTops(s: String): Map[String, String] =
@@ -330,6 +313,7 @@ object SeqexecEngine {
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
 
     // TODO: Review initialization of EPICS systems
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
       Task.delay(
         Option(CaService.getInstance()) match {

@@ -12,9 +12,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   import dsl._
 
-  val gutterWidth = 25
-  val handleContainerWidth = 28
-  val iconWidth = 16.5
+  private val gutterWidth = 25
+  private val iconWidth = 16.5
 
   val body: StyleA = style(unsafeRoot("body")(
     backgroundColor(white)
@@ -46,16 +45,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(45.px)
   )
 
-  val activeInstrumentLabel = style(
+  val activeInstrumentLabel: StyleA = style(
     paddingBottom(0.2.em),
     textAlign.center
   )
 
-  val activeInstrumentContent = style(
+  val activeInstrumentContent: StyleA = style(
     padding(0.6.em, 0.9.em)
   )
 
-  val fieldsNoBottom = style(
+  val fieldsNoBottom: StyleA = style(
     marginBottom(0.px).important
   )
 

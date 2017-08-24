@@ -7,11 +7,6 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.Flamingos2Controller._
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadoutMode
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -19,7 +14,8 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import scala.concurrent.duration.SECONDS
 import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
-import scalaz._
+import scalaz.{Equal, Reader, EitherT, \/, \/-}
+import scalaz.syntax.equal._
 
 final case class Flamingos2(f2Controller: Flamingos2Controller) extends InstrumentSystem {
 
@@ -29,8 +25,9 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val sfName: String = Flamingos2.sfName
 
-  override val contributorName = "flamingos2"
-  val dhsInstrumentName = "F2"
+  override val contributorName: String = "flamingos2"
+
+  override val dhsInstrumentName: String = "F2"
 
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader {
     fileId => f2Controller.observe(fileId).map(_ => ObserveResult(fileId))
@@ -42,6 +39,8 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 }
 
 object Flamingos2 {
+  implicit val equalFPUnit: Equal[FPUnit] = Equal.equalA
+
   val name: String = INSTRUMENT_NAME_PROP
 
   val sfName: String = "f2"
@@ -76,7 +75,7 @@ object Flamingos2 {
     val b = INSTRUMENT_KEY / FPU_MASK_PROP
 
     config.extract(a).as[FPUnit].flatMap(x =>
-      if(x != FPUnit.CUSTOM_MASK) \/-(fpuFromFPUnit(x))
+      if(x =/= FPUnit.CUSTOM_MASK) \/-(fpuFromFPUnit(x))
       else config.extract(b).as[String].map(FocalPlaneUnit.Custom)
     )
   }
@@ -128,6 +127,5 @@ object Flamingos2 {
       q <- dcConfigFromSequenceConfig(config)
     } yield Flamingos2Config(p, q)
   ) )
-
 
 }

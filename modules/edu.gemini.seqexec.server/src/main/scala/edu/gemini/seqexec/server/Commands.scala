@@ -14,18 +14,20 @@ import scalaz._
 sealed trait CommandError {
   val msg: String
 }
-case class BadParameter(msg: String) extends CommandError
-case class ObsIdNotFound(msg: String) extends CommandError
-case class SeqexecFailureError(e: SeqexecFailure) extends CommandError {
-  val msg = SeqexecFailure.explain(e)
+final case class BadParameter(msg: String) extends CommandError
+final case class ObsIdNotFound(msg: String) extends CommandError
+final case class SeqexecFailureError(e: SeqexecFailure) extends CommandError {
+  val msg: String = SeqexecFailure.explain(e)
 }
 
-case class CommandResponse(msg: String, keys: List[(String, String)], steps: List[String])
+final case class CommandResponse(msg: String, keys: List[(String, String)], steps: List[String])
 
 object CommandResponse {
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(msg: String): CommandResponse = CommandResponse(msg, Nil, Nil)
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 sealed trait Commands {
   import Commands.CommandResult
 
@@ -41,9 +43,9 @@ sealed trait Commands {
 object Commands {
   type CommandResult = CommandError \/ CommandResponse
 
-  val Usage =
+  val Usage: String =
     "Usage: seq host [host:port] | show obsId count|static|dynamic | run obsId"
-  val ShowUsage =
+  val ShowUsage: String =
     """Usage:
       |  seq show obsId count
       |  seq show obsId static [calibration|instrument|telescope ...]
@@ -65,6 +67,7 @@ object Commands {
     """.stripMargin
 
   // scalastyle:off
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(odbProxy: ODBProxy): Commands = new Commands {
 
     override def host(): CommandResult =
@@ -108,7 +111,7 @@ object Commands {
       case s: SequenceableSpType => s.sequenceValue()
       case d: DisplayableSpType  => d.displayValue()
       case l: LoggableSpType     => l.logValue()
-      case _                     => o.toString
+      case _                     => s"$o"
     }
 
     def keys(cs: ConfigSequence, step: Int, ks: Array[ItemKey]): List[(String, String)] = {
@@ -118,8 +121,7 @@ object Commands {
     }
 
     def sysFilter(system: String): ItemKey => Boolean =
-      _.splitPath().get(0) == system
-
+      _.splitPath().get(0) === system
 
     def ifStepValid(oid: SPObservationID, cs: ConfigSequence, step: String): CommandError \/ Int =
       \/.fromTryCatchNonFatal(step.toInt - 1).fold(

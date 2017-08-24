@@ -13,7 +13,7 @@ import scalaz.concurrent.Task
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-case class Sequence[+A](
+final case class Sequence[+A](
   id: Sequence.Id,
   metadata: SequenceMetadata,
   steps: List[Step[A]]
@@ -30,12 +30,12 @@ object Sequence {
 
   def empty[A](id: Id, m: SequenceMetadata): Sequence[A] = Sequence(id, m, Nil)
 
-  implicit val sequenceFunctor = new Functor[Sequence] {
+  implicit val sequenceFunctor: Functor[Sequence] = new Functor[Sequence] {
     def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
       Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
   }
 
-  implicit val stepFoldable = new Foldable[Sequence] {
+  implicit val stepFoldable: Foldable[Sequence] = new Foldable[Sequence] {
     def foldMap[A, B](fa: Sequence[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
       fa.steps.foldMap(_.foldMap(f))
 
@@ -48,7 +48,7 @@ object Sequence {
     * execution.
     *
     */
-  case class Zipper(
+  final case class Zipper(
     id: Id,
     metadata: SequenceMetadata,
     pending: List[Step[Action]],
@@ -245,7 +245,7 @@ object Sequence {
       * This is the `State` in Zipper mode, which means is under execution.
       *
       */
-    case class Zipper(zipper: Sequence.Zipper, status: SequenceState) extends State { self =>
+    final case class Zipper(zipper: Sequence.Zipper, status: SequenceState) extends State { self =>
 
       override val next: Option[State] = zipper.next match {
         // Last execution
@@ -314,7 +314,7 @@ object Sequence {
       * only completed `Step`s.
       *
       */
-    case class Final(seq: Sequence[Result], status: SequenceState) extends State { self =>
+    final case class Final(seq: Sequence[Result], status: SequenceState) extends State { self =>
 
       override val next: Option[State] = None
 

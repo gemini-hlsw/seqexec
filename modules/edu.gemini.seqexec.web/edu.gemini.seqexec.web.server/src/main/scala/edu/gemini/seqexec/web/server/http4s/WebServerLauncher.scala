@@ -31,14 +31,14 @@ import scalaz.stream.async
 import scalaz.stream.async.mutable.Topic
 
 object WebServerLauncher extends ProcessApp with LogInitialization {
-  val logger = getLogger
+  private val logger = getLogger
 
-  case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
+  final case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
+  final case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
@@ -119,7 +119,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
 
   def redirectWebServer: Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
     val builder = BlazeBuilder.bindHttp(conf.insecurePort, conf.host)
-      .mountService(RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
+      .mountService(new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
     builder.start
   }
 

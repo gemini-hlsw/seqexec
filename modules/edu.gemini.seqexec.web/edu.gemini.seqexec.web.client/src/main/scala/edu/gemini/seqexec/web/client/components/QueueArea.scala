@@ -25,10 +25,10 @@ import scalaz.syntax.std.option._
 object QueueTableBody {
   type SequencesModel = ModelProxy[StatusAndLoadedSequencesFocus]
 
-  case class Props(ctl: RouterCtl[SeqexecPages], sequences: SequencesModel)
+  final case class Props(ctl: RouterCtl[SeqexecPages], sequences: SequencesModel)
 
   // Minimum rows to display, pad with empty rows if needed
-  val minRows = 5
+  private val minRows = 5
 
   def emptyRow(k: String, isLogged: Boolean): VdomTagOf[TableRow] = {
     <.tr(

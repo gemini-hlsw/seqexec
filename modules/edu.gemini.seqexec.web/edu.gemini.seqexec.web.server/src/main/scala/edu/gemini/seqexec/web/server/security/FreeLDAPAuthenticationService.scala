@@ -3,13 +3,15 @@
 
 package edu.gemini.seqexec.web.server.security
 
-import org.log4s._
+import org.log4s.getLogger
 
 import com.unboundid.ldap.sdk._
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
 
 import scalaz._
+import Scalaz._
+
 import scalaz.concurrent.Task
 import scalaz.effect.IO
 
@@ -24,11 +26,11 @@ object FreeLDAPAuthenticationService {
   // Operations on ldap
   object LdapOp {
     // Operation to authenticate a user, It returns true if it works
-    case class AuthenticateOp(username: String, password: String) extends LdapOp[UID]
+    final case class AuthenticateOp(username: String, password: String) extends LdapOp[UID]
     // Read the user display name
-    case class UserDisplayNameOp(uid: UID)                        extends LdapOp[DisplayName]
+    final case class UserDisplayNameOp(uid: UID)                        extends LdapOp[DisplayName]
     // Reads the name, groups and thumbnail
-    case class DisplayNameGrpThumbOp(uid: UID)                    extends LdapOp[(DisplayName, Groups, Option[Thumbnail])]
+    final case class DisplayNameGrpThumbOp(uid: UID)                    extends LdapOp[(DisplayName, Groups, Option[Thumbnail])]
   }
 
   // Free monad over the free functor of LdapOp.
@@ -91,13 +93,13 @@ object FreeLDAPAuthenticationService {
   */
 class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthService {
   import FreeLDAPAuthenticationService._
+  private implicit val resultEqual: Equal[ResultCode] = Equal.equalA
 
-  val Log = getLogger
+  private val Log = getLogger
 
-  val MaxConnections = 20
   // Shorten the default timeout
-  val Timeout = 1000
-  val Domain = "@gemini.edu"
+  private val Timeout = 1000
+  private val Domain = "@gemini.edu"
 
   lazy val ldapOptions: LDAPConnectionOptions = {
     val opts = new LDAPConnectionOptions()
@@ -118,16 +120,16 @@ class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthServ
       runIO(authenticationAndName(usernameWithDomain, password), c)
         .ensuring(IO(c.close())).unsafePerformIO()
     }.leftMap {
-      case e: LDAPException if e.getResultCode == ResultCode.NO_SUCH_OBJECT      =>
+      case e: LDAPException if e.getResultCode === ResultCode.NO_SUCH_OBJECT      =>
         Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         BadCredentials(username)
-      case e: LDAPException if e.getResultCode == ResultCode.INVALID_CREDENTIALS =>
+      case e: LDAPException if e.getResultCode === ResultCode.INVALID_CREDENTIALS =>
         Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         UserNotFound(username)
-      case e: LDAPException =>
+      case e: LDAPException                                                       =>
         Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
         GenericFailure("LDAP Authentication error")
-      case e: Throwable =>
+      case e: Throwable                                                           =>
         GenericFailure(e.getMessage)
     }
   }

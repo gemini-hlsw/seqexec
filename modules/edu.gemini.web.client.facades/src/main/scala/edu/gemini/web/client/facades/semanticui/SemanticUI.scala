@@ -65,6 +65,7 @@ object SemanticUI {
   }
 
   @js.native
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticCommands extends JQuery {
     def visibility(o: JsVisiblityOptions): this.type = js.native
 
@@ -83,6 +84,7 @@ object SemanticUI {
     def progress(o: JsProgressOptions): this.type = js.native
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic(jq: JQuery): SemanticCommands = jq.asInstanceOf[SemanticCommands]
 
 }

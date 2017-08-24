@@ -20,5 +20,3 @@ object Size {
 
   implicit val equal: Equal[Size] = Equal.equalA[Size]
 }
-
-trait SemanticUISize extends Size

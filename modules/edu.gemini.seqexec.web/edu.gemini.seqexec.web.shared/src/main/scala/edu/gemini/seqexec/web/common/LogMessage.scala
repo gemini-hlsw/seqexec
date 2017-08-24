@@ -10,7 +10,7 @@ import boopickle.Default._
 /** Minimal class to transfer log messages from client to server
   * We only care about level and message
   */
-case class LogMessage(level: Level, msg: String)
+final case class LogMessage(level: Level, msg: String)
 
 object LogMessage {
   def fromLogRecord(record: LogRecord): LogMessage = {

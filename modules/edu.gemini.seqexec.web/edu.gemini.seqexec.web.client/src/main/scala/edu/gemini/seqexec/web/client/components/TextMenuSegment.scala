@@ -9,7 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 /**
   * Bar at the top of the page segtions
   */
-case class TextMenuSegment(p: TextMenuSegment.Props, children: Seq[VdomNode], key: String) {
+final case class TextMenuSegment private (p: TextMenuSegment.Props, children: Seq[VdomNode], key: String) {
   import TextMenuSegment.Props
 
   private def component = ScalaComponent.builder[Props]("TextMenuSegment")
@@ -29,11 +29,11 @@ case class TextMenuSegment(p: TextMenuSegment.Props, children: Seq[VdomNode], ke
 }
 
 object TextMenuSegment {
-  case class Props(header: String)
+  final case class Props(header: String)
 
   // Used to call TextMenuSegment directly on a jsx component declaration
   implicit def textMenu2TagMod(i: TextMenuSegment):VdomElement = i.component
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(header: String, key: String, children: VdomNode*): TextMenuSegment = TextMenuSegment(Props(header), children, key)
 }
-

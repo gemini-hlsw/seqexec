@@ -115,17 +115,17 @@ object GcalControllerEpics extends GcalController {
     y <- decode[String, Option[Shutter]](x)
   } yield y
 
-  private def getArLamp: Option[ArLampState] = GcalEpics.instance.lampAr().map(decode[BinaryOnOff, LampState]).map(ArLampState)
+  private def getArLamp: Option[ArLampState] = GcalEpics.instance.lampAr().map(decode[BinaryOnOff, LampState]).map(ArLampState.apply)
 
-  private def getCuArLamp: Option[CuArLampState] = GcalEpics.instance.lampCuAr().map(decode[BinaryOnOff, LampState]).map(CuArLampState)
+  private def getCuArLamp: Option[CuArLampState] = GcalEpics.instance.lampCuAr().map(decode[BinaryOnOff, LampState]).map(CuArLampState.apply)
 
-  private def getQHLamp: Option[QHLampState] = GcalEpics.instance.lampQH().map(decode[BinaryOnOff, LampState]).map(QHLampState)
+  private def getQHLamp: Option[QHLampState] = GcalEpics.instance.lampQH().map(decode[BinaryOnOff, LampState]).map(QHLampState.apply)
 
-  private def getThArLamp: Option[ThArLampState] = GcalEpics.instance.lampThAr().map(decode[BinaryOnOff, LampState]).map(ThArLampState)
+  private def getThArLamp: Option[ThArLampState] = GcalEpics.instance.lampThAr().map(decode[BinaryOnOff, LampState]).map(ThArLampState.apply)
 
-  private def getXeLamp: Option[XeLampState] = GcalEpics.instance.lampXe().map(decode[BinaryOnOff, LampState]).map(XeLampState)
+  private def getXeLamp: Option[XeLampState] = GcalEpics.instance.lampXe().map(decode[BinaryOnOff, LampState]).map(XeLampState.apply)
 
-  private def getIrLamp: Option[IrLampState] = GcalEpics.instance.lampIr().map(decode[BinaryOnOff, LampState]).map(IrLampState)
+  private def getIrLamp: Option[IrLampState] = GcalEpics.instance.lampIr().map(decode[BinaryOnOff, LampState]).map(IrLampState.apply)
 
   override def getConfig: SeqAction[GcalConfig] = SeqAction(GcalConfig(getArLamp, getCuArLamp, getQHLamp,
     getThArLamp, getXeLamp, getIrLamp, getShutter, getFilter, getDiffuser)
@@ -169,12 +169,12 @@ object GcalControllerEpics extends GcalController {
       config.lampQh.map(v => setQHLampParams(encode(v.self))),
       config.lampXe.map(v => setXeLampParams(encode(v.self))),
       config.lampIr.map(v => setIrLampParams(encode(v.self)))
-    ).flatten.flatten ++
+    ).toList.collect { case Some(x) => x }.flatten ++
       List(
         config.shutter.map(v => GcalEpics.instance.shutterCmd.setPosition(encode(v))),
         config.filter.map(v => GcalEpics.instance.filterCmd.setName(encode(v))),
         config.diffuser.map(v => GcalEpics.instance.diffuserCmd.setName(encode(v)))
-      ).flatten
+      ).collect { case Some(x) => x }
 
     if (params.isEmpty) SeqAction(())
     else for {

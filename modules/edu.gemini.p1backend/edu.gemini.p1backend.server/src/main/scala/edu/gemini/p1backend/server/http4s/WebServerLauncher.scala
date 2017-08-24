@@ -20,7 +20,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configuration for the web server
     */
-  case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
+  final case class WebServerConfiguration(host: String, port: Int, devMode: Boolean)
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: Task[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))

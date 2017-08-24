@@ -25,11 +25,11 @@ import scalaz.concurrent.Task
   */
 class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.EventQueue, se: SeqexecEngine) extends BooEncoders {
 
-  val commands = Commands(se.odbProxy)
+  private val commands = Commands(se.odbProxy)
   // Handles authentication
-  val httpAuthentication = new Http4sAuthentication(auth)
+  private val httpAuthentication = new Http4sAuthentication(auth)
 
-  val commandServices: AuthedService[UserDetails] = AuthedService {
+  private val commandServices: AuthedService[UserDetails] = AuthedService {
     case GET  -> Root  / "host" as _ =>
       Ok(toCommandResult("host", commands.host()))
 

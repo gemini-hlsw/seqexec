@@ -17,7 +17,7 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 
-case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
+final case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] ={
     sendKeywords(id, inst, hs, List(
       buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
@@ -93,12 +93,12 @@ case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader
 }
 
 object GmosHeader {
-  case class RoiValues(xStart: SeqAction[Int], xSize: SeqAction[Int], yStart: SeqAction[Int], ySize: SeqAction[Int])
+  final case class RoiValues(xStart: SeqAction[Int], xSize: SeqAction[Int], yStart: SeqAction[Int], ySize: SeqAction[Int])
   trait ObsKeywordsReader {
     def preimage: SeqAction[YesNoType]
   }
 
-  case class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
+  final case class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
     override def preimage: SeqAction[YesNoType] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
       .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
   }
@@ -252,7 +252,7 @@ object GmosHeader {
       } yield roi.map { r =>
           i ->
             RoiValues(r.ccdXstart.toSeqAction, r.ccdXsize.toSeqAction, r.ccdYstart.toSeqAction, r.ccdYsize.toSeqAction)
-        }).toList.flatten.toMap
+        }).toList.collect { case Some(x) => x }.toMap
     override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
     override def isADCInUse: Boolean =

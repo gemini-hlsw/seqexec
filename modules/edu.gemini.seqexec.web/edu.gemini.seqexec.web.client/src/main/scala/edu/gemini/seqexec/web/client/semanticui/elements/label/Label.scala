@@ -9,8 +9,11 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
+import scalaz.syntax.equal._
+
 object Label {
-  case class Props(text: String,
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props(text: String,
     htmlFor: Option[String] = None,
     color  : Option[String] = None,
     tag    : Boolean = false,
@@ -26,13 +29,13 @@ object Label {
         ^.classSet(
           "basic"   -> p.basic,
           "tag"     -> p.tag,
-          "tiny"    -> (p.size == Size.Tiny),
-          "mini"    -> (p.size == Size.Mini),
-          "small"   -> (p.size == Size.Small),
-          "large"   -> (p.size == Size.Large),
-          "big"     -> (p.size == Size.Big),
-          "huge"    -> (p.size == Size.Huge),
-          "massive" -> (p.size == Size.Massive)
+          "tiny"    -> (p.size === Size.Tiny),
+          "mini"    -> (p.size === Size.Mini),
+          "small"   -> (p.size === Size.Small),
+          "large"   -> (p.size === Size.Large),
+          "big"     -> (p.size === Size.Big),
+          "huge"    -> (p.size === Size.Huge),
+          "massive" -> (p.size === Size.Massive)
         ),
         p.color.map(u => ^.cls := u).whenDefined,
         ^.htmlFor :=? p.htmlFor,

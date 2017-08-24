@@ -5,6 +5,8 @@ package edu.gemini.web.common
 
 import scalaz.{Show, Equal, Functor}
 import scalaz.syntax.std.boolean._
+import scalaz.syntax.equal._
+import scalaz.std.AllInstances._
 
 object FixedLengthBuffer {
   private final case class FixedLengthBufferImpl[A](maxLength: Int, data: Vector[A]) extends FixedLengthBuffer[A] {
@@ -13,8 +15,11 @@ object FixedLengthBuffer {
     require(maxLength >= 0)
 
     def append(element: A): FixedLengthBuffer[A] = {
-      if (data.length == maxLength && data.length >= 0) {
-        FixedLengthBufferImpl[A](maxLength, data.tail :+ element)
+      if (data.length === maxLength && data.length >= 0) {
+        data match {
+          case _ +: tail => FixedLengthBufferImpl[A](maxLength, tail :+ element)
+          case _         => FixedLengthBufferImpl[A](maxLength, Vector(element))
+        }
       } else {
         FixedLengthBufferImpl[A](maxLength, data :+ element)
       }

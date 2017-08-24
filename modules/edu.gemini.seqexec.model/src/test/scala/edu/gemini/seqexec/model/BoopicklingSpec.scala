@@ -14,6 +14,7 @@ import org.scalatest.prop.PropertyChecks
 /**
   * Tests Serialization/Deserialization using BooPickle
   */
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals"))
 class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks with ModelBooPicklers {
   import SharedModelArbitraries._
 

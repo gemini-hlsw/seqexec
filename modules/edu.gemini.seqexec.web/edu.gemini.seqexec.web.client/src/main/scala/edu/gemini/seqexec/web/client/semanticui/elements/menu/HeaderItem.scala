@@ -12,7 +12,9 @@ import scalacss.ScalaCssReact._
   * Semantic UI Header Item component
   */
 object HeaderItem {
-  case class Props(name: String, sub: Boolean = false, extraStyles: List[scalacss.internal.StyleA] = Nil)
+
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props(name: String, sub: Boolean = false, extraStyles: List[scalacss.internal.StyleA] = Nil)
 
   private val component = ScalaComponent.builder[Props]("Header-Item")
     .stateless
@@ -28,7 +30,9 @@ object HeaderItem {
       )
     ).build
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(name: String, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(Props(name))(children: _*)
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

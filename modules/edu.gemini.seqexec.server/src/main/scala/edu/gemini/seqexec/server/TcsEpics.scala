@@ -7,7 +7,7 @@ import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import java.util.{Timer, TimerTask}
-import org.log4s.getLogger
+import org.log4s.{Logger, getLogger}
 
 import edu.gemini.seqexec.server.EpicsCommand._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
@@ -33,110 +33,110 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   import TcsEpics._
   import EpicsCommand.setParameter
 
-  val TCS_TOP = tops.getOrElse("tcs", "")
+  val TCS_TOP: String = tops.getOrElse("tcs", "")
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
   def post: SeqAction[Unit] = m1GuideCmd.post
 
   object m1GuideCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("m1Guide"))
-    val state = cs.map(_.getString("state"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m1Guide"))
+    private val state = cs.map(_.getString("state"))
 
     def setState(v: String): SeqAction[Unit] = setParameter(state, v)
   }
 
   object m2GuideCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("m2Guide"))
-    val state = cs.map(_.getString("state"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2Guide"))
+    private val state = cs.map(_.getString("state"))
 
     def setState(v: String): SeqAction[Unit] = setParameter[String](state, v)
   }
 
   object mountGuideCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("mountGuide"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("mountGuide"))
 
-    val source = cs.map(_.getString("source"))
+    private val source = cs.map(_.getString("source"))
 
     def setSource(v: String): SeqAction[Unit] = setParameter(source, v)
 
-    val p1weight = cs.map(_.getDouble("p1weight"))
+    private val p1weight = cs.map(_.getDouble("p1weight"))
 
     def setP1Weight(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](p1weight, v)
 
-    val p2weight = cs.map(_.getDouble("p2weight"))
+    private val p2weight = cs.map(_.getDouble("p2weight"))
 
     def setP2Weight(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](p2weight, v)
 
-    val mode = cs.map(_.getString("mode"))
+    private val mode = cs.map(_.getString("mode"))
 
     def setMode(v: String): SeqAction[Unit] = setParameter(mode, v)
   }
 
   object offsetACmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("offsetPoA1"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("offsetPoA1"))
 
-    val x = cs.map(_.getDouble("x"))
+    private val x = cs.map(_.getDouble("x"))
 
     def setX(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](x, v)
 
-    val y = cs.map(_.getDouble("y"))
+    private val y = cs.map(_.getDouble("y"))
 
     def setY(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](y, v)
   }
 
   object offsetBCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("offsetPoB1"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("offsetPoB1"))
 
-    val x = cs.map(_.getDouble("x"))
+    private val x = cs.map(_.getDouble("x"))
 
     def setX(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](x, v)
 
-    val y = cs.map(_.getDouble("y"))
+    private val y = cs.map(_.getDouble("y"))
 
     def setY(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](y, v)
   }
 
   object offsetCCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("offsetPoC1"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("offsetPoC1"))
 
-    val x = cs.map(_.getDouble("x"))
+    private val x = cs.map(_.getDouble("x"))
 
     def setX(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](x, v)
 
-    val y = cs.map(_.getDouble("y"))
+    private val y = cs.map(_.getDouble("y"))
 
     def setY(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](y, v)
   }
 
   object wavelSourceA extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("wavelSourceA"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelSourceA"))
 
-    val wavel = cs.map(_.getDouble("wavel"))
+    private val wavel = cs.map(_.getDouble("wavel"))
 
     def setWavel(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](wavel, v)
   }
 
   object wavelSourceB extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("wavelSourceB"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelSourceB"))
 
-    val wavel = cs.map(_.getDouble("wavel"))
+    private val wavel = cs.map(_.getDouble("wavel"))
 
     def setWavel(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](wavel, v)
   }
 
   object wavelSourceC extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("wavelSourceC"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelSourceC"))
 
-    val wavel = cs.map(_.getDouble("wavel"))
+    private val wavel = cs.map(_.getDouble("wavel"))
 
     def setWavel(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](wavel, v)
   }
 
   object m2Beam extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("m2Beam"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2Beam"))
 
-    val beam = cs.map(_.getString("beam"))
+    private val beam = cs.map(_.getString("beam"))
 
     def setBeam(v: String): SeqAction[Unit] = setParameter(beam, v)
   }
@@ -148,27 +148,27 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   object oiwfsProbeGuideCmd extends ProbeGuideCmd("oiwfsGuide", epicsService)
 
   object pwfs1Park extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("pwfs1Park"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1Park"))
   }
 
   object pwfs2Park extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("pwfs2Park"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs2Park"))
   }
 
   object oiwfsPark extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("oiwfsPark"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiwfsPark"))
   }
 
   object pwfs1StopObserveCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("pwfs1StopObserve"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1StopObserve"))
   }
 
   object pwfs2StopObserveCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("pwfs2StopObserve"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs2StopObserve"))
   }
 
   object oiwfsStopObserveCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("oiwfsStopObserve"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiwfsStopObserve"))
   }
 
   object pwfs1ObserveCmd extends WfsObserveCmd("pwfs1Observe", epicsService)
@@ -178,38 +178,38 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   object oiwfsObserveCmd extends WfsObserveCmd("oiwfsObserve", epicsService)
 
   object hrwfsParkCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("hrwfsPark"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("hrwfsPark"))
   }
 
   object hrwfsPosCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("hrwfs"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("hrwfs"))
 
-    val hrwfsPos = cs.map(_.getString("hrwfsPos"))
+    private val hrwfsPos = cs.map(_.getString("hrwfsPos"))
 
     def setHrwfsPos(v: String): SeqAction[Unit] = setParameter(hrwfsPos, v)
   }
 
   object scienceFoldParkCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("scienceFoldPark"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("scienceFoldPark"))
   }
 
   object scienceFoldPosCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("scienceFold"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("scienceFold"))
 
-    val scfold = cs.map(_.getString("scfold"))
+    private val scfold = cs.map(_.getString("scfold"))
 
     def setScfold(v: String): SeqAction[Unit] = setParameter(scfold, v)
   }
 
   object observe extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("tcs::observe"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("tcs::observe"))
   }
 
   object endObserve extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("tcs::endObserve"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("tcs::endObserve"))
   }
 
-  val tcsState = epicsService.getStatusAcceptor("tcsstate")
+  private val tcsState = epicsService.getStatusAcceptor("tcsstate")
 
   def absorbTipTilt: Option[Integer] = Option(tcsState.getIntegerAttribute("absorbTipTilt").value)
 
@@ -514,15 +514,15 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def m2UserFocusOffset: Option[Double] = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
 
-  val pwfs1Status = epicsService.getStatusAcceptor("pwfs1state")
+  private val pwfs1Status = epicsService.getStatusAcceptor("pwfs1state")
 
   def pwfs1IntegrationTime: Option[Double] = Option(pwfs1Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
-  val pwfs2Status = epicsService.getStatusAcceptor("pwfs2state")
+  private val pwfs2Status = epicsService.getStatusAcceptor("pwfs2state")
 
   def pwfs2IntegrationTime: Option[Double] = Option(pwfs2Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
 
-  val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
+  private val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
 
   // Attribute must be changed back to Double after EPICS channel is fixed.
   def oiwfsIntegrationTime: Option[Double]  = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
@@ -540,65 +540,65 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
 object TcsEpics extends EpicsSystem[TcsEpics] {
 
-  override val className = getClass.getName
-  override val Log = getLogger
-  override val CA_CONFIG_FILE = "/Tcs.xml"
+  override val className: String = getClass.getName
+  override val Log: Logger = getLogger
+  override val CA_CONFIG_FILE: String = "/Tcs.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new TcsEpics(service, tops)
 
   sealed class ProbeGuideCmd(csName: String, epicsService: CaService) extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender(csName))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
-    val nodachopa = cs.map(_.getString("nodachopa"))
+    private val nodachopa = cs.map(_.getString("nodachopa"))
     def setNodachopa(v: String): SeqAction[Unit] = setParameter(nodachopa, v)
 
-    val nodachopb = cs.map(_.getString("nodachopb"))
+    private val nodachopb = cs.map(_.getString("nodachopb"))
     def setNodachopb(v: String): SeqAction[Unit] = setParameter(nodachopb, v)
 
-    val nodachopc = cs.map(_.getString("nodachopc"))
+    private val nodachopc = cs.map(_.getString("nodachopc"))
     def setNodachopc(v: String): SeqAction[Unit] = setParameter(nodachopc, v)
 
-    val nodbchopa = cs.map(_.getString("nodbchopa"))
+    private val nodbchopa = cs.map(_.getString("nodbchopa"))
     def setNodbchopa(v: String): SeqAction[Unit] = setParameter(nodbchopa, v)
 
-    val nodbchopb = cs.map(_.getString("nodbchopb"))
+    private val nodbchopb = cs.map(_.getString("nodbchopb"))
     def setNodbchopb(v: String): SeqAction[Unit] = setParameter(nodbchopb, v)
 
-    val nodbchopc = cs.map(_.getString("nodbchopc"))
+    private val nodbchopc = cs.map(_.getString("nodbchopc"))
     def setNodbchopc(v: String): SeqAction[Unit] = setParameter(nodbchopc, v)
 
-    val nodcchopa = cs.map(_.getString("nodcchopa"))
+    private val nodcchopa = cs.map(_.getString("nodcchopa"))
     def setNodcchopa(v: String): SeqAction[Unit] = setParameter(nodcchopa, v)
 
-    val nodcchopb = cs.map(_.getString("nodcchopb"))
+    private val nodcchopb = cs.map(_.getString("nodcchopb"))
     def setNodcchopb(v: String): SeqAction[Unit] = setParameter(nodcchopb, v)
 
-    val nodcchopc = cs.map(_.getString("nodcchopc"))
+    private val nodcchopc = cs.map(_.getString("nodcchopc"))
     def setNodcchopc(v: String): SeqAction[Unit] = setParameter(nodcchopc, v)
   }
 
   sealed class WfsObserveCmd(csName: String, epicsService: CaService) extends EpicsCommand {
-    override val cs= Option(epicsService.getCommandSender(csName))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
-    val noexp = cs.map(_.getInteger("noexp"))
+    private val noexp = cs.map(_.getInteger("noexp"))
     def setNoexp(v: Integer): SeqAction[Unit] = setParameter(noexp, v)
 
-    val int = cs.map(_.getDouble("int"))
+    private val int = cs.map(_.getDouble("int"))
     def setInt(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](int, v)
 
-    val outopt = cs.map(_.getString("outopt"))
+    private val outopt = cs.map(_.getString("outopt"))
     def setOutopt(v: String): SeqAction[Unit] = setParameter(outopt, v)
 
-    val label = cs.map(_.getString("label"))
+    private val label = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
 
-    val output = cs.map(_.getString("output"))
+    private val output = cs.map(_.getString("output"))
     def setOutput(v: String): SeqAction[Unit] = setParameter(output, v)
 
-    val path = cs.map(_.getString("path"))
+    private val path = cs.map(_.getString("path"))
     def setPath(v: String): SeqAction[Unit] = setParameter(path, v)
 
-    val name = cs.map(_.getString("name"))
+    private val name = cs.map(_.getString("name"))
     def setName(v: String): SeqAction[Unit] = setParameter(name, v)
   }
 

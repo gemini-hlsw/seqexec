@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.server
 
-import org.log4s.getLogger
+import org.log4s.{Logger, getLogger}
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps.{ContentError, ConversionError}
@@ -22,6 +22,7 @@ import squants.space.LengthConversions._
 import scalaz.{EitherT, Reader, \/}
 import scalaz.concurrent.Task
 import scalaz.syntax.std.string._
+import scalaz.syntax.equal._
 import scala.concurrent.duration._
 
 /**
@@ -32,9 +33,9 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override val sfName: String = "gmos"
 
-  override val contributorName = "gmosdc"
+  override val contributorName: String = "gmosdc"
 
-  val Log = getLogger
+  val Log: Logger = getLogger
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
       case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
@@ -120,7 +121,7 @@ object Gmos {
     val rois = for {
       i <- 1 to 5
     } yield attemptROI(i)
-    rois.toList.flatten
+    rois.toList.collect { case Some(x) => x }
   }
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
@@ -136,7 +137,7 @@ object Gmos {
       xBinning     <- config.extract(INSTRUMENT_KEY / CCD_X_BIN_PROP).as[Binning]
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
       builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltinROI]
-      customROI = if (builtInROI == BuiltinROI.CUSTOM) customROIs(config) else Nil
+      customROI = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
       roi          <- RegionsOfInterest.fromOCS(builtInROI, customROI).leftMap(e => ContentError(SeqexecFailure.explain(e)))
     } yield
       DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))

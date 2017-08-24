@@ -34,7 +34,7 @@ import scalacss.ScalaCssReact._
   * Display the name of the sequence and the observer
   */
 object SequenceInfo {
-  case class Props(p: ModelProxy[StatusAndObserverFocus])
+  final case class Props(p: ModelProxy[StatusAndObserverFocus])
 
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
@@ -69,9 +69,9 @@ object SequenceInfo {
   * Encapsulates the field to change the observer name
   */
 object SequenceObserverField {
-  case class Props(p: ModelProxy[StatusAndObserverFocus])
+  final case class Props(p: ModelProxy[StatusAndObserverFocus])
 
-  case class State(currentText: Option[String])
+  final case class State(currentText: Option[String])
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
     def updateObserver(id: SequenceId, name: String): Callback =
@@ -103,8 +103,8 @@ object SequenceObserverField {
           <.div(
             ^.cls := "field fourteen wide",
             InputEV(InputEV.Props(
-              instrument + ".observer",
-              instrument + ".observer",
+              s"$instrument.observer",
+              s"$instrument.observer",
               observerEV,
               placeholder = "Observer...",
               onBlur = _ => submitIfChanged))
@@ -138,8 +138,8 @@ object SequenceObserverField {
   * Control buttons for the sequence
   */
 object SequenceControl {
-  case class Props(p: ModelProxy[SequenceControlFocus])
-  case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
+  final case class Props(p: ModelProxy[SequenceControlFocus])
+  final case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean)
 
   private val ST = ReactS.Fix[State]
 
@@ -203,9 +203,9 @@ object SequenceControl {
   * Component deciding what tooblar to display
   */
 object SequenceDefaultToolbar {
-  case class Props(site: SeqexecSite, instrument: Instrument) {
-    val sequenceObserverConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-    val sequenceControlConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
+  final case class Props(site: SeqexecSite, instrument: Instrument) {
+    protected[sequence] val sequenceObserverConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+    protected[sequence] val sequenceControlConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
   }
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
@@ -238,8 +238,8 @@ object SequenceDefaultToolbar {
   * Toolbar for anonymous users
   */
 object SequenceAnonymousToolbar {
-  case class Props(site: SeqexecSite, instrument: Instrument) {
-    val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  final case class Props(site: SeqexecSite, instrument: Instrument) {
+    protected[sequence] val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
@@ -264,8 +264,8 @@ object SequenceAnonymousToolbar {
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  case class Props(site: SeqexecSite, instrument: Instrument, isLogged: Boolean, step: Int) {
-    val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+  final case class Props(site: SeqexecSite, instrument: Instrument, isLogged: Boolean, step: Int) {
+    protected[sequence] val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
   def backToSequence(i: Instrument): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(i))}

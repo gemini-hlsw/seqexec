@@ -11,7 +11,7 @@ import Scalaz._
   * information about which `Action`s have been completed.
   *
   */
-case class Execution(execution: List[Action \/ Result]) {
+final case class Execution(execution: List[Action \/ Result]) {
 
   import Execution._
 
@@ -99,16 +99,16 @@ object Result {
   trait RetVal
   trait PartialVal
 
-  case class OK[R<:RetVal](response: R) extends Result
-  case class Partial[R<:PartialVal](response: R, continuation: Action) extends Result
+  final case class OK[R<:RetVal](response: R) extends Result
+  final case class Partial[R<:PartialVal](response: R, continuation: Action) extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
-  case class Error(msg: String) extends Result {
+  final case class Error(msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)
   }
 
   sealed trait Response extends RetVal
-  case class Configured(r: String) extends Response
-  case class Observed(fileId: FileId) extends Response
+  final case class Configured(r: String) extends Response
+  final case class Observed(fileId: FileId) extends Response
   object Ignored extends Response
 
 }

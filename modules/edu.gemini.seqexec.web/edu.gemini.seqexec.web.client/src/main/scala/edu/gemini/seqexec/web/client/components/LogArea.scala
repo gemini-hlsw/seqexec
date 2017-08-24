@@ -15,7 +15,7 @@ import scalaz.syntax.functor._
   * Area to display a sequence's log
   */
 object LogArea {
-  case class Props(log: GlobalLog)
+  final case class Props(log: GlobalLog)
 
   private val component = ScalaComponent.builder[Props]("LogArea")
     .stateless

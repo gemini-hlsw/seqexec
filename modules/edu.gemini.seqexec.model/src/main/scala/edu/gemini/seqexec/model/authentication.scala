@@ -4,8 +4,8 @@
 package edu.gemini.seqexec.model
 
 // Shared classes used for authentication
-case class UserLoginRequest(username: String, password: String)
-case class UserDetails(username: String, displayName: String)
+final case class UserLoginRequest(username: String, password: String)
+final case class UserDetails(username: String, displayName: String)
 
 object UserDetails {
   // Some useful type aliases for user elements

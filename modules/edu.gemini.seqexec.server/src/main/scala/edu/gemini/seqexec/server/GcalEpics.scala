@@ -3,9 +3,9 @@
 
 package edu.gemini.seqexec.server
 
-import org.log4s.getLogger
+import org.log4s.{Logger, getLogger}
 
-import edu.gemini.epics.acm.{CaAttribute, CaService, CaStatusAcceptor}
+import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 
 /**
@@ -16,74 +16,74 @@ class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
   import EpicsCommand.setParameter
   import GcalEpics._
 
-  val GCAL_TOP = tops.get("gc").getOrElse("")
+  val GCAL_TOP: String = tops.get("gc").getOrElse("")
 
   def post: SeqAction[Unit] = lampsCmd.post
 
   object shutterCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("gcal::shutter"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::shutter"))
 
-    val position = cs.map(_.getString("position"))
+    private val position = cs.map(_.getString("position"))
     def setPosition(v: String): SeqAction[Unit] = setParameter(position, v)
   }
 
   object filterCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("gcal::filtSel"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::filtSel"))
 
-    val name = cs.map(_.getString("name"))
+    private val name = cs.map(_.getString("name"))
     def setName(v: String): SeqAction[Unit] = setParameter(name, v)
   }
 
   object diffuserCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("gcal::diffuseSel"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::diffuseSel"))
 
-    val name = cs.map(_.getString("name"))
+    private val name = cs.map(_.getString("name"))
     def setName(v: String): SeqAction[Unit] = setParameter(name, v)
   }
 
   private def toLampState(v: BinaryOnOff): String = v.name
 
   object lampsCmd extends EpicsCommand {
-    override val cs = Option(epicsService.getCommandSender("gcal::lampSel"))
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::lampSel"))
 
-    val nameAr = cs.map(_.getString("nameAr"))
+    private val nameAr = cs.map(_.getString("nameAr"))
     def setArLampName(v: String): SeqAction[Unit] = setParameter(nameAr, v)
 
-    val stateAr = cs.map(_.getString("stateAr"))
+    private val stateAr = cs.map(_.getString("stateAr"))
     def setArLampOn(v: BinaryOnOff): SeqAction[Unit] = setParameter(stateAr, v, toLampState)
 
-    val nameCuAr = cs.map(_.getString("nameCuAr"))
+    private val nameCuAr = cs.map(_.getString("nameCuAr"))
     def setCuArLampName(v: String): SeqAction[Unit] = setParameter(nameCuAr, v)
 
-    val stateCuAr = cs.map(_.getString("stateCuAr"))
+    private val stateCuAr = cs.map(_.getString("stateCuAr"))
     def setCuArLampOn(v: BinaryOnOff): SeqAction[Unit] = setParameter(stateCuAr, v, toLampState)
 
-    val nameIR = cs.map(_.getString("nameIR"))
+    private val nameIR = cs.map(_.getString("nameIR"))
     def setIRLampName(v: String): SeqAction[Unit] = setParameter(nameIR, v)
 
-    val stateIR = cs.map(_.getString("stateIR"))
+    private val stateIR = cs.map(_.getString("stateIR"))
     def setIRLampOn(v: BinaryOnOff): SeqAction[Unit] = setParameter(stateIR, v, toLampState)
 
-    val nameQH = cs.map(_.getString("nameQH"))
+    private val nameQH = cs.map(_.getString("nameQH"))
     def setQHLampName(v: String): SeqAction[Unit] = setParameter(nameQH, v)
 
-    val stateQH = cs.map(_.getString("stateQH"))
+    private val stateQH = cs.map(_.getString("stateQH"))
     def setQHLampOn(v: BinaryOnOff): SeqAction[Unit] = setParameter(stateQH, v, toLampState)
 
-    val nameXe = cs.map(_.getString("nameXe"))
+    private val nameXe = cs.map(_.getString("nameXe"))
     def setXeLampName(v: String): SeqAction[Unit] = setParameter(nameXe, v)
 
-    val stateXe = cs.map(_.getString("stateXe"))
+    private val stateXe = cs.map(_.getString("stateXe"))
     def setXeLampOn(v: BinaryOnOff): SeqAction[Unit] = setParameter(stateXe, v, toLampState)
 
-    val nameThAr = cs.map(_.getString("nameThAr"))
+    private val nameThAr = cs.map(_.getString("nameThAr"))
     def setThArLampName(v: String): SeqAction[Unit] = setParameter(nameThAr, v)
 
-    val stateThAr = cs.map(_.getString("stateThAr"))
+    private val stateThAr = cs.map(_.getString("stateThAr"))
     def setThArLampOn(v: BinaryOnOff): SeqAction[Unit] = setParameter(stateThAr, v, toLampState)
   }
 
-  val state = epicsService.getStatusAcceptor("gcal::status")
+  private val state = epicsService.getStatusAcceptor("gcal::status")
 
   def createLampAttribute(name: String, longName: String): EnumAttribute[BinaryOnOff] =
     new EnumAttribute[BinaryOnOff](state, name + "LampState", GCAL_TOP + name + "_LampState", longName + " lamp state")(classOf[BinaryOnOff])
@@ -109,9 +109,9 @@ class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
 
 object GcalEpics extends EpicsSystem[GcalEpics] {
 
-  override val className = getClass.getName
-  override val Log = getLogger
-  override val CA_CONFIG_FILE = "/Gcal.xml"
+  override val className: String = getClass.getName
+  override val Log: Logger = getLogger
+  override val CA_CONFIG_FILE: String = "/Gcal.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GcalEpics(service, tops)
 

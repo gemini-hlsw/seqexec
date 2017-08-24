@@ -19,7 +19,9 @@ object Pages {
   sealed trait SeqexecPages
 
   case object Root extends SeqexecPages
-  case class InstrumentPage(instrument: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
+  final case class InstrumentPage(instrument: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
+
+  implicit val equal: Equal[SeqexecPages] = Equal.equalA
 }
 
 // UI model
@@ -28,21 +30,21 @@ case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 
 object SectionVisibilityState {
-  implicit val eq = Equal.equalA[SectionVisibilityState]
+  implicit val eq: Equal[SectionVisibilityState] = Equal.equalA[SectionVisibilityState]
 }
 
-case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
+final case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
   // Returns the current sequence or if empty the last completed one
   // This must be a def since it will do a call to dereference a RefTo
   def sequence: Option[SequenceView] = currentSequence().orElse(completedSequence)
 }
 
 object SequenceTab {
-  val empty = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), None, None)
+  val empty: SequenceTab = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), None, None)
 }
 
 // Model for the tabbed area of sequences
-case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+final case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
   def withSite(site: SeqexecSite): SequencesOnDisplay =
     SequencesOnDisplay(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None)).toZipper)
 
@@ -90,24 +92,24 @@ object SequencesOnDisplay {
   val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
   // We need to initialize the model with some instruments but it will be shortly replaced by the actual list
-  val empty = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None, None)).toZipper)
+  val empty: SequencesOnDisplay = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None, None)).toZipper)
 }
 
-case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)
+final case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)
 
 object WebSocketConnection {
-  val empty = WebSocketConnection(Empty, 0)
+  val empty: WebSocketConnection = WebSocketConnection(Empty, 0)
 }
 
 /**
   * Keeps a list of log entries for display
   */
-case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage])
+final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage])
 
 /**
  * UI model, changes here will update the UI
  */
-case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
+final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           user: Option[UserDetails],
                           sequences: SeqexecAppRootModel.LoadedSequences,
                           loginBox: SectionVisibilityState,
@@ -116,8 +118,8 @@ case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           firstLoad: Boolean)
 
 object SeqexecUIModel {
-  val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
-  val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
+  private val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
+  val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
     SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
 }
 
@@ -126,10 +128,10 @@ object SeqexecUIModel {
 /**
   * Root of the UI Model of the application
   */
-case class SeqexecAppRootModel(ws: WebSocketConnection, site: SeqexecSite, uiModel: SeqexecUIModel)
+final case class SeqexecAppRootModel(ws: WebSocketConnection, site: SeqexecSite, uiModel: SeqexecUIModel)
 
 object SeqexecAppRootModel {
   type LoadedSequences = SequencesQueue[SequenceView]
 
-  val initial = SeqexecAppRootModel(WebSocketConnection.empty, SeqexecSite.SeqexecGS, SeqexecUIModel.initial)
+  val initial: SeqexecAppRootModel = SeqexecAppRootModel(WebSocketConnection.empty, SeqexecSite.SeqexecGS, SeqexecUIModel.initial)
 }

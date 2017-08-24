@@ -80,7 +80,7 @@ object NavBar {
   */
 object ConnectionState {
 
-  case class Props(u: WebSocketConnection)
+  final case class Props(u: WebSocketConnection)
 
   def formatTime(delay: Int): String = if (delay < 1000) {
     f"${delay / 1000.0}%.1f"

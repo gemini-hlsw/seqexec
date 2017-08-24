@@ -8,6 +8,8 @@ import edu.gemini.seqexec.model.Model.ObservationOperations
 import edu.gemini.seqexec.model.Model.SequenceOperations
 
 import scalaz.Show
+import scalaz.syntax.equal._
+import scalaz.std.AllInstances._
 
 /**
   * Contains useful operations for the seqexec model
@@ -58,7 +60,7 @@ object ModelOps {
       case _                        => None
     }
 
-    def allStepsDone: Boolean = s.steps.forall(_.status == StepState.Completed)
+    def allStepsDone: Boolean = s.steps.forall(_.status === StepState.Completed)
 
     def flipStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
       case st: StandardStep if st == step => st.copy(skip = !st.skip)
@@ -84,14 +86,14 @@ object ModelOps {
 
     def nextStepToRun: Option[Int] =
       s.steps match {
-        case x if x.forall(_.status == StepState.Pending)   => Some(0) // No steps have been executed, start at 0
-        case x if x.forall(_.status == StepState.Completed) => None // All steps have been executed
-        case x if x.exists(_.hasError)                      => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ != -1).map(_ + 1)
-        case x if x.exists(_.status == StepState.Paused)    => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1)
-        case x                                              => Option(x.indexWhere((s: Step) => s.status != StepState.Completed)).filter(_ != -1)
+        case x if x.forall(_.status === StepState.Pending)   => Some(0) // No steps have been executed, start at 0
+        case x if x.forall(_.status === StepState.Completed) => None // All steps have been executed
+        case x if x.exists(_.hasError)                      => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =/= -1).map(_ + 1)
+        case x if x.exists(_.status === StepState.Paused)    => Option(x.indexWhere((s: Step) => s.status =/= StepState.Completed)).filter(_ =/= -1)
+        case x                                              => Option(x.indexWhere((s: Step) => s.status =/= StepState.Completed)).filter(_ =/= -1)
       }
 
-    def isPartiallyExecuted: Boolean = s.steps.exists(_.status == StepState.Completed)
+    def isPartiallyExecuted: Boolean = s.steps.exists(_.status === StepState.Completed)
   }
 
   implicit class StepOps(val s: Step) extends AnyVal {

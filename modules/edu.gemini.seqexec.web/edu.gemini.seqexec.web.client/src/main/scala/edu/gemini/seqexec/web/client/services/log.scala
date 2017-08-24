@@ -5,14 +5,19 @@ package edu.gemini.seqexec.web.client.services
 
 import java.util.logging.{Handler, Level, LogRecord, SimpleFormatter}
 
+import scalaz.Equal
+import scalaz.syntax.equal._
+
 object log {
+  private implicit val equalLog: Equal[Level] = Equal.equalA
+
   // Override Console Handler to use the default js console
   class ConsoleHandler(level: Level) extends Handler {
     setFormatter(new SimpleFormatter)
     setLevel(level)
 
     override def publish(record: LogRecord): Unit = {
-      if (record.getLevel == Level.SEVERE) {
+      if (record.getLevel === Level.SEVERE) {
         System.err.println(getFormatter.format(record)) // scalastyle:ignore
       } else {
         println(getFormatter.format(record)) // scalastyle:ignore
@@ -28,6 +33,7 @@ object log {
   class AjaxHandler(level: Level) extends Handler {
     setLevel(level)
 
+    @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
     override def publish(record: LogRecord): Unit = {
       SeqexecWebClient.log(record)
       ()

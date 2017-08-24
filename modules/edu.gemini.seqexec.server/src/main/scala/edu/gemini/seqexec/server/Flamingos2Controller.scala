@@ -7,6 +7,8 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 
 import scala.concurrent.duration.Duration
 
+import scalaz.Equal
+
 trait Flamingos2Controller {
   import Flamingos2Controller._
 
@@ -39,6 +41,7 @@ object Flamingos2Controller {
     object Slit6Pix extends FocalPlaneUnit
     object Slit8Pix extends FocalPlaneUnit
     final case class Custom(mask: String) extends FocalPlaneUnit
+    implicit val equal: Equal[FocalPlaneUnit] = Equal.equalA
   }
 
   type Filter = edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter

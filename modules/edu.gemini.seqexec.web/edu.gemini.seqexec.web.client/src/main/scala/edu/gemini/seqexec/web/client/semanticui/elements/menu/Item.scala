@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
   * Semantic UI Menu Item component
   */
 object Item {
-  case class Props(name: String)
+  final case class Props(name: String)
 
   private val component = ScalaComponent.builder[Props]("Item")
     .stateless

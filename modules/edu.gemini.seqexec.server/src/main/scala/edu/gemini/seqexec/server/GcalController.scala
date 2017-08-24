@@ -5,6 +5,8 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
+import scalaz.Equal
+
 /**
   * Created by jluhrs on 3/15/17.
   */
@@ -32,15 +34,39 @@ object GcalController {
 
   final case class ArLampState(self: LampState) extends AnyVal
 
+  object ArLampState {
+    implicit val eq: Equal[ArLampState] = Equal.equalA
+  }
+
   final case class CuArLampState(self: LampState) extends AnyVal
+
+  object CuArLampState {
+    implicit val eq: Equal[CuArLampState] = Equal.equalA
+  }
 
   final case class QHLampState(self: LampState) extends AnyVal
 
+  object QHLampState {
+    implicit val eq: Equal[QHLampState] = Equal.equalA
+  }
+
   final case class ThArLampState(self: LampState) extends AnyVal
+
+  object ThArLampState {
+    implicit val eq: Equal[ThArLampState] = Equal.equalA
+  }
 
   final case class XeLampState(self: LampState) extends AnyVal
 
+  object XeLampState {
+    implicit val eq: Equal[XeLampState] = Equal.equalA
+  }
+
   final case class IrLampState(self: LampState) extends AnyVal
+
+  object IrLampState {
+    implicit val eq: Equal[IrLampState] = Equal.equalA
+  }
 
   type Shutter = edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
@@ -48,7 +74,7 @@ object GcalController {
 
   type Diffuser = edu.gemini.spModel.gemini.calunit.CalUnitParams.Diffuser
 
-  case class GcalConfig(
+  final case class GcalConfig(
                          lampAr: Option[ArLampState],
                          lampCuAr: Option[CuArLampState],
                          lampQh: Option[QHLampState],
@@ -62,7 +88,7 @@ object GcalController {
 
   object GcalConfig {
 
-    val allOff = GcalConfig(Some(ArLampState(LampState.Off)),
+    val allOff: GcalConfig = GcalConfig(Some(ArLampState(LampState.Off)),
       Some(CuArLampState(LampState.Off)),
       Some(QHLampState(LampState.Off)),
       Some(ThArLampState(LampState.Off)),

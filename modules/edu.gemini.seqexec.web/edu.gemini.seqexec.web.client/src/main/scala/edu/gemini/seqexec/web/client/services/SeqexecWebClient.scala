@@ -22,10 +22,12 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 /**
   * Encapsulates remote calls to the Seqexec Web API
   */
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.Throw"))
 object SeqexecWebClient extends ModelBooPicklers {
-  val baseUrl = "/api/seqexec"
+  private val baseUrl = "/api/seqexec"
 
   // Decodes the binary response with BooPickle, errors are not handled
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   def unpickle[A](r: XMLHttpRequest)(implicit u: Pickler[A]): A = {
     val ab = TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer])
     Unpickle[A].fromBytes(ab)
@@ -80,7 +82,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax.post(
       url = s"$baseUrl/commands/$id/observer/${encodeURI(name)}",
       responseType = "arraybuffer"
-    ).map(unpickle[RegularCommand])
+          ).map(unpickle[RegularCommand])
   }
 
   /**

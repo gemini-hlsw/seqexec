@@ -10,9 +10,11 @@ import org.scalacheck.Arbitrary._
 import java.time.Instant
 
 // Keep the arbitraries in a separate trait to improve caching
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SharedModelArbitraries {
+
   import org.scalacheck.ScalacheckShapeless._
-  val maxListSize = 2
+  private val maxListSize = 2
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
   def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {

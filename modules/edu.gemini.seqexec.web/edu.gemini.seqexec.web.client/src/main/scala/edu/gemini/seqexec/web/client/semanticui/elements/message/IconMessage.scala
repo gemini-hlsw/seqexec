@@ -9,6 +9,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 
+import scalaz.syntax.equal._
+
 /**
   * React component for a message with a large icon
   */
@@ -20,19 +22,19 @@ object IconMessage extends Message {
       <.div(
         ^.cls := "ui icon message",
         ^.classSet(
-          "warning"  -> (p.style == IconMessage.Style.Warning),
-          "info"     -> (p.style == IconMessage.Style.Info),
-          "positive" -> (p.style == IconMessage.Style.Positive),
-          "success"  -> (p.style == IconMessage.Style.Success),
-          "negative" -> (p.style == IconMessage.Style.Negative),
-          "error"    -> (p.style == IconMessage.Style.Error),
-          "tiny"     -> (p.size == Size.Tiny),
-          "mini"     -> (p.size == Size.Mini),
-          "small"    -> (p.size == Size.Small),
-          "large"    -> (p.size == Size.Large),
-          "big"      -> (p.size == Size.Big),
-          "huge"     -> (p.size == Size.Huge),
-          "massive"  -> (p.size == Size.Massive)
+          "warning"  -> (p.style === IconMessage.Style.Warning),
+          "info"     -> (p.style === IconMessage.Style.Info),
+          "positive" -> (p.style === IconMessage.Style.Positive),
+          "success"  -> (p.style === IconMessage.Style.Success),
+          "negative" -> (p.style === IconMessage.Style.Negative),
+          "error"    -> (p.style === IconMessage.Style.Error),
+          "tiny"     -> (p.size === Size.Tiny),
+          "mini"     -> (p.size === Size.Mini),
+          "small"    -> (p.size === Size.Small),
+          "large"    -> (p.size === Size.Large),
+          "big"      -> (p.size === Size.Big),
+          "huge"     -> (p.size === Size.Huge),
+          "massive"  -> (p.size === Size.Massive)
         ),
         p.icon,
         <.div(
@@ -49,7 +51,8 @@ object IconMessage extends Message {
     )
     .build
 
-  case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined, size: Size = Size.NotSized)
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined, size: Size = Size.NotSized)
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

@@ -19,9 +19,9 @@ import Scalaz._
 object ConfigUtilOps {
 
   sealed trait ExtractFailure
-  case class KeyNotFound(key: ItemKey) extends ExtractFailure
-  case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
-  case class ContentError(msg: String) extends ExtractFailure
+  final case class KeyNotFound(key: ItemKey) extends ExtractFailure
+  final case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
+  final case class ContentError(msg: String) extends ExtractFailure
 
   def explain(e: ExtractFailure): String = e match {
     case KeyNotFound(k)          => s"Missing config value for key ${k.getPath}"
@@ -37,6 +37,7 @@ object ConfigUtilOps {
   }
 
   // key syntax: parent / child
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   implicit class ItemKeyOps(val k: ItemKey) extends AnyVal {
     def /(s: String): ItemKey = new ItemKey(k, s)
     def /(p: PropertyDescriptor): ItemKey = /(p.getName)
@@ -46,14 +47,15 @@ object ConfigUtilOps {
     def itemValue(a: A, key: ItemKey): Option[AnyRef]
   }
 
-  implicit val ConfigExtractItem = new ExtractItem[Config] {
+  implicit val ConfigExtractItem: ExtractItem[Config] = new ExtractItem[Config] {
     override def itemValue(c: Config, key: ItemKey): Option[AnyRef] = Option(c.getItemValue(key))
   }
 
-  implicit val ConfigSequenceExtractItem = new ExtractItem[ConfigSequence] {
+  implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] = new ExtractItem[ConfigSequence] {
     override def itemValue(c: ConfigSequence, key: ItemKey): Option[AnyRef] = Option(c.getItemValue(0, key))
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   final class Extracted[C] private [server] (c: C, key: ItemKey)(implicit ei: ExtractItem[C]) {
     def as[A](implicit clazz: ClassTag[A]): ExtractFailure \/ A =
       for {
@@ -72,7 +74,7 @@ object ConfigUtilOps {
         case (subsystem, entries) =>
           subsystem.getName ->
             (entries.toList.map {
-              e => (e.getKey.getPath, e.getItemValue.toString)
+              e => (e.getKey.getPath, s"${e.getItemValue}")
             }(breakOut): Map[String, String])
       }
     }

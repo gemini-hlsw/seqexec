@@ -26,7 +26,7 @@ import scalaz.syntax.show._
 import scalaz.syntax.equal._
 
 object InstrumentTab {
-  case class Props(site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
+  final case class Props(site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
@@ -91,8 +91,8 @@ object InstrumentTab {
   * Menu with tabs
   */
 object InstrumentsTabs {
-  case class Props(site: SeqexecSite) {
-    val instrumentConnects = site.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
+  final case class Props(site: SeqexecSite) {
+    protected[sequence] val instrumentConnects = site.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
   }
 
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")

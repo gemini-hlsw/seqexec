@@ -18,7 +18,7 @@ trait InstrumentSystem extends System {
 }
 
 //Placeholder for observe response
-case class ObserveResult(dataId: ImageFileId)
+final case class ObserveResult(dataId: ImageFileId)
 
 object UnknownInstrument extends InstrumentSystem {
 
@@ -29,6 +29,7 @@ object UnknownInstrument extends InstrumentSystem {
   override val contributorName: String = "unknown"
   override val dhsInstrumentName: String = "UNKNOWN"
 
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private var imageCount = 0 // scalastyle:ignore
 
   override def configure(config: Config): SeqAction[ConfigResult] = EitherT ( Task {

@@ -8,11 +8,15 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 
+import scalaz.syntax.equal. _
+
 /**
   * ReactComponent for a closeable message
   */
 object CloseableMessage extends Message {
-  case class Props(header: Option[String] = None, style: Style = Style.NotDefined)
+
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props(header: Option[String] = None, style: Style = Style.NotDefined)
 
   private def component = ScalaComponent.builder[Props]("Message")
     .stateless
@@ -20,12 +24,12 @@ object CloseableMessage extends Message {
       <.div(
         ^.cls := "ui message",
         ^.classSet(
-          "warning"  -> (p.style == Style.Warning),
-          "info"     -> (p.style == Style.Info),
-          "positive" -> (p.style == Style.Positive),
-          "success"  -> (p.style == Style.Success),
-          "negative" -> (p.style == Style.Negative),
-          "error"    -> (p.style == Style.Error)
+          "warning"  -> (p.style === Style.Warning),
+          "info"     -> (p.style === Style.Info),
+          "positive" -> (p.style === Style.Positive),
+          "success"  -> (p.style === Style.Success),
+          "negative" -> (p.style === Style.Negative),
+          "error"    -> (p.style === Style.Error)
         ),
         IconClose,
         p.header.whenDefined(h =>

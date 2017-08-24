@@ -17,11 +17,11 @@ import Scalaz._
 import scalaz.concurrent.Task
 
 sealed trait AuthenticationFailure
-case class UserNotFound(user: String) extends AuthenticationFailure
-case class BadCredentials(user: String) extends AuthenticationFailure
+final case class UserNotFound(user: String) extends AuthenticationFailure
+final case class BadCredentials(user: String) extends AuthenticationFailure
 case object NoAuthenticator extends AuthenticationFailure
-case class GenericFailure(msg: String) extends AuthenticationFailure
-case class DecodingFailure(msg: String) extends AuthenticationFailure
+final case class GenericFailure(msg: String) extends AuthenticationFailure
+final case class DecodingFailure(msg: String) extends AuthenticationFailure
 case object MissingCookie extends AuthenticationFailure
 
 /**
@@ -34,10 +34,10 @@ trait AuthService {
 /**
   * Configuration for the LDAP client
   */
-case class LDAPConfig(ldapHosts: List[String]) {
-  val hosts = ldapHosts.map(new LDAPURL(_)).map(u => (u.getHost, u.getPort))
+final case class LDAPConfig(ldapHosts: List[String]) {
+  private val hosts = ldapHosts.map(new LDAPURL(_)).map(u => (u.getHost, u.getPort))
 
-  val ldapService = new FreeLDAPAuthenticationService(hosts)
+  val ldapService: AuthService = new FreeLDAPAuthenticationService(hosts)
 }
 
 /**
@@ -49,20 +49,20 @@ case class LDAPConfig(ldapHosts: List[String]) {
   * @param useSSL Whether we use SSL setting the cookie to be https only
   * @param ldap Configuration for the ldap client
   */
-case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Time, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
+final case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Time, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
 
 // Intermediate class to decode the claim stored in the JWT token
-case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
+final case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
   def toUserDetails: UserDetails = UserDetails(username, displayName)
 }
 
-case class AuthenticationService(config: AuthenticationConfig) extends AuthService {
+final case class AuthenticationService(config: AuthenticationConfig) extends AuthService {
   import AuthenticationService._
 
   implicit def UserDetailsCodecJson: CodecJson[UserDetails] =
     casecodec2(UserDetails.apply, UserDetails.unapply)("username", "displayName")
 
-  val authServices =
+  private val authServices =
     if (config.devMode) List(TestAuthenticationService, config.ldap.ldapService)
     else List(config.ldap.ldapService)
 
@@ -116,4 +116,3 @@ object AuthenticationService {
     }
   }
 }
-

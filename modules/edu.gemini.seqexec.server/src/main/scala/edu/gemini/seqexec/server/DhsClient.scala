@@ -17,7 +17,7 @@ trait DhsClient {
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId, keywords: DhsClient.KeywordBag, finalFlag: Boolean = false): SeqAction[Unit]
+  def setKeywords(id: ImageFileId, keywords: DhsClient.KeywordBag, finalFlag: Boolean): SeqAction[Unit]
 
 }
 
@@ -60,7 +60,7 @@ object DhsClient {
 
   final case class InternalKeyword(name: String, keywordType: KeywordType, value: String)
 
-  protected implicit def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword = InternalKeyword(k.n, k.t, k.v.toString)
+  protected implicit def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword = InternalKeyword(k.n, k.t, s"${k.v}")
 
   final case class KeywordBag(keywords: List[InternalKeyword]) {
     def add[T](k: Keyword[T]): KeywordBag = KeywordBag(keywords :+ internalKeywordConvert(k))
@@ -68,6 +68,7 @@ object DhsClient {
   }
 
   //TODO: Add more apply methods if necessary
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   object KeywordBag {
     def empty: KeywordBag = KeywordBag(List())
     def apply[A](k1: Keyword[A]): KeywordBag = KeywordBag(List(internalKeywordConvert(k1)))

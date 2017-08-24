@@ -23,6 +23,7 @@ sealed trait TaskRef[A] {
 object TaskRef {
 
   /** Create a new TaskRef. */
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
   def newTaskRef[A](a: A): Task[TaskRef[A]] =
     Task.delay {
       @volatile var value = a

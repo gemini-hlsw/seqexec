@@ -19,10 +19,10 @@ import japgolly.scalajs.react.ScalazReact._
 import scalaz.syntax.show._
 
 object SequenceStepsTableContainer {
-  case class Props(site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
-    val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i)))).toMap
+  final case class Props(site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
+    private[sequence] val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i)))).toMap
   }
-  case class State(nextStepToRun: Int)
+  final case class State(nextStepToRun: Int)
 
   private val ST = ReactS.Fix[State]
 
@@ -55,8 +55,8 @@ object SequenceStepsTableContainer {
 */
 object SequenceTabContent {
 
-  case class Props(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]) {
-    val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
+  final case class Props(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]) {
+    protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
@@ -83,8 +83,8 @@ object SequenceTabContent {
  * Contains the area with tabs and the sequence body
  */
 object SequenceTabsBody {
-  case class Props(site: SeqexecSite) {
-    val instrumentConnects = site.instruments.list.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
+  final case class Props(site: SeqexecSite) {
+    protected[sequence] val instrumentConnects = site.instruments.list.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")

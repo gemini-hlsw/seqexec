@@ -119,8 +119,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       headers   <- calcHeaders(config, stepType)
       resources <- calcResources(stepType)
     } yield buildStep(inst, systems, headers, resources)
-
   }
+
+  // Required for untyped objects from java
+  implicit val objectShow: Show[AnyRef] = Show.showA
 
   private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =
     // This is too weak. We may want to use the extractors used in ITC
@@ -128,18 +130,18 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case "Flamingos2" => edu.gemini.seqexec.model.Model.Instrument.F2.right
       case "GMOS-S"     => edu.gemini.seqexec.model.Model.Instrument.GmosS.right
       case "GMOS-N"     => edu.gemini.seqexec.model.Model.Instrument.GmosN.right
-      case n            => SeqexecFailure.UnrecognizedInstrument(n.toString).left
+      case n            => SeqexecFailure.UnrecognizedInstrument(s"$n").left
     }
 
   private def extractStatus(config: Config): StepState =
-    config.getItemValue(new ItemKey("observe:status")).toString match {
+    config.getItemValue(new ItemKey("observe:status")).shows match {
       case "ready"    => StepState.Pending
       case "complete" => StepState.Completed
       case kw         => StepState.Error("Unexpected status keyword: " ++ kw)
     }
 
   private def extractSkipped(config: Config): Boolean =
-    config.getItemValue(new ItemKey("observe:status")).toString match {
+    config.getItemValue(new ItemKey("observe:status")).shows match {
       case "skipped" => true
       case _         => false
     }
@@ -150,7 +152,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val configs = sequenceConfig.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, i == (configs.length - 1))
+      case (c, i) => step(obsId, i, c, i === (configs.length - 1))
     }.separate
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)
@@ -177,14 +179,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))
     case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth))
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth))
-    case _                      => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
     case CelestialObject(inst) => TrySeq(Set(inst, Resource.TCS, Resource.Gcal))
     case FlatOrArc(inst)       => TrySeq(Set(inst, Resource.Gcal, Resource.TCS))
     case DarkOrBias(inst)      => TrySeq(Set(inst))
-    case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
+    case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
   }
 
   import TcsController.Subsystem._
@@ -203,7 +205,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, all, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
       case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, NonEmptyList[TcsController.Subsystem](ScienceFold) :::> (if(hasOI(inst)) IList(OIWFS) else IList.empty), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
-      case _                     => TrySeq.fail(Unexpected(s"Unsupported step type ${stepType.toString}"))
+      case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
 
@@ -215,7 +217,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
       val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
       TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsReader))
-    case _                       =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case _                       =>  TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def commonHeaders(config: Config)(ctx: ActionMetadata): Header = new StandardHeader(systems.dhs,
@@ -236,7 +238,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case CelestialObject(inst) => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gwsHeaders, h)))
     case FlatOrArc(inst)       => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gcalHeader, gwsHeaders, h)))
     case DarkOrBias(inst)      => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gwsHeaders, h)))
-    case st                    => TrySeq.fail(Unexpected("Unsupported step type " + st.toString))
+    case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
   }
 
 }
@@ -244,7 +246,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 object SeqTranslate {
   def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
-  case class Systems(
+  final case class Systems(
                       odb: ODBProxy,
                       dhs: DhsClient,
                       tcs: TcsController,
@@ -254,7 +256,7 @@ object SeqTranslate {
                       gmosNorth: GmosController.GmosNorthController
                     )
 
-  case class Settings(
+  final case class Settings(
                       tcsKeywords: Boolean,
                       f2Keywords: Boolean,
                       gwsKeywords: Boolean,
