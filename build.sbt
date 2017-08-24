@@ -174,7 +174,7 @@ lazy val gem = project
   .aggregate(coreJVM, db, json, ocs2, service, telnetd, ctl, web)
 
 lazy val core = crossProject
-  .crossType(CrossType.Pure)
+  .crossType(CrossType.Full)
   .in(file("modules/core"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
