@@ -126,12 +126,14 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     Task.delay { logger.info(msg) }
   }
 
-  def logToClients: Task[Unit] = Task.delay {
+  // We need to manually update the configuration of the logging subsystem
+  // to support capturing log messages and forward them to the clients
+  def logToClients(out: Topic[SeqexecEvent]): Task[AppenderForClients] = Task.delay {
     import org.slf4j.LoggerFactory
     import ch.qos.logback.classic.LoggerContext
     import ch.qos.logback.classic.Logger
 
-    val appender = new AppenderForClients
+    val appender = new AppenderForClients(out)
     Option(LoggerFactory.getILoggerFactory()).collect {
       case lc: LoggerContext => lc
     }.foreach(appender.setContext)
@@ -142,6 +144,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
       l.addAppender(appender)
       appender.start()
     }
+    appender
   }
 
   /**
@@ -170,7 +173,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
             as <- authService.run(ac)
             rd <- redirectWebServer.run(wc)
             _  <- logStart.run(wc)
-            _  <- logToClients
+            _  <- logToClients(out)
             ws <- webServer(as, (inq, out), et).run(wc)
           } yield (ws, rd)
         )
