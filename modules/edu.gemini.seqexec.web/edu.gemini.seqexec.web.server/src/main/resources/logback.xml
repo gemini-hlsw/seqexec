@@ -9,6 +9,7 @@
  It supports auto reloading scanning every 60s
 -->
 <configuration scan="true" scanPeriod="60 seconds">
+  <logger name="org.http4s" level="INFO"/>
 
   <if condition='property("HOSTNAME").contains("seqexec")'>
     <!-- Configuration when running on the test or production servers -->
