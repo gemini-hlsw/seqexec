@@ -10,6 +10,8 @@ import monocle.{Lens, Prism}
 import monocle.macros.GenLens
 import monocle.Traversal
 
+import java.time.Instant
+
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
   sealed trait SeqexecSite {
@@ -28,6 +30,13 @@ object Model {
       case SeqexecGN => "GN"
       case SeqexecGS => "GS"
     })
+  }
+
+  sealed trait ServerLogLevel
+  object ServerLogLevel {
+    case object INFO extends ServerLogLevel
+    case object WARN extends ServerLogLevel
+    case object ERROR extends ServerLogLevel
   }
 
   sealed trait SeqexecEvent
@@ -66,9 +75,10 @@ object Model {
     // Generic update. It will probably become useless if we have a special Event for every case.
     case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    // TODO: msg should be LogMsg bit it does IO when getting a timestamp, it
+    // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
     // has to be embedded in a `Task`
     case class NewLogMessage(msg: String) extends SeqexecEvent
+    case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String) extends SeqexecEvent
     case object NullEvent extends SeqexecEvent
 
     // Some useful Monocle lenses
