@@ -17,10 +17,10 @@ addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager"    % "1.2.0-M7")
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin" % "0.8.0")
 
 // add and check headers
-addSbtPlugin("de.heikoseeberger" % "sbt-header"             % "2.0.0")
+addSbtPlugin("de.heikoseeberger" % "sbt-header"             % "3.0.1")
 
 // Built the version out of git
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
+addSbtPlugin("com.typesafe.sbt"  % "sbt-git"                % "0.9.3")
 
 // Avoids a warning message when starting sbt-git
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"

@@ -1,6 +1,6 @@
 language: scala
 scala:
-  - 2.12.2
+  - 2.12.3
 jdk:
   - oraclejdk8
 # These directories are cached to S3 at the end of the build
@@ -20,4 +20,4 @@ install:
 before_script:
   - sudo apt-get install -y rpm
 script:
-  - sbt -J-Xmx3G -J-XX:-UseGCOverheadLimit headerCheck test:headerCheck scalastyle test
+  - sbt -J-Xmx3G headerCheck test:headerCheck scalastyle test
