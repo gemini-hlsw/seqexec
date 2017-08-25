@@ -6,16 +6,16 @@ lazy val attoVersion         = "0.6.1-M1"
 lazy val catsEffectVersion   = "0.4"
 lazy val catsVersion         = "1.0.0-MF"
 lazy val declineVersion      = "0.4.0-M1"
-lazy val doobieVersion       = "0.5.0-M2"
+lazy val doobieVersion       = "0.5.0-M5"
 lazy val flywayVersion       = "4.0.3"
-lazy val fs2Version          = "0.10.0-M5"
-lazy val http4sVersion       = "0.18.0-SNAPSHOT"
+lazy val fs2Version          = "0.10.0-M6"
+lazy val http4sVersion       = "0.18.0-M1"
 lazy val jwtVersion          = "0.14.0"
-lazy val kpVersion           = "0.9.3"
+lazy val kpVersion           = "0.9.4"
 lazy val mouseVersion        = "0.10-MF"
 lazy val scalaCheckVersion   = "1.13.5"
-lazy val scalaParsersVersion = "1.0.4"
-lazy val scalaTestVersion    = "3.0.1"
+lazy val scalaParsersVersion = "1.0.6"
+lazy val scalaTestVersion    = "3.0.4"
 lazy val scalaXmlVerson      = "1.0.6"
 lazy val shapelessVersion    = "2.3.2"
 lazy val slf4jVersion        = "1.7.25"
@@ -24,6 +24,9 @@ lazy val tucoVersion         = "0.3.0-M2"
 enablePlugins(GitVersioning)
 
 git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
+
+// check for library updates whenever the project is [re]load
+onLoad in Global := { s => "dependencyUpdates" :: s }
 
 // Before printing the prompt check git to make sure all is well.
 shellPrompt in ThisBuild := { state =>
@@ -80,6 +83,10 @@ lazy val commonSettings = Seq(
        |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
        |""".stripMargin
   )),
+
+  // We don't care to see updates about the scala language itself
+  dependencyUpdatesFilter -= moduleFilter(name = "scala-library"),
+  dependencyUpdatesFilter -= moduleFilter(name = "scala-reflect"),
 
   // Temporary, needed for decline 0.4.0-M1
   resolvers += Resolver.jcenterRepo,
@@ -170,7 +177,7 @@ lazy val flywaySettings = Seq(
 
 lazy val gem = project
   .in(file("."))
-  .settings(scalaVersion := "2.11.8")
+  .settings(commonSettings)
   .aggregate(coreJVM, db, json, ocs2, service, telnetd, ctl, web)
 
 lazy val core = crossProject
