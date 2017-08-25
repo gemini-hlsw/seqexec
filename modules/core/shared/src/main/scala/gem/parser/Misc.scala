@@ -77,7 +77,7 @@ trait MiscParsers {
 
   /**
    * Force and examine remaining input and yield the longest prefix up to (but not including) a
-   * char satisfying `p`, which is discarded. Fails is no such char is found.
+   * char satisfying `p`, which is discarded. Fails if no such char is found.
    */
   def takeUntilLast(p: Char => Boolean): Parser[String] =
     force.flatMap { s =>
