@@ -26,6 +26,10 @@ final class Epoch private (val scheme: Epoch.Scheme, private val toMilliyears: I
   def epochYear: Double =
     toMilliyears.toDouble * 1000.0
 
+  /** Offset in epoch-years from this `Epoch` to the given `Instant`. */
+  def untilInstant(i: Instant): Double =
+    untilLocalDateTime(LocalDateTime.ofInstant(i, ZoneOffset.UTC))
+
   /** Offset in epoch-years from this `Epoch` to the given `LocalDateTime`. */
   def untilLocalDateTime(ldt: LocalDateTime): Double =
     untilJulianDay(Epoch.Scheme.toJulianDay(ldt))

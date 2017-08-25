@@ -19,6 +19,10 @@ final case class Offset(p: Offset.P, q: Offset.Q) {
   def +(o: Offset): Offset =
     Offset(p + o.p, q + o.q)
 
+  /** This offset pair in radians. */
+  def toRadians: (Double, Double) =
+    (p.toRadians, q.toRadians)
+
 }
 
 object Offset {
@@ -42,7 +46,6 @@ object Offset {
   implicit val EqualOffset: Eq[Offset] =
     Eq.by(o => (o.p, o.q))
 
-
   /** P component of an angular offset.. */
   final case class P(toAngle: Angle) {
 
@@ -53,6 +56,10 @@ object Offset {
     /** Some of this P component and `p`. Exact. */
     def +(p: P): P =
       P(toAngle + p.toAngle)
+
+    /** This P component in signed radians. */
+    def toRadians: Double =
+      toAngle.toSignedDoubleRadians
 
   }
   object P {
@@ -88,6 +95,10 @@ object Offset {
     /** Some of this Q component and `p`. Exact. */
     def +(p: Q): Q =
       Q(toAngle + p.toAngle)
+
+    /** This Q component in signed radians. */
+    def toRadians: Double =
+      toAngle.toSignedDoubleRadians
 
   }
   object Q {

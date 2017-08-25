@@ -43,6 +43,10 @@ final case class RightAscension(toHourAngle: HourAngle) {
   def format: String =
     toHourAngle.formatHMS
 
+  /** This RightAscension in radians [0 .. 2π). Approximate. */
+  def toRadians: Double =
+    toAngle.toDoubleRadians
+
   override def toString =
     s"RA($format)"
 
@@ -56,6 +60,13 @@ object RightAscension {
    */
   def fromHourAngle(ha: HourAngle): RightAscension =
     apply(ha)
+
+  /**
+   * Construct a `RightAscension` from an angle in radians.
+   * @group Constructors
+   */
+  def fromRadians(rad: Double): RightAscension =
+    fromHourAngle(Angle.fromDoubleRadians(rad).toHourAngle)
 
   /** Attempt to parse a `RightAscension` from a `format`-formatted string. */
   def parse(s: String): Option[RightAscension] =
