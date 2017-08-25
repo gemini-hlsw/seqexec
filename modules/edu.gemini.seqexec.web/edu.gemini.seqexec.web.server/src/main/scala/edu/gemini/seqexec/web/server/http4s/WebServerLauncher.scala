@@ -4,6 +4,8 @@
 package edu.gemini.seqexec.web.server.http4s
 
 import org.log4s._
+import ch.qos.logback.core.Appender
+import ch.qos.logback.classic.spi.ILoggingEvent
 
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.server
@@ -11,6 +13,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
+import edu.gemini.seqexec.web.server.logging.AppenderForClients
 import edu.gemini.web.server.common.{LogInitialization, StaticRoutes, RedirectToHttpsRoutes}
 import knobs._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
@@ -125,6 +128,34 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     Task.delay { logger.info(msg) }
   }
 
+  // We need to manually update the configuration of the logging subsystem
+  // to support capturing log messages and forward them to the clients
+  def logToClients(out: Topic[SeqexecEvent]): Task[Appender[ILoggingEvent]] = Task.delay {
+    import org.slf4j.LoggerFactory
+    import ch.qos.logback.classic.LoggerContext
+    import ch.qos.logback.classic.Logger
+    import ch.qos.logback.classic.AsyncAppender
+
+    val asyncAppender = new AsyncAppender
+    val appender = new AppenderForClients(out)
+    Option(LoggerFactory.getILoggerFactory()).collect {
+      case lc: LoggerContext => lc
+    }.foreach { ctx =>
+      asyncAppender.setContext(ctx)
+      appender.setContext(ctx)
+      asyncAppender.addAppender(appender)
+    }
+
+    Option(LoggerFactory.getLogger("edu.gemini.seqexec")).collect {
+      case l: Logger => l
+    }.foreach { l =>
+      l.addAppender(asyncAppender)
+      asyncAppender.start()
+      appender.start()
+    }
+    asyncAppender
+  }
+
   /**
     * Reads the configuration and launches the web server
     */
@@ -151,6 +182,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
             as <- authService.run(ac)
             rd <- redirectWebServer.run(wc)
             _  <- logStart.run(wc)
+            _  <- logToClients(out)
             ws <- webServer(as, (inq, out), et).run(wc)
           } yield (ws, rd)
         )

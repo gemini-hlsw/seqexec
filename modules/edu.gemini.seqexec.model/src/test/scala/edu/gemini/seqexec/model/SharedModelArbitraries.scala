@@ -7,6 +7,7 @@ import Model._
 import Model.SeqexecEvent._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary._
+import java.time.Instant
 
 // Keep the arbitraries in a separate trait to improve caching
 object SharedModelArbitraries {
@@ -21,6 +22,13 @@ object SharedModelArbitraries {
       // Let's reduce the test space by only testing the list of items
     } yield SequencesQueue(Conditions.default, Some("operator"), b)
   }
+
+  implicit val instArb: Arbitrary[Instant] = Arbitrary {
+    for {
+      i <- Gen.choose(0L, Long.MaxValue)
+    } yield Instant.ofEpochMilli(i)
+  }
+  implicit val levArb = Arbitrary(Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
 
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]
   implicit val svArb  = implicitly[Arbitrary[SequenceView]]
@@ -37,6 +45,7 @@ object SharedModelArbitraries {
   implicit val smeArb = implicitly[Arbitrary[StepSkipMarkChanged]]
   implicit val speArb = implicitly[Arbitrary[SequencePauseRequested]]
   implicit val lmArb  = implicitly[Arbitrary[NewLogMessage]]
+  implicit val slmArb = implicitly[Arbitrary[ServerLogMessage]]
   implicit val neArb  = implicitly[Arbitrary[NullEvent.type]]
   implicit val opArb  = implicitly[Arbitrary[OperatorUpdated]]
   implicit val obArb  = implicitly[Arbitrary[ObserverUpdated]]

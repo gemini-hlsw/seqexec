@@ -7,6 +7,8 @@ import boopickle.Default._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
 
+import java.time.Instant
+
 /**
   * Contains boopickle implicit picklers of model objects
   * Boopickle can auto derived encoders but it is preferred to make
@@ -42,6 +44,13 @@ trait ModelBooPicklers {
 
   implicit val stepConfigPickler = generatePickler[SequenceView]
 
+  implicit val datePickler = transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
+
+  implicit val serverLogLevelPickler = compositePickler[ServerLogLevel]
+    .addConcreteType[ServerLogLevel.INFO.type]
+    .addConcreteType[ServerLogLevel.WARN.type]
+    .addConcreteType[ServerLogLevel.ERROR.type]
+
   implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[SequenceId]]
 
   // Composite pickler for the seqexec event hierarchy
@@ -59,6 +68,7 @@ trait ModelBooPicklers {
     .addConcreteType[SequenceUpdated]
     .addConcreteType[SequenceRefreshed]
     .addConcreteType[NewLogMessage]
+    .addConcreteType[ServerLogMessage]
     .addConcreteType[NullEvent.type]
     .addConcreteType[ObserverUpdated]
     .addConcreteType[OperatorUpdated]

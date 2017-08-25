@@ -24,6 +24,7 @@ class SeqexecEventPrismSpec extends FlatSpec with Matchers with PropertyChecks {
           case e: SeqexecModelUpdate if e.view.queue.isEmpty =>
           case e: ConnectionOpenEvent                        =>
           case e: NewLogMessage                              =>
+          case e: ServerLogMessage                           =>
           case NullEvent                                     =>
         }
       }

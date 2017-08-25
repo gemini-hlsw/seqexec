@@ -204,6 +204,7 @@ lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .jsSettings(commonJSSettings)
   .jsSettings(
     // And add a custom one
+    libraryDependencies += JavaTimeJS.value,
     addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
 
