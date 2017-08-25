@@ -85,7 +85,7 @@ trait MiscParsers {
         case -1 => err[String]("not satisfied")
         case  n => take(n) <~ advance(1)
       }
-    } named "takeUntilʹ(…)"
+    } named "takeUntilLast(…)"
 
 }
 object MiscParsers extends MiscParsers
