@@ -65,5 +65,27 @@ trait MiscParsers {
 
   } namedOpaque s"frac($n)"
 
+
+  /** Force and return all remaining input without consuming it. */
+  val force: Parser[String] =
+    get.flatMap { s =>
+      opt(ensure(s.length + 1)) flatMap {
+        case Some(_) => force
+        case None    => ok(s)
+      }
+    }
+
+  /**
+   * Force and examine remaining input and yield the longest prefix up to (but not including) a
+   * char satisfying `p`, which is discarded. Fails is no such char is found.
+   */
+  def takeUntilLast(p: Char => Boolean): Parser[String] =
+    force.flatMap { s =>
+      s.lastIndexWhere(p) match {
+        case -1 => err[String]("not satisfied")
+        case  n => take(n) <~ advance(1)
+      }
+    } named "takeUntilʹ(…)"
+
 }
 object MiscParsers extends MiscParsers
