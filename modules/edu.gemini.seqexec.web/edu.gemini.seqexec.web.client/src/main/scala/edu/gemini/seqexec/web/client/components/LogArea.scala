@@ -31,7 +31,7 @@ object LogArea {
               ^.cls := "field",
               <.textarea(
                 ^.readOnly := true,
-                ^.value := p.log.log.map(e => s"${e.timestamp} ${e.msg}").toList.mkString("\n")
+                ^.value := p.log.log.map(e => s"${e.timestamp} ${e.msg}").toVector.mkString("\n")
               )
             )
           )

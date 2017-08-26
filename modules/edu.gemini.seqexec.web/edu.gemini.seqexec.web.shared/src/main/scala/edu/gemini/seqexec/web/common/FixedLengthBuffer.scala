@@ -4,31 +4,36 @@
 package edu.gemini.web.common
 
 import scalaz.{Show, Equal, Functor}
+import scalaz.syntax.std.boolean._
 
 object FixedLengthBuffer {
-  private final case class FixedLengthBufferImpl[A](maxLength: Int, data: List[A]) extends FixedLengthBuffer[A] {
+  private final case class FixedLengthBufferImpl[A](maxLength: Int, data: Vector[A]) extends FixedLengthBuffer[A] {
+    // Sanity check
+    require(maxLength >= data.length)
+    require(maxLength > 0)
+
     def append(element: A): FixedLengthBuffer[A] = {
-      if (data.length == maxLength) {
-        FixedLengthBufferImpl[A](maxLength, element :: data.reverse.tail.reverse)
+      if (data.length == maxLength && data.length >= 0) {
+        FixedLengthBufferImpl[A](maxLength, data.tail :+ element)
       } else {
-        FixedLengthBufferImpl[A](maxLength, element :: data)
+        FixedLengthBufferImpl[A](maxLength, data :+ element)
       }
     }
 
-    def toList: List[A] =
-      data.reverse
+    def toVector: Vector[A] =
+      data
   }
 
-  private object FixedLengthBufferImpl {
-    def apply[A](maxLength: Int, initial: A*): FixedLengthBuffer[A] = {
-      // Sanity check
-      require(maxLength >= initial.length)
-      new FixedLengthBufferImpl[A](maxLength, List(initial: _*))
-    }
-
+  def apply[A](maxLength: Int, initial: A*): Option[FixedLengthBuffer[A]] = {
+    (maxLength > 0 && maxLength >= initial.length) option
+      FixedLengthBufferImpl[A](maxLength, Vector(initial: _*))
   }
 
-  def apply[A](maxLength: Int): FixedLengthBuffer[A] = FixedLengthBufferImpl[A](maxLength)
+  def fromInt[A](maxLength: Int): Option[FixedLengthBuffer[A]] =
+    apply[A](maxLength)
+
+  def unsafeFromInt[A](maxLength: Int): FixedLengthBuffer[A] =
+    fromInt[A](maxLength).getOrElse(sys.error(s"Invalid max length $maxLength"))
 
   implicit def show[A]: Show[FixedLengthBuffer[A]] = Show.showFromToString
 
@@ -60,5 +65,5 @@ sealed trait FixedLengthBuffer[A] {
   /**
    * Converts the buffer to a list
    */
-  def toList: List[A]
+  def toVector: Vector[A]
 }
