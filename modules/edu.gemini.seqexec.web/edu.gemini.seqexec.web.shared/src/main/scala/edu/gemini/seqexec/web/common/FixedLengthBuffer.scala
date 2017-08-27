@@ -10,7 +10,7 @@ object FixedLengthBuffer {
   private final case class FixedLengthBufferImpl[A](maxLength: Int, data: Vector[A]) extends FixedLengthBuffer[A] {
     // Sanity check
     require(maxLength >= data.length)
-    require(maxLength > 0)
+    require(maxLength >= 0)
 
     def append(element: A): FixedLengthBuffer[A] = {
       if (data.length == maxLength && data.length >= 0) {
@@ -29,11 +29,11 @@ object FixedLengthBuffer {
       FixedLengthBufferImpl[A](maxLength, Vector(initial: _*))
   }
 
-  def fromInt[A](maxLength: Int): Option[FixedLengthBuffer[A]] =
-    apply[A](maxLength)
+  def fromInt[A](maxLength: Int, initial: A*): Option[FixedLengthBuffer[A]] =
+    apply[A](maxLength, initial: _*)
 
-  def unsafeFromInt[A](maxLength: Int): FixedLengthBuffer[A] =
-    fromInt[A](maxLength).getOrElse(sys.error(s"Invalid max length $maxLength"))
+  def unsafeFromInt[A](maxLength: Int, initial: A*): FixedLengthBuffer[A] =
+    fromInt[A](maxLength, initial: _*).getOrElse(sys.error(s"Invalid max length $maxLength, data length ${initial.length}"))
 
   implicit def show[A]: Show[FixedLengthBuffer[A]] = Show.showFromToString
 
