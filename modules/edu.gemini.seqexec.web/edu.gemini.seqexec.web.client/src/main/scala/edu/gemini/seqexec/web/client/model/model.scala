@@ -3,12 +3,12 @@
 
 package edu.gemini.seqexec.web.client.model
 
-import java.time.LocalTime
-
 import diode.RootModelR
 import diode.data.{Empty, Pot, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
+import edu.gemini.web.common.FixedLengthBuffer
 import org.scalajs.dom.WebSocket
 
 import scalaz._
@@ -99,17 +99,10 @@ object WebSocketConnection {
   val empty = WebSocketConnection(Empty, 0)
 }
 
-case class GlobalLogEntry(timestamp: LocalTime, s: String)
-
 /**
   * Keeps a list of log entries for display
   */
-case class GlobalLog(log: List[GlobalLogEntry]) {
-  // Upper bound of accepted events or we may run out of memory
-  val maxLength = 500
-  def append(e: String):GlobalLog =
-    copy((log :+ GlobalLogEntry(LocalTime.now(), e)).take(maxLength - 1))
-}
+case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage])
 
 /**
  * UI model, changes here will update the UI
@@ -125,7 +118,7 @@ case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
 object SeqexecUIModel {
   val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
   val initial = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-    SectionClosed, GlobalLog(Nil), SequencesOnDisplay.empty, true)
+    SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
 }
 
 

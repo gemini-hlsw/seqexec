@@ -4,6 +4,7 @@
 package edu.gemini.seqexec.web.client.model
 
 import java.util.logging.{Level, Logger}
+import java.time.Instant
 
 import diode.data._
 import diode.react.ReactConnector
@@ -14,7 +15,7 @@ import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
@@ -267,7 +268,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case AppendToLog(s) =>
-      updated(value.append(s))
+      updated(value.copy(log = value.log.append(s)))
   }
 }
 
@@ -339,7 +340,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
       updated(WebSocketConnection(Ready(ws), delay), refreshRequest)
 
     case ConnectionError(e) =>
-      effectOnly(Effect.action(AppendToLog(e)))
+      effectOnly(Effect.action(AppendToLog(ServerLogMessage(ServerLogLevel.ERROR, Instant.now, "Error connecting to the seqexec server"))))
 
     case ConnectionClosed(_) =>
       val next = math.min(60000, math.max(250, value.nextAttempt * 2))
@@ -366,6 +367,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
 
   // scalastyle:off
   override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(l: ServerLogMessage) =>
+      effectOnly(Effect(Future(AppendToLog(l))))
+
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(user = u))
 

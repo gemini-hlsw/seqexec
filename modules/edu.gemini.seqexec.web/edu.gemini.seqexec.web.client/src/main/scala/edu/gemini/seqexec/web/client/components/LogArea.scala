@@ -9,6 +9,8 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
+import scalaz.syntax.functor._
+
 /**
   * Area to display a sequence's log
   */
@@ -29,7 +31,7 @@ object LogArea {
               ^.cls := "field",
               <.textarea(
                 ^.readOnly := true,
-                ^.value := p.log.log.map(e => s"${e.timestamp} ${e.s}").mkString("\n")
+                ^.value := p.log.log.map(e => s"${e.timestamp} ${e.msg}").toVector.mkString("\n")
               )
             )
           )

@@ -6,7 +6,7 @@ package edu.gemini.seqexec.web.client.model
 import diode.RootModelR
 import diode.data._
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceView}
-import edu.gemini.seqexec.web.common.ArbitrariesWebCommon
+import edu.gemini.web.common.ArbitrariesWebCommon
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 

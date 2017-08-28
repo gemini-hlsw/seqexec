@@ -7,6 +7,7 @@ package edu.gemini.seqexec.web.client.model
 import diode.Action
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
 import org.scalajs.dom.WebSocket
 
 
@@ -46,7 +47,7 @@ case class ShowStep(s: SequenceId, i: Int) extends Action
 case class UnShowStep(i: Instrument) extends Action
 case class RememberCompleted(s: SequenceView) extends Action
 
-case class AppendToLog(s: String) extends Action
+case class AppendToLog(l: ServerLogMessage) extends Action
 
 // Actions related to web sockets
 case class WSConnect(delay: Int) extends Action
