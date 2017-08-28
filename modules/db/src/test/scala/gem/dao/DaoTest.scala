@@ -4,7 +4,7 @@
 package gem.dao
 
 import cats.effect.IO
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.{ Program, Step }
 
 /** Base trait for DAO test cases.

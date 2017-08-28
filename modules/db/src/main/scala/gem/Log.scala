@@ -4,7 +4,7 @@
 package gem
 
 import cats.implicits._, cats.effect._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.dao.LogDao
 import java.util.concurrent.{ ExecutorService, Executors, TimeUnit }
 import java.util.logging._

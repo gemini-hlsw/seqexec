@@ -5,7 +5,7 @@ package gem
 package dao
 
 import cats.implicits._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.enum.{ GmosDetector, Instrument, MosPreImaging }
 import gem.config._
 

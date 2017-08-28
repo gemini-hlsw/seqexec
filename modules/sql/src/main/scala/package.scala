@@ -3,7 +3,7 @@
 
 package gem
 
-import doobie.imports._
+import doobie._
 import java.time.{ Duration, ZoneId }
 
 package object sql {

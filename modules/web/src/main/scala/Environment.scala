@@ -6,7 +6,7 @@ package web
 
 import cats.implicits._
 import cats.effect.IO
-import doobie.imports.Transactor
+import doobie.Transactor
 import gem.{ Service => GemService }
 import io.circe._
 import io.circe.parser.decode

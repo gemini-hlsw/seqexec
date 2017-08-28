@@ -16,7 +16,7 @@ import gem.math.Wavelength
 
 import java.io.File
 import java.time.Duration
-import doobie.imports._
+import doobie._, doobie.implicits._
 
 import scala.reflect.runtime.universe._
 

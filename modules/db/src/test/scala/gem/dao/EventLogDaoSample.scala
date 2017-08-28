@@ -4,7 +4,7 @@
 package gem.dao
 
 import cats.effect.IO
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem._
 import java.time.Instant
 

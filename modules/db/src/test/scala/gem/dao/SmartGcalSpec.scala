@@ -4,7 +4,7 @@
 package gem.dao
 
 import cats.implicits._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem._
 import gem.SmartGcal._
 import gem.config._

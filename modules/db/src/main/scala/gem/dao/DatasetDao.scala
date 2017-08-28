@@ -4,7 +4,7 @@
 package gem.dao
 
 import cats.syntax.functor._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.{ Dataset, Observation }
 
 object DatasetDao {

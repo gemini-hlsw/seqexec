@@ -7,7 +7,7 @@ package dao
 import gem.enum.ProgramRole
 import cats.data._, cats.implicits._
 
-import doobie.imports._
+import doobie._, doobie.implicits._
 
 object UserDao {
 

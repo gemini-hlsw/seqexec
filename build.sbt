@@ -6,8 +6,8 @@ lazy val attoVersion         = "0.6.1-M1"
 lazy val catsEffectVersion   = "0.4"
 lazy val catsVersion         = "1.0.0-MF"
 lazy val declineVersion      = "0.4.0-M1"
-lazy val doobieVersion       = "0.5.0-M5"
-lazy val flywayVersion       = "4.0.3"
+lazy val doobieVersion       = "0.5.0-M6"
+lazy val flywayVersion       = "4.2.0"
 lazy val fs2Version          = "0.10.0-M6"
 lazy val http4sVersion       = "0.18.0-M1"
 lazy val jwtVersion          = "0.14.0"
@@ -178,7 +178,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(commonSettings)
-  .aggregate(coreJVM, db, json, ocs2, service, telnetd, ctl, web)
+  .aggregate(coreJVM, db, json, ocs2, service, telnetd, ctl, web, sql)
 
 lazy val core = crossProject
   .crossType(CrossType.Full)
@@ -222,7 +222,7 @@ lazy val db = project
     ),
     initialCommands += """
       |import cats._, cats.data._, cats.implicits._, scalaz.effect.IO
-      |import doobie.imports._
+      |import doobie._, doobie.implicits._
       |import gem._, gem.enum._, gem.dao._
       |val xa = DriverManagerTransactor[IO](
       |  "org.postgresql.Driver",

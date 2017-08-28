@@ -3,7 +3,7 @@
 
 package gem.sql
 
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.sql.enum._
 import java.nio.file._
 import cats.implicits._, cats.effect.IO

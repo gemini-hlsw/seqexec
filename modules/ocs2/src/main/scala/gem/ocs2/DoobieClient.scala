@@ -4,9 +4,8 @@
 package gem.ocs2
 
 import cats.effect.IO, cats.implicits._
-import doobie.imports._
-import doobie.util.monaderror._
-import doobie.postgres.imports._
+import doobie._, doobie.implicits._
+import doobie.postgres.implicits._
 import java.util.logging.{ Level, Logger }
 
 /** Shared support for import applications using Doobie. */

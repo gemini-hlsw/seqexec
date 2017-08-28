@@ -4,7 +4,7 @@
 package gem.ocs2
 
 import cats.effect.IO, cats.implicits._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.{ Dataset, Log, Observation, Program, Step, User }
 import gem.config.{ StaticConfig, DynamicConfig }
 import gem.dao.UserDao

@@ -3,7 +3,7 @@
 
 package gem.sql
 
-import doobie.imports._
+import doobie._
 import java.time.{ Duration, ZoneId }
 import cats.data.NonEmptyList, cats.implicits._
 import shapeless._

@@ -6,7 +6,7 @@ package gem.dao
 import cats.implicits._
 import gem.config.GcalConfig
 import gem.config.GcalConfig.GcalLamp
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
 import java.time.Duration

@@ -6,7 +6,7 @@ package gem
 import cats._
 import cats.implicits._
 import cats.effect.Sync
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.dao._
 import gem.enum._
 import gem.util.Lens, Lens._

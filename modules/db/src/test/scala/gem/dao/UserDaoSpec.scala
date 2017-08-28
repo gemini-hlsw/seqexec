@@ -4,8 +4,8 @@
 package gem.dao
 
 import cats.implicits._
-import doobie.imports._
-import doobie.postgres.imports._
+import doobie._, doobie.implicits._
+import doobie.postgres.implicits._
 import gem._
 import gem.enum.ProgramRole
 import org.scalatest._

@@ -4,7 +4,7 @@
 package gem.sql
 package enum
 
-import doobie.imports._
+import doobie._, doobie.implicits._
 import java.time.ZoneId
 import shapeless.record._
 
