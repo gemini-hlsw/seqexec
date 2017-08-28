@@ -11,6 +11,7 @@ import gem.config._
 import gem.config.DynamicConfig.{ SmartGcalKey, SmartGcalSearchKey }
 import gem.enum._
 import gem.math.Wavelength
+import gem.util.Location
 import fs2.Stream
 import scala.collection.immutable.TreeMap
 

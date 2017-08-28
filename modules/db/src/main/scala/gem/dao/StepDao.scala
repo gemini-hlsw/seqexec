@@ -5,7 +5,7 @@ package gem
 package dao
 
 import cats.implicits._
-import gem.Location
+import gem.util.Location
 import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._

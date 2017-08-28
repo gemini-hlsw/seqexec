@@ -8,6 +8,7 @@ import cats.implicits._
 import doobie.imports._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum.Instrument
+import gem.util.Location
 
 object ObservationDao {
 

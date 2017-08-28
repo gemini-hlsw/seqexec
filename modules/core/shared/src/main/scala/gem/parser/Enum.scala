@@ -6,6 +6,7 @@ package gem
 import cats.implicits._
 import atto._, Atto._
 import gem.enum._
+import gem.util.Enumerated
 
 /** Parsers for `gem.enum` data types. */
 trait EnumParsers {

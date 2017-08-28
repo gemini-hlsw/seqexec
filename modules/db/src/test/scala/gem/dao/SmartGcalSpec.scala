@@ -11,6 +11,7 @@ import gem.config._
 import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
+import gem.util.Location
 import org.scalatest.{Assertion, FlatSpec, Matchers}
 import java.time.Duration
 import scala.collection.immutable.TreeMap

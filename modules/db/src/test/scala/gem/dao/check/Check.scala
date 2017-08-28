@@ -11,6 +11,7 @@ import gem._
 import gem.enum._
 import gem.config._
 import gem.config.DynamicConfig.SmartGcalKey
+import gem.util.Location
 import gem.math.{ Offset, Wavelength }
 import java.time.LocalDate
 import org.scalatest._

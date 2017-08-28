@@ -4,6 +4,7 @@
 package gem
 
 import gem.config.DynamicConfig
+import gem.util.Location
 
 /**
  * Module of types and constuctors related to Smart GCal.

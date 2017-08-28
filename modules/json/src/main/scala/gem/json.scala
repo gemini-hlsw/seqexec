@@ -8,6 +8,7 @@ import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
 import gem.math.{ Angle, Offset, Wavelength }
+import gem.util.Enumerated
 import io.circe._
 import io.circe.syntax._
 import java.time.Duration
