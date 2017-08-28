@@ -12,7 +12,7 @@ import cats.implicits._
 /** Parser for [[gem.target.HorizonsDesignation]]. */
 trait HorizonsDesignationParsers {
 
-  private def des[A,B](s: String, p: Parser[A]): Parser[A] =
+  private def des[A](s: String, p: Parser[A]): Parser[A] =
     string(s"${s}_") ~> p
 
   private def textDes[A](s: String)(f: String => A): Parser[A] =
