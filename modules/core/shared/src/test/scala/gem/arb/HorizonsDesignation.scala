@@ -4,8 +4,7 @@
 package gem
 package arb
 
-import gem.target.HorizonsDesignation
-import gem.target.HorizonsDesignation._
+import HorizonsDesignation._
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._

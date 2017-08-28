@@ -1,10 +1,10 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.parser
+package gem
+package parser
 
-import gem.target.HorizonsDesignation
-import gem.target.HorizonsDesignation._
+import HorizonsDesignation._
 
 import atto._, Atto._
 import cats.implicits._
@@ -30,14 +30,14 @@ trait HorizonsDesignationParsers {
   val asteroidOld: Parser[AsteroidOld] =
     numDes ("AsteroidOld")(AsteroidOld.apply) namedOpaque "asteroidOld"
 
-  val major: Parser[MajorBody] =
+  val majorBody: Parser[MajorBody] =
     numDes ("MajorBody"  )(MajorBody.apply  ) namedOpaque "majorBody"
 
   val horizonsDesignation: Parser[HorizonsDesignation] =
       (comet      .widen[HorizonsDesignation] |
        asteroidNew.widen[HorizonsDesignation] |
        asteroidOld.widen[HorizonsDesignation] |
-       major      .widen[HorizonsDesignation] ) named "horizonsDesignation"
+       majorBody  .widen[HorizonsDesignation] ) named "horizonsDesignation"
 
 }
 

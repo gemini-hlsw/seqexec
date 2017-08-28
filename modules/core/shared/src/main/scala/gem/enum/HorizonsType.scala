@@ -13,15 +13,16 @@ import cats.instances.string._
  */
 sealed abstract class HorizonsType(
   val tag: String,
-  val name: String
+  val shortName: String,
+  val longName: String
 )
 
 object HorizonsType {
 
-  /** @group Constructors */ case object Comet extends HorizonsType("Comet", "Comet")
-  /** @group Constructors */ case object AsteroidNew extends HorizonsType("AsteroidNew", "Asteroid New")
-  /** @group Constructors */ case object AsteroidOld extends HorizonsType("AsteroidOld", "Asteroid Old")
-  /** @group Constructors */ case object MajorBody extends HorizonsType("MajorBody", "Major Body")
+  /** @group Constructors */ case object Comet extends HorizonsType("Comet", "Comet", "Comet")
+  /** @group Constructors */ case object AsteroidNew extends HorizonsType("AsteroidNew", "Asteroid New", "Asteroid (New Format)")
+  /** @group Constructors */ case object AsteroidOld extends HorizonsType("AsteroidOld", "Asteroid Old", "Asteroid (Old Format)")
+  /** @group Constructors */ case object MajorBody extends HorizonsType("MajorBody", "Major Body", "Major Body")
 
   /** All members of HorizonsType, in canonical order. */
   val all: List[HorizonsType] =
