@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepState}
+import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepState}
 import edu.gemini.seqexec.engine.Step._
 
 import scalaz._

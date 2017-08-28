@@ -27,7 +27,7 @@ import scala.concurrent.duration._
 /**
   * Created by jluhrs on 8/3/17.
   */
-abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends Instrument {
+abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem {
   import Gmos._
 
   override val sfName: String = "gmos"

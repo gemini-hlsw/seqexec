@@ -9,7 +9,7 @@ import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import squants.time.Seconds
 
 import edu.gemini.seqexec.server.TcsController._
-import edu.gemini.seqexec.engine.Resource
+import edu.gemini.seqexec.model.Model
 import edu.gemini.spModel.core.Wavelength
 import squants.space.{Angstroms, Degrees, Millimeters}
 
@@ -56,14 +56,14 @@ object TcsControllerEpics extends TcsController {
   private def getGuideConfig: TrySeq[GuideConfig] = {
     for {
       mountGuide <- TcsEpics.instance.absorbTipTilt.map(decode[Integer, MountGuideOption])
-      m1Source <- TcsEpics.instance.m1GuideSource.map(decode[String, M1Source])
-      m1Guide <- TcsEpics.instance.m1Guide.map(decodeM1Guide(_, m1Source))
-      m2p1Guide <- TcsEpics.instance.m2p1Guide.map(decodeGuideSourceOption)
-      m2p2Guide <- TcsEpics.instance.m2p2Guide.map(decodeGuideSourceOption)
-      m2oiGuide <- TcsEpics.instance.m2oiGuide.map(decodeGuideSourceOption)
-      m2aoGuide <- TcsEpics.instance.m2aoGuide.map(decodeGuideSourceOption)
-      m2Coma <- TcsEpics.instance.comaCorrect.map(decode[String, ComaOption])
-      m2Guide <- TcsEpics.instance.m2GuideState.map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
+      m1Source   <- TcsEpics.instance.m1GuideSource.map(decode[String, M1Source])
+      m1Guide    <- TcsEpics.instance.m1Guide.map(decodeM1Guide(_, m1Source))
+      m2p1Guide  <- TcsEpics.instance.m2p1Guide.map(decodeGuideSourceOption)
+      m2p2Guide  <- TcsEpics.instance.m2p2Guide.map(decodeGuideSourceOption)
+      m2oiGuide  <- TcsEpics.instance.m2oiGuide.map(decodeGuideSourceOption)
+      m2aoGuide  <- TcsEpics.instance.m2aoGuide.map(decodeGuideSourceOption)
+      m2Coma     <- TcsEpics.instance.comaCorrect.map(decode[String, ComaOption])
+      m2Guide    <- TcsEpics.instance.m2GuideState.map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
         (m2p2Guide, TipTiltSource.PWFS2), (m2oiGuide, TipTiltSource.OIWFS),
         (m2aoGuide, TipTiltSource.GAOS)).foldLeft(Set[TipTiltSource]())((s: Set[TipTiltSource], v: (Boolean, TipTiltSource)) => if (v._1) s + v._2 else s)))
     } yield TrySeq(GuideConfig(mountGuide, m1Guide, m2Guide))
@@ -80,16 +80,16 @@ object TcsControllerEpics extends TcsController {
 
   private def getTelescopeConfig: TrySeq[TelescopeConfig] = {
     for {
-      xOffsetA <- TcsEpics.instance.xoffsetPoA1
-      yOffsetA <- TcsEpics.instance.yoffsetPoA1
-      xOffsetB <- TcsEpics.instance.xoffsetPoB1
-      yOffsetB <- TcsEpics.instance.yoffsetPoB1
-      xOffsetC <- TcsEpics.instance.xoffsetPoC1
-      yOffsetC <- TcsEpics.instance.yoffsetPoC1
+      xOffsetA    <- TcsEpics.instance.xoffsetPoA1
+      yOffsetA    <- TcsEpics.instance.yoffsetPoA1
+      xOffsetB    <- TcsEpics.instance.xoffsetPoB1
+      yOffsetB    <- TcsEpics.instance.yoffsetPoB1
+      xOffsetC    <- TcsEpics.instance.xoffsetPoC1
+      yOffsetC    <- TcsEpics.instance.yoffsetPoC1
       wavelengthA <- TcsEpics.instance.sourceAWavelength
       wavelengthB <- TcsEpics.instance.sourceBWavelength
       wavelengthC <- TcsEpics.instance.sourceCWavelength
-      m2Beam <- TcsEpics.instance.chopBeam.map(decode[String, Beam])
+      m2Beam      <- TcsEpics.instance.chopBeam.map(decode[String, Beam])
     } yield TrySeq(TelescopeConfig(
       OffsetA(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetA)), OffsetY(Millimeters[Double](yOffsetA)))),
       OffsetB(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetB)), OffsetY(Millimeters[Double](yOffsetB)))),
@@ -147,9 +147,9 @@ object TcsControllerEpics extends TcsController {
 
   private def getGuidersTrackingConfig: TrySeq[GuidersTrackingConfig] = {
     for {
-      p1 <- getNodChopTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideConfig)
-      p2 <- getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig)
-      oi <- getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig)
+      p1       <- getNodChopTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideConfig)
+      p2       <- getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig)
+      oi       <- getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig)
       p1Follow <- TcsEpics.instance.p1FollowS.map(decode[String, FollowOption])
       p2Follow <- TcsEpics.instance.p2FollowS.map(decode[String, FollowOption])
       oiFollow <- TcsEpics.instance.oiFollowS.map(decode[String, FollowOption])
@@ -170,16 +170,16 @@ object TcsControllerEpics extends TcsController {
     } yield TrySeq(GuidersEnabled(GuiderSensorOptionP1(p1On), GuiderSensorOptionP2(p2On), GuiderSensorOptionOI(oiOn)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
 
-  private def getInstPort(inst: Resource.Instrument): Option[Int] = (inst match {
-    case Resource.GMOS_S |
-         Resource.GMOS_N  => TcsEpics.instance.gmosPort
-    case Resource.GSAOI   => TcsEpics.instance.gsaoiPort
-    case Resource.F2      => TcsEpics.instance.f2Port
-    case Resource.GPI     => TcsEpics.instance.gpiPort
-    case Resource.NIRI    => TcsEpics.instance.niriPort
-    case Resource.GNIRS   => TcsEpics.instance.gnirsPort
-    case Resource.NIFS    => TcsEpics.instance.nifsPort
-    case _                => None
+  private def getInstPort(inst: Model.Instrument): Option[Int] = (inst match {
+    case Model.Instrument.GmosS |
+         Model.Instrument.GmosN  => TcsEpics.instance.gmosPort
+    case Model.Instrument.GSAOI  => TcsEpics.instance.gsaoiPort
+    case Model.Instrument.F2     => TcsEpics.instance.f2Port
+    case Model.Instrument.GPI    => TcsEpics.instance.gpiPort
+    case Model.Instrument.NIRI   => TcsEpics.instance.niriPort
+    case Model.Instrument.GNIRS  => TcsEpics.instance.gnirsPort
+    case Model.Instrument.NIFS   => TcsEpics.instance.nifsPort
+    case _                       => None
   }).flatMap(p => if (p == 0) None else Some(p))
 
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an
@@ -199,15 +199,15 @@ object TcsControllerEpics extends TcsController {
         Equal.equalA // natural equality here
     }
 
-    val instNameMap: Map[Resource.Instrument, SFInstName] = Map(
-      Resource.GMOS_S -> SFInstName("gmos"),
-      Resource.GMOS_N -> SFInstName("gmos"),
-      Resource.GSAOI  -> SFInstName("gsaoi"),
-      Resource.F2     -> SFInstName("f2"),
-      Resource.GPI    -> SFInstName("gpi")
+    val instNameMap: Map[Model.Instrument, SFInstName] = Map(
+      Model.Instrument.GmosS -> SFInstName("gmos"),
+      Model.Instrument.GmosN -> SFInstName("gmos"),
+      Model.Instrument.GSAOI -> SFInstName("gsaoi"),
+      Model.Instrument.F2    -> SFInstName("f2"),
+      Model.Instrument.GPI   -> SFInstName("gpi")
     )
 
-    private def findInstrument(str: String): Option[Resource.Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)
+    private def findInstrument(str: String): Option[Model.Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)
 
     implicit val decodeScienceFoldPosition: DecodeEpicsValue[String, Option[ScienceFoldPosition]] = DecodeEpicsValue(
       (t: String) => if (t.startsWith(PARK_POS)) Parked.some

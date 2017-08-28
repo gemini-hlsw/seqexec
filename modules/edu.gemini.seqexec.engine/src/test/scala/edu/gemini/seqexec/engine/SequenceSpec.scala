@@ -5,7 +5,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.engine.Event.start
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
-import edu.gemini.seqexec.model.Model.F2
+import edu.gemini.seqexec.model.Model.Instrument.F2
 import edu.gemini.seqexec.model.UserDetails
 
 import scala.Function.const
@@ -195,4 +195,3 @@ class SequenceSpec extends FlatSpec {
   }
 
 }
-

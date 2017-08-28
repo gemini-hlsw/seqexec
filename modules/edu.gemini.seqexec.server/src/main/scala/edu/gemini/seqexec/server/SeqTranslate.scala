@@ -5,8 +5,9 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.{Action, ActionMetadata, Resource, Result, Sequence, Step, fromTask}
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, StepState}
+import edu.gemini.seqexec.engine.{Action, ActionMetadata, Result, Sequence, Step, fromTask}
+import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, StepState}
+import edu.gemini.seqexec.model.Model
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
@@ -37,7 +38,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
 
-  private def observe(config: Config, obsId: SPObservationID, inst: Instrument,
+  private def observe(config: Config, obsId: SPObservationID, inst: InstrumentSystem,
                       otherSys: List[System], headers: Reader[ActionMetadata,List[Header]])
                      (ctx: ActionMetadata): SeqAction[ObserveResult] = {
     val dataId: SeqAction[String] = EitherT(Task(
@@ -72,7 +73,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean): TrySeq[Step[Action \/ Result]] = {
-    def buildStep(inst: Instrument, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
+    def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
       extractStatus(config) match {
         case StepState.Pending =>
           Step(
@@ -124,9 +125,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =
     // This is too weak. We may want to use the extractors used in ITC
     config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)) match {
-      case "Flamingos2" => edu.gemini.seqexec.model.Model.F2.right
-      case "GMOS-S"     => edu.gemini.seqexec.model.Model.GmosS.right
-      case "GMOS-N"     => edu.gemini.seqexec.model.Model.GmosN.right
+      case "Flamingos2" => edu.gemini.seqexec.model.Model.Instrument.F2.right
+      case "GMOS-S"     => edu.gemini.seqexec.model.Model.Instrument.GmosS.right
+      case "GMOS-N"     => edu.gemini.seqexec.model.Model.Instrument.GmosN.right
       case n            => SeqexecFailure.UnrecognizedInstrument(n.toString).left
     }
 
@@ -172,11 +173,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       })
   }
 
-  private def toInstrumentSys(inst: Resource.Instrument): TrySeq[Instrument] = inst match {
-    case Resource.F2     => TrySeq(Flamingos2(systems.flamingos2))
-    case Resource.GMOS_S => TrySeq(GmosSouth(systems.gmosSouth))
-    case Resource.GMOS_N => TrySeq(GmosNorth(systems.gmosNorth))
-    case _               => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+  private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
+    case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))
+    case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth))
+    case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth))
+    case _                      => TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
   private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
@@ -188,13 +189,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import TcsController.Subsystem._
 
-  private def hasOI(inst: Resource.Instrument): Boolean = inst match {
-    case Resource.F2   => true
-    case Resource.GMOS_S => true
-    case Resource.GMOS_N => true
-    case Resource.NIFS => true
-    case Resource.NIRI => true
-    case _             => false
+  private def hasOI(inst: Model.Instrument): Boolean = inst match {
+    case Model.Instrument.F2    => true
+    case Model.Instrument.GmosS => true
+    case Model.Instrument.GmosN => true
+    case Model.Instrument.NIFS  => true
+    case Model.Instrument.NIRI  => true
+    case _                      => false
   }
 
   private def calcSystems(stepType: StepType): TrySeq[List[System]] = {
@@ -206,15 +207,15 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
   }
 
-  private def calcInstHeader(config: Config, inst: Resource.Instrument): TrySeq[Header] = inst match {
-    case Resource.F2      =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+  private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = inst match {
+    case Model.Instrument.F2     =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
-    case Resource.GMOS_S |
-         Resource.GMOS_N  =>
+    case Model.Instrument.GmosS |
+         Model.Instrument.GmosN  =>
       val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
       val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
       TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsReader))
-    case _                =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
+    case _                       =>  TrySeq.fail(Unexpected(s"Instrument ${inst.toString} not supported."))
   }
 
   private def commonHeaders(config: Config)(ctx: ActionMetadata): Header = new StandardHeader(systems.dhs,
@@ -263,31 +264,31 @@ object SeqTranslate {
 
 
   private sealed trait StepType {
-    val instrument: Resource.Instrument
+    val instrument: Model.Instrument
   }
 
-  private def extractInstrument(config: Config): TrySeq[Resource.Instrument] = {
+  private def extractInstrument(config: Config): TrySeq[Model.Instrument] = {
     config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
-      case Flamingos2.name => TrySeq(Resource.F2)
-      case GmosSouth.name  => TrySeq(Resource.GMOS_S)
-      case GmosNorth.name  => TrySeq(Resource.GMOS_N)
+      case Flamingos2.name => TrySeq(Model.Instrument.F2)
+      case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
+      case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
       case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
     }
   }
 
-  private final case class CelestialObject(override val instrument: Resource.Instrument) extends StepType
-  private final case class Dark(override val instrument: Resource.Instrument) extends StepType
-  private final case class NodAndShuffle(override val instrument: Resource.Instrument) extends StepType
-  private final case class Gems(override val instrument: Resource.Instrument) extends StepType
-  private final case class Altair(override val instrument: Resource.Instrument) extends StepType
-  private final case class FlatOrArc(override val instrument: Resource.Instrument) extends StepType
-  private final case class DarkOrBias(override val instrument: Resource.Instrument) extends StepType
+  private final case class CelestialObject(override val instrument: Model.Instrument) extends StepType
+  private final case class Dark(override val instrument: Model.Instrument) extends StepType
+  private final case class NodAndShuffle(override val instrument: Model.Instrument) extends StepType
+  private final case class Gems(override val instrument: Model.Instrument) extends StepType
+  private final case class Altair(override val instrument: Model.Instrument) extends StepType
+  private final case class FlatOrArc(override val instrument: Model.Instrument) extends StepType
+  private final case class DarkOrBias(override val instrument: Model.Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
-    override val instrument = Resource.GPI
+    override val instrument = Model.Instrument.GPI
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Resource.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
+    def extractGaos(inst: Model.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
       case -\/(ConfigUtilOps.ConversionError(_, _)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case -\/(ConfigUtilOps.ContentError(_))       => TrySeq.fail(Unexpected("Logical error"))
       case -\/(ConfigUtilOps.KeyNotFound(_))        => TrySeq(CelestialObject(inst))

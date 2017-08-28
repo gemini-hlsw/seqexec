@@ -9,7 +9,7 @@ import edu.gemini.spModel.config2.Config
 import scalaz.{EitherT, Reader}
 import scalaz.concurrent.Task
 
-trait Instrument extends System {
+trait InstrumentSystem extends System {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String
@@ -20,7 +20,7 @@ trait Instrument extends System {
 //Placeholder for observe response
 case class ObserveResult(dataId: ImageFileId)
 
-object UnknownInstrument extends Instrument {
+object UnknownInstrument extends InstrumentSystem {
 
   override val name: String = "UNKNOWN"
 
