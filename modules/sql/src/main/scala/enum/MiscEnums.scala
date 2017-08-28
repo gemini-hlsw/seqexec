@@ -63,6 +63,11 @@ object MiscEnums {
           FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
           WHERE pg_type.typname = 'half'
          """.query[(String, R)]
+      },
+
+      EnumDef.fromQuery("HorizonsType", "horizons non-sidereal target type") {
+        type R = Record.`'tag -> String, 'name -> String`.T
+        sql"SELECT id, id tag, name FROM e_horizons_type".query[(String, R)]
       }
 
     )
