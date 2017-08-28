@@ -19,11 +19,11 @@ trait AngleParsers {
   def genAngle(t1: Parser[_], t2: Parser[_], t3: Parser[_]): Parser[(Int, Int, Int, Int, Int)] =
     (int <~ t1, int <~ t2, int <~ char('.'), frac(6) <~ t3) mapN { (h, m, s, µs) =>
       (h, m, s, µs / 1000, µs % 1000)
-    } named s"genAngle($t2, $t2, $t3)"
+    } named s"genAngle($t1, $t2, $t3)"
 
   /** Generic parser for the components of an HourAngle; see `genAngle`. */
   def genHMS(t1: Parser[_], t2: Parser[_], t3: Parser[_]): Parser[HourAngle] =
-    genAngle(t1, t2, t3).map((HourAngle.fromHMS _).tupled) named s"genHMS($t2, $t2, $t3)"
+    genAngle(t1, t2, t3).map((HourAngle.fromHMS _).tupled) named s"genHMS($t1, $t2, $t3)"
 
   /** 00:00:00.000000 */
   val hms1: Parser[HourAngle] =
