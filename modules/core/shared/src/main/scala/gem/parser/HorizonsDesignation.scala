@@ -22,7 +22,7 @@ trait HorizonsDesignationParsers {
     des(s, int.map(f))
 
   val comet: Parser[Comet] =
-    textDes("Comet"      )(Comet.apply      ) namedOpaque "comet"
+    textDes("Comet")(Comet.apply) namedOpaque "comet"
 
   val asteroidNew: Parser[AsteroidNew] =
     textDes("AsteroidNew")(AsteroidNew.apply) namedOpaque "asteroidNew"
@@ -31,7 +31,7 @@ trait HorizonsDesignationParsers {
     numDes ("AsteroidOld")(AsteroidOld.apply) namedOpaque "asteroidOld"
 
   val majorBody: Parser[MajorBody] =
-    numDes ("MajorBody"  )(MajorBody.apply  ) namedOpaque "majorBody"
+    numDes ("MajorBody")(MajorBody.apply) namedOpaque "majorBody"
 
   val horizonsDesignation: Parser[HorizonsDesignation] =
       (comet      .widen[HorizonsDesignation] |
