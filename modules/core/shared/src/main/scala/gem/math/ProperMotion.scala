@@ -8,10 +8,10 @@ import scala.math.{ sin, cos, hypot, atan2 }
 
 /**
  * Time-parameterized coordinates, based on an observed position at some point in time (called
- * the `epoch`) and measured velocities in distance (`rv`; i.e., doppler shift) and position
- * (`pv`) per year. Given this information we can compute the position at any instant in time. The
- * references below are ''extremely'' helpful, so do check them out if you're trying to understand
- * the implementation.
+ * the `epoch`) and measured velocities in distance (`radialVelocity`; i.e., doppler shift) and
+ * position (`properVelocity`) per year. Given this information we can compute the position at any
+ * instant in time. The references below are ''extremely'' helpful, so do check them out if you're
+  * trying to understand the implementation.
  * @see The pretty good [[https://en.wikipedia.org/wiki/Proper_motion wikipedia]] article
  * @see Astronomical Almanac 1984 [[https://babel.hathitrust.org/cgi/pt?id=uc1.b3754036;view=1up;seq=141 p.B39]]
  * @see Astronomy and Astrophysics 134 (1984) [[http://articles.adsabs.harvard.edu/cgi-bin/nph-iarticle_query?bibcode=1984A%26A...134....1L&db_key=AST&page_ind=0&data_type=GIF&type=SCREEN_VIEW&classic=YES p.1-6]]
@@ -29,8 +29,8 @@ final case class ProperMotion(
   parallax:        Option[Angle]
 ) {
 
-  /** Coordinates `dt` fractional epoch-years after `epoch`. */
-  def plusYears(dt: Double): Coordinates =
+  /** Coordinates `elapsedYears` fractional epoch-years after `epoch`. */
+  def plusYears(elapsedYears: Double): Coordinates =
     ProperMotion.properMotion(
       baseCoordinates,
       epoch,
