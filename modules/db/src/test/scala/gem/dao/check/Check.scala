@@ -5,7 +5,7 @@ package gem.dao
 package check
 
 import cats.effect.IO
-import doobie.imports._
+import doobie._
 import doobie.scalatest.imports._
 import gem._
 import gem.enum._

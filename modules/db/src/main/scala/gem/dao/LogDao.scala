@@ -4,7 +4,7 @@
 package gem
 package dao
 
-import doobie.imports._
+import doobie._, doobie.implicits._
 import java.util.logging.Level
 
 object LogDao {

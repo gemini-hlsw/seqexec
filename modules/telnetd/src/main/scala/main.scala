@@ -6,7 +6,7 @@ package telnetd
 
 import cats.effect.{ IO, Async }
 import tuco._, Tuco._
-import doobie.imports._
+import doobie._
 import org.flywaydb.core.Flyway
 
 /**

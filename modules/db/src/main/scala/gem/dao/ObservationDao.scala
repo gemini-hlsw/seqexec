@@ -5,7 +5,7 @@ package gem
 package dao
 
 import cats.implicits._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum.Instrument
 import gem.util.Location

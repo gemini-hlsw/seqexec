@@ -10,7 +10,7 @@ import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 import gem.math.{ Offset, Wavelength }
-import doobie.imports._
+import doobie._, doobie.implicits._
 import java.time.Duration
 import scala.collection.immutable.TreeMap
 

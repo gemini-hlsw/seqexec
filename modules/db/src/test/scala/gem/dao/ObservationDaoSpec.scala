@@ -4,7 +4,7 @@
 package gem.dao
 
 import cats.implicits._
-import doobie.imports._
+import doobie.implicits._
 import gem.Observation
 import org.scalatest._
 import org.scalatest.prop._

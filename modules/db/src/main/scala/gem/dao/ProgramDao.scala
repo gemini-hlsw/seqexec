@@ -6,7 +6,7 @@ package dao
 
 import gem.config.{DynamicConfig, StaticConfig}
 
-import doobie.imports._
+import doobie._, doobie.implicits._
 
 import cats.implicits._
 

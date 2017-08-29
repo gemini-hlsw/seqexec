@@ -4,9 +4,9 @@
 package gem
 
 import cats.data._, cats.implicits._
-import doobie.postgres.imports._
-import doobie.imports._
+import doobie._, doobie.implicits._
 import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
+import doobie.postgres.implicits._
 import gem.math.{ Angle, Offset, Wavelength }
 import gem.util.{ Enumerated, Location }
 import java.sql.Timestamp

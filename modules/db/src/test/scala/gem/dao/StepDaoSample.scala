@@ -3,7 +3,7 @@
 
 package gem.dao
 
-import doobie.imports._
+import doobie._
 import gem.{ Observation, Step }
 import gem.config.DynamicConfig
 import gem.util.Location

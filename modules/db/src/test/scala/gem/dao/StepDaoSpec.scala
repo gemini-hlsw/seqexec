@@ -3,7 +3,7 @@
 
 package gem.dao
 
-import doobie.imports._
+import doobie.implicits._
 import gem._
 import gem.config._
 import gem.config.F2Config.F2FpuChoice.Builtin

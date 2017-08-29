@@ -3,7 +3,7 @@
 
 package gem.dao
 
-import doobie.imports._
+import doobie._, doobie.implicits._
 import gem.{Event, Observation}
 import gem.Event._
 import gem.enum.EventType
