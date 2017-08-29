@@ -2,6 +2,7 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package gem
+package util
 
 import gem.arb._
 import gem.enum._

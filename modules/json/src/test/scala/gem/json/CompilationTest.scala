@@ -8,6 +8,7 @@ import io.circe._
 import io.circe.generic.auto._
 import gem.config._
 import gem.enum._
+import gem.util.Enumerated
 
 // N.B. lots of false warnings from codec derivation.
 @SuppressWarnings(Array(

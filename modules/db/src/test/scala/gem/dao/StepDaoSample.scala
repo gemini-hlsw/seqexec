@@ -4,8 +4,9 @@
 package gem.dao
 
 import doobie.imports._
-import gem.{ Location, Observation, Step }
+import gem.{ Observation, Step }
 import gem.config.DynamicConfig
+import gem.util.Location
 import scala.collection.immutable.TreeMap
 
 object StepDaoSample extends TimedSample {

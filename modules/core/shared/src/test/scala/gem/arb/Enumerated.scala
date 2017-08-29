@@ -4,6 +4,7 @@
 package gem
 package arb
 
+import gem.util.Enumerated
 import org.scalacheck._
 import org.scalacheck.Gen._
 

@@ -6,6 +6,7 @@ package enum
 
 import cats.syntax.eq._
 import cats.instances.string._
+import gem.util.Enumerated
 
 /**
  * Enumerated type for the subset of [[ProgramType]] allowed for daily science programs.

@@ -8,6 +8,7 @@ import doobie.postgres.imports._
 import doobie.imports._
 import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
 import gem.math.{ Angle, Offset, Wavelength }
+import gem.util.{ Enumerated, Location }
 import java.sql.Timestamp
 import java.time.{Duration, Instant}
 import java.util.logging.Level

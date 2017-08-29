@@ -8,6 +8,7 @@ import gem.arb._
 import gem.config.{DynamicConfig, GcalConfig, StaticConfig, TelescopeConfig}
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.Offset
+import gem.util.Location
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
