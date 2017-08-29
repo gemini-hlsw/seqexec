@@ -9,7 +9,7 @@ import cats.effect.Sync
 import doobie._, doobie.implicits._
 import gem.dao._
 import gem.enum._
-import gem.util.Lens, Lens._
+import monocle.Lens
 
 final class Service[M[_]: Monad] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 
@@ -34,9 +34,8 @@ final class Service[M[_]: Monad] private (private val xa: Transactor[M], val log
 
 object Service {
 
-  object L {
-    def user[M[_]: Monad]: Service[M] @> User[ProgramRole] = Lens((a, b) => new Service(a.xa, a.log, b), _.user)
-  }
+  def user[M[_]: Monad]: Lens[Service[M], User[ProgramRole]] =
+    Lens[Service[M], User[ProgramRole]](_.user)(a => b => new Service(b.xa, b.log, a))
 
   def apply[M[_]: Monad](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
     new Service(xa, log, user)

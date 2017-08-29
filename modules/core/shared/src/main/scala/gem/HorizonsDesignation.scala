@@ -6,10 +6,10 @@ package gem
 import gem.enum.HorizonsType
 import gem.parser.HorizonsDesignationParsers
 import gem.syntax.parser._
-import gem.util.Lens
-import gem.util.Lens._
 
 import cats.{ Eq, Show }
+
+import monocle.macros.Lenses
 
 /**
  * Unique Horizons designation, which should allow for reproducible ephemeris queries <b>if</b> the
@@ -44,12 +44,9 @@ object HorizonsDesignation {
    * Designation for a comet, in the current apparition. Example: `C/1973 E1` for Kohoutek, yielding
    * the query string `NAME=C/1973 E1;CAP`.
    */
-  final case class Comet(des: String) extends HorizonsDesignation(s"NAME=$des;CAP")
-
-  object Comet {
-    val des: Comet @> String =
-      Lens((a, b) => a.copy(des = b), _.des)
-  }
+  @Lenses final case class Comet(des: String) extends HorizonsDesignation(s"NAME=$des;CAP")
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object Comet
 
   sealed abstract class Asteroid(s: String) extends HorizonsDesignation(s)
 
@@ -57,40 +54,31 @@ object HorizonsDesignation {
    * Designation for an asteroid under modern naming conventions. Example: `1971 UC1` for
    * 1896 Beer, yielding a query string `ASTNAM=1971 UC1`.
    */
-  final case class AsteroidNew(des: String) extends Asteroid(s"ASTNAM=$des")
-
-  object AsteroidNew {
-    val des: AsteroidNew @> String =
-      Lens((a, b) => a.copy(des = b), _.des)
-  }
+  @Lenses final case class AsteroidNew(des: String) extends Asteroid(s"ASTNAM=$des")
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object AsteroidNew
 
   /**
    * Designation for an asteroid under "old" naming conventions. These are small numbers. Example:
    * `4` for Vesta, yielding a query string `4;`
    */
-  final case class AsteroidOld(num: Int) extends Asteroid(s"$num;") {
+  @Lenses final case class AsteroidOld(num: Int) extends Asteroid(s"$num;") {
     override def des: String =
       num.toString
   }
-
-  object AsteroidOld {
-    val num: AsteroidOld @> Int =
-      Lens((a, b) => a.copy(num = b), _.num)
-  }
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object AsteroidOld
 
   /**
    * Designation for a major body (planet or satellite thereof). These have small numbers. Example:
    * `606` for Titan, yielding a query string `606`.
    */
-  final case class MajorBody(num: Int) extends HorizonsDesignation(s"$num") {
+  @Lenses final case class MajorBody(num: Int) extends HorizonsDesignation(s"$num") {
     override def des: String =
       num.toString
   }
-
-  object MajorBody {
-    val num: MajorBody @> Int =
-      Lens((a, b) => a.copy(num = b), _.num)
-  }
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object MajorBody
 
   /**
     * Parse an `HorizonsDesignation`.

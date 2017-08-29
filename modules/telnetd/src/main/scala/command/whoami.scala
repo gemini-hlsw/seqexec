@@ -25,6 +25,6 @@ object whoami {
           _ <- writeLn(s"   flags: ${if (u.isStaff) "staff" else "<none>"}")
         } yield u
       }
-    ).zoom(Session.L.data[GemState] >=> GemState.L.user[SessionIO].toTucoLens)
+    ).zoom(Session.data[GemState] ^|-> Service.user[SessionIO])
 
 }

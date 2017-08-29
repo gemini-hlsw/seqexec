@@ -6,8 +6,8 @@ package gem.config
 import cats.Eq
 import gem.enum._
 import gem.math.{ Offset, Wavelength }
-import gem.util.Lens, Lens._
 import java.time.Duration
+import monocle.macros.Lenses
 
 /**
  * Additional type hierarchy over the low-level GMOS enums.
@@ -180,14 +180,15 @@ object GmosConfig {
 
   /** Shared static configuration for both GMOS-N and GMOS-S.
     */
-  final case class GmosCommonStaticConfig(
+  @Lenses final case class GmosCommonStaticConfig(
     detector:      GmosDetector,
     mosPreImaging: MosPreImaging,
     nodAndShuffle: Option[GmosNodAndShuffle],
     customRois:    Set[GmosCustomRoiEntry]
   )
 
-  object GmosCommonStaticConfig extends GmosCommonStaticConfigLenses {
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object GmosCommonStaticConfig {
     val Default: GmosCommonStaticConfig =
       GmosCommonStaticConfig(
         GmosDetector.HAMAMATSU,
@@ -195,14 +196,6 @@ object GmosConfig {
         None,
         Set.empty[GmosCustomRoiEntry]
       )
-  }
-
-  trait GmosCommonStaticConfigLenses {
-    val CustomRois: GmosCommonStaticConfig @> Set[GmosCustomRoiEntry] =
-      Lens((a, b) => a.copy(customRois = b), _.customRois)
-
-    val NodAndShuffle: GmosCommonStaticConfig @> Option[GmosNodAndShuffle] =
-      Lens((a, b) => a.copy(nodAndShuffle = b), _.nodAndShuffle)
   }
 
   /** Parameters that determine GMOS CCD readout.

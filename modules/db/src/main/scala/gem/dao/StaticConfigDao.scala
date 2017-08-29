@@ -91,16 +91,16 @@ object StaticConfigDao {
         ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosN).list.map(_.toSet)
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosN).option
         gn <- Statements.Gmos.selectNorth(sid).unique
-        gnʹ = GmosNorth.CustomRois.set(gn, ro)
-      } yield GmosNorth.NodAndShuffle.set(gnʹ, ns)
+        gnʹ = GmosNorth.customRois.set(ro)(gn)
+      } yield GmosNorth.nodAndShuffle.set(ns)(gnʹ)
 
     def selectSouth(sid: Int): ConnectionIO[GmosSouth] =
       for {
         ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosS).list.map(_.toSet)
         ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosS).option
         gs <- Statements.Gmos.selectSouth(sid).unique
-        gsʹ = GmosSouth.CustomRois.set(gs, ro)
-      } yield GmosSouth.NodAndShuffle.set(gsʹ, ns)
+        gsʹ = GmosSouth.customRois.set(ro)(gs)
+      } yield GmosSouth.nodAndShuffle.set(ns)(gsʹ)
   }
 
   object Statements {

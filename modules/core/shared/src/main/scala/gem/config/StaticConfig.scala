@@ -5,7 +5,8 @@ package gem
 package config
 
 import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
-import gem.util.Lens, Lens._
+import monocle.Lens
+import monocle.macros.Lenses
 
 /**
  * Instrument configuration that is specified once per [[gem.Observation Observation]] and is thus
@@ -47,35 +48,38 @@ object StaticConfig {
 
   import GmosConfig._
 
-  final case class GmosNorth(
+  @Lenses final case class GmosNorth(
     common:    GmosCommonStaticConfig,
     stageMode: GmosNorthStageMode
   ) extends StaticConfig.Impl(Instrument.GmosN)
 
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GmosNorth extends GmosNorthLenses {
+
     val Default: GmosNorth =
       GmosNorth(
         GmosCommonStaticConfig.Default,
         GmosNorthStageMode.FollowXy
       )
+
   }
 
-  trait GmosNorthLenses {
-    val Common: GmosNorth @> GmosCommonStaticConfig =
-      Lens((a, b) => a.copy(common = b), _.common)
+  trait GmosNorthLenses { this: GmosNorth.type =>
 
-    val CustomRois: GmosNorth @> Set[GmosCustomRoiEntry] =
-      Common >=> GmosCommonStaticConfig.CustomRois
+    lazy val customRois: Lens[GmosNorth, Set[GmosCustomRoiEntry]] =
+      common ^|-> GmosCommonStaticConfig.customRois
 
-    val NodAndShuffle: GmosNorth @> Option[GmosNodAndShuffle] =
-      Common >=> GmosCommonStaticConfig.NodAndShuffle
+    lazy val nodAndShuffle: Lens[GmosNorth, Option[GmosNodAndShuffle]] =
+      common ^|-> GmosCommonStaticConfig.nodAndShuffle
+
   }
 
-  final case class GmosSouth(
+  @Lenses final case class GmosSouth(
     common:    GmosCommonStaticConfig,
     stageMode: GmosSouthStageMode
   ) extends StaticConfig.Impl(Instrument.GmosS)
 
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GmosSouth extends GmosSouthLenses {
     val Default: GmosSouth =
       GmosSouth(
@@ -84,15 +88,13 @@ object StaticConfig {
       )
   }
 
-  trait GmosSouthLenses {
-    val Common: GmosSouth @> GmosCommonStaticConfig =
-      Lens((a, b) => a.copy(common = b), _.common)
+  trait GmosSouthLenses { this: GmosSouth.type =>
 
-    val CustomRois: GmosSouth @> Set[GmosCustomRoiEntry] =
-      Common >=> GmosCommonStaticConfig.CustomRois
+    lazy val customRois: Lens[GmosSouth, Set[GmosCustomRoiEntry]] =
+      common ^|-> GmosCommonStaticConfig.customRois
 
-    val NodAndShuffle: GmosSouth @> Option[GmosNodAndShuffle] =
-      Common >=> GmosCommonStaticConfig.NodAndShuffle
+    lazy val nodAndShuffle: Lens[GmosSouth, Option[GmosNodAndShuffle]] =
+      common ^|-> GmosCommonStaticConfig.nodAndShuffle
   }
 
 }
