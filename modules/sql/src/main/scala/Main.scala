@@ -30,7 +30,7 @@ object Main {
   def write(dir: Path, d: EnumDef): IO[Unit] = {
     val out = dir.resolve(d.fileName)
     IO(Files.write(out, d.text.getBytes("UTF-8"))) *>
-    IO(Console.println(s"Wrote $out"))
+    IO(Console.println(s"Wrote $out")) // scalastyle:ignore console.io
   }
 
   def writeAll(dir: Path): IO[Unit] =
@@ -43,7 +43,7 @@ object Main {
   def runl(args: List[String]): IO[Unit] =
     args match {
       case List(dirName) => IO(Paths.get(dirName).toAbsolutePath).flatMap(writeAll)
-      case _             => IO(Console.println("usage: <main> path/to/output/dir"))
+      case _             => IO(Console.println("usage: <main> path/to/output/dir")) // scalastyle:ignore console.io
     }
 
   def main(args: Array[String]): Unit =

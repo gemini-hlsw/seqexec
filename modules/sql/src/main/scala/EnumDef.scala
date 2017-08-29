@@ -18,6 +18,7 @@ object EnumDef {
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
   protected[sql] object ToDeclaration extends Poly1 {
+    // scalastyle:off method.type
     implicit def caseString  [S <: Symbol] = at[(S, String)  ] { case (s, _) => "  val " + s.name + ": String" }
     implicit def caseInt     [S <: Symbol] = at[(S, Int)     ] { case (s, _) => "  val " + s.name + ": Int" }
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
@@ -34,6 +35,7 @@ object EnumDef {
 
     implicit def caseOptionWavelengthNm[S <: Symbol] = at[(S, Option[Wavelength.Nm])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
     implicit def caseOptionWavelengthUm[S <: Symbol] = at[(S, Option[Wavelength.Um])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
+    // scalastyle:on method.type
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
@@ -68,6 +70,7 @@ object EnumDef {
   ): String =
     h.map(ToDeclaration).toList.mkString(s"sealed abstract class $name(\n", ",\n", "\n)")
 
+  // scalastyle:off method.length
   def fromRecords[R <: HList, F <: HList, D <: HList, V <: HList, Lub1, Lub2, L <: HList](name: String, desc: String, records: NonEmptyList[(String, R)])(
     implicit  f: Fields.Aux[R, F],
               d: Mapper.Aux[ToDeclaration.type, F, D],
@@ -117,6 +120,7 @@ object EnumDef {
       |}
       |""".stripMargin.trim
     )
+  // scalastyle:on method.length
 
   def fromQuery[R <: HList, F <: HList, D <: HList, V <: HList, Lub1, Lub2, L <: HList](name: String, desc: String)(records: Query0[(String, R)])(
     implicit  f: Fields.Aux[R, F],
