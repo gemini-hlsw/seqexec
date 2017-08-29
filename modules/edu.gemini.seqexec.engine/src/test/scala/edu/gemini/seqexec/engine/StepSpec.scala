@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig, StepState}
-import edu.gemini.seqexec.model.Model.F2
+import edu.gemini.seqexec.model.Model.Instrument.F2
 
 import scalaz.syntax.either._
 import org.scalatest._

@@ -38,7 +38,7 @@ case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[Seq
 }
 
 object SequenceTab {
-  val empty = SequenceTab(F2, RefTo(new RootModelR(None)), None, None)
+  val empty = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), None, None)
 }
 
 // Model for the tabbed area of sequences

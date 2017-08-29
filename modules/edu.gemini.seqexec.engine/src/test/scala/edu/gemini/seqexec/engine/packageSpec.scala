@@ -8,7 +8,8 @@ import java.util.concurrent.Semaphore
 import Event._
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
-import edu.gemini.seqexec.model.Model.{F2, GmosS}
+import edu.gemini.seqexec.model.Model.Resource
+import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.UserDetails
 
 import scala.concurrent.duration._
@@ -65,7 +66,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                  1,
                  None,
                  config,
-                 Set(Resource.TCS, Resource.F2),
+                 Set(Resource.TCS, F2),
                  breakpoint = false,
                  skip = false,
                  List(
@@ -77,7 +78,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                  2,
                  None,
                  config,
-                 Set(Resource.TCS, Resource.OI, Resource.F2),
+                 Set(Resource.TCS, Resource.OI, F2),
                  breakpoint = false,
                  skip = false,
                  List(
@@ -102,7 +103,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS_S),
+            Set(GmosS),
             breakpoint = false,
             skip = false,
             List(
@@ -194,7 +195,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS_S),
+            Set(GmosS),
             breakpoint = false,
             skip = false,
             List(
@@ -231,7 +232,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS_S),
+            Set(GmosS),
             breakpoint = false,
             skip = false,
             List(
@@ -264,7 +265,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             1,
             None,
             config,
-            Set(Resource.GMOS_S),
+            Set(GmosS),
             breakpoint = false,
             skip = false,
             List(

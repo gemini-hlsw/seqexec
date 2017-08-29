@@ -21,7 +21,7 @@ import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
 import scalaz._
 
-final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrument {
+final case class Flamingos2(f2Controller: Flamingos2Controller) extends InstrumentSystem {
 
   import Flamingos2._
 

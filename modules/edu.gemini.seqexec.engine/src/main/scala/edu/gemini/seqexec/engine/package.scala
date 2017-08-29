@@ -6,6 +6,7 @@ package edu.gemini.seqexec
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor, Operator, Observer}
+import edu.gemini.seqexec.model.Model.Resource
 import org.log4s.getLogger
 
 import scalaz._

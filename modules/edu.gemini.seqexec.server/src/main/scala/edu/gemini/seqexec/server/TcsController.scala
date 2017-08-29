@@ -3,8 +3,8 @@
 
 package edu.gemini.seqexec.server
 
-import edu.gemini.seqexec.engine.Resource
 import edu.gemini.spModel.core.Wavelength
+import edu.gemini.seqexec.model.Model.Instrument
 
 import scalaz._
 import Scalaz._
@@ -178,7 +178,7 @@ object TcsController {
   sealed trait ScienceFoldPosition
   object ScienceFoldPosition {
     case object Parked extends ScienceFoldPosition
-    final case class Position(source: LightSource, sink: Resource.Instrument) extends ScienceFoldPosition
+    final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
   }
 
   /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
