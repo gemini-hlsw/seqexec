@@ -41,7 +41,7 @@ object ls {
            _      <- writeLn(s"--Limit reached. ($n)--").whenA(t.nonEmpty)
          } yield d
       }
-    ).zoom(Session.L.data[GemState])
+    ).zoom(Session.data[GemState])
 
   // scala.text and kiama are both on the classpath but neither has any doc so I'm just going
   // to do this by hand for now. We're going to truncate output for now.

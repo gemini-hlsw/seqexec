@@ -24,6 +24,6 @@ object passwd {
                else   writeLn("Incorrect old password and/or invalid new password.")
         } yield s
       }
-    ).zoom(Session.L.data[GemState])
+    ).zoom(Session.data[GemState])
 
 }

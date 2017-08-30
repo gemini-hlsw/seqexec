@@ -1,6 +1,3 @@
-resolvers in ThisBuild +=
-  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-
 lazy val circeVersion        = "0.9.0-M1"
 lazy val attoVersion         = "0.6.1-M1"
 lazy val catsEffectVersion   = "0.4"
@@ -12,14 +9,16 @@ lazy val fs2Version          = "0.10.0-M6"
 lazy val http4sVersion       = "0.18.0-M1"
 lazy val jwtVersion          = "0.14.0"
 lazy val kpVersion           = "0.9.4"
+lazy val monocleVersion      = "1.5.0-cats-M1"
 lazy val mouseVersion        = "0.10-MF"
+lazy val paradiseVersion     = "2.1.1"
 lazy val scalaCheckVersion   = "1.13.5"
 lazy val scalaParsersVersion = "1.0.6"
 lazy val scalaTestVersion    = "3.0.4"
 lazy val scalaXmlVerson      = "1.0.6"
 lazy val shapelessVersion    = "2.3.2"
 lazy val slf4jVersion        = "1.7.25"
-lazy val tucoVersion         = "0.3.0-M2"
+lazy val tucoVersion         = "0.3.0-M3"
 
 enablePlugins(GitVersioning)
 
@@ -160,7 +159,11 @@ lazy val commonSettings = Seq(
     "-doc-title", "Gem",
     "-doc-version", version.value
   ),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % kpVersion),
+
+  // We need kind-projector generally, and paradise for
+  addCompilerPlugin("org.spire-math"  %% "kind-projector" % kpVersion),
+  addCompilerPlugin("org.scalamacros" %% "paradise"       % paradiseVersion cross CrossVersion.patch),
+
   libraryDependencies ++= (scalaOrganization.value % "scala-reflect" % scalaVersion.value +: testLibs.value),
   name := "gem-" + name.value
 )
@@ -187,11 +190,14 @@ lazy val core = crossProject
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel"           %%% "cats-core"    % catsVersion,
-      "org.typelevel"           %%% "cats-testkit" % catsVersion % "test",
-      "com.chuusai"             %%% "shapeless"    % shapelessVersion,
-      "org.tpolecat"            %%% "atto-core"    % attoVersion,
-      "com.github.benhutchison" %%% "mouse"        % mouseVersion
+      "org.typelevel"              %%% "cats-core"      % catsVersion,
+      "org.typelevel"              %%% "cats-testkit"   % catsVersion % "test",
+      "com.chuusai"                %%% "shapeless"      % shapelessVersion,
+      "org.tpolecat"               %%% "atto-core"      % attoVersion,
+      "com.github.benhutchison"    %%% "mouse"          % mouseVersion,
+      "com.github.julien-truffaut" %%% "monocle-core"   % monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-macro"  % monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test"
     )
   )
   .jsSettings(
@@ -290,7 +296,6 @@ lazy val telnetd = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
   .settings(commonSettings)
-  .settings(resolvers += "bmjames Bintray Repo" at "https://dl.bintray.com/bmjames/maven")
   .settings(
     libraryDependencies ++= Seq(
       "org.tpolecat" %% "tuco-core" % tucoVersion,

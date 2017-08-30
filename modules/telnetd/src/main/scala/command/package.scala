@@ -12,9 +12,6 @@ package object command {
 
   /** Our state is a Service with effect type SessionIO. */
   type GemState = Service[SessionIO]
-  object GemState {
-    val L: Service.L.type = Service.L // alias the Lens module
-  }
 
   val All: Commands[GemState] =
     Commands[GemState](
