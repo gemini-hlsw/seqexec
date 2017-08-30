@@ -86,9 +86,9 @@ object EphemerisKey {
   /** Identifies a user-supplied collection of ephemeris data, where the number
     * comes from a database sequence.
     */
-  @Lenses final case class UserSupplied(num: Int) extends EphemerisKey {
+  @Lenses final case class UserSupplied(id: Int) extends EphemerisKey {
     override def des: String =
-      num.toString
+      id.toString
   }
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object UserSupplied
