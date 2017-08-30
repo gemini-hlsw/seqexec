@@ -34,7 +34,7 @@ sealed trait EphemerisKey extends Product with Serializable {
     }
 
   /** Exports an ephemeris key to a `String` in a format that can be read by the
-    * `gem.parsers.EphemerisKeyParsers` method.
+    * `parse` method.
     */
   def format: String =
     s"${keyType.tag}_$des"
