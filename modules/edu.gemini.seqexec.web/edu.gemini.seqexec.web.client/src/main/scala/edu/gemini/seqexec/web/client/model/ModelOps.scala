@@ -4,8 +4,8 @@
 package edu.gemini.seqexec.web.client.model
 
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
-import edu.gemini.seqexec.model.Model.ObservationOperations
-import edu.gemini.seqexec.model.Model.SequenceOperations
+import edu.gemini.seqexec.model.operations.ObservationOperations
+import edu.gemini.seqexec.model.operations.SequenceOperations
 
 import scalaz.Show
 import scalaz.syntax.equal._
