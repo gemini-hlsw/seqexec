@@ -62,6 +62,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val smartGcalType    = SmartGcalType.Arc
     val instrumentConfig = f2Config
     val stepType         = StepType.Science
+    val ephemerisKey     = EphemerisKey.Comet("Lanrezac")
 
     val gmosCustomRoiEntry =
       gem.config.GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(1, 1, 1, 1)
