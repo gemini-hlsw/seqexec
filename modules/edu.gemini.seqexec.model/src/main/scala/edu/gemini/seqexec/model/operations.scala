@@ -12,7 +12,6 @@ object operations {
 
   object SequenceOperations {
     case object PauseSequence extends SequenceOperations
-    case object ContinueSequence extends SequenceOperations
     case object StopSequence extends SequenceOperations
     case object RunSequence extends SequenceOperations
   }
@@ -33,7 +32,14 @@ object operations {
   }
 
   sealed trait SupportedOperations {
+    /**
+     * Sorted list of operations supported at the sequence level
+     */
     def observationOperations: List[ObservationOperations]
+
+    /**
+     * Sorted list of operations supported at the observation (row) level
+     */
     def sequenceOperations: List[SequenceOperations]
   }
 

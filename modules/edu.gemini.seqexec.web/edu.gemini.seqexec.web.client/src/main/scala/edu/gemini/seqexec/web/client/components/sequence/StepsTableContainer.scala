@@ -89,14 +89,21 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(instrument: Instrument): TagMod = {
+
+    def requestStop(step: Step): Callback =
+      $.props >>= {p => p.steps.map(s => p.stepsTable.dispatchCB(RequestStop(s.id, step.id))).getOrEmpty}
+
+    def requestAbort(step: Step): Callback =
+      $.props >>= {p => p.steps.map(s => p.stepsTable.dispatchCB(RequestAbort(s.id, step.id))).getOrEmpty}
+
+    def observationControlButtons(step: Step, instrument: Instrument): TagMod = {
       instrumentOperations(instrument).observationOperations.map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early")))
+          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = requestStop(step)))
         case AbortObservation            =>
-          Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
+          Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = requestAbort(step)))
         case ResumeObservation           =>
           Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
         // Hamamatsu operations
@@ -128,7 +135,7 @@ object StepsTableContainer {
             SeqexecStyles.buttonsRow,
             <.div(
               ^.cls := "ui icon buttons",
-              observationControlButtons(instrument)
+              observationControlButtons(step, instrument)
             )
           ).when(loggedIn)
         )
