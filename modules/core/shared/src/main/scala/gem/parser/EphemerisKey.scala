@@ -4,13 +4,13 @@
 package gem
 package parser
 
-import HorizonsDesignation._
-
-import atto._, Atto._
+import EphemerisKey._
+import atto._
+import Atto._
 import cats.implicits._
 
-/** Parser for [[gem.target.HorizonsDesignation]]. */
-trait HorizonsDesignationParsers {
+/** Parser for [[gem.EphemerisKey]]. */
+trait EphemerisKeyParsers {
 
   private def des[A](s: String, p: Parser[A]): Parser[A] =
     string(s"${s}_") ~> p
@@ -28,17 +28,21 @@ trait HorizonsDesignationParsers {
     textDes("AsteroidNew")(AsteroidNew.apply) namedOpaque "asteroidNew"
 
   val asteroidOld: Parser[AsteroidOld] =
-    numDes ("AsteroidOld")(AsteroidOld.apply) namedOpaque "asteroidOld"
+    numDes("AsteroidOld")(AsteroidOld.apply) namedOpaque "asteroidOld"
 
   val majorBody: Parser[MajorBody] =
-    numDes ("MajorBody")(MajorBody.apply) namedOpaque "majorBody"
+    numDes("MajorBody")(MajorBody.apply) namedOpaque "majorBody"
 
-  val horizonsDesignation: Parser[HorizonsDesignation] =
-      (comet      .widen[HorizonsDesignation] |
-       asteroidNew.widen[HorizonsDesignation] |
-       asteroidOld.widen[HorizonsDesignation] |
-       majorBody  .widen[HorizonsDesignation] ) named "horizonsDesignation"
+  val userSupplied: Parser[UserSupplied] =
+    numDes("UserSupplied")(UserSupplied.apply) namedOpaque "userSupplied"
+
+  val ephemerisKey: Parser[EphemerisKey] =
+      (comet       .widen[EphemerisKey] |
+       asteroidNew .widen[EphemerisKey] |
+       asteroidOld .widen[EphemerisKey] |
+       majorBody   .widen[EphemerisKey] |
+       userSupplied.widen[EphemerisKey]) named "ephemerisKey"
 
 }
 
-object HorizonsDesignationParsers extends HorizonsDesignationParsers
+object EphemerisKeyParsers extends EphemerisKeyParsers
