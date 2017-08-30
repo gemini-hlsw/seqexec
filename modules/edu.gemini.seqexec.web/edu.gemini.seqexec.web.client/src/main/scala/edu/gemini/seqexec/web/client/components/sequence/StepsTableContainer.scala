@@ -14,6 +14,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.operations.ObservationOperations._
+import edu.gemini.seqexec.model.operations._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -88,8 +89,8 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(step: Step): TagMod = {
-      step.allowedObservationOperations.map {
+    def observationControlButtons(instrument: Instrument): TagMod = {
+      instrumentOperations(instrument).observationOperations.map {
         case PauseObservation            =>
           Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
         case StopObservation             =>
@@ -110,7 +111,7 @@ object StepsTableContainer {
       }.toTagMod
     }
 
-    def controlButtons(loggedIn: Boolean, step: Step): VdomNode =
+    def controlButtons(loggedIn: Boolean, instrument: Instrument, step: Step): VdomNode =
       <.div(
         ^.cls := "ui two column grid stackable",
         <.div(
@@ -127,7 +128,7 @@ object StepsTableContainer {
             SeqexecStyles.buttonsRow,
             <.div(
               ^.cls := "ui icon buttons",
-              observationControlButtons(step)
+              observationControlButtons(instrument)
             )
           ).when(loggedIn)
         )
@@ -148,7 +149,7 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, step: Step): VdomNode =
       step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, step)
+        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p.instrument, step)
         case StepState.Completed                  => <.p(step.status.shows)
         case StepState.Error(msg)                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine

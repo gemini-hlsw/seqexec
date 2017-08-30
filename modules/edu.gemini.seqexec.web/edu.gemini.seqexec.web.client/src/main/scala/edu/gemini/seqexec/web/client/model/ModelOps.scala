@@ -4,8 +4,6 @@
 package edu.gemini.seqexec.web.client.model
 
 import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
-import edu.gemini.seqexec.model.operations.ObservationOperations
-import edu.gemini.seqexec.model.operations.SequenceOperations
 
 import scalaz.Show
 import scalaz.syntax.equal._
@@ -67,12 +65,6 @@ object ModelOps {
       case st               => st
     })
 
-    /**
-     * Returns the observation operations allowed
-     * TODO Convert to an Instrument-level typeclass
-     */
-    def allowedSequenceOperations: List[SequenceOperations] = Nil
-
     def flipBreakpointAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
       case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
       case st               => st
@@ -122,6 +114,5 @@ object ModelOps {
         case _                  => false
       }
 
-    def allowedObservationOperations: List[ObservationOperations] = Nil
   }
 }
