@@ -4,31 +4,32 @@
 package gem
 package arb
 
-import HorizonsDesignation._
+import EphemerisKey._
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
-trait ArbHorizonsDesignation {
+trait ArbEphemerisKey {
   private def genStringDes[A](f: String => A): Gen[A] =
     arbitrary[String].map(s => f(s.take(10)))
 
   private def genIntDes[A](f: Int => A): Gen[A] =
     arbitrary[Int].map(f)
 
-  implicit val arbHorizonsDesignation: Arbitrary[HorizonsDesignation] =
+  implicit val arbEphemerisKey: Arbitrary[EphemerisKey] =
     Arbitrary {
-      Gen.oneOf[HorizonsDesignation](
-        genStringDes(Comet.apply      ),
-        genStringDes(AsteroidNew.apply),
-        genIntDes   (AsteroidOld.apply),
-        genIntDes   (MajorBody.apply  )
+      Gen.oneOf[EphemerisKey](
+        genStringDes(Comet.apply       ),
+        genStringDes(AsteroidNew.apply ),
+        genIntDes   (AsteroidOld.apply ),
+        genIntDes   (MajorBody.apply   ),
+        genIntDes   (UserSupplied.apply)
       )
     }
 
-  implicit val CogenHorizonsDesignation: Cogen[HorizonsDesignation] =
+  implicit val CogenEphemerisKey: Cogen[EphemerisKey] =
     Cogen[String].contramap(_.format)
 
 }
 
-object ArbHorizonsDesignation extends ArbHorizonsDesignation
+object ArbEphemerisKey extends ArbEphemerisKey

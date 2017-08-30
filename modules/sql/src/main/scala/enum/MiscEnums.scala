@@ -65,9 +65,9 @@ object MiscEnums {
          """.query[(String, R)]
       },
 
-      EnumDef.fromQuery("HorizonsType", "horizons non-sidereal target type") {
+      EnumDef.fromQuery("EphemerisKeyType", "Non-sidereal target lookup type") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
-        sql"SELECT id, id tag, short_name, long_name FROM e_horizons_type".query[(String, R)]
+        sql"SELECT id, id tag, short_name, long_name FROM e_ephemeris_type".query[(String, R)]
       }
 
     )
