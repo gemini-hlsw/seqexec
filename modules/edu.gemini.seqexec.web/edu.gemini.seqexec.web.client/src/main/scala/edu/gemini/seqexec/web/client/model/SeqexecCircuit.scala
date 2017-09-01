@@ -30,6 +30,8 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scalaz._
 import Scalaz._
 
+import Handlers._
+
 class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) {
   def handle: PartialFunction[Any, ActionResult[M]] = {
     case NavigateTo(page) =>
@@ -438,13 +440,14 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    logMessage.orElse(connectionOpenMessage)
-      .orElse(sequenceCompletedMessage)
-      .orElse(observerUpdatedMessage)
-      .orElse(sequenceLoadedMessage)
-      .orElse(sequenceUnloadedMessage)
-      .orElse(modelUpdateMessage)
-      .orElse(defaultMessage)
+    List(logMessage,
+      connectionOpenMessage,
+      sequenceCompletedMessage,
+      observerUpdatedMessage,
+      sequenceLoadedMessage,
+      sequenceUnloadedMessage,
+      modelUpdateMessage,
+      defaultMessage).suml
 }
 
 /**
