@@ -15,10 +15,13 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 
 import scalaz.{EitherT, Kleisli, \/}
 import scalaz.syntax.either._
+import scalaz.syntax.equal._
+import scalaz.std.string._
 import scalaz.concurrent.Task
 import scala.xml.Elem
 import org.http4s.client.blaze._
 import org.http4s.{Uri, scalaxml}
+import org.http4s.Uri._
 import knobs.Config
 
 /**
@@ -67,9 +70,9 @@ object ODBProxy {
     override def queuedSequences(): SeqAction[Seq[SPObservationID]] = SeqAction(List.empty)
   }
 
-  case class OdbCommandsImpl(host: Peer) extends OdbCommands {
-    val xmlrpcClient = new WDBA_XmlRpc_SessionClient(host.host, host.port.toString)
-    val sessionName = "sessionQueue"
+  final case class OdbCommandsImpl(host: Peer) extends OdbCommands {
+    private val xmlrpcClient = new WDBA_XmlRpc_SessionClient(host.host, host.port.toString)
+    private val sessionName = "sessionQueue"
 
     implicit class TaskRecover[A](t: Task[A]) {
       def recover: Task[SeqexecFailure\/A] = t.map(_.right).handle{
@@ -134,27 +137,29 @@ object ODBProxy {
 
 }
 
-case class ODBClientConfig(odbHost: String, port: Int)
+final case class ODBClientConfig(odbHost: String, port: Int)
 
-case class ODBClient(config: ODBClientConfig) {
-  val httpClient = PooledHttp1Client()
+final case class ODBClient(config: ODBClientConfig) {
+  private val httpClient = PooledHttp1Client()
   // Entity Decoder for xml
-  implicit val decoder = scalaxml.xml
+  private implicit val decoder = scalaxml.xml
 
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def observationTitle(id: SPProgramID, obsId: SequenceId): Task[ExtractFailure \/ String] = {
     val baseUri = s"http://${config.odbHost}:${config.port}/odbbrowser/observations"
-    val target = Uri.fromString(baseUri).toOption.get +?("programReference", id.stringValue)
+    val target = Uri.fromString(baseUri).toOption.fold(uri("/"))(identity) +?("programReference", id.stringValue)
     httpClient.expect[Elem](target).map { xml =>
       // Parse the xml explicitly
       for {
         x <- xml \\ "observations" \ "observation"
-        if (x \ "id").text == obsId
+        if (x \ "id").text === obsId
         n <- x \ "name"
       } yield n
     }.map(_.text).map(\/.right)
   }
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object ODBClient {
   val DefaultODBBrowserPort: Int = 8442
   def apply: Kleisli[Task, Config, ODBClient] = Kleisli { cfg: Config =>

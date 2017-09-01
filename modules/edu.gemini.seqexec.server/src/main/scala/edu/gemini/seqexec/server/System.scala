@@ -19,4 +19,4 @@ trait System {
 }
 
 //Placeholder for config response
-case class ConfigResult(sys: System)
+final case class ConfigResult(sys: System)

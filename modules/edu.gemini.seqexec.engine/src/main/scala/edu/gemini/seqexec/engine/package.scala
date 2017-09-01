@@ -15,11 +15,11 @@ import scalaz.concurrent.Task
 import scalaz.stream.{Process, Sink, merge}
 
 package engine {
-  case class HandleP[A](run: Handle[(A, Option[Process[Task, Event]])])
+  final case class HandleP[A](run: Handle[(A, Option[Process[Task, Event]])])
   object HandleP {
     def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
   }
-  case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
+  final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
 }
 
 package object engine {
@@ -55,7 +55,7 @@ package object engine {
   // Helper alias to facilitate lifting.
   type HandleStateT[M[_], A] = StateT[M, Engine.State, A]
 
-  implicit val handlePInstances = new Applicative[HandleP] with Monad[HandleP] {
+  implicit val handlePInstances: Applicative[HandleP] with Monad[HandleP] = new Applicative[HandleP] with Monad[HandleP] {
     private def concatOpP(op1: Option[Process[Task, Event]],
                           op2: Option[Process[Task, Event]]): Option[Process[Task, Event]] = (op1, op2) match {
       case (None, None)         => None

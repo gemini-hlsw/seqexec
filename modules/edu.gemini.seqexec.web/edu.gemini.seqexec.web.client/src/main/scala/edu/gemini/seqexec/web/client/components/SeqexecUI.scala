@@ -17,9 +17,10 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import scala.scalajs.js.timers.SetTimeoutHandle
 import scalaz._
 import Scalaz._
+import scalaz.effect.IO
 
 object SeqexecMain {
-  case class Props(site: SeqexecSite, ctl: RouterCtl[SeqexecPages])
+  final case class Props(site: SeqexecSite, ctl: RouterCtl[SeqexecPages])
 
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
@@ -43,7 +44,7 @@ object SeqexecMain {
   * Top level UI component
   */
 object SeqexecUI {
-  case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
+  final case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
   def router(site: SeqexecSite): Router[SeqexecPages] = {
     val instrumentNames = site.instruments.map(i => (i.shows, i)).list.toList.toMap
@@ -68,24 +69,27 @@ object SeqexecUI {
         // Runtime verification that all pages are routed
         .verify(Root, site.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
         .onPostRender((_, next) =>
-          Callback.when(next != SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
+          Callback.when(next =/= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith { case (_, r) => <.div(r.render()).render}
         .logToConsole
     }
 
-    val (router, routerLogic) = Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig)
 
-    def navigated(page: ModelRO[SeqexecPages]): SetTimeoutHandle = {
+    def navigated(routerLogic: RouterLogic[SeqexecPages], page: ModelRO[SeqexecPages]): SetTimeoutHandle = {
       scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
     }
 
-    // subscribe to navigation changes
-    SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(x); ()})
-
-    // Initiate the WebSocket connection
-    SeqexecCircuit.dispatch(WSConnect(0))
-
-    router
+    @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+    val run =
+      for {
+        r                     <- IO(Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig))
+        (router, routerLogic) = r
+        // subscribe to navigation changes
+        _                     <- IO(SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(routerLogic, x);()}))
+         // Initiate the WebSocket connection
+        _                     <- IO(SeqexecCircuit.dispatch(WSConnect(0)))
+      } yield router
+    run.unsafePerformIO
   }
 
 }

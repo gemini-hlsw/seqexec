@@ -6,7 +6,7 @@ package edu.gemini.seqexec.model
 import scalaz._
 import Scalaz._
 
-import monocle.{Lens, Prism}
+import monocle.{Lens, Prism, PTraversal}
 import monocle.macros.GenLens
 import monocle.Traversal
 
@@ -19,11 +19,11 @@ object Model {
   }
   object SeqexecSite {
     case object SeqexecGN extends SeqexecSite {
-      val instruments = Instrument.gnInstruments
+      val instruments: NonEmptyList[Instrument] = Instrument.gnInstruments
     }
 
     case object SeqexecGS extends SeqexecSite {
-      val instruments = Instrument.gsInstruments
+      val instruments : NonEmptyList[Instrument]= Instrument.gsInstruments
     }
 
     implicit val show: Show[SeqexecSite] = Show.shows({
@@ -44,52 +44,52 @@ object Model {
     def view: SequencesQueue[SequenceView]
   }
   object SeqexecEvent {
-    case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
+    final case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 
-    case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceLoaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceLoaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceUnloaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceUnloaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class OperatorUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class OperatorUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class ConditionsUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class ConditionsUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    case class ResourcesBusy(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class ResourcesBusy(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // Generic update. It will probably become useless if we have a special Event for every case.
-    case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
     // has to be embedded in a `Task`
-    case class NewLogMessage(msg: String) extends SeqexecEvent
-    case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String) extends SeqexecEvent
+    final case class NewLogMessage(msg: String) extends SeqexecEvent
+    final case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String) extends SeqexecEvent
     case object NullEvent extends SeqexecEvent
 
     // Some useful Monocle lenses
-    val obsNameL = GenLens[SequenceView](_.metadata.name)
-    val eachL = Traversal.fromTraverse[List, SequenceView]
-    val sequencesQueueL = GenLens[SequencesQueue[SequenceView]](_.queue)
-    val ssLens = GenLens[SequenceStart](_.view)
+    val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
+    val eachL: Traversal[List[SequenceView], SequenceView] = Traversal.fromTraverse[List, SequenceView]
+    val sequencesQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] = GenLens[SequencesQueue[SequenceView]](_.queue)
+    val ssLens: Lens[SequenceStart, SequencesQueue[SequenceView]] = GenLens[SequenceStart](_.view)
 
     // Prism to focus on only the SeqexecEvents that have a queue
     // Unfortunately it doesn't seem to exist a more generic form to build this one
-    val sePrism = Prism.partial[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])]{
+    val sePrism: Prism[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])] = Prism.partial[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])]{
       case e @ StepExecuted(v)           => (e, v)
       case e @ SequenceStart(v)          => (e, v)
       case e @ SequenceCompleted(v)      => (e, v)
@@ -123,9 +123,9 @@ object Model {
         case e                          => e
       }
     }
-    val tupleLens = Lens[(SeqexecEvent, SequencesQueue[SequenceView]), SequencesQueue[SequenceView]](_._2)(v => t => t.copy(_2 = v))
+    val tupleLens: Lens[(SeqexecEvent, SequencesQueue[SequenceView]), SequencesQueue[SequenceView]] = Lens[(SeqexecEvent, SequencesQueue[SequenceView]), SequencesQueue[SequenceView]](_._2)(v => t => t.copy(_2 = v))
     // Composite lens to change the sequence name of an event
-    val sequenceNameL = sePrism composeLens tupleLens composeLens sequencesQueueL composeTraversal eachL composeLens obsNameL
+    val sequenceNameL: PTraversal[SeqexecEvent, SeqexecEvent, String, String] = sePrism composeLens tupleLens composeLens sequencesQueueL composeTraversal eachL composeLens obsNameL
   }
 
   type SystemName = String
@@ -178,8 +178,8 @@ object Model {
       case NIRI  => "NIRI"
       case NIFS  => "NIFS"
     })
-    val gsInstruments = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
-    val gnInstruments = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
+    val gsInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
+    val gnInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
   }
 
   type Operator = String
@@ -192,16 +192,16 @@ object Model {
   }
   object StepState {
     case object Pending extends StepState {
-      override val canRunFrom = true
+      override val canRunFrom: Boolean = true
     }
     case object Completed extends StepState
     case object Skipped extends StepState
-    case class Error(msg: String) extends StepState {
-      override val canRunFrom = true
+    final case class Error(msg: String) extends StepState {
+      override val canRunFrom: Boolean = true
     }
     case object Running extends StepState
     case object Paused extends StepState {
-      override val canRunFrom = true
+      override val canRunFrom: Boolean = true
     }
 
     implicit val equal: Equal[StepState] = Equal.equalA[StepState]
@@ -211,7 +211,7 @@ object Model {
   object ActionStatus {
     case object Pending extends ActionStatus
     case object Completed extends ActionStatus
-    case class Running(progress: Double) extends ActionStatus
+    final case class Running(progress: Double) extends ActionStatus
   }
 
   sealed trait Step {
@@ -223,7 +223,7 @@ object Model {
     val fileId: Option[dhs.ImageFileId]
   }
 
-  case class StandardStep(
+  final case class StandardStep(
     override val id: StepId,
     override val config: StepConfig,
     override val status: StepState,
@@ -242,7 +242,7 @@ object Model {
     case object Stopping          extends SequenceState
     case object Idle              extends SequenceState
     case object Paused            extends SequenceState
-    case class Error(msg: String) extends SequenceState
+    final case class Error(msg: String) extends SequenceState
 
     def isError(state: SequenceState): Boolean = state match {
       case Error(_) => true
@@ -256,13 +256,13 @@ object Model {
     * Metadata about the sequence required on the exit point
     */
   // TODO Une a proper instrument class
-  case class SequenceMetadata(
+  final case class SequenceMetadata(
     instrument: Instrument,
     observer: Option[Observer],
     name: String
   )
 
-  case class SequenceView (
+  final case class SequenceView (
     id: SequenceId,
     metadata: SequenceMetadata,
     status: SequenceState,
@@ -274,7 +274,7 @@ object Model {
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
     * Or a list of fully hydrated SequenceViews
     */
-  case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
+  final case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
 
   // Ported from OCS' SPSiteQuality.java
 
@@ -287,21 +287,21 @@ object Model {
 
   object Conditions {
 
-    val worst = Conditions(
+    val worst: Conditions = Conditions(
       CloudCover.Any,
       ImageQuality.Any,
       SkyBackground.Any,
       WaterVapor.Any
     )
 
-    val nominal = Conditions(
+    val nominal: Conditions = Conditions(
       CloudCover.Percent50,
       ImageQuality.Percent70,
       SkyBackground.Percent50,
       WaterVapor.Any
     )
 
-    val best = Conditions(
+    val best: Conditions = Conditions(
       // In the ODB model it's 20% but that value it's marked as obsolete
       // so I took the non-obsolete lowest value.
       CloudCover.Percent50,
@@ -310,7 +310,7 @@ object Model {
       WaterVapor.Percent20
     )
 
-    val default = worst // Taken from ODB
+    val default: Conditions = worst // Taken from ODB
 
     implicit val equalConditions: Equal[Conditions] = Equal.equalA[Conditions]
 
@@ -419,7 +419,7 @@ object Model {
     object Error
   }
 
-  case class LogMsg(t: LogType, timestamp: Time, msg: String)
+  final case class LogMsg(t: LogType, timestamp: Time, msg: String)
 
   // Operations possible at the sequence level
   sealed trait SequenceOperations

@@ -27,7 +27,7 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
   import DhsClientHttp._
 
   // Connection timeout, im milliseconds
-  val timeout = 10000
+  private val timeout = 10000
 
   implicit def errorDecode: DecodeJson[Error] = DecodeJson[Error]( c => for {
       t   <- (c --\ "type").as[ErrorType]
@@ -70,6 +70,7 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
   implicit def keywordEncode: EncodeJson[DhsClient.InternalKeyword] = EncodeJson[DhsClient.InternalKeyword]( k =>
     ("name" := k.name) ->: ("type" := k.keywordType.str) ->: ("value" := k.value) ->: Json.jEmptyObject )
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( Task.delay {
       val client = new HttpClient()
 
@@ -87,17 +88,20 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
       r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
     } )
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   private def createImage(reqBody: Json): SeqAction[ImageFileId] =
     sendRequest[ImageFileId](new PostMethod(baseURI), Json.jSingleObject("createImage", reqBody), "Unable to get label")
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def createImage: SeqAction[ImageFileId] = createImage(Json.jEmptyObject)
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   override def createImage(p: ImageParameters): SeqAction[ImageFileId] = createImage(p.asJson)
 
   def setParameters(id: ImageFileId, p: ImageParameters): SeqAction[Unit] =
     sendRequest[Unit](new PutMethod(baseURI + "/" + id), Json.jSingleObject("setParameters", p.asJson), "Unable to set parameters for image " + id)
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean = false): SeqAction[Unit] =
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
     sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
       Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
       "Unable to write keywords for image " + id)

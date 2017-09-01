@@ -14,6 +14,7 @@ import scalaz.std.AllInstances._
 /**
   * Tests the Monocle Lenses for Seqexec Events
   */
+@SuppressWarnings(Array("org.wartremover.warts.ToString"))
 class FixedLengthBufferSpec extends FlatSpec with Matchers with PropertyChecks with NonImplicitAssertions with ArbitrariesWebCommon {
 
   "FixedLenghBuffer" should

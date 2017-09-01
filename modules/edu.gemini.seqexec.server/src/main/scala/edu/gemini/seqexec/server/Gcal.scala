@@ -13,7 +13,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{CALIBRATION_CONFIG_NAME, CALIB
 import scala.collection.JavaConverters._
 import scala.Function.const
 import scalaz.Scalaz._
-import scalaz.\/
+import scalaz.{Equal, \/}
 
 /**
   * Created by jluhrs on 3/21/17.
@@ -43,10 +43,10 @@ object Gcal {
 
   def diffConfiguration(from: GcalConfig, to: GcalConfig): GcalConfig = {
 
-    def diff[T](from: Option[T], to: Option[T]): Option[T] = (from, to) match {
-      case (Some(a), Some(b)) if a != b => Some(b)
-      case (None, Some(b))              => Some(b)
-      case _                            => None
+    def diff[T](from: Option[T], to: Option[T])(implicit eq: Equal[T]): Option[T] = (from, to) match {
+      case (Some(a), Some(b)) if a =/= b => Some(b)
+      case (None, Some(b))               => Some(b)
+      case _                             => None
     }
 
     GcalConfig(
@@ -80,12 +80,12 @@ object Gcal {
     SeqAction.either(
       for {
         lm   <- lamps
-        ar   <- arLamp.map(_.map(ArLampState))
-        cuar <- cuarLamp.map(_.map(CuArLampState))
-        thar <- tharLamp.map(_.map(ThArLampState))
-        qh   <- qhLamp.map(_.map(QHLampState))
-        xe   <- xeLamp.map(_.map(XeLampState))
-        ir   <- (if (isCP) irLampCP else irLampMK).map(_.map(IrLampState))
+        ar   <- arLamp.map(_.map(ArLampState.apply))
+        cuar <- cuarLamp.map(_.map(CuArLampState.apply))
+        thar <- tharLamp.map(_.map(ThArLampState.apply))
+        qh   <- qhLamp.map(_.map(QHLampState.apply))
+        xe   <- xeLamp.map(_.map(XeLampState.apply))
+        ir   <- (if (isCP) irLampCP else irLampMK).map(_.map(IrLampState.apply))
         sht  <- shutter
         flt  <- filter
         dif  <- diffuser

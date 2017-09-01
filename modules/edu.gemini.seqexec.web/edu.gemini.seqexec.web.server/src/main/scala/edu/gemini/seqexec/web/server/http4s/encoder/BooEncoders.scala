@@ -14,6 +14,7 @@ import boopickle.Default._
 /**
   * Contains http4s implicit encoders of model objects
   */
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.Throw"))
 trait BooEncoders {
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s

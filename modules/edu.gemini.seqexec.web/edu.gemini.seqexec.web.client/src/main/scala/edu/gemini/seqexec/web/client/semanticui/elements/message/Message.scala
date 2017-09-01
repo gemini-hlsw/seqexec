@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.web.client.semanticui.elements.message
 
+import scalaz.Equal
+
 /**
   * Common code for all Message components
   */
@@ -17,5 +19,7 @@ trait Message {
     case object Success extends Style
     case object Negative extends Style
     case object Error extends Style
+
+    implicit val equal: Equal[Style] = Equal.equalA
   }
 }

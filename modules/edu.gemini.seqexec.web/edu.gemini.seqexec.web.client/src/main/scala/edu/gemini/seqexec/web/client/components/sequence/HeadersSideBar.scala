@@ -26,11 +26,11 @@ import scala.concurrent.duration._
   * Display to show headers per sequence
   */
 object HeadersSideBar {
-  case class Props(model: ModelProxy[HeaderSideBarFocus]) {
+  final case class Props(model: ModelProxy[HeaderSideBarFocus]) {
     def isLogged: Boolean = model().status.isLogged
   }
 
-  case class State(currentText: Option[String])
+  final case class State(currentText: Option[String])
 
   object State {
     implicit val equals: Equal[State] = Equal.equalA[State]

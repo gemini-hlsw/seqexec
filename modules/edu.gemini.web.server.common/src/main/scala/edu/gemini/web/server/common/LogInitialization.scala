@@ -4,7 +4,7 @@
 package edu.gemini.web.server.common
 
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.util.logging.LogManager
 
@@ -25,7 +25,7 @@ trait AppBaseDir {
       // it assumes the jar is in a lib dir under base
       val jarFile = new File(f).getParentFile
       jarFile.getParentFile.toPath
-    }.getOrElse(throw new RuntimeException("Fatal! Cannot calculate the app base dir"))
+    }.getOrElse(Paths.get(System.getProperty("user.home")))
   }
 }
 

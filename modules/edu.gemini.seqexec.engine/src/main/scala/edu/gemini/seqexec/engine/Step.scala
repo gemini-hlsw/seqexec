@@ -11,7 +11,7 @@ import Scalaz._
 /**
   * A list of `Executions` grouped by observation.
   */
-case class Step[+A](
+final case class Step[+A](
   id: Int,
   fileId: Option[FileId],
   config: StepConfig,
@@ -25,13 +25,13 @@ object Step {
 
   type Id = Int
 
-  implicit val stepFunctor = new Functor[Step] {
+  implicit val stepFunctor: Functor[Step] = new Functor[Step] {
     def map[A, B](step: Step[A])(f: A => B): Step[B] =
       step.copy(executions = step.executions.map(_.map(f)))
   }
 
   // TODO: Proof Foldable laws
-  implicit val stepFoldable = new Foldable[Step] {
+  implicit val stepFoldable: Foldable[Step] = new Foldable[Step] {
     def foldMap[A, B](fa: Step[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
       // TODO: Foldable composition?
       fa.executions.foldMap(_.foldMap(f))
@@ -69,7 +69,7 @@ object Step {
     * Step Zipper. This structure is optimized for the actual `Step` execution.
     *
     */
-  case class Zipper(
+  final case class Zipper(
     id: Int,
     fileId: Option[FileId],
     config: StepConfig,

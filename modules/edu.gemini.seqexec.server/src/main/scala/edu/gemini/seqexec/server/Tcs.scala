@@ -56,25 +56,26 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
     }
 
   // Helper function to output the part of the TCS configuration that is actually applied.
-  def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[String] = (subsystem match {
-    case Subsystem.M1          => List(tcs.gc.m1Guide)
-    case Subsystem.M2          => List(tcs.gc.m2Guide)
-    case Subsystem.OIWFS       => List(tcs.gtc.oiwfs, tcs.ge.oiwfs)
-    case Subsystem.P1WFS       => List(tcs.gtc.pwfs1, tcs.ge.pwfs1)
-    case Subsystem.P2WFS       => List(tcs.gtc.pwfs2, tcs.ge.pwfs2)
-    case Subsystem.Mount       => List(tcs.tc)
-    case Subsystem.HRProbe     => List(tcs.agc.hrwfsPos)
-    case Subsystem.ScienceFold => List(tcs.agc.sfPos)
-  }).map(_.toString)
+  private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = (subsystem match {
+    case Subsystem.M1          => List(tcs.gc.m1Guide.shows)
+    case Subsystem.M2          => List(tcs.gc.m2Guide.shows)
+    case Subsystem.OIWFS       => List(tcs.gtc.oiwfs.shows, tcs.ge.oiwfs.shows)
+    case Subsystem.P1WFS       => List(tcs.gtc.pwfs1.shows, tcs.ge.pwfs1.shows)
+    case Subsystem.P2WFS       => List(tcs.gtc.pwfs2.shows, tcs.ge.pwfs2.shows)
+    case Subsystem.Mount       => List(tcs.tc.shows)
+    case Subsystem.HRProbe     => List(tcs.agc.hrwfsPos.shows)
+    case Subsystem.ScienceFold => List(tcs.agc.sfPos.shows)
+  })
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
     val configFromSequence = fromSequenceConfig(config)(tcsState)
     //The desired science fold position is passed as a class parameter
     val tcsConfig = configFromSequence.copy(agc = configFromSequence.agc.copy(sfPos = scienceFoldPosition.some))
 
-    Log.info("Applying TCS configuration: " + subsystems.toList.flatMap(subsystemConfig(tcsConfig, _)))
+    Log.info(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(tcsConfig, _))}")
 
-    if(subsystems.toList.contains(Subsystem.Mount))
+    if (subsystems.toList.contains(Subsystem.Mount))
       for {
         _ <- guideOff(tcsState, Requested(tcsConfig))
         _ <- tcsController.applyConfig(subsystems, tcsConfig)
@@ -84,6 +85,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
       tcsController.applyConfig(subsystems, tcsConfig).map(_ => ConfigResult(this))
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   override def configure(config: Config): SeqAction[ConfigResult] = tcsController.getConfig.flatMap(configure(config, _))
 
   override def notifyObserveStart = tcsController.notifyObserveStart
@@ -95,11 +97,11 @@ object Tcs {
   private val Log = getLogger
 
   // Shouldn't these be defined somewhere ?
-  val GUIDE_WITH_PWFS1_PROP = "guideWithPWFS1"
-  val GUIDE_WITH_PWFS2_PROP = "guideWithPWFS2"
-  val GUIDE_WITH_AOWFS_PROP = "guideWithAOWFS"
-  val P_OFFSET_PROP = "p"
-  val Q_OFFSET_PROP = "q"
+  val GUIDE_WITH_PWFS1_PROP: String = "guideWithPWFS1"
+  val GUIDE_WITH_PWFS2_PROP: String = "guideWithPWFS2"
+  val GUIDE_WITH_AOWFS_PROP: String = "guideWithAOWFS"
+  val P_OFFSET_PROP: String = "p"
+  val Q_OFFSET_PROP: String = "q"
 
   // Conversions from ODB model values to TCS configuration values
   implicit def probeTrackingConfigFromGuideWith(guideWith: StandardGuideOptions.Value): ProbeTrackingConfig = guideWith match {
@@ -113,9 +115,11 @@ object Tcs {
     else GuiderSensorOff
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag](f: P => Endo[T], k: ItemKey, config: Config): Endo[T] =
     config.extract(k).as[P].foldMap(f)
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => Endo[T], k1: ItemKey, k2: ItemKey, config: Config): Endo[T] =
     (config.extract(k1).as[P] tuple config.extract(k2).as[Q]).foldMap(f.tupled)
 

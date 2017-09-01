@@ -26,13 +26,13 @@ import scalaz.syntax.equal._
   */
 object LoginBox {
 
-  case class Props(visible: ModelProxy[SectionVisibilityState])
+  final case class Props(visible: ModelProxy[SectionVisibilityState])
 
-  case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
+  final case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
 
-  val empty = State("", "", None, None)
+  private val empty = State("", "", None, None)
 
-  val formId = "login"
+  private val formId = "login"
 
   class Backend($: BackendScope[Props, State]) {
     def pwdMod(e: ReactEventFromInput): CallbackTo[Unit] = {
@@ -145,6 +145,7 @@ object LoginBox {
       )
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private val component = ScalaComponent.builder[Props]("Login")
     .initialState(State("", "", None, None))
     .renderBackend[Backend]

@@ -35,12 +35,12 @@ import scalaz.stream.{Exchange, Process}
 class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
 
   // Logger for client messages
-  private[this] val clientLog = getLogger
+  private val clientLog = getLogger
 
   // Handles authentication
-  val httpAuthentication = new Http4sAuthentication(auth)
+  private val httpAuthentication = new Http4sAuthentication(auth)
 
-  val (inputQueue, engineOutput) = events
+  private val (inputQueue, engineOutput) = events
 
   /**
     * Creates a process that sends a ping every second to keep the connection alive

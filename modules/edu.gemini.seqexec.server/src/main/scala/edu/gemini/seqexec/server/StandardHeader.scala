@@ -70,23 +70,24 @@ object ObsKeywordsReader {
 }
 
 // A Timing window always have 4 keywords
-case class TimingWindowKeywords(start: SeqAction[String], duration: SeqAction[Double], repeat: SeqAction[Int], period: SeqAction[Double])
+final case class TimingWindowKeywords(start: SeqAction[String], duration: SeqAction[Double], repeat: SeqAction[Int], period: SeqAction[Double])
 
-case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
+final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
   import ObsKeywordsReader._
 
+  implicit private val show: Show[AnyRef] = Show.showA
+
   override def getObsType: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).toString)
+    config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).shows)
 
   override def getObsClass: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP)).toString)
+    config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP)).shows)
 
   override def getGemPrgId: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP)).toString)
+    config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP)).shows)
 
   override def getObsId: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).toString
-  )
+    config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).shows)
 
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
@@ -94,7 +95,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
   override def getRequestedAirMassAngle: Map[String, SeqAction[Double]] =
     List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).flatMap { key =>
       val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[Double].toOption
-      value.map(v => key -> SeqAction(v))
+      value.toList.map(v => key -> SeqAction(v))
     }(breakOut)
 
   override def getRequestedConditions: Map[String, SeqAction[String]]  =
@@ -102,7 +103,7 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
       val value: Option[String] = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].map { d =>
         (d === "100") ? "Any" | s"$d-percentile"
       }.toOption
-      value.map(v => key -> SeqAction(v))
+      value.toList.map(v => key -> SeqAction(v))
     }(breakOut)
 
   override def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
@@ -128,18 +129,18 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
       // Keys on the ocs use the prefix and the value and they are always Strings
       val keys = prefixes.map(p => f"$p$w")
       keys.map { k =>
-        Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.toString)
+        Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.shows)
       }.sequence.collect {
         case start :: duration :: repeat :: period :: Nil =>
           (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period))(TimingWindowKeywords.apply)
           .map(w -> _).toOption
       }.join
     }
-    windows.flatten
+    windows.collect { case Some(x) => x }
   }
 
   override def getDataLabel: SeqAction[String] = SeqAction(
-    config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).toString
+    config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).shows
   )
 
   override def getObservatory: SeqAction[String] = SeqAction(telescope)
@@ -183,11 +184,11 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
     }
     else SeqAction(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
 
-  val manualDarkValue = "Manual Dark"
-  val manualDarkOverride = "Dark"
+  private val manualDarkValue = "Manual Dark"
+  private val manualDarkOverride = "Dark"
   override def getObsObject: SeqAction[String] =
     SeqAction.either(config.extract(OBSERVE_KEY / OBJECT_PROP).as[String]
-      .map(v => if(v == manualDarkValue) manualDarkOverride else v).leftMap(explainExtractError))
+      .map(v => if(v === manualDarkValue) manualDarkOverride else v).leftMap(explainExtractError))
 
   override def getGeminiQA: SeqAction[String] = SeqAction("UNKNOWN")
 
@@ -198,8 +199,8 @@ case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKe
 }
 
 // TODO: Replace Unit by something that can read the state for real
-case class StateKeywordsReader(conditions: Conditions, operator: Option[Operator], observer: Option[Observer]) {
-  def encodeCondition(c: Int): String = if(c == 100) "Any" else s"$c-percentile"
+final case class StateKeywordsReader(conditions: Conditions, operator: Option[Operator], observer: Option[Observer]) {
+  def encodeCondition(c: Int): String = if(c === 100) "Any" else s"$c-percentile"
 
   // TODO: "observer" should be the default when not set in state
   def getObserverName: SeqAction[String] = SeqAction(observer.filter(_.nonEmpty).getOrElse("observer"))
@@ -264,7 +265,7 @@ class StandardHeader(
     obsType   <- obsReader.getObsType
     obsObject <- obsReader.getObsObject
     tcsObject <- tcsReader.getSourceATarget.getObjectName
-  } yield if (obsType == "OBJECT" && obsObject != "Twilight" && obsObject != "Domeflat") tcsObject
+  } yield if (obsType === "OBJECT" && obsObject =/= "Twilight" && obsObject =/= "Domeflat") tcsObject
           else Some(obsObject)
 
   private def decodeGuide(v: StandardGuideOptions.Value): String = v match {
@@ -273,7 +274,7 @@ class StandardHeader(
     case StandardGuideOptions.Value.freeze => "frozen"
   }
 
-  val baseKeywords = List(
+  private val baseKeywords = List(
     buildString(obsObject.orDefault, "OBJECT"),
     buildString(obsReader.getObsType, "OBSTYPE"),
     buildString(obsReader.getObsClass, "OBSCLASS"),
@@ -362,7 +363,7 @@ class StandardHeader(
       "REQBG" -> SB,
       "REQWV" -> WV)
     val requested = keys.flatMap {
-      case (keyword, value) => obsReader.getRequestedConditions.get(value).map(buildString(_, keyword))
+      case (keyword, value) => obsReader.getRequestedConditions.get(value).toList.map(buildString(_, keyword))
     }
     sendKeywords(id, inst, hs, requested)
   }
@@ -375,7 +376,7 @@ class StandardHeader(
       "REQMINAM" -> MIN_AIRMASS,
       "REQMINHA" -> MIN_HOUR_ANGLE)
     val requested = keys.flatMap {
-      case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).map(buildDouble(_, keyword))
+      case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).toList.map(buildDouble(_, keyword))
     }
     if (!requested.isEmpty) sendKeywords(id, inst, hs, requested)
     else SeqAction(())
@@ -385,7 +386,7 @@ class StandardHeader(
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
                        extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
-      if (g == StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
+      if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
         buildDouble(target.getRA.orDefault, baseName + "ARA"),
         buildDouble(target.getDec.orDefault, baseName + "ADEC"),
         buildDouble(target.getRadialVelocity.orDefault, baseName + "ARV"), {

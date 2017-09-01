@@ -47,14 +47,14 @@ object Header {
     implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultValue[A]) {
       def orDefault: A = a.getOrElse(d.default)
     }
-    implicit val IntDefaultValue = new DefaultValue[Int] {
-      val default = IntDefault
+    implicit val IntDefaultValue: DefaultValue[Int] = new DefaultValue[Int] {
+      val default: Int = IntDefault
     }
-    implicit val DoubleDefaultValue = new DefaultValue[Double] {
-      val default = DoubleDefault
+    implicit val DoubleDefaultValue: DefaultValue[Double] = new DefaultValue[Double] {
+      val default: Double = DoubleDefault
     }
-    implicit val StrDefaultValue = new DefaultValue[String] {
-      val default = StrDefault
+    implicit val StrDefaultValue: DefaultValue[String] = new DefaultValue[String] {
+      val default: String = StrDefault
     }
 
     implicit class A2SeqAction[A: DefaultValue](val v: Option[A]) {

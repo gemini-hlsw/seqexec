@@ -15,5 +15,3 @@ object Aligned {
 
   implicit val equal: Equal[Aligned] = Equal.equalA[Aligned]
 }
-
-trait SemanticUIAlign extends Aligned

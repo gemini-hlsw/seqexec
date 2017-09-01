@@ -10,7 +10,8 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import squants.Length
 
 import scala.concurrent.duration.Duration
-import scalaz.\/
+import scalaz.{Equal, \/}
+import scalaz.syntax.equal._
 
 /**
   * Created by jluhrs on 8/3/17.
@@ -33,6 +34,8 @@ object GmosController {
 
   final class Config[T<:SiteDependentTypes] {
     import Config._
+
+    @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
 
     case class GmosDisperser(disperser: T#Disperser, order: Option[DisperserOrder], lambda: Option[Length])
@@ -63,6 +66,8 @@ object GmosController {
     type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
     type ExposureTime = Duration
     type PosAngle = edu.gemini.spModel.core.Angle
+
+    implicit val equalBuiltInROI: Equal[BuiltinROI] = Equal.equalA
 
     // I'm not totally sure this is being used
     sealed trait BiasTime
@@ -105,7 +110,7 @@ object GmosController {
     object RegionsOfInterest {
       def fromOCS(builtIn: BuiltinROI, custom: List[ROI]): SeqexecFailure \/ RegionsOfInterest =
         (builtIn, custom) match {
-          case (b, r) if b != BuiltinROI.CUSTOM && r.isEmpty => \/.right(new RegionsOfInterest(\/.left(b)) {})
+          case (b, r) if b =/= BuiltinROI.CUSTOM && r.isEmpty => \/.right(new RegionsOfInterest(\/.left(b)) {})
           case (BuiltinROI.CUSTOM, r) if r.nonEmpty => \/.right(new RegionsOfInterest(\/.right(r)) {})
           case _ => \/.left(Unexpected("Inconsistent values for GMOS regions of interest"))
         }
@@ -140,7 +145,7 @@ object GmosController {
   }
 
   type SouthConfigTypes = Config[SouthTypes]
-  val southConfigTypes = new SouthConfigTypes
+  val southConfigTypes: SouthConfigTypes = new SouthConfigTypes
 
   final class NorthTypes extends SiteDependentTypes {
     override type Filter = edu.gemini.spModel.gemini.gmos.GmosNorthType.FilterNorth
@@ -150,10 +155,11 @@ object GmosController {
   }
 
   type NorthConfigTypes = Config[NorthTypes]
-  val northConfigTypes = new NorthConfigTypes
+  val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
   class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T]) {
+    @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig) = this(cc, dc, c)
   }
 

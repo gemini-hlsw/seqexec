@@ -13,13 +13,14 @@ sealed trait CliCommand {
 }
 
 // Classes exposed to web clients, uses only scala classes
-case class RegularCommand(command: String, error: Boolean, response: String) extends CliCommand
-case class SequenceConfig(command: String, error: Boolean, response: String, keys: StepConfig) extends CliCommand
-case class SequenceStatus(command: String, error: Boolean, response: String, steps: List[String]) extends CliCommand
+final case class RegularCommand(command: String, error: Boolean, response: String) extends CliCommand
+final case class SequenceConfig(command: String, error: Boolean, response: String, keys: StepConfig) extends CliCommand
+final case class SequenceStatus(command: String, error: Boolean, response: String, steps: List[String]) extends CliCommand
 
 object CliCommand {
   // Pickler for the commands hierarchy
-  implicit val commandsPickler = compositePickler[CliCommand]
+  @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial","org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Equals"))
+  implicit val commandsPickler: boopickle.CompositePickler[CliCommand] = compositePickler[CliCommand]
       .addConcreteType[RegularCommand]
       .addConcreteType[SequenceConfig]
       .addConcreteType[SequenceStatus]

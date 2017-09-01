@@ -17,7 +17,8 @@ import scalaz.std.string._
   * Produces a dropdown menu, similar to a combobox
   */
 object DropdownMenu {
-  case class Props[A](label: String,
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props[A](label: String,
                    defaultSelect: Option[A],
                    defaultSelectText: String,
                    items: List[A],

@@ -8,7 +8,8 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object FormLabel {
-  case class Props(text: String,
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props(text: String,
     htmlFor: Option[String] = None)
 
   private val component = ScalaComponent.builder[Props]("FormLabel")

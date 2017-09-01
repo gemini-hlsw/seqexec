@@ -17,8 +17,7 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser
 import squants.Length
 
 import scalaz._
-import scalaz.Scalaz._
-import scalaz.EitherT
+import Scalaz._
 import scalaz.concurrent.Task
 
 class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
@@ -28,8 +27,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   import GmosController.Config._
   import EpicsCodex._
 
-  val CC = GmosEpics.instance.configCmd
-  val DC = GmosEpics.instance.configDCCmd
+  private val CC = GmosEpics.instance.configCmd
+  private val DC = GmosEpics.instance.configDCCmd
 
   override def getConfig: SeqAction[GmosController.GmosConfig[T]] = ??? // scalastyle:ignore
 
@@ -163,6 +162,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     CC.setFilter1(filter1) *> CC.setFilter2(filter2)
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def setDisperser(d: GmosController.Config[T]#GmosDisperser): SeqAction[Unit] = {
     val disperserMode = "Select Grating and Tilt"
     CC.setDisperser(encoders.disperser.encode(d.disperser)) *>
@@ -196,7 +196,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     }
   }
 
-  val PixelsToMicrons = 15.0
+  private val PixelsToMicrons = 15.0
 
   def setCCConfig(cc: GmosController.Config[T]#CCConfig): SeqAction[Unit] = for {
     _ <- setFilters(cc.filter)

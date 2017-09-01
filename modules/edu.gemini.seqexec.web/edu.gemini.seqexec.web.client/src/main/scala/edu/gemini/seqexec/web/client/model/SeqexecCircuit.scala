@@ -31,8 +31,6 @@ import scalaz._
 import Scalaz._
 
 class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   def handle: PartialFunction[Any, ActionResult[M]] = {
     case NavigateTo(page) =>
       updated(page)
@@ -90,8 +88,6 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
   * Handles sequence execution actions
   */
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
@@ -144,8 +140,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
   * Handles actions related to opening/closing the login box
   */
 class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case OpenLoginBox if value == SectionClosed =>
       updated(SectionOpen)
@@ -165,8 +159,6 @@ class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends Ac
   * Handles actions related to opening/closing the login box
   */
 class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case LoggedIn(u) =>
       // Close the login box
@@ -184,8 +176,6 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
   * Handles actions related to the changing the selection of the displayed sequence
   */
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences, SeqexecSite)]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SelectInstrumentToDisplay(i) =>
       updated(value.copy(_1 = value._1.focusOnInstrument(i)))
@@ -221,8 +211,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
  * Handles updates to the operator
  */
 class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateOperator(name) =>
       val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
@@ -234,8 +222,6 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHa
  * Handles updates to conditions
  */
 class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateImageQuality(iq) =>
       val updateE = Effect(SeqexecWebClient.setImageQuality(iq).map(_ => NoAction))
@@ -264,8 +250,6 @@ class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandle
   * Handles updates to the log
   */
 class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case AppendToLog(s) =>
       updated(value.copy(log = value.log.append(s)))
@@ -277,7 +261,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
   */
 class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with ModelBooPicklers {
   // Import explicitly the custom pickler
-  implicit val runner = new RunAfterJS
+  private implicit val runner = new RunAfterJS
 
   private val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
@@ -300,10 +284,15 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     }
 
     def onMessage(e: MessageEvent): Unit = {
-      val byteBuffer = TypedArrayBuffer.wrap(e.data.asInstanceOf[ArrayBuffer])
-      \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-        case \/-(event) => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
-        case -\/(t)     => logger.warning(s"Error decoding event ${t.getMessage}")
+      e.data match {
+        case buffer: ArrayBuffer =>
+          val byteBuffer = TypedArrayBuffer.wrap(buffer)
+          \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
+            case \/-(event) => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
+            case -\/(t)     => logger.warning(s"Error decoding event ${t.getMessage}")
+          }
+        case _                   =>
+          ()
       }
     }
 
@@ -344,7 +333,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
 
     case ConnectionClosed(_) =>
       val next = math.min(60000, math.max(250, value.nextAttempt * 2))
-      logger.fine("Retry connecting in "+ next)
+      logger.fine(s"Retry connecting in $next")
       val effect = Effect(Future(WSConnect(next)))
       updated(WebSocketConnection(Pending(), next), effect)
   }
@@ -354,8 +343,6 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
   * Handles messages received over the WS channel
   */
 class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) {
-  implicit val runner = new RunAfterJS
-
   private val VoidEffect = Effect(Future(NoAction))
 
   // It is legal do put sequences of the other sites on the queue
@@ -423,8 +410,8 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
               (q :: seq, syncUrlE :: eff)
             }
           }
-      updated(value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false),
-              effects.flatten.reduce(_ + _): Effect)
+      val newValue = value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false)
+      effects.collect { case Some(x) => x }.reduceOption(_ + _).fold(updated(newValue))(eff => updated(newValue, eff))
 
     case ServerMessage(_) =>
       // Ignore unknown events
@@ -437,7 +424,9 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
   * Generates Eq comparisons for Pot[A], it is useful for state indicators
   */
 object PotEq {
-  def potStateEq[A]: FastEq[Pot[A]] = (a: Pot[A], b: Pot[A]) => a.state == b.state
+  implicit val equalPot: Equal[PotState] = Equal.equalA
+
+  def potStateEq[A]: FastEq[Pot[A]] = (a: Pot[A], b: Pot[A]) => a.state === b.state
 
   val seqexecQueueEq:  FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
   val searchResultsEq: FastEq[Pot[SearchResults]]      = potStateEq[SearchResults]
@@ -447,23 +436,23 @@ object PotEq {
 /**
   * Utility class to let components more easily switch parts of the UI depending on the context
   */
-case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean) extends UseValueEq {
+final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean) extends UseValueEq {
   def isLogged: Boolean = u.isDefined
   def isConnected: Boolean = w.ws.isReady
 }
 
 // All these classes are focused views of the root model. They are used to only update small sections of the
 // UI even if other parts of the root model change
-case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
-case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
-case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
-case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
-case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
-case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
-case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
-case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
+final case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
+final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
+final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
+final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
+final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
+final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
+final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
+final case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
+final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
+final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
 
 /**
   * Contains the model for Diode
@@ -473,19 +462,19 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
 
   // Model read-writers
-  val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
+  private val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
     zoomRW(m => WebSocketsFocus(m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
 
-  val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  val wsEventsHandler        = new WebSocketEventsHandler(webSocketFocusRW)
-  val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
-  val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
-  val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
-  val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
-  val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
-  val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
-  val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
-  val operatorHandler        = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
+  private val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
+  private val wsEventsHandler        = new WebSocketEventsHandler(webSocketFocusRW)
+  private val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
+  private val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
+  private val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
+  private val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
+  private val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
+  private val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
+  private val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
+  private val operatorHandler        = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
 
   override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -536,7 +525,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader for a specific sequence if available
   def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
-    zoom(_.uiModel.sequences.queue.find(_.id == id))
+    zoom(_.uiModel.sequences.queue.find(_.id === id))
 
   // Reader to indicate the allowed interactions
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
@@ -573,7 +562,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     */
   override def handleError(msg: String): Unit = {
     logger.severe(s"Action error $msg")
-    throw new Exception(s"handleError called with: $msg")
   }
 
 }

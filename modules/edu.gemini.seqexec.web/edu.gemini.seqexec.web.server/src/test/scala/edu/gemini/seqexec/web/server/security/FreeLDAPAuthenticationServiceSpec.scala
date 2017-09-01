@@ -6,20 +6,21 @@ package edu.gemini.seqexec.web.server.security
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.UserDetails._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 
 import scalaz._
 import Scalaz._
 
-class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with PropertyChecks {
+class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with PropertyChecks with NonImplicitAssertions {
   import FreeLDAPAuthenticationService._
 
   // Silly mock of a user database
   case class MockAuthDB(users: Map[UID, (String, DisplayName)], acceptEmptyPwd: Boolean) {
-    def authenticate(u: String, p: String): UID = {
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+    def authenticate(u: String, p: String): UID =
       // This checks if the username and password but lets it bypass it
-      if (users.contains(u) && ((u == p && p.nonEmpty) || acceptEmptyPwd)) u else throw new RuntimeException()
-    }
+      if (users.contains(u) && ((u === p && p.nonEmpty) || acceptEmptyPwd)) u else throw new RuntimeException()
+
     def displayName(uid: UID): DisplayName = ~users.get(uid).map(_._2)
   }
 

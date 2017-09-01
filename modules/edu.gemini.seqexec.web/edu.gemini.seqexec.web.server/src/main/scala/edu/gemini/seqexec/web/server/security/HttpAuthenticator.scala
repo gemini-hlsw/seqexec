@@ -18,7 +18,7 @@ import java.time.Instant
   * Bridge between http4s authentication and the actual internal authenticator
   */
 class Http4sAuthentication(auth: AuthenticationService) {
-  val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
+  private val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
 
   def loginCookie(user: UserDetails): Task[Cookie] = cookieService.loginCookie(auth, user)
 
@@ -31,10 +31,10 @@ class Http4sAuthentication(auth: AuthenticationService) {
     Task.delay(authResult)
   })
 
-  val optAuth = AuthMiddleware(authUser)
+  val optAuth: AuthMiddleware[AuthResult] = AuthMiddleware(authUser)
 
-  val onFailure: AuthedService[AuthenticationFailure] = Kleisli(req => Forbidden())
-  val reqAuth = AuthMiddleware(authUser, onFailure)
+  private val onFailure: AuthedService[AuthenticationFailure] = Kleisli(req => Forbidden())
+  val reqAuth: AuthMiddleware[UserDetails] = AuthMiddleware(authUser, onFailure)
 
 }
 
@@ -74,8 +74,8 @@ trait CookiesService {
 
 object CookiesService {
   def apply(cookieName: String, useSSL: Boolean, timeToLive: Long): CookiesService = new CookiesService {
-    override val name = cookieName
-    override val ssl = useSSL
-    override val ttl = timeToLive
+    override val name: String = cookieName
+    override val ssl: Boolean = useSSL
+    override val ttl: Long = timeToLive
   }
 }

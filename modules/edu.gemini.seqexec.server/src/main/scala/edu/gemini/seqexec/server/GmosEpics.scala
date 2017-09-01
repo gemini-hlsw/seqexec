@@ -9,9 +9,12 @@ import edu.gemini.epics.acm.{CaCommandSender, CaParameter, CaService, CaStatusAc
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
 import edu.gemini.seqexec.server.GmosEpics.{RoiParameters, RoiStatus}
 
-import org.log4s.getLogger
+import org.log4s.{Logger, getLogger}
 import scala.concurrent.duration._
 import scala.collection.breakOut
+
+import scalaz.syntax.equal._
+import scalaz.std.AllInstances._
 
 class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
@@ -209,7 +212,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def stageMode: Option[String] = Option(state.getStringAttribute("stageMode").value)
 
-  def useElectronicOffsetting: Option[Boolean] = Option(state.getIntegerAttribute("useElectronicOffsetting").value).map(_!=0)
+  def useElectronicOffsetting: Option[Boolean] = Option(state.getIntegerAttribute("useElectronicOffsetting").value).map(_.toInt =/= 0)
 
   def disperserWavel: Option[Double] = Option(state.getDoubleAttribute("disperserLambda").value).map(_.toDouble)
 
@@ -246,13 +249,13 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
 object GmosEpics extends EpicsSystem[GmosEpics] {
 
-  override val className = getClass.getName
-  override val Log = getLogger
-  override val CA_CONFIG_FILE = "/Gmos.xml"
+  override val className: String = getClass.getName
+  override val Log: Logger = getLogger
+  override val CA_CONFIG_FILE: String = "/Gmos.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)
 
-  case class RoiParameters(cs: Option[CaCommandSender], i: Int) {
+  final case class RoiParameters(cs: Option[CaCommandSender], i: Int) {
     val ccdXstart: Option[CaParameter[Integer]] = cs.map(_.getInteger(s"ccdXstart$i"))
     def setCcdXstart1(v: Integer): SeqAction[Unit] = setParameter(ccdXstart, v)
 
@@ -266,7 +269,7 @@ object GmosEpics extends EpicsSystem[GmosEpics] {
     def setCcdYsize1(v: Integer): SeqAction[Unit] = setParameter(ccdYsize, v)
   }
 
-  case class RoiStatus(sa: CaStatusAcceptor, i: Int) {
+  final case class RoiStatus(sa: CaStatusAcceptor, i: Int) {
     def ccdXstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXstart$i").value).map(_.toInt)
     def ccdYstart: Option[Int] = Option(sa.getIntegerAttribute(s"ccdYstart$i").value).map(_.toInt)
     def ccdXsize: Option[Int] = Option(sa.getIntegerAttribute(s"ccdXsize$i").value).map(_.toInt)

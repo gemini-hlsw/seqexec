@@ -1,12 +1,24 @@
 import Settings.Libraries._
 import sbt.Keys._
-import sbt.{file, Compile, ModuleID, project}
+import sbt.{file, Compile, ModuleID, project, Test}
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
+import wartremover.WartRemover.autoImport._
 
 /**
   * Define tasks and settings used by module definitions
   */
 object Common {
+  lazy val gemWarts =
+    Warts.allBut(
+      Wart.Any,                // false positives
+      Wart.Nothing,            // false positives
+      Wart.Null,               // false positives
+      Wart.Product,            // false positives
+      Wart.Serializable,       // false positives
+      Wart.Recursion,          // false positives
+      Wart.ImplicitConversion  // we know what we're doing
+    )
+
   lazy val commonSettings = Seq(
     scalaOrganization := "org.typelevel",
     scalaVersion := Settings.LibraryVersions.scalaVersion,
@@ -24,7 +36,10 @@ object Common {
     )),
 
     // Common libraries
-    libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value
+    libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value,
+    // Wartremover in compile and test (not in Console)
+    wartremoverErrors in (Compile, compile) := gemWarts,
+    wartremoverErrors in (Test,    compile) := gemWarts
   )
 
   lazy val commonJSSettings = commonSettings ++ Seq(

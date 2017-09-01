@@ -18,9 +18,9 @@ import scalaz.concurrent.Task
 class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
   val oneYear = 365 * 24 * 60 * 60
 
-  val cacheHeaders = if (devMode) List(`Cache-Control`(NonEmptyList(`no-cache`()))) else List(`Cache-Control`(NonEmptyList(`max-age`(oneYear.seconds))))
+  private val cacheHeaders = if (devMode) List(`Cache-Control`(NonEmptyList(`no-cache`()))) else List(`Cache-Control`(NonEmptyList(`max-age`(oneYear.seconds))))
 
-  val indexResponse =
+  private val indexResponse =
     Ok(index).withContentType(Some(`Content-Type`(`text/html`, Charset.`UTF-8`))).putHeaders(`Cache-Control`(NonEmptyList(`no-cache`())))
 
   // Get a resource from a local file, useful for development
@@ -34,7 +34,7 @@ class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
   }
 
   implicit class ReqOps(req: Request) {
-    val timestampRegex = s"(.*)\\.$builtAtMillis\\.(.*)".r
+    private val timestampRegex = s"(.*)\\.$builtAtMillis\\.(.*)".r
 
     /**
       * If a request contains the timestamp remove it to find the original file name
@@ -47,7 +47,7 @@ class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
 
     def endsWith(exts: String*): Boolean = exts.exists(req.pathInfo.endsWith)
 
-    def serve(path: String = req.pathInfo): Task[Response] = {
+    def serve(path: String): Task[Response] = {
       // To find scala.js generated files we need to go into the dir below, hopefully this can be improved
       localResource(removeTimestamp(path), req).orElse(embeddedResource(removeTimestamp(path), req))
         .map(_.putHeaders(cacheHeaders: _*))
@@ -56,11 +56,11 @@ class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
     }
   }
 
-  val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
+  private val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
 
-  val service = GZip { HttpService {
+  val service: HttpService = GZip { HttpService {
     case req if req.pathInfo == "/"                  => indexResponse
-    case req if req.endsWith(supportedExtension: _*) => req.serve()
+    case req if req.endsWith(supportedExtension: _*) => req.serve(req.pathInfo)
     // This maybe not desired in all cases but it helps to keep client side routing cleaner
     case req if !req.pathInfo.contains(".")          => indexResponse
   }}

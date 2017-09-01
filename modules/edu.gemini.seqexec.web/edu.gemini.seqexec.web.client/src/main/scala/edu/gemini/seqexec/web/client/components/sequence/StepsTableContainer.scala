@@ -24,17 +24,18 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
+import scalaz.std.AllInstances._
 import org.scalajs.dom.html.Div
 
 /**
   * Container for a table with the steps
   */
 object StepsTableContainer {
-  case class State(nextScrollPos  : Double,
+  final case class State(nextScrollPos  : Double,
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
+  final case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
     def steps: Option[StepsTableFocus] = stepsTable()._2
   }
@@ -132,7 +133,7 @@ object StepsTableContainer {
         )
       )
 
-    def isPartiallyExecuted(p: StepsTableFocus): Boolean = p.steps.exists(_.status == StepState.Completed)
+    def isPartiallyExecuted(p: StepsTableFocus): Boolean = p.steps.exists(_.status === StepState.Completed)
 
     def stepInError(loggedIn: Boolean, isPartiallyExecuted: Boolean, msg: String): VdomNode =
       <.div(
@@ -161,7 +162,7 @@ object StepsTableContainer {
     def mouseEnter(index: Int): Callback =
       $.state.flatMap(s => Callback.when(!s.onHover.contains(index))($.modState(_.copy(onHover = Some(index)))))
 
-    def mouseLeave(index: Int): Callback =
+    def mouseLeaveOn(index: Int): Callback =
       $.state.flatMap(s => Callback.when(s.onHover.contains(index))($.modState(_.copy(onHover = None))))
 
     def mouseLeave: Callback =
@@ -221,16 +222,16 @@ object StepsTableContainer {
           "active"   -> (step.status === StepState.Skipped),
           "disabled" -> step.skip
         ),
-        SeqexecStyles.stepRunning.when(step.status == StepState.Running),
+        SeqexecStyles.stepRunning.when(step.status === StepState.Running),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           step.status match {
-            case StepState.Completed                 => IconCheckmark
-            case StepState.Running                   => IconCircleNotched.copyIcon(loading = true)
-            case StepState.Error(_)                  => IconAttention
-            case _ if p.nextStepToRun.forall(_ == i) => IconChevronRight
-            case _ if step.skip                      => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-            case _                                   => iconEmpty
+            case StepState.Completed                  => IconCheckmark
+            case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
+            case StepState.Error(_)                   => IconAttention
+            case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
+            case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+            case _                                    => iconEmpty
           }
         ),
         <.td(

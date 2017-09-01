@@ -19,6 +19,7 @@ import scalaz.Nondeterminism
 import scalaz.concurrent.Task
 import scalaz.stream.{Cause, Process, async}
 
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   /**
@@ -50,7 +51,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   } yield Result.Error("There was an error in this action"))
 
   val config: StepConfig = Map()
-  val seqId = "TEST-01"
+  val seqId: String = "TEST-01"
   val qs1: Engine.State =
     Engine.State(
       Conditions.default,
@@ -93,7 +94,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       )
     )
 
-  val seqG =
+  private val seqG =
     Sequence.State.init(
       Sequence(
         "First",
@@ -115,12 +116,12 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       )
     )
 
-  val seqId1 = seqId
-  val seqId2 = "TEST-02"
-  val seqId3 = "TEST-03"
-  val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
-  val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
-  val user = UserDetails("telops", "Telops")
+  private val seqId1 = seqId
+  private val seqId2 = "TEST-02"
+  private val seqId3 = "TEST-03"
+  private val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
+  private val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
+  private val user = UserDetails("telops", "Telops")
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -129,26 +130,26 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Engine.State = {
+  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
     process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.get._2
+    ).runLast.unsafePerformSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
     val p = Process.eval(Task.now(start(seqId, user)))
-    val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.get._2
-    assert(qs.sequences(seqId).status === SequenceState.Running)
+    val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.map(_._2)
+    assert(qs.map(_.sequences(seqId).status).forall(_ === SequenceState.Running))
   }
 
   it should "be 0 pending executions after execution" in {
     val qs = runToCompletion(qs1)
-    assert(qs.sequences(seqId).pending.isEmpty)
+    assert(qs.map(_.sequences(seqId).pending).forall(_.isEmpty))
   }
 
   it should "be 2 Steps done after execution" in {
     val qs = runToCompletion(qs1)
-    assert(qs.sequences(seqId).done.length == 2)
+    assert(qs.map(_.sequences(seqId).done.length).forall(_ === 2))
   }
 
   ignore should "Print execution" in {
@@ -168,7 +169,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "not run 2nd sequence because it's using the same resource" in {
     val p = Process.emitAll(List(start(seqId1, user), start(seqId2, user))).evalMap(Task.now(_))
     assert(
-      process(p)(qs2).take(6).runLast.unsafePerformSync.get._2.sequences(seqId2).status === SequenceState.Idle
+      process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).forall(_.status === SequenceState.Idle)
     )
   }
 
@@ -176,7 +177,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val p = Process.emitAll(List(start(seqId1, user), start(seqId3, user))).evalMap(Task.now(_))
 
     assert(
-      process(p)(qs3).take(6).runLast.unsafePerformSync.get._2.sequences(seqId3).status === SequenceState.Running
+      process(p)(qs3).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId3)).forall(_.status === SequenceState.Running)
     )
   }
 
@@ -222,6 +223,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "not capture fatal errors." in {
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def s0(e: Error) = Engine.State(Conditions.default,
       None,
       Map((seqId, Sequence.State.init(Sequence(
@@ -278,9 +280,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     val sf = process(p)(s0).drop(3).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.get._2
+    ).runLast.unsafePerformSync.map(_._2)
 
-    assertResult(Result.OK(Result.Configured("John-Smith")))(sf.sequences.get(seqId).get.done.head.executions.head.head)
+    assertResult(Some(Result.OK(Result.Configured("John-Smith"))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
   }
 
 }

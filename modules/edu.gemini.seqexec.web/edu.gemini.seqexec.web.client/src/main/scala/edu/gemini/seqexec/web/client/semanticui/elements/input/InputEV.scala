@@ -18,7 +18,8 @@ import scalaz.std.string._
 object InputEV {
   type ChangeCallback = String => Callback
 
-  case class Props(name: String,
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class Props(name: String,
                    id: String,
                    value: StateSnapshot[String],
                    inputType: InputType = TextInput,
@@ -27,7 +28,8 @@ object InputEV {
                    onChange: ChangeCallback = s => Callback.empty, // callback for parents of this component
                    onBlur: ChangeCallback = s => Callback.empty)
 
-  case class State(value: String, changed: Boolean = false)
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  final case class State(value: String, changed: Boolean = false)
 
   sealed trait InputType
   case object TextInput extends InputType

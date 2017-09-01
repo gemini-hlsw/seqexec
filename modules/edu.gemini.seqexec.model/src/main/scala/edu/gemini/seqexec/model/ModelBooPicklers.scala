@@ -14,6 +14,7 @@ import java.time.Instant
   * Boopickle can auto derived encoders but it is preferred to make
   * them explicitly
   */
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
 trait ModelBooPicklers {
 
   // Composite pickler for the seqexec event hierarchy
@@ -103,6 +104,7 @@ trait ModelBooPicklers {
     * In most cases http4s will use the limit of a byte buffer but not for websockets
     * This method trims the binary array to be sent on the WS channel
     */
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def trimmedArray(e: Model.SeqexecEvent): Array[Byte] = {
     val byteBuffer = Pickle.intoBytes(e)
     val bytes = new Array[Byte](byteBuffer.limit())

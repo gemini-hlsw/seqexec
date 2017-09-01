@@ -54,7 +54,7 @@ trait EpicsSystem[T] {
   // now result in an Exception with a meaningful message, instead of a NullPointerException
   private var instanceInternal = Option.empty[T] // scalastyle:ignore
   lazy val instance: T = instanceInternal.getOrElse(
-    throw new Exception(s"Attempt to reference $className single instance before initialization."))
+    sys.error(s"Attempt to reference $className single instance before initialization."))
 
   def init(service: CaService, tops: Map[String, String]): TrySeq[Unit] = {
     try {
@@ -73,6 +73,7 @@ trait EpicsSystem[T] {
   }
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object EpicsCommand {
   def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.run.handle {
     case e: Exception => SeqexecException(e).left

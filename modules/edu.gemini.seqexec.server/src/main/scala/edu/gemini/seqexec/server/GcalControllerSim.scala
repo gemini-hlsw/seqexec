@@ -16,16 +16,15 @@ object GcalControllerSim extends GcalController {
   override def getConfig: SeqAction[GcalConfig] = SeqAction(GcalController.GcalConfig.allOff)
 
   def printConfig(config: GcalConfig): List[String] = List(
-    "lampAr = " + config.lampAr,
-    "lampCuar = " + config.lampCuAr,
-    "lampQH = " + config.lampQh,
-    "lampThAr = " + config.lampThAr,
-    "lampXe = " + config.lampXe,
-    "lampIr = " + config.lampIr,
-    "shutter = " + config.shutter,
-    "filter = " + config.filter,
-    "diffuser = " + config.diffuser
-    )
+    s"lampAr = ${config.lampAr}",
+    s"lampCuar = ${config.lampCuAr}",
+    s"lampQH = ${config.lampQh}",
+    s"lampThAr = ${config.lampThAr}",
+    s"lampXe = ${config.lampXe}",
+    s"lampIr = ${config.lampIr}",
+    s"shutter = ${config.shutter}",
+    s"filter = ${config.filter}",
+    s"diffuser = ${config.diffuser}")
 
   override def applyConfig(config: GcalConfig): SeqAction[Unit] = SeqAction.either {
     Log.info("applyConfig: config is\n" + printConfig(config).mkString("\n"))

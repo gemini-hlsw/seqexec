@@ -8,7 +8,7 @@ import Header._
 import Header.Implicits._
 
 class GcalHeader(hs: DhsClient, gcalReader: GcalKeywordReader) extends Header {
-  val gcalKeywords = List(
+  private val gcalKeywords = List(
     buildString(gcalReader.getLamp.orDefault, "GCALLAMP"),
     buildString(gcalReader.getFilter.orDefault, "GCALFILT"),
     buildString(gcalReader.getDiffuser.orDefault, "GCALDIFF"),
@@ -20,4 +20,3 @@ class GcalHeader(hs: DhsClient, gcalReader: GcalKeywordReader) extends Header {
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = SeqAction(())
 }
-

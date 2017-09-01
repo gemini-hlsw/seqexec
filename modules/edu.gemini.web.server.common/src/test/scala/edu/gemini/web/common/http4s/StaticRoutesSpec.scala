@@ -13,11 +13,11 @@ import org.scalatest.{EitherValues, FlatSpec, Matchers}
 
 import scala.concurrent.duration._
 
+@SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with UriFunctions {
+  private val builtAtMillis = 1000L
 
-  val builtAtMillis = 1000L
-
-  def index(devMode: Boolean) = {
+  def index(devMode: Boolean): String = {
     val deps = if (devMode) "package-jsdeps.js" else s"package-jsdeps.min.${builtAtMillis}.js"
     val script = if (devMode) s"app.js" else s"app-opt.${builtAtMillis}.js"
 
@@ -50,7 +50,7 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
       service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
       service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Content-Type`(`text/html`, Charset.`UTF-8`))
       service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Cache-Control`(NonEmptyList(`no-cache`())))
-      val body = service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.body.runLast.unsafePerformSync.map(_.decodeUtf8).get.right.value
+      val body = service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.body.runLast.unsafePerformSync.map(_.decodeUtf8).fold("")(_.right.value)
       body should include regex ".*jsdeps\\.min\\.(\\d*)\\.js.*"
       body should include regex ".*app-opt\\.(\\d*)\\.js.*"
     }
@@ -59,7 +59,7 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
       service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
       service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Content-Type`(`text/html`, Charset.`UTF-8`))
       service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Cache-Control`(NonEmptyList(`no-cache`())))
-      val body = service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.body.runLast.unsafePerformSync.map(_.decodeUtf8).get.right.value
+      val body = service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.body.runLast.unsafePerformSync.map(_.decodeUtf8).fold("")(_.right.value)
       body should include regex ".*jsdeps\\.js.*"
       body should include regex ".*app*\\.js.*"
     }
@@ -88,6 +88,6 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
     }
     it should "support fingerprinting" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = Uri.fromString(s"/css/test.$builtAtMillis.css").toOption.get)).unsafePerformSync.orNotFound.status should equal (Status.Ok)
+      service.apply(Request(uri = Uri.fromString(s"/css/test.$builtAtMillis.css").toOption.fold(uri("/"))(x => x))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
     }
 }

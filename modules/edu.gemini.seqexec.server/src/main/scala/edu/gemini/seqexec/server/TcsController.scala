@@ -34,7 +34,7 @@ trait TcsController {
 // scalastyle:off
 object TcsController {
 
-  case class Requested[T](self: T) extends AnyVal
+  final case class Requested[T](self: T) extends AnyVal
 
   /** Enumerated type for Tip/Tilt Source. */
   sealed trait TipTiltSource
@@ -64,6 +64,9 @@ object TcsController {
 
   /** Data type for M2 guide config. */
   sealed trait M2GuideConfig
+  object M2GuideConfig {
+    implicit val show: Show[M2GuideConfig] = Show.showA
+  }
   case object M2GuideOff extends M2GuideConfig
   final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig {
     def setComa(v: ComaOption): M2GuideConfig = M2GuideOn(v, source)
@@ -72,6 +75,9 @@ object TcsController {
 
   /** Data type for M2 guide config. */
   sealed trait M1GuideConfig
+  object M1GuideConfig {
+    implicit val show: Show[M1GuideConfig] = Show.showA
+  }
   case object M1GuideOff extends M1GuideConfig
   final case class M1GuideOn(source: M1Source) extends M1GuideConfig
 
@@ -81,6 +87,8 @@ object TcsController {
     case object A extends Beam
     case object B extends Beam
     case object C extends Beam
+
+    implicit val equal: Equal[Beam] = Equal.equalA
   }
 
   /**
@@ -124,7 +132,7 @@ object TcsController {
 
     object Normal extends ActiveNodChopTracking {
       def get(nodchop: NodChop): NodChopTrackingOption =
-        NodChopTrackingOption.fromBoolean(nodchop.nod == nodchop.chop)
+        NodChopTrackingOption.fromBoolean(nodchop.nod === nodchop.chop)
     }
 
     final case class Special(s: OneAnd[Set, NodChop]) extends ActiveNodChopTracking {
@@ -164,6 +172,7 @@ object TcsController {
     case object IN     extends HrwfsPickupPosition
     case object OUT    extends HrwfsPickupPosition
     case object Parked extends HrwfsPickupPosition
+    implicit val show: Show[HrwfsPickupPosition] = Show.showA
   }
 
   /** Enumerated type for light source. */
@@ -179,6 +188,7 @@ object TcsController {
   object ScienceFoldPosition {
     case object Parked extends ScienceFoldPosition
     final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
+    implicit val show: Show[ScienceFoldPosition] = Show.showA
   }
 
   /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
@@ -253,11 +263,26 @@ object TcsController {
     def setWavelengthC(v: Wavelength): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, WavelengthC(v), m2beam)
     def setBeam(v: Beam): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, wavelC, v)
   }
+  object TelescopeConfig {
+    implicit val show: Show[TelescopeConfig] = Show.showA
+  }
 
   final case class ProbeTrackingConfigP1(self: ProbeTrackingConfig) extends AnyVal
+  object ProbeTrackingConfigP1 {
+    implicit val show: Show[ProbeTrackingConfigP1] = Show.showA
+  }
   final case class ProbeTrackingConfigP2(self: ProbeTrackingConfig) extends AnyVal
+  object ProbeTrackingConfigP2 {
+    implicit val show: Show[ProbeTrackingConfigP2] = Show.showA
+  }
   final case class ProbeTrackingConfigOI(self: ProbeTrackingConfig) extends AnyVal
+  object ProbeTrackingConfigOI {
+    implicit val show: Show[ProbeTrackingConfigOI] = Show.showA
+  }
   final case class ProbeTrackingConfigAO(self: ProbeTrackingConfig) extends AnyVal
+  object ProbeTrackingConfigAO {
+    implicit val show: Show[ProbeTrackingConfigAO] = Show.showA
+  }
 
   final case class GuidersTrackingConfig(
     pwfs1: ProbeTrackingConfigP1,
@@ -276,9 +301,21 @@ object TcsController {
   object GuiderSensorOn extends GuiderSensorOption
 
   final case class GuiderSensorOptionP1(self: GuiderSensorOption) extends AnyVal
+  object GuiderSensorOptionP1 {
+    implicit val show: Show[GuiderSensorOptionP1] = Show.showA
+  }
   final case class GuiderSensorOptionP2(self: GuiderSensorOption) extends AnyVal
+  object GuiderSensorOptionP2 {
+    implicit val show: Show[GuiderSensorOptionP2] = Show.showA
+  }
   final case class GuiderSensorOptionOI(self: GuiderSensorOption) extends AnyVal
+  object GuiderSensorOptionOI {
+    implicit val show: Show[GuiderSensorOptionOI] = Show.showA
+  }
   final case class GuiderSensorOptionAO(self: GuiderSensorOption) extends AnyVal
+  object GuiderSensorOptionAO {
+    implicit val show: Show[GuiderSensorOptionAO] = Show.showA
+  }
 
   // A enabled guider means it is taking images and producing optical error measurements.
   final case class GuidersEnabled(
@@ -322,7 +359,7 @@ object TcsController {
     object M1 extends Subsystem
     object M2 extends Subsystem
 
-    val all = NonEmptyList(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
+    val all: NonEmptyList[Subsystem] = NonEmptyList(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
   }
 
 }

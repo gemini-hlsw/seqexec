@@ -4,6 +4,6 @@
 package edu.gemini.seqexec.web.client.services
 
 object HtmlConstants {
-  val nbsp = "\u00a0"
-  val iconEmpty = nbsp * 2
+  val nbsp: String = "\u00a0"
+  val iconEmpty: String = nbsp * 2
 }

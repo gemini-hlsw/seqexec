@@ -27,16 +27,19 @@ import scalaz.stream.Process
 import scalaz.stream.async
 import scalaz.OptionT
 import scalaz.syntax.std.option._
+import scalaz.syntax.equal._
+import scalaz.std.AllInstances._
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.{Queue, Topic}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 
 import scala.concurrent.duration._
 
-class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with StringSyntax {
-  val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
-  val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
-  val authService = AuthenticationService(config)
+@SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
+class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with StringSyntax with NonImplicitAssertions {
+  private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
+  private val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
+  private val authService = AuthenticationService(config)
   val inq: Queue[Event] = async.boundedQueue[Event](10)
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()
   val queues: (Queue[Event], Topic[SeqexecEvent]) = (inq, out)
@@ -135,7 +138,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
         seqResp             <- OptionT(service.apply(Request(method = Method.GET, uri = uri("/seqexec/sequence/abc")).addCookie(setCookie.cookie)).map(Option.apply))
         updatedCookieHeader = seqResp.orNotFound.headers.find(_.name === "Set-Cookie".ci)
         updatedCookie       <- OptionT(Task.now(updatedCookieHeader.flatMap(u => `Set-Cookie`.parse(u.value).toOption)))
-      } yield setCookie.cookie.content != updatedCookie.cookie.content
+      } yield setCookie.cookie.content =/= updatedCookie.cookie.content
       sequence.run.unsafePerformSync shouldBe Some(true)
     }
 

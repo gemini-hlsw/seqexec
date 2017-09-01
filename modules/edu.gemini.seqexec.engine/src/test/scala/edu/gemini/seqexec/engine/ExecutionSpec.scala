@@ -16,11 +16,17 @@ class ExecutionSpec extends FlatSpec with Matchers {
 
   "currentify" should "be None only when an Execution is empty" in {
     assert(Execution.currentify(List(action, action)).nonEmpty)
+  }
+
+  "currentify2" should "be None only when an Execution is empty" in {
     assert(Execution.currentify(Nil).isEmpty)
   }
 
   "uncurrentify" should "be None when not all actions are completed" in {
     assert(Execution(Nil).uncurrentify.isEmpty)
+  }
+
+  "uncurrentify2" should "be None when not all actions are completed" in {
     assert(curr.uncurrentify.isEmpty)
   }
 

@@ -28,5 +28,3 @@ object Width {
 
   implicit val equal: Equal[Width] = Equal.equalA[Width]
 }
-
-trait SemanticUIWidth extends Width
