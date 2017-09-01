@@ -42,6 +42,9 @@ final class Epoch private (val scheme: Epoch.Scheme, private val toMilliyears: I
   def untilEpochYear(epochYear: Double): Double =
     epochYear - this.epochYear
 
+  def plusYears(y: Double): Epoch =
+    scheme.fromEpochYears(epochYear + y)
+
   /** Canonical representation, like `J2017.456`. Exact, invertable via `fromString`. */
   def format: String =
     f"${scheme.prefix}%s${toMilliyears / 1000}%d.${toMilliyears % 1000}%03d"

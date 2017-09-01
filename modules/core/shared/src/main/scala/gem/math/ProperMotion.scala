@@ -25,25 +25,32 @@ final case class ProperMotion(
   baseCoordinates: Coordinates,
   epoch:           Epoch,
   properVelocity:  Option[Offset],
-  radialVelocity:  Option[Double], // for now
+  radialVelocity:  Option[RadialVelocity],
   parallax:        Option[Angle]
 ) {
 
   /** Coordinates `elapsedYears` fractional epoch-years after `epoch`. */
-  def plusYears(elapsedYears: Double): Coordinates =
-    ProperMotion.properMotion(
-      baseCoordinates,
-      epoch,
-      properVelocity.orEmpty,
-      radialVelocity.orEmpty,
-      parallax.orEmpty,
-      dt
+  def plusYears(elapsedYears: Double): ProperMotion =
+    ProperMotion(
+      ProperMotion.properMotion(
+        baseCoordinates,
+        epoch,
+        properVelocity.orEmpty,
+        radialVelocity.getOrElse(RadialVelocity.Zero).toKilometersPerSecond,
+        parallax.orEmpty,
+        elapsedYears
+      ),
+      epoch.plusYears(elapsedYears),
+      properVelocity,
+      radialVelocity,
+      parallax
     )
 
 }
 
 
 object ProperMotion {
+  import PhysicalConstants.{ AstronomicalUnit, TwoPi }
 
   /**
    * Proper motion correction in model units.
@@ -76,9 +83,8 @@ object ProperMotion {
 
   // Some constants we need
   private val secsPerDay  = 86400.0
-  private val auPerKm     = 1.0 / 149597870.0
+  private val auPerKm     = 1000.0 / AstronomicalUnit.toDouble
   private val radsPerAsec = Angle.fromArcseconds(1).toDoubleRadians
-  private val twoPi       = 6.283185307179586476925286766559
 
   // We need to do things with little vectors of doubles
   private type Vec2 = (Double, Double)
@@ -147,8 +153,8 @@ object ProperMotion {
     val decʹ = if (z === 0.0) 0.0 else atan2(z, r)
     val raʹʹ = {
       // Normalize to [0 .. 2π)
-      val rem = raʹ % twoPi
-      if (rem < 0.0) rem + twoPi else rem
+      val rem = raʹ % TwoPi
+      if (rem < 0.0) rem + TwoPi else rem
     }
     (raʹʹ, decʹ)
 
@@ -168,13 +174,13 @@ object ProperMotionExample {
         Offset.P(Angle.fromMicroarcseconds( -798580L)),
         Offset.Q(Angle.fromMicroarcseconds(10328120L))
       )),
-      Some(-110.6), // km/s
+      Some(RadialVelocity.fromKilometersPerSecond(-110.6)),
       Some(Angle.fromMicroarcseconds(545620L))
     )
 
   def main(args: Array[String]): Unit = {
     (0.0 to 10.0 by 1.0) foreach { y =>
-      val cs = Barnard.plusYears(y)
+      val cs = Barnard.plusYears(y).baseCoordinates
       println(s"${2000 + y} -> $cs")
     }
   }
