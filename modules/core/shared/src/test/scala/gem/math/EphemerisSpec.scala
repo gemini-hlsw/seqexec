@@ -3,11 +3,12 @@
 
 package gem.math
 
-import cats.tests.CatsSuite
+import gem.arb._
+import gem.util.InstantMicros
+
 import cats.Eq
 import cats.kernel.laws._
-import gem.arb._
-import java.time.Instant
+import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisSpec extends CatsSuite {
@@ -33,7 +34,7 @@ final class EphemerisSpec extends CatsSuite {
   }
 
   test("Ephemeris.get.interpolated") {
-    forAll { (t1: Instant, c1: Coordinates, c2: Coordinates, n: Int) =>
+    forAll { (t1: InstantMicros, c1: Coordinates, c2: Coordinates, n: Int) =>
       val offset = (n % 100).abs
       val (t2, t3) = (t1.plusSeconds(offset.toLong), t1.plusSeconds(100))
       val e = Ephemeris(t1 -> c1, t3 -> c2)

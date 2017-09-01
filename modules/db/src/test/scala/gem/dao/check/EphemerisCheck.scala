@@ -4,12 +4,13 @@
 package gem.dao
 package check
 
-import java.time.Instant
+import gem.util.InstantMicros
 
 class EphemerisCheck extends Check {
   import EphemerisDao.Statements._
   "EphemerisDao.Statements" should
-            "insert"        in check(insert)
-  it should "select"        in check(select(Dummy.ephemerisKey))
-  it should "selectBetween" in check(selectBetween(Dummy.ephemerisKey, Instant.now, Instant.now))
+            "insert"      in check(insert)
+  it should "delete"      in check(delete(Dummy.ephemerisKey))
+  it should "select"      in check(select(Dummy.ephemerisKey))
+  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, InstantMicros.now(), InstantMicros.now()))
 }
