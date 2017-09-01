@@ -360,23 +360,30 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       case SequenceView(_, metadata, _, _, _) => value.site.instruments.list.toList.contains(metadata.instrument)
     })
 
-  // scalastyle:off
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+  val logMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(l: ServerLogMessage) =>
       effectOnly(Effect(Future(AppendToLog(l))))
+  }
 
+  val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(user = u))
+  }
 
+  val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
       val rememberCompleted = Effect(Future(sv.queue.find(_.status == SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
+  }
 
+  val observerUpdatedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: ObserverUpdated) =>
       updated(value.copy(sequences = filterSequences(s.view)))
+  }
 
+  val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceLoaded(id, view)) =>
       val observer = value.user.map(_.displayName)
       val newSequence = view.queue.find(_.id === id)
@@ -389,10 +396,13 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
           }
         }.getOrElse(VoidEffect)
       updated(value.copy(sequences = filterSequences(view), firstLoad = false), updateObserverE)
-
+  }
+  val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceUnloaded(id, view)) =>
       updated(value.copy(sequences = filterSequences(view), firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
+  }
 
+  val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
       val observer = value.user.map(_.displayName)
@@ -402,7 +412,6 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
            case _        => none
         }
       }).join
-
       val (sequencesWithObserver, effects) =
         filterSequences(s.view).queue.foldLeft(
           (List.empty[SequenceView],
@@ -420,12 +429,22 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
           }
       val newValue = value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false)
       effects.collect { case Some(x) => x }.reduceOption(_ + _).fold(updated(newValue))(eff => updated(newValue, eff))
+  }
 
+  val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(_) =>
       // Ignore unknown events
       noChange
   }
-  // scalastyle:on
+
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    logMessage.orElse(connectionOpenMessage)
+      .orElse(sequenceCompletedMessage)
+      .orElse(observerUpdatedMessage)
+      .orElse(sequenceLoadedMessage)
+      .orElse(sequenceUnloadedMessage)
+      .orElse(modelUpdateMessage)
+      .orElse(defaultMessage)
 }
 
 /**
