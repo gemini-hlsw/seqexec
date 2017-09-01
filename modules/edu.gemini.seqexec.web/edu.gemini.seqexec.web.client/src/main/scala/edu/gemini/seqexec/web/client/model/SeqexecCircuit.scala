@@ -87,6 +87,7 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
 /**
   * Handles sequence execution actions
   */
+// scalastyle:off
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
@@ -141,6 +142,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
       }), breakpointRequest)
   }
 }
+// scalastyle:on
 
 /**
   * Handles actions related to opening/closing the login box

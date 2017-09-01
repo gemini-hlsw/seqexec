@@ -302,8 +302,6 @@ object StepsTableContainer {
     }
   }
 
-  def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s.id))}
-
   def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
