@@ -118,7 +118,7 @@ object StepsTableContainer {
       }.toTagMod
     }
 
-    def controlButtons(loggedIn: Boolean, instrument: Instrument, step: Step): VdomNode =
+    def controlButtons(loggedIn: Boolean, status: SequenceState, instrument: Instrument, step: Step): VdomNode =
       <.div(
         ^.cls := "ui two column grid stackable",
         <.div(
@@ -137,7 +137,7 @@ object StepsTableContainer {
               ^.cls := "ui icon buttons",
               observationControlButtons(step, instrument)
             )
-          ).when(loggedIn)
+          ).when(loggedIn && status === SequenceState.Running)
         )
       )
 
@@ -156,7 +156,7 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, step: Step): VdomNode =
       step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p.instrument, step)
+        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p.state, p.instrument, step)
         case StepState.Completed                  => <.p(step.status.shows)
         case StepState.Error(msg)                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine

@@ -449,16 +449,16 @@ final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, an
 
 // All these classes are focused views of the root model. They are used to only update small sections of the
 // UI even if other parts of the root model change
-final case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
-final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
-final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
-final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
-final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
-final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
-final case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
-final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
+case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
+case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
+case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
+case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
+case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
+case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
+case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
+case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
+case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
+case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
 
 /**
   * Contains the model for Diode
@@ -519,7 +519,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     statusReader.zip(instrumentTab(i)).zoom {
       case (status, (tab, _)) =>
         (status, tab.sequence.map { sequence =>
-          StepsTableFocus(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
+          StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
         })
     }
 
