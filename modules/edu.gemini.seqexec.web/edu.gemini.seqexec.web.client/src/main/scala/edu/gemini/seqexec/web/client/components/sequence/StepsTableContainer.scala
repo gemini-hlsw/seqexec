@@ -20,6 +20,7 @@ import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.ScalazReact._
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
@@ -27,6 +28,49 @@ import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 import scalaz.std.AllInstances._
 import org.scalajs.dom.html.Div
+
+
+object StepsControlButtons {
+  final case class Props(id: SequenceId, instrument: Instrument, step: Step)
+  final case class State(stopRequested: Boolean)
+
+  private val ST = ReactS.Fix[State]
+
+  def requestStop(id: SequenceId, stepId: Int): Callback =
+    Callback(SeqexecCircuit.dispatch(RequestStop(id, stepId)))
+
+  def requestAbort(id: SequenceId, stepId: Int): Callback =
+    Callback(SeqexecCircuit.dispatch(RequestAbort(id, stepId)))
+
+  private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
+    .initialState(State(false))
+    .renderP { ($, p) =>
+      <.div(
+        ^.cls := "ui icon buttons",
+        instrumentOperations(p.instrument).observationOperations.map {
+          case PauseObservation            =>
+            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
+          case StopObservation             =>
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = requestStop(p.id, p.step.id)))
+          case AbortObservation            =>
+            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = requestAbort(p.id, p.step.id)))
+          case ResumeObservation           =>
+            Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
+          // Hamamatsu operations
+          case PauseImmediatelyObservation =>
+            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
+          case PauseGracefullyObservation  =>
+            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true, dataTooltip = Some(s"Pause the current exposure gracefully $ST")))
+          case StopImmediatelyObservation  =>
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
+          case StopGracefullyObservation   =>
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
+        }.toTagMod
+      )
+    }.build
+
+  def apply(id: SequenceId, instrument: Instrument, step: Step): Unmounted[Props, State, Unit] = component(Props(id, instrument, step))
+}
 
 /**
   * Container for a table with the steps
@@ -90,35 +134,7 @@ object StepsTableContainer {
       }
 
 
-    def requestStop(step: Step): Callback =
-      $.props >>= {p => p.steps.map(s => p.stepsTable.dispatchCB(RequestStop(s.id, step.id))).getOrEmpty}
-
-    def requestAbort(step: Step): Callback =
-      $.props >>= {p => p.steps.map(s => p.stepsTable.dispatchCB(RequestAbort(s.id, step.id))).getOrEmpty}
-
-    def observationControlButtons(step: Step, instrument: Instrument): TagMod = {
-      instrumentOperations(instrument).observationOperations.map {
-        case PauseObservation            =>
-          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
-        case StopObservation             =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = requestStop(step)))
-        case AbortObservation            =>
-          Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = requestAbort(step)))
-        case ResumeObservation           =>
-          Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
-        // Hamamatsu operations
-        case PauseImmediatelyObservation =>
-          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
-        case PauseGracefullyObservation  =>
-          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true, dataTooltip = Some("Pause the current exposure gracefully")))
-        case StopImmediatelyObservation  =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
-        case StopGracefullyObservation   =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
-      }.toTagMod
-    }
-
-    def controlButtons(loggedIn: Boolean, status: SequenceState, instrument: Instrument, step: Step): VdomNode =
+    def controlButtons(loggedIn: Boolean, p: StepsTableFocus, step: Step): VdomNode =
       <.div(
         ^.cls := "ui two column grid stackable",
         <.div(
@@ -133,11 +149,8 @@ object StepsTableContainer {
           <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
-            <.div(
-              ^.cls := "ui icon buttons",
-              observationControlButtons(step, instrument)
-            )
-          ).when(loggedIn && status === SequenceState.Running)
+            StepsControlButtons(p.id, p.instrument, step)
+          ).when(loggedIn && p.state === SequenceState.Running)
         )
       )
 
@@ -156,7 +169,7 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, step: Step): VdomNode =
       step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p.state, p.instrument, step)
+        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p, step)
         case StepState.Completed                  => <.p(step.status.shows)
         case StepState.Error(msg)                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
