@@ -58,18 +58,19 @@ object operations {
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
-  def instrumentOperations(a: Instrument): SupportedOperations = a match {
-    case F2    => F2SupportedOperations
-    case GmosS => GmosSupportedOperations
-    case GmosN => GmosSupportedOperations
-    case _     => NilSupportedOperations
+  private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
+    (F2    -> F2SupportedOperations),
+    (GmosS -> GmosSupportedOperations),
+    (GmosN -> GmosSupportedOperations)
+  )
+
+  final class SupportedOperationsOps(val i: Instrument) extends AnyVal {
+    def observationOperations: List[ObservationOperations] =
+      instrumentOperations.getOrElse(i, NilSupportedOperations).observationOperations
+    def sequenceOperations: List[SequenceOperations] =
+      instrumentOperations.getOrElse(i, NilSupportedOperations).sequenceOperations
   }
 
-  final class SupportedOperationsOps(val self: SupportedOperations) extends AnyVal {
-    def observationOperations: List[ObservationOperations] = self.observationOperations
-    def sequenceOperations: List[SequenceOperations] = self.sequenceOperations
-  }
-
-  implicit def operationsSyntax(a: SupportedOperations): SupportedOperationsOps =
-    new SupportedOperationsOps(a)
+  implicit def operationsSyntax(i: Instrument): SupportedOperationsOps =
+    new SupportedOperationsOps(i)
 }

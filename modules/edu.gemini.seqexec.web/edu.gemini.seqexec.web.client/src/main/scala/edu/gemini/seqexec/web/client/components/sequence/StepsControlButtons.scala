@@ -41,7 +41,7 @@ object StepsControlButtons {
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui icon buttons",
-        instrumentOperations(p.instrument).observationOperations.map {
+        p.instrument.observationOperations.map {
           case PauseObservation            =>
             Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
           case StopObservation             =>
