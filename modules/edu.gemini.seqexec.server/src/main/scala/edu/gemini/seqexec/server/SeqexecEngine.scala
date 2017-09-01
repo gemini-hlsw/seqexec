@@ -273,6 +273,23 @@ object SeqexecEngine {
                       odbQueuePollingInterval: Duration)
   def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
 
+  val defaultSettings: Settings = Settings(Site.GS,
+    "localhost",
+    LocalDate.of(2017, 1, 1),
+    "http://localhost/",
+    dhsSim = true,
+    tcsSim = true,
+    instSim = true,
+    gcalSim = true,
+    odbNotifications = false,
+    tcsKeywords = false,
+    f2Keywords = false,
+    gmosKeywords = false,
+    gwsKeywords = false,
+    gcalKeywords = false,
+    instForceError = false,
+    10.seconds)
+
   private def decodeTops(s: String): Map[String, String] =
     s.split("=|,").grouped(2).collect {
       case Array(k, v) => k.trim -> v.trim

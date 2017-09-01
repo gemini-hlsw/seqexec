@@ -42,7 +42,7 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
         s <- Gen.nonEmptyListOf(arbitrary[SequenceTab])
         if s.exists(_.sequence.isDefined)
       } yield {
-        val sequences = NonEmptyList(s.head, s.tail: _*)
+        val sequences = NonEmptyList(s.headOption.getOrElse(SequenceTab.empty), s.drop(1): _*)
         SequencesOnDisplay(sequences.toZipper)
       }
     }

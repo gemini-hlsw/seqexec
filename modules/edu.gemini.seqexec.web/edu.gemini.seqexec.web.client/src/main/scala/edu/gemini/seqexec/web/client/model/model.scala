@@ -118,7 +118,7 @@ final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           firstLoad: Boolean)
 
 object SeqexecUIModel {
-  private val noSequencesLoaded = SequencesQueue[SequenceView](Conditions.default, None, Nil)
+  val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
   val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
     SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
 }

@@ -23,10 +23,11 @@ import scalaz.\/-
 /**
   * Created by jluhrs on 9/29/16.
   */
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
 
-  val seqId ="TEST-01"
-  val user = UserDetails("telops", "Telops")
+  private val seqId ="TEST-01"
+  private val user = UserDetails("telops", "Telops")
 
   /**
     * Emulates TCS configuration in the real world.
@@ -72,10 +73,10 @@ class StepSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Engine.State = {
+  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
     process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.get._2
+    ).runLast.unsafePerformSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State): List[Engine.State] = {
@@ -125,17 +126,16 @@ class StepSpec extends FlatSpec {
 
     val qs1 = (q.enqueueOne(start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
           a => !isFinished(a._2.sequences(seqId).status)
-        ).runLast)).unsafePerformSync.get._2
+        ).runLast)).unsafePerformSync.map(_._2)
 
 
-     inside (qs1.sequences(seqId)) {
-      case Sequence.State.Zipper(zipper, status) =>
-        status should be (SequenceState.Idle)
+     inside (qs1.map(_.sequences(seqId))) {
+      case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
-
         }
+        status should be (SequenceState.Idle)
     }
 
   }
@@ -172,15 +172,15 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = process(Process.eval(Task.now(start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.get._2
+    val qs1 = process(Process.eval(Task.now(start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
-    inside (qs1.sequences.get(seqId).get) {
-      case Sequence.State.Zipper(zipper, status) =>
-        status should be (Running)
+    inside (qs1.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
+        status should be (Running)
     }
 
   }
@@ -244,25 +244,25 @@ class StepSpec extends FlatSpec {
 
     val qss = runToCompletionL(qs0)
 
-    inside (qss.tail.head.sequences.get(seqId).get) {
-      case Sequence.State.Zipper(zipper, status) =>
-        status shouldBe SequenceState.Running
-        inside (zipper.focus.focus.execution.head) {
-          case \/-(Result.Partial(v, _)) => v shouldEqual PartialValDouble(0.5)
+    inside (qss.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(zipper, status)) =>
+        inside (zipper.focus.focus.execution.headOption) {
+          case Some(\/-(Result.Partial(v, _))) => v shouldEqual PartialValDouble(0.5)
         }
+        status shouldBe SequenceState.Running
     }
-    inside (qss.last.sequences.get(seqId).get) {
-      case Sequence.State.Final(seq, status) =>
+    inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Final(seq, status)) =>
+        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)) shouldEqual Some(Result.OK(RetValDouble(1.0)))
         status shouldBe SequenceState.Completed
-        seq.steps.head.executions.head.head shouldEqual Result.OK(RetValDouble(1.0))
     }
 
   }
 
-  val result = Result.OK(Result.Observed("dummyId"))
-  val failure = Result.Error("Dummy error")
-  val action: Action = fromTask(Task(result))
-  val config: StepConfig = Map.empty
+  private val result = Result.OK(Result.Observed("dummyId"))
+  private val failure = Result.Error("Dummy error")
+  private val action: Action = fromTask(Task(result))
+  private val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) = (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {
       case Nil => (Execution.empty, Nil)

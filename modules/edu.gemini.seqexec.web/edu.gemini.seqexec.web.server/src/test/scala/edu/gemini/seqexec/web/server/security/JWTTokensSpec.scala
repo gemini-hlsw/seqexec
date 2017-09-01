@@ -11,9 +11,9 @@ import squants.time.Hours
 import scalaz.\/-
 
 class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
-  val ldapConfig = LDAPConfig(Nil)
-  val config = AuthenticationConfig(devMode = true, Hours(8), "token", "key", useSSL = false, ldapConfig)
-  val authService = AuthenticationService(config)
+  private val ldapConfig = LDAPConfig(Nil)
+  private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "key", useSSL = false, ldapConfig)
+  private val authService = AuthenticationService(config)
 
   "JWT Tokens" should "encode/decode" in {
     forAll { (u: String, p: String) =>

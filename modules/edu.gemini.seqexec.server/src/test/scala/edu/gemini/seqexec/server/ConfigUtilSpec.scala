@@ -39,6 +39,7 @@ object ConfigArbitraries {
     }
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with PropertyChecks {
   import ConfigUtilOps._
   import ConfigArbitraries._
