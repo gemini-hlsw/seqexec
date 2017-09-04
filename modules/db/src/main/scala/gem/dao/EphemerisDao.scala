@@ -15,29 +15,15 @@ import fs2.Stream
 
 object EphemerisDao {
 
-  // TODO: move to HMS?
-  private def formatRa(c: Coordinates): String = {
-    val hms = c.ra.toHourAngle.toHMS
-    f"${hms.hours}%02d:${hms.minutes}%02d:${hms.seconds}%02d.${hms.milliseconds}%03d${hms.microseconds}%03d"
-  }
-
-  // TODO: move to DMS?
-  private def formatDec(c: Coordinates): String = {
-    val a         = c.dec.toAngle
-    val (sgn, aʹ) = if (a.toSignedMicroarcseconds >= 0) ("+", a) else ("-", -a)
-    val dms       = aʹ.toDMS
-    f"$sgn${dms.degrees}%02d:${dms.arcminutes}%02d:${dms.arcseconds}%02d.${dms.milliarcseconds}%03d${dms.microarcseconds}%03d"
-  }
-
   def insert(k: EphemerisKey, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(
-      e.toMap.toList.map { case (i, c) => (k, i, c, formatRa(c), formatDec(c)) }
+      e.toMap.toList.map { case (i, c) => (k, i, c, c.ra.format, c.dec.format) }
     )
 
   def streamInsert[M[_]: Monad](k: EphemerisKey, s: Stream[M, Ephemeris.Element], xa: Transactor[M]): Stream[M, Int] =
     Stream.constant(k)                                                  // Stream[Pure, EphemerisKey]
       .zip(s)                                                           // Stream[M, (EphemerisKey, Ephemeris.Element)]
-      .map { case (k, (i, c)) => (k, i, c, formatRa(c), formatDec(c)) } // Stream[M, EphemerisRow]
+      .map { case (k, (i, c)) => (k, i, c, c.ra.format, c.dec.format) } // Stream[M, EphemerisRow]
       .segmentN(4096)                                                   // Stream[M, Segment[EphemerisRow, Unit]]
       .flatMap { rows =>
         Stream.eval(Statements.insert.updateMany(rows.toVector).transact(xa))

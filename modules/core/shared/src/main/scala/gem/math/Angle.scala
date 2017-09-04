@@ -212,7 +212,7 @@ object Angle {
       milliarcseconds: Int,
       microarcseconds: Int
     ) = Angle.toMicrosexigesimal(toAngle.toMicroarcseconds)
-    def format: String = f"$degrees° $arcminutes%02d′ $arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d″"
+    def format: String = f"$degrees%02d:$arcminutes%02d:$arcseconds%02d.$milliarcseconds%03d$microarcseconds%03d"
     override final def toString = s"DMS($format)"
   }
 
@@ -377,7 +377,7 @@ object HourAngle {
       milliseconds: Int,
       microseconds: Int
     ) = Angle.toMicrosexigesimal(toHourAngle.toMicroseconds)
-    def format: String = f"${hours}h $minutes%02dm $seconds%02d.$milliseconds%03d$microseconds%03ds"
+    def format: String = f"$hours%02d:$minutes%02d:$seconds%02d.$milliseconds%03d$microseconds%03d"
     override final def toString = format
   }
 
