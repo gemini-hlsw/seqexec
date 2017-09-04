@@ -62,6 +62,10 @@ object EphemerisDao {
   def streamRange(k: EphemerisKey, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.selectRange(k, start, end).stream
 
+  /** Create the next UserSupplied ephemeris key value. */
+  val nextUserSuppliedKey: ConnectionIO[EphemerisKey.UserSupplied] =
+    Statements.selectNextUserSuppliedKey.unique
+
   object Statements {
 
     // Describe how to turn an EphemerisKey into a (EphemerisKeyType, String)
@@ -117,6 +121,11 @@ object EphemerisDao {
     def selectRange(k: EphemerisKey, s: InstantMicros, e: InstantMicros): Query0[Ephemeris.Element] =
       (selectFragment(k) ++ fr"""AND timestamp >= $s AND timestamp < $e""")
         .query[Ephemeris.Element]
+
+    val selectNextUserSuppliedKey: Query0[EphemerisKey.UserSupplied] =
+      sql"""
+        SELECT nextval('user_ephemeris_id')
+      """.query[Long].map(id => EphemerisKey.UserSupplied(id.toInt))
 
   }
 }

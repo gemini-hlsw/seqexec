@@ -77,4 +77,23 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       e1 shouldEqual execTest(m + (k -> e0), p)
     }
   }
+
+  property("EphemerisDao should generate UserSupplied ephemeris keys") {
+
+    // Select a handful of ids and make sure they are unique.
+    //
+    // NOTE: even though we abort the transaction and rollback, this doesn't
+    // reset the sequence id counter because SEQUENCE is "non-transactional".
+    // A flywayClean followed by flywayMigrate will reset the sequence of
+    // course, or an explicit SELECT setval('user_ephemeris_id', 0, false).
+
+    val ids: List[EphemerisKey.UserSupplied] =
+      (1 to 10)
+        .toList
+        .traverse(_ => EphemerisDao.nextUserSuppliedKey)
+        .transact(xa)
+        .unsafeRunSync
+
+    ids.distinct shouldEqual ids
+  }
 }

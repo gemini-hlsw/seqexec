@@ -11,7 +11,7 @@ import org.scalacheck.Arbitrary._
 
 trait ArbEphemerisKey {
   private def genStringDes[A](f: String => A): Gen[A] =
-    arbitrary[String].map(s => f(s.take(10)))
+    Gen.alphaNumStr.map(s => f(s.take(10)))
 
   private def genIntDes[A](f: Int => A): Gen[A] =
     arbitrary[Int].map(f)

@@ -2,6 +2,10 @@
 --
 -- Ephemeris
 --
+-- RA and dec are represented in both numeric (µs, µas respectively) and
+-- formatted string representation.  Internally we use the numeric value,
+-- but the string representation is provided as well for human consumption.
+--
 
 CREATE TABLE ephemeris (
     key_type   identifier REFERENCES e_ephemeris_type ON DELETE CASCADE,
@@ -23,6 +27,11 @@ COMMENT ON COLUMN ephemeris.ra_str  IS 'HH:MM:SS.µµµµµµ';
 COMMENT ON COLUMN ephemeris.dec_str IS '[+-]DD:MM:SS.µµµµµµ';
 
 CREATE INDEX ephemeris_index ON ephemeris (key_type, key, timestamp);
+
+--
+-- Sequence for UserSupplied keys.  Here we set the max value to Int.MaxValue
+-- so that we can store the resulting value in an Int.
+--
 
 CREATE SEQUENCE user_ephemeris_id
     MINVALUE 0
