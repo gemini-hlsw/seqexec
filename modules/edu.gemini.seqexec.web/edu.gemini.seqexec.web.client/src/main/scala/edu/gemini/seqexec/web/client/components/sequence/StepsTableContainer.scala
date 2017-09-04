@@ -5,20 +5,18 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
-import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.Model.ObservationOperations._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
-import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
@@ -88,29 +86,8 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-    def observationControlButtons(step: Step): TagMod = {
-      step.allowedObservationOperations.map {
-        case PauseObservation            =>
-          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
-        case StopObservation             =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early")))
-        case AbortObservation            =>
-          Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure")))
-        case ResumeObservation           =>
-          Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
-        // Hamamatsu operations
-        case PauseImmediatelyObservation =>
-          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
-        case PauseGracefullyObservation  =>
-          Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true, dataTooltip = Some("Pause the current exposure gracefully")))
-        case StopImmediatelyObservation  =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
-        case StopGracefullyObservation   =>
-          Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
-      }.toTagMod
-    }
 
-    def controlButtons(loggedIn: Boolean, step: Step): VdomNode =
+    def controlButtons(loggedIn: Boolean, p: StepsTableFocus, step: Step): VdomNode =
       <.div(
         ^.cls := "ui two column grid stackable",
         <.div(
@@ -125,11 +102,8 @@ object StepsTableContainer {
           <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
-            <.div(
-              ^.cls := "ui icon buttons",
-              observationControlButtons(step)
-            )
-          ).when(loggedIn)
+            StepsControlButtons(p.id, p.instrument, step)
+          ).when(loggedIn && p.state === SequenceState.Running)
         )
       )
 
@@ -148,7 +122,7 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, step: Step): VdomNode =
       step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, step)
+        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p, step)
         case StepState.Completed                  => <.p(step.status.shows)
         case StepState.Error(msg)                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
@@ -293,8 +267,6 @@ object StepsTableContainer {
       )
     }
   }
-
-  def requestPause(s: SequenceView): Callback = Callback {SeqexecCircuit.dispatch(RequestPause(s.id))}
 
   def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
 

@@ -87,6 +87,7 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
 /**
   * Handles sequence execution actions
   */
+// scalastyle:off
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
@@ -96,7 +97,13 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
       effectOnly(Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
 
     case RequestPause(s) =>
-      effectOnly(Effect(SeqexecWebClient.stop(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))
+      effectOnly(Effect(SeqexecWebClient.pause(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))
+
+    case RequestStop(id, step) =>
+      effectOnly(Effect(SeqexecWebClient.stop(id, step).map(r => if (r.error) RunStopFailed(id) else RunStop(id))))
+
+    case RequestAbort(id, step) =>
+      effectOnly(Effect(SeqexecWebClient.abort(id, step).map(r => if (r.error) RunAbortFailed(id) else RunAbort(id))))
 
     // We could react to these events but we rather wait for the command from the event queue
     case RunStarted(_) =>
@@ -135,6 +142,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
       }), breakpointRequest)
   }
 }
+// scalastyle:on
 
 /**
   * Handles actions related to opening/closing the login box
@@ -450,7 +458,7 @@ final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions
 final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
 final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
 final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
-final case class StepsTableFocus(id: SequenceId, instrument: Instrument, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
+final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
 final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
 final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
 
@@ -513,7 +521,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     statusReader.zip(instrumentTab(i)).zoom {
       case (status, (tab, _)) =>
         (status, tab.sequence.map { sequence =>
-          StepsTableFocus(sequence.id, i, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
+          StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
         })
     }
 

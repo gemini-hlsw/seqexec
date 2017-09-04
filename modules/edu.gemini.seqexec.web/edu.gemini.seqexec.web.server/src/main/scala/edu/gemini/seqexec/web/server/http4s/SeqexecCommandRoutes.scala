@@ -64,6 +64,14 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
 
       } yield resp
 
+    case POST -> Root / obsId / stepId / "stop" as _ =>
+      // TODO call stop on the engine
+      Ok(s"Stop requested for $obsId on step $stepId")
+
+    case POST -> Root / obsId / stepId / "abort" as _ =>
+      // TODO call abort on the engine
+      Ok(s"Abort requested for $obsId on step $stepId")
+
     case POST -> Root / "operator" / name as user =>
       se.setOperator(inputQueue, user, name) *> Ok(s"Set operator name to '$name'")
 

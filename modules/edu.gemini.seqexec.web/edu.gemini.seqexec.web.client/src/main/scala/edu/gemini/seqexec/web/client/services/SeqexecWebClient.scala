@@ -66,6 +66,26 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
+    * Requests the backend to stop immediately this sequence
+    */
+  def stop(sid: SequenceId, step: Int): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/$sid/$step/stop",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
+    * Requests the backend to abort this sequenece
+    */
+  def abort(sid: SequenceId, step: Int): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/$sid/$step/abort",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Requests the backend to set the operator name of a sequence
     */
   def setOperator(name: String): Future[RegularCommand] = {
@@ -151,9 +171,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
-    * Requests the backend to stop a sequence
+    * Requests the backend to pause a sequence
     */
-  def stop(id: SequenceId): Future[RegularCommand] = {
+  def pause(id: SequenceId): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$id/pause",
       responseType = "arraybuffer"
