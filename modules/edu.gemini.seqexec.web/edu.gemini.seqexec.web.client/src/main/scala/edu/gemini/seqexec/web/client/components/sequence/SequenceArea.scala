@@ -55,28 +55,27 @@ object SequenceStepsTableContainer {
 */
 object SequenceTabContent {
 
-  final case class Props(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]) {
+  final case class Props(site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]) {
     protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val InstrumentStatusFocus(instrument, active, id, _) = p.p()
+      val InstrumentTabContentFocus(instrument, active, sequenceSelected) = p.p()
       <.div(
         ^.cls := "ui bottom attached tab segment",
         ^.classSet(
           "active" -> active
         ),
         dataTab := instrument.shows,
-        id.fold(IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): VdomElement) { _ =>
-          p.connect(st => SequenceStepsTableContainer(p.site, st): VdomElement)
-        }
+        IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
+        p.connect(st => SequenceStepsTableContainer(p.site, st)).when(sequenceSelected)
       )
     }
     .build
 
-    def apply(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]): Unmounted[Props, Unit, Unit] = component(Props(site, p))
+    def apply(site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]): Unmounted[Props, Unit, Unit] = component(Props(site, p))
 }
 
 /**
@@ -84,7 +83,7 @@ object SequenceTabContent {
  */
 object SequenceTabsBody {
   final case class Props(site: SeqexecSite) {
-    protected[sequence] val instrumentConnects = site.instruments.list.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
+    protected[sequence] val instrumentConnects = site.instruments.list.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")

@@ -32,6 +32,7 @@ final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrume
 final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
 final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
 final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
+final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean) extends UseValueEq
 final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
 final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
 final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
@@ -79,6 +80,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
     zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
       case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
+    }
+
+  def instrumentTabContentReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabContentFocus] =
+    zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
+      case (tab, active) => InstrumentTabContentFocus(tab.instrument, active, tab.sequence.isDefined)
     }
 
   private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
