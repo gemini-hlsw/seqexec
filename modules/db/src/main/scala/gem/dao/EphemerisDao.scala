@@ -35,9 +35,21 @@ object EphemerisDao {
   def update(k: EphemerisKey, e: Ephemeris): ConnectionIO[Unit] =
     (delete(k) *> insert(k, e)).void
 
+  /** Selects all ephemeris elements associated with the given key into an
+    * Ephemeris object.
+    */
   def selectAll(k: EphemerisKey): ConnectionIO[Ephemeris] =
     runSelect(Statements.select(k))
 
+  /** Selects all ephemeris elements that fall between start (inclusive) and end
+    * (exclusive) into an Ephemeris object.
+    *
+    * @param k     key to match
+    * @param start start time (inclusive)
+    * @param end   end time (exclusive
+    *
+    * @return Ephemeris object with just the matching elements
+    */
   def selectRange(k: EphemerisKey, start: InstantMicros, end: InstantMicros): ConnectionIO[Ephemeris] =
     runSelect(Statements.selectRange(k, start, end))
 

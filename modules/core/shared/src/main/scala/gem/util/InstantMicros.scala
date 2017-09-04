@@ -36,17 +36,17 @@ final class InstantMicros private (val toInstant: Instant) extends AnyVal {
   /** Creates an updated instance of InstantMicros by applying the given
     * function to its wrapped Instant.
     */
-  def updated(f: Instant => Instant): InstantMicros =
+  def mod(f: Instant => Instant): InstantMicros =
     InstantMicros.truncate(f(toInstant))
 
   def plusMillis(millisToAdd: Long): InstantMicros =
-    updated(_.plusMillis(millisToAdd))
+    mod(_.plusMillis(millisToAdd))
 
   def plusMicros(microsToAdd: Long): InstantMicros =
-    updated(_.plusNanos(microsToAdd * 1000))
+    mod(_.plusNanos(microsToAdd * 1000))
 
   def plusSeconds(secondsToAdd: Long): InstantMicros =
-    updated(_.plusSeconds(secondsToAdd))
+    mod(_.plusSeconds(secondsToAdd))
 
   override def toString: String =
     toInstant.toString
