@@ -39,8 +39,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  private val odbClient = ODBClient(ODBClientConfig(settings.odbHost, ODBClient.DefaultODBBrowserPort))
-
   private val systems = SeqTranslate.Systems(
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
@@ -144,10 +142,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
     val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action \/ Result]])] = for {
       odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
-      progIdString <- EitherT(Task.delay(odbSeq.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
+      progIdString <- EitherT(Task.delay(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
       progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
-      name         <- EitherT(odbClient.observationTitle(progId, seqId.toString).map(_.leftMap(ConfigUtilOps.explainExtractError)))
-    } yield translator.sequence(seqId, odbSeq, name)
+    } yield translator.sequence(seqId, odbSeq.config, odbSeq.title)
 
     t.map {
       case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))

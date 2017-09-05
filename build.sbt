@@ -189,7 +189,7 @@ lazy val edu_gemini_seqexec_server = project
           Knobs,
           OpenCSV,
           Log4s
-      ) ++ SeqexecOdb ++ WDBAClient ++ Http4sClient ++ TestLibs.value
+      ) ++ SeqexecOdb ++ WDBAClient ++ TestLibs.value
   ).settings(
     sources in (Compile,doc) := Seq.empty
   )

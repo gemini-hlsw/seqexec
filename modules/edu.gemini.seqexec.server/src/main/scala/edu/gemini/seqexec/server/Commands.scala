@@ -77,35 +77,35 @@ object Commands {
       for {
         oid <- parseId(obsId)
         seq <- odbProxy.read(oid).leftMap(SeqexecFailureError.apply)
-      } yield CommandResponse(s"$oid sequence has ${seq.size()} steps.")
+      } yield CommandResponse(s"$oid sequence has ${seq.config.size()} steps.")
 
     override def showStatic(obsId: String): CommandResult =
       for {
         oid <- parseId(obsId)
         seq <- odbProxy.read(oid).leftMap(SeqexecFailureError.apply)
-      } yield CommandResponse(s"$oid Static Values", keys(seq, 0, seq.getStaticKeys), Nil)
+      } yield CommandResponse(s"$oid Static Values", keys(seq.config, 0, seq.config.getStaticKeys), Nil)
 
     override def showStatic(obsId: String, system: String): CommandResult =
       for {
         oid <- parseId(obsId)
         seq <- odbProxy.read(oid).leftMap(SeqexecFailureError.apply)
-        ks  = seq.getStaticKeys.filter(sysFilter(system))
-      } yield CommandResponse(s"$oid Static Values ($system only)", keys(seq, 0, ks), Nil)
+        ks  = seq.config.getStaticKeys.filter(sysFilter(system))
+      } yield CommandResponse(s"$oid Static Values ($system only)", keys(seq.config, 0, ks), Nil)
 
     override def showDynamic(obsId: String, step: String): CommandResult =
       for {
         oid <- parseId(obsId)
         seq <- odbProxy.read(oid).leftMap(SeqexecFailureError.apply)
-        s   <- ifStepValid(oid, seq, step)
-      } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(seq, s, seq.getIteratedKeys), Nil)
+        s   <- ifStepValid(oid, seq.config, step)
+      } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1})", keys(seq.config, s, seq.config.getIteratedKeys), Nil)
 
     override def showDynamic(obsId: String, step: String, system: String): CommandResult =
       for {
         oid <- parseId(obsId)
         seq <- odbProxy.read(oid).leftMap(SeqexecFailureError.apply)
-        s   <- ifStepValid(oid, seq, step)
-        ks  = seq.getStaticKeys.filter(sysFilter(system))
-      } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(seq, s, ks), Nil)
+        s   <- ifStepValid(oid, seq.config, step)
+        ks  = seq.config.getStaticKeys.filter(sysFilter(system))
+      } yield CommandResponse(s"$oid Dynamic Values (Step ${s + 1}, $system only)", keys(seq.config, s, ks), Nil)
 
     def seqValue(o: Object): String = o match {
       case s: SequenceableSpType => s.sequenceValue()
