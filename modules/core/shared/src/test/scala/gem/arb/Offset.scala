@@ -14,12 +14,12 @@ trait ArbOffset {
 
   implicit val arbOffsetP: Arbitrary[Offset.P] =
     Arbitrary(
-      Gen.chooseNum(0, 10000).map(mas => Offset.P(Angle.fromMilliarcseconds(mas)))
+      Gen.chooseNum(-10000, 10000).map(mas => Offset.P(Angle.fromMilliarcseconds(mas)))
     )
 
   implicit val arbOffsetQ: Arbitrary[Offset.Q] =
     Arbitrary(
-      Gen.chooseNum(0, 10000).map(mas => Offset.Q(Angle.fromMilliarcseconds(mas)))
+      Gen.chooseNum(-10000, 10000).map(mas => Offset.Q(Angle.fromMilliarcseconds(mas)))
     )
 
   implicit val arbOffset: Arbitrary[Offset] =

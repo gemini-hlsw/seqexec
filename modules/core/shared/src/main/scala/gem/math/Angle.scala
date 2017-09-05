@@ -56,9 +56,17 @@ sealed class Angle protected (val toMicroarcseconds: Long) {
   def toDoubleDegrees: Double =
     toMicroarcseconds.toDouble / (60.0 * 60.0 * 1000.0 * 1000.0)
 
-  /** This angle in decimal radisns. Approximate, non-invertible */
+  /** This angle in signed decimal degrees. Approximate, non-invertible */
+  def toSignedDoubleDegrees: Double =
+    toSignedMicroarcseconds.toDouble / (60.0 * 60.0 * 1000.0 * 1000.0)
+
+  /** This angle in decimal radian, [0 .. 2π) Approximate, non-invertible */
   def toDoubleRadians: Double =
     toDoubleDegrees.toRadians
+
+  /** This angle in signed decimal radians, [-π .. π) Approximate, non-invertible */
+  def toSignedDoubleRadians: Double =
+    toSignedDoubleDegrees.toRadians
 
   /**
    * Convert to the closest hour angle by rounding down to the closest 15 milliarcseconds.

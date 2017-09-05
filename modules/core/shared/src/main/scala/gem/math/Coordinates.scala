@@ -81,6 +81,10 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
     }
   }
 
+  /** These coordinates in radians, [0 .. 2π) and [-π/2 .. π/2]. */
+  def toRadians: (Double, Double) =
+    (ra.toRadians, dec.toRadians)
+
   /**
    * Format these [[Coordinates]] as a standard human-readable string. Invertable via
    * `Coordinates.parse`.
@@ -102,6 +106,12 @@ object Coordinates {
   /** Attempt to parse `Coordinates` from a `format`-formatted string. */
   def parse(s: String): Option[Coordinates] =
     CoordinateParsers.coordinates.parseExact(s)
+
+  def fromRadians(ra: Double, dec: Double): Option[Coordinates] =
+    Declination.fromRadians(dec).map(Coordinates(RA.fromRadians(ra), _))
+
+  def unsafeFromRadians(ra: Double, dec: Double): Coordinates =
+    Coordinates(RA.fromRadians(ra), Declination.unsafeFromRadians(dec))
 
   /** @group Typeclass Instances */
   implicit val CoordinatesEqual: Eq[Coordinates] =

@@ -36,6 +36,10 @@ sealed abstract case class Declination private (toAngle: Angle) {
   def offset(a: Angle): (Declination, Boolean) =
     Declination.fromAngleWithCarry(toAngle + a)
 
+  /** This declination in signed radians in [-π/2 .. π/2] */
+  def toRadians: Double =
+    toAngle.toSignedDoubleRadians
+
   /**
    * Format this [[Declination]] as a standard human-readable string. Invertable via
    * `Declination.parse`.
@@ -83,6 +87,12 @@ object Declination {
    */
   def unsafeFromAngle(a: Angle): Declination =
     fromAngle(a).getOrElse(sys.error(s"Declination out of range: $a"))
+
+  def fromRadians(rad: Double): Option[Declination] =
+    fromAngle(Angle.fromDoubleRadians(rad))
+
+  def unsafeFromRadians(rad: Double): Declination =
+    unsafeFromAngle(Angle.fromDoubleRadians(rad))
 
   /** Attempt to parse a `Declination` from a `format`-formatted string. */
   def parse(s: String): Option[Declination] =

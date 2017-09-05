@@ -7,7 +7,7 @@ import cats.implicits._
 import atto._, Atto._
 import gem.math.Epoch
 
-/** Parser for [[gem.Epoch]]. */
+/** Parser for [[gem.math.Epoch]]. */
 trait EpochParsers {
   import MiscParsers.intN
 
