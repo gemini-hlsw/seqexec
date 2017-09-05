@@ -3,16 +3,18 @@
 
 package gem.math
 
+import gem.util.InstantMicros
+
 import cats.{ Eq, Foldable, Monoid }
 import cats.implicits._
-import java.time.Instant
+
 import scala.collection.immutable.TreeMap
 
 /**
  * Time-parameterized coordinates over a fixed interval, defined pairwise. Coordinates that fall
  * between known instants are interpolated.
  */
-sealed abstract case class Ephemeris private (toMap: TreeMap[Instant, Coordinates]) {
+sealed abstract case class Ephemeris private (toMap: TreeMap[InstantMicros, Coordinates]) {
   import Ephemeris.Element
 
   // N.B. this case class is abstract and has a private ctor because we want to keep construction of
@@ -27,7 +29,7 @@ sealed abstract case class Ephemeris private (toMap: TreeMap[Instant, Coordinate
     toMap.lastOption
 
   /** Coordinates at time `t`, exact if known, interpolated if `bracket(t)` is known. */
-  def get(t: Instant): Option[Coordinates] =
+  def get(t: InstantMicros): Option[Coordinates] =
     toMap.get(t) orElse bracket(t).map { case ((a, ca), (b, cb)) =>
       val (iʹ, aʹ, bʹ) = (t.toEpochMilli, a.toEpochMilli, b.toEpochMilli)
       val factor = (iʹ - aʹ).toDouble / (bʹ - aʹ).toDouble
@@ -38,7 +40,7 @@ sealed abstract case class Ephemeris private (toMap: TreeMap[Instant, Coordinate
    * Greatest lower and least upper bounds of `t`; i.e., the closest elements on either side,
    * inclusive (so if `t` is present then `bracket(t) = (t, t)`).
    */
-  def bracket(t: Instant): Option[(Element, Element)] =
+  def bracket(t: InstantMicros): Option[(Element, Element)] =
     (toMap.to(t).lastOption, toMap.from(t).headOption).tupled
 
   /** The sum of this ephemeris and `e`, taking values from `e` in the case of overlap. */
@@ -49,7 +51,7 @@ sealed abstract case class Ephemeris private (toMap: TreeMap[Instant, Coordinate
 object Ephemeris {
 
   /** An ephemeris element. */
-  type Element = (Instant, Coordinates)
+  type Element = (InstantMicros, Coordinates)
 
   /** The empty ephemeris. */
   val Empty: Ephemeris = apply()

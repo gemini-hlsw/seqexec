@@ -4,11 +4,14 @@
 package gem
 package arb
 
-import java.time._
+import gem.util.InstantMicros
+
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
+
 import scala.collection.JavaConverters._
+import java.time._
 
 // Arbitrary but resonable dates and times.
 trait ArbTime {
@@ -60,8 +63,14 @@ trait ArbTime {
   implicit val arbInstant: Arbitrary[Instant] =
     Arbitrary(arbitrary[ZonedDateTime].map(_.toInstant))
 
+  implicit val arbInstantMicros: Arbitrary[InstantMicros] =
+    Arbitrary(arbitrary[Instant].map(InstantMicros.truncate))
+
   implicit val cogInstant: Cogen[Instant] =
     Cogen[(Long, Int)].contramap(t => (t.getEpochSecond, t.getNano))
+
+  implicit val cogInstantMicros: Cogen[InstantMicros] =
+    Cogen[Instant].contramap(_.toInstant)
 
   implicit val cogYear: Cogen[Year] =
     Cogen[Int].contramap(_.getValue)

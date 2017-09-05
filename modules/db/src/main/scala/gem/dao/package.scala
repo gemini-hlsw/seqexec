@@ -8,8 +8,7 @@ import doobie._, doobie.implicits._
 import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
 import doobie.postgres.implicits._
 import gem.math.{ Angle, Offset, Wavelength }
-import gem.util.{ Enumerated, Location }
-import java.sql.Timestamp
+import gem.util.{ Enumerated, InstantMicros, Location }
 import java.time.{Duration, Instant}
 import java.util.logging.Level
 import scala.reflect.runtime.universe.TypeTag
@@ -114,8 +113,8 @@ package object dao {
   implicit def levelMeta: Meta[Level] =
     Meta[String].xmap(Level.parse, _.getName)
 
-  implicit val InstantMeta: Meta[Instant] =
-    Meta[Timestamp].xmap(_.toInstant, Timestamp.from)
+  implicit val InstantMicrosMeta: Meta[InstantMicros] =
+    Meta[Instant].xmap(InstantMicros.truncate, _.toInstant)
 
   implicit val LocationMeta: Meta[Location.Middle] =
     Meta[List[Int]].xmap(Location.unsafeMiddleFromFoldable(_), _.toList)

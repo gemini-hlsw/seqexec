@@ -34,7 +34,7 @@ sealed trait EphemerisKey extends Product with Serializable {
     }
 
   /** Exports an ephemeris key to a `String` in a format that can be read by the
-    * `gem.parsers.EphemerisKeyParsers` method.
+    * `parse` method.
     */
   def format: String =
     s"${keyType.tag}_$des"
@@ -86,9 +86,9 @@ object EphemerisKey {
   /** Identifies a user-supplied collection of ephemeris data, where the number
     * comes from a database sequence.
     */
-  @Lenses final case class UserSupplied(num: Int) extends EphemerisKey {
+  @Lenses final case class UserSupplied(id: Int) extends EphemerisKey {
     override def des: String =
-      num.toString
+      id.toString
   }
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object UserSupplied
