@@ -6,35 +6,44 @@ package edu.gemini.seqexec.web.client.model
 import java.util.logging.{Level, Logger}
 import java.time.Instant
 
-import diode.data._
-import diode.react.ReactConnector
 import diode.util.RunAfterJS
-import diode._
+import diode.{Action, ModelRW, NoAction, Effect, ActionHandler, ActionResult}
+import diode.data.{Pending, Ready}
+
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
-import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ServerLogMessage, SequenceLoaded, SequenceUnloaded}
-import edu.gemini.seqexec.web.client.model.SeqexecCircuit.SearchResults
-import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
+import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
+import edu.gemini.seqexec.web.client.model.ModelOps._
+
 import org.scalajs.dom._
 import boopickle.Default._
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import scalaz._
 import Scalaz._
 
-class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) {
-  def handle: PartialFunction[Any, ActionResult[M]] = {
+trait Handlers {
+  implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] = new Monoid[PartialFunction[A, B]] {
+    def zero = PartialFunction.empty[A, B]
+    def append(pf1: PartialFunction[A, B], pf2: => PartialFunction[A, B]) = pf1.orElse(pf2)
+  }
+}
+
+class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers {
+  def handleNavigateTo: PartialFunction[Any, ActionResult[M]] = {
     case NavigateTo(page) =>
       updated(page)
+  }
 
+  def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
     case NavigateSilentTo(page) =>
       val effect = page match {
         case InstrumentPage(i, None)     => Effect(Future(SelectInstrumentToDisplay(i)))
@@ -42,7 +51,9 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case _                           => Effect(Future(NoAction: Action))
       }
       updatedSilent(page, effect)
+  }
 
+  def handleSyncToPage: PartialFunction[Any, ActionResult[M]] = {
     case SyncToPage(s) =>
       // the page maybe not in sync with the tabs. Let's fix that
       value match {
@@ -51,16 +62,20 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case _ =>
           noChange
       }
+  }
 
+  def handleSyncToRunning: PartialFunction[Any, ActionResult[M]] = {
     case SyncToRunning(s) =>
       // We'll select the sequence currently running and show the correct url
       value match {
         case Root | InstrumentPage(_, None) =>
-          updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
+            updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
         case InstrumentPage(_, Some(id))    =>
           effectOnly(Effect(Future(SelectIdToDisplay(id))))
       }
+  }
 
+  def handleSyncPageToRemovedSequence: PartialFunction[Any, ActionResult[M]] = {
     case SyncPageToRemovedSequence(id) =>
       // If the id is selected, reset the route
       value match {
@@ -69,7 +84,9 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case _                                          =>
           noChange
       }
+  }
 
+  def handleSyncPageToAddedSequence: PartialFunction[Any, ActionResult[M]] = {
     case SyncPageToAddedSequence(i, id) =>
       // Switch to the sequence in none is selected
       value match {
@@ -78,18 +95,22 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case _                                  =>
           noChange
       }
-
-    case _ =>
-      noChange
   }
+
+  def handle: PartialFunction[Any, ActionResult[M]] =
+    List(handleNavigateTo,
+      handleSilentTo,
+      handleSyncToPage,
+      handleSyncToRunning,
+      handleSyncPageToRemovedSequence,
+      handleSyncPageToAddedSequence).suml
 }
 
 /**
   * Handles sequence execution actions
   */
-// scalastyle:off
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
+  def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
 
@@ -104,7 +125,9 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
 
     case RequestAbort(id, step) =>
       effectOnly(Effect(SeqexecWebClient.abort(id, step).map(r => if (r.error) RunAbortFailed(id) else RunAbort(id))))
+  }
 
+  def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
     // We could react to these events but we rather wait for the command from the event queue
     case RunStarted(_) =>
       noChange
@@ -118,7 +141,9 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
 
     case RunPauseFailed(_) =>
       noChange
+  }
 
+  def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
       val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
       val updatedSequences = value.copy(queue = value.queue.collect {
@@ -127,7 +152,9 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
         case s                  => s
       })
       updated(updatedSequences, updateObserverE)
+  }
 
+  def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
     case FlipSkipStep(sequence, step) =>
       updated(value.copy(queue = value.queue.collect {
         case s if s.id === sequence => s.flipStep(step)
@@ -141,32 +168,42 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends 
         case s                        => s
       }), breakpointRequest)
   }
+
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    List(handleRequestOperation,
+      handleOperationResult,
+      handleUpdateObserver,
+      handleFlipSkipBreakpoint).suml
 }
-// scalastyle:on
 
 /**
   * Handles actions related to opening/closing the login box
   */
-class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
+  def openLoginBox: PartialFunction[Any, ActionResult[M]] = {
     case OpenLoginBox if value == SectionClosed =>
       updated(SectionOpen)
 
     case OpenLoginBox                           =>
       noChange
+  }
 
+  def closeLoginBox: PartialFunction[Any, ActionResult[M]] = {
     case CloseLoginBox if value == SectionOpen  =>
       updated(SectionClosed)
 
     case CloseLoginBox                          =>
       noChange
   }
+
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    openLoginBox |+| closeLoginBox
 }
 
 /**
   * Handles actions related to opening/closing the login box
   */
-class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) {
+class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) with Handlers {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case LoggedIn(u) =>
       // Close the login box
@@ -183,18 +220,22 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences, SeqexecSite)]) extends ActionHandler(modelRW) {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences, SeqexecSite)]) extends ActionHandler(modelRW) with Handlers {
+  def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
     case SelectInstrumentToDisplay(i) =>
       updated(value.copy(_1 = value._1.focusOnInstrument(i)))
 
     case SelectIdToDisplay(id) =>
       val seq = SeqexecCircuit.sequenceRef(id)
       updated(value.copy(_1 = value._1.focusOnSequence(seq)))
+  }
 
+  def handleInitialize: PartialFunction[Any, ActionResult[M]] = {
     case Initialize(site) =>
       updated(value.copy(_1 = value._1.withSite(site), _3 = site))
+  }
 
+  def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
     case ShowStep(s, i) =>
       if (value._1.instrumentSequences.focus.sequence.exists(_.id === s)) {
         updated(value.copy(_1 = value._1.showStep(i)))
@@ -208,17 +249,24 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedS
       } else {
         noChange
       }
+  }
 
+  def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
     case RememberCompleted(s) =>
       updated(value.copy(_1 = value._1.markCompleted(s)))
-
   }
+
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    List(handleSelectSequenceDisplay,
+      handleInitialize,
+      handleShowHideStep,
+      handleRememberCompleted).suml
 }
 
 /**
  * Handles updates to the operator
  */
-class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) {
+class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) with Handlers {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateOperator(name) =>
       val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
@@ -229,35 +277,43 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHa
 /**
  * Handles updates to conditions
  */
-class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) with Handlers {
+  val iqHandle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateImageQuality(iq) =>
       val updateE = Effect(SeqexecWebClient.setImageQuality(iq).map(_ => NoAction))
       val updatedSequences = value.copy(iq = iq)
       updated(updatedSequences, updateE)
+  }
 
+  val ccHandle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateCloudCover(cc) =>
       val updateE = Effect(SeqexecWebClient.setCloudCover(cc).map(_ => NoAction))
       val updatedSequences = value.copy(cc = cc)
       updated(updatedSequences, updateE)
+  }
 
+  val sbHandle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateSkyBackground(sb) =>
       val updateE = Effect(SeqexecWebClient.setSkyBackground(sb).map(_ => NoAction))
       val updatedSequences = value.copy(sb = sb)
       updated(updatedSequences, updateE)
+  }
 
+  val wvHandle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateWaterVapor(wv) =>
       val updateE = Effect(SeqexecWebClient.setWaterVapor(wv).map(_ => NoAction))
       val updatedSequences = value.copy(wv = wv)
       updated(updatedSequences, updateE)
-
   }
+
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    iqHandle |+| ccHandle |+| sbHandle |+| wvHandle
 }
 
 /**
   * Handles updates to the log
   */
-class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) {
+class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) with Handlers {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case AppendToLog(s) =>
       updated(value.copy(log = value.log.append(s)))
@@ -267,8 +323,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles the WebSocket connection and performs reconnection if needed
   */
-class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with ModelBooPicklers {
-  // Import explicitly the custom pickler
+class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers with ModelBooPicklers {
   private implicit val runner = new RunAfterJS
 
   private val logger = Logger.getLogger(this.getClass.getSimpleName)
@@ -322,35 +377,50 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends Acti
     case _: Throwable => NoAction
   }
 
-  // This is essentially a state machine to handle the connection status and
-  // can reconnect if needed
-  override protected def handle = {
+  def connectHandler: PartialFunction[Any, ActionResult[M]] = {
     case WSConnect(d) =>
       effectOnly(Effect(webSocket(d)).after(d.millis))
+  }
 
+  def connectingHandler: PartialFunction[Any, ActionResult[M]] = {
     case Connecting =>
       noChange
+  }
 
+  def connectedHandler: PartialFunction[Any, ActionResult[M]] = {
     case Connected(ws, delay) =>
       // After connected to the Websocket request a refresh
       val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
       updated(WebSocketConnection(Ready(ws), delay), refreshRequest)
+  }
 
+  def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
     case ConnectionError(e) =>
       effectOnly(Effect.action(AppendToLog(ServerLogMessage(ServerLogLevel.ERROR, Instant.now, "Error connecting to the seqexec server"))))
+  }
 
+  def connectionClosedHandler: PartialFunction[Any, ActionResult[M]] = {
     case ConnectionClosed(_) =>
       val next = math.min(60000, math.max(250, value.nextAttempt * 2))
       logger.fine(s"Retry connecting in $next")
       val effect = Effect(Future(WSConnect(next)))
       updated(WebSocketConnection(Pending(), next), effect)
   }
+
+  // This is essentially a state machine to handle the connection status and
+  // can reconnect if needed
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    List(connectHandler,
+      connectingHandler,
+      connectedHandler,
+      connectionErrorHandler,
+      connectionClosedHandler).suml
 }
 
 /**
   * Handles messages received over the WS channel
   */
-class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) {
+class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
   private val VoidEffect = Effect(Future(NoAction))
 
   // It is legal do put sequences of the other sites on the queue
@@ -360,23 +430,30 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
       case SequenceView(_, metadata, _, _, _) => value.site.instruments.list.toList.contains(metadata.instrument)
     })
 
-  // scalastyle:off
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+  val logMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(l: ServerLogMessage) =>
       effectOnly(Effect(Future(AppendToLog(l))))
+  }
 
+  val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u)) =>
       updated(value.copy(user = u))
+  }
 
+  val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
       val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
       val rememberCompleted = Effect(Future(sv.queue.find(_.status == SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
+  }
 
+  val observerUpdatedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: ObserverUpdated) =>
       updated(value.copy(sequences = filterSequences(s.view)))
+  }
 
+  val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceLoaded(id, view)) =>
       val observer = value.user.map(_.displayName)
       val newSequence = view.queue.find(_.id === id)
@@ -389,10 +466,13 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
           }
         }.getOrElse(VoidEffect)
       updated(value.copy(sequences = filterSequences(view), firstLoad = false), updateObserverE)
-
+  }
+  val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceUnloaded(id, view)) =>
       updated(value.copy(sequences = filterSequences(view), firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
+  }
 
+  val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
       // Replace the observer if not set and logged in
       val observer = value.user.map(_.displayName)
@@ -402,7 +482,6 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
            case _        => none
         }
       }).join
-
       val (sequencesWithObserver, effects) =
         filterSequences(s.view).queue.foldLeft(
           (List.empty[SequenceView],
@@ -420,156 +499,21 @@ class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Ac
           }
       val newValue = value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false)
       effects.collect { case Some(x) => x }.reduceOption(_ + _).fold(updated(newValue))(eff => updated(newValue, eff))
+  }
 
+  val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(_) =>
       // Ignore unknown events
       noChange
   }
-  // scalastyle:on
-}
 
-/**
-  * Generates Eq comparisons for Pot[A], it is useful for state indicators
-  */
-object PotEq {
-  implicit val equalPot: Equal[PotState] = Equal.equalA
-
-  def potStateEq[A]: FastEq[Pot[A]] = (a: Pot[A], b: Pot[A]) => a.state === b.state
-
-  val seqexecQueueEq:  FastEq[Pot[List[SequenceView]]] = potStateEq[List[SequenceView]]
-  val searchResultsEq: FastEq[Pot[SearchResults]]      = potStateEq[SearchResults]
-  val sequenceEq:      FastEq[Pot[SequenceView]]       = potStateEq[SequenceView]
-}
-
-/**
-  * Utility class to let components more easily switch parts of the UI depending on the context
-  */
-final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean) extends UseValueEq {
-  def isLogged: Boolean = u.isDefined
-  def isConnected: Boolean = w.ws.isReady
-}
-
-// All these classes are focused views of the root model. They are used to only update small sections of the
-// UI even if other parts of the root model change
-final case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
-final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
-final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
-final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
-final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer]) extends UseValueEq
-final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
-final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
-final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
-
-/**
-  * Contains the model for Diode
-  */
-object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
-  type SearchResults = SequencesQueue[SequenceId]
-  private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
-
-  // Model read-writers
-  private val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
-    zoomRW(m => WebSocketsFocus(m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
-
-  private val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-  private val wsEventsHandler        = new WebSocketEventsHandler(webSocketFocusRW)
-  private val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
-  private val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
-  private val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
-  private val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
-  private val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
-  private val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
-  private val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
-  private val operatorHandler        = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
-
-  override protected def initialModel = SeqexecAppRootModel.initial
-
-  // Some useful readers
-  val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
-    zoom { c =>
-      val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
-        val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
-        SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, s.runningStep)
-      }
-      StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue)
-    }
-
-  // Reader for sequences on display
-  val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-    zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
-
-  def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
-    zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
-      case (tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
-    }
-
-  private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
-
-  def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
-    statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer))
-    }
-
-  def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
-    statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) => StatusAndStepFocus(status.isLogged, i, tab.stepConfigDisplayed)
-    }
-
-  def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTableFocus])] =
-    statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) =>
-        (status, tab.sequence.map { sequence =>
-          StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
-        })
-    }
-
-  def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
-    statusReader.zip(instrumentTab(i)).zoom {
-      case (status, (tab, _)) =>
-        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
-    }
-
-  // Reader for a specific sequence if available
-  def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
-    zoom(_.uiModel.sequences.queue.find(_.id === id))
-
-  // Reader to indicate the allowed interactions
-  val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
-
-  /**
-    * Makes a reference to a sequence on the queue.
-    * This way we have a normalized model and need to update it in only one place
-    */
-  def sequenceRef(id: SequenceId): RefTo[Option[SequenceView]] =
-    RefTo(sequenceReader(id))
-
-  override protected def actionHandler = composeHandlers(
-    wsHandler,
-    wsEventsHandler,
-    sequenceExecHandler,
-    loginBoxHandler,
-    userLoginHandler,
-    sequenceDisplayHandler,
-    globalLogHandler,
-    conditionsHandler,
-    operatorHandler,
-    navigationHandler)
-
-  /**
-    * Handles a fatal error most likely during action processing
-    */
-  override def handleFatal(action: Any, e: Throwable): Unit = {
-    logger.severe(s"Action not handled $action")
-    super.handleFatal(action, e)
-  }
-
-  /**
-    * Handle a non-fatal error, such as dispatching an action with no action handler.
-    */
-  override def handleError(msg: String): Unit = {
-    logger.severe(s"Action error $msg")
-  }
-
+  override def handle: PartialFunction[Any, ActionResult[M]] =
+    List(logMessage,
+      connectionOpenMessage,
+      sequenceCompletedMessage,
+      observerUpdatedMessage,
+      sequenceLoadedMessage,
+      sequenceUnloadedMessage,
+      modelUpdateMessage,
+      defaultMessage).suml
 }
