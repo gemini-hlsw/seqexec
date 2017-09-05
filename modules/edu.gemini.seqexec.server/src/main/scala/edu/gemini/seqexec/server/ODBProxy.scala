@@ -31,7 +31,7 @@ class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
 
   def host(): Peer = loc
   def read(oid: SPObservationID): SeqexecFailure \/ ConfigSequence =
-    SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
+    SeqExecService.client(loc).sequence(oid).map(_.config).leftMap(SeqexecFailure.ODBSeqError)
 
   val queuedSequences: SeqAction[Seq[SPObservationID]] = cmds.queuedSequences()
   val datasetStart: (SPObservationID, String, ImageFileId) => SeqAction[Boolean] = cmds.datasetStart
