@@ -4,6 +4,7 @@
 package gem.util
 
 import cats._
+import cats.effect.IO
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit.MICROS
@@ -25,7 +26,7 @@ final class InstantMicros private (val toInstant: Instant) extends AnyVal {
     * by `epochSecond`.
     */
   def µs: Long =
-    toInstant.getNano / 1000l
+    toInstant.getNano / 1000L
 
   /** Converts this instant to the number of milliseconds from the epoch of
     * 1970-01-01T00:00:00Z.
@@ -34,9 +35,10 @@ final class InstantMicros private (val toInstant: Instant) extends AnyVal {
     toInstant.toEpochMilli
 
   /** Creates an updated instance of InstantMicros by applying the given
-    * function to its wrapped Instant.
+    * function to its wrapped Instant.  The computed Instant is truncated to
+    * microsecond precision.
     */
-  def mod(f: Instant => Instant): InstantMicros =
+  private def mod(f: Instant => Instant): InstantMicros =
     InstantMicros.truncate(f(toInstant))
 
   def plusMillis(millisToAdd: Long): InstantMicros =
@@ -71,8 +73,10 @@ object InstantMicros {
     *
     * @group Constructors
     */
-  def now(): InstantMicros =
-    truncate(Instant.now())
+  def now: IO[InstantMicros] =
+    IO {
+      truncate(Instant.now())
+    }
 
   /** Creates an InstantMicro representing the current time using milliseconds
     * from the Java time epoch.

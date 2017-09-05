@@ -191,6 +191,7 @@ lazy val core = crossProject
   .settings(
     libraryDependencies ++= Seq(
       "org.typelevel"              %%% "cats-core"      % catsVersion,
+      "org.typelevel"              %%% "cats-effect"    % catsEffectVersion,
       "org.typelevel"              %%% "cats-testkit"   % catsVersion % "test",
       "com.chuusai"                %%% "shapeless"      % shapelessVersion,
       "org.tpolecat"               %%% "atto-core"      % attoVersion,

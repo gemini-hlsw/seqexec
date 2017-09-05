@@ -12,7 +12,7 @@ class EphemerisCheck extends Check {
             "insert"      in check(insert)
   it should "delete"      in check(delete(Dummy.ephemerisKey))
   it should "select"      in check(select(Dummy.ephemerisKey))
-  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, InstantMicros.now(), InstantMicros.now()))
+  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, InstantMicros.Min, InstantMicros.Max))
 
   it should "selectNextUserSuppliedKey" in check(selectNextUserSuppliedKey)
 }

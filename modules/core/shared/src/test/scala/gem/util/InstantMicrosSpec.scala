@@ -18,7 +18,7 @@ final class InstantMicrosSpec extends CatsSuite {
 
   test("Construction should truncate Instant nanoseconds to microseconds") {
     forAll { (i: InstantMicros) =>
-      i.toInstant.getNano % 1000l == 0
+      i.toInstant.getNano % 1000L == 0
     }
   }
 
