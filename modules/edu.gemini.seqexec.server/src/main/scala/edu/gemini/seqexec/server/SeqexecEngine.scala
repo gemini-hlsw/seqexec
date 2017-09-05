@@ -144,7 +144,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
       progIdString <- EitherT(Task.delay(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
       progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
-    } yield translator.sequence(seqId, odbSeq.config, odbSeq.title)
+    } yield translator.sequence(seqId, odbSeq)
 
     t.map {
       case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
