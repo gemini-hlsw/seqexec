@@ -157,10 +157,6 @@ object Settings {
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4s,
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
 
-    val Http4sClient  = Seq(
-      "org.http4s" %% "http4s-blaze-client" % LibraryVersions.http4s,
-      "org.http4s" %% "http4s-scala-xml"    % LibraryVersions.http4s)
-
     val Monocle  = Def.setting(Seq(
       "com.github.julien-truffaut" %%% "monocle-core"  % LibraryVersions.monocle,
       "com.github.julien-truffaut" %%% "monocle-macro" % LibraryVersions.monocle))

@@ -15,10 +15,11 @@ import edu.gemini.seqexec.server.SeqTranslate.{Settings, Systems}
 import edu.gemini.seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import edu.gemini.seqexec.server.TcsController.ScienceFoldPosition
 import edu.gemini.spModel.ao.AOConstants._
-import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
+import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 
 import scalaz.Scalaz._
 import scalaz._
@@ -72,7 +73,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield ObserveResult(id)
   }
 
-  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean): TrySeq[Step[Action \/ Result]] = {
+  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
       extractStatus(config) match {
         case StepState.Pending =>
@@ -99,8 +100,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case _ =>
           Step(
             i,
-            // TODO: Get image fileId?
-            None,
+            datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
             config.toStepConfig,
             // No resources when done
             Set.empty,
@@ -146,13 +146,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case _         => false
     }
 
-  def sequence(obsId: SPObservationID, sequenceConfig: ConfigSequence, name: String):
+  def sequence(obsId: SPObservationID, sequence: SeqexecSequence):
       (List[SeqexecFailure], Option[Sequence[Action \/ Result]]) = {
 
-    val configs = sequenceConfig.getAllSteps.toList
+    val configs = sequence.config.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, i === (configs.length - 1))
+      case (c, i) => step(obsId, i, c, i === (configs.length - 1), sequence.datasets)
     }.separate
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)
@@ -167,7 +167,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             Some(
               Sequence[Action \/ Result](
                 obsId.stringValue(),
-                SequenceMetadata(i, None, name),
+                SequenceMetadata(i, None, sequence.title),
                 ss
               )
             )
