@@ -142,7 +142,6 @@ package object engine {
   def setCloudCover(cc: CloudCover): HandleP[Unit] =
     modify(st => st.copy(conditions = st.conditions.copy(cc = cc)))
 
-
   /**
     * Load a Sequence
     */
@@ -232,17 +231,15 @@ package object engine {
         }
     }
 
-    get.flatMap(st => st.sequences.get(id).map { seq =>
-        seq match {
-          case Sequence.State.Final(_, _) =>
-            // The sequence is marked as completed here
-            putS(id)(seq) *> send(finished(id))
-          case _                          =>
-            val u = seq.current.actions.zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
-            val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed (id))
-            HandleP.fromProcess(v)
-        }
-      }.getOrElse(unit)
+    get.flatMap(st => st.sequences.get(id).map {
+      case seq@Sequence.State.Final(_, _) =>
+        // The sequence is marked as completed here
+        putS(id)(seq) *> send(finished(id))
+      case seq =>
+        val u = seq.current.actions.zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
+        val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed(id))
+        HandleP.fromProcess(v)
+    }.getOrElse(unit)
     )
   }
 

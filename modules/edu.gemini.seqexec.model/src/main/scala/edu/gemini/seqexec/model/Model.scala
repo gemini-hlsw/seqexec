@@ -12,6 +12,8 @@ import monocle.Traversal
 
 import java.time.Instant
 
+import dhs.ImageFileId
+
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
   sealed trait SeqexecSite {
@@ -49,6 +51,8 @@ object Model {
     final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     final case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    final case class FileIdStepExecuted(fileId: ImageFileId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     final case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 

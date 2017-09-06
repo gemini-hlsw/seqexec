@@ -60,6 +60,7 @@ trait ModelBooPicklers {
     .addConcreteType[ConnectionOpenEvent]
     .addConcreteType[SequenceStart]
     .addConcreteType[StepExecuted]
+    .addConcreteType[FileIdStepExecuted]
     .addConcreteType[SequenceCompleted]
     .addConcreteType[SequenceLoaded]
     .addConcreteType[SequenceUnloaded]

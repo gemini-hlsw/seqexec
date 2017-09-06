@@ -5,6 +5,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Observed}
 import edu.gemini.seqexec.engine.{Action, ActionMetadata, Result, Sequence, Step, fromTask}
 import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.Model
@@ -32,16 +33,30 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import SeqTranslate._
 
-  def toResult(r: SeqexecFailure\/Result.Response): Result = r match {
+  def toResult(r: SeqexecFailure \/ Result.Response): Result = r match {
     case \/-(r) => Result.OK(r)
+    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+  }
+
+  def toResult2[A <: Result.PartialVal](r: SeqexecFailure \/ Result.Partial[A]): Result = r match {
+    case \/-(r) => r case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+  }
+
+  def toResult3(r: SeqexecFailure \/ ObserveResult): Result = r match {
+    case \/-(r) => Result.OK(Observed(r.dataId))
     case -\/(e) => Result.Error(SeqexecFailure.explain(e))
   }
 
   def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
 
+  def toAction2(x: SeqAction[ObserveResult]): Action = fromTask(x.run.map(toResult3))
+
+  private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
+    systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
+
   private def observe(config: Config, obsId: SPObservationID, inst: InstrumentSystem,
                       otherSys: List[System], headers: Reader[ActionMetadata,List[Header]])
-                     (ctx: ActionMetadata): SeqAction[ObserveResult] = {
+                     (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(Task(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
@@ -50,50 +65,62 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       d <- dataId
       _ <- systems.odb.datasetStart(obsId, d, imageFileId)
     } yield ()
+
     def sendDataEnd(imageFileId: ImageFileId): SeqAction[Unit] = for {
       d <- dataId
       _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
     } yield ()
-    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_=>())
-    def notifyObserveEnd: SeqAction[Unit] = otherSys.map(_.notifyObserveEnd).sequenceU.map(_=>())
+
+    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_ => ())
+
+    def notifyObserveEnd: SeqAction[Unit] = otherSys.map(_.notifyObserveEnd).sequenceU.map(_ => ())
 
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
 
+    def doObserve(id: ImageFileId): SeqAction[ObserveResult] =
+      for {
+        _  <- sendDataStart(id)
+        _  <- notifyObserveStart
+        _  <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
+        _  <- inst.observe(config)(id)
+        _  <- notifyObserveEnd
+        _  <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+        _  <- closeImage(id, systems.dhs)
+        _  <- sendDataEnd(id)
+      } yield ObserveResult(id)
+
     for {
-      id <- systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
-      _ <- sendDataStart(id)
-      _ <- notifyObserveStart
-      _ <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
-      _ <- inst.observe(config)(id)
-      _ <- notifyObserveEnd
-      _ <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
-      _ <- closeImage(id, systems.dhs)
-      _ <- sendDataEnd(id)
-    } yield ObserveResult(id)
+      id <- dhsFileId(inst)
+    } yield Result.Partial(FileIdAllocated(id), toAction2(doObserve(id)))
   }
 
   private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
+      val initialStepExecutions: List[List[Action]] =
+        if (i === 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
+        else Nil
+
+      val lastStepExecutions: List[List[Action]] =
+        if (last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
+        else Nil
+
+      val regularStepExecutions: List[List[Action]] =
+        List(
+          sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
+          List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(toResult2)))
+        )
+
       extractStatus(config) match {
         case StepState.Pending =>
           Step(
-            i,
-            None,
-            config.toStepConfig,
-            resources,
-            false,
-            false,
-            (if(i == 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
-            else List())
-            ++
-            List(
-              sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-              List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).map(x => Result.Observed(x.dataId)).run.map(toResult)))
-            )
-            ++
-            (if(last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
-            else List())
+            id = i,
+            fileId = None,
+            config = config.toStepConfig,
+            resources = resources,
+            breakpoint = false,
+            skip = false,
+            executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
           ).map(_.left)
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
@@ -103,11 +130,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
             config.toStepConfig,
             // No resources when done
-            Set.empty,
-            false,
-            extractSkipped(config),
+            resources = Set.empty,
+            breakpoint = false,
+            skip = extractSkipped(config),
             // TODO: Is it possible to reconstruct done executions from the ODB?
-            List(Nil)
+            executions = Nil
             )
       }
     }

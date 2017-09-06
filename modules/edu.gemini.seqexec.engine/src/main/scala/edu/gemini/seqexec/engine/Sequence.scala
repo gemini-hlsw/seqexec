@@ -297,8 +297,8 @@ object Sequence {
           zipperL >=> Sequence.Zipper.focus >=> Step.Zipper.fileId
 
         val z: Zipper = r match {
-            case Result.OK(Result.Observed(fileId)) => currentFileIdL.set(self, fileId.some)
-            case _                                  => self
+            case Result.Partial(Result.FileIdAllocated(fileId), _) => currentFileIdL.set(self, fileId.some)
+            case _                                                 => self
           }
 
         currentExecutionL.mod(_.mark(i)(r), z)

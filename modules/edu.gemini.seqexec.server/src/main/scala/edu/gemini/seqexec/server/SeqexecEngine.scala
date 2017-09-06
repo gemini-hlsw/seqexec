@@ -11,6 +11,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Site
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
+import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
 
@@ -175,13 +176,14 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
-      case engine.Completed(_, _, _)     => NewLogMessage("Action completed")
-      case engine.PartialResult(_, _, _) => SequenceUpdated(svs)
-      case engine.Failed(_, _, _)        => NewLogMessage("Action failed")
-      case engine.Busy(_)                => ResourcesBusy(svs)
-      case engine.Executed(_)            => StepExecuted(svs)
-      case engine.Executing(_)           => NewLogMessage("Executing")
-      case engine.Finished(_)            => SequenceCompleted(svs)
+      case engine.Completed(_, _, _)                                        => NewLogMessage("Action completed")
+      case engine.PartialResult(id, _, Partial(FileIdAllocated(fileId), _)) => FileIdStepExecuted(fileId, svs)
+      case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
+      case engine.Failed(_, _, _)                                           => NewLogMessage("Action failed")
+      case engine.Busy(_)                                                   => ResourcesBusy(svs)
+      case engine.Executed(_)                                               => StepExecuted(svs)
+      case engine.Executing(_)                                              => NewLogMessage("Executing")
+      case engine.Finished(_)                                               => SequenceCompleted(svs)
     }
   }
 
