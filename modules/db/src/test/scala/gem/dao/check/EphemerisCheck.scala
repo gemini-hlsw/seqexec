@@ -10,9 +10,9 @@ class EphemerisCheck extends Check {
   import EphemerisDao.Statements._
   "EphemerisDao.Statements" should
             "insert"      in check(insert)
-  it should "delete"      in check(delete(Dummy.ephemerisKey))
-  it should "select"      in check(select(Dummy.ephemerisKey))
-  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, InstantMicros.Min, InstantMicros.Max))
+  it should "delete"      in check(delete(Dummy.ephemerisKey, Dummy.site))
+  it should "select"      in check(select(Dummy.ephemerisKey, Dummy.site))
+  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, Dummy.site, InstantMicros.Min, InstantMicros.Max))
 
   it should "selectNextUserSuppliedKey" in check(selectNextUserSuppliedKey)
 }

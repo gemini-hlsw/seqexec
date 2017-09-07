@@ -4,7 +4,7 @@
 package gem
 package dao
 
-import gem.enum.EphemerisKeyType
+import gem.enum.{ EphemerisKeyType, Site }
 import gem.math._
 import gem.util.InstantMicros
 
@@ -15,52 +15,51 @@ import fs2.Stream
 
 object EphemerisDao {
 
-  def insert(k: EphemerisKey, e: Ephemeris): ConnectionIO[Int] =
+  def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(
-      e.toMap.toList.map { case (i, c) => (k, i, c, c.ra.format, c.dec.format) }
+      e.toMap.toList.map { case (i, c) => (k, s, i, c, c.ra.format, c.dec.format) }
     )
 
-  def streamInsert[M[_]: Monad](k: EphemerisKey, s: Stream[M, Ephemeris.Element], xa: Transactor[M]): Stream[M, Int] =
-    Stream.constant(k)                                                  // Stream[Pure, EphemerisKey]
-      .zip(s)                                                           // Stream[M, (EphemerisKey, Ephemeris.Element)]
-      .map { case (k, (i, c)) => (k, i, c, c.ra.format, c.dec.format) } // Stream[M, EphemerisRow]
-      .segmentN(4096)                                                   // Stream[M, Segment[EphemerisRow, Unit]]
+  def streamInsert[M[_]: Monad](k: EphemerisKey, s: Site, sm: Stream[M, Ephemeris.Element], xa: Transactor[M]): Stream[M, Int] =
+    sm.map { case (i, c) => (k, s, i, c, c.ra.format, c.dec.format) } // Stream[M, EphemerisRow]
+      .segmentN(4096)                                                 // Stream[M, Segment[EphemerisRow, Unit]]
       .flatMap { rows =>
         Stream.eval(Statements.insert.updateMany(rows.toVector).transact(xa))
       }
 
-  def delete(k: EphemerisKey): ConnectionIO[Int] =
-    Statements.delete(k).run
+  def delete(k: EphemerisKey, s: Site): ConnectionIO[Int] =
+    Statements.delete(k, s).run
 
-  def update(k: EphemerisKey, e: Ephemeris): ConnectionIO[Unit] =
-    (delete(k) *> insert(k, e)).void
+  def update(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Unit] =
+    (delete(k, s) *> insert(k, s, e)).void
 
-  /** Selects all ephemeris elements associated with the given key into an
-    * Ephemeris object.
+  /** Selects all ephemeris elements associated with the given key and site into
+    * an Ephemeris object.
     */
-  def selectAll(k: EphemerisKey): ConnectionIO[Ephemeris] =
-    runSelect(Statements.select(k))
+  def selectAll(k: EphemerisKey, s: Site): ConnectionIO[Ephemeris] =
+    runSelect(Statements.select(k, s))
 
   /** Selects all ephemeris elements that fall between start (inclusive) and end
     * (exclusive) into an Ephemeris object.
     *
-    * @param k     key to match
+    * @param k     ephemeris key to match
+    * @param s     site to match
     * @param start start time (inclusive)
     * @param end   end time (exclusive
     *
     * @return Ephemeris object with just the matching elements
     */
-  def selectRange(k: EphemerisKey, start: InstantMicros, end: InstantMicros): ConnectionIO[Ephemeris] =
-    runSelect(Statements.selectRange(k, start, end))
+  def selectRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): ConnectionIO[Ephemeris] =
+    runSelect(Statements.selectRange(k, s, start, end))
 
   private def runSelect(q: Query0[Ephemeris.Element]): ConnectionIO[Ephemeris] =
     q.list.map(Ephemeris.fromFoldable[List])
 
-  def streamAll(k: EphemerisKey): Stream[ConnectionIO, Ephemeris.Element] =
-    Statements.select(k).stream
+  def streamAll(k: EphemerisKey, s: Site): Stream[ConnectionIO, Ephemeris.Element] =
+    Statements.select(k, s).stream
 
-  def streamRange(k: EphemerisKey, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
-    Statements.selectRange(k, start, end).stream
+  def streamRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
+    Statements.selectRange(k, s, start, end).stream
 
   /** Create the next UserSupplied ephemeris key value. */
   val nextUserSuppliedKey: ConnectionIO[EphemerisKey.UserSupplied] =
@@ -85,41 +84,42 @@ object EphemerisDao {
           (c.ra.toHourAngle.toMicroseconds, c.dec.toAngle.toMicroarcseconds)
       )
 
-    type EphemerisRow = (EphemerisKey, InstantMicros, Coordinates, String, String)
+    type EphemerisRow = (EphemerisKey, Site, InstantMicros, Coordinates, String, String)
 
     val insert: Update[EphemerisRow] =
       Update[EphemerisRow](
         s"""
           INSERT INTO ephemeris (key_type,
                                  key,
+                                 site,
                                  timestamp,
                                  ra,
                                  dec,
                                  ra_str,
                                  dec_str)
-               VALUES (?, ?, ?, ?, ?, ?, ?)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """)
 
-    def delete(k: EphemerisKey): Update0 =
+    def delete(k: EphemerisKey, s: Site): Update0 =
       sql"""
         DELETE FROM ephemeris
-              WHERE key_type = ${k.keyType} AND key = ${k.des}
+              WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
       """.update
 
-    private def selectFragment(k: EphemerisKey): Fragment =
+    private def selectFragment(k: EphemerisKey, s: Site): Fragment =
       fr"""
          SELECT timestamp,
                 ra,
                 dec
            FROM ephemeris
-          WHERE key_type = ${k.keyType} AND key = ${k.des}
+          WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
       """
 
-    def select(k: EphemerisKey): Query0[Ephemeris.Element] =
-      selectFragment(k).query[Ephemeris.Element]
+    def select(k: EphemerisKey, s: Site): Query0[Ephemeris.Element] =
+      selectFragment(k, s).query[Ephemeris.Element]
 
-    def selectRange(k: EphemerisKey, s: InstantMicros, e: InstantMicros): Query0[Ephemeris.Element] =
-      (selectFragment(k) ++ fr"""AND timestamp >= $s AND timestamp < $e""")
+    def selectRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Query0[Ephemeris.Element] =
+      (selectFragment(k, s) ++ fr"""AND timestamp >= $start AND timestamp < $end""")
         .query[Ephemeris.Element]
 
     val selectNextUserSuppliedKey: Query0[EphemerisKey.UserSupplied] =
