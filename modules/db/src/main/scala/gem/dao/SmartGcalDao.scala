@@ -9,6 +9,7 @@ import gem._
 import gem.SmartGcal._
 import gem.config._
 import gem.config.DynamicConfig.{ SmartGcalKey, SmartGcalSearchKey }
+import gem.dao.meta._
 import gem.enum._
 import gem.math.Wavelength
 import gem.util.Location
@@ -16,6 +17,8 @@ import fs2.Stream
 import scala.collection.immutable.TreeMap
 
 object SmartGcalDao {
+  import EnumeratedMeta._
+  import WavelengthMeta._
 
   def select(k: SmartGcalSearchKey, t: SmartGcalType): ConnectionIO[List[GcalConfig]] =
     for {

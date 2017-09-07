@@ -5,6 +5,7 @@ package gem.dao
 
 import doobie._, doobie.implicits._
 import gem.{Event, Observation}
+import gem.dao.meta._
 import gem.Event._
 import gem.enum.EventType
 import gem.enum.EventType.{Abort, Continue, EndIntegration, EndSequence, EndSlew, EndVisit, Pause, StartIntegration, StartSequence, StartSlew, StartVisit, Stop}
@@ -12,6 +13,8 @@ import java.time.Instant
 
 
 object EventLogDao {
+  import EnumeratedMeta._
+  import ObservationIdMeta._
 
   def insertAbortObserve(oid: Observation.Id): ConnectionIO[Int] =
     Statements.insertEvent(Abort, oid, None).run

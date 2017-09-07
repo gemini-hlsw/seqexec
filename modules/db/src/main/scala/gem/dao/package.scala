@@ -5,13 +5,6 @@ package gem
 
 import cats.data._, cats.implicits._
 import doobie._, doobie.implicits._
-import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, Array => _, _ }
-import doobie.postgres.implicits._
-import gem.math.{ Angle, Offset, Wavelength }
-import gem.util.{ Enumerated, InstantMicros, Location }
-import java.time.{Duration, Instant}
-import java.util.logging.Level
-import scala.reflect.runtime.universe.TypeTag
 
 package object dao {
 
@@ -69,102 +62,6 @@ package object dao {
 
     def injectRight[A]: EitherConnectionIO[A, T] =
       EitherConnectionIO.right[A, T](c)
-  }
-
-  // Angle mapping to signed arcseconds via NUMERIC. NOT implicit. We're mapping a type that
-  // is six orders of magnitude more precise than the database column, so we will shift
-  // the decimal pure back and forth.
-  val AngleMetaAsSignedArcseconds: Meta[Angle] =
-    Meta[java.math.BigDecimal]
-      .xmap[Angle](
-        b => Angle.fromMicroarcseconds(b.movePointRight(6).longValue),
-        a => new java.math.BigDecimal(a.toSignedMicroarcseconds).movePointLeft(6)
-      )
-
-  // OffsetP maps to a signed angle in arcseconds
-  implicit val OffsetPMeta: Meta[Offset.P] =
-    AngleMetaAsSignedArcseconds.xmap(Offset.P(_), _.toAngle)
-
-  // OffsetQ maps to a signed angle in arcseconds
-  implicit val OffsetQMeta: Meta[Offset.Q] =
-    AngleMetaAsSignedArcseconds.xmap(Offset.Q(_), _.toAngle)
-
-  // Wavelength maps to an integer in angstroms
-  implicit val WavelengthMeta: Meta[Wavelength] =
-    Meta[Int].xmap(Wavelength.unsafeFromAngstroms, _.toAngstroms)
-
-  // Program.Id as string
-  implicit val ProgramIdMeta: Meta[Program.Id] =
-    Meta[String].xmap(Program.Id.unsafeFromString, _.format)
-
-  // Observation.Id as string
-  implicit val ObservationIdMeta: Meta[Observation.Id] =
-    Meta[String].xmap(Observation.Id.unsafeFromString, _.format)
-
-  // Dataset.Label as string
-  implicit val DatasetLabelMeta: Meta[Dataset.Label] =
-    Meta[String].xmap(Dataset.Label.unsafeFromString, _.format)
-
-  // Enumerated by tag as DISTINCT (identifier)
-  implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
-    Distinct.string("identifier").xmap[A](ev.unsafeFromTag(_), ev.tag(_))
-
-  // Java Log Levels (not nullable)
-  implicit def levelMeta: Meta[Level] =
-    Meta[String].xmap(Level.parse, _.getName)
-
-  implicit val InstantMicrosMeta: Meta[InstantMicros] =
-    Meta[Instant].xmap(InstantMicros.truncate, _.toInstant)
-
-  implicit val LocationMeta: Meta[Location.Middle] =
-    Meta[List[Int]].xmap(Location.unsafeMiddleFromFoldable(_), _.toList)
-
-  implicit val DurationMeta: Meta[Duration] =
-    Distinct.long("milliseconds").xmap(Duration.ofMillis, _.toMillis)
-
-  /**
-   * Constructor for a Meta instances with an underlying types that are reported by JDBC as
-   * type Distinct, as happens when a column has a check constraint. By using a data type with
-   * a Distinct Meta instance we can satisfy the query checker.
-   */
-  object Distinct {
-
-    def integer(name: String): Meta[Int] =
-      Meta.advanced(
-        NonEmptyList.of(JdbcDistinct, Integer),
-        NonEmptyList.of(name),
-        _ getInt _,
-        _.setInt(_, _),
-        _.updateInt(_, _)
-      )
-
-    def long(name: String): Meta[Long] =
-      Meta.advanced(
-        NonEmptyList.of(JdbcDistinct, BigInt),
-        NonEmptyList.of(name),
-        _ getLong _,
-        _.setLong(_, _),
-        _.updateLong(_, _)
-      )
-
-    def short(name: String): Meta[Short] =
-      Meta.advanced(
-        NonEmptyList.of(JdbcDistinct, SmallInt),
-        NonEmptyList.of(name),
-        _ getShort _,
-        _.setShort(_, _),
-        _.updateShort(_, _)
-      )
-
-    def string(name: String): Meta[String] =
-      Meta.advanced(
-        NonEmptyList.of(JdbcDistinct, VarChar),
-        NonEmptyList.of(name),
-        _ getString _,
-        _.setString(_, _),
-        _.updateString(_, _)
-      )
-
   }
 
   def capply2[A, B, T](f: (A, B) => T)(

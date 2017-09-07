@@ -6,8 +6,11 @@ package gem.dao
 import cats.syntax.functor._
 import doobie._, doobie.implicits._
 import gem.{ Dataset, Observation }
+import gem.dao.meta._
 
 object DatasetDao {
+  import DatasetLabelMeta._
+  import ObservationIdMeta._
 
   /**
    * Construct a program to insert the given a `Dataset`, associating it with the given step

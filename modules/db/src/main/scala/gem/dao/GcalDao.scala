@@ -7,6 +7,7 @@ import cats.implicits._
 import gem.config.GcalConfig
 import gem.config.GcalConfig.GcalLamp
 import doobie._, doobie.implicits._
+import gem.dao.meta._
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
 import java.time.Duration
@@ -15,6 +16,9 @@ import java.time.Duration
   * gcal (for smart gcal lookup).
   */
 object GcalDao {
+  import EnumeratedMeta._
+  import TimeMeta._
+
   def insertStepGcal(stepId: Int, gcal: GcalConfig): ConnectionIO[Int] =
     Statements.insertStepGcal(stepId, gcal).run
 

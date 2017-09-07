@@ -5,16 +5,22 @@ package gem
 package dao
 
 import cats.implicits._
+import doobie._, doobie.implicits._
 import gem.util.Location
 import gem.config._
 import gem.config.GcalConfig.GcalLamp
+import gem.dao.meta._
 import gem.enum._
 import gem.math.{ Offset, Wavelength }
-import doobie._, doobie.implicits._
 import java.time.Duration
 import scala.collection.immutable.TreeMap
 
 object StepDao {
+  import EnumeratedMeta._
+  import LocationMeta._
+  import ObservationIdMeta._
+  import OffsetMeta._
+  import TimeMeta._
 
   type Loc = Location.Middle
 

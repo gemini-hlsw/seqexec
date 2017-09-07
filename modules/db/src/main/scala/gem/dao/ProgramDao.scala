@@ -4,13 +4,14 @@
 package gem
 package dao
 
-import gem.config.{DynamicConfig, StaticConfig}
-
-import doobie._, doobie.implicits._
-
 import cats.implicits._
+import doobie._, doobie.implicits._
+import gem.config.{DynamicConfig, StaticConfig}
+import gem.dao.meta._
 
 object ProgramDao {
+  import EnumeratedMeta._
+  import ProgramIdMeta._
 
   /** Insert a program, disregarding its observations, if any. */
   def insertFlat(p: Program[_]): ConnectionIO[Program.Id] =
