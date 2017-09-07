@@ -5,11 +5,12 @@ package gem.ocs2
 
 import cats.effect.IO, cats.implicits._
 import doobie._, doobie.implicits._
+import gem.dao.meta._
 import doobie.postgres.implicits._
 import java.util.logging.{ Level, Logger }
 
 /** Shared support for import applications using Doobie. */
-trait DoobieClient {
+trait DoobieClient extends ProgramIdMeta with ObservationIdMeta {
 
   val Url  = "jdbc:postgresql:gem"
   val User = "postgres"

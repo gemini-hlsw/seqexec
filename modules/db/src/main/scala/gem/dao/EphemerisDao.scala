@@ -4,7 +4,9 @@
 package gem
 package dao
 
-import gem.enum.{ EphemerisKeyType, Site }
+import gem.dao.composite._
+import gem.dao.meta._
+import gem.enum.Site
 import gem.math._
 import gem.util.InstantMicros
 
@@ -14,6 +16,10 @@ import doobie._, doobie.implicits._
 import fs2.Stream
 
 object EphemerisDao {
+  import CoordinatesComposite._
+  import EnumeratedMeta._
+  import EphemerisKeyComposite._
+  import TimeMeta._
 
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(
@@ -66,23 +72,6 @@ object EphemerisDao {
     Statements.selectNextUserSuppliedKey.unique
 
   object Statements {
-
-    // Describe how to turn an EphemerisKey into a (EphemerisKeyType, String)
-    implicit val CompositeEphemerisKey: Composite[EphemerisKey] =
-      Composite[(EphemerisKeyType, String)].imap(
-        (t: (EphemerisKeyType, String)) => EphemerisKey.unsafeFromTypeAndDes(t._1, t._2))(
-        (k: EphemerisKey)               => (k.keyType, k.des)
-      )
-
-    // Describe how to map Coordinates into (Long, Long)
-    implicit val CompositeCoordinates: Composite[Coordinates] =
-      Composite[(Long, Long)].imap(
-        (t: (Long, Long)) =>
-          Coordinates(RightAscension(HourAngle.fromMicroseconds(t._1)),
-                      Declination.unsafeFromAngle(Angle.fromMicroarcseconds(t._2))))(
-        (c: Coordinates)                  =>
-          (c.ra.toHourAngle.toMicroseconds, c.dec.toAngle.toMicroarcseconds)
-      )
 
     type EphemerisRow = (EphemerisKey, Site, InstantMicros, Coordinates, String, String)
 

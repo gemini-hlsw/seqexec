@@ -7,9 +7,12 @@ package dao
 import cats.implicits._
 import doobie._, doobie.implicits._
 import gem.enum.{ GmosDetector, Instrument, MosPreImaging }
+import gem.dao.meta._
 import gem.config._
 
 object StaticConfigDao {
+  import EnumeratedMeta._
+  import OffsetMeta._
 
   def insert(s: StaticConfig): ConnectionIO[Int] =
     for {
