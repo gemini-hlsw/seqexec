@@ -5,9 +5,10 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.SequenceState
-import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.circuit._
+import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconSelectedRadio}
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}

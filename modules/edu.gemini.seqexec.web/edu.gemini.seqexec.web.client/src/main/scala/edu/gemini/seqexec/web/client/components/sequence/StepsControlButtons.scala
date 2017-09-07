@@ -13,7 +13,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.operations.ObservationOperations._
 import edu.gemini.seqexec.model.operations._
-import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
+import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 
 /**
  * Contains the control buttons like stop/abort at the row level

@@ -3,9 +3,10 @@
 
 package edu.gemini.seqexec.web.client.components
 
-import edu.gemini.seqexec.web.client.model.{SeqexecCircuit, WSConnect}
+import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
+import edu.gemini.seqexec.web.client.actions.WSConnect
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.web.client.model.NavigateSilentTo
+import edu.gemini.seqexec.web.client.actions.NavigateSilentTo
 import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import japgolly.scalajs.react.vdom.html_<^._

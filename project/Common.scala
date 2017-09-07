@@ -1,6 +1,7 @@
 import Settings.Libraries._
+import Settings.PluginVersions
 import sbt.Keys._
-import sbt.{file, Compile, ModuleID, project, Test}
+import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
 
@@ -39,7 +40,10 @@ object Common {
     libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value,
     // Wartremover in compile and test (not in Console)
     wartremoverErrors in (Compile, compile) := gemWarts,
-    wartremoverErrors in (Test,    compile) := gemWarts
+    wartremoverErrors in (Test,    compile) := gemWarts,
+
+    // Needed to e.g. Monocle macros
+    addCompilerPlugin("org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion cross CrossVersion.patch)
   )
 
   lazy val commonJSSettings = commonSettings ++ Seq(

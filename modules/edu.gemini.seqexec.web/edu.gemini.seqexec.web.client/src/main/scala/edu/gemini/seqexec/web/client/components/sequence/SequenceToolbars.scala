@@ -4,8 +4,9 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, SequenceState}
-import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndObserverFocus, SequenceControlFocus, ControlModel}
+import edu.gemini.seqexec.web.client.actions.{UpdateObserver, UnShowStep, RequestPause, RequestSync, RequestRun}
+import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.Size

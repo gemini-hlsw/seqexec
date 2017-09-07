@@ -7,6 +7,7 @@ import diode.ModelR
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.components.TextMenuSegment
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, HeaderSideBarFocus, InstrumentTabContentFocus, ClientStatus}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox

@@ -114,6 +114,11 @@ object Settings {
     val opencsv        = "2.1"
   }
 
+  object PluginVersions {
+    // Compiler plugins
+    val paradiseVersion    = "2.1.1"
+  }
+
   /**
     * Global libraries
     */
