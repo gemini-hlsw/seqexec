@@ -51,7 +51,7 @@ sbt genEnums
 
 ### Generating Schema Documentation
 
-You can do `sbt schemaSpy` to generate a little website about the database. It will appear in `modules/sql/target/schemaspy`.
+You can do `sbt schemaSpy` to generate a little website about the database using [SchemaSpy](http://schemaspy.org/). It will appear in `modules/sql/target/schemaspy`.
 
 
 ### Importing
