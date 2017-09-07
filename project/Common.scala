@@ -40,10 +40,7 @@ object Common {
     libraryDependencies ++= Seq(ScalaZCore.value) ++ TestLibs.value,
     // Wartremover in compile and test (not in Console)
     wartremoverErrors in (Compile, compile) := gemWarts,
-    wartremoverErrors in (Test,    compile) := gemWarts,
-
-    // Needed to e.g. Monocle macros
-    addCompilerPlugin("org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion cross CrossVersion.patch)
+    wartremoverErrors in (Test,    compile) := gemWarts
   )
 
   lazy val commonJSSettings = commonSettings ++ Seq(

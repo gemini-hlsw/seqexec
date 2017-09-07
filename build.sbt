@@ -1,5 +1,6 @@
 import Settings.Libraries._
 import Settings.LibraryVersions
+import Settings.Plugins
 import Common._
 import AppsCommon._
 import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.crossProject
@@ -126,6 +127,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonJSSettings: _*)
   .settings(
+    // Needed for Monocle macros
+    addCompilerPlugin(Plugins.paradisePlugin),
     // This is a not very nice trick to remove js files that exist on the scala tools
     // library and that conflict with the requested on jsDependencies, in particular
     // with jquery.js
