@@ -64,19 +64,4 @@ package object dao {
       EitherConnectionIO.right[A, T](c)
   }
 
-  def capply2[A, B, T](f: (A, B) => T)(
-    implicit ca: Composite[(Option[A], Option[B])]
-  ): Composite[Option[T]] =
-    ca.imap(_.mapN(f))(_ => sys.error("decode only"))
-
-  def capply3[A, B, C, T](f: (A, B, C) => T)(
-    implicit ca: Composite[(Option[A], Option[B], Option[C])]
-  ): Composite[Option[T]] =
-    ca.imap(_.mapN(f))(_ => sys.error("decode only"))
-
-  def capply4[A, B, C, D, T](f: (A, B, C, D) => T)(
-    implicit ca: Composite[(Option[A], Option[B], Option[C], Option[D])]
-  ): Composite[Option[T]] =
-    ca.imap(_.mapN(f))(_ => sys.error("decode only"))
-
 }
