@@ -42,12 +42,14 @@ to poke around with the database on the commandline. For real work I recommend a
 
 ### Generating Enumerated Types
 
-There are many enumerated types in the database. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files. This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
+There are many enumerated types in the database, represented by tables named `e_whatever`. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files. This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
 code in the `sql` project. In any case, you can [re]-generate the enumerated types thus:
 
 ```
 sbt genEnums
 ```
+
+The source files appear in `modules/core/shared/src/main/scala/gem/enum`.
 
 ### Generating Schema Documentation
 
