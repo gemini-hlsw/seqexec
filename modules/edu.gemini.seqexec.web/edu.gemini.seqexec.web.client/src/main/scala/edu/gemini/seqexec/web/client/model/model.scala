@@ -11,7 +11,7 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
 import edu.gemini.web.common.FixedLengthBuffer
 import org.scalajs.dom.WebSocket
 
-import monocle.macros.Lenses
+// import monocle.macros.Lenses
 
 import scalaz._
 import Scalaz._
@@ -100,10 +100,10 @@ object model {
     val empty: SequencesOnDisplay = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None, None)).toZipper)
   }
 
-  @Lenses final case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int)
+  final case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int, autoReconnect: Boolean)
 
   object WebSocketConnection {
-    val empty: WebSocketConnection = WebSocketConnection(Empty, 0)
+    val empty: WebSocketConnection = WebSocketConnection(Empty, 0, true)
   }
 
   /**
@@ -127,8 +127,6 @@ object model {
     val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
       SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
   }
-
-
 
   /**
     * Root of the UI Model of the application

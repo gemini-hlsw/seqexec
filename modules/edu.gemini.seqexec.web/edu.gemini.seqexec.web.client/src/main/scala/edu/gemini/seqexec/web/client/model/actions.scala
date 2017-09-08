@@ -60,10 +60,10 @@ object actions {
 
   // Actions related to web sockets
   final case class WSConnect(delay: Int) extends Action
-  case object Disconnect extends Action
+  case object Reconnect extends Action
   case object Connecting extends Action
   final case class Connected(ws: WebSocket, delay: Int) extends Action
-  final case class ConnectionClosed(delay: Int) extends Action
+  final case class ConnectionRetry(delay: Int) extends Action
   final case class ConnectionError(s: String) extends Action
   final case class ServerMessage(e: SeqexecEvent) extends Action
 

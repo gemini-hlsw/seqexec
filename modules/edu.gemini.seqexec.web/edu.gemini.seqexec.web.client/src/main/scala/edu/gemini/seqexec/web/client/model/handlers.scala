@@ -214,7 +214,7 @@ object handlers {
         // Close the login box
         val effect = Effect(Future(CloseLoginBox))
         // Close the websocket and reconnect
-        val reconnect = Effect(Future(Disconnect))
+        val reconnect = Effect(Future(Reconnect))
         updated(Some(u), reconnect + effect)
 
       case Logout =>
@@ -339,7 +339,7 @@ object handlers {
     logger.addHandler(new ConsoleHandler(Level.FINE))
 
     // Makes a websocket connection and setups event listeners
-    def webSocket(nextDelay: Int): Future[Action] = Future[Action] {
+    def webSocket: Future[Action] = Future[Action] {
       import org.scalajs.dom.document
 
       val host = document.location.host
@@ -372,7 +372,9 @@ object handlers {
 
       def onClose(): Unit =
         // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
-        SeqexecCircuit.dispatch(ConnectionClosed(math.min(60000, math.max(200, nextDelay * 2))))
+        if (value.autoReconnect) {
+          SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(200, value.nextAttempt * 2))))
+        }
 
       ws.binaryType = "arraybuffer"
       ws.onopen = _ => onOpen
@@ -386,10 +388,14 @@ object handlers {
 
     def connectHandler: PartialFunction[Any, ActionResult[M]] = {
       case WSConnect(d) =>
-        effectOnly(Effect(webSocket(d)).after(d.millis))
+        effectOnly(Effect(webSocket).after(d.millis))
 
-      case Disconnect   =>
-        updated(WebSocketConnection.ws.set(Pot.empty[WebSocket])(value))
+      case Reconnect   =>
+        // Capture the WS, or it maybe invalid during the Future
+        val ws = value.ws
+        val closeCurrent = Effect(Future(ws.foreach(_.close())).map(_ => NoAction))
+        val reConnect = Effect(webSocket)
+        updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false), closeCurrent >> reConnect)
     }
 
     def connectingHandler: PartialFunction[Any, ActionResult[M]] = {
@@ -401,7 +407,7 @@ object handlers {
       case Connected(ws, delay) =>
         // After connected to the Websocket request a refresh
         val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
-        updated(WebSocketConnection(Ready(ws), delay), refreshRequest)
+        updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true), refreshRequest)
     }
 
     def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
@@ -410,11 +416,10 @@ object handlers {
     }
 
     def connectionClosedHandler: PartialFunction[Any, ActionResult[M]] = {
-      case ConnectionClosed(_) =>
-        val next = math.min(60000, math.max(250, value.nextAttempt * 2))
+      case ConnectionRetry(next) =>
         logger.fine(s"Retry connecting in $next")
         val effect = Effect(Future(WSConnect(next)))
-        updated(WebSocketConnection(Pending(), next), effect)
+        updated(value.copy(ws = Pending(), nextAttempt = next), effect)
     }
 
     // This is essentially a state machine to handle the connection status and
