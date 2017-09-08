@@ -185,7 +185,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(commonSettings)
-  .aggregate(coreJVM, db, json, ocs2, service, telnetd, ctl, web, sql)
+  .aggregate(coreJVM, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql)
 
 lazy val core = crossProject
   .crossType(CrossType.Full)
@@ -284,6 +284,17 @@ lazy val ocs2 = project
       "org.http4s"             %% "http4s-scala-xml"         % http4sVersion,
       "org.http4s"             %% "http4s-blaze-client"      % http4sVersion,
       "org.http4s"             %% "http4s-blaze-server"      % http4sVersion
+    )
+  )
+
+lazy val ephemeris = project
+  .in(file("modules/ephemeris"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(coreJVM, db, sql)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-testkit" % catsVersion % "test"
     )
   )
 

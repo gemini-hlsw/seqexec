@@ -13,17 +13,37 @@ trait MiscParsers {
   val void: Parser[Unit] =
     ok(()) namedOpaque "void"
 
+  /** Creates a Parser that consumes the given character. */
+  private def matchChar(c: Char, n: String): Parser[Unit] =
+    char(c).void namedOpaque n
+
+  /** Parser for a colon. */
+  val colon: Parser[Unit] =
+    matchChar(':', "colon")
+
+  /** Parser for a dot/period/decimal point. */
+  val dot: Parser[Unit] =
+    matchChar('.', "dot")
+
   /** Parser for a hyphen. */
   val hyphen: Parser[Unit] =
-    char('-').void namedOpaque "hyphen"
+    matchChar('-', "hyphen")
+
+  /** Parser for a single space. */
+  val space: Parser[Unit] =
+    matchChar(' ', "space")
 
   /** Parser for one or more spaces. */
   val spaces1: Parser[Unit] =
-    skipMany1(char(' ')) namedOpaque "spaces1"
+    skipMany1(space) namedOpaque "spaces1"
 
   /** Parser for a non-whitespace string. */
   val nonWhitespace: Parser[String] =
     takeWhile(c => !c.isWhitespace) namedOpaque "nonWhitespace"
+
+  /** Parser for a vertical whitespace String. */
+  val verticalWhitespace: Parser[Unit] =
+    skipMany1(char('\n') | char('\r'))
 
   /** Catch a `NumberFormatException`, useful for flatMap. */
   def catchNFE[A, B](f: A => B): A => Parser[B] = a =>
