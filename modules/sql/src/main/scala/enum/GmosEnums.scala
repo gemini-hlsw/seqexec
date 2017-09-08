@@ -8,6 +8,7 @@ import doobie._, doobie.implicits._
 import shapeless.record._
 
 object GmosEnums {
+  import Angle.Arcseconds
 
   val enums: List[ConnectionIO[EnumDef]] =
     List(
@@ -33,12 +34,12 @@ object GmosEnums {
       },
 
       EnumDef.fromQuery("GmosCustomSlitWidth", "GMOS custom slit width") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'width -> Angle`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'width -> Arcseconds`.T
         sql"""SELECT id, id tag, short_name, long_name, width FROM e_gmos_custom_slit_width""".query[(String, R)]
       },
 
       EnumDef.fromQuery("GmosDetector", "GMOS detector") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Angle, 'southPixelSize -> Angle, 'shuffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'northPixelSize -> Arcseconds, 'southPixelSize -> Arcseconds, 'shuffleOffset -> Int, 'xSize -> Int, 'ySize -> Int, 'maxRois -> Int`.T
         sql"""SELECT id, id tag, short_name, long_name, north_pixel_size, south_pixel_size, shuffle_offset, x_size, y_size, max_rois FROM e_gmos_detector""".query[(String, R)]
       },
 
@@ -68,7 +69,7 @@ object GmosEnums {
       },
 
       EnumDef.fromQuery("GmosNorthFpu", "GMOS North focal plane units") {
-        type GmosNorthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Angle]`.T
+        type GmosNorthFpuRec = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Arcseconds]`.T
         sql"""SELECT id, id tag, short_name, long_name, slit_width FROM e_gmos_north_fpu""".query[(String, GmosNorthFpuRec)]
       },
 
@@ -93,7 +94,7 @@ object GmosEnums {
       },
 
       EnumDef.fromQuery("GmosSouthFpu", "GMOS South focal plane units") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Angle]`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'slitWidth -> Option[Arcseconds]`.T
         sql"""SELECT id, id tag, short_name, long_name, slit_width FROM e_gmos_south_fpu""".query[(String, R)]
       },
 

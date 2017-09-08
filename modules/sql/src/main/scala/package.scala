@@ -7,12 +7,16 @@ import doobie._
 import java.time.{ Duration, ZoneId }
 
 package object sql {
+  import Angle._
 
   implicit val DurationMeta: Meta[Duration] =
     Meta[Long].xmap(Duration.ofMillis, _.toMillis)
 
-  implicit val AngleMeta: Meta[Angle] =
-    Meta[Double].xmap(Angle.fromArcsecs, _.toArcsecs)
+  implicit val ArcsecondsMeta: Meta[Arcseconds] =
+    Meta[Double].xmap(Arcseconds.fromArcsecs, _.toArcsecs)
+
+  implicit val DegreesMeta: Meta[Degrees] =
+    Meta[Double].xmap(Degrees.fromDegrees, _.toDegrees)
 
   implicit val WavelengthNmMeta: Meta[Wavelength.Nm] =
     Meta[BigDecimal].xmap(Wavelength.fromNm, _.toBigDecimal)

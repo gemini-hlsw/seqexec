@@ -15,6 +15,7 @@ import shapeless.record._
 final case class EnumDef(fileName: String, text: String)
 
 object EnumDef {
+  import Angle._
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
   protected[sql] object ToDeclaration extends Poly1 {
@@ -24,13 +25,15 @@ object EnumDef {
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
     implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": java.time.Duration" }
-    implicit def caseAngle   [S <: Symbol] = at[(S, Angle)   ] { case (s, _) => "  val " + s.name + ": gem.math.Angle"}
+    implicit def caseArcseconds [S <: Symbol] = at[(S, Arcseconds) ] { case (s, _) => "  val " + s.name + ": gem.math.Angle"}
+    implicit def caseDegrees [S <: Symbol] = at[(S, Degrees) ] { case (s, _) => "  val " + s.name + ": gem.math.Angle"}
     implicit def caseZoneId  [S <: Symbol] = at[(S, ZoneId)  ] { case (s, _) => "  val " + s.name + ": java.time.ZoneId"}
 
     implicit def caseWavelengthNm[S <: Symbol] = at[(S, Wavelength.Nm ) ] { case (s, _) => "  val " + s.name + ": gem.math.Wavelength"}
     implicit def caseWavelengthUm[S <: Symbol] = at[(S, Wavelength.Um ) ] { case (s, _) => "  val " + s.name + ": gem.math.Wavelength"}
 
-    implicit def caseOptionAngle [S <: Symbol] = at[(S, Option[Angle] ) ] { case (s, _) => "  val " + s.name + ": Option[gem.math.Angle]" }
+    implicit def caseOptionArcseconds [S <: Symbol] = at[(S, Option[Arcseconds]) ] { case (s, _) => "  val " + s.name + ": Option[gem.math.Angle]" }
+    implicit def caseOptionDegrees [S <: Symbol] = at[(S, Option[Degrees]) ] { case (s, _) => "  val " + s.name + ": Option[gem.math.Angle]" }
     implicit def caseOptionDouble[S <: Symbol] = at[(S, Option[Double]) ] { case (s, _) => "  val " + s.name + ": Option[Double]" }
 
     implicit def caseOptionWavelengthNm[S <: Symbol] = at[(S, Option[Wavelength.Nm])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
@@ -45,13 +48,15 @@ object EnumDef {
     implicit val caseBoolean      = at[Boolean ](a => a.toString)
     implicit val caseDouble       = at[Double  ](a => a.toString)
     implicit val caseDuration     = at[Duration](a => s"java.time.Duration.ofMillis(${a.toMillis})")
-    implicit val caseAngle        = at[Angle   ](a => s"gem.math.Angle.fromDoubleArcseconds(${a.toArcsecs})")
+    implicit val caseArcseconds   = at[Arcseconds](a => s"gem.math.Angle.fromDoubleArcseconds(${a.toArcsecs})")
+    implicit val caseDegrees      = at[Degrees](a => s"gem.math.Angle.fromDoubleDegrees(${a.toDegrees})")
     implicit val caseZoneId       = at[ZoneId  ](a => s"""java.time.ZoneId.of("${a.toString}")""")
 
     implicit val caseWavelengthNm = at[Wavelength.Nm ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
     implicit val caseWavelengthUm = at[Wavelength.Um ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
 
-    implicit val caseOptionAngle  = at[Option[Angle ]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
+    implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
+    implicit val caseOptionDegrees = at[Option[Degrees]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleDegrees(${aʹ.toDegrees}))"))
     implicit val caseOptionDouble = at[Option[Double]](a => a.fold("None")(aʹ => s"Some($aʹ)"))
 
     implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))

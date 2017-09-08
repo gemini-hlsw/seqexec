@@ -3,9 +3,19 @@
 
 package gem.sql
 
-/** A very minimal Angle class to support reading from the enum tables without depending on core. */
-final case class Angle(toArcsecs: Double)
+/** Minimal Angle classes to support reading from the enum tables without depending on core. */
 object Angle {
-  def fromArcsecs(d: Double): Angle =
-    Angle(d)
+
+  final case class Arcseconds(toArcsecs: Double)
+  object Arcseconds {
+    def fromArcsecs(d: Double): Arcseconds =
+      Arcseconds(d)
+  }
+
+  final case class Degrees(toDegrees: Double)
+  object Degrees {
+    def fromDegrees(d: Double): Degrees =
+      Degrees(d)
+  }
+
 }
