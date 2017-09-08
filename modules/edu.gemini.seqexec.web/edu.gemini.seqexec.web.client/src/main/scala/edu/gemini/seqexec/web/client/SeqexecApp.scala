@@ -52,7 +52,7 @@ object SeqexecApp {
       case _    => SeqexecSite.SeqexecGS // Default to something reasonable
     }
 
-    // Set thi instruments before adding it to the dom
+    // Set the instruments before adding it to the dom
     SeqexecCircuit.dispatch(Initialize(seqexecSite))
 
     // Render the UI using React

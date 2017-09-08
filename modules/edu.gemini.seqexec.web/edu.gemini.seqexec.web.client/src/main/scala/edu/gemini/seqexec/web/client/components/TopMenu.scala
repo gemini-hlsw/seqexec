@@ -22,7 +22,7 @@ object TopMenu {
 
   final case class Props(status: ModelProxy[ClientStatus])
 
-  def openLogin[A](proxy: ModelProxy[A]): Callback = japgolly.scalajs.react.Callback.log("Login") >> proxy.dispatchCB(OpenLoginBox)
+  def openLogin[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(OpenLoginBox)
   def logout[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(Logout)
 
   private def loginButton[A](proxy: ModelProxy[A], enabled: Boolean) =

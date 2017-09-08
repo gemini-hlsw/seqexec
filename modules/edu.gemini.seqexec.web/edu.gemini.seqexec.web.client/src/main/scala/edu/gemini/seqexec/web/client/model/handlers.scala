@@ -219,8 +219,9 @@ object handlers {
 
       case Logout =>
         val effect = Effect(SeqexecWebClient.logout().map(_ => NoAction))
+        val reConnect = Effect(Future(Reconnect))
         // Remove the user and call logout
-        updated(None, effect)
+        updated(None, effect + reConnect)
     }
   }
 
