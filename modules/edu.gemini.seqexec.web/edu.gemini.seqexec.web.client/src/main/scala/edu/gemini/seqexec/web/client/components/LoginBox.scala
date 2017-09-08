@@ -10,6 +10,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.actions.{CloseLoginBox, LoggedIn}
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient

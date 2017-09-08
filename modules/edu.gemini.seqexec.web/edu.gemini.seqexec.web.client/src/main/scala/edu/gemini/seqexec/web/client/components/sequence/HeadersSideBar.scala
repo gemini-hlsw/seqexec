@@ -8,7 +8,8 @@ import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, 
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
-import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.circuit.{HeaderSideBarFocus, SeqexecCircuit}
+import edu.gemini.seqexec.web.client.actions.{UpdateOperator, UpdateCloudCover, UpdateWaterVapor, UpdateImageQuality, UpdateSkyBackground}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}

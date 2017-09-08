@@ -196,7 +196,15 @@ object Settings {
                       "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
                       "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC
     )
+  }
 
+  object PluginVersions {
+    // Compiler plugins
+    val paradiseVersion    = "2.1.1"
+  }
+
+  object Plugins {
+    val paradisePlugin = "org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion cross CrossVersion.patch
   }
 
 }

@@ -13,8 +13,9 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.model.ModelOps._
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
+import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep, ShowStep}
+import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 

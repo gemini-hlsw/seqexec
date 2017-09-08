@@ -7,7 +7,9 @@ import diode.react.ModelProxy
 import diode.react.ReactPot._
 import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.model.Model.SeqexecSite
-import edu.gemini.seqexec.web.client.model.{NavigateTo, SeqexecCircuit, WebSocketConnection}
+import edu.gemini.seqexec.web.client.actions.NavigateTo
+import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
+import edu.gemini.seqexec.web.client.model.WebSocketConnection
 import edu.gemini.seqexec.web.client.model.Pages.Root
 import edu.gemini.seqexec.web.client.OcsBuildInfo
 import edu.gemini.seqexec.web.client.semanticui.Size

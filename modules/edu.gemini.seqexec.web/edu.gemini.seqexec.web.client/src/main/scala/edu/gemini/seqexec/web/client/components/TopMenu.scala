@@ -4,7 +4,8 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.model.{ClientStatus, Logout, OpenLoginBox}
+import edu.gemini.seqexec.web.client.actions.{Logout, OpenLoginBox}
+import edu.gemini.seqexec.web.client.circuit.ClientStatus
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconSignOut
@@ -21,7 +22,7 @@ object TopMenu {
 
   final case class Props(status: ModelProxy[ClientStatus])
 
-  def openLogin[A](proxy: ModelProxy[A]): Callback = japgolly.scalajs.react.Callback.log("Login") >> proxy.dispatchCB(OpenLoginBox)
+  def openLogin[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(OpenLoginBox)
   def logout[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(Logout)
 
   private def loginButton[A](proxy: ModelProxy[A], enabled: Boolean) =

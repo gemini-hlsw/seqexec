@@ -1,6 +1,7 @@
 import Settings.Libraries._
+import Settings.PluginVersions
 import sbt.Keys._
-import sbt.{file, Compile, ModuleID, project, Test}
+import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
 
