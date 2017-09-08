@@ -4,12 +4,15 @@
 package gem
 package dao
 
+import gem.dao.meta._
 import gem.enum.ProgramRole
 import cats.data._, cats.implicits._
 
 import doobie._, doobie.implicits._
 
 object UserDao {
+  import EnumeratedMeta._
+  import ProgramIdMeta._
 
   /**
    * Select the root user, for system processes. Always succceds if the system is consistent;

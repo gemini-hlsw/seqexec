@@ -6,8 +6,10 @@ package dao
 
 import cats.syntax.functor._
 import doobie._, doobie.implicits._
+import gem.dao.meta._
 
 object SemesterDao {
+  import EnumeratedMeta._
 
   def canonicalize(s: Semester): ConnectionIO[Semester] =
     Statements.canonicalize(s).run.as(s)

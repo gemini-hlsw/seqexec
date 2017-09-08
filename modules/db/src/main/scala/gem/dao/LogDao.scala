@@ -6,8 +6,11 @@ package dao
 
 import doobie._, doobie.implicits._
 import java.util.logging.Level
+import gem.dao.meta._
 
 object LogDao {
+  import LevelMeta._
+  import ProgramIdMeta._
 
   def insert(user: User[_], level: Level, pid: Option[Program.Id], msg: String, t: Option[Throwable], elapsed: Option[Long]): ConnectionIO[Int] =
     Statements.insert(user, level, pid, msg, t, elapsed).run

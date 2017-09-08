@@ -7,10 +7,14 @@ package dao
 import cats.implicits._
 import doobie._, doobie.implicits._
 import gem.config.{DynamicConfig, StaticConfig}
+import gem.dao.meta._
 import gem.enum.Instrument
 import gem.util.Location
 
 object ObservationDao {
+  import EnumeratedMeta._
+  import ObservationIdMeta._
+  import ProgramIdMeta._
 
   /**
    * Construct a program to insert a fully-populated Observation. This program will raise a
