@@ -27,6 +27,10 @@ git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
 // check for library updates whenever the project is [re]load
 onLoad in Global := { s => "dependencyUpdates" :: s }
 
+// some extra commands for us
+addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum; headerCreate")
+addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
+
 // Before printing the prompt check git to make sure all is well.
 shellPrompt in ThisBuild := { state =>
   import scala.sys.process._
@@ -263,8 +267,7 @@ lazy val sql = project
       "org.flywaydb" %  "flyway-core"      % flywayVersion,
       "org.tpolecat" %% "doobie-core"      % doobieVersion,
       "org.tpolecat" %% "doobie-postgres"  % doobieVersion
-    ),
-    addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/src/main/scala/gem/enum; headerCreate")
+    )
   )
 
 lazy val ocs2 = project

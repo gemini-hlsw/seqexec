@@ -42,12 +42,18 @@ to poke around with the database on the commandline. For real work I recommend a
 
 ### Generating Enumerated Types
 
-There are many enumerated types in the database. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files. This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
+There are many enumerated types in the database, represented by tables named `e_whatever`. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files. This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
 code in the `sql` project. In any case, you can [re]-generate the enumerated types thus:
 
 ```
 sbt genEnums
 ```
+
+The source files appear in `modules/core/shared/src/main/scala/gem/enum`.
+
+### Generating Schema Documentation
+
+You can do `sbt schemaSpy` to generate a little website about the database using [SchemaSpy](http://schemaspy.org/). It will appear in `modules/sql/target/schemaspy`.
 
 
 ### Importing
@@ -142,12 +148,6 @@ Multiple main classes detected, select one to run:
 
 If you pick the program importer, it will import everything which is the same as explicitly passing in `Int.MaxValue`.
 
-
-### Enumerated Types
-
-Enumerated types are represented by tables named `e_whatever` which are the source for generated code on the Scala side. After compiling if you look in `modules/core/target/scala-2.11/src_managed/gem` you will see the source. The rationale for this is that the database becomes the source of truth, which makes things like filter wavelengths, etc., available for querying and reporting.
-
-It's not yet clear which bits could be data-driven and which need to exist in Scala code. We do need to write code against specific filters and so on but we could still read these from the database on the fly. TBD.
 
 ### Schema Updates
 
