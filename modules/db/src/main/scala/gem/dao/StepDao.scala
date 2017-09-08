@@ -11,7 +11,7 @@ import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.dao.meta._
 import gem.enum._
-import gem.math.{ Offset, Wavelength }
+import gem.math.Offset
 import java.time.Duration
 import scala.collection.immutable.TreeMap
 
@@ -21,6 +21,7 @@ object StepDao {
   import ObservationIdMeta._
   import OffsetMeta._
   import TimeMeta._
+  import WavelengthMeta._
 
   type Loc = Location.Middle
 
@@ -394,20 +395,6 @@ object StepDao {
       import gem.config.GmosConfig.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
       import DynamicConfig.{ GmosNorth, GmosSouth }
 
-      final case class GmosGratingBuilder[D](
-                         disperser: Option[D],
-                         disperserOrder: Option[GmosDisperserOrder],
-                         wavelength: Option[Int]) {
-
-
-        def toGrating: Option[GmosGrating[D]] =
-          for {
-            d <- disperser
-            o <- disperserOrder
-            w <- wavelength.flatMap(Wavelength.fromAngstroms)
-          } yield GmosGrating(d, o, w)
-      }
-
       final case class GmosFpuBuilder[U](
                          mdfFileName: Option[String],
                          customSlitWidth: Option[GmosCustomSlitWidth],
@@ -427,22 +414,22 @@ object StepDao {
 
       final case class GmosNorthBuilder(
                          c: GmosCommonDynamicConfig,
-                         g: GmosGratingBuilder[GmosNorthDisperser],
+                         g: Option[GmosGrating[GmosNorthDisperser]],
                          f: Option[GmosNorthFilter],
                          u: GmosFpuBuilder[GmosNorthFpu]) {
 
         val toDynamicConfig: GmosNorth =
-          GmosNorth(c, g.toGrating, f, u.toFpu)
+          GmosNorth(c, g, f, u.toFpu)
       }
 
       final case class GmosSouthBuilder(
                          c: GmosCommonDynamicConfig,
-                         g: GmosGratingBuilder[GmosSouthDisperser],
+                         g: Option[GmosGrating[GmosSouthDisperser]],
                          f: Option[GmosSouthFilter],
                          u: GmosFpuBuilder[GmosSouthFpu]) {
 
         val toDynamicConfig: GmosSouth =
-          GmosSouth(c, g.toGrating, f, u.toFpu)
+          GmosSouth(c, g, f, u.toFpu)
       }
 
       private def selectFragment(withLocation: Boolean, table: String, oid: Observation.Id): Fragment =

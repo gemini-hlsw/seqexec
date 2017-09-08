@@ -5,7 +5,7 @@ package gem.dao.meta
 
 import cats.data.NonEmptyList
 import doobie._
-import doobie.enum.jdbctype.{ Distinct => JdbcDistinct, _ }
+import doobie.enum.JdbcType.{ Distinct => JdbcDistinct, _ }
 
 /**
  * Constructor for a Meta instances with an underlying types that are reported by JDBC as
