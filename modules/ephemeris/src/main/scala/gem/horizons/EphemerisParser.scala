@@ -13,7 +13,7 @@ import atto.syntax.parser._
 
 /** Horizons ephemeris parser.  Parses horizons output generated with the flags
   *
-  * 	QUANTITIES=1; time digits=FRACSEC; extra precision=YES
+  *   `QUANTITIES=1; time digits=FRACSEC; extra precision=YES`
   *
   * into an `Ephemeris` object.
   */
