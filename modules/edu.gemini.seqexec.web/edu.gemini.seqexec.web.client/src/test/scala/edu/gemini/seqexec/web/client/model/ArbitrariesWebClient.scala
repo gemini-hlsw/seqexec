@@ -1,11 +1,12 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package edu.gemini.seqexec.web.client.model
+package edu.gemini.seqexec.web.client
 
 import diode.RootModelR
 import diode.data._
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceView}
+import edu.gemini.seqexec.web.client.model.{SequenceTab, SequencesOnDisplay}
 import edu.gemini.web.common.ArbitrariesWebCommon
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}

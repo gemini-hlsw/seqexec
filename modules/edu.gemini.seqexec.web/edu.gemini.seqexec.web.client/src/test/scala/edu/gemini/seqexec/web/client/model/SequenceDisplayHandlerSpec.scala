@@ -1,11 +1,15 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package edu.gemini.seqexec.web.client.model
+package edu.gemini.seqexec.web.client
 
 import diode.ActionResult.ModelUpdate
 import diode.RootModelRW
 import edu.gemini.seqexec.model.Model.{SeqexecSite, SequenceView}
+import edu.gemini.seqexec.web.client.model.{SequencesOnDisplay, SeqexecUIModel}
+import edu.gemini.seqexec.web.client.handlers.SequenceDisplayHandler
+import edu.gemini.seqexec.web.client.actions.SelectIdToDisplay
+import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
