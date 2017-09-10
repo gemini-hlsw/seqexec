@@ -14,15 +14,16 @@ import boopickle.DefaultBasic._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{StepExecuted, ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
 import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ExposurePaused, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.lenses.{sequenceViewT, sequenceStepT}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
+import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio, Beep}
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 
 import org.scalajs.dom._
@@ -493,6 +494,20 @@ object handlers {
         updated(value.copy(user = u))
     }
 
+    val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(e @ StepExecuted(obsId, sv)) =>
+      val curStep =
+        for {
+            obs      <- sequenceViewT.find(_.id === obsId)(e)
+            curSIdx  <- obs.runningStep.map(_._1)
+            curStep  <- sequenceStepT.find(_.id === curSIdx)(obs)
+            if curStep.observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
+            if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
+          } yield curStep
+        val audioEffect = curStep.fold(VoidEffect)(_ => Effect(Future(Beep.beep()).map(_ => NoAction)))
+        updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+    }
+
     val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceCompleted(sv)) =>
         // Play audio when the sequence completes
@@ -595,6 +610,7 @@ object handlers {
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
       List(logMessage,
+        stepCompletedMessage,
         connectionOpenMessage,
         sequenceCompletedMessage,
         sequenceOnErrorMessage,

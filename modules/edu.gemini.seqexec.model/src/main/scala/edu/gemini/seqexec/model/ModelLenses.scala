@@ -67,7 +67,7 @@ trait ModelLenses {
   // Focus on the sequence view
   val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
       case e @ SequenceStart(_)           => e.copy(view = q)
-      case e @ StepExecuted(_)            => e.copy(view = q)
+      case e @ StepExecuted(_, _)         => e.copy(view = q)
       case e @ FileIdStepExecuted(_, _)   => e.copy(view = q)
       case e @ SequenceCompleted(_)       => e.copy(view = q)
       case e @ SequenceLoaded(_, _)       => e.copy(view = q)
@@ -89,23 +89,34 @@ trait ModelLenses {
       case e                              => e
     }
   )
+
+  val sequenceViewT: Traversal[SeqexecModelUpdate, SequenceView] =
+    sequenceQueueViewL ^|->  // Find the sequence view
+    sequencesQueueL    ^|->> // Find the queue
+    eachViewT                // each sequence on the queue
+
+  val sequenceStepT: Traversal[SequenceView, StandardStep] =
+    obsStepsL          ^|->> // sequence steps
+    eachStepT          ^<-?  // each step
+    standardStepP            // which is a standard step
+
   // Composite lens to change the sequence name of an event
   val sequenceNameT: Traversal[SeqexecEvent, ObservationName] =
-    sequenceEventsP         ^|->  // Events with model updates
-    sequenceQueueViewL         ^|->  // Find the sequence view
-    sequencesQueueL ^|->> // Find the queue
-    eachViewT       ^|->  // each sequence on the queue
+    sequenceEventsP    ^|->  // Events with model updates
+    sequenceQueueViewL ^|->  // Find the sequence view
+    sequencesQueueL    ^|->> // Find the queue
+    eachViewT          ^|->  // each sequence on the queue
     obsNameL              // sequence's observation name
 
   // Composite lens to find the step config
   val sequenceConfigT: Traversal[SeqexecEvent, StepConfig] =
-    sequenceEventsP           ^|->  // Events with model updates
-    sequenceQueueViewL           ^|->  // Find the sequence view
-    sequencesQueueL   ^|->> // Find the queue
-    eachViewT         ^|->  // each sequence on the queue
-    obsStepsL         ^|->> // sequence steps
-    eachStepT         ^<-?  // each step
-    standardStepP     ^|->  // which is a standard step
+    sequenceEventsP    ^|->  // Events with model updates
+    sequenceQueueViewL ^|->  // Find the sequence view
+    sequencesQueueL    ^|->> // Find the queue
+    eachViewT          ^|->  // each sequence on the queue
+    obsStepsL          ^|->> // sequence steps
+    eachStepT          ^<-?  // each step
+    standardStepP      ^|->  // which is a standard step
     stepConfigL             // configuration of the step
 
   def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =

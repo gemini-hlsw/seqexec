@@ -20,24 +20,24 @@ class Audio(val src: String) extends js.Object {
 
 object Beep {
   private val ctx = new AudioContext
-
-  /** Emits a beep with the Web Audio API */
-  def beep(): SetTimeoutHandle = {
-    println("STEO")
-    val oscillator = ctx.createOscillator
-    val gain = ctx.createGain
+    private val oscillator = ctx.createOscillator
+    private val gain = ctx.createGain
 
     oscillator.connect(gain)
     gain.connect(ctx.destination)
 
-    // Volume
-    gain.gain.value = 1
+    // Volume 0 at start
+    gain.gain.value = 0
     // frequency
     oscillator.frequency.value = 3020
     // type
-    oscillator.`type` = "square"
-
+    oscillator.`type` = "sine"
+    // start
     oscillator.start()
-    setTimeout(150) { oscillator.stop() }
+
+  /** Emits a beep with the Web Audio API */
+  def beep(): SetTimeoutHandle = {
+    gain.gain.value = 1
+    setTimeout(0.05) { gain.gain.value = 0 }
   }
 }

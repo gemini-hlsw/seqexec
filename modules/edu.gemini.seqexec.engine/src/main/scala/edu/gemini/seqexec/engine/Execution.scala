@@ -61,18 +61,20 @@ object Execution {
     * are pending.
     */
   def currentify(as: Actions): Option[Execution] =
-    (as.nonEmpty && as.forall((_.state.runState === Action.Idle))).option(Execution(as))
+    (as.nonEmpty && as.forall(_.state.runState === Action.Idle)).option(Execution(as))
 
   def errored(ex: Execution): Boolean = ex.execution.exists(_.state.runState match {
     case Action.Failed(_) => true
-    case _ => false
+    case _                => false
   })
 
   def finished(ex: Execution): Boolean = ex.execution.all(_.state.runState match {
     case Action.Completed(_) => true
     case Action.Failed(_)    => true
-    case _ => false
+    case _                   => false
   })
+
+  def progressRatio(ex: Execution): (Int, Int) = (ex.results.length, ex.execution.length)
 
   def actionStateFromResult(r: Result): (Action.State => Action.State) = s => r match {
     case Result.OK(x)         => s.copy(runState = Action.Completed(x))

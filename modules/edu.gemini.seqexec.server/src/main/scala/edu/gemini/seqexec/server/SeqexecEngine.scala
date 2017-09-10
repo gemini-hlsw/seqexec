@@ -163,15 +163,18 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     })
 
     (i match {
-      case (EventSystem(Failed(id, _, e)), _) => for {
-        obsId <- safeGetObsId(id)
-        _ <- systems.odb.obsAbort(obsId, e.msg)
-      } yield ()
-      case (EventSystem(Executed(id)), st) if st.sequences.get(id).exists(_.status === SequenceState.Idle) => for {
-        obsId <- safeGetObsId(id)
-        _ <- systems.odb.obsPause(obsId, "Sequence paused by user")
-      } yield ()
-      case _ => SeqAction(())
+      case (EventSystem(Failed(id, _, e)), _) =>
+        for {
+          obsId <- safeGetObsId(id)
+          _     <- systems.odb.obsAbort(obsId, e.msg)
+        } yield ()
+      case (EventSystem(Executed(id)), st) if st.sequences.get(id).exists(_.status === SequenceState.Idle) =>
+        for {
+          obsId <- safeGetObsId(id)
+          _     <- systems.odb.obsPause(obsId, "Sequence paused by user")
+        } yield ()
+      case _ =>
+        SeqAction(())
     }).run.map(_ => i)
   }
 
@@ -224,7 +227,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
       case engine.Failed(id, _, _)                                          => SequenceError(id, svs)
       case engine.Busy(id)                                                  => ResourcesBusy(id, svs)
-      case engine.Executed(_)                                               => StepExecuted(svs)
+      case engine.Executed(s)                                               => StepExecuted(s, svs)
       case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
