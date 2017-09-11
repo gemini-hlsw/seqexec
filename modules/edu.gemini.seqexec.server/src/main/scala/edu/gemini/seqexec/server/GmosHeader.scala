@@ -220,7 +220,7 @@ object GmosHeader {
     override def gratingTilt: SeqAction[Double] = GmosEpics.instance.gratingTilt.toSeqAction
     override def gratingStep: SeqAction[Double] =
       // Set the value to the epics channel if inBeam is    1
-      GmosEpics.instance.reqGratingMotorSteps.filter(_ => GmosEpics.instance.inBeam === Some(1)).toSeqAction
+      GmosEpics.instance.reqGratingMotorSteps.filter(_ => GmosEpics.instance.disperserInBeam === Some(1)).toSeqAction
     override def dtaX: SeqAction[Double] = GmosEpics.instance.dtaX.toSeqAction
     override def dtaY: SeqAction[Double] = GmosEpics.instance.dtaY.toSeqAction
     override def dtaZ: SeqAction[Double] = GmosEpics.instance.dtaZ.toSeqAction
