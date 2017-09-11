@@ -33,23 +33,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import SeqTranslate._
 
-  def toResult(r: SeqexecFailure \/ Result.Response): Result = r match {
-    case \/-(r) => Result.OK(r)
-    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
-  }
 
-  def toResult2[A <: Result.PartialVal](r: SeqexecFailure \/ Result.Partial[A]): Result = r match {
-    case \/-(r) => r case -\/(e) => Result.Error(SeqexecFailure.explain(e))
-  }
-
-  def toResult3(r: SeqexecFailure \/ ObserveResult): Result = r match {
-    case \/-(r) => Result.OK(Observed(r.dataId))
-    case -\/(e) => Result.Error(SeqexecFailure.explain(e))
-  }
-
-  def toAction(x: SeqAction[Result.Response]): Action = fromTask(x.run.map(toResult))
-
-  def toAction2(x: SeqAction[ObserveResult]): Action = fromTask(x.run.map(toResult3))
 
   private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
@@ -92,23 +76,23 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
     for {
       id <- dhsFileId(inst)
-    } yield Result.Partial(FileIdAllocated(id), toAction2(doObserve(id)))
+    } yield Result.Partial(FileIdAllocated(id), doObserve(id).toAction)
   }
 
   private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
       val initialStepExecutions: List[List[Action]] =
-        if (i === 0) List(List(toAction(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored))))
+        if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction))
         else Nil
 
       val lastStepExecutions: List[List[Action]] =
-        if (last) List(List(toAction(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored))))
+        if (last) List(List(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored).toAction))
         else Nil
 
       val regularStepExecutions: List[List[Action]] =
         List(
-          sys.map(x => toAction(x.configure(config).map(y => Result.Configured(y.sys.name)))),
-          List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(toResult2)))
+          sys.map(x => x.configure(config).map(y => Result.Configured(y.sys.name)).toAction),
+          List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)))
         )
 
       extractStatus(config) match {
@@ -341,4 +325,32 @@ object SeqTranslate {
     }.join
   }
 
+  implicit class ResponseToResult(val r: SeqexecFailure \/ Result.Response) extends AnyVal {
+    def toResult: Result = r match {
+      case \/-(r) => Result.OK(r)
+      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+    }
+  }
+
+  implicit class PartialResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ Result.Partial[A]) extends AnyVal {
+    def toResult: Result = r match {
+      case \/-(r) => r
+      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+    }
+  }
+
+  implicit class ObserveResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ObserveResult) extends AnyVal {
+    def toResult: Result = r match {
+      case \/-(r) => Result.OK(Observed(r.dataId))
+      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+    }
+  }
+
+  implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
+    def toAction: Action = fromTask(x.run.map(_.toResult))
+  }
+
+  implicit class ObserveResultToAction(val x: SeqAction[ObserveResult]) extends AnyVal {
+    def toAction: Action = fromTask(x.run.map(_.toResult))
+  }
 }
