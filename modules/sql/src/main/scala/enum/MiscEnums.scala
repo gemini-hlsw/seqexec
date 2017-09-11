@@ -9,6 +9,7 @@ import java.time.ZoneId
 import shapeless.record._
 
 object MiscEnums {
+  import Angle._
 
   val enums: List[ConnectionIO[EnumDef]] =
     List(
@@ -47,8 +48,10 @@ object MiscEnums {
       },
 
       EnumDef.fromQuery("Site", "Gemini observing sites") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'timezone -> ZoneId`.T
-        sql"SELECT id, id tag, short_name, long_name, timezone FROM e_site".query[(String, R)]
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'mountain -> String, 'latitude -> Degrees, 'longitude -> Degrees, 'altitude -> Int, 'timezone -> ZoneId`.T
+        sql"""SELECT id, id tag, short_name, long_name, mountain, latitude, longitude, altitude,
+                timezone
+              FROM e_site""".query[(String, R)]
       },
 
       EnumDef.fromQuery("ProgramRole", "user roles with respect to a given program") {
