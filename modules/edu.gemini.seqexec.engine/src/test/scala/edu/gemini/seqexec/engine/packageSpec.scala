@@ -5,7 +5,6 @@ package edu.gemini.seqexec.engine
 
 import java.util.concurrent.Semaphore
 
-import Event._
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Resource
@@ -131,13 +130,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
-    val p = Process.eval(Task.now(start(seqId, user)))
+    val p = Process.eval(Task.now(Event.start(seqId, user)))
     val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.map(_._2)
     assert(qs.map(_.sequences(seqId).status).forall(_ === SequenceState.Running))
   }
@@ -153,28 +152,28 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   ignore should "Print execution" in {
-    val p = Process.eval(Task(start(seqId, user)))
+    val p = Process.eval(Task(Event.start(seqId, user)))
     intercept[Cause.Terminated](
       process(p)(qs1).run.unsafePerformSync
     )
   }
 
   ignore should "Print execution with pause" in {
-    val p = Process.emitAll(List(start(seqId, user), pause(seqId, user), start(seqId, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.start(seqId, user), Event.pause(seqId, user), Event.start(seqId, user))).evalMap(Task.now(_))
     intercept[Cause.Terminated](
        process(p)(qs1).run.unsafePerformSync
     )
   }
 
   it should "not run 2nd sequence because it's using the same resource" in {
-    val p = Process.emitAll(List(start(seqId1, user), start(seqId2, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId2, user))).evalMap(Task.now(_))
     assert(
       process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).forall(_.status === SequenceState.Idle)
     )
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val p = Process.emitAll(List(start(seqId1, user), start(seqId3, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId3, user))).evalMap(Task.now(_))
 
     assert(
       process(p)(qs3).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId3)).forall(_.status === SequenceState.Running)
@@ -213,7 +212,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     val result = Nondeterminism[Task].both(
       List(
-        q.enqueueOne(start(seqId, user)),
+        q.enqueueOne(Event.start(seqId, user)),
         Task.apply(startedFlag.acquire),
         q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release} *> Task.delay(None)})
       ).sequenceU,
@@ -256,7 +255,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "pass parameters to Actions." in {
-    val p = Process.emitAll(List(Event.setOperator("John", user), Event.setObserver(seqId1, user, "Smith"), start(seqId1, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.setOperator("John", user), Event.setObserver(seqId1, user, "Smith"), Event.start(seqId1, user))).evalMap(Task.now(_))
     val s0 = Engine.State(Conditions.default,
       None,
       Map((seqId, Sequence.State.init(Sequence(

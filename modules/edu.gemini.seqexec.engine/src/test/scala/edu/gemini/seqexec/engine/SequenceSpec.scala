@@ -3,7 +3,6 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.engine.Event.start
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.F2
 import edu.gemini.seqexec.model.UserDetails
@@ -81,7 +80,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }

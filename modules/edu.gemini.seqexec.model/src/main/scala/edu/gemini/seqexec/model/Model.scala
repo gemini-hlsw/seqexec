@@ -72,6 +72,8 @@ object Model {
 
     final case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    final case class SequencePauseCanceled(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     final case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     final case class ResourcesBusy(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
@@ -106,6 +108,7 @@ object Model {
       case e @ ConditionsUpdated(v)      => (e, v)
       case e @ StepSkipMarkChanged(v)    => (e, v)
       case e @ SequencePauseRequested(v) => (e, v)
+      case e @ SequencePauseCanceled(v)  => (e, v)
       case e @ SequenceRefreshed(v)      => (e, v)
       case e @ ResourcesBusy(v)          => (e, v)
       case e @ SequenceUpdated(v)        => (e, v)
@@ -123,6 +126,7 @@ object Model {
         case ConditionsUpdated(_)       => ConditionsUpdated(q)
         case StepSkipMarkChanged(_)     => StepSkipMarkChanged(q)
         case SequencePauseRequested(_)  => SequencePauseRequested(q)
+        case SequencePauseCanceled(_)   => SequencePauseCanceled(q)
         case SequenceRefreshed(_)       => SequenceRefreshed(q)
         case ResourcesBusy(_)           => ResourcesBusy(q)
         case SequenceUpdated(_)         => SequenceUpdated(q)

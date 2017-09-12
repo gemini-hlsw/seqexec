@@ -160,6 +160,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_, _)            => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
+      case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
       case engine.Load(id, _)            => SequenceLoaded(id, svs)
       case engine.Unload(id)             => SequenceUnloaded(id, svs)
       case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)

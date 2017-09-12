@@ -30,6 +30,7 @@ sealed trait UserEvent {
 
 final case class Start(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent
 final case class Pause(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent
+final case class CancelPause(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent
 final case class Load(id: Sequence.Id, sequence: Sequence[Action \/ Result]) extends UserEvent {
   val user: Option[UserDetails] = None
 }

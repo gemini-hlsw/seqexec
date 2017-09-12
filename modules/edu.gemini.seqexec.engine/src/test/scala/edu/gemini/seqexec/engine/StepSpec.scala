@@ -13,7 +13,6 @@ import Inside._
 
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
-import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.Running
 import edu.gemini.seqexec.model.UserDetails
 
@@ -60,7 +59,7 @@ class StepSpec extends FlatSpec {
   } yield Result.OK(Result.Observed("DummyFileId")))
 
   def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(for {
-    _ <- q.enqueueOne(pause(seqId, user))
+    _ <- q.enqueueOne(Event.pause(seqId, user))
     // There is not a distinct result for Pause because the Pause action is a
     // trick for testing but we don't need to support it real life, he pause
     // input event is enough.
@@ -74,13 +73,13 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State): List[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog.unsafePerformSync.map(_._2).toList
   }
@@ -124,7 +123,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = (q.enqueueOne(start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qs1 = (q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
           a => !isFinished(a._2.sequences(seqId).status)
         ).runLast)).unsafePerformSync.map(_._2)
 
@@ -172,7 +171,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = process(Process.eval(Task.now(start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = process(Process.eval(Task.now(Event.start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
