@@ -90,8 +90,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       val regularStepExecutions: List[List[Action]] =
         List(
           sys.map(x => x.configure(config).map(y => Result.Configured(y.sys.name)).toAction),
-          List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)))
-        )
+          List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult))))
 
       extractStatus(config) match {
         case StepState.Pending =>
