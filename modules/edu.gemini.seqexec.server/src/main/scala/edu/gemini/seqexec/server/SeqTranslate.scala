@@ -33,8 +33,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import SeqTranslate._
 
-
-
   private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
 

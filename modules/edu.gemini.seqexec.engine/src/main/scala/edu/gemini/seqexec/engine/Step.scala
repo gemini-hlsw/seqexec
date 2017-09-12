@@ -45,6 +45,10 @@ object Step {
     *
     */
   def status(step: Step[Action \/ Result]): StepState = {
+    def stepCompleted(s: Action \/ Result): Boolean = s match {
+      case \/-(Result.OK(_)) => true
+      case _                 => false
+    }
 
     // Find an error in the Step
     step.findLeft(Execution.errored).flatMap(
@@ -58,7 +62,7 @@ object Step {
       // All actions in this Step are pending.
       else if (step.all(_.isLeft)) StepState.Pending
       // All actions in this Step were completed successfully.
-      else if (step.all(_.isRight)) StepState.Completed
+      else if (step.all(stepCompleted)) StepState.Completed
       // Not all actions are completed or pending.
       else StepState.Running
     )
