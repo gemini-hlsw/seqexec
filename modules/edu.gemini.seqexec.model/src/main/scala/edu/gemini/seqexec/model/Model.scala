@@ -7,13 +7,14 @@ import scalaz._
 import Scalaz._
 
 import monocle.{Lens, Prism, PTraversal}
-import monocle.macros.GenLens
+import monocle.macros.{GenLens, Lenses}
 import monocle.Traversal
 
 import java.time.Instant
 
 import dhs.ImageFileId
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
   sealed trait SeqexecSite {
@@ -266,13 +267,13 @@ object Model {
     * Metadata about the sequence required on the exit point
     */
   // TODO Une a proper instrument class
-  final case class SequenceMetadata(
+  @Lenses final case class SequenceMetadata(
     instrument: Instrument,
     observer: Option[Observer],
     name: String
   )
 
-  final case class SequenceView (
+  @Lenses final case class SequenceView (
     id: SequenceId,
     metadata: SequenceMetadata,
     status: SequenceState,

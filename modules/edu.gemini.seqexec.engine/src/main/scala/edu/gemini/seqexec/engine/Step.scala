@@ -5,8 +5,14 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Resource, StepConfig, StepState}
 
-import scalaz._
-import Scalaz._
+import scalaz.{Monoid, Functor, Foldable, \/, \/-}
+import scalaz.syntax.apply._
+import scalaz.syntax.foldable._
+import scalaz.syntax.either._
+import scalaz.std.AllInstances._
+
+import monocle.Lens
+import monocle.macros.GenLens
 
 /**
   * A list of `Executions` grouped by observation.
@@ -32,7 +38,7 @@ object Step {
 
   // TODO: Proof Foldable laws
   implicit val stepFoldable: Foldable[Step] = new Foldable[Step] {
-    def foldMap[A, B](fa: Step[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
+    def foldMap[A, B](fa: Step[A])(f: A => B)(implicit F: Monoid[B]): B =
       // TODO: Foldable composition?
       fa.executions.foldMap(_.foldMap(f))
 
@@ -163,11 +169,11 @@ object Step {
           )
       }
 
-    val current: Zipper @> Execution =
-      Lens.lensu((s, f) => s.copy(focus = f), _.focus)
+    val current: Lens[Zipper, Execution] =
+      GenLens[Zipper](_.focus)
 
-    val fileId: Zipper @> Option[FileId] =
-      Lens.lensu((s, f) => s.copy(fileId = f), _.fileId)
+    val fileId: Lens[Zipper, Option[FileId]] =
+      GenLens[Zipper](_.fileId)
 
   }
 

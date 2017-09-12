@@ -202,8 +202,12 @@ lazy val edu_gemini_seqexec_server = project
 lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .in(file("modules/edu.gemini.seqexec.model"))
   .enablePlugins(AutomateHeaderPlugin)
-  .settings(libraryDependencies ++= BooPickle.value +: Monocle.value)
-  .jvmSettings(commonSettings)
+  .settings(
+    addCompilerPlugin(Plugins.paradisePlugin),
+    libraryDependencies ++= BooPickle.value +: Monocle.value
+  )
+  .jvmSettings(
+    commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
     // And add a custom one
@@ -220,7 +224,10 @@ lazy val edu_gemini_seqexec_engine = project
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(edu_gemini_seqexec_model_JVM)
   .settings(commonSettings: _*)
-  .settings(libraryDependencies ++= Seq(ScalaZStream, Log4s))
+  .settings(
+    addCompilerPlugin(Plugins.paradisePlugin),
+    libraryDependencies ++= Seq(ScalaZStream, Log4s) ++ Monocle.value
+  )
 
 /**
   * Common settings for the Seqexec instances

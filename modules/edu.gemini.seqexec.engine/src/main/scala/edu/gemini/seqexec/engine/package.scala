@@ -92,7 +92,7 @@ package object engine {
     * Changes the `Status` and returns the new `Queue.State`.
     */
   def switch(id: Sequence.Id)(st: SequenceState): HandleP[Unit] =
-    modifyS(id)(s => Sequence.State.status.set(s, st))
+    modifyS(id)(s => Sequence.State.status.set(st)(s))
 
   def start(id: Sequence.Id): HandleP[Unit] =
     resources.flatMap(
@@ -101,7 +101,7 @@ package object engine {
           // No resources being used by other running sequences
           if (seq.status === SequenceState.Idle)
             if(seq.toSequence.resources.intersect(other).isEmpty)
-              putS(id)(Sequence.State.status.set(seq.rollback, SequenceState.Running))*> send(Event.executing(id))
+              putS(id)(Sequence.State.status.set(SequenceState.Running)(seq.rollback))*> send(Event.executing(id))
           // Some resources are being used
             else send(busy(id))
           else unit
@@ -109,9 +109,9 @@ package object engine {
       }
     )
 
-  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Running) Sequence.State.status.set(s, SequenceState.Stopping) else s)
+  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Running) Sequence.State.status.set(SequenceState.Stopping)(s) else s)
 
-  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Stopping) Sequence.State.status.set(s, SequenceState.Running) else s)
+  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Stopping) Sequence.State.status.set(SequenceState.Running)(s) else s)
 
   val resources: HandleP[Set[Resource]] =
     gets(_.sequences
