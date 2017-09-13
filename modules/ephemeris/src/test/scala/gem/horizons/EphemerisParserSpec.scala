@@ -6,8 +6,12 @@ package gem.horizons
 import gem.math.{ Coordinates, Ephemeris }
 import gem.util.InstantMicros
 
+import cats.effect.IO
 import cats.tests.CatsSuite
 
+import fs2.Stream
+
+import java.io.InputStream
 import java.time.{ LocalDateTime, ZoneOffset }
 import java.time.format.DateTimeFormatter
 
@@ -37,7 +41,7 @@ final class EphemerisParserSpec extends CatsSuite {
       "2018-Feb-01 00:00:00.000" -> "16 32 29.4260 -13 17 34.938"
     )
 
-    checkEph("borrelly", head, tail)
+    checkParse("borrelly", head, tail)
   }
 
   test("Must parse ceres") {
@@ -54,7 +58,7 @@ final class EphemerisParserSpec extends CatsSuite {
       "2018-Feb-01 00:00:00.000" -> "09 11 36.4958 +30 13 02.822"
     )
 
-    checkEph("ceres", head, tail)
+    checkParse("ceres", head, tail)
   }
 
   test("Must parse enceladus") {
@@ -71,7 +75,7 @@ final class EphemerisParserSpec extends CatsSuite {
       "2018-Feb-01 00:00:00.000" -> "18 19 49.8023 -22 28 35.777"
     )
 
-    checkEph("enceladus", head, tail)
+    checkParse("enceladus", head, tail)
   }
 
   test("Must parse mars") {
@@ -88,10 +92,20 @@ final class EphemerisParserSpec extends CatsSuite {
       "2018-Feb-01 00:00:00.000" -> "16 04 46.9735 -20 08 31.938"
     )
 
-    checkEph("mars", head, tail)
+    checkParse("mars", head, tail)
   }
 
-  private def checkEph(name: String,
+  test("Must stream mars") {
+    val head = eph(
+      "2017-Aug-01 00:00:00.000" -> "08 39 26.1113 +19 33 27.498",
+      "2017-Aug-02 20:09:36.000" -> "08 44 16.7664 +19 15 25.619",
+      "2017-Aug-04 16:19:12.000" -> "08 49 06.2770 +18 56 56.576"
+    )
+
+    checkStream("mars", head)
+  }
+
+  private def checkParse(name: String,
                head: TreeMap[InstantMicros, Coordinates],
                tail: TreeMap[InstantMicros, Coordinates]): org.scalatest.Assertion = {
 
@@ -105,13 +119,28 @@ final class EphemerisParserSpec extends CatsSuite {
       (e.toMap.from(tail.firstKey) == tail)
     )
   }
+
+  private def checkStream(name: String, head: TreeMap[InstantMicros, Coordinates]): org.scalatest.Assertion = {
+
+    val s = stream(name).through(EphemerisParser.elements[IO])
+    val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
+
+    assert(m == head)
+  }
 }
 
 object EphemerisParserSpec {
   private val TimeFormat = DateTimeFormatter.ofPattern("yyyy-MMM-dd HH:mm:ss.SSS")
 
+  private def inputStream(n: String): InputStream =
+    getClass.getResourceAsStream(s"$n.eph")
+
+  private def stream(n: String): Stream[IO, String] =
+    fs2.io.readInputStream(IO(inputStream(n)), 128)
+          .through(fs2.text.utf8Decode)
+
   private def load(n: String): String =
-    Source.fromInputStream(getClass.getResourceAsStream(s"$n.eph")).mkString
+    Source.fromInputStream(inputStream(n)).mkString
 
   private def time(s: String): InstantMicros =
     InstantMicros.truncate(LocalDateTime.parse(s, TimeFormat).toInstant(ZoneOffset.UTC))
