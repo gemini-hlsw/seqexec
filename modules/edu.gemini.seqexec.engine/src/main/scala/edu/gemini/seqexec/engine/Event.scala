@@ -71,6 +71,7 @@ object Event {
 
   def start(id: Sequence.Id, user: UserDetails): Event = EventUser(Start(id, user.some))
   def pause(id: Sequence.Id, user: UserDetails): Event = EventUser(Pause(id, user.some))
+  def cancelPause(id: Sequence.Id, user: UserDetails): Event = EventUser(CancelPause(id, user.some))
   def load(id: Sequence.Id, sequence: Sequence[Action \/ Result]): Event = EventUser(Load(id, sequence))
   def unload(id: Sequence.Id): Event = EventUser(Unload(id))
   def breakpoint(id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, user.some, step, v))
