@@ -100,7 +100,8 @@ object EphemerisParser {
     * @return pipe for a `Stream[F, String]` into a `Stream[F, Either[String, Ephemeris.Element]]`
     */
   def eitherElements[F[_]]: Pipe[F, String, Either[String, Ephemeris.Element]] =
-    in => parsedElements(in).map(_.either)
+    _.through(parsedElements)
+     .map(_.either)
 
   /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
     * horizons into a `Stream[F, Ephemeris.Element]`.  If there is a parse
@@ -112,9 +113,9 @@ object EphemerisParser {
     * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
     */
   def unsafeElements[F[_]]: Pipe[F, String, Ephemeris.Element] =
-    in => parsedElements(in)
-            .map(_.either.left.map(new RuntimeException(_)))
-            .rethrow
+    _.through(parsedElements)
+     .map(_.either.left.map(new RuntimeException(_)))
+     .rethrow
 
   /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
     * horizons into a `Stream[F, Ephemeris.Element]`.  If there is a parse
@@ -125,7 +126,7 @@ object EphemerisParser {
     * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
     */
   def elements[F[_]]: Pipe[F, String, Ephemeris.Element] =
-    in => parsedElements(in)
-            .collect { case Done(_, e) => e }
+    _.through(parsedElements)
+     .collect { case Done(_, e) => e }
 
 }

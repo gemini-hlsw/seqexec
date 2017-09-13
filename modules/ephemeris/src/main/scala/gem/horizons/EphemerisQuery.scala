@@ -34,6 +34,10 @@ object EphemerisQuery {
   private val client = PooledHttp1Client[IO]()
 
   private object req {
+    // Horizons responses are capped at 90024, but you always get one more than
+    // you request so the maximum request is MaxElements - 1.
+    val MaxElements = 90024
+
     val url         = "https://ssd.jpl.nasa.gov/horizons_batch.cgi"
     val dateFormat  = DateTimeFormatter.ofPattern("yyyy-MMM-d HH:mm:ss.SSS", US).withZone(UTC)
 
@@ -58,21 +62,18 @@ object EphemerisQuery {
         .map { case (k, v) => s"$k=${URLEncoder.encode(v, UTF_8.name)}" }
         .mkString("&")
 
+    /** Creates a URL string corresponding the the horizons request. */
     def string(k: EphemerisKey.Horizons, s: Site, start: Instant, end: Instant, elements: Int): String = {
 
       val reqParams = List(
         "COMMAND"    -> s"'${k.queryString}'",
         "SITE_COORD" -> formatCoords(s),
         "START_TIME" -> s"'${dateFormat.format(start)}'",
-        "STEP_SIZE"  -> (((elements max 2) min 90024) - 1).toString,
+        "STEP_SIZE"  -> (((elements max 2) min MaxElements) - 1).toString,
         "STOP_TIME"  -> s"'${dateFormat.format(end)}'"
       )
 
-      val str = s"$url?${formatQuery(reqParams ++ fixedParams)}"
-
-      println(str)
-
-      str
+      s"$url?${formatQuery(reqParams ++ fixedParams)}"
     }
 
     def uri[F[_]](k: HorizonsDesignation, s: Site, start: Instant, end: Instant, elements: Int)(implicit F: MonadError[F, Throwable]): F[Uri] =
@@ -83,6 +84,14 @@ object EphemerisQuery {
   }
 
   /** Makes an horizons request and parses all the ephemeris elements in memory.
+    *
+    * @param k        identifies the non-sidereal target of interest
+    * @param s        site for which ephemeris data is sought
+    * @param start    time at which the ephemeris data should start
+    * @param end      time at which the ephemeris data should end
+    * @param elements how many elements are requested; regardless no fewer than
+    *                 two elements and no more than 90024 will be returned for a
+    *                 successful query
     */
   def fetchEphemeris(k: HorizonsDesignation, s: Site, start: Instant, end: Instant, elements: Int): IO[Either[String, Ephemeris]] =
     client.expect[String](req[IO](k, s, start, end, elements)).map { s =>
@@ -91,6 +100,14 @@ object EphemerisQuery {
 
   /** Makes an horizons request, parsing and emitting ephemeris elements as they
     * are received.
+    *
+    * @param k        identifies the non-sidereal target of interest
+    * @param s        site for which ephemeris data is sought
+    * @param start    time at which the ephemeris data should start
+    * @param end      time at which the ephemeris data should end
+    * @param elements how many elements are requested; regardless no fewer than
+    *                 two elements and no more than 90024 will be returned for a
+    *                 successful query
     */
   def streamEphemeris(k: HorizonsDesignation, s: Site, start: Instant, end: Instant, elements: Int): Stream[IO, Ephemeris.Element] =
     client.streaming(req[IO](k, s, start, end, elements)) {
