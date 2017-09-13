@@ -13,7 +13,6 @@ import Inside._
 
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
-import edu.gemini.seqexec.engine.Event.{pause, start}
 import edu.gemini.seqexec.model.Model.SequenceState.Running
 import edu.gemini.seqexec.model.UserDetails
 
@@ -59,12 +58,23 @@ class StepSpec extends FlatSpec {
     _ <- Task(println ("System: Complete observation"))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
+  def error(errMsg: String): Action  = fromTask(Task {
+    Thread.sleep(200)
+    Result.Error(errMsg)
+  } )
+
+
   def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(for {
-    _ <- q.enqueueOne(pause(seqId, user))
+    _ <- q.enqueueOne(Event.pause(seqId, user))
     // There is not a distinct result for Pause because the Pause action is a
     // trick for testing but we don't need to support it real life, he pause
     // input event is enough.
-  } yield Result.OK(Result.Observed("DummyFileId")))
+  } yield Result.OK(Result.Configured("PauseCmdAction")))
+
+  def triggerStart(q: async.mutable.Queue[Event]): Action = fromTask(for {
+    _ <- q.enqueueOne(Event.start(seqId, user))
+    // Same case that the pause action
+  } yield Result.OK(Result.Configured("StartCmdAction")))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -74,13 +84,13 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State): List[Engine.State] = {
-    process(Process.eval(Task.now(start(seqId, user))))(s0).drop(1).takeThrough(
+    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog.unsafePerformSync.map(_._2).toList
   }
@@ -124,7 +134,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = (q.enqueueOne(start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qs1 = (q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
           a => !isFinished(a._2.sequences(seqId).status)
         ).runLast)).unsafePerformSync.map(_._2)
 
@@ -172,7 +182,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = process(Process.eval(Task.now(start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = process(Process.eval(Task.now(Event.start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
@@ -185,18 +195,189 @@ class StepSpec extends FlatSpec {
 
   }
 
-  ignore should "ignore pause command if step is not been executed." in {
+  it should "cancel a pause request in response to a cancel pause command." in {
+    val qs0: Engine.State =
+      Engine.State(
+        Conditions.default,
+        None,
+        Map(
+          (seqId,
+           Sequence.State.Zipper(
+             Sequence.Zipper(
+               "First",
+               SequenceMetadata(F2, None, ""),
+               Nil,
+               Step.Zipper(
+                 2,
+                 None,
+                 config,
+                 Set.empty,
+                 false,
+                 false,
+                 Nil,
+                 Execution(List(observe.left)),
+                 List(List(result, result)),
+                 (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
+               Nil
+             ),
+             SequenceState.Stopping
+           )
+          )
+        )
+      )
+
+    val qs1 = process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+
+    inside (qs1.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(zipper, status)) =>
+        status should be (Running)
+    }
 
   }
 
-  // Be careful that resume command really arrives while sequence is running.
-  ignore should "ignore resume command if step is already running." in {
+  "engine" should "ignore pause command if step is not being executed." in {
+    val qs0: Engine.State =
+      Engine.State(
+        Conditions.default,
+        None,
+        Map(
+          (seqId,
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata(F2, None, ""),
+               List(
+                 Step(
+                   1,
+                   None,
+                   config,
+                   Set.empty,
+                   false,
+                   false,
+                   List(
+                     List(configureTcs, configureInst).map(_.left), // Execution
+                     List(observe.left) // Execution
+                   )
+                 )
+               )
+             )
+           )
+          )
+        )
+      )
 
+    val qss = process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
+
+    assert(qss.length == 1)
+    inside (qss.headOption.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(zipper, status)) =>
+        inside (zipper.focus.toStep) {
+          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
+            assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
+        }
+        status should be (SequenceState.Idle)
+    }
+  }
+
+  // Be careful that start command doesn't run an already running sequence.
+  "engine" should "ignore start command if step is already running." in {
+    val q = async.boundedQueue[Event](10)
+    val qs0: Engine.State =
+      Engine.State(
+        Conditions.default,
+        None,
+        Map(
+          (seqId,
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata(F2, None, ""),
+               List(
+                 Step(
+                   1,
+                   None,
+                   config,
+                   Set.empty,
+                   false,
+                   false,
+                   List(
+                     List(configureTcs, configureInst).map(_.left), // Execution
+                     List(triggerStart(q).left), // Execution
+                     List(observe.left) // Execution
+                   )
+                 )
+               )
+             )
+           )
+          )
+        )
+      )
+
+    val qss = (q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+          a => !isFinished(a._2.sequences(seqId).status)
+        ).runLog)).unsafePerformSync
+
+    val actionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Completed[_]) => x}
+    assert(actionsCompleted.length == 4)
+
+    val executionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Executed) => x}
+    assert(executionsCompleted.length == 3)
+
+    val sequencesCompleted = qss.map(_._1).collect{case x@EventSystem(_: Finished) => x}
+    assert(sequencesCompleted.length == 1)
+
+    inside (qss.lastOption.flatMap(_._2.sequences.get(seqId))) {
+      case Some(Sequence.State.Final(_, status)) =>
+        status should be (SequenceState.Completed)
+    }
   }
 
   // For this test, one of the actions in the step must produce an error as result.
-  ignore should "stop execution and propagate error when an Action ends in error." in {
+  "engine" should "stop execution and propagate error when an Action ends in error." in {
+    val errMsg = "Dummy error"
+    val qs0: Engine.State =
+      Engine.State(
+        Conditions.default,
+        None,
+        Map(
+          (seqId,
+           Sequence.State.init(
+             Sequence(
+               seqId,
+               SequenceMetadata(F2, None, ""),
+               List(
+                 Step(
+                   1,
+                   None,
+                   config,
+                   Set.empty,
+                   false,
+                   false,
+                   List(
+                     List(configureTcs, configureInst).map(_.left), // Execution
+                     List(error(errMsg).left),
+                     List(observe.left)
+                   )
+                 )
+               )
+             )
+           )
+          )
+        )
+      )
 
+    val qs1 = runToCompletion(qs0)
+
+    inside (qs1.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(zipper, status)) =>
+        inside (zipper.focus.toStep) {
+          // Check that the sequence stopped midway
+          case Step(_, _, _, _, _, _, ex1::ex2::ex3::Nil) =>
+            assert( Execution(ex1).results.length == 2 && Execution(ex2).results.length == 1 && Execution(ex3).actions.length == 1)
+        }
+        // And that it ended in error
+        status should be (SequenceState.Error(errMsg))
+    }
   }
 
   "engine" should "record a partial result and continue execution." in {

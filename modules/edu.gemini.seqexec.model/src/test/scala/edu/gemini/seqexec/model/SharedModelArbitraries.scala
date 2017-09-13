@@ -46,6 +46,7 @@ object SharedModelArbitraries {
   implicit val sbeArb = implicitly[Arbitrary[StepBreakpointChanged]]
   implicit val smeArb = implicitly[Arbitrary[StepSkipMarkChanged]]
   implicit val speArb = implicitly[Arbitrary[SequencePauseRequested]]
+  implicit val spcArb = implicitly[Arbitrary[SequencePauseCanceled]]
   implicit val lmArb  = implicitly[Arbitrary[NewLogMessage]]
   implicit val slmArb = implicitly[Arbitrary[ServerLogMessage]]
   implicit val neArb  = implicitly[Arbitrary[NullEvent.type]]

@@ -90,24 +90,28 @@ package object engine {
 
   /**
     * Changes the `Status` and returns the new `Queue.State`.
-    *
-    * It also takes care of initiating the execution when transitioning to
-    * `Running` `Status`.
     */
   def switch(id: Sequence.Id)(st: SequenceState): HandleP[Unit] =
+    modifyS(id)(s => Sequence.State.status.set(s, st))
+
+  def start(id: Sequence.Id): HandleP[Unit] =
     resources.flatMap(
       other => getS(id).flatMap {
         case Some(seq) =>
-          if (st === SequenceState.Running)
-            // No resources being used by other running sequences
-            if (seq.toSequence.resources.intersect(other).isEmpty)
-              putS(id)(Sequence.State.status.set(seq, st))
-            // Some resources are being used
+          // No resources being used by other running sequences
+          if (seq.status === SequenceState.Idle)
+            if(seq.toSequence.resources.intersect(other).isEmpty)
+              putS(id)(Sequence.State.status.set(seq.rollback, SequenceState.Running))*> send(Event.executing(id))
+          // Some resources are being used
             else send(busy(id))
-          else putS(id)(Sequence.State.status.set(seq, st))
+          else unit
         case None => unit
       }
     )
+
+  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Running) Sequence.State.status.set(s, SequenceState.Stopping) else s)
+
+  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Stopping) Sequence.State.status.set(s, SequenceState.Running) else s)
 
   val resources: HandleP[Set[Resource]] =
     gets(_.sequences
@@ -263,7 +267,7 @@ package object engine {
     */
   def fail(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit] =
     modifyS(id)(_.mark(i)(e)) *>
-      switch(id)(SequenceState.Error("There was an error"))
+      switch(id)(SequenceState.Error(e.msg))
 
   /**
     * Ask for the current Handle `Status`.
@@ -297,8 +301,9 @@ package object engine {
     */
   private def run(ev: Event): HandleP[Engine.State] = {
     def handleUserEvent(ue: UserEvent): HandleP[Unit] = ue match {
-      case Start(id, _)                => Logger.info("Engine: Started") *> rollback(id) *> switch(id)(SequenceState.Running) *> send(Event.executing(id))
-      case Pause(id, _)                => Logger.info("Engine: Paused") *> switch(id)(SequenceState.Stopping)
+      case Start(id, _)                => Logger.info("Engine: Started") *> start(id)
+      case Pause(id, _)                => Logger.info("Engine: Pause requested") *> pause(id)
+      case CancelPause(id, _)          => Logger.info("Engine: Pause canceled") *> cancelPause(id)
       case Load(id, seq)               => Logger.info("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)                  => Logger.info("Engine: Sequence unloaded") *> unload(id)
       case Breakpoint(id, _, step, v)  => Logger.info("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
