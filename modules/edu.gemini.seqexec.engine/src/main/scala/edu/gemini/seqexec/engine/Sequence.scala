@@ -266,7 +266,7 @@ object Sequence {
 
       override val pending: List[Step[Action]] = zipper.pending
 
-      override def rollback = self.copy(zipper = zipper.rollback)
+      override def rollback: Zipper = self.copy(zipper = zipper.rollback)
 
       override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self.copy(zipper =
         zipper.copy(pending =
@@ -276,7 +276,7 @@ object Sequence {
 
       // I put a guard against blank values, although Observer is forced to have
       // a default value at an upper level.
-      override def setObserver(name: String): State = observerL.set(self, Some(name))
+      override def setObserver(name: String): State = observerL.set(self, name.some)
 
       override val done: List[Step[Result]] = zipper.done
 
@@ -297,8 +297,8 @@ object Sequence {
           zipperL >=> Sequence.Zipper.focus >=> Step.Zipper.fileId
 
         val z: Zipper = r match {
-            case Result.OK(Result.Observed(fileId)) => currentFileIdL.set(self, fileId.some)
-            case _                                  => self
+            case Result.Partial(Result.FileIdAllocated(fileId), _) => currentFileIdL.set(self, fileId.some)
+            case _                                                 => self
           }
 
         currentExecutionL.mod(_.mark(i)(r), z)

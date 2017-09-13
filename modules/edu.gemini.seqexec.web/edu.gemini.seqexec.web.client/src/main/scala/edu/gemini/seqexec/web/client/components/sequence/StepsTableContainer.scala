@@ -72,13 +72,21 @@ object StepsTableContainer {
 
     def stepProgress(step: Step): VdomNode =
       step.status match {
+        case StepState.Pending =>
+          step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
         case StepState.Running =>
-          <.div(
-            ^.cls := "ui progress vcentered",
+          step.fileId.fold(<.div("Configuring..."))(fileId =>
             <.div(
-              ^.cls := "bar",
+              ^.cls := "ui small progress vcentered",
               <.div(
-                ^.cls := "progress")
+                ^.cls := "bar",
+                <.div(
+                  ^.cls := "progress")
+              ),
+              <.div(
+                ^.cls := "label",
+                fileId
+              )
             )
           )
         case StepState.Completed =>

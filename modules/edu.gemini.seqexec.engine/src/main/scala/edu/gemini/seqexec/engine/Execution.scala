@@ -111,4 +111,5 @@ object Result {
   final case class Observed(fileId: FileId) extends Response
   object Ignored extends Response
 
+  final case class FileIdAllocated(fileId: FileId) extends PartialVal
 }

@@ -12,6 +12,8 @@ import monocle.Traversal
 
 import java.time.Instant
 
+import dhs.ImageFileId
+
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
   sealed trait SeqexecSite {
@@ -49,6 +51,8 @@ object Model {
     final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     final case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    final case class FileIdStepExecuted(fileId: ImageFileId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     final case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
@@ -90,6 +94,7 @@ object Model {
     // Prism to focus on only the SeqexecEvents that have a queue
     // Unfortunately it doesn't seem to exist a more generic form to build this one
     val sePrism: Prism[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])] = Prism.partial[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])]{
+      case e @ FileIdStepExecuted(i, v)  => (e, v)
       case e @ StepExecuted(v)           => (e, v)
       case e @ SequenceStart(v)          => (e, v)
       case e @ SequenceCompleted(v)      => (e, v)
@@ -108,6 +113,7 @@ object Model {
       e match {
         case SequenceStart(_)           => SequenceStart(q)
         case StepExecuted(_)            => StepExecuted(q)
+        case FileIdStepExecuted(i, _)   => FileIdStepExecuted(i, q)
         case SequenceCompleted(_)       => SequenceCompleted(q)
         case e @ SequenceLoaded(_, v)   => e.copy(view = q)
         case e @ SequenceUnloaded(_, v) => e.copy(view = q)
