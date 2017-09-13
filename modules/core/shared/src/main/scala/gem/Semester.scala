@@ -4,6 +4,7 @@
 package gem
 
 import cats.{ Order, Show }
+import cats.effect.IO
 import cats.implicits._
 import gem.enum.{ Half, Site }
 import gem.imp.TimeInstances._
@@ -116,6 +117,10 @@ object Semester {
   /** Semester for the zoned date and time of the given Site and Instant. */
   def fromSiteAndInstant(s: Site, i: Instant): Semester =
     fromZonedDateTime(ZonedDateTime.ofInstant(i, s.timezone))
+
+  /** Current semester. */
+  val current: IO[Semester] =
+    IO(LocalDateTime.now).map(fromLocalDateTime)
 
   /** Parse a full-year Semester like `2009A` from a String, if possible. */
   def fromString(s: String): Option[Semester] =

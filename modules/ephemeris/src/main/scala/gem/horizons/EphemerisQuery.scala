@@ -18,7 +18,7 @@ import org.http4s.client.blaze.PooledHttp1Client
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.{ Instant, LocalDateTime }
+import java.time.Instant
 import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
 import java.util.Locale.US
@@ -158,7 +158,6 @@ object EphemerisQuery {
       limit
     )
 
-
   /** Constructs an horizons ephemeris query for the given key, site, current
     * semester, and element limit.
     *
@@ -175,11 +174,35 @@ object EphemerisQuery {
                          site:  Site,
                          limit: Int): IO[EphemerisQuery] =
 
-    IO(LocalDateTime.now).map { t =>
-      forSemester(key, site, Semester.fromLocalDateTime(t), limit)
+    Semester.current.map(forSemester(key, site, _, limit))
+
+
+  /** Constructs an horizons ephemeris query for the given key, site, current
+    * semester, and element limit.  The results include 1 month padding on
+    * either side of the current semester.
+    *
+    * @param key   Unique Horizons designation for the non-sidereal target of
+    *              interest
+    * @param site  site to which the ephemeris data applies
+    * @param limit count of elements requested (note that a successful query
+    *              will contain no more than 90024 elements regardless of the
+    *              requested limit)
+    *
+    * @return an IO that computes an Horizons query ready to be executed
+    */
+  def forCurrentSemesterWithPadding(key:   HorizonsDesignation,
+                                    site:  Site,
+                                    limit: Int): IO[EphemerisQuery] =
+
+    Semester.current.map { s =>
+      apply(
+        key,
+        site,
+        s.start.localDateTime.minusMonths(1L).toInstant(UTC),
+        s.end.localDateTime.plusMonths(1L).toInstant(UTC),
+        limit
+      )
     }
 
-
-  // TODO: padding ?
 }
 
