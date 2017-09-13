@@ -19,7 +19,7 @@ import fs2.Pipe
   *
   *   `QUANTITIES=1; time digits=FRACSEC; extra precision=YES`
   *
-  * into an `Ephemeris` object.
+  * into an `Ephemeris` object, or a `Stream[Ephemeris.Element]`.
   */
 object EphemerisParser {
 
@@ -68,14 +68,27 @@ object EphemerisParser {
 
   import impl.{ element, ephemeris, SOE, EOE }
 
+  /** Parses an ephemeris file into an `Ephemeris` object in memory.
+    *
+    * @param s string containing the ephemeris data from horizons
+    *
+    * @return result of parsing the string into an `Ephemeris` object
+    */
   def parse(s: String): ParseResult[Ephemeris] =
     ephemeris.parseOnly(s)
 
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Ephemeris.Element]`.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
+    */
   def elements[F[_]]: Pipe[F, String, Ephemeris.Element] =
     _.through(fs2.text.lines)
      .dropThrough(_.trim =!= SOE)
      .takeWhile(_.trim =!= EOE)
-     .map { s => { println(s"'$s'"); element.parseOnly(s).either.left.map(new RuntimeException(_)) } }
+     .map { s => element.parseOnly(s).either.left.map(new RuntimeException(_)) }
      .rethrow
 
 }

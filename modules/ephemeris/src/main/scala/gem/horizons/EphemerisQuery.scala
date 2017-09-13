@@ -4,7 +4,7 @@
 package gem.horizons
 
 import gem.EphemerisKey
-import gem.enum.Site, Site.GN, Site.GS
+import gem.enum.Site
 import gem.math.Ephemeris
 
 import cats._
@@ -49,12 +49,9 @@ object EphemerisQuery {
       "time_digits" -> "FRACSEC"
     )
 
-    // TODO: take from Site enum
+    // Format coordinates and altitude as expected by horizons.
     def formatCoords(s: Site): String =
-      s match {
-        case GN => "'204.53094,19.823806,4.2134'"
-        case GS => "'289.23944,-30.237778,2.743'"
-      }
+      f"'${s.longitude.toDoubleDegrees}%1.5f,${s.latitude.toSignedDoubleDegrees}%1.6f,${s.altitude.toDouble/1000.0}%1.3f'"
 
     def formatQuery(params: List[(String, String)]): String =
       params
