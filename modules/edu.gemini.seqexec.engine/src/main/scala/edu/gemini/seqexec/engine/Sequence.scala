@@ -3,12 +3,15 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepState}
+import edu.gemini.seqexec.model.Model.{Observer, Resource, SequenceMetadata, SequenceState, StepState}
 import edu.gemini.seqexec.engine.Step._
 
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
+
+import monocle.Lens
+import monocle.macros.GenLens
 
 /**
   * A list of `Step`s grouped by target and instrument.
@@ -36,12 +39,15 @@ object Sequence {
   }
 
   implicit val stepFoldable: Foldable[Sequence] = new Foldable[Sequence] {
-    def foldMap[A, B](fa: Sequence[A])(f: A => B)(implicit F: scalaz.Monoid[B]): B =
+    def foldMap[A, B](fa: Sequence[A])(f: A => B)(implicit F: Monoid[B]): B =
       fa.steps.foldMap(_.foldMap(f))
 
     def foldRight[A, B](fa: Sequence[A], z: => B)(f: (A, => B) => B): B =
       fa.steps.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
   }
+
+  def metadata[A]: Lens[Sequence[A], SequenceMetadata] =
+    GenLens[Sequence[A]](_.metadata)
 
   /**
     * Sequence Zipper. This structure is optimized for the actual `Sequence`
@@ -167,10 +173,14 @@ object Sequence {
 
     }
 
-    val focus: Zipper @> Step.Zipper =
-      Lens.lensu((s, f) => s.copy(focus = f), _.focus)
+    val focus: Lens[Zipper, Step.Zipper] =
+      GenLens[Zipper](_.focus)
 
-    val current: Zipper @> Execution = focus >=> Step.Zipper.current
+    val current: Lens[Zipper, Execution] =
+      focus ^|-> Step.Zipper.current
+
+    val metadata: Lens[Zipper, SequenceMetadata] =
+      GenLens[Zipper](_.metadata)
 
   }
 
@@ -223,15 +233,12 @@ object Sequence {
 
   object State {
 
-    val status: State @> SequenceState =
+    val status: Lens[State, SequenceState] =
     // `State` doesn't provide `.copy`
-      Lens.lensu(
-        (qs, s) => qs match {
-          case Zipper(st, _) => Zipper(st, s)
-          case Final(st, _)  => Final(st, s)
-        },
-        _.status
-      )
+      Lens[State, SequenceState](_.status)(s => a => a match {
+        case Zipper(st, _) => Zipper(st, s)
+        case Final(st, _)  => Final(st, s)
+      })
 
     /**
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
@@ -250,7 +257,7 @@ object Sequence {
       override val next: Option[State] = zipper.next match {
         // Last execution
         case None    => zipper.uncurrentify.map(Final(_, status))
-        case Some(x) => Some(Zipper(x, status))
+        case Some(x) => Zipper(x, status).some
       }
 
       /**
@@ -274,34 +281,32 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
-      // I put a guard against blank values, although Observer is forced to have
-      // a default value at an upper level.
-      override def setObserver(name: String): State = observerL.set(self, name.some)
+      override def setObserver(name: Observer): State = observerL.set(name.some)(self)
 
       override val done: List[Step[Result]] = zipper.done
 
-      private val zipperL: Zipper @> Sequence.Zipper =
-        Lens.lensu((qs, z) => qs.copy(zipper = z), _.zipper)
+      private val zipperL: Lens[Zipper, Sequence.Zipper] =
+        GenLens[Zipper](_.zipper)
 
-      private val metadataL: Zipper @> SequenceMetadata =
-        zipperL >=> Lens.lensu((x, y) => x.copy(metadata = y), _.metadata)
+      private val metadataL: Lens[Zipper, SequenceMetadata] =
+        zipperL ^|-> Sequence.Zipper.metadata
 
-      private val observerL: Zipper @> Option[String] =
-        metadataL >=> Lens.lensu((x, y) => x.copy(observer = y), _.observer)
+      private val observerL: Lens[Zipper, Option[Observer]] =
+        metadataL ^|-> SequenceMetadata.observer
 
       override def mark(i: Int)(r: Result): State = {
 
-        val currentExecutionL: Zipper @> Execution = zipperL >=> Sequence.Zipper.current
+        val currentExecutionL: Lens[Zipper, Execution] = zipperL ^|-> Sequence.Zipper.current
 
-        val currentFileIdL: Zipper @> Option[FileId] =
-          zipperL >=> Sequence.Zipper.focus >=> Step.Zipper.fileId
+        val currentFileIdL: Lens[Zipper, Option[FileId]] =
+          zipperL ^|-> Sequence.Zipper.focus ^|-> Step.Zipper.fileId
 
         val z: Zipper = r match {
-            case Result.Partial(Result.FileIdAllocated(fileId), _) => currentFileIdL.set(self, fileId.some)
+            case Result.Partial(Result.FileIdAllocated(fileId), _) => currentFileIdL.set(fileId.some)(self)
             case _                                                 => self
           }
 
-        currentExecutionL.mod(_.mark(i)(r), z)
+        currentExecutionL.modify(_.mark(i)(r))(z)
 
       }
 
@@ -328,7 +333,7 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = false
 
-      override def setObserver(name: String): State = observerL.set(self, Some(name))
+      override def setObserver(name: String): State = observerL.set(name.some)(self)
 
       override val done: List[Step[Result]] = seq.steps
 
@@ -336,14 +341,14 @@ object Sequence {
 
       override val toSequence: Sequence[Action \/ Result] = seq.map(_.right)
 
-      private val sequenceL: Final @> Sequence[Result] =
-        Lens.lensu((x, y) => x.copy(seq = y), _.seq)
+      private val sequenceL: Lens[Final, Sequence[Result]] =
+        GenLens[Final](_.seq)
 
-      private val metadataL: Final @> SequenceMetadata =
-        sequenceL >=> Lens.lensu((x, y) => x.copy(metadata = y), _.metadata)
+      private val metadataL: Lens[Final, SequenceMetadata] =
+        sequenceL ^|-> Sequence.metadata
 
-      private val observerL: Final @> Option[String] =
-        metadataL >=> Lens.lensu((x, y) => x.copy(observer = y), _.observer)
+      private val observerL: Lens[Final, Option[Observer]] =
+        metadataL ^|-> SequenceMetadata.observer
 
     }
 
