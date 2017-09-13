@@ -294,7 +294,8 @@ lazy val ephemeris = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-testkit" % catsVersion % "test"
+      "org.http4s"    %% "http4s-blaze-client" % http4sVersion,
+      "org.typelevel" %% "cats-testkit"        % catsVersion    % "test"
     )
   )
 

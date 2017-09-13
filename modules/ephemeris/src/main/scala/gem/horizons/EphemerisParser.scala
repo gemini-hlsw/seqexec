@@ -10,6 +10,10 @@ import gem.util.InstantMicros
 import atto.ParseResult
 import atto.syntax.parser._
 
+import cats.implicits._
+
+import fs2.Pipe
+
 
 /** Horizons ephemeris parser.  Parses horizons output generated with the flags
   *
@@ -28,8 +32,11 @@ object EphemerisParser {
     import gem.parser.MiscParsers._
     import gem.parser.TimeParsers._
 
-    val soe           = string("$$SOE")
-    val eoe           = string("$$EOE")
+    val SOE           = "$$SOE"
+    val EOE           = "$$EOE"
+
+    val soe           = string(SOE)
+    val eoe           = string(EOE)
     val skipPrefix    = manyUntil(anyChar, soe)  ~> verticalWhitespace
     val skipEol       = skipMany(noneOf("\n\r")) ~> verticalWhitespace
     val solarPresence = oneOf("*CNA ").void namedOpaque "solarPresence"
@@ -47,15 +54,28 @@ object EphemerisParser {
         i <- utc           <~ space
         _ <- solarPresence
         _ <- lunarPresence <~ spaces1
-        c <- coordinates   <~ skipEol
+        c <- coordinates
       } yield (i, c)
+
+    val elementLine: Parser[Ephemeris.Element] =
+      element <~ skipEol
 
     val ephemeris: Parser[Ephemeris] =
       skipPrefix ~> (
-        many(element).map(Ephemeris.fromFoldable[List]) <~ eoe
+        many(elementLine).map(Ephemeris.fromFoldable[List]) <~ eoe
       )
   }
 
+  import impl.{ element, ephemeris, SOE, EOE }
+
   def parse(s: String): ParseResult[Ephemeris] =
-    impl.ephemeris.parseOnly(s)
+    ephemeris.parseOnly(s)
+
+  def elements[F[_]]: Pipe[F, String, Ephemeris.Element] =
+    _.through(fs2.text.lines)
+     .dropThrough(_.trim =!= SOE)
+     .takeWhile(_.trim =!= EOE)
+     .map { s => { println(s"'$s'"); element.parseOnly(s).either.left.map(new RuntimeException(_)) } }
+     .rethrow
+
 }
