@@ -193,7 +193,14 @@ object Model {
     val gnInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
   }
 
-  type Operator = String
+  final case class Operator(value: String)
+
+  object Operator {
+    val Zero: Operator = Operator("")
+    implicit val equal: Equal[Operator] = Equal.equalA
+    implicit val shows: Show[Operator] = Show.shows(_.value)
+  }
+
   type Observer = String
 
   implicit val equalSequenceId: Equal[SequenceId] = Equal.equalA[SequenceId]

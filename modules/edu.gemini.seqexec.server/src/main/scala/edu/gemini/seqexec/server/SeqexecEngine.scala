@@ -77,7 +77,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                     v: Boolean): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.right)
 
-  def setOperator(q: EventQueue, user: UserDetails, name: String): Task[SeqexecFailure \/ Unit] =
+  def setOperator(q: EventQueue, user: UserDetails, name: Operator): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setOperator(name, user)).map(_.right)
 
   def setObserver(q: EventQueue,

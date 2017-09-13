@@ -124,8 +124,7 @@ package object engine {
   def rollback(id: Sequence.Id): HandleP[Unit] =
     modifyS(id)(_.rollback)
 
-  // A blank value is regarded as a None
-  def setOperator(name: String): HandleP[Unit] =
+  def setOperator(name: Operator): HandleP[Unit] =
     modify(_.copy(operator = name.some))
 
   def setObserver(id: Sequence.Id)(name: String): HandleP[Unit] =

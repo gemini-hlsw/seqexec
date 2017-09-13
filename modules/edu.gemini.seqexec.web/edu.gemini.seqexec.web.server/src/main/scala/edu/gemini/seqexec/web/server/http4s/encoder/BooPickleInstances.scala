@@ -32,4 +32,5 @@ trait BooPickleInstances {
     EntityEncoder[ByteVector].contramap[A] { v =>
       ByteVector(Pickle.intoBytes(v))
     }.withContentType(`Content-Type`(MediaType.`application/octet-stream`))
+
 }

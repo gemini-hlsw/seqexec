@@ -22,7 +22,7 @@ object SharedModelArbitraries {
       b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
       // We are already testing serialization of conditions and Strings
       // Let's reduce the test space by only testing the list of items
-    } yield SequencesQueue(Conditions.default, Some("operator"), b)
+    } yield SequencesQueue(Conditions.default, Some(Operator("operator")), b)
   }
 
   implicit val instArb: Arbitrary[Instant] = Arbitrary {

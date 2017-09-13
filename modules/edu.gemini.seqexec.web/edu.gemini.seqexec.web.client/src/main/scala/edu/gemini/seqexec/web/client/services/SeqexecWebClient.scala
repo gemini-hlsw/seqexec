@@ -6,18 +6,20 @@ package edu.gemini.seqexec.web.client.services
 import java.util.logging.LogRecord
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
-import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor, SequencesQueue, SequenceId}
+import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor, Operator, Step, SequencesQueue, SequenceId}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
+
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.XMLHttpRequest
-import boopickle.Default._
-import edu.gemini.seqexec.model.Model.Step
 import scala.scalajs.js.URIUtils._
+import boopickle.Default._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+
+import scalaz.syntax.show._
 
 /**
   * Encapsulates remote calls to the Seqexec Web API
@@ -88,9 +90,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set the operator name of a sequence
     */
-  def setOperator(name: String): Future[RegularCommand] = {
+  def setOperator(name: Operator): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/operator/${encodeURI(name)}",
+      url = s"$baseUrl/commands/operator/${encodeURI(name.shows)}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

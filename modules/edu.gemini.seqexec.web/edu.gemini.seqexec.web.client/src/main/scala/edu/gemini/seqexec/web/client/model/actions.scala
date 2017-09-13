@@ -71,7 +71,7 @@ object actions {
   final case class FlipSkipStep(id: SequenceId, step: Step) extends Action
   final case class FlipBreakpointStep(id: SequenceId, step: Step) extends Action
   final case class UpdateObserver(id: SequenceId, name: String) extends Action
-  final case class UpdateOperator(name: String) extends Action
+  final case class UpdateOperator(name: Operator) extends Action
   final case class UpdateImageQuality(iq: ImageQuality) extends Action
   final case class UpdateCloudCover(cc: CloudCover) extends Action
   final case class UpdateSkyBackground(sb: SkyBackground) extends Action
