@@ -8,6 +8,7 @@ import gem.math.Ephemeris
 import gem.util.InstantMicros
 
 import atto.ParseResult
+import atto.ParseResult.Done
 import atto.syntax.parser._
 
 import cats.implicits._
@@ -78,17 +79,53 @@ object EphemerisParser {
     ephemeris.parseOnly(s)
 
   /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
-    * horizons into a `Stream[F, Ephemeris.Element]`.
+    * horizons into a `Stream[F, ParseResult[Ephemeris.Element]]`.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, ParseResult[Ephemeris.Element]]`
+    */
+  def parsedElements[F[_]]: Pipe[F, String, ParseResult[Ephemeris.Element]] =
+    _.through(fs2.text.lines)
+     .dropThrough(_.trim =!= SOE)
+     .takeWhile(_.trim =!= EOE)
+     .map(element.parseOnly)
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Either[String, Ephemeris.Element]]` where left
+    * values indicate parsing errors.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, Either[String, Ephemeris.Element]]`
+    */
+  def eitherElements[F[_]]: Pipe[F, String, Either[String, Ephemeris.Element]] =
+    in => parsedElements(in).map(_.either)
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Ephemeris.Element]`.  If there is a parse
+    * error reading the data, the Stream raises an error.  See `Stream.onError`
+    * to handle this case.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
+    */
+  def unsafeElements[F[_]]: Pipe[F, String, Ephemeris.Element] =
+    in => parsedElements(in)
+            .map(_.either.left.map(new RuntimeException(_)))
+            .rethrow
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Ephemeris.Element]`.  If there is a parse
+    * error reading the data, the element that does not parse is skipped.
     *
     * @tparam F effect to use
     *
     * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
     */
   def elements[F[_]]: Pipe[F, String, Ephemeris.Element] =
-    _.through(fs2.text.lines)
-     .dropThrough(_.trim =!= SOE)
-     .takeWhile(_.trim =!= EOE)
-     .map { s => element.parseOnly(s).either.left.map(new RuntimeException(_)) }
-     .rethrow
+    in => parsedElements(in)
+            .collect { case Done(_, e) => e }
 
 }
