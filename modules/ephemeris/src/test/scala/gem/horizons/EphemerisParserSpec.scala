@@ -12,8 +12,6 @@ import cats.tests.CatsSuite
 import fs2.Stream
 
 import java.io.InputStream
-import java.time.{ LocalDateTime, ZoneOffset }
-import java.time.format.DateTimeFormatter
 
 import scala.collection.immutable.TreeMap
 import scala.io.Source
@@ -23,7 +21,7 @@ import scala.io.Source
   * with a few fixed examples and get a sense of whether it works.
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-final class EphemerisParserSpec extends CatsSuite {
+final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
 
   import EphemerisParserSpec._
 
@@ -160,8 +158,6 @@ final class EphemerisParserSpec extends CatsSuite {
 }
 
 object EphemerisParserSpec {
-  private val TimeFormat = DateTimeFormatter.ofPattern("yyyy-MMM-dd HH:mm:ss.SSS")
-
   private def inputStream(n: String): InputStream =
     getClass.getResourceAsStream(s"$n.eph")
 
@@ -171,13 +167,4 @@ object EphemerisParserSpec {
 
   private def load(n: String): String =
     Source.fromInputStream(inputStream(n)).mkString
-
-  private def time(s: String): InstantMicros =
-    InstantMicros.truncate(LocalDateTime.parse(s, TimeFormat).toInstant(ZoneOffset.UTC))
-
-  private def coords(s: String): Coordinates =
-    Coordinates.parse(s).getOrElse(Coordinates.Zero)
-
-  private def eph(elems: (String, String)*): TreeMap[InstantMicros, Coordinates] =
-    TreeMap(elems.map { case (i, c) => time(i) -> coords(c) }: _*)
 }

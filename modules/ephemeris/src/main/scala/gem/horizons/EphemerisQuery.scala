@@ -79,16 +79,17 @@ object EphemerisQuery {
       .mkString("&")
 
   /** Constructs an horizons ephemeris query for the given key, site, start/stop
-    * time range, and element limit.
+    * time range, and element limit. Note that a successful query will contain
+    * no more than 90024 elements regardless of the requested limit since
+    * Horizons responses are capped at 90024 elements.  It will also include at
+    * least two elements (at the start and stop times).
     *
     * @param key   Unique Horizons designation for the non-sidereal target of
     *              interest
     * @param site  site to which the ephemeris data applies
-    * @param start time at which ephemeris data should start
-    * @param end   time at which ephemeris data should end
-    * @param limit count of elements requested (note that a successful query
-    *              will contain no more than 90024 elements regardless of the
-    *              requested limit)
+    * @param start time at which ephemeris data should start (inclusive)
+    * @param end   time at which ephemeris data should end (inclusive)
+    * @param limit count of elements requested
     *
     * @return an Horizons query ready to be executed
     */

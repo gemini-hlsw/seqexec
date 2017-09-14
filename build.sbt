@@ -290,14 +290,15 @@ lazy val ocs2 = project
 lazy val ephemeris = project
   .in(file("modules/ephemeris"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM, db, sql)
+  .dependsOn(coreJVM % "compile->compile;test->test", db, sql)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       "co.fs2"        %% "fs2-io"              % fs2Version     % "test",
       "org.http4s"    %% "http4s-blaze-client" % http4sVersion,
       "org.typelevel" %% "cats-testkit"        % catsVersion    % "test"
-    )
+    ),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "gem.test.Tags.RequiresNetwork") // by default, ignore network tests
   )
 
 lazy val service = project
