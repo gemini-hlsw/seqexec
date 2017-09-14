@@ -16,7 +16,6 @@ import java.time.Instant
   */
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
 trait ModelBooPicklers {
-
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
   implicit val sequenceStatePickler = compositePickler[SequenceState]
@@ -51,6 +50,8 @@ trait ModelBooPicklers {
     .addConcreteType[ServerLogLevel.INFO.type]
     .addConcreteType[ServerLogLevel.WARN.type]
     .addConcreteType[ServerLogLevel.ERROR.type]
+
+  implicit val operatorPickler = generatePickler[Operator]
 
   implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[SequenceId]]
 

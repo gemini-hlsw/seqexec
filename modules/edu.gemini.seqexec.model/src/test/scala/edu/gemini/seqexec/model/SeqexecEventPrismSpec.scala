@@ -20,7 +20,7 @@ class SeqexecEventPrismSpec extends FlatSpec with Matchers with PropertyChecks {
     "be defined for all types with a queue" in {
       forAll { (e: SeqexecEvent) =>
         // This test should fail if we forget to update the prism when adding new events
-        sePrism.set((e, SequencesQueue(Conditions.default, Some("Operator name"), Nil)))(e) should matchPattern {
+        sePrism.set((e, SequencesQueue(Conditions.default, Some(Operator("Operator name")), Nil)))(e) should matchPattern {
           case e: SeqexecModelUpdate if e.view.queue.isEmpty =>
           case e: ConnectionOpenEvent                        =>
           case e: NewLogMessage                              =>

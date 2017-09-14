@@ -7,7 +7,7 @@ import scalaz._
 import scalaz.syntax.std.option._
 import scalaz.std.string._
 
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor, Operator, Observer}
 import edu.gemini.seqexec.model.UserDetails
 import Result.{OK, Partial, PartialVal, RetVal}
 import scalaz.concurrent.Task
@@ -38,8 +38,8 @@ final case class Unload(id: Sequence.Id) extends UserEvent {
   val user: Option[UserDetails] = None
 }
 final case class Breakpoint(id: Sequence.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent
-final case class SetOperator(name: String, user: Option[UserDetails]) extends UserEvent
-final case class SetObserver(id: Sequence.Id, user: Option[UserDetails], name: String) extends UserEvent
+final case class SetOperator(name: Operator, user: Option[UserDetails]) extends UserEvent
+final case class SetObserver(id: Sequence.Id, user: Option[UserDetails], name: Observer) extends UserEvent
 final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends UserEvent
 final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends UserEvent
 final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends UserEvent
@@ -75,8 +75,8 @@ object Event {
   def load(id: Sequence.Id, sequence: Sequence[Action \/ Result]): Event = EventUser(Load(id, sequence))
   def unload(id: Sequence.Id): Event = EventUser(Unload(id))
   def breakpoint(id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, user.some, step, v))
-  def setOperator(name: String, user: UserDetails): Event = EventUser(SetOperator(name, user.some))
-  def setObserver(id: Sequence.Id, user: UserDetails, name: String): Event = EventUser(SetObserver(id, user.some, name))
+  def setOperator(name: Operator, user: UserDetails): Event = EventUser(SetOperator(name, user.some))
+  def setObserver(id: Sequence.Id, user: UserDetails, name: Observer): Event = EventUser(SetObserver(id, user.some, name))
   def setConditions(conditions: Conditions, user: UserDetails): Event = EventUser(SetConditions(conditions, user.some))
   def setImageQuality(iq: ImageQuality, user: UserDetails): Event = EventUser(SetImageQuality(iq, user.some))
   def setWaterVapor(wv: WaterVapor, user: UserDetails): Event = EventUser(SetWaterVapor(wv, user.some))

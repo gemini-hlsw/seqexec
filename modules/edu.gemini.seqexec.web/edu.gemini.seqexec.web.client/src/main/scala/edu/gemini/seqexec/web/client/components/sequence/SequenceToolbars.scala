@@ -57,7 +57,7 @@ object SequenceInfo {
           ).unless(isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props(observer.getOrElse("Unknown."), basic = true))
+            Label(Label.Props(observer.map(_.value).getOrElse("Unknown."), basic = true))
           ).unless(isLogged)
         )
       )
@@ -83,7 +83,7 @@ object SequenceObserverField {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.p().isLogged && p.p().observer =/= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
+        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.map(_.value) =/= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
       }
 
     def setupTimer: Callback =
@@ -119,16 +119,16 @@ object SequenceObserverField {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.p().observer.isDefined)(f.backend.updateState(p.p().observer.getOrElse("")))})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.p().observer.isDefined)(f.backend.updateState(p.p().observer.map(_.value).getOrElse("")))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val observer = f.nextProps.p().observer
       // Update the observer field
-      Callback.when((observer =/= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.getOrElse("")))
+      Callback.when((observer.map(_.value) =/= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.map(_.value).getOrElse("")))
     }
     .shouldComponentUpdatePure { f =>
       val observer = f.nextProps.p().observer
-      observer =/= f.currentState.currentText
+      observer.map(_.value) =/= f.currentState.currentText
     }
     .build
 

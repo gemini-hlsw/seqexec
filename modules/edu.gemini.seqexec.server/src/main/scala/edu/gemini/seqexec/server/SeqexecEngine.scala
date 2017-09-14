@@ -77,13 +77,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                     v: Boolean): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.right)
 
-  def setOperator(q: EventQueue, user: UserDetails, name: String): Task[SeqexecFailure \/ Unit] =
+  def setOperator(q: EventQueue, user: UserDetails, name: Operator): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setOperator(name, user)).map(_.right)
 
   def setObserver(q: EventQueue,
                   seqId: SPObservationID,
                   user: UserDetails,
-                  name: String): Task[SeqexecFailure \/ Unit] =
+                  name: Observer): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setObserver(seqId.stringValue(), user, name)).map(_.right)
 
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): Task[SeqexecFailure \/ Unit] =

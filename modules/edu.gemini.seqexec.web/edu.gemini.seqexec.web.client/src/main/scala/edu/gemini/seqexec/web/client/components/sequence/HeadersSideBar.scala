@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, ImageQuality, SkyBackground, WaterVapor, Operator}
 import edu.gemini.seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
@@ -39,10 +39,10 @@ object HeadersSideBar {
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
     def updateOperator(name: String): Callback =
-      $.props >>= { p => Callback.when(p.isLogged)(p.model.dispatchCB(UpdateOperator(name))) }
+      $.props >>= { p => Callback.when(p.isLogged)(p.model.dispatchCB(UpdateOperator(Operator(name)))) }
 
     def updateState(value: String): Callback =
-      $.modState(_.copy(currentText = Some(value)))
+      $.modState(_.copy(currentText = value.some))
 
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
@@ -50,7 +50,7 @@ object HeadersSideBar {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.model().operator =/= s.currentText)(updateOperator(~s.currentText))
+        case (s, p) => Callback.when(p.model().operator =/= s.currentText.map(Operator.apply))(updateOperator(~s.currentText))
       }
 
     def iqChanged(iq: ImageQuality): Callback =
@@ -98,12 +98,12 @@ object HeadersSideBar {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(~p.model().operator))})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(p.model().operator.getOrElse(Operator.Zero).value))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator
       // Update the operator field
-      Callback.when((operator =/= f.state.currentText) && operator.nonEmpty)(f.modState(_.copy(currentText = operator)))
+      Callback.when((operator =/= f.state.currentText.map(Operator.apply)) && operator.nonEmpty)(f.modState(_.copy(currentText = operator.map(_.value))))
     }
     .build
 

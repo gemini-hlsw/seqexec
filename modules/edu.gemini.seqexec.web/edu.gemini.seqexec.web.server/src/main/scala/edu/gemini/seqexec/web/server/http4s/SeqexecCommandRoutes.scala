@@ -7,7 +7,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, Observer, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
@@ -73,14 +73,14 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       Ok(s"Abort requested for $obsId on step $stepId")
 
     case POST -> Root / "operator" / name as user =>
-      se.setOperator(inputQueue, user, name) *> Ok(s"Set operator name to '$name'")
+      se.setOperator(inputQueue, user, Operator(name)) *> Ok(s"Set operator name to '$name'")
 
     case POST -> Root / obsId / "observer" / name as user =>
       for {
         obs   <-
           \/.fromTryCatchNonFatal(new SPObservationID(obsId))
             .fold(e => Task.fail(e), Task.now)
-        _     <- se.setObserver(inputQueue, obs, user, name)
+        _     <- se.setObserver(inputQueue, obs, user, Observer(name))
         resp  <- Ok(s"Set observer name to '$name' for sequence $obs")
       } yield resp
 

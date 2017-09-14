@@ -203,8 +203,8 @@ final case class StateKeywordsReader(conditions: Conditions, operator: Option[Op
   def encodeCondition(c: Int): String = if(c === 100) "Any" else s"$c-percentile"
 
   // TODO: "observer" should be the default when not set in state
-  def getObserverName: SeqAction[String] = SeqAction(observer.filter(_.nonEmpty).getOrElse("observer"))
-  def getOperatorName: SeqAction[String] = SeqAction(operator.filter(_.nonEmpty).getOrElse("ssa"))
+  def getObserverName: SeqAction[String] = SeqAction(observer.map(_.value).filter(_.nonEmpty).getOrElse("observer"))
+  def getOperatorName: SeqAction[String] = SeqAction(operator.map(_.value).filter(_.nonEmpty).getOrElse("ssa"))
   def getRawImageQuality: SeqAction[String] = SeqAction(encodeCondition(conditions.iq.toInt))
   def getRawCloudCover: SeqAction[String] = SeqAction(encodeCondition(conditions.cc.toInt))
   def getRawWaterVapor: SeqAction[String] = SeqAction(encodeCondition(conditions.wv.toInt))
