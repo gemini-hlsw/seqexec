@@ -153,7 +153,7 @@ object handlers {
         val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
         val updatedSequences = value.copy(queue = value.queue.collect {
           case s if s.id === sequenceId =>
-            s.copy(metadata = s.metadata.copy(observer = Some(name)))
+            s.copy(metadata = s.metadata.copy(observer = Some(Observer(name))))
           case s                  => s
         })
         updated(updatedSequences, updateObserverE)
@@ -506,7 +506,7 @@ object handlers {
               val syncUrlE: Option[Effect] =
                 syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(VoidEffect.some)
               if (q.metadata.observer.isEmpty && observer.nonEmpty) {
-                (q.copy(metadata = q.metadata.copy(observer = observer)) :: seq,
+                (q.copy(metadata = q.metadata.copy(observer = observer.map(Observer.apply))) :: seq,
                 Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::
                 syncUrlE :: eff)
               } else {

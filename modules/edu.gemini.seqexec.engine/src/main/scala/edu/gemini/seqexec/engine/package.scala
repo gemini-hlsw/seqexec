@@ -127,7 +127,7 @@ package object engine {
   def setOperator(name: Operator): HandleP[Unit] =
     modify(_.copy(operator = name.some))
 
-  def setObserver(id: Sequence.Id)(name: String): HandleP[Unit] =
+  def setObserver(id: Sequence.Id)(name: Observer): HandleP[Unit] =
     modifyS(id)(_.setObserver(name))
 
   def setConditions(conditions: Conditions): HandleP[Unit] =

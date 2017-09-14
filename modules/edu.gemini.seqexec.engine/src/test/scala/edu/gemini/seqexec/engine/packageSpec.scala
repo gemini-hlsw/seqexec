@@ -7,7 +7,7 @@ import java.util.concurrent.Semaphore
 
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
-import edu.gemini.seqexec.model.Model.{Operator, Resource}
+import edu.gemini.seqexec.model.Model.{Operator, Observer, Resource}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.UserDetails
 
@@ -255,7 +255,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "pass parameters to Actions." in {
-    val p = Process.emitAll(List(Event.setOperator(Operator("John"), user), Event.setObserver(seqId1, user, "Smith"), Event.start(seqId1, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.setOperator(Operator("John"), user), Event.setObserver(seqId1, user, Observer("Smith")), Event.start(seqId1, user))).evalMap(Task.now(_))
     val s0 = Engine.State(Conditions.default,
       None,
       Map((seqId, Sequence.State.init(Sequence(
@@ -270,7 +270,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(new Action(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.getOrElse(""))))).left)
+              List(new Action(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.map(_.value).getOrElse(""))))).left)
             )
           )
         )

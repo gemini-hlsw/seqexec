@@ -7,7 +7,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, Observer, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
@@ -80,7 +80,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
         obs   <-
           \/.fromTryCatchNonFatal(new SPObservationID(obsId))
             .fold(e => Task.fail(e), Task.now)
-        _     <- se.setObserver(inputQueue, obs, user, name)
+        _     <- se.setObserver(inputQueue, obs, user, Observer(name))
         resp  <- Ok(s"Set observer name to '$name' for sequence $obs")
       } yield resp
 

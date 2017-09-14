@@ -206,7 +206,7 @@ object Sequence {
 
     def getCurrentBreakpoint: Boolean
 
-    def setObserver(name: String): State
+    def setObserver(name: Observer): State
 
     /**
       * Current Execution
@@ -333,7 +333,7 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = false
 
-      override def setObserver(name: String): State = observerL.set(name.some)(self)
+      override def setObserver(name: Observer): State = observerL.set(name.some)(self)
 
       override val done: List[Step[Result]] = seq.steps
 

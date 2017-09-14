@@ -201,7 +201,12 @@ object Model {
     implicit val shows: Show[Operator] = Show.shows(_.value)
   }
 
-  type Observer = String
+  final case class Observer(value: String)
+  object Observer {
+    val Zero: Observer = Observer("")
+    implicit val equal: Equal[Observer] = Equal.equalA
+    implicit val shows: Show[Observer] = Show.shows(_.value)
+  }
 
   implicit val equalSequenceId: Equal[SequenceId] = Equal.equalA[SequenceId]
 

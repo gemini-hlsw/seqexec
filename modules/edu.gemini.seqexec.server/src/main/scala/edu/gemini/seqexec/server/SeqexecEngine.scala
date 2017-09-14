@@ -83,7 +83,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setObserver(q: EventQueue,
                   seqId: SPObservationID,
                   user: UserDetails,
-                  name: String): Task[SeqexecFailure \/ Unit] =
+                  name: Observer): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setObserver(seqId.stringValue(), user, name)).map(_.right)
 
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): Task[SeqexecFailure \/ Unit] =
