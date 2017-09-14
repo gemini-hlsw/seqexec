@@ -95,16 +95,6 @@ final class EphemerisParserSpec extends CatsSuite {
     checkParse("mars", head, tail)
   }
 
-  test("Must stream mars") {
-    val head = eph(
-      "2017-Aug-01 00:00:00.000" -> "08 39 26.1113 +19 33 27.498",
-      "2017-Aug-02 20:09:36.000" -> "08 44 16.7664 +19 15 25.619",
-      "2017-Aug-04 16:19:12.000" -> "08 49 06.2770 +18 56 56.576"
-    )
-
-    checkStream("mars", head)
-  }
-
   private def checkParse(name: String,
                head: TreeMap[InstantMicros, Coordinates],
                tail: TreeMap[InstantMicros, Coordinates]): org.scalatest.Assertion = {
@@ -120,13 +110,53 @@ final class EphemerisParserSpec extends CatsSuite {
     )
   }
 
-  private def checkStream(name: String, head: TreeMap[InstantMicros, Coordinates]): org.scalatest.Assertion = {
+  test("Must stream mars") {
+    val head = eph(
+      "2017-Aug-01 00:00:00.000" -> "08 39 26.1113 +19 33 27.498",
+      "2017-Aug-02 20:09:36.000" -> "08 44 16.7664 +19 15 25.619",
+      "2017-Aug-04 16:19:12.000" -> "08 49 06.2770 +18 56 56.576"
+    )
 
-    val s = stream(name).through(EphemerisParser.elements[IO])
+    val s = stream("mars").through(EphemerisParser.elements[IO])
     val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
 
     assert(m == head)
   }
+
+  test("Must handle errors") {
+    val z = InstantMicros.ofEpochMilli(0L) -> Coordinates.Zero
+    val s = stream("mars-error")
+             .through(EphemerisParser.elements[IO])
+             .onError(_ => Stream(z))
+    assert(Vector(Some(z)) == s.last.runLog.unsafeRunSync)
+  }
+
+  test("Must stream eitherElements") {
+    val head = Vector[Either[String, Ephemeris.Element]](
+      Right(time("2017-Aug-01 00:00:00.000") -> coords("08 39 26.1113 +19 33 27.498")),
+      Right(time("2017-Aug-02 20:09:36.000") -> coords("08 44 16.7664 +19 15 25.619")),
+      Left("Failure reading:solarPresence")
+    )
+
+    val s = stream("mars-error").through(EphemerisParser.eitherElements[IO])
+    val m = s.take(head.size.toLong).runLog.unsafeRunSync()
+
+    assert(m == head)
+  }
+
+  test("Must stream validElements") {
+    val head = eph(
+      "2017-Aug-01 00:00:00.000" -> "08 39 26.1113 +19 33 27.498", // 0
+      "2017-Aug-02 20:09:36.000" -> "08 44 16.7664 +19 15 25.619", // 1
+      "2017-Aug-06 12:28:48.000" -> "08 53 54.4942 +18 38 00.694"  // 3 (skipping 2)
+    )
+
+    val s = stream("mars-error").through(EphemerisParser.validElements[IO])
+    val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
+
+    assert(m == head)
+  }
+
 }
 
 object EphemerisParserSpec {
