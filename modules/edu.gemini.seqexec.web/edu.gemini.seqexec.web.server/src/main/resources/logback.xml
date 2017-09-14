@@ -29,7 +29,7 @@
 
         <!-- Intermediate async appender for improved performance -->
         <appender name="ASYNC500" class="ch.qos.logback.classic.AsyncAppender">
-            <queueSize>500</queueSize>
+            <queueSize>2000</queueSize>
             <discardingThreshold>0</discardingThreshold>
             <appender-ref ref="FILE" />
         </appender>
@@ -37,6 +37,13 @@
         <root level="INFO">
             <appender-ref ref="ASYNC500" />
         </root>
+        <logger name="com.cosylab.epics" level="DEBUG">
+            <appender-ref ref="ASYNC500" />
+        </logger>
+        <logger name="gov.aps.jca" level="DEBUG">
+            <appender-ref ref="ASYNC500" />
+        </logger>
+
     </then>
     <else>
         <!-- Configuration for development and local deployment -->
