@@ -6,7 +6,7 @@ package edu.gemini.web.server.common
 import java.io.File
 import java.nio.file.{Path, Paths}
 import org.slf4j.bridge.SLF4JBridgeHandler
-import java.util.logging.LogManager
+import java.util.logging.{Logger, Level, LogManager}
 
 import scalaz.concurrent.Task
 
@@ -35,6 +35,8 @@ trait LogInitialization extends AppBaseDir {
     LogManager.getLogManager().reset()
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
+    // Required to include debugging info, may affect performance though
+    Logger.getGlobal.setLevel(Level.FINE)
   }
 
   def configLog: Task[Unit] = sendJuliToSLF4J

@@ -253,7 +253,7 @@ lazy val seqexecCommonSettings = Seq(
   // Launch options
   javaOptions in Universal ++= Seq(
     // -J params will be added as jvm parameters
-    "-J-Xmx512m",
+    "-J-Xmx1024m",
     "-J-Xms256m",
     // Support remote JMX access
     "-J-Dcom.sun.management.jmxremote",
