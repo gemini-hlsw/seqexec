@@ -76,7 +76,7 @@ object EphemerisQuery {
   private def formatQuery(params: List[(String, String)]): String =
     params
       .map { case (k, v) => s"$k=${URLEncoder.encode(v, UTF_8.name)}" }
-      .mkString("&")
+      .intercalate("&")
 
   /** Constructs an horizons ephemeris query for the given key, site, start/stop
     * time range, and element limit. Note that a successful query will contain
