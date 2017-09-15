@@ -188,7 +188,7 @@ package object engine {
     getS(id).flatMap(
       _.map { seq =>
         seq.status match {
-          case SequenceState.Stopping =>
+          case SequenceState.Pausing | SequenceState.Stopping =>
             seq.next match {
               case None =>
                 send(finished(id))
@@ -248,6 +248,9 @@ package object engine {
 
   private def getState(f: Engine.State => Task[Option[Process[Task, Event]]]): HandleP[Unit] =
     get.flatMap(s => HandleP[Unit](f(s).liftM[HandleStateT].map(((), _))))
+
+  private def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): HandleP[Unit] =
+    getS(id).flatMap(_.map(s => if(s.status === SequenceState.Running) HandleP[Unit](f(s).pure[Handle].map(((), _))) *> switch(id)(SequenceState.Stopping) else unit).getOrElse(unit))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -315,6 +318,7 @@ package object engine {
       case SetCloudCover(cc, user)     => Logger.info("Engine: Setting cloud cover") *> setCloudCover(cc)
       case Poll                        => Logger.info("Engine: Polling current state")
       case GetState(f)                 => getState(f)
+      case ActionStop(id, f)           => Logger.info("Engine: Action stop requested") *> actionStop(id, f)
       case Log(msg)                    => Logger.info(msg)
     }
 
@@ -326,6 +330,7 @@ package object engine {
       case Executed(id)            => Logger.info("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.info("Engine: Executing") *> execute(id)
       case Finished(id)            => Logger.info("Engine: Finished") *> switch(id)(SequenceState.Completed)
+      case Null                    => unit
     }
 
     (ev match {

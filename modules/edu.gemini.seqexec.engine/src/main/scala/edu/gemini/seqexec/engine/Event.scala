@@ -48,7 +48,14 @@ final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extend
 case object Poll extends UserEvent {
   val user: Option[UserDetails] = None
 }
+// Generic event to put a function in the main Process process, which takes an
+// action depending on the current state
 final case class GetState(f: (Engine.State) => Task[Option[Process[Task, Event]]]) extends UserEvent {
+  val user: Option[UserDetails] = None
+}
+// Calls a user given function in the main Process process to stop an Action.
+// It sets the Sequence to be stopped. The user function is called only if the Sequence is running.
+final case class ActionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]) extends UserEvent {
   val user: Option[UserDetails] = None
 }
 final case class Log(msg: String) extends UserEvent {
@@ -66,6 +73,7 @@ final case class Busy(id: Sequence.Id) extends SystemEvent
 final case class Executed(id: Sequence.Id) extends SystemEvent
 final case class Executing(id: Sequence.Id) extends SystemEvent
 final case class Finished(id: Sequence.Id) extends SystemEvent
+final object Null extends SystemEvent
 
 object Event {
 
@@ -84,6 +92,7 @@ object Event {
   def setCloudCover(cc: CloudCover, user: UserDetails): Event = EventUser(SetCloudCover(cc, user.some))
   val poll: Event = EventUser(Poll)
   def getState(f: (Engine.State) => Task[Option[Process[Task, Event]]]): Event = EventUser(GetState(f))
+  def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(ActionStop(id, f))
   def logMsg(msg: String): Event = EventUser(Log(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))

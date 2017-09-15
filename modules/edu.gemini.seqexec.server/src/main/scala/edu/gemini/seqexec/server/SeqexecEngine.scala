@@ -173,6 +173,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetCloudCover(_, _)    => ConditionsUpdated(svs)
       case engine.Poll                   => SequenceRefreshed(svs)
       case engine.GetState(_)            => NullEvent
+      case engine.ActionStop(_, _)       => NullEvent
       case engine.Log(msg)               => NewLogMessage(msg)
     }
     case engine.EventSystem(se) => se match {
@@ -185,6 +186,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Executed(_)                                               => StepExecuted(svs)
       case engine.Executing(_)                                              => NewLogMessage("Executing")
       case engine.Finished(_)                                               => SequenceCompleted(svs)
+      case engine.Null                                                      => NullEvent
     }
   }
 
@@ -221,7 +223,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         // The sequence could be empty
         case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
-        case steps if (st === SequenceState.Running || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
+        case steps if (st === SequenceState.Running || st === SequenceState.Pausing) && steps.all(_.status =/= StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
           xs ++ (y.copy(status = StepState.Running) :: ys)
         case steps if st === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
