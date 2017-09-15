@@ -8,14 +8,19 @@ import gem.math.Ephemeris
 import gem.util.InstantMicros
 
 import atto.ParseResult
+import atto.ParseResult.Done
 import atto.syntax.parser._
+
+import cats.implicits._
+
+import fs2.Pipe
 
 
 /** Horizons ephemeris parser.  Parses horizons output generated with the flags
   *
   *   `QUANTITIES=1; time digits=FRACSEC; extra precision=YES`
   *
-  * into an `Ephemeris` object.
+  * into an `Ephemeris` object, or a `Stream[Ephemeris.Element]`.
   */
 object EphemerisParser {
 
@@ -28,8 +33,11 @@ object EphemerisParser {
     import gem.parser.MiscParsers._
     import gem.parser.TimeParsers._
 
-    val soe           = string("$$SOE")
-    val eoe           = string("$$EOE")
+    val SOE           = "$$SOE"
+    val EOE           = "$$EOE"
+
+    val soe           = string(SOE)
+    val eoe           = string(EOE)
     val skipPrefix    = manyUntil(anyChar, soe)  ~> verticalWhitespace
     val skipEol       = skipMany(noneOf("\n\r")) ~> verticalWhitespace
     val solarPresence = oneOf("*CNA ").void namedOpaque "solarPresence"
@@ -47,15 +55,77 @@ object EphemerisParser {
         i <- utc           <~ space
         _ <- solarPresence
         _ <- lunarPresence <~ spaces1
-        c <- coordinates   <~ skipEol
+        c <- coordinates
       } yield (i, c)
+
+    val elementLine: Parser[Ephemeris.Element] =
+      element <~ skipEol
 
     val ephemeris: Parser[Ephemeris] =
       skipPrefix ~> (
-        many(element).map(Ephemeris.fromFoldable[List]) <~ eoe
+        many(elementLine).map(Ephemeris.fromFoldable[List]) <~ eoe
       )
   }
 
+  import impl.{ element, ephemeris, SOE, EOE }
+
+  /** Parses an ephemeris file into an `Ephemeris` object in memory.
+    *
+    * @param s string containing the ephemeris data from horizons
+    *
+    * @return result of parsing the string into an `Ephemeris` object
+    */
   def parse(s: String): ParseResult[Ephemeris] =
-    impl.ephemeris.parseOnly(s)
+    ephemeris.parseOnly(s)
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, ParseResult[Ephemeris.Element]]`.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, ParseResult[Ephemeris.Element]]`
+    */
+  def parsedElements[F[_]]: Pipe[F, String, ParseResult[Ephemeris.Element]] =
+    _.through(fs2.text.lines)
+     .dropThrough(_.trim =!= SOE)
+     .takeWhile(_.trim =!= EOE)
+     .map(element.parseOnly)
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Either[String, Ephemeris.Element]]` where left
+    * values indicate parsing errors.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, Either[String, Ephemeris.Element]]`
+    */
+  def eitherElements[F[_]]: Pipe[F, String, Either[String, Ephemeris.Element]] =
+    _.through(parsedElements)
+     .map(_.either)
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Ephemeris.Element]`.  If there is a parse
+    * error reading the data, the element that does not parse is skipped.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
+    */
+  def validElements[F[_]]: Pipe[F, String, Ephemeris.Element] =
+    _.through(parsedElements)
+     .collect { case Done(_, e) => e }
+
+  /** An `fs2.Pipe` that converts a `Stream[F, String]` of ephemeris data from
+    * horizons into a `Stream[F, Ephemeris.Element]`.  If there is a parse
+    * error reading the data, the Stream raises an error.  See `Stream.onError`
+    * to handle this case.
+    *
+    * @tparam F effect to use
+    *
+    * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
+    */
+  def elements[F[_]]: Pipe[F, String, Ephemeris.Element] =
+    _.through(parsedElements)
+     .map(_.either.left.map(new RuntimeException(_)))
+     .rethrow
 }
