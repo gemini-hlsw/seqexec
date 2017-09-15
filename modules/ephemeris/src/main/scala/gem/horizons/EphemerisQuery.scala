@@ -175,7 +175,7 @@ object EphemerisQuery {
                          site:  Site,
                          limit: Int): IO[EphemerisQuery] =
 
-    Semester.current.map(forSemester(key, site, _, limit))
+    Semester.current(site).map(forSemester(key, site, _, limit))
 
 
   /** Constructs an horizons ephemeris query for the given key, site, current
@@ -195,7 +195,7 @@ object EphemerisQuery {
                                     site:  Site,
                                     limit: Int): IO[EphemerisQuery] =
 
-    Semester.current.map { s =>
+    Semester.current(site).map { s =>
       apply(
         key,
         site,

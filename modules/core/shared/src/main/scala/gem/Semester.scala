@@ -119,8 +119,8 @@ object Semester {
     fromZonedDateTime(ZonedDateTime.ofInstant(i, s.timezone))
 
   /** Current semester. */
-  val current: IO[Semester] =
-    IO(LocalDateTime.now).map(fromLocalDateTime)
+  def current(s: Site): IO[Semester] =
+    IO(LocalDateTime.now(s.timezone)).map(fromLocalDateTime)
 
   /** Parse a full-year Semester like `2009A` from a String, if possible. */
   def fromString(s: String): Option[Semester] =
