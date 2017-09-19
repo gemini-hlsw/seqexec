@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math.Angle
+import gem.math.{ Angle, HourAngle }
 
 trait AngleMeta {
 
@@ -17,6 +17,12 @@ trait AngleMeta {
         b => Angle.fromMicroarcseconds(b.movePointRight(6).longValue),
         a => new java.math.BigDecimal(a.toSignedMicroarcseconds).movePointLeft(6)
       )
+
+  val AngleMetaAsMicroarcseconds: Meta[Angle] =
+    Meta[Long].xmap[Angle](Angle.fromMicroarcseconds, _.toMicroarcseconds)
+
+  val HourAngleMetaAsMicroseconds: Meta[HourAngle] =
+    Meta[Long].xmap[HourAngle](HourAngle.fromMicroseconds, _.toMicroseconds)
 
 }
 object AngleMeta extends AngleMeta

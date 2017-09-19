@@ -17,7 +17,7 @@ sealed abstract class GmosYBinning(
   val shortName: String,
   val longName: String,
   val count: Int
-)
+) extends Product with Serializable
 
 object GmosYBinning {
 

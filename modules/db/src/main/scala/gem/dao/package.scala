@@ -64,4 +64,8 @@ package object dao {
       EitherConnectionIO.right[A, T](c)
   }
 
+  /** Flattened `a` as a VALUES argument (...). */
+  def values[A](a: A)(implicit ev: Composite[A]): Fragment =
+    Fragment(List.fill(ev.length)("?").mkString("(", ", ", ")"), a)
+
 }

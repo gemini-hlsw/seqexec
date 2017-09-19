@@ -16,7 +16,7 @@ sealed abstract class GmosEOffsetting(
   val tag: String,
   val description: String,
   val toBoolean: Boolean
-)
+) extends Product with Serializable
 
 object GmosEOffsetting {
 

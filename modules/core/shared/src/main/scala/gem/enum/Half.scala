@@ -15,7 +15,7 @@ import gem.util.Enumerated
 sealed abstract class Half(
   val tag: String,
   val toInt: Int
-)
+) extends Product with Serializable
 
 object Half {
 

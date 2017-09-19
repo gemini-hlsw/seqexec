@@ -16,7 +16,7 @@ sealed abstract class F2WindowCover(
   val tag: String,
   val shortName: String,
   val longName: String
-)
+) extends Product with Serializable
 
 object F2WindowCover {
 

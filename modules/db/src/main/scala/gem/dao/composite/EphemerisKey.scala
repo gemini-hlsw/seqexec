@@ -14,9 +14,17 @@ trait EphemerisKeyComposite {
   /** Map an EphemerisKey as an (EphemerisKeyType, String) pair. */
   implicit val CompositeEphemerisKey: Composite[EphemerisKey] =
     Composite[(EphemerisKeyType, String)].imap(
-      (t: (EphemerisKeyType, String)) => EphemerisKey.unsafeFromTypeAndDes(t._1, t._2))(
-      (k: EphemerisKey)               => (k.keyType, k.des)
+      t => EphemerisKey.unsafeFromTypeAndDes(t._1, t._2))(
+      k => (k.keyType, k.des)
     )
+
+  /** Map an Option[EphemerisKey] as a nullable (EphemerisKeyType, String) pair. */
+  implicit lazy val CompositeOptionEphemerisKey: Composite[Option[EphemerisKey]] =
+    Composite[Option[(EphemerisKeyType, String)]].imap(
+      _.map(p => EphemerisKey.unsafeFromTypeAndDes(p._1, p._2)))(
+      _.map(k => (k.keyType, k.des))
+    )
+
 
 }
 object EphemerisKeyComposite extends EphemerisKeyComposite

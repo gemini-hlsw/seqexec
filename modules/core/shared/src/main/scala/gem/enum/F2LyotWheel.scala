@@ -19,7 +19,7 @@ sealed abstract class F2LyotWheel(
   val plateScale: Double,
   val pixelScale: Double,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object F2LyotWheel {
 

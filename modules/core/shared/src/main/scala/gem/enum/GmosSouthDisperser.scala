@@ -18,7 +18,7 @@ sealed abstract class GmosSouthDisperser(
   val longName: String,
   val rulingDensity: Int,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object GmosSouthDisperser {
 

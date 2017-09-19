@@ -17,7 +17,7 @@ sealed abstract class F2Disperser(
   val shortName: String,
   val longName: String,
   val wavelength: gem.math.Wavelength
-)
+) extends Product with Serializable
 
 object F2Disperser {
 

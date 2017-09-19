@@ -20,10 +20,11 @@ object Main {
 
   val enums: ConnectionIO[List[EnumDef]] = {
     List(
-      F2Enums  .enums,
-      GcalEnums.enums,
-      GmosEnums.enums,
-      MiscEnums.enums
+      F2Enums    .enums,
+      GcalEnums  .enums,
+      GmosEnums  .enums,
+      MiscEnums  .enums,
+      TargetEnums.enums
     ).flatten.sequence
   }
 

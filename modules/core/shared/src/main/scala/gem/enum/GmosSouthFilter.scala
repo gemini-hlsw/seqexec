@@ -18,7 +18,7 @@ sealed abstract class GmosSouthFilter(
   val longName: String,
   val wavelength: gem.math.Wavelength,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object GmosSouthFilter {
 

@@ -16,7 +16,7 @@ sealed abstract class EphemerisKeyType(
   val tag: String,
   val shortName: String,
   val longName: String
-)
+) extends Product with Serializable
 
 object EphemerisKeyType {
 

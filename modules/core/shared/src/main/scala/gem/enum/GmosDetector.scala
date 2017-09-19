@@ -22,7 +22,7 @@ sealed abstract class GmosDetector(
   val xSize: Int,
   val ySize: Int,
   val maxRois: Int
-)
+) extends Product with Serializable
 
 object GmosDetector {
 
