@@ -7,7 +7,7 @@ import cats._
 import cats.implicits._
 import doobie._
 import shapeless._
-import shapeless.ops.coproduct.Inject
+import shapeless.ops.coproduct.{ Inject, Unifier }
 
 object TaggedCoproduct {
 
@@ -64,6 +64,17 @@ object TaggedCoproduct {
      */
     def composite(implicit ev: Composite[(T, Out)], eq: Eq[T]): Composite[C] =
       ev.imap((unsafeDecode _).tupled)(encode)
+
+    /**
+     * Convenience method, equivalent to `composite.imap[A](_.unify)(inj)`. Requires that A be a
+     * unifier of C; i.e., some supertype of its element types.
+     */
+    def unifiedComposite[A](inj: A => C)(
+      implicit ev: Composite[(T, Out)],
+               eq: Eq[T],
+               un: Unifier.Aux[C, A]
+             ): Composite[A] =
+      composite.imap(_.unify)(inj)
 
     /**
      * Widen the tag type. This is a no-op but Scala needs some convincing. Observe that you can

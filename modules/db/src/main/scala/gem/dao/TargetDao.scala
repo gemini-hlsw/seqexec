@@ -9,7 +9,6 @@ import doobie.implicits._
 import gem.dao.meta._
 import gem.dao.composite._
 import gem.enum.TrackType
-import shapeless._
 
 object TargetDao {
   import EnumeratedMeta._
@@ -44,8 +43,10 @@ object TargetDao {
       val enc = Tag[Sidereal](TrackType.Sidereal)       :+:
                 Tag[Nonsidereal](TrackType.Nonsidereal) :+: TNil
 
-      // from enc we get a Composite[Sidereal :+: Nonsidereal :+: CNil], which we map out to Track
-      enc.composite.imap(_.unify) {
+      // from enc we get a Composite[Sidereal :+: Nonsidereal :+: CNil], which we imap out by
+      // unifying C to the LUB of its elements when reading, and inspecting/injecting the element
+      // into C when writing.
+      enc.unifiedComposite {
         case t: Sidereal    => enc.inj(t)
         case t: Nonsidereal => enc.inj(t)
       }
