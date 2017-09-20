@@ -18,7 +18,7 @@ sealed abstract class F2Filter(
   val longName: String,
   val wavelength: Option[gem.math.Wavelength],
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object F2Filter {
 

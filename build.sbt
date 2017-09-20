@@ -70,11 +70,11 @@ lazy val gemWarts =
   Warts.allBut(
     Wart.Any,                // false positives
     Wart.Nothing,            // false positives
-    Wart.Null,               // false positives
     Wart.Product,            // false positives
     Wart.Serializable,       // false positives
     Wart.Recursion,          // false positives
-    Wart.ImplicitConversion  // we know what we're doing
+    Wart.ImplicitConversion, // we know what we're doing
+    Wart.ImplicitParameter   // false positives
   )
 
 lazy val commonSettings = Seq(
@@ -232,10 +232,10 @@ lazy val db = project
       "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test"
     ),
     initialCommands += """
-      |import cats._, cats.data._, cats.implicits._, scalaz.effect.IO
+      |import cats._, cats.data._, cats.implicits._, cats.effect._
       |import doobie._, doobie.implicits._
-      |import gem._, gem.enum._, gem.dao._
-      |val xa = DriverManagerTransactor[IO](
+      |import gem._, gem.enum._, gem.math._, gem.dao._, gem.dao.meta._, gem.dao.composite._
+      |val xa = Transactor.fromDriverManager[IO](
       |  "org.postgresql.Driver",
       |  "jdbc:postgresql:gem",
       |  "postgres",

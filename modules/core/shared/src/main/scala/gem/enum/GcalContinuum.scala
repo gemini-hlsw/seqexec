@@ -17,7 +17,7 @@ sealed abstract class GcalContinuum(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object GcalContinuum {
 

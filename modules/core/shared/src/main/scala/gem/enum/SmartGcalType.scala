@@ -14,7 +14,7 @@ import gem.util.Enumerated
  */
 sealed abstract class SmartGcalType(
   val tag: String
-)
+) extends Product with Serializable
 
 object SmartGcalType {
 

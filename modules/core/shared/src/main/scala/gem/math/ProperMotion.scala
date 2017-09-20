@@ -4,6 +4,7 @@
 package gem.math
 
 import cats.implicits._
+import java.time.Instant
 import scala.math.{ sin, cos, hypot, atan2 }
 
 /**
@@ -29,6 +30,9 @@ final case class ProperMotion(
   parallax:        Option[Angle]
 ) {
 
+  def at(i: Instant): ProperMotion =
+    plusYears(epoch.untilInstant(i))
+
   /** Coordinates `elapsedYears` fractional epoch-years after `epoch`. */
   def plusYears(elapsedYears: Double): ProperMotion =
     ProperMotion(
@@ -51,6 +55,9 @@ final case class ProperMotion(
 
 object ProperMotion {
   import PhysicalConstants.{ AstronomicalUnit, TwoPi }
+
+  def const(cs: Coordinates): ProperMotion =
+    ProperMotion(cs, Epoch.J2000, None, None, None)
 
   /**
    * Proper motion correction in model units.

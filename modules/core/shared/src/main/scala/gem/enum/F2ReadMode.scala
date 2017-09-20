@@ -22,7 +22,7 @@ sealed abstract class F2ReadMode(
   val readoutTime: java.time.Duration,
   val readCount: Int,
   val readNoise: Double
-)
+) extends Product with Serializable
 
 object F2ReadMode {
 

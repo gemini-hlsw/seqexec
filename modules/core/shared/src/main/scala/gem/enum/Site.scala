@@ -21,7 +21,7 @@ sealed abstract class Site(
   val longitude: gem.math.Angle,
   val altitude: Int,
   val timezone: java.time.ZoneId
-)
+) extends Product with Serializable
 
 object Site {
 

@@ -17,7 +17,7 @@ sealed abstract class GmosDtax(
   val shortName: String,
   val longName: String,
   val dtax: Int
-)
+) extends Product with Serializable
 
 object GmosDtax {
 

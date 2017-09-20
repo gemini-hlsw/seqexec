@@ -4,19 +4,28 @@
 package gem.dao.composite
 
 import doobie._
-import gem.math.{ Angle, HourAngle, Coordinates, Declination, RightAscension }
+import gem.dao.meta._
+
+import gem.math._
 
 trait CoordinatesComposite {
 
-  /** Map Coordinates as a (µsec, µasec) pair. */
-  implicit val CompositeCoordinates: Composite[Coordinates] =
-    Composite[(Long, Long)].imap {
-      case (ra, dec) =>
-        Coordinates(
-          RightAscension(HourAngle.fromMicroseconds(ra)),
-          Declination.unsafeFromAngle(Angle.fromMicroarcseconds(dec))
-        )
-      }(c => (c.ra.toHourAngle.toMicroseconds, c.dec.toAngle.toMicroarcseconds))
+  /** Coordinates composite, laid out in natural order, in microarcseconds. */
+  implicit val CoordinatesComposite: Composite[Coordinates] =
+    CoordinatesCompositeLemmas.CoordinatesComposite
+
+  implicit val CoordinatesOptionComposite: Composite[Option[Coordinates]] =
+    CoordinatesCompositeLemmas.CoordinatesOptionComposite
 
 }
 object CoordinatesComposite extends CoordinatesComposite
+
+/** Derivation of Composite instances for Coordinates. */
+private object CoordinatesCompositeLemmas {
+  import DeclinationMeta._
+  import RightAscensionMeta._
+
+  val CoordinatesComposite: Composite[Coordinates] = implicitly
+  val CoordinatesOptionComposite: Composite[Option[Coordinates]] = implicitly
+
+}

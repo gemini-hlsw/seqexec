@@ -19,7 +19,7 @@ sealed abstract class F2Fpu(
   val slitWidth: Int,
   val decker: String,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object F2Fpu {
 

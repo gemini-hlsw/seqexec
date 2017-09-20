@@ -12,7 +12,7 @@ import gem.enum._
 import gem.config._
 import gem.config.DynamicConfig.SmartGcalKey
 import gem.util.Location
-import gem.math.{ Offset, Wavelength }
+import gem.math._
 import java.time.LocalDate
 import org.scalatest._
 
@@ -88,6 +88,10 @@ trait Check extends FlatSpec with Matchers with IOChecker {
         (Wavelength.ZeroAngstroms, Wavelength.ZeroAngstroms)
       )
     }
+
+    val target: Target =
+      Target("untitled", Track.Sidereal(ProperMotion.const(Coordinates.Zero)))
+
   }
 
 

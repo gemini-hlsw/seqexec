@@ -17,7 +17,7 @@ sealed abstract class GmosNorthFpu(
   val shortName: String,
   val longName: String,
   val slitWidth: Option[gem.math.Angle]
-)
+) extends Product with Serializable
 
 object GmosNorthFpu {
 

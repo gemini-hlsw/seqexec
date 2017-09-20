@@ -17,7 +17,7 @@ sealed abstract class GmosCustomSlitWidth(
   val shortName: String,
   val longName: String,
   val width: gem.math.Angle
-)
+) extends Product with Serializable
 
 object GmosCustomSlitWidth {
 

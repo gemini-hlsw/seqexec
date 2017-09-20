@@ -73,7 +73,7 @@ object EnumDef {
     implicit ma: Mapper.Aux[ToDeclaration.type, H, O],
              ta: ToTraversable.Aux[O, List, L]
   ): String =
-    h.map(ToDeclaration).toList.mkString(s"sealed abstract class $name(\n", ",\n", "\n)")
+    h.map(ToDeclaration).toList.mkString(s"sealed abstract class $name(\n", ",\n", "\n) extends Product with Serializable")
 
   // scalastyle:off method.length
   def fromRecords[R <: HList, F <: HList, D <: HList, V <: HList, Lub1, Lub2, L <: HList](name: String, desc: String, records: NonEmptyList[(String, R)])(

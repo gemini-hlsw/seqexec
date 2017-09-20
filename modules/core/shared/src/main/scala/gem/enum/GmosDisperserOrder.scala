@@ -17,7 +17,7 @@ sealed abstract class GmosDisperserOrder(
   val shortName: String,
   val longName: String,
   val count: Int
-)
+) extends Product with Serializable
 
 object GmosDisperserOrder {
 

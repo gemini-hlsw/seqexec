@@ -17,7 +17,7 @@ sealed abstract class GmosNorthStageMode(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object GmosNorthStageMode {
 

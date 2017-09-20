@@ -17,7 +17,7 @@ sealed abstract class GcalShutter(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-)
+) extends Product with Serializable
 
 object GcalShutter {
 
