@@ -33,7 +33,7 @@ import org.scalatest._
   *    Unfortunately this doesn't work with the `test` command itself.  For that
   *    you must update the setting which can be done on the SBT command line with:
   *
-  *        set testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-n", "gem.test.Tags.RequiresNetwork")
+  *        set testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaTest, "-n", "gem.test.Tags.RequiresNetwork")
   *
   *
   * Background
