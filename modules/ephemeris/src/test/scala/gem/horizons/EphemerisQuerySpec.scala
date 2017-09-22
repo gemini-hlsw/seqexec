@@ -6,6 +6,7 @@ package gem.horizons
 import gem.EphemerisKey
 import gem.enum.Site.GS
 import gem.math.Ephemeris
+import gem.test.RespectIncludeTags
 import gem.test.Tags._
 import gem.util.InstantMicros
 
@@ -24,7 +25,7 @@ import java.time.temporal.ChronoUnit.DAYS
   *
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-final class EphemerisQuerySpec extends CatsSuite with EphemerisTestSupport {
+final class EphemerisQuerySpec extends CatsSuite with EphemerisTestSupport with RespectIncludeTags {
 
   import EphemerisQuerySpec._
 

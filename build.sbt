@@ -164,6 +164,8 @@ lazy val commonSettings = Seq(
     "-doc-version", version.value
   ),
 
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "gem.test.Tags.RequiresNetwork"), // by default, ignore network tests
+
   // We need kind-projector generally, and paradise for
   addCompilerPlugin("org.spire-math"  %% "kind-projector" % kpVersion),
   addCompilerPlugin("org.scalamacros" %% "paradise"       % paradiseVersion cross CrossVersion.patch),
@@ -297,8 +299,7 @@ lazy val ephemeris = project
       "co.fs2"        %% "fs2-io"              % fs2Version     % "test",
       "org.http4s"    %% "http4s-blaze-client" % http4sVersion,
       "org.typelevel" %% "cats-testkit"        % catsVersion    % "test"
-    ),
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "gem.test.Tags.RequiresNetwork") // by default, ignore network tests
+    )
   )
 
 lazy val service = project
