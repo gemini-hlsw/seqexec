@@ -3,25 +3,15 @@
 
 package gem.horizons
 
-import gem.{ EphemerisKey, Semester }
+import gem.{EphemerisKey, Semester}
 import gem.enum.Site
 import gem.math.Ephemeris
-
 import cats.implicits._
 import cats.effect.IO
-
 import fs2.Stream
-import fs2.text.utf8Decode
 
-import org.http4s._
-import org.http4s.client.blaze.PooledHttp1Client
-
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Instant
 import java.time.ZoneOffset.UTC
-import java.time.format.DateTimeFormatter
-import java.util.Locale.US
 
 
 /** Representation of an Horizons ephemeris query.
@@ -30,10 +20,6 @@ sealed trait EphemerisQuery {
 
   /** URL string corresponding the the horizons request. */
   def urlString: String
-
-  /** Makes an horizons request and parses all the ephemeris elements in memory.
-    */
-  def fetchEphemeris: IO[Either[String, Ephemeris]]
 
   /** Makes an horizons request, parsing and emitting ephemeris elements as they
     * are received.
@@ -50,33 +36,14 @@ object EphemerisQuery {
     */
   val MaxElements: Int = 90024
 
-  // Horizons permits only one request at a time from a given host.
-  private val client = PooledHttp1Client[IO](maxTotalConnections = 1)
-
-  private val Url         = "https://ssd.jpl.nasa.gov/horizons_batch.cgi"
-  private val DateFormat  = DateTimeFormatter.ofPattern("yyyy-MMM-d HH:mm:ss.SSS", US).withZone(UTC)
-
-  private val FixedParams = List(
-    "batch"       -> "1",
+  private val FixedParams = HorizonsClient.SharedParams ++ Map(
     "CENTER"      -> "coord",
     "COORD_TYPE"  -> "GEODETIC",
-    "CSV_FORMAT"  -> "NO",
     "extra_prec"  -> "YES",
     "MAKE_EPHEM"  -> "YES",
     "QUANTITIES"  -> "1",
-    "TABLE_TYPE"  -> "OBSERVER",
     "time_digits" -> "FRACSEC"
   )
-
-  // Format coordinates and altitude as expected by horizons.
-  private def formatCoords(s: Site): String =
-    f"'${s.longitude.toDoubleDegrees}%1.5f,${s.latitude.toSignedDoubleDegrees}%1.6f,${s.altitude.toDouble/1000.0}%1.3f'"
-
-  // URL encode query params.
-  private def formatQuery(params: List[(String, String)]): String =
-    params
-      .map { case (k, v) => s"$k=${URLEncoder.encode(v, UTF_8.name)}" }
-      .intercalate("&")
 
   /** Constructs an horizons ephemeris query for the given key, site, start/stop
     * time range, and element limit. Note that a successful query will contain
@@ -102,36 +69,19 @@ object EphemerisQuery {
     new EphemerisQuery {
       // Horizons responses are capped at 90024, but always include one more than
       // requested so the max request is MaxElements - 1.
-      val reqParams = List(
+      val reqParams = Map(
         "COMMAND"    -> s"'${key.queryString}'",
-        "SITE_COORD" -> formatCoords(site),
-        "START_TIME" -> s"'${DateFormat.format(start)}'",
+        "SITE_COORD" -> HorizonsClient.formatCoords(site),
+        "START_TIME" -> s"'${HorizonsClient.formatInstant(start)}'",
         "STEP_SIZE"  -> (((limit max 2) min MaxElements) - 1).toString,
-        "STOP_TIME"  -> s"'${DateFormat.format(end)}'"
+        "STOP_TIME"  -> s"'${HorizonsClient.formatInstant(end)}'"
       ) ++ FixedParams
 
       override val urlString: String =
-        s"$Url?${formatQuery(reqParams)}"
-
-      /** Creates an http4s Uri representing the request and lifts it into IO,
-        * raising an error if there is a problem parsing the request.
-        */
-      val uri: IO[Uri] =
-        Uri.fromString(urlString).fold(IO.raiseError, IO.pure)
-
-      /** Creates an http4s Request representing the request. */
-      val request: IO[Request[IO]] =
-          uri.map { Request(Method.GET, _) }
-
-      override val fetchEphemeris: IO[Either[String, Ephemeris]] =
-        client.expect[String](request).map { s =>
-          EphemerisParser.parse(s).either
-        }
+        HorizonsClient.urlString(reqParams)
 
       override val streamEphemeris: Stream[IO, Ephemeris.Element] =
-        client.streaming(request) {
-          _.body.through(utf8Decode).through(EphemerisParser.elements)
-        }
+        HorizonsClient.stream(reqParams).through(EphemerisParser.elements)
     }
 
   /** Constructs an horizons ephemeris query for the given key, site, semester,
