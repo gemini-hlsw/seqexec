@@ -17,7 +17,7 @@ object SharedModelArbitraries {
   private val maxListSize = 2
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
-  def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
+  implicit def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
     for {
       b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
       // We are already testing serialization of conditions and Strings
@@ -58,4 +58,5 @@ object SharedModelArbitraries {
   implicit val ccArb  = implicitly[Arbitrary[CloudCover]]
   implicit val conArb = implicitly[Arbitrary[Conditions]]
   implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
+  implicit val smuArb = implicitly[Arbitrary[SeqexecModelUpdate]]
 }

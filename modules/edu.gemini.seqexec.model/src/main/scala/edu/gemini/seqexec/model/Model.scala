@@ -7,14 +7,14 @@ import scalaz._
 import Scalaz._
 
 import monocle.{Lens, Prism, PTraversal}
-import monocle.macros.{GenLens, Lenses}
+import monocle.macros.{GenLens, GenPrism, Lenses}
 import monocle.Traversal
 
 import java.time.Instant
 
 import dhs.ImageFileId
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
   sealed trait SeqexecSite {
@@ -46,10 +46,18 @@ object Model {
   sealed trait SeqexecModelUpdate extends SeqexecEvent {
     def view: SequencesQueue[SequenceView]
   }
+
+  object SeqexecModelUpdate {
+    implicit val equal: Equal[SeqexecModelUpdate] = Equal.equalA
+  }
   object SeqexecEvent {
     final case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 
     final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    object SequenceStart {
+      implicit val equal: Equal[SequenceStart] = Equal.equalA
+    }
 
     final case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
@@ -95,48 +103,32 @@ object Model {
     val ssLens: Lens[SequenceStart, SequencesQueue[SequenceView]] = GenLens[SequenceStart](_.view)
 
     // Prism to focus on only the SeqexecEvents that have a queue
-    // Unfortunately it doesn't seem to exist a more generic form to build this one
-    val sePrism: Prism[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])] = Prism.partial[SeqexecEvent, (SeqexecEvent, SequencesQueue[SequenceView])]{
-      case e @ FileIdStepExecuted(i, v)  => (e, v)
-      case e @ StepExecuted(v)           => (e, v)
-      case e @ SequenceStart(v)          => (e, v)
-      case e @ SequenceCompleted(v)      => (e, v)
-      case e @ SequenceLoaded(_, v)      => (e, v)
-      case e @ SequenceUnloaded(_, v)    => (e, v)
-      case e @ StepBreakpointChanged(v)  => (e, v)
-      case e @ OperatorUpdated(v)        => (e, v)
-      case e @ ObserverUpdated(v)        => (e, v)
-      case e @ ConditionsUpdated(v)      => (e, v)
-      case e @ StepSkipMarkChanged(v)    => (e, v)
-      case e @ SequencePauseRequested(v) => (e, v)
-      case e @ SequencePauseCanceled(v)  => (e, v)
-      case e @ SequenceRefreshed(v)      => (e, v)
-      case e @ ResourcesBusy(v)          => (e, v)
-      case e @ SequenceUpdated(v)        => (e, v)
-    } { case (e, q) =>
-      e match {
-        case SequenceStart(_)           => SequenceStart(q)
-        case StepExecuted(_)            => StepExecuted(q)
-        case FileIdStepExecuted(i, _)   => FileIdStepExecuted(i, q)
-        case SequenceCompleted(_)       => SequenceCompleted(q)
-        case e @ SequenceLoaded(_, v)   => e.copy(view = q)
-        case e @ SequenceUnloaded(_, v) => e.copy(view = q)
-        case StepBreakpointChanged(_)   => StepBreakpointChanged(q)
-        case OperatorUpdated(_)         => OperatorUpdated(q)
-        case ObserverUpdated(_)         => ObserverUpdated(q)
-        case ConditionsUpdated(_)       => ConditionsUpdated(q)
-        case StepSkipMarkChanged(_)     => StepSkipMarkChanged(q)
-        case SequencePauseRequested(_)  => SequencePauseRequested(q)
-        case SequencePauseCanceled(_)   => SequencePauseCanceled(q)
-        case SequenceRefreshed(_)       => SequenceRefreshed(q)
-        case ResourcesBusy(_)           => ResourcesBusy(q)
-        case SequenceUpdated(_)         => SequenceUpdated(q)
-        case e                          => e
+    val sePrism: Prism[SeqexecEvent, SeqexecModelUpdate] = GenPrism[SeqexecEvent, SeqexecModelUpdate]
+
+    val seViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
+        case e @ SequenceStart(_)           => e.copy(view = q)
+        case e @ StepExecuted(_)            => e.copy(view = q)
+        case e @ FileIdStepExecuted(i, _)   => e.copy(view = q)
+        case e @ SequenceCompleted(_)       => e.copy(view = q)
+        case e @ SequenceLoaded(_, v)       => e.copy(view = q)
+        case e @ SequenceUnloaded(_, v)     => e.copy(view = q)
+        case e @ StepBreakpointChanged(_)   => e.copy(view = q)
+        case e @ OperatorUpdated(_)         => e.copy(view = q)
+        case e @ ObserverUpdated(_)         => e.copy(view = q)
+        case e @ ConditionsUpdated(_)       => e.copy(view = q)
+        case e @ StepSkipMarkChanged(_)     => e.copy(view = q)
+        case e @ SequencePauseRequested(_)  => e.copy(view = q)
+        case e @ SequencePauseCanceled(_)   => e.copy(view = q)
+        case e @ SequenceRefreshed(_)       => e.copy(view = q)
+        case e @ ResourcesBusy(_)           => e.copy(view = q)
+        case e @ SequenceUpdated(_)         => e.copy(view = q)
+        case e                              => e
       }
-    }
-    val tupleLens: Lens[(SeqexecEvent, SequencesQueue[SequenceView]), SequencesQueue[SequenceView]] = Lens[(SeqexecEvent, SequencesQueue[SequenceView]), SequencesQueue[SequenceView]](_._2)(v => t => t.copy(_2 = v))
+    )
     // Composite lens to change the sequence name of an event
-    val sequenceNameL: PTraversal[SeqexecEvent, SeqexecEvent, String, String] = sePrism composeLens tupleLens composeLens sequencesQueueL composeTraversal eachL composeLens obsNameL
+    val sequenceNameL: PTraversal[SeqexecEvent, SeqexecEvent, String, String] = sePrism composeLens seViewL composeLens sequencesQueueL composeTraversal eachL composeLens obsNameL
+
+    implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
 
   type SystemName = String
@@ -293,11 +285,19 @@ object Model {
     willStopIn: Option[Int]
   )
 
+  object SequenceView {
+    implicit val eq: Equal[SequenceView] = Equal.equalA
+  }
+
   /**
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
     * Or a list of fully hydrated SequenceViews
     */
   final case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
+
+  object SequencesQueue {
+    implicit def equal[T: Equal]: Equal[SequencesQueue[T]] = Equal.equalA
+  }
 
   // Ported from OCS' SPSiteQuality.java
 

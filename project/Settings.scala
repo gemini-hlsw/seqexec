@@ -100,6 +100,7 @@ object Settings {
     val scalaTest             = "3.0.4"
     val scalaCheck            = "1.13.5"
     val scalaCheckShapeless   = "1.1.7"
+    val discipline            = "0.7.3"
 
     // Pure JS libraries
     val reactJS        = "15.6.1"
@@ -124,7 +125,8 @@ object Settings {
     val TestLibs = Def.setting(Seq(
       "org.scalatest"              %%% "scalatest"                 % LibraryVersions.scalaTest           % "test",
       "org.scalacheck"             %%% "scalacheck"                % LibraryVersions.scalaCheck          % "test",
-      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test"
+      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test",
+      "org.typelevel"              %%% "discipline"                % LibraryVersions.discipline          % "test"
     ))
 
     val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut
@@ -159,7 +161,8 @@ object Settings {
 
     val Monocle  = Def.setting(Seq(
       "com.github.julien-truffaut" %%% "monocle-core"  % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-macro" % LibraryVersions.monocle))
+      "com.github.julien-truffaut" %%% "monocle-macro" % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-law"   % LibraryVersions.monocle % "test"))
 
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(
