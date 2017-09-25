@@ -254,6 +254,7 @@ object Model {
   object SequenceState {
     case object Completed         extends SequenceState
     case object Running           extends SequenceState
+    case object Pausing           extends SequenceState
     case object Stopping          extends SequenceState
     case object Idle              extends SequenceState
     case object Paused            extends SequenceState
