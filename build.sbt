@@ -20,10 +20,6 @@ lazy val shapelessVersion    = "2.3.2"
 lazy val slf4jVersion        = "1.7.25"
 lazy val tucoVersion         = "0.3.0-M5"
 
-enablePlugins(GitVersioning)
-
-git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
-
 // check for library updates whenever the project is [re]load
 onLoad in Global := { s => "dependencyUpdates" :: s }
 
@@ -32,31 +28,32 @@ cancelable in Global := true
 // some extra commands for us
 addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum; headerCreate")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
+addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
 
 // Before printing the prompt check git to make sure all is well.
-shellPrompt in ThisBuild := { state =>
-  import scala.sys.process._
-  import scala.Console.{ RED, RESET }
-  try {
-    val revision = "git rev-parse HEAD".!!.trim
-    val dirty    = "git status -s".!!.trim.length > 0
-    val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
-    val actual   = version.value
-    val stale    = expected != actual
-    if (stale) {
-      print(RED)
-      println(s"Computed version doesn't match the filesystem anymore.")
-      println(s"Please `reload` to get back in sync.")
-      print(RESET)
-    }
-  } catch {
-    case e: Exception =>
-      print(RED)
-      println(s"Couldn't run `git` to check on versioning. Something is amiss.")
-      print(RESET)
-  }
-  "> "
-}
+// shellPrompt in ThisBuild := { state =>
+//   import scala.sys.process._
+//   import scala.Console.{ RED, RESET }
+//   try {
+//     val revision = "git rev-parse HEAD".!!.trim
+//     val dirty    = "git status -s".!!.trim.length > 0
+//     val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
+//     val actual   = version.value
+//     val stale    = expected != actual
+//     if (stale) {
+//       print(RED)
+//       println(s"Computed version doesn't match the filesystem anymore.")
+//       println(s"Please `reload` to get back in sync.")
+//       print(RESET)
+//     }
+//   } catch {
+//     case e: Exception =>
+//       print(RED)
+//       println(s"Couldn't run `git` to check on versioning. Something is amiss.")
+//       print(RESET)
+//   }
+//   "> "
+// }
 
 // sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
@@ -356,10 +353,10 @@ lazy val ctl = project
   .settings (
     resolvers += Resolver.bintrayRepo("bkirwi", "maven"),
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core"   % catsVersion,
-      "org.typelevel" %% "cats-free"   % catsVersion,
-      "org.typelevel" %% "cats-effect" % catsEffectVersion,
-      "com.monovore"  %% "decline"     % declineVersion,
-    ),
-    addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
+      "org.typelevel"           %% "cats-core"   % catsVersion,
+      "org.typelevel"           %% "cats-free"   % catsVersion,
+      "org.typelevel"           %% "cats-effect" % catsEffectVersion,
+      "com.monovore"            %% "decline"     % declineVersion,
+      "com.github.benhutchison" %% "mouse"       % mouseVersion
+    )
   )
