@@ -53,14 +53,6 @@ object HorizonsNameQuery {
   /** Result of performing an horizons name resolution. */
   type Result[A] = EitherT[IO, Error, A]
 
-  object Result {
-    def fromEither[A](e: Either[Error, A]): Result[A] =
-      EitherT.fromEither[IO](e)
-
-    def delay[A](a: => A): Result[A] =
-      EitherT.rightT[IO, Error](a)
-  }
-
   /** A human-readable name and its unique horizons ephemeris key. */
   final case class Resolution[A](a: A, name: String)
 

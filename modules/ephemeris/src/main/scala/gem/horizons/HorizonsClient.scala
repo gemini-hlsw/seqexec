@@ -5,6 +5,7 @@ package gem.horizons
 
 import gem.enum.Site
 
+import cats.ApplicativeError
 import cats.data.Reader
 import cats.effect.IO
 import cats.implicits._
@@ -76,7 +77,7 @@ object HorizonsClient {
     * raising an error if there is a problem parsing the request.
     */
   val uri: ParamReader[IO[Uri]] =
-    urlString.map(Uri.fromString).map(_.fold(IO.raiseError, IO.pure))
+    urlString.map(Uri.fromString).map(ApplicativeError[IO, Throwable].fromEither)
 
   /** Creates an http4s Request representing the request. */
   val request: ParamReader[IO[Request[IO]]] =
