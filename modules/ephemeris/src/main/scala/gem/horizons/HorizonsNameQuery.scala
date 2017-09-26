@@ -5,7 +5,7 @@ package gem.horizons
 
 import gem.EphemerisKey
 
-import NameQuery._
+import HorizonsNameQuery._
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -15,17 +15,28 @@ import scala.util.Either
 import scala.util.matching.Regex
 
 
-
-/**
+/** Horizons name-resolution query.
+  *
+  * {{{
+  * import HorizonsNameQuery.Search.Comet
+  *
+  * HorizonsNameQuery(Comet("Halley")).lookup.value.unsafeRunSync
+  * }}}
   */
-sealed trait NameQuery[A] {
+sealed trait HorizonsNameQuery[A] {
 
+  /** URL string corresponding the the horizons request. */
   def urlString: String
 
-  def results: Result[List[Row[A]]]
+  /** Returns a program that will perform the name lookup when executed,
+    * returing a List of ephemeris keys with their common name.
+    */
+  def lookup: Result[List[Resolution[A]]]
 }
 
-object NameQuery {
+object HorizonsNameQuery {
+
+  /** Describes a non-sidereal target query of a specific type of object. */
   sealed abstract class Search[A](val queryString: String) extends Product with Serializable
 
   object Search {
@@ -39,6 +50,7 @@ object NameQuery {
   final case class HorizonsException(e: Throwable)                  extends Error
   final case class ParseError(input: List[String], message: String) extends Error
 
+  /** Result of performing an horizons name resolution. */
   type Result[A] = EitherT[IO, Error, A]
 
   object Result {
@@ -49,10 +61,12 @@ object NameQuery {
       EitherT.rightT[IO, Error](a)
   }
 
-  final case class Row[A](a: A, name: String)
+  /** A human-readable name and it's unique horizons ephemeris key. */
+  final case class Resolution[A](a: A, name: String)
 
-  def fromSearch[A](search: Search[A]): NameQuery[A] =
-    new NameQuery[A] {
+  /** Creates a NameQuery for the given search object. */
+  def apply[A](search: Search[A]): HorizonsNameQuery[A] =
+    new HorizonsNameQuery[A] {
       import NameQueryImpl._
 
       val reqParams = HorizonsClient.SharedParams ++ Map(
@@ -60,10 +74,10 @@ object NameQuery {
         "COMMAND"    -> s"'${search.queryString}'"
       )
 
-      override def urlString: String =
+      override val urlString: String =
         HorizonsClient.urlString(reqParams)
 
-      override def results: Result[List[Row[A]]] =
+      override val lookup: Result[List[Resolution[A]]] =
         EitherT(HorizonsClient.fetch(reqParams).map { s =>
           val lines = s.split('\n').toList
           parseResponse(search, lines).leftMap(ParseError(lines, _))
@@ -102,8 +116,8 @@ object NameQuery {
         case _           => "Fewer than 2 lines!".asLeft
       }
 
-    def parseResponse[A](s: Search[A], lines: List[String]): Either[String, List[Row[A]]] =
-      parseHeader[Row[A]](lines) { case (header, tail) =>
+    def parseResponse[A](s: Search[A], lines: List[String]): Either[String, List[Resolution[A]]] =
+      parseHeader[Resolution[A]](lines) { case (header, tail) =>
         s match {
           case Search.Comet(_)     => parseComets(header, tail)
           case Search.Asteroid(_)  => parseAsteroids(header, tail)
@@ -111,21 +125,21 @@ object NameQuery {
         }
       }
 
-    type ParsedRows[A]     = Either[String, List[Row[A]]]
-    type ParsedComets      = ParsedRows[EphemerisKey.Comet]
-    type ParsedAsteroids   = ParsedRows[EphemerisKey.Asteroid]
-    type ParsedMajorBodies = ParsedRows[EphemerisKey.MajorBody]
+    type ParsedResolutions[A] = Either[String, List[Resolution[A]]]
+    type ParsedComets         = ParsedResolutions[EphemerisKey.Comet]
+    type ParsedAsteroids      = ParsedResolutions[EphemerisKey.Asteroid]
+    type ParsedMajorBodies    = ParsedResolutions[EphemerisKey.MajorBody]
 
     def parseComets(header: String, tail: List[String]): ParsedComets = {
 
       // Common case is that we have many results, or none.
       def case0: ParsedComets =
-        parseMany[Row[EphemerisKey.Comet]](header, tail, """  +Small-body Index Search Results  """.r) { offs =>
+        parseMany[Resolution[EphemerisKey.Comet]](header, tail, """  +Small-body Index Search Results  """.r) { offs =>
           (offs.lift(2), offs.lift(3)).mapN {
             case ((ods, ode), (ons, _)) => { row =>
               val desig = row.substring(ods, ode).trim
               val name  = row.substring(ons     ).trim // last column, so no end index because rows are ragged
-              Row(EphemerisKey.Comet(desig), name)
+              Resolution(EphemerisKey.Comet(desig), name)
             }
           }
         }
@@ -133,13 +147,13 @@ object NameQuery {
       // Single result with form: JPL/HORIZONS      Hubble (C/1937 P1)     2015-Dec-31 11:40:21
       def case1: ParsedComets =
         """  +([^(]+)\s+\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.Comet(m.group(2)), m.group(1)))
+          List(Resolution(EphemerisKey.Comet(m.group(2)), m.group(1)))
         }.toRight("Could not match 'Hubble (C/1937 P1)' header pattern.")
 
       // Single result with form: JPL/HORIZONS         1P/Halley           2015-Dec-31 11:40:21
       def case2: ParsedComets =
         """  +([^/]+)/(.+?)  """.r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.Comet(m.group(1)), m.group(2)))
+          List(Resolution(EphemerisKey.Comet(m.group(1)), m.group(2)))
         }.toRight("Could not match '1P/Halley' header pattern.")
 
       // First one that works!
@@ -153,15 +167,15 @@ object NameQuery {
 
       // Common case is that we have many results, or none.
       def case0: ParsedAsteroids =
-        parseMany[Row[EphemerisKey.Asteroid]](header, tail, """  +Small-body Index Search Results  """.r) { offs =>
+        parseMany[Resolution[EphemerisKey.Asteroid]](header, tail, """  +Small-body Index Search Results  """.r) { offs =>
           (offs.lift(0), offs.lift(1), offs.lift(2)).mapN {
             case ((ors, ore), (ods, ode), (ons, _)) => { row =>
               val rec   = row.substring(ors, ore).trim.toInt
               val desig = row.substring(ods, ode).trim
               val name  = row.substring(ons     ).trim // last column, so no end index because rows are ragged
               desig match {
-                case "(undefined)" => Row(EphemerisKey.AsteroidOld(rec): EphemerisKey.Asteroid, name)
-                case des           => Row(EphemerisKey.AsteroidNew(des): EphemerisKey.Asteroid, name)
+                case "(undefined)" => Resolution(EphemerisKey.AsteroidOld(rec): EphemerisKey.Asteroid, name)
+                case des           => Resolution(EphemerisKey.AsteroidNew(des): EphemerisKey.Asteroid, name)
               }
             }
           }
@@ -170,25 +184,25 @@ object NameQuery {
       // Single result with form: JPL/HORIZONS      90377 Sedna (2003 VB12)     2015-Dec-31 11:40:21
       def case1: ParsedAsteroids =
         """  +\d+ ([^(]+)\s+\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.AsteroidNew(m.group(2)) : EphemerisKey.Asteroid, m.group(1)))
+          List(Resolution(EphemerisKey.AsteroidNew(m.group(2)) : EphemerisKey.Asteroid, m.group(1)))
         }.toRight("Could not match '90377 Sedna (2003 VB12)' header pattern.")
 
       // Single result with form: JPL/HORIZONS      4 Vesta     2015-Dec-31 11:40:21
       def case2: ParsedAsteroids =
         """  +(\d+) ([^(]+?)  """.r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.AsteroidOld(m.group(1).toInt) : EphemerisKey.Asteroid, m.group(2)))
+          List(Resolution(EphemerisKey.AsteroidOld(m.group(1).toInt) : EphemerisKey.Asteroid, m.group(2)))
         }.toRight("Could not match '4 Vesta' header pattern.")
 
       // Single result with form: JPL/HORIZONS    (2016 GB222)    2016-Apr-20 15:22:36
       def case3: ParsedAsteroids =
         """  +\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
+          List(Resolution(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
         }.toRight("Could not match '(2016 GB222)' header pattern.")
 
       // Single result with form: JPL/HORIZONS        418993 (2009 MS9)            2016-Sep-07 18:23:54
       def case4: ParsedAsteroids =
         """  +\d+\s+\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
+          List(Resolution(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
         }.toRight("Could not match '418993 (2009 MS9)' header pattern.")
 
       // First one that works!
@@ -204,12 +218,12 @@ object NameQuery {
 
       // Common case is that we have many results, or none.
       def case0: ParsedMajorBodies =
-        parseMany[Row[EphemerisKey.MajorBody]](header, tail, """Multiple major-bodies match string""".r) { offs =>
+        parseMany[Resolution[EphemerisKey.MajorBody]](header, tail, """Multiple major-bodies match string""".r) { offs =>
           (offs.lift(0), offs.lift(1)).mapN {
             case ((ors, ore), (ons, one)) => { row =>
               val rec  = row.substring(ors, ore).trim.toInt
               val name = row.substring(ons, one).trim
-              Row(EphemerisKey.MajorBody(rec.toInt), name)
+              Resolution(EphemerisKey.MajorBody(rec.toInt), name)
             }
           }
         }.map(_.filterNot(_.a.num < 0)) // filter out spacecraft
@@ -217,7 +231,7 @@ object NameQuery {
       // Single result with form:  Revised: Aug 11, 2015       Charon / (Pluto)     901
       def case1: ParsedMajorBodies =
         """  +(.*?) / \((.+?)\)  +(\d+) *$""".r.findFirstMatchIn(header).map { m =>
-          List(Row(EphemerisKey.MajorBody(m.group(3).toInt), m.group(1)))
+          List(Resolution(EphemerisKey.MajorBody(m.group(3).toInt), m.group(1)))
         }.toRight("Could not match 'Charon / (Pluto)     901' header pattern.")
 
       // First one that works, otherwise Nil because it falls through to small-body search
