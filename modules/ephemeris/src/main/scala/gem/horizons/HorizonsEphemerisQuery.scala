@@ -16,7 +16,7 @@ import java.time.ZoneOffset.UTC
 
 /** Representation of an Horizons ephemeris query.
   */
-sealed trait EphemerisQuery {
+sealed trait HorizonsEphemerisQuery {
 
   /** URL string corresponding the the horizons request. */
   def urlString: String
@@ -28,7 +28,7 @@ sealed trait EphemerisQuery {
 
 }
 
-object EphemerisQuery {
+object HorizonsEphemerisQuery {
   type HorizonsDesignation = EphemerisKey.Horizons
 
   /** Maximum number of elements that may be received by an Horizons ephemeris
@@ -64,9 +64,9 @@ object EphemerisQuery {
             site:  Site,
             start: Instant,
             end:   Instant,
-            limit: Int): EphemerisQuery =
+            limit: Int): HorizonsEphemerisQuery =
 
-    new EphemerisQuery {
+    new HorizonsEphemerisQuery {
       // Horizons responses are capped at 90024, but always include one more than
       // requested so the max request is MaxElements - 1.
       val reqParams = Map(
@@ -100,7 +100,7 @@ object EphemerisQuery {
   def forSemester(key:      HorizonsDesignation,
                   site:     Site,
                   semester: Semester,
-                  limit:    Int): EphemerisQuery =
+                  limit:    Int): HorizonsEphemerisQuery =
     apply(
       key,
       site,
@@ -123,7 +123,7 @@ object EphemerisQuery {
     */
   def forCurrentSemester(key:   HorizonsDesignation,
                          site:  Site,
-                         limit: Int): IO[EphemerisQuery] =
+                         limit: Int): IO[HorizonsEphemerisQuery] =
 
     Semester.current(site).map(forSemester(key, site, _, limit))
 
@@ -143,7 +143,7 @@ object EphemerisQuery {
     */
   def forCurrentSemesterWithPadding(key:   HorizonsDesignation,
                                     site:  Site,
-                                    limit: Int): IO[EphemerisQuery] =
+                                    limit: Int): IO[HorizonsEphemerisQuery] =
 
     Semester.current(site).map { s =>
       apply(

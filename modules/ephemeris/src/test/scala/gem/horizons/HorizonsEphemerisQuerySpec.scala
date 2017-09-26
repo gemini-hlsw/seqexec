@@ -17,7 +17,7 @@ import java.time.{ LocalDateTime, Month }
 import java.time.ZoneOffset.UTC
 import java.time.temporal.ChronoUnit.DAYS
 
-/** Exercises EphemerisQuerySpec.  Because the tests require accessing an
+/** Exercises HorizonsEphemerisQuery.  Because the tests require accessing an
   * external service, they are tagged with "RequiresNetwork" and usually skipped
   * See the build.sbt where RequiresNetwork tests are excluded via the setting:
   *
@@ -25,12 +25,12 @@ import java.time.temporal.ChronoUnit.DAYS
   *
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-final class EphemerisQuerySpec extends CatsSuite with EphemerisTestSupport with RespectIncludeTags {
+final class HorizonsEphemerisQuerySpec extends CatsSuite with EphemerisTestSupport with RespectIncludeTags {
 
-  import EphemerisQuerySpec._
+  import HorizonsEphemerisQuerySpec._
 
   test("simple query should work", RequiresNetwork) {
-    val e = EphemerisQuery(titan, GS, start, end, 60).exec()
+    val e = HorizonsEphemerisQuery(titan, GS, start, end, 60).exec()
 
     assert(
       e.first.exists(_ == (startM -> startCoords)) &&
@@ -40,7 +40,7 @@ final class EphemerisQuerySpec extends CatsSuite with EphemerisTestSupport with 
   }
 
   test("at least 2 values are returned (start and end)", RequiresNetwork) {
-    val e = EphemerisQuery(titan, GS, start, end, -1).exec()
+    val e = HorizonsEphemerisQuery(titan, GS, start, end, -1).exec()
 
     assert(
       e.first.exists(_ == (startM -> startCoords)) &&
@@ -50,20 +50,20 @@ final class EphemerisQuerySpec extends CatsSuite with EphemerisTestSupport with 
   }
 
   test("caps requests at MaxElements", RequiresNetwork, Slow) {
-    val e = EphemerisQuery(titan, GS, start, end.plus(182, DAYS), EphemerisQuery.MaxElements + 1).exec()
+    val e = HorizonsEphemerisQuery(titan, GS, start, end.plus(182, DAYS), HorizonsEphemerisQuery.MaxElements + 1).exec()
 
-    assert(e.toMap.size == EphemerisQuery.MaxElements)
+    assert(e.toMap.size == HorizonsEphemerisQuery.MaxElements)
   }
 
   test("returns nothing if end comes before start", RequiresNetwork) {
-    val e = EphemerisQuery(titan, GS, end, start, 60).exec()
+    val e = HorizonsEphemerisQuery(titan, GS, end, start, 60).exec()
 
     assert(e.toMap.size == 0)
   }
 
 }
 
-object EphemerisQuerySpec extends EphemerisTestSupport {
+object HorizonsEphemerisQuerySpec extends EphemerisTestSupport {
   private val titan = EphemerisKey.MajorBody(606)
 
   private val start = LocalDateTime.of(2017, Month.AUGUST, 15, 1, 0).toInstant(UTC)
@@ -75,7 +75,7 @@ object EphemerisQuerySpec extends EphemerisTestSupport {
   private val startCoords = coords("17:21:29.110300 -21:55:46.509000")
   private val endCoords   = coords("17:21:28.904000 -21:55:48.103000")
 
-  implicit class QueryOps(q: EphemerisQuery) {
+  implicit class QueryOps(q: HorizonsEphemerisQuery) {
     def exec(): Ephemeris =
       Ephemeris.fromFoldable[Vector](q.streamEphemeris.runLog.unsafeRunSync)
   }
