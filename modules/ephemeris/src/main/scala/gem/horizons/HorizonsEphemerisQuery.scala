@@ -72,9 +72,9 @@ object HorizonsEphemerisQuery {
       val reqParams = Map(
         "COMMAND"    -> s"'${key.queryString}'",
         "SITE_COORD" -> HorizonsClient.formatCoords(site),
-        "START_TIME" -> s"'${HorizonsClient.formatInstant(start)}'",
+        "START_TIME" -> s"${HorizonsClient.formatInstant(start)}",
         "STEP_SIZE"  -> (((limit max 2) min MaxElements) - 1).toString,
-        "STOP_TIME"  -> s"'${HorizonsClient.formatInstant(end)}'"
+        "STOP_TIME"  -> s"${HorizonsClient.formatInstant(end)}"
       ) ++ FixedParams
 
       override val urlString: String =
