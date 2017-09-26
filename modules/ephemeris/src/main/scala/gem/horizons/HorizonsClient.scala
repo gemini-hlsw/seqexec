@@ -39,8 +39,8 @@ object HorizonsClient {
   val DateFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MMM-d HH:mm:ss.SSS", US).withZone(UTC)
 
-  val SharedParams: List[(String, String)] =
-    List(
+  val SharedParams: Map[String, String] =
+    Map(
       "batch"       -> "1",
       "CSV_FORMAT"  -> "NO",
       "TABLE_TYPE"  -> "OBSERVER"
@@ -79,4 +79,7 @@ object HorizonsClient {
 
   val stream: ParamReader[Stream[IO, String]] =
     request.map { client.streaming(_) { _.body.through(utf8Decode) } }
+
+  val fetch: ParamReader[IO[String]] =
+    request.map { client.expect[String](_) }
 }
