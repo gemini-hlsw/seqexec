@@ -61,7 +61,7 @@ object HorizonsNameQuery {
       EitherT.rightT[IO, Error](a)
   }
 
-  /** A human-readable name and it's unique horizons ephemeris key. */
+  /** A human-readable name and its unique horizons ephemeris key. */
   final case class Resolution[A](a: A, name: String)
 
   /** Creates a NameQuery for the given search object. */

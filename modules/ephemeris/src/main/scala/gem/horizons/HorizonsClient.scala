@@ -33,9 +33,13 @@ object HorizonsClient {
   val client: Client[IO] =
     PooledHttp1Client[IO](maxTotalConnections = 1)
 
+  /** Horizons service URL. */
   val Url: String =
     "https://ssd.jpl.nasa.gov/horizons_batch.cgi"
 
+  /** DateTimeFormatter that can format instants into the string expected by
+    * the horizons service: {{{yyyy-MMM-d HH:mm:ss.SSS}}}.
+    */
   val DateFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MMM-d HH:mm:ss.SSS", US).withZone(UTC)
 
@@ -48,15 +52,15 @@ object HorizonsClient {
 
   type ParamReader[A] = Reader[Map[String, String], A]
 
-  // Format coordinates and altitude as expected by horizons.
+  /** Format coordinates and altitude as expected by horizons.*/
   def formatCoords(s: Site): String =
     f"'${s.longitude.toDoubleDegrees}%1.5f,${s.latitude.toSignedDoubleDegrees}%1.6f,${s.altitude.toDouble/1000.0}%1.3f'"
 
-  // Format an instant as expected by horizons.
+  /** Format an instant as expected by horizons. */
   def formatInstant(i: Instant): String =
     s"'${DateFormat.format(i)}'"
 
-  // URL encode query params.
+  /** URL encodes query params. */
   val formatQuery: ParamReader[String] =
     Reader {
       _.toList
@@ -64,6 +68,7 @@ object HorizonsClient {
        .intercalate("&")
     }
 
+  /** Computes the URL string that matches the given parameters. */
   val urlString: ParamReader[String] =
     formatQuery.map { s => s"$Url?$s" }
 
@@ -77,9 +82,11 @@ object HorizonsClient {
   val request: ParamReader[IO[Request[IO]]] =
       uri.map { _.map(Request(Method.GET, _)) }
 
+  /** Creates a `Stream` of results from the horizons server when executed. */
   val stream: ParamReader[Stream[IO, String]] =
     request.map { client.streaming(_) { _.body.through(utf8Decode) } }
 
+  /** Retrieves all the horizons server outout into a single String. */
   val fetch: ParamReader[IO[String]] =
     request.map { client.expect[String](_) }
 }
