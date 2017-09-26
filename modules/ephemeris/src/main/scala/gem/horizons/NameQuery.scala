@@ -148,6 +148,7 @@ object NameQuery {
       case2 orElse "Could not parse the header line as a comet".asLeft
     }
 
+    // scalastyle:off method.length
     def parseAsteroids(header: String, tail: List[String]): ParsedAsteroids = {
 
       // Common case is that we have many results, or none.
@@ -197,9 +198,31 @@ object NameQuery {
       case3 orElse
       case4 orElse "Could not parse the header line as an asteroid".asLeft
     }
+    // scalastyle:on method.length
 
     def parseMajorBodies(header: String, tail: List[String]): ParsedMajorBodies = {
-      (header :: tail).mkString("\n").asLeft
+
+      // Common case is that we have many results, or none.
+      def case0: ParsedMajorBodies =
+        parseMany[Row[EphemerisKey.MajorBody]](header, tail, """Multiple major-bodies match string""".r) { offs =>
+          (offs.lift(0), offs.lift(1)).mapN {
+            case ((ors, ore), (ons, one)) => { row =>
+              val rec  = row.substring(ors, ore).trim.toInt
+              val name = row.substring(ons, one).trim
+              Row(EphemerisKey.MajorBody(rec.toInt), name)
+            }
+          }
+        }.map(_.filterNot(_.a.num < 0)) // filter out spacecraft
+
+      // Single result with form:  Revised: Aug 11, 2015       Charon / (Pluto)     901
+      def case1: ParsedMajorBodies =
+        """  +(.*?) / \((.+?)\)  +(\d+) *$""".r.findFirstMatchIn(header).map { m =>
+          List(Row(EphemerisKey.MajorBody(m.group(3).toInt), m.group(1)))
+        }.toRight("Could not match 'Charon / (Pluto)     901' header pattern.")
+
+      // First one that works, otherwise Nil because it falls through to small-body search
+      case0 orElse
+      case1 orElse Nil.asRight
     }
   }
 

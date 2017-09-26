@@ -46,10 +46,10 @@ final class NameQuerySpec extends CatsSuite with RespectIncludeTags {
   }
 
   test("asteroid search should handle empty results", RequiresNetwork) {
-    runSearch(Search.Asteroid("kjhdwekuq")) shouldEqual Nil.asRight
+    runSearch(Search.Asteroid("covfefe")) shouldEqual Nil.asRight
   }
 
-  test("handle multiple results", RequiresNetwork) {
+  test("asteroid search should handle multiple results", RequiresNetwork) {
     runSearch(Search.Asteroid("her")).map(_.take(5)) shouldEqual List(
       Row(EK.AsteroidOld(103), "Hera"),
       Row(EK.AsteroidOld(121), "Hermione"),
@@ -59,28 +59,59 @@ final class NameQuerySpec extends CatsSuite with RespectIncludeTags {
     ).asRight
   }
 
-  test("handle single result (Format 1) 90377 Sedna (2003 VB12)", RequiresNetwork) {
+  test("asteroid search should handle single result (Format 1) 90377 Sedna (2003 VB12)", RequiresNetwork) {
     runSearch(Search.Asteroid("sedna")) shouldEqual List(
       Row(EK.AsteroidNew("2003 VB12"), "Sedna")
     ).asRight
   }
 
-  test("handle single result (Format 2) 29 Amphitrite", RequiresNetwork) {
+  test("asteroid search should handle single result (Format 2) 29 Amphitrite", RequiresNetwork) {
     runSearch(Search.Asteroid("amphitrite")) shouldEqual List(
       Row(EK.AsteroidOld(29), "Amphitrite")
     ).asRight
   }
 
-  test("handle single result (Format 3) (2016 GB222)", RequiresNetwork) {
+  test("asteroid search should handle single result (Format 3) (2016 GB222)", RequiresNetwork) {
     runSearch(Search.Asteroid("2016 GB222")) shouldEqual List(
       Row(EK.AsteroidNew("2016 GB222"), "2016 GB222")
     ).asRight
   }
 
-  test("handle single result (Format 4) 418993 (2009 MS9)", RequiresNetwork) {
+  test("asteroid search should handle single result (Format 4) 418993 (2009 MS9)", RequiresNetwork) {
     runSearch(Search.Asteroid("2009 MS9")) shouldEqual List(
       Row(EK.AsteroidNew("2009 MS9"), "2009 MS9")
     ).asRight
   }
 
+  test("major body search should handle empty results", RequiresNetwork) {
+    runSearch(Search.MajorBody("covfefe")) shouldEqual Nil.asRight
+  }
+
+  test("major body search should handle empty results with small-body fallthrough (many)", RequiresNetwork) {
+    runSearch(Search.MajorBody("hu")) shouldEqual Nil.asRight
+  }
+
+  test("major body search should handle empty results with small-body fallthrough (single)", RequiresNetwork) {
+    runSearch(Search.MajorBody("hermione")) shouldEqual Nil.asRight
+  }
+
+  test("major body search should handle multiple results", RequiresNetwork) {
+    runSearch(Search.MajorBody("mar")).map(_.take(5)) shouldEqual List(
+      Row(EK.MajorBody(4), "Mars Barycenter"),
+      Row(EK.MajorBody(499), "Mars"),
+      Row(EK.MajorBody(723), "Margaret")
+    ).asRight
+  }
+
+  test("major body search should handle single result with trailing space (!)", RequiresNetwork) {
+    runSearch(Search.MajorBody("charon")) shouldEqual List(
+      Row(EK.MajorBody(901), "Charon")
+    ).asRight
+  }
+
+  test("major body search should handle single result without trailing space", RequiresNetwork) {
+    runSearch(Search.MajorBody("europa")) shouldEqual List(
+      Row(EK.MajorBody(502), "Europa")
+    ).asRight
+  }
 }
