@@ -117,6 +117,8 @@ object NameQuery {
     type ParsedMajorBodies = ParsedRows[EphemerisKey.MajorBody]
 
     def parseComets(header: String, tail: List[String]): ParsedComets = {
+
+      // Common case is that we have many results, or none.
       def case0: ParsedComets =
         parseMany[Row[EphemerisKey.Comet]](header, tail, """  +Small-body Index Search Results  """.r) { offs =>
           (offs.lift(2), offs.lift(3)).mapN {
@@ -147,7 +149,53 @@ object NameQuery {
     }
 
     def parseAsteroids(header: String, tail: List[String]): ParsedAsteroids = {
-      (header :: tail).mkString("\n").asLeft
+
+      // Common case is that we have many results, or none.
+      def case0: ParsedAsteroids =
+        parseMany[Row[EphemerisKey.Asteroid]](header, tail, """  +Small-body Index Search Results  """.r) { offs =>
+          (offs.lift(0), offs.lift(1), offs.lift(2)).mapN {
+            case ((ors, ore), (ods, ode), (ons, _)) => { row =>
+              val rec   = row.substring(ors, ore).trim.toInt
+              val desig = row.substring(ods, ode).trim
+              val name  = row.substring(ons     ).trim // last column, so no end index because rows are ragged
+              desig match {
+                case "(undefined)" => Row(EphemerisKey.AsteroidOld(rec): EphemerisKey.Asteroid, name)
+                case des           => Row(EphemerisKey.AsteroidNew(des): EphemerisKey.Asteroid, name)
+              }
+            }
+          }
+        }
+
+      // Single result with form: JPL/HORIZONS      90377 Sedna (2003 VB12)     2015-Dec-31 11:40:21
+      def case1: ParsedAsteroids =
+        """  +\d+ ([^(]+)\s+\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
+          List(Row(EphemerisKey.AsteroidNew(m.group(2)) : EphemerisKey.Asteroid, m.group(1)))
+        }.toRight("Could not match '90377 Sedna (2003 VB12)' header pattern.")
+
+      // Single result with form: JPL/HORIZONS      4 Vesta     2015-Dec-31 11:40:21
+      def case2: ParsedAsteroids =
+        """  +(\d+) ([^(]+?)  """.r.findFirstMatchIn(header).map { m =>
+          List(Row(EphemerisKey.AsteroidOld(m.group(1).toInt) : EphemerisKey.Asteroid, m.group(2)))
+        }.toRight("Could not match '4 Vesta' header pattern.")
+
+      // Single result with form: JPL/HORIZONS    (2016 GB222)    2016-Apr-20 15:22:36
+      def case3: ParsedAsteroids =
+        """  +\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
+          List(Row(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
+        }.toRight("Could not match '(2016 GB222)' header pattern.")
+
+      // Single result with form: JPL/HORIZONS        418993 (2009 MS9)            2016-Sep-07 18:23:54
+      def case4: ParsedAsteroids =
+        """  +\d+\s+\((.+?)\)  """.r.findFirstMatchIn(header).map { m =>
+          List(Row(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
+        }.toRight("Could not match '418993 (2009 MS9)' header pattern.")
+
+      // First one that works!
+      case0 orElse
+      case1 orElse
+      case2 orElse
+      case3 orElse
+      case4 orElse "Could not parse the header line as an asteroid".asLeft
     }
 
     def parseMajorBodies(header: String, tail: List[String]): ParsedMajorBodies = {
