@@ -49,6 +49,10 @@ object EphemerisKey {
     */
   sealed abstract class Horizons(val queryString: String) extends EphemerisKey
 
+  /** Horizons designation for asteroids, old and new style.
+    */
+  sealed abstract class Asteroid(s: String) extends Horizons(s)
+
   /** Designation for a comet, in the current apparition. Example: `C/1973 E1`
     * for Kohoutek, yielding the query string `NAME=C/1973 E1;CAP`.
     */
@@ -59,14 +63,14 @@ object EphemerisKey {
   /** Designation for an asteroid under modern naming conventions. Example:
     * `1971 UC1` for 1896 Beer, yielding a query string `ASTNAM=1971 UC1`.
     */
-  @Lenses final case class AsteroidNew(des: String) extends Horizons(s"ASTNAM=$des")
+  @Lenses final case class AsteroidNew(des: String) extends Asteroid(s"ASTNAM=$des")
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object AsteroidNew
 
   /** Designation for an asteroid under "old" naming conventions. These are
     * small numbers. Example: `4` for Vesta, yielding a query string `4;`
     */
-  @Lenses final case class AsteroidOld(num: Int) extends Horizons(s"$num;") {
+  @Lenses final case class AsteroidOld(num: Int) extends Asteroid(s"$num;") {
     override def des: String =
       num.toString
   }
