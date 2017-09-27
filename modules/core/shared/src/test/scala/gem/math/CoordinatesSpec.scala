@@ -129,15 +129,21 @@ final class CoordinatesSpec extends CatsSuite {
     }
   }
 
-  test("interpolate should be consistent with fractional angular separation, to within 1µsec (15 µas)") {
+  test("interpolate should be consistent with fractional angular separation, to within 20 µas") {
+    val µas180 = Angle.Angle180.toMicroarcseconds
+    val µas360 = µas180 * 2L
+
     forAll { (c1: Coordinates, c2: Coordinates) =>
       val sep = c1.angularDistance(c2)
       val Δs  = (-1.0 to 2.0 by 0.1).map { f =>
-        val stepSep = c1.interpolate(c2, f).angularDistance(c1)
-        (stepSep.toMicroarcseconds - (sep.toSignedMicroarcseconds * f.abs).toLong)
+        val stepSep  = c1.interpolate(c2, f).angularDistance(c1).toMicroarcseconds
+        val fracSep  = (sep.toMicroarcseconds * f.abs).toLong
+        val fracSepʹ = if (fracSep <= µas180) fracSep else µas360 - fracSep
+        (stepSep - fracSepʹ).abs
       }
-      Δs.filter(_ > 15L) shouldBe empty
+      Δs.filter(_ > 20L) shouldBe empty
     }
+
   }
 
   test("format and parse must round-trip") {
