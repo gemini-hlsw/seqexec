@@ -14,7 +14,21 @@ trait InstrumentSystem extends System {
   val sfName: String
   val contributorName: String
   val dhsInstrumentName: String
+  val observeControl: InstrumentSystem.ObserveControl
   def observe(config: Config): SeqObserve[ImageFileId, ObserveResult]
+}
+
+object InstrumentSystem {
+  sealed trait ObserveControl
+  object Uncontrollable extends ObserveControl
+  final case class StopObserveCmd(self: SeqAction[Unit]) extends AnyVal
+  final case class AbortObserveCmd(self: SeqAction[Unit]) extends AnyVal
+  final case class PauseObserveCmd(self: SeqAction[Unit]) extends AnyVal
+  final case class ContinueObserveCmd(self: SeqAction[Unit]) extends AnyVal
+  final case class Controllable(stop: StopObserveCmd,
+                                abort: AbortObserveCmd,
+                                pause: PauseObserveCmd,
+                                continue: ContinueObserveCmd) extends ObserveControl
 }
 
 //Placeholder for observe response
@@ -28,6 +42,8 @@ object UnknownInstrument extends InstrumentSystem {
 
   override val contributorName: String = "unknown"
   override val dhsInstrumentName: String = "UNKNOWN"
+
+  override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private var imageCount = 0 // scalastyle:ignore

@@ -242,12 +242,6 @@
                 <description>CCD X size</description>
             </parameter>
         </command>
-    </Apply>
-    <Apply name="gmos::observeapply">
-        <top>gm</top>
-        <apply>dc:apply</apply>
-        <car>dc:observeC</car>
-        <description>Observe Apply Record</description>
         <command name="gmos::pause">
             <record>dc:pause</record>
             <description>Pause observation</description>
@@ -256,6 +250,16 @@
             <record>dc:abort</record>
             <description>Abort observation</description>
         </command>
+        <command name="gmos::stop">
+            <record>dc:stop</record>
+            <description>Stop observation</description>
+        </command>
+    </Apply>
+    <Apply name="gmos::observeapply">
+        <top>gm</top>
+        <apply>dc:apply</apply>
+        <car>dc:observeC</car>
+        <description>Observe Apply Record</description>
         <command name="gmos::continue">
             <record>dc:continue</record>
             <description>Continue observation</description>
@@ -268,10 +272,6 @@
                 <type>STRING</type>
                 <description>DHS data label</description>
             </parameter>
-        </command>
-        <command name="gmos::stop">
-            <record>dc:stop</record>
-            <description>Stop observation</description>
         </command>
     </Apply>
     <Status name="gmos::dcstatus">

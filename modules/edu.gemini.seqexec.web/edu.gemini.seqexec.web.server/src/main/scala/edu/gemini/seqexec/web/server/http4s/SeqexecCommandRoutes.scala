@@ -65,8 +65,11 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       } yield resp
 
     case POST -> Root / obsId / stepId / "stop" as _ =>
-      // TODO call stop on the engine
-      Ok(s"Stop requested for $obsId on step $stepId")
+      for {
+        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        _    <- se.stopObserve(inputQueue, obs)
+        resp <- Ok(s"Stop requested for $obsId on step $stepId")
+      } yield resp
 
     case POST -> Root / obsId / stepId / "abort" as _ =>
       // TODO call abort on the engine
