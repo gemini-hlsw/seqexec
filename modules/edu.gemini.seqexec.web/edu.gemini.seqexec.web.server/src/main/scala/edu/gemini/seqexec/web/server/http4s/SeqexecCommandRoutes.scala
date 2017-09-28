@@ -72,8 +72,12 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       } yield resp
 
     case POST -> Root / obsId / stepId / "abort" as _ =>
-      // TODO call abort on the engine
-      Ok(s"Abort requested for $obsId on step $stepId")
+      for {
+        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        _    <- se.abortObserve(inputQueue, obs)
+        resp <- Ok(s"Abort requested for $obsId on step $stepId")
+      } yield resp
+
 
     case POST -> Root / "operator" / name as user =>
       se.setOperator(inputQueue, user, Operator(name)) *> Ok(s"Set operator name to '$name'")

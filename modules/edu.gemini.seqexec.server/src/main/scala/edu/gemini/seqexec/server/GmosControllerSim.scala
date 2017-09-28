@@ -52,6 +52,12 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     stopFlag.set(true)
     TrySeq(())
   } )
+
+  override def abortObserve: SeqAction[Unit] = EitherT( Task {
+      Log.info(s"Simulate aborting Gmos $name exposure")
+      abortFlag.set(true)
+      TrySeq(())
+    } )
 }
 
 object GmosControllerSim {
