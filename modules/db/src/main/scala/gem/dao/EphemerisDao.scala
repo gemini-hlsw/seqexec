@@ -21,8 +21,6 @@ object EphemerisDao {
   import EphemerisKeyComposite._
   import TimeMeta._
 
-//  implicit val han: LogHandler = LogHandler.jdkLogHandler
-
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(
       e.toMap.toList.map { case (i, c) => (k, s, i, c, c.ra.format, c.dec.format) }
