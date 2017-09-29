@@ -15,4 +15,9 @@ class EphemerisCheck extends Check {
   it should "selectRange" in check(selectRange(Dummy.ephemerisKey, Dummy.site, InstantMicros.Min, InstantMicros.Max))
 
   it should "selectNextUserSuppliedKey" in check(selectNextUserSuppliedKey)
+
+  it should "insertMeta"  in check(insertMeta(Dummy.ephemerisKey, Dummy.site, Dummy.ephemerisMeta))
+  it should "updateMeta"  in check(updateMeta(Dummy.ephemerisKey, Dummy.site, Dummy.ephemerisMeta))
+  it should "deleteMeta"  in check(deleteMeta(Dummy.ephemerisKey, Dummy.site))
+  it should "selectMeta"  in check(selectMeta(Dummy.ephemerisKey, Dummy.site))
 }

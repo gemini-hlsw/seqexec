@@ -7,18 +7,16 @@ package dao
 import gem.arb.ArbEnumerated._
 import gem.arb.ArbEphemeris._
 import gem.arb.ArbEphemerisKey._
+import gem.arb.ArbEphemerisMeta._
 import gem.arb.ArbTime._
 import gem.enum.Site
 import gem.math.Ephemeris
 import gem.util.InstantMicros
-
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
-
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
@@ -101,8 +99,79 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
     ids.distinct shouldEqual ids
   }
+
+  property("EphemerisDao meta select should return None if unknown key") {
+    forAll { (ks: KS) =>
+      val meta = EphemerisDao.selectMeta(ks.key, ks.site)
+        .transact(xa)
+        .unsafeRunSync
+
+      meta shouldEqual None
+    }
+  }
+
+  property("EphemerisDao meta should roundtrip") {
+    forAll { (ks: KS, m: EphemerisMeta) =>
+      val p = EphemerisDao.insertMeta(ks.key, ks.site, m) *>
+                EphemerisDao.selectMeta(ks.key, ks.site)
+
+      p.transact(xa).unsafeRunSync shouldEqual Some(m)
+    }
+  }
+
+  property("EphemerisDao meta should select by key and site") {
+    forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int) =>
+
+      val env = EphemerisMetaTestEnv(head, tail, i)
+
+      // Select from the DB the one that we picked
+      val selectOne = EphemerisDao.selectMeta(env.key, env.site)
+
+      // Run the test
+      val res = (env.insertAll *> selectOne).transact(xa).unsafeRunSync
+
+      res shouldEqual Some(env.meta)
+    }
+  }
+
+  property("EphemerisDao meta should update") {
+    forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int, meta: EphemerisMeta) =>
+
+      val env = EphemerisMetaTestEnv(head, tail, i)
+
+      // Update the one that we picked
+      val updateOne = EphemerisDao.updateMeta(env.key, env.site, meta)
+
+      // Try to select the updated one
+      val selectOne = EphemerisDao.selectMeta(env.key, env.site)
+
+      // Run the test
+      val res = (env.insertAll *> updateOne *> selectOne).transact(xa).unsafeRunSync
+
+      res shouldEqual Some(meta)
+    }
+  }
+
+  property("EphemerisDao meta should delete") {
+    forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int) =>
+
+      val env = EphemerisMetaTestEnv(head, tail, i)
+
+      // Delete the one that we picked
+      val deleteOne = EphemerisDao.deleteMeta(env.key, env.site)
+
+      // Try to select the deleted one
+      val selectOne = EphemerisDao.selectMeta(env.key, env.site)
+
+      // Run the test
+      val res = (env.insertAll *> deleteOne *> selectOne).transact(xa).unsafeRunSync
+
+      res shouldEqual None
+    }
+  }
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 object EphemerisDaoSpec {
   final case class KS(key: EphemerisKey, site: Site)
 
@@ -115,4 +184,44 @@ object EphemerisDaoSpec {
     }
 
   type EphemerisMap = Map[KS, Ephemeris]
+
+  /** Environment for running EphemerisMeta tests.  It is a program for
+    * inserting a collection of ephemeris meta for testing and the key, site,
+    * and EphemerisMeta corresponding to one of the members of the collection
+    * at random.
+    *
+    * @param insertAll action that inserts an initial collection of ephemeris
+    *                  meta values
+    * @param key       a random key referring to one of the values that will be
+    *                  inserted
+    * @param site      a random site referring to one of the values that will be
+    *                  inserted
+    * @param meta      ephemeris meta value corresponding to (key, site)
+    */
+  final class EphemerisMetaTestEnv(
+    val insertAll: ConnectionIO[Unit],
+    val key:       EphemerisKey,
+    val site:      Site,
+    val meta:      EphemerisMeta)
+
+  object EphemerisMetaTestEnv {
+    def apply(head: (KS, EphemerisMeta),
+              tail: List[(KS, EphemerisMeta)],
+              i:    Int): EphemerisMetaTestEnv = {
+
+      // Eliminate duplicate keys
+      val all = (head :: tail).toMap.toList
+
+      // Pick an element at random
+      val index = if (i == Int.MinValue) i + 1 else i
+      val (ks, em) = all(index.abs % all.size)
+
+      // Insert all the ephemeris meta data
+      val insertAll = all.traverse { case (ksʹ, emʹ) =>
+        EphemerisDao.insertMeta(ksʹ.key, ksʹ.site, emʹ)
+      }.void
+
+      new EphemerisMetaTestEnv(insertAll, ks.key, ks.site, em)
+    }
+  }
 }

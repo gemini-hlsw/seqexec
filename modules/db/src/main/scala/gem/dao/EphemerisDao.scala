@@ -21,6 +21,8 @@ object EphemerisDao {
   import EphemerisKeyComposite._
   import TimeMeta._
 
+//  implicit val han: LogHandler = LogHandler.jdkLogHandler
+
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(
       e.toMap.toList.map { case (i, c) => (k, s, i, c, c.ra.format, c.dec.format) }
@@ -71,6 +73,18 @@ object EphemerisDao {
   val nextUserSuppliedKey: ConnectionIO[EphemerisKey.UserSupplied] =
     Statements.selectNextUserSuppliedKey.unique
 
+  def insertMeta(k: EphemerisKey, s: Site, m: EphemerisMeta): ConnectionIO[Int] =
+    Statements.insertMeta(k, s, m).run
+
+  def updateMeta(k: EphemerisKey, s: Site, m: EphemerisMeta): ConnectionIO[Int] =
+    Statements.updateMeta(k, s, m).run
+
+  def deleteMeta(k: EphemerisKey, s: Site): ConnectionIO[Int] =
+    Statements.deleteMeta(k, s).run
+
+  def selectMeta(k: EphemerisKey, s: Site): ConnectionIO[Option[EphemerisMeta]] =
+    Statements.selectMeta(k, s).option
+
   object Statements {
 
     type EphemerisRow = (EphemerisKey, Site, InstantMicros, Coordinates, String, String)
@@ -116,5 +130,39 @@ object EphemerisDao {
         SELECT nextval('user_ephemeris_id')
       """.query[Long].map(id => EphemerisKey.UserSupplied(id.toInt))
 
+    def insertMeta(k: EphemerisKey, s: Site, m: EphemerisMeta): Update0 =
+      (fr"""
+        INSERT INTO ephemeris_meta (
+            key_type,
+            key,
+            site,
+            last_update,
+            last_update_check,
+            horizons_soln_ref
+        ) VALUES""" ++ values((k, s, m))).update
+
+    def updateMeta(k: EphemerisKey, s: Site, m: EphemerisMeta): Update0 =
+      (fr"""
+        UPDATE ephemeris_meta
+           SET (last_update,
+                last_update_check,
+                horizons_soln_ref
+        ) =""" ++ values(m) ++
+      fr"WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s").update
+
+    def deleteMeta(k: EphemerisKey, s: Site): Update0 =
+      sql"""
+         DELETE FROM ephemeris_meta
+               WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
+       """.update
+
+    def selectMeta(k: EphemerisKey, s: Site): Query0[EphemerisMeta] =
+      sql"""
+        SELECT last_update,
+               last_update_check,
+               horizons_soln_ref
+          FROM ephemeris_meta
+         WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
+      """.query[EphemerisMeta]
   }
 }

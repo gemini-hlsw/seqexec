@@ -56,8 +56,9 @@ final class InstantMicros private (val toInstant: Instant) extends AnyVal {
 
 object InstantMicros {
 
-  val Min: InstantMicros = InstantMicros.truncate(Instant.MIN)
-  val Max: InstantMicros = InstantMicros.truncate(Instant.MAX)
+  val Min:   InstantMicros = InstantMicros.truncate(Instant.MIN)
+  val Max:   InstantMicros = InstantMicros.truncate(Instant.MAX)
+  val Epoch: InstantMicros = InstantMicros.truncate(Instant.EPOCH)
 
 
   /** Creates an InstantMicro from the given Instant, assuring that the time
