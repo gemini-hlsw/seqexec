@@ -18,14 +18,14 @@ import scala.util.matching.Regex
 /** Horizons name-resolution query.
   *
   * {{{
-  * import HorizonsNameQuery.Search.Comet
+  *   import HorizonsNameQuery.Search.Comet
   *
-  * HorizonsNameQuery(Comet("Halley")).lookup.value.unsafeRunSync
+  *   HorizonsNameQuery(Comet("Halley")).lookup.value.unsafeRunSync
   * }}}
   */
 sealed trait HorizonsNameQuery[A] {
 
-  /** URL string corresponding the the horizons request. */
+  /** URL string corresponding to the horizons request. */
   def urlString: String
 
   /** Returns a program that will perform the name lookup when executed,

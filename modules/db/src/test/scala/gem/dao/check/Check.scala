@@ -11,7 +11,7 @@ import gem._
 import gem.enum._
 import gem.config._
 import gem.config.DynamicConfig.SmartGcalKey
-import gem.util.Location
+import gem.util.{ InstantMicros, Location }
 import gem.math._
 import java.time.LocalDate
 import org.scalatest._
@@ -63,6 +63,8 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val instrumentConfig = f2Config
     val stepType         = StepType.Science
     val ephemerisKey     = EphemerisKey.Comet("Lanrezac")
+    val horizonsSolnRef  = HorizonsSolutionRef("JPL#K162/5")
+    val ephemerisMeta    = EphemerisMeta(InstantMicros.Min, InstantMicros.Min, Some(horizonsSolnRef))
 
     val gmosCustomRoiEntry =
       gem.config.GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(1, 1, 1, 1)
