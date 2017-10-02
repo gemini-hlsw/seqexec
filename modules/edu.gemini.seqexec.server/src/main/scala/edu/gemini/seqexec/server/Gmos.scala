@@ -101,8 +101,8 @@ object Gmos {
   }
 
   private def shutterStateObserveType(observeType: String): ShutterState = observeType match {
-    case SCIENCE_OBSERVE_TYPE => UnsetShutter
-    case FLAT_OBSERVE_TYPE    => UnsetShutter
+    case SCIENCE_OBSERVE_TYPE => OpenShutter
+    case FLAT_OBSERVE_TYPE    => OpenShutter
     case ARC_OBSERVE_TYPE     => OpenShutter
     case DARK_OBSERVE_TYPE    => CloseShutter
     case BIAS_OBSERVE_TYPE    => CloseShutter
