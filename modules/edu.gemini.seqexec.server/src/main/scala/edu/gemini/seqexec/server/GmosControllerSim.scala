@@ -9,8 +9,8 @@ import org.log4s._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import GmosController.{GmosConfig, NorthTypes, SiteDependentTypes, SouthTypes}
 
+import scala.annotation.tailrec
 import scalaz.{EitherT, \/}
-import scalaz.Scalaz._
 import scalaz.concurrent.Task
 
 private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends GmosController[T] {
@@ -22,21 +22,25 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   private val abortFlag = new AtomicBoolean(false)
 
   private val tic = 200
-  private def observeTic(obsid: ImageFileId, remain: Int): Task[\/[SeqexecFailure, ImageFileId]] =
-    if(remain < tic) Task {
+
+  @tailrec
+  private def observeTic(obsid: ImageFileId, stop: Boolean, abort: Boolean, remain: Int): \/[SeqexecFailure, ImageFileId] =
+    if(remain < tic) {
       Log.info(s"Simulate Gmos $name observation completed")
       TrySeq(obsid)
-    }
-    else Task.delay(stopFlag.get).flatMap( stop => Task.delay(abortFlag.get).flatMap( abort =>
-      if(stop) Task(TrySeq.fail(SeqexecFailure.Execution("Exposure stopped by user.")))
-      else if(abort) Task(TrySeq.fail(SeqexecFailure.Execution("Exposure aborted by user.")))
-      else Task{ Thread.sleep(tic.toLong)} *> observeTic(obsid, remain-tic)))
+    } else if(stop) TrySeq.fail(SeqexecFailure.Execution("Exposure stopped by user."))
+      else if(abort) TrySeq.fail(SeqexecFailure.Execution("Exposure aborted by user."))
+      else {
+        Thread.sleep(tic.toLong)
+        observeTic(obsid, stopFlag.get, abortFlag.get, remain-tic)
+      }
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info(s"Simulate taking Gmos $name observation with label " + obsid)
     stopFlag.set(false)
     abortFlag.set(false)
-  } *> observeTic(obsid, 5000) )
+    observeTic(obsid, false, false, 5000)
+  })
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
     Log.info(s"Simulate applying Gmos $name configuration")
