@@ -21,7 +21,7 @@ import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.seqexec.server.InstrumentSystem.{Controllable, StopObserveCmd}
+import edu.gemini.seqexec.server.InstrumentSystem.{AbortObserveCmd, Controllable, StopObserveCmd}
 
 import scalaz.Scalaz._
 import scalaz._
@@ -188,6 +188,15 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   def stopObserve(inst: Model.Instrument): Option[Process[Task, Event]] =
     toInstrumentSys(inst).toOption.flatMap(_.observeControl match {
       case Controllable(StopObserveCmd(stop), _, _, _) => Some(Process.eval(stop.run.map{
+        case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
+        case _      => Event.nullEvent
+      }))
+      case _                                           => none
+    } )
+
+  def abortObserve(inst: Model.Instrument): Option[Process[Task, Event]] =
+    toInstrumentSys(inst).toOption.flatMap(_.observeControl match {
+      case Controllable(_, AbortObserveCmd(abort), _, _) => Some(Process.eval(abort.run.map{
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))

@@ -228,6 +228,12 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- GmosEpics.instance.stopCmd.post
   } yield ()
 
+  override def abortObserve: SeqAction[Unit] = for {
+    _ <- EitherT(Task(Log.info("Abort Gmos exposure").right))
+    _ <- GmosEpics.instance.abortCmd.mark
+    _ <- GmosEpics.instance.abortCmd.post
+  } yield ()
+
 }
 
 object GmosControllerEpics {

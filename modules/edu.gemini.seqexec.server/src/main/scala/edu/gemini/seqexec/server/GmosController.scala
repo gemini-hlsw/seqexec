@@ -30,6 +30,8 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
   def observe(obsid: ImageFileId): SeqAction[ImageFileId]
 
   def stopObserve: SeqAction[Unit]
+
+  def abortObserve: SeqAction[Unit]
 }
 
 object GmosController {

@@ -36,7 +36,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override val contributorName: String = "gmosdc"
 
-  override val observeControl: InstrumentSystem.ObserveControl = Controllable(StopObserveCmd(controller.stopObserve), AbortObserveCmd(SeqAction.void),
+  override val observeControl: InstrumentSystem.ObserveControl = Controllable(StopObserveCmd(controller.stopObserve), AbortObserveCmd(controller.abortObserve),
     PauseObserveCmd(SeqAction.void), ContinueObserveCmd(SeqAction.void))
 
   val Log: Logger = getLogger
