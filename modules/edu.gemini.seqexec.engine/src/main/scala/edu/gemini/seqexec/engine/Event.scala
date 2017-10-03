@@ -46,5 +46,6 @@ object Event {
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
   def finished(id: Sequence.Id): Event = EventSystem(Finished(id))
+  def nullEvent: Event = EventSystem(Null)
 
 }

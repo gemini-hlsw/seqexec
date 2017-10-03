@@ -6,7 +6,7 @@ package edu.gemini.seqexec.server
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Observed}
-import edu.gemini.seqexec.engine.{Action, ActionMetadata, Result, Sequence, Step, fromTask}
+import edu.gemini.seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromTask}
 import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.Model
 import edu.gemini.seqexec.model.dhs.ImageFileId
@@ -21,10 +21,12 @@ import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
+import edu.gemini.seqexec.server.InstrumentSystem.{Controllable, StopObserveCmd}
 
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
+import scalaz.stream.Process
 
 /**
   * Created by jluhrs on 9/14/16.
@@ -182,6 +184,15 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         )
       })
   }
+
+  def stopObserve(inst: Model.Instrument): Option[Process[Task, Event]] =
+    toInstrumentSys(inst).toOption.flatMap(_.observeControl match {
+      case Controllable(StopObserveCmd(stop), _, _, _) => Some(Process.eval(stop.run.map{
+        case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
+        case _      => Event.nullEvent
+      }))
+      case _                                           => none
+    } )
 
   private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))

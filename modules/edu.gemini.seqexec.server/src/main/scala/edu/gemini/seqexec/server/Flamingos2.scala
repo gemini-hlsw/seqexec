@@ -29,6 +29,8 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val dhsInstrumentName: String = "F2"
 
+  override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
+
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader {
     fileId => f2Controller.observe(fileId).map(_ => ObserveResult(fileId))
   }

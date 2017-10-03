@@ -221,6 +221,13 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- GmosEpics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
   } yield obsid
+
+  override def stopObserve: SeqAction[Unit] = for {
+    _ <- EitherT(Task(Log.info("Stop Gmos exposure").right))
+    _ <- GmosEpics.instance.stopCmd.mark
+    _ <- GmosEpics.instance.stopCmd.post
+  } yield ()
+
 }
 
 object GmosControllerEpics {

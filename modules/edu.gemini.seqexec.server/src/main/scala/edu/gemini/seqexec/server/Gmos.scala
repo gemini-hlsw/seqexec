@@ -30,10 +30,14 @@ import scala.concurrent.duration._
   */
 abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem {
   import Gmos._
+  import InstrumentSystem._
 
   override val sfName: String = "gmos"
 
   override val contributorName: String = "gmosdc"
+
+  override val observeControl: InstrumentSystem.ObserveControl = Controllable(StopObserveCmd(controller.stopObserve), AbortObserveCmd(SeqAction.void),
+    PauseObserveCmd(SeqAction.void), ContinueObserveCmd(SeqAction.void))
 
   val Log: Logger = getLogger
 
