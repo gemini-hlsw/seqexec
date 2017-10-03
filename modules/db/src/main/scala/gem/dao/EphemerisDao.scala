@@ -23,7 +23,7 @@ object EphemerisDao {
   import TimeMeta._
 
   private def toRow(k: EphemerisKey, s: Site, i: InstantMicros, c: EphemerisCoordinates): Statements.EphemerisRow =
-    (k, s, i, c.coord, c.coord.ra.format, c.coord.dec.format, c.velocity)
+    (k, s, i, c.coord, c.coord.ra.format, c.coord.dec.format, c.delta)
 
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(

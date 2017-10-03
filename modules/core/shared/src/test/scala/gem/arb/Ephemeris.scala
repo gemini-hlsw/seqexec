@@ -42,7 +42,7 @@ trait ArbEphemeris {
     }
 
   implicit val cogEphemerisCoordinates: Cogen[EphemerisCoordinates] =
-    Cogen[(Coordinates, Offset)].contramap(co => (co.coord, co.velocity))
+    Cogen[(Coordinates, Offset)].contramap(co => (co.coord, co.delta))
 
   implicit val cogEphemeris: Cogen[Ephemeris] =
     Cogen[Map[InstantMicros, EphemerisCoordinates]].contramap(_.toMap)
