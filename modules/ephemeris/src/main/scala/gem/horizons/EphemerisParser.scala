@@ -4,7 +4,7 @@
 package gem
 package horizons
 
-import gem.math.Ephemeris
+import gem.math.{ Angle, Ephemeris, EphemerisCoordinates, Offset }
 import gem.util.InstantMicros
 
 import atto.ParseResult
@@ -14,6 +14,8 @@ import atto.syntax.parser._
 import cats.implicits._
 
 import fs2.Pipe
+
+import scala.math.BigDecimal.RoundingMode.HALF_EVEN
 
 
 /** Horizons ephemeris parser.  Parses horizons output generated with the flags
@@ -43,6 +45,11 @@ object EphemerisParser {
     val solarPresence = oneOf("*CNA ").void namedOpaque "solarPresence"
     val lunarPresence = oneOf("mrts ").void namedOpaque "lunarPresence"
 
+    val deltaAngle    = bigDecimal.map { d =>
+      val µas = d.underlying.movePointRight(6).setScale(0, HALF_EVEN).longValue
+      Angle.fromMicroarcseconds(µas)
+    }
+
     val utc: Parser[InstantMicros] =
       instantUTC(
         genYMD(monthMMM, hyphen) named "yyyy-MMM-dd",
@@ -55,8 +62,10 @@ object EphemerisParser {
         i <- utc           <~ space
         _ <- solarPresence
         _ <- lunarPresence <~ spaces1
-        c <- coordinates
-      } yield (i, c)
+        c <- coordinates   <~ spaces1
+        p <- deltaAngle    <~ spaces1
+        q <- deltaAngle
+      } yield (i, EphemerisCoordinates(c, Offset(Offset.P(p), Offset.Q(q))))
 
     val elementLine: Parser[Ephemeris.Element] =
       element <~ skipEol
@@ -87,7 +96,8 @@ object EphemerisParser {
     */
   def parsedElements[F[_]]: Pipe[F, String, ParseResult[Ephemeris.Element]] =
     _.through(fs2.text.lines)
-     .dropThrough(_.trim =!= SOE)
+     .dropWhile(_.trim =!= SOE)
+     .drop(1)
      .takeWhile(_.trim =!= EOE)
      .map(element.parseOnly)
 

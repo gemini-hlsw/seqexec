@@ -19,16 +19,20 @@ object EphemerisDao {
   import CoordinatesComposite._
   import EnumeratedMeta._
   import EphemerisKeyComposite._
+  import OffsetMeta._
   import TimeMeta._
+
+  private def toRow(k: EphemerisKey, s: Site, i: InstantMicros, c: EphemerisCoordinates): Statements.EphemerisRow =
+    (k, s, i, c.coord, c.coord.ra.format, c.coord.dec.format, c.velocity)
 
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(
-      e.toMap.toList.map { case (i, c) => (k, s, i, c, c.ra.format, c.dec.format) }
+      e.toMap.toList.map { case (i, c) => toRow(k, s, i, c) }
     )
 
   def streamInsert[M[_]: Monad](k: EphemerisKey, s: Site, sm: Stream[M, Ephemeris.Element], xa: Transactor[M]): Stream[M, Int] =
-    sm.map { case (i, c) => (k, s, i, c, c.ra.format, c.dec.format) } // Stream[M, EphemerisRow]
-      .segmentN(4096)                                                 // Stream[M, Segment[EphemerisRow, Unit]]
+    sm.map { case (i, c) => toRow(k, s, i, c) } // Stream[M, EphemerisRow]
+      .segmentN(4096)                           // Stream[M, Segment[EphemerisRow, Unit]]
       .flatMap { rows =>
         Stream.eval(Statements.insert.updateMany(rows.toVector).transact(xa))
       }
@@ -85,7 +89,7 @@ object EphemerisDao {
 
   object Statements {
 
-    type EphemerisRow = (EphemerisKey, Site, InstantMicros, Coordinates, String, String)
+    type EphemerisRow = (EphemerisKey, Site, InstantMicros, Coordinates, String, String, Offset)
 
     val insert: Update[EphemerisRow] =
       Update[EphemerisRow](
@@ -97,8 +101,10 @@ object EphemerisDao {
                                  ra,
                                  dec,
                                  ra_str,
-                                 dec_str)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                 dec_str,
+                                 delta_ra,
+                                 delta_dec)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """)
 
     def delete(k: EphemerisKey, s: Site): Update0 =
@@ -111,7 +117,9 @@ object EphemerisDao {
       fr"""
          SELECT timestamp,
                 ra,
-                dec
+                dec,
+                delta_ra,
+                delta_dec
            FROM ephemeris
           WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
       """

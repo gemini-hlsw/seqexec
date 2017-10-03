@@ -4,7 +4,7 @@
 package gem
 package arb
 
-import gem.math.{ Coordinates, Ephemeris }
+import gem.math.{ Coordinates, Ephemeris, EphemerisCoordinates, Offset }
 import gem.util.InstantMicros
 
 import org.scalacheck._
@@ -13,15 +13,24 @@ import org.scalacheck.Arbitrary._
 
 trait ArbEphemeris {
   import ArbCoordinates._
+  import ArbOffset._
   import ArbTime._
   import Ephemeris.Element
+
+  implicit val arbEphemerisCoordinates: Arbitrary[EphemerisCoordinates] =
+    Arbitrary {
+      for {
+        c <- arbitrary[Coordinates]
+        o <- arbitrary[Offset]
+      } yield EphemerisCoordinates(c, o)
+    }
 
   implicit val arbElement: Arbitrary[Element] =
     Arbitrary {
       for {
-        t  <- arbitrary[InstantMicros]
-        cs <- arbitrary[Coordinates]
-      } yield (t, cs)
+        t <- arbitrary[InstantMicros]
+        c <- arbitrary[EphemerisCoordinates]
+      } yield (t, c)
     }
 
   implicit val arbEphemeris: Arbitrary[Ephemeris] =
@@ -32,8 +41,11 @@ trait ArbEphemeris {
       } yield Ephemeris(es: _*)
     }
 
+  implicit val cogEphemerisCoordinates: Cogen[EphemerisCoordinates] =
+    Cogen[(Coordinates, Offset)].contramap(co => (co.coord, co.velocity))
+
   implicit val cogEphemeris: Cogen[Ephemeris] =
-    Cogen[Map[InstantMicros, Coordinates]].contramap(_.toMap)
+    Cogen[Map[InstantMicros, EphemerisCoordinates]].contramap(_.toMap)
 
 }
 object ArbEphemeris extends ArbEphemeris

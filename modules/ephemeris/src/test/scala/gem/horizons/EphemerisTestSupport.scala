@@ -3,7 +3,7 @@
 
 package gem.horizons
 
-import gem.math.Coordinates
+import gem.math.{ Angle, EphemerisCoordinates, Coordinates, Offset }
 import gem.util.InstantMicros
 
 import java.time.{LocalDateTime, ZoneOffset}
@@ -21,6 +21,18 @@ trait EphemerisTestSupport {
   def coords(s: String): Coordinates =
     Coordinates.parse(s).getOrElse(Coordinates.Zero)
 
-  def eph(elems: (String, String)*): TreeMap[InstantMicros, Coordinates] =
-    TreeMap(elems.map { case (i, c) => time(i) -> coords(c) }: _*)
+  def arcsec(s: String): Angle =
+    Angle.fromMicroarcseconds(BigDecimal(s).underlying.movePointRight(6).longValueExact)
+
+  def offsetp(s: String): Offset.P =
+    Offset.P(arcsec(s))
+
+  def offsetq(s: String): Offset.Q =
+    Offset.Q(arcsec(s))
+
+  def ephCoords(c: String, p: String, q: String): EphemerisCoordinates =
+    EphemerisCoordinates(coords(c), Offset(offsetp(p), offsetq(q)))
+
+  def eph(elems: (String, (String, String, String))*): TreeMap[InstantMicros, EphemerisCoordinates] =
+    TreeMap(elems.map { case (i, (c, p, q)) => time(i) -> ephCoords(c, p, q) }: _*)
 }

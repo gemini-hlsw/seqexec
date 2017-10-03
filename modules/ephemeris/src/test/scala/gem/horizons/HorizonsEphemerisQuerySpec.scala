@@ -72,8 +72,8 @@ object HorizonsEphemerisQuerySpec extends EphemerisTestSupport {
   private val startM      = InstantMicros.truncate(start)
   private val endM        = InstantMicros.truncate(end)
 
-  private val startCoords = coords("17:21:29.110300 -21:55:46.509000")
-  private val endCoords   = coords("17:21:28.904000 -21:55:48.103000")
+  private val startCoords = ephCoords("17:21:29.110300 -21:55:46.509000", "-2.85225", "-1.61124")
+  private val endCoords   = ephCoords("17:21:28.904000 -21:55:48.103000", "-2.87880", "-1.58756")
 
   implicit class QueryOps(q: HorizonsEphemerisQuery) {
     def exec(): Ephemeris =

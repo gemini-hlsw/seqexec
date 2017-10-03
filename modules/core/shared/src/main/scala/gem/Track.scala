@@ -41,7 +41,7 @@ object Track {
   final case class Nonsidereal(ephemerisKey: EphemerisKey, ephemerides: Map[Site, Ephemeris]) extends Track {
 
     override def at(time: Instant, s: Site) =
-      ephemeris(s).flatMap(_.get(InstantMicros.truncate(time)))
+      ephemeris(s).flatMap(_.get(InstantMicros.truncate(time)).map(_.coord))
 
     def ephemeris(s: Site): Option[Ephemeris] =
       ephemerides.get(s)
