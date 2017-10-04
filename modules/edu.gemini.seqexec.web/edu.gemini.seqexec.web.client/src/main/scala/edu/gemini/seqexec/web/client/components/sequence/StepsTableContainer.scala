@@ -70,12 +70,16 @@ object StepsTableContainer {
         )
       )
 
-    def stepProgress(step: Step): VdomNode =
-      step.status match {
-        case StepState.Pending =>
+    def stepProgress(state: SequenceState, step: Step): VdomNode =
+      (state, step.status) match {
+        case (SequenceState.Pausing, StepState.Running) =>
+          <.div(state.shows)
+        case (SequenceState.Stopping, _) =>
+          <.div(step.status.shows)
+        case (_, StepState.Pending) =>
           step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
-        case StepState.Running =>
-          step.fileId.fold(<.div("Configuring..."))(fileId =>
+        case (_, StepState.Running) =>
+          step.fileId.fold(<.div(state.shows))(fileId =>
             <.div(
               ^.cls := "ui small progress vcentered",
               <.div(
@@ -89,7 +93,7 @@ object StepsTableContainer {
               )
             )
           )
-        case StepState.Completed =>
+        case (_, StepState.Completed) =>
           step.fileId.getOrElse(""): String
         case _ =>
           step.file.getOrElse(""): String
@@ -111,7 +115,7 @@ object StepsTableContainer {
           <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
-            StepsControlButtons(p.id, p.instrument, step)
+            StepsControlButtons(p.id, p.instrument, p.state, step)
           ).when(loggedIn && p.state === SequenceState.Running)
         )
       )
@@ -129,14 +133,15 @@ object StepsTableContainer {
         ).when(loggedIn)
       )
 
-    def stepDisplay(status: ClientStatus, p: StepsTableFocus, step: Step): VdomNode =
-      step.status match {
-        case StepState.Running | StepState.Paused => controlButtons(status.isLogged, p, step)
-        case StepState.Completed                  => <.p(step.status.shows)
-        case StepState.Error(msg)                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
+    def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
+      (state, step.status) match {
+        case (SequenceState.Pausing, StepState.Running)=> <.p(state.shows)
+        case (_, StepState.Running | StepState.Paused) => controlButtons(status.isLogged, p, step)
+        case (_, StepState.Completed)                  => <.p(step.status.shows)
+        case (_, StepState.Error(msg))                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
-        case s if step.skip                       => <.p(step.status.shows + " - Skipped")
-        case _                                    => <.p(step.status.shows)
+        case (_, s) if step.skip                       => <.p(step.status.shows + " - Skipped")
+        case (_, _)                                    => <.p(step.status.shows)
       }
 
     def selectRow(step: Step, index: Int): Callback =
@@ -191,7 +196,7 @@ object StepsTableContainer {
         )
       )
 
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, step: Step) =
+    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -219,15 +224,18 @@ object StepsTableContainer {
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
-          i + 1),
+          i + 1
+        ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "middle aligned",
-          stepDisplay(status, p, step)),
+          stepDisplay(status, p, state, step)
+        ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "middle aligned",
-          stepProgress(step)),
+          stepProgress(state, step)
+        ),
         <.td(
           ^.cls := "collapsing right aligned",
           IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
@@ -254,7 +262,7 @@ object StepsTableContainer {
             case (step, i) =>
               List(
                 gutterCol(p.id, i, step, s),
-                stepCols(status, p, i, step)
+                stepCols(status, p, i, p.state, step)
               )
           }.toTagMod
         )
@@ -264,6 +272,7 @@ object StepsTableContainer {
       <.div(
         ^.cls := "ui row scroll pane",
         SeqexecStyles.stepsListPane,
+        s"${p.steps.map(_.state)}",
         //^.ref := scrollRef,
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>

@@ -8,7 +8,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalazReact._
 import edu.gemini.seqexec.web.client.semanticui._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPause, IconPlay, IconStop, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.operations.ObservationOperations._
@@ -20,7 +20,7 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
  * Contains the control buttons like stop/abort at the row level
  */
 object StepsControlButtons {
-  final case class Props(id: SequenceId, instrument: Instrument, step: Step)
+  final case class Props(id: SequenceId, instrument: Instrument, sequenceState: SequenceState, step: Step)
   final case class State(stopRequested: Boolean, abortRequested: Boolean)
 
   private val ST = ReactS.Fix[State]
@@ -32,10 +32,10 @@ object StepsControlButtons {
     Callback(SeqexecCircuit.dispatch(RequestAbort(id, stepId)))
 
   def handleStop(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestStop(id, stepId)) >> ST.mod(_.copy(stopRequested = true)).liftCB
+    ST.retM(requestStop(id, stepId)) >> ST.mod(_.copy(stopRequested = true, abortRequested = true)).liftCB
 
   def handleAbort(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestAbort(id, stepId)) >> ST.mod(_.copy(abortRequested = true)).liftCB
+    ST.retM(requestAbort(id, stepId)) >> ST.mod(_.copy(abortRequested = true, stopRequested = true)).liftCB
 
   private val component = ScalaComponent.builder[Props]("StepsControlButtons")
     .initialState(State(false, false))
@@ -64,5 +64,5 @@ object StepsControlButtons {
       )
     }.build
 
-  def apply(id: SequenceId, instrument: Instrument, step: Step): Unmounted[Props, State, Unit] = component(Props(id, instrument, step))
+  def apply(id: SequenceId, instrument: Instrument, state: SequenceState, step: Step): Unmounted[Props, State, Unit] = component(Props(id, instrument, state, step))
 }
