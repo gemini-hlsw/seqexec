@@ -28,29 +28,16 @@ cancelable in Global := true
 // some extra commands for us
 addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum; headerCreate")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
-addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
+addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 // Before printing the prompt check git to make sure all is well.
 // shellPrompt in ThisBuild := { state =>
-//   import scala.sys.process._
-//   import scala.Console.{ RED, RESET }
-//   try {
-//     val revision = "git rev-parse HEAD".!!.trim
-//     val dirty    = "git status -s".!!.trim.length > 0
-//     val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
-//     val actual   = version.value
-//     val stale    = expected != actual
-//     if (stale) {
-//       print(RED)
-//       println(s"Computed version doesn't match the filesystem anymore.")
-//       println(s"Please `reload` to get back in sync.")
-//       print(RESET)
-//     }
-//   } catch {
-//     case e: Exception =>
-//       print(RED)
-//       println(s"Couldn't run `git` to check on versioning. Something is amiss.")
-//       print(RESET)
+//   if (version.value != dynver.value) {
+//     import scala.Console.{ RED, RESET }
+//     print(RED)
+//     println(s"Computed version doesn't match the filesystem anymore.")
+//     println(s"Please `reload` to get back in sync.")
+//     print(RESET)
 //   }
 //   "> "
 // }
