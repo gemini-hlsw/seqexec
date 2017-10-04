@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, SequenceState}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndObserverFocus, SequenceControlFocus, ControlModel}
-import edu.gemini.seqexec.web.client.actions.{UpdateObserver, UnShowStep, RequestPause, RequestSync, RequestRun}
+import edu.gemini.seqexec.web.client.actions.{UpdateObserver, UnShowStep, RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -140,23 +140,36 @@ object SequenceObserverField {
   */
 object SequenceControl {
   final case class Props(p: ModelProxy[SequenceControlFocus])
-  final case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean) {
+  final case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean, cancelPauseRequested: Boolean) {
     val canRun: Boolean = !runRequested && !pauseRequested && !syncRequested
     val canSync: Boolean = canRun
     val canPause: Boolean = !pauseRequested && !syncRequested
+    val canCancelPause: Boolean = !pauseRequested && !syncRequested
     val canResume: Boolean = !pauseRequested && !syncRequested && !runRequested
+
+    def requestRun: State = copy(runRequested = true, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
+    def requestSync: State = copy(runRequested = false, pauseRequested = false, syncRequested = true, cancelPauseRequested = false)
+    def requestPause: State = copy(runRequested = false, pauseRequested = true, syncRequested = false, cancelPauseRequested = false)
+    def requestCancelPause: State = copy(runRequested = false, pauseRequested = false, syncRequested = false, cancelPauseRequested = true)
+  }
+
+  object State {
+    val Zero: State = State(runRequested = false, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
   }
 
   private val ST = ReactS.Fix[State]
 
   def requestRun(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestRun(s)))) >> ST.mod(_.copy(runRequested = true, pauseRequested = false, syncRequested = false)).liftCB
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestRun(s)))) >> ST.mod(_.requestRun).liftCB
 
   def requestSync(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestSync(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = false, syncRequested = true)).liftCB
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestSync(s)))) >> ST.mod(_.requestSync).liftCB
 
   def requestPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.copy(runRequested = false, pauseRequested = true, syncRequested = false)).liftCB
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.requestPause).liftCB
+
+  def requestCancelPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
+    ST.retM(Callback(SeqexecCircuit.dispatch(RequestCancelPause(s)))) >> ST.mod(_.requestCancelPause).liftCB
 
   private def controlButton(icon: Icon, color: String, onClick: Callback, disabled: Boolean, tooltip: String, text: String) =
     Button(
@@ -171,7 +184,7 @@ object SequenceControl {
     )
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
-    .initialState(State(runRequested = false, pauseRequested = false, syncRequested = false))
+    .initialState(State.Zero)
     .renderPS { ($, p, s) =>
       val SequenceControlFocus(isLogged, isConnected, control) = p.p()
       val allowedToExecute = isLogged && isConnected
@@ -190,7 +203,7 @@ object SequenceControl {
             controlButton(IconPlay, "blue", $.runState(requestRun(id)), !allowedToExecute || !s.canRun, runContinueTooltip, runContinueButton)
               .when(status === SequenceState.Idle || status.isError),
             // Cancel pause button
-            controlButton(IconBan, "brown", $.runState(requestPause(id)), !allowedToExecute || s.syncRequested, "Cancel process to pause the sequence", "Cancel Pause")
+            controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !allowedToExecute || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")
               .when(status === SequenceState.Stopping),
             // Pause button
             controlButton(IconPause, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canPause, "Pause the sequence after the current step completes", "Pause")

@@ -54,6 +54,15 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
         resp  <- Ok(s"Pause sequence $obs")
       } yield resp
 
+    case POST -> Root / obsId / "cancelpause" as user =>
+      for {
+        obs <-
+            \/.fromTryCatchNonFatal(new SPObservationID(obsId))
+              .fold(e => Task.fail(e), Task.now)
+        _     <- se.requestCancelPause(inputQueue, obs, user)
+        resp  <- Ok(s"Cancel Pause sequence $obs")
+      } yield resp
+
     case POST -> Root / obsId / stepId / "breakpoint" / bp as user =>
       for {
         obs    <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)

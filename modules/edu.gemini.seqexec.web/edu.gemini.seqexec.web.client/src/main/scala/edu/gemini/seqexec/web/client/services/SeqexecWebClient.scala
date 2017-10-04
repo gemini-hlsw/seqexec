@@ -183,6 +183,16 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
+    * Requests the backend to cancel a pausing request in process
+    */
+  def cancelPause(id: SequenceId): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/$id/cancelpause",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Login request
     */
   def login(u: String, p: String): Future[UserDetails] =
