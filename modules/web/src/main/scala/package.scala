@@ -5,7 +5,7 @@ package gem
 
 import cats.implicits._
 import org.http4s._
-import org.http4s.dsl._
+import org.http4s.dsl.io._
 
 package object web {
 

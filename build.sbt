@@ -1,12 +1,12 @@
 lazy val circeVersion        = "0.9.0-M1"
-lazy val attoVersion         = "0.6.1-M1"
+lazy val attoVersion         = "0.6.1-M5"
 lazy val catsEffectVersion   = "0.4"
 lazy val catsVersion         = "1.0.0-MF"
 lazy val declineVersion      = "0.4.0-M1"
-lazy val doobieVersion       = "0.5.0-M7"
+lazy val doobieVersion       = "0.5.0-M8"
 lazy val flywayVersion       = "4.2.0"
 lazy val fs2Version          = "0.10.0-M6"
-lazy val http4sVersion       = "0.18.0-M1"
+lazy val http4sVersion       = "0.18.0-M2"
 lazy val jwtVersion          = "0.14.0"
 lazy val kpVersion           = "0.9.4"
 lazy val monocleVersion      = "1.5.0-cats-M1"
@@ -74,7 +74,7 @@ lazy val gemWarts =
     Wart.Serializable,       // false positives
     Wart.Recursion,          // false positives
     Wart.ImplicitConversion, // we know what we're doing
-    Wart.ImplicitParameter   // false positives
+    Wart.ImplicitParameter
   )
 
 lazy val commonSettings = Seq(

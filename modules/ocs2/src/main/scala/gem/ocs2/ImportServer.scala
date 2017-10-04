@@ -15,7 +15,7 @@ import gem.ocs2.pio.PioError._
 import fs2.Stream
 
 import org.http4s._
-import org.http4s.dsl._
+import org.http4s.dsl.io._
 import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.util.StreamApp
