@@ -74,7 +74,7 @@ lazy val gemWarts =
     Wart.Serializable,       // false positives
     Wart.Recursion,          // false positives
     Wart.ImplicitConversion, // we know what we're doing
-    Wart.ImplicitParameter
+    Wart.ImplicitParameter   // false positives
   )
 
 lazy val commonSettings = Seq(
