@@ -231,7 +231,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         // The sequence could be empty
         case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
-        case steps if (st === SequenceState.Running || st === SequenceState.Pausing) && steps.all(_.status =/= StepState.Running) =>
+        case steps if (st === SequenceState.Running || st === SequenceState.Pausing || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
           xs ++ (y.copy(status = StepState.Running) :: ys)
         case steps if st === SequenceState.Idle && steps.any(_.status === StepState.Running) =>

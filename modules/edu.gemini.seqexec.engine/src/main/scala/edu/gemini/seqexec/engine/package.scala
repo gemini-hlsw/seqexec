@@ -109,9 +109,9 @@ package object engine {
       }
     )
 
-  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Running) Sequence.State.status.set(SequenceState.Stopping)(s) else s)
+  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Running) Sequence.State.status.set(SequenceState.Pausing)(s) else s)
 
-  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Stopping) Sequence.State.status.set(SequenceState.Running)(s) else s)
+  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Pausing) Sequence.State.status.set(SequenceState.Running)(s) else s)
 
   val resources: HandleP[Set[Resource]] =
     gets(_.sequences
