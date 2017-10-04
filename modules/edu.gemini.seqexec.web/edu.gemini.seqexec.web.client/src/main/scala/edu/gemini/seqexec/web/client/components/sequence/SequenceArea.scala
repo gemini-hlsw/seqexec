@@ -6,6 +6,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.ModelR
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.components.TextMenuSegment
+import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, HeaderSideBarFocus, InstrumentTabContentFocus, ClientStatus}
 import edu.gemini.seqexec.web.client.semanticui._

@@ -1,139 +1,29 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package edu.gemini.seqexec.web.client.components.sequence
+package edu.gemini.seqexec.web.client.components.sequence.toolbars
 
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, SequenceState}
-import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndObserverFocus, SequenceControlFocus, ControlModel}
-import edu.gemini.seqexec.web.client.actions.{UpdateObserver, UnShowStep, RequestCancelPause, RequestPause, RequestSync, RequestRun}
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
+import edu.gemini.seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.Size
-import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
-import edu.gemini.seqexec.web.client.semanticui.elements.label.{FormLabel, Label}
+import edu.gemini.seqexec.web.client.semanticui.elements.label.{Label}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconCheckmark, IconPlay, IconPause, IconBan}
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ScalaComponent, ScalazReact}
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import org.scalajs.dom.html.Div
 import diode.react.ModelProxy
 
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
-import scalaz.std.string._
-import scalaz.std.option._
-import scala.concurrent.duration._
 
 import scalacss.ScalaCssReact._
-
-/**
-  * Display the name of the sequence and the observer
-  */
-object SequenceInfo {
-  final case class Props(p: ModelProxy[StatusAndObserverFocus])
-
-  private def component = ScalaComponent.builder[Props]("SequenceInfo")
-    .stateless
-    .render_P { p =>
-      val StatusAndObserverFocus(isLogged, name, _, _, observer) = p.p()
-      val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
-      <.div(
-        ^.cls := "ui form",
-        <.div(
-          ^.cls := "fields",
-          SeqexecStyles.fieldsNoBottom.unless(isLogged),
-          <.div(
-            ^.cls := "field",
-            Label(Label.Props(obsName, basic = true))
-          ).when(isLogged),
-          <.div(
-            ^.cls := "field",
-            Label(Label.Props("Observer:", basic = true, color = "red".some))
-          ).unless(isLogged),
-          <.div(
-            ^.cls := "field",
-            Label(Label.Props(observer.map(_.value).getOrElse("Unknown."), basic = true))
-          ).unless(isLogged)
-        )
-      )
-    }.build
-
-  def apply(p: ModelProxy[StatusAndObserverFocus]): Unmounted[Props, Unit, Unit] = component(Props(p))
-}
-
-/**
-  * Encapsulates the field to change the observer name
-  */
-object SequenceObserverField {
-  final case class Props(p: ModelProxy[StatusAndObserverFocus])
-
-  final case class State(currentText: Option[String])
-
-  class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
-    def updateObserver(id: SequenceId, name: String): Callback =
-      $.props >>= { p => Callback.when(p.p().isLogged)(p.p.dispatchCB(UpdateObserver(id, name))) }
-
-    def updateState(value: String): Callback =
-      $.state >>= { s => Callback.when(!s.currentText.contains(value))($.modState(_.copy(currentText = Some(value)))) }
-
-    def submitIfChanged: Callback =
-      ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.map(_.value) =/= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
-      }
-
-    def setupTimer: Callback =
-      // Every 2 seconds check if the field has changed and submit
-      setInterval(submitIfChanged, 2.second)
-
-    def render(p: Props, s: State): VdomTagOf[Div] = {
-      val observerEV = StateSnapshot(~s.currentText)(updateState)
-      val StatusAndObserverFocus(_, _, instrument, _, _) = p.p()
-      <.div(
-        ^.cls := "ui form",
-        <.div(
-          ^.cls := "ui inline fields",
-          <.div(
-            ^.cls := "field four wide required",
-            FormLabel(FormLabel.Props("Observer"))
-          ),
-          <.div(
-            ^.cls := "field fourteen wide",
-            InputEV(InputEV.Props(
-              s"$instrument.observer",
-              s"$instrument.observer",
-              observerEV,
-              placeholder = "Observer...",
-              onBlur = _ => submitIfChanged))
-          )
-        )
-      )
-    }
-  }
-
-  private val component = ScalaComponent.builder[Props]("SequenceObserverField")
-    .initialState(State(None))
-    .renderBackend[Backend]
-    .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.p().observer.isDefined)(f.backend.updateState(p.p().observer.map(_.value).getOrElse("")))})
-    .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps { f =>
-      val observer = f.nextProps.p().observer
-      // Update the observer field
-      Callback.when((observer.map(_.value) =/= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.map(_.value).getOrElse("")))
-    }
-    .shouldComponentUpdatePure { f =>
-      val observer = f.nextProps.p().observer
-      observer.map(_.value) =/= f.currentState.currentText
-    }
-    .build
-
-  def apply(p: ModelProxy[StatusAndObserverFocus]): Unmounted[Props, State, Backend] = component(Props(p))
-}
 
 /**
   * Control buttons for the sequence
@@ -255,66 +145,4 @@ object SequenceDefaultToolbar {
     ).build
 
   def apply(site: SeqexecSite, p: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, p))
-}
-
-/**
-  * Toolbar for anonymous users
-  */
-object SequenceAnonymousToolbar {
-  final case class Props(site: SeqexecSite, instrument: Instrument) {
-    protected[sequence] val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-  }
-
-  private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
-    .stateless
-    .render_P ( p =>
-      <.div(
-        ^.cls := "ui column",
-        <.div(
-          ^.cls := "ui row",
-          <.div(
-            ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            p.instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
-          )
-        )
-      )
-    ).build
-
-  def apply(site: SeqexecSite, i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, i))
-}
-
-/**
-  * Toolbar when displaying a step configuration
-  */
-object StepConfigToolbar {
-  final case class Props(site: SeqexecSite, instrument: Instrument, isLogged: Boolean, step: Int) {
-    protected[sequence] val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-  }
-
-  def backToSequence(i: Instrument): Callback = Callback {SeqexecCircuit.dispatch(UnShowStep(i))}
-
-  private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
-    .stateless
-    .render_P( p =>
-      <.div(
-        <.div(
-          ^.cls := "ui row",
-          <.div(
-            ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            p.sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
-          )
-        ),
-        <.div(
-          ^.cls := "row",
-          Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.instrument)), "Back"),
-          <.h5(
-            ^.cls := "ui header",
-            SeqexecStyles.inline,
-            s" Configuration for step ${p.step + 1}"
-          )
-        )
-      )
-    ).build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
