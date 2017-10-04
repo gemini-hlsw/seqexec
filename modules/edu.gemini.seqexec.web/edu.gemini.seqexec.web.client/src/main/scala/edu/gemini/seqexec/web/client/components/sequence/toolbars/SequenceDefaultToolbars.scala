@@ -94,7 +94,7 @@ object SequenceControl {
               .when(status === SequenceState.Idle || status.isError),
             // Cancel pause button
             controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !allowedToExecute || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")
-              .when(status === SequenceState.Stopping),
+              .when(status === SequenceState.Pausing),
             // Pause button
             controlButton(IconPause, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canPause, "Pause the sequence after the current step completes", "Pause")
               .when(status === SequenceState.Running),
