@@ -220,7 +220,7 @@ class StepSpec extends FlatSpec {
                  (Execution(List(configureTcs.left, configureInst.left)), List(List(observe)))),
                Nil
              ),
-             SequenceState.Stopping
+             SequenceState.Pausing
            )
           )
         )
