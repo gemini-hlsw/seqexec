@@ -6,7 +6,6 @@ package gem.horizons
 import gem.{EphemerisKey, Semester}
 import gem.enum.Site
 import gem.math.Ephemeris
-import cats.implicits._
 import cats.effect.IO
 import fs2.Stream
 

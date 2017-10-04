@@ -3,13 +3,19 @@
 
 package gem.horizons
 
-import gem.math.{ Angle, EphemerisCoordinates, Coordinates, Offset }
+import gem.math.{ Angle, Coordinates, EphemerisCoordinates, Offset }
 import gem.util.InstantMicros
 
-import java.time.{LocalDateTime, ZoneOffset}
+import cats.effect.IO
+import fs2.Stream
+
+import java.io.InputStream
+import java.time.{ LocalDateTime, ZoneOffset }
 import java.time.format.DateTimeFormatter
 
 import scala.collection.immutable.TreeMap
+import scala.io.Source
+
 
 trait EphemerisTestSupport {
   val TimeFormat: DateTimeFormatter =
@@ -35,4 +41,14 @@ trait EphemerisTestSupport {
 
   def eph(elems: (String, (String, String, String))*): TreeMap[InstantMicros, EphemerisCoordinates] =
     TreeMap(elems.map { case (i, (c, p, q)) => time(i) -> ephCoords(c, p, q) }: _*)
+
+  def inputStream(n: String): InputStream =
+    getClass.getResourceAsStream(s"$n.eph")
+
+  def stream(n: String): Stream[IO, String] =
+    fs2.io.readInputStream(IO(inputStream(n)), 128)
+          .through(fs2.text.utf8Decode)
+
+  def load(n: String): String =
+    Source.fromInputStream(inputStream(n)).mkString
 }

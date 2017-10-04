@@ -11,10 +11,7 @@ import cats.tests.CatsSuite
 
 import fs2.Stream
 
-import java.io.InputStream
-
 import scala.collection.immutable.TreeMap
-import scala.io.Source
 
 
 /** Not really a spec per se, but rather a way to exercise the ephemeris parser
@@ -22,8 +19,6 @@ import scala.io.Source
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
-
-  import EphemerisParserSpec._
 
   test("Must parse") {
 
@@ -65,6 +60,11 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly").through(EphemerisParser.elements[IO])
+
+    s.runLog.unsafeRunSync.foreach { case (i, c) =>
+      println(s"${c.delta.p.toAngle.toSignedMicroarcseconds} ${c.delta.q.toAngle.toSignedMicroarcseconds} ${c.velocity.toMicroarcseconds}")
+    }
+
     val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
 
     assert(m == head)
@@ -104,16 +104,4 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     assert(m == head)
   }
 
-}
-
-object EphemerisParserSpec {
-  private def inputStream(n: String): InputStream =
-    getClass.getResourceAsStream(s"$n.eph")
-
-  private def stream(n: String): Stream[IO, String] =
-    fs2.io.readInputStream(IO(inputStream(n)), 128)
-          .through(fs2.text.utf8Decode)
-
-  private def load(n: String): String =
-    Source.fromInputStream(inputStream(n)).mkString
 }

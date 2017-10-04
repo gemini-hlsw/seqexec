@@ -35,8 +35,8 @@ final case class EphemerisCoordinates(
     * separation per time unit of the change in RA and Dec.
     */
   def velocity: Angle = {
-    val p = delta.p.toAngle.toMicroarcseconds.toDouble
-    val q = delta.q.toAngle.toMicroarcseconds.toDouble
+    val p = delta.p.toAngle.toSignedMicroarcseconds.toDouble
+    val q = delta.q.toAngle.toSignedMicroarcseconds.toDouble
     Angle.fromMicroarcseconds(Math.sqrt(p*p + q*q).round)
   }
 }
