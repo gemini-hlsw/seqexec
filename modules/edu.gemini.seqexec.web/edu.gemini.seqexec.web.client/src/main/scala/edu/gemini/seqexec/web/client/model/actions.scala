@@ -38,14 +38,17 @@ object actions {
   final case class RequestRun(s: SequenceId) extends Action
   final case class RequestSync(s: SequenceId) extends Action
   final case class RequestPause(s: SequenceId) extends Action
+  final case class RequestCancelPause(s: SequenceId) extends Action
   final case class RequestStop(id: SequenceId, step: Int) extends Action
   final case class RequestAbort(id: SequenceId, step: Int) extends Action
 
   final case class RunStarted(s: SequenceId) extends Action
   final case class RunPaused(s: SequenceId) extends Action
+  final case class RunCancelPaused(s: SequenceId) extends Action
   final case class RunSync(s: SequenceId) extends Action
   final case class RunStartFailed(s: SequenceId) extends Action
   final case class RunPauseFailed(s: SequenceId) extends Action
+  final case class RunCancelPauseFailed(s: SequenceId) extends Action
   final case class RunSyncFailed(s: SequenceId) extends Action
   final case class RunStop(s: SequenceId) extends Action
   final case class RunStopFailed(s: SequenceId) extends Action

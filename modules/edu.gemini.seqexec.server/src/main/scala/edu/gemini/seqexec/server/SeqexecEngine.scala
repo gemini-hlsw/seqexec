@@ -70,6 +70,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.right)
 
+  def requestCancelPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.cancelPause(id.stringValue(), user)).map(_.right)
+
   def setBreakpoint(q: EventQueue,
                     seqId: SPObservationID,
                     user: UserDetails,

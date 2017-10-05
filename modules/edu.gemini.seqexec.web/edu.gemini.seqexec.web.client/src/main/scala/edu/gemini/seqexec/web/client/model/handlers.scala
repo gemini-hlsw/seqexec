@@ -125,6 +125,9 @@ object handlers {
       case RequestPause(s) =>
         effectOnly(Effect(SeqexecWebClient.pause(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))
 
+      case RequestCancelPause(s) =>
+        effectOnly(Effect(SeqexecWebClient.cancelPause(s).map(r => if (r.error) RunCancelPauseFailed(s) else RunCancelPaused(s))))
+
       case RequestStop(id, step) =>
         effectOnly(Effect(SeqexecWebClient.stop(id, step).map(r => if (r.error) RunStopFailed(id) else RunStop(id))))
 
