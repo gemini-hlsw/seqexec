@@ -193,7 +193,6 @@ object Settings {
                         exclude("xml-apis", "xml-apis")
                         exclude("xpp3", "xpp3"))
     val POT         = "edu.gemini.ocs"    %% "edu-gemini-pot"                 % LibraryVersions.ocsVersion
-    val EpicsACM    = "edu.gemini.ocs"    %% "edu-gemini-epics-acm"           % LibraryVersions.ocsVersion
     val TRPC        = "edu.gemini.ocs"    %% "edu-gemini-util-trpc"           % LibraryVersions.ocsVersion
     val WDBAClient  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
