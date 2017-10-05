@@ -4,14 +4,17 @@
 package gem
 package web
 
+import cats.data._
 import cats.effect.IO
+import cats.implicits._
 import gem.json._
 import gem.{ Service => GemService }
 import io.circe.generic.auto._
 import java.time.Instant
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.dsl._
+import org.http4s.dsl.io._
+import org.http4s.implicits._
 import org.http4s.server._
 
 /**
@@ -79,40 +82,50 @@ object Gatekeeper {
   // A data type for login requests.
   final case class LoginRequest(uid: String, pass: String)
 
+  /** A service that listens to /login and issues new cookies. */
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference")) // false positive on decodeJson
+  def login(env: Environment): HttpService[IO] =
+    HttpService[IO] {
+      // curl -i -d '{ "uid": "bobdole", "pass": "banana" }' localhost:8080/login
+      case req @ POST -> Root / "login" =>
+        req.decodeJson[LoginRequest].flatMap { case LoginRequest(u, p) =>
+          env.tryLogin(u, p).flatMap {
+            case None      => Forbidden("Login failed.")
+            case Some(svc) => GemToken.cookie(env, svc.user).flatMap(c => Ok("Logged in.").map(_.addCookie(c)))
+          }
+        }
+    }
+
+  /**
+   * Given an AuthedService and an Environment that knows how to authenticate user cookies, yield a
+   * Normal HttpService that verifies the cookie on the way in and updates it on the way out. This
+   * is a bit more complex than normal services because we must work in OptionT to handle the case
+   * where `delegate` doesn't respond.
+   */
+  def authenticate(env: Environment, delegate: AuthedService[IO, GemService[IO]]): HttpService[IO] =
+    Kleisli[OptionT[IO, ?], Request[IO], Response[IO]] {
+      // curl -i -b gem.jwt=... localhost:8080/something/else
+      case req =>
+        OptionT.liftF(GemToken.decodeFromCookie(env, req)).flatMap {
+          case Left(msg)  => OptionT.liftF(Forbidden(msg))
+          case Right(jwt) =>
+            OptionT.liftF(env.service(jwt.uid)).flatMap {
+              case None      => OptionT.liftF(Forbidden(s"JWT is valid but user ${jwt.uid} was not found."))
+              case Some(svc) =>
+                // Delegate and refresh our cookie as the response comes back.
+                delegate.run(AuthedRequest(svc, req)).flatMap { res =>
+                  OptionT.liftF(GemToken.cookie(env, svc.user).map(res.addCookie))
+                }
+            }
+        }
+    }
 
   /**
    * Construct the gatekeeper middleware. We need a server environment to figure out how to do
    * do this because we need a way to encode/decode tokens, as well as way to log users in.
    */
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  def apply(env: Environment): AuthMiddleware[IO, GemService[IO]] = authed =>
-    HttpService.lift[IO] {
-
-      // curl -i -d '{ "uid": "bobdole", "pass": "banana" }' localhost:8080/login
-      case req @ POST -> Root / "login" =>
-        // this is gross, hopefully will improve before 0.18 ships
-        req.as(implicitly, jsonOf[IO, LoginRequest]).flatMap { case LoginRequest(u, p) =>
-          env.tryLogin(u, p).flatMap {
-            case None      => Forbidden("Login failed.")
-            case Some(svc) => GemToken.cookie(env, svc.user).flatMap(Ok("Logged in.").addCookie)
-          }
-        }
-
-      // curl -i -b gem.jwt=... localhost:8080/something/else
-      case req =>
-        GemToken.decodeFromCookie(env, req).flatMap {
-          case Left(msg)  => Forbidden(msg)
-          case Right(jwt) =>
-            env.service(jwt.uid).flatMap {
-              case None      => Forbidden(s"JWT is valid but user ${jwt.uid} was not found.")
-              case Some(svc) =>
-                // Delegate to `authed` and refresh our cookie as the response comes back.
-                authed.run(AuthedRequest(svc, req)).flatMap { res =>
-                  res.cata(r => GemToken.cookie(env, svc.user).map(r.addCookie), Pass.pure[IO])
-                }
-            }
-        }
-
-    }
+  def apply(env: Environment): AuthMiddleware[IO, GemService[IO]] = delegate =>
+    login(env) <+> authenticate(env, delegate)
 
 }
