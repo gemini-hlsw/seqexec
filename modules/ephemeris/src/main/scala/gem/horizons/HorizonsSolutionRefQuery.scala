@@ -40,17 +40,37 @@ object HorizonsSolutionRefQuery {
     "MAKE_EPHEM" -> "NO"  // We don't need actual ephemeris elements
   )
 
+  // Comets and Asteroids have solution references.
   private val SolnRefKey = "soln ref.="
 
-  private val solnRefParser: Parser[HorizonsSolutionRef] =
-    (manyUntil(anyChar, string(SolnRefKey)) ~> stringOf1(noneOf(",\n"))).map { s =>
-      HorizonsSolutionRef(s.trim)
+  private val solnRefParser: Parser[String] =
+    (manyUntil(anyChar, string(SolnRefKey)) ~> stringOf1(noneOf(",\n")))
+
+  // MajorBody objects don't have a solution reference proper, so we use the
+  // revision date.
+  private val RevisedKey = "Revised: "
+
+  private val revisionParser: Parser[String] =
+    (manyUntil(anyChar, string(RevisedKey)) ~> manyUntil(anyChar, string("  ")).map(_.mkString))
+
+  /** Parses the given string for a solution reference. For comets and asteroids,
+    * this will be an actual solution reference.  For major bodies it is a
+    * revision date.  Either way we treat this as opaque data only of interest
+    * for determining whether there is new data.
+    *
+    * @param k key used to determine the type of non-sidereal object
+    * @param s header for a non-sidereal object of this type
+    *
+    * @return a solution reference, if found in the header
+    */
+  def parseSolutionRef(k: EphemerisKey.Horizons, s: String): Option[HorizonsSolutionRef] = {
+    val parser = k match {
+      case EphemerisKey.MajorBody(_) => revisionParser
+      case _                         => solnRefParser
     }
 
-  /** Parses an horizons header string into a solution reference, if found.
-    */
-  def parseSolutionRef(s: String): Option[HorizonsSolutionRef] =
-    (solnRefParser parseOnly s).option
+    (parser.map(s => HorizonsSolutionRef(s.trim)) parseOnly s).option
+  }
 
   /** Creates a query instance for the given ephemeris key.
     */
@@ -65,16 +85,9 @@ object HorizonsSolutionRefQuery {
         HorizonsClient.urlString(reqParams)
 
       override val lookup: IO[Option[HorizonsSolutionRef]] =
-        key match {
-
-          // Horizons has no solution references for major bodies so we can skip
-          // doing an actual lookup.
-          case EphemerisKey.MajorBody(_) =>
-            IO.pure(None)
-
-          case _                         =>
-            HorizonsClient.fetch(reqParams).map(parseSolutionRef)
-        }
+        HorizonsClient
+          .fetch(reqParams)
+          .map(parseSolutionRef(key, _))
     }
 
 }

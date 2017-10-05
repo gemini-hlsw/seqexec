@@ -3,25 +3,27 @@
 
 package gem.horizons
 
-import gem.{EphemerisKey, HorizonsSolutionRef}
+import gem.{ EphemerisKey, HorizonsSolutionRef }
+
+import gem.test.RespectIncludeTags
 import gem.test.Tags.RequiresNetwork
 
 import cats.tests.CatsSuite
 
-final class HorizonsSolutionRefQuerySpec extends CatsSuite {
+final class HorizonsSolutionRefQuerySpec extends CatsSuite with RespectIncludeTags {
 
   import HorizonsSolutionRefQuerySpec._
 
   test("parse solution ref terminated by comma") {
-    HorizonsSolutionRefQuery.parseSolutionRef(wild2Header) shouldEqual Some(HorizonsSolutionRef("JPL#K162/5"))
+    HorizonsSolutionRefQuery.parseSolutionRef(wild2, wild2Header) shouldEqual Some(HorizonsSolutionRef("JPL#K162/5"))
   }
 
   test("parse solution ref terminated by newline") {
-    HorizonsSolutionRefQuery.parseSolutionRef(beerHeader) shouldEqual Some(HorizonsSolutionRef("JPL#23"))
+    HorizonsSolutionRefQuery.parseSolutionRef(beer, beerHeader) shouldEqual Some(HorizonsSolutionRef("JPL#23"))
   }
 
   test("parse a major body without solution ref") {
-    HorizonsSolutionRefQuery.parseSolutionRef(titanHeader) shouldEqual None
+    HorizonsSolutionRefQuery.parseSolutionRef(titan, titanHeader) shouldEqual Some(HorizonsSolutionRef("JUn 17, 2016"))
   }
 
   test("runs comet solution ref query", RequiresNetwork) {
@@ -32,8 +34,8 @@ final class HorizonsSolutionRefQuerySpec extends CatsSuite {
     HorizonsSolutionRefQuery(beer).lookup.unsafeRunSync.isDefined shouldBe true
   }
 
-  test("runs major body solution ref query") {
-    HorizonsSolutionRefQuery(titan).lookup.unsafeRunSync shouldEqual None
+  test("runs major body solution ref query", RequiresNetwork) {
+    HorizonsSolutionRefQuery(titan).lookup.unsafeRunSync.isDefined shouldBe true
   }
 }
 
