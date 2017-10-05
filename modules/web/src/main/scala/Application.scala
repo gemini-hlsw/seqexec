@@ -10,7 +10,7 @@ import gem.json._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.dsl._
+import org.http4s.dsl.io._
 
 /**
  * The main application web service, which is "authenticated" in the sense that request carries
