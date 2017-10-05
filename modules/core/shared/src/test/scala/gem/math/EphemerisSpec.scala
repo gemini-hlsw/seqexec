@@ -12,7 +12,6 @@ import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisSpec extends CatsSuite {
-  import ArbCoordinates._
   import ArbEphemeris._
   import ArbTime._
   import Ephemeris.Element
@@ -34,13 +33,13 @@ final class EphemerisSpec extends CatsSuite {
   }
 
   test("Ephemeris.get.interpolated") {
-    forAll { (t1: InstantMicros, c1: Coordinates, c2: Coordinates, n: Int) =>
+    forAll { (t1: InstantMicros, c1: EphemerisCoordinates, c2: EphemerisCoordinates, n: Int) =>
       val offset = (n % 100).abs
       val (t2, t3) = (t1.plusSeconds(offset.toLong), t1.plusSeconds(100))
       val e = Ephemeris(t1 -> c1, t3 -> c2)
       val c3 = e.get(t2).getOrElse(sys.error("failed"))
       val c4 = c1.interpolate(c2, offset.toDouble / 100.00)
-      (c3 angularDistance c4).toMicroarcseconds should be <= 15L
+      (c3.coord angularDistance c4.coord).toMicroarcseconds should be <= 15L
     }
   }
 

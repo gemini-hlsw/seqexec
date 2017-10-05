@@ -6,7 +6,6 @@ package gem.horizons
 import gem.{EphemerisKey, Semester}
 import gem.enum.Site
 import gem.math.Ephemeris
-import cats.implicits._
 import cats.effect.IO
 import fs2.Stream
 
@@ -41,7 +40,7 @@ object HorizonsEphemerisQuery {
     "COORD_TYPE"  -> "GEODETIC",
     "extra_prec"  -> "YES",
     "MAKE_EPHEM"  -> "YES",
-    "QUANTITIES"  -> "1",
+    "QUANTITIES"  -> "'1,3'",
     "time_digits" -> "FRACSEC"
   )
 

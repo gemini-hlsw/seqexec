@@ -14,7 +14,7 @@ import scala.collection.immutable.TreeMap
  * Time-parameterized coordinates over a fixed interval, defined pairwise. Coordinates that fall
  * between known instants are interpolated.
  */
-sealed abstract case class Ephemeris private (toMap: TreeMap[InstantMicros, Coordinates]) {
+sealed abstract case class Ephemeris private (toMap: TreeMap[InstantMicros, EphemerisCoordinates]) {
   import Ephemeris.Element
 
   // N.B. this case class is abstract and has a private ctor because we want to keep construction of
@@ -29,7 +29,7 @@ sealed abstract case class Ephemeris private (toMap: TreeMap[InstantMicros, Coor
     toMap.lastOption
 
   /** Coordinates at time `t`, exact if known, interpolated if `bracket(t)` is known. */
-  def get(t: InstantMicros): Option[Coordinates] =
+  def get(t: InstantMicros): Option[EphemerisCoordinates] =
     toMap.get(t) orElse bracket(t).map { case ((a, ca), (b, cb)) =>
       val (iʹ, aʹ, bʹ) = (t.toEpochMilli, a.toEpochMilli, b.toEpochMilli)
       val factor = (iʹ - aʹ).toDouble / (bʹ - aʹ).toDouble
@@ -51,7 +51,7 @@ sealed abstract case class Ephemeris private (toMap: TreeMap[InstantMicros, Coor
 object Ephemeris {
 
   /** An ephemeris element. */
-  type Element = (InstantMicros, Coordinates)
+  type Element = (InstantMicros, EphemerisCoordinates)
 
   /** The empty ephemeris. */
   val Empty: Ephemeris = apply()
