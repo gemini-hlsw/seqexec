@@ -49,7 +49,7 @@ class FixedLengthBufferSpec extends FlatSpec with Matchers with PropertyChecks w
     }
     it should "support map associativity" in {
       forAll { (e: FixedLengthBuffer[Int]) =>
-        val f = (x: Int) => x * x
+        val f = (x: Int) => x + 1
         val g = (x: Int) => x + x
         e.map(f map g) === e.map(f).map(g) shouldBe true
       }
