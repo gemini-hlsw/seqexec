@@ -60,11 +60,6 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly").through(EphemerisParser.elements[IO])
-
-    s.runLog.unsafeRunSync.foreach { case (i, c) =>
-      println(s"${c.delta.p.toAngle.toSignedMicroarcseconds} ${c.delta.q.toAngle.toSignedMicroarcseconds} ${c.velocity.toMicroarcseconds}")
-    }
-
     val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
 
     assert(m == head)

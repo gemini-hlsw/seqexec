@@ -3,6 +3,8 @@
 
 package gem.math
 
+import cats._
+
 /** A coordinate along with a rate of change in RA and Dec for some time unit,
   * expressed as an offset in p and q.  In reality the velocity information
   * comes from horizons and is always arcseconds per hour in horizons data.
@@ -21,7 +23,7 @@ final case class EphemerisCoordinates(
   def interpolate(that: EphemerisCoordinates, f: Double): EphemerisCoordinates = {
     def interpolateAngle(a: Angle, b: Angle): Angle =
       Angle.fromMicroarcseconds(
-        (a.toMicroarcseconds.toDouble * (1 - f) + b.toMicroarcseconds * f).round
+        (a.toSignedMicroarcseconds.toDouble * (1 - f) + b.toSignedMicroarcseconds * f).round
       )
 
     val coordʹ = coord.interpolate(that.coord, f)
@@ -39,5 +41,18 @@ final case class EphemerisCoordinates(
     val q = delta.q.toAngle.toSignedMicroarcseconds.toDouble
     Angle.fromMicroarcseconds(Math.sqrt(p*p + q*q).round)
   }
+
+}
+
+object EphemerisCoordinates {
+
+  /** @group Typeclass Instances */
+  implicit val EphemerisCoordinatesEqual: Eq[EphemerisCoordinates] =
+    Eq.fromUniversalEquals
+
+  /** @group Typeclass Instances */
+  implicit val ShowEphemerisCoordinates: Show[EphemerisCoordinates] =
+    Show.fromToString
+
 }
 
