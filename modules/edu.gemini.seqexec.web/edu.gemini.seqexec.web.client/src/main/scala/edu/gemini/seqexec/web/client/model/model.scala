@@ -118,6 +118,7 @@ object model {
                             user: Option[UserDetails],
                             sequences: SeqexecAppRootModel.LoadedSequences,
                             loginBox: SectionVisibilityState,
+                            resourceConflictBox: SectionVisibilityState,
                             globalLog: GlobalLog,
                             sequencesOnDisplay: SequencesOnDisplay,
                             firstLoad: Boolean)
@@ -125,7 +126,7 @@ object model {
   object SeqexecUIModel {
     val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-      SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
+      SectionClosed, SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
   }
 
   /**

@@ -17,7 +17,7 @@ import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ResourcesBusy, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
@@ -136,7 +136,6 @@ object handlers {
     }
 
     def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
-      // We could react to these events but we rather wait for the command from the event queue
       case RunStarted(_) =>
         noChange
 
@@ -144,7 +143,6 @@ object handlers {
         noChange
 
       case RunPaused(_) =>
-        // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
         noChange
 
       case RunPauseFailed(_) =>
@@ -206,6 +204,30 @@ object handlers {
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
       openLoginBox |+| closeLoginBox
+  }
+
+  /**
+    * Handles actions related to opening/closing the resources conflict box
+    */
+  class ResourcesBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
+    def openResourcesBox: PartialFunction[Any, ActionResult[M]] = {
+      case OpenResourcesBox if value == SectionClosed =>
+        updated(SectionOpen)
+
+      case OpenResourcesBox                           =>
+        noChange
+    }
+
+    def closeResourcesBox: PartialFunction[Any, ActionResult[M]] = {
+      case CloseResourcesBox if value == SectionOpen  =>
+        updated(SectionClosed)
+
+      case CloseResourcesBox                          =>
+        noChange
+    }
+
+    override def handle: PartialFunction[Any, ActionResult[M]] =
+      openResourcesBox |+| closeResourcesBox
   }
 
   /**
@@ -472,6 +494,12 @@ object handlers {
         updated(value.copy(sequences = filterSequences(s.view)))
     }
 
+    val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(ResourcesBusy(sv)) =>
+        val openBoxE = Effect(Future(OpenResourcesBox))
+        updated(value.copy(sequences = filterSequences(sv)), openBoxE)
+    }
+
     val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceLoaded(id, view)) =>
         val observer = value.user.map(_.displayName)
@@ -533,6 +561,7 @@ object handlers {
         observerUpdatedMessage,
         sequenceLoadedMessage,
         sequenceUnloadedMessage,
+        resourceBusyMessage,
         modelUpdateMessage,
         defaultMessage).suml
   }

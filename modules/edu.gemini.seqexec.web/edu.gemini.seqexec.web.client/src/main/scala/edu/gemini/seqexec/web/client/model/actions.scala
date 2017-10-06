@@ -26,6 +26,8 @@ object actions {
   // Actions to close and/open the login box
   case object OpenLoginBox extends Action
   case object CloseLoginBox extends Action
+  case object OpenResourcesBox extends Action
+  case object CloseResourcesBox extends Action
 
   final case class LoggedIn(u: UserDetails) extends Action
   case object Logout extends Action

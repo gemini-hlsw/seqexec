@@ -58,6 +58,7 @@ object circuit {
     private val wsEventsHandler        = new WebSocketEventsHandler(webSocketFocusRW)
     private val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
     private val loginBoxHandler        = new LoginBoxHandler(zoomTo(_.uiModel.loginBox))
+    private val resourcesBoxHandler    = new ResourcesBoxHandler(zoomTo(_.uiModel.resourceConflictBox))
     private val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
     private val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
     private val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
@@ -135,6 +136,7 @@ object circuit {
       wsHandler,
       wsEventsHandler,
       sequenceExecHandler,
+      resourcesBoxHandler,
       loginBoxHandler,
       userLoginHandler,
       sequenceDisplayHandler,
