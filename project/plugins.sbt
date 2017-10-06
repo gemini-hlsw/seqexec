@@ -1,6 +1,6 @@
 // Gives support for Scala.js compilation
 val scalaJSVersion =
-  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.19")
+  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.20")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion)
 
@@ -23,7 +23,7 @@ addSbtPlugin("de.heikoseeberger" % "sbt-header"             % "3.0.1")
 addSbtPlugin("com.typesafe.sbt"  % "sbt-git"                % "0.9.3")
 
 
-addSbtPlugin("org.wartremover"   % "sbt-wartremover"        % "2.1.1")
+addSbtPlugin("org.wartremover"   % "sbt-wartremover"        % "2.2.1")
 
 // Avoids a warning message when starting sbt-git
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"

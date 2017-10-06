@@ -89,7 +89,7 @@ object Gcal {
         sht  <- shutter
         flt  <- filter
         dif  <- diffuser
-      } yield if(lamps.isEmpty && List(sht, flt, dif).all(_.isEmpty)) GcalConfig.allOff
+      } yield if(lamps.isEmpty && List[Option[_]](sht, flt, dif).all(_.isEmpty)) GcalConfig.allOff
               else GcalConfig(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
     )
 

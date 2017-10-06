@@ -83,7 +83,7 @@ object Settings {
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
-    val http4s       = "0.16.0a"
+    val http4s       = "0.16.4a"
     val squants      = "1.3.0"
     val argonaut     = "6.2"
     val commonsHttp  = "2.0.2"
@@ -92,7 +92,7 @@ object Settings {
     val slf4j        = "1.7.25"
     val log4s        = "1.3.6"
     val logback      = "1.2.3"
-    val janino       = "3.0.6"
+    val janino       = "3.0.7"
     val knobs        = "4.0.31-scalaz-7.2"
     val monocle      = "1.4.0"
 
@@ -100,7 +100,7 @@ object Settings {
     val scalaTest             = "3.0.4"
     val scalaCheck            = "1.13.5"
     val scalaCheckShapeless   = "1.1.7"
-    val discipline            = "0.7.3"
+    val discipline            = "0.8"
 
     // Pure JS libraries
     val reactJS        = "15.6.1"

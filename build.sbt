@@ -43,6 +43,7 @@ enablePlugins(GitBranchPrompt)
 lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s ++ Logging
@@ -52,6 +53,7 @@ lazy val edu_gemini_web_client_facades = project
   .in(file("modules/edu.gemini.web.client.facades"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonJSSettings: _*)
   .settings(
     scalacOptions ~= (_.filterNot(Set(
@@ -67,11 +69,13 @@ lazy val edu_gemini_web_client_facades = project
 lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
   .settings(commonSettings: _*)
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .dependsOn(edu_gemini_seqexec_model)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
@@ -89,6 +93,7 @@ lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
 lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
@@ -125,6 +130,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonJSSettings: _*)
   .settings(
     // Needed for Monocle macros
@@ -177,6 +183,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
 lazy val edu_gemini_seqexec_server = project
   .in(file("modules/edu.gemini.seqexec.server"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM)
   .settings(commonSettings: _*)
   .settings(
@@ -202,6 +209,7 @@ lazy val edu_gemini_seqexec_server = project
 lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .in(file("modules/edu.gemini.seqexec.model"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++= BooPickle.value +: Monocle.value
@@ -222,6 +230,7 @@ lazy val edu_gemini_seqexec_model_JS:Project = edu_gemini_seqexec_model.js
 lazy val edu_gemini_seqexec_engine = project
   .in(file("modules/edu.gemini.seqexec.engine"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .dependsOn(edu_gemini_seqexec_model_JVM)
   .settings(commonSettings: _*)
   .settings(
@@ -298,6 +307,7 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   .dependsOn(edu_gemini_seqexec_web_server)
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
   .settings(
     description := "Seqexec server for local testing",
@@ -323,6 +333,7 @@ lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexe
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
@@ -339,6 +350,7 @@ lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexe
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
@@ -355,6 +367,7 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
@@ -373,6 +386,7 @@ lazy val seqexec_server_gn = preventPublication(project.in(file("app/seqexec-ser
   .aggregate(edu_gemini_seqexec_web_server)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
@@ -386,12 +400,14 @@ lazy val seqexec_server_gn = preventPublication(project.in(file("app/seqexec-ser
 // Root web project
 lazy val edu_gemini_p1backend = project.in(file("modules/edu.gemini.p1backend"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .aggregate(edu_gemini_p1backend_server, edu_gemini_p1backend_client, edu_gemini_p1backend_shared_JS, edu_gemini_p1backend_shared_JVM)
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_p1backend_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.p1backend/edu.gemini.p1backend.shared"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
@@ -407,6 +423,7 @@ lazy val edu_gemini_p1backend_shared_JS = edu_gemini_p1backend_shared.js
 lazy val edu_gemini_p1backend_server = project.in(file("modules/edu.gemini.p1backend/edu.gemini.p1backend.server"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(Knobs) ++ Logging ++ Http4s,
@@ -443,6 +460,7 @@ lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1bac
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(GitBranchPrompt)
   .settings(commonJSSettings: _*)
   .settings(
     // This is a not very nice trick to remove js files that exist on the scala tools
@@ -459,7 +477,7 @@ lazy val edu_gemini_p1backend_client = project.in(file("modules/edu.gemini.p1bac
     artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "p1backend.js",
     artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "p1backend-opt.js",
     // Requires the DOM
-    jsDependencies += RuntimeDOM,
+    jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
     // JS dependencies from webjars
     jsDependencies ++= Seq(
       "org.webjars.bower" % "react"       % LibraryVersions.reactJS     / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
