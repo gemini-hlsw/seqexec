@@ -123,7 +123,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server, edu_gemini_web_server_common)
 
 // Client side project using Scala.js
-lazy val btest = project.in(file("modules/btest"))
+/*lazy val btest = project.in(file("modules/btest"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
   .settings(commonJSSettings: _*)
@@ -142,7 +142,7 @@ lazy val btest = project.in(file("modules/btest"))
     libraryDependencies ++= ReactScalaJS.value,
     // And add a custom one
     addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
-  )
+  )*/
 
 lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
@@ -167,17 +167,17 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
   // Write the generated js to the filename seqexec.js
     // artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
     // artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
-    // Requires the DOM
-    jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
-    webpackBundlingMode := BundlingMode.LibraryAndApplication(),
+    webpackBundlingMode := BundlingMode.LibraryOnly(),
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
       "react" -> LibraryVersions.reactJS,
       "react-dom" -> LibraryVersions.reactJS,
-      "jquery" -> LibraryVersions.jQuery,
-      "semantic-ui-css" -> LibraryVersions.semanticUI
+      "jquery" -> LibraryVersions.jQuery//,
+      // "semantic-ui-css" -> LibraryVersions.semanticUI
     ),
-    // Put the jsdeps file on a place reachable for the server
+    // Requires the DOM for tests
+    requiresDOM in Test := true,
+    // Use yarn as it is faster than npm
     useYarn := true,
     // crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
