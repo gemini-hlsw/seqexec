@@ -184,7 +184,7 @@ lazy val edu_gemini_seqexec_server = project
   .in(file("modules/edu.gemini.seqexec.server"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
-  .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM)
+  .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM, edu_gemini_epics_acm)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++=
@@ -195,7 +195,6 @@ lazy val edu_gemini_seqexec_server = project
           // OCS bundles
           SpModelCore,
           POT,
-          EpicsACM,
           Knobs,
           OpenCSV,
           Log4s
@@ -236,6 +235,35 @@ lazy val edu_gemini_seqexec_engine = project
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++= Seq(ScalaZStream, Log4s) ++ Monocle.value
+  )
+
+lazy val edu_gemini_epics_acm = project
+  .in(file("modules/edu.gemini.epics.acm"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq("xmlunit" % "xmlunit" % "1.5",
+      "com.novocode" % "junit-interface" % "0.11" % "test"),
+    sourceGenerators in Compile += Def.task {
+      import scala.sys.process._
+      val pkg = "edu.gemini.epics.acm.generated"
+      val log = state.value.log
+      val gen = (sourceManaged in Compile).value
+      val out = (gen /: pkg.split("\\."))(_ / _)
+      val xsd = sourceDirectory.value / "main" / "resources" / "CaSchema.xsd"
+      val cmd = List("xjc",
+        "-d", gen.getAbsolutePath,
+        "-p", pkg,
+        xsd.getAbsolutePath)
+      val mod = xsd.getParentFile.listFiles.map(_.lastModified).max
+      val cur = if (out.exists && out.listFiles.nonEmpty) out.listFiles.map(_.lastModified).min else Int.MaxValue
+      if (mod > cur) {
+        out.mkdirs
+        val err = cmd.run(ProcessLogger(log.info(_), log.error(_))).exitValue
+        if (err != 0) sys.error("xjc failed")
+      }
+      out.listFiles.toSeq
+    }.taskValue
   )
 
 /**
