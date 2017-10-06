@@ -143,7 +143,12 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
                                                                                       Class<A> attrType,
                                                                                       String description)
             throws CaException, CAException {
-        CaAttributeImpl<T> attr = attrType.cast(enumAttributes.get(name));
+        CaAttributeImpl<T> attr;
+        try {
+            attr = attrType.cast(enumAttributes.get(name));
+        } catch(ClassCastException e) {
+            attr = null;
+        }
         if (attr == null) {
             if (alreadyExist(name)) {
                 throw new CaException(
