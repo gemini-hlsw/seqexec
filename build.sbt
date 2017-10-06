@@ -242,7 +242,6 @@ lazy val edu_gemini_epics_acm = project
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings: _*)
   .settings(
-    addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++= Seq("xmlunit" % "xmlunit" % "1.5",
       "com.novocode" % "junit-interface" % "0.11" % "test"),
     sourceGenerators in Compile += Def.task {
