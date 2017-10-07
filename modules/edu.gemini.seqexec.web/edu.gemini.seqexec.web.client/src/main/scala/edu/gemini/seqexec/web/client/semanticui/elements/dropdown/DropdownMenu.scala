@@ -13,9 +13,11 @@ import scalaz.Show
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
 import scalaz.std.string._
+
 /**
   * Produces a dropdown menu, similar to a combobox
   */
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object DropdownMenu {
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props[A](label: String,
@@ -55,9 +57,9 @@ object DropdownMenu {
       Callback {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
-        import edu.gemini.web.client.facades.semanticui.SemanticUI._
+        import edu.gemini.web.client.facades.semanticui.SemanticUIDropDown._
 
-        $(ctx.getDOMNode).find(".ui.dropdown").dropdown(
+        $(ctx.getDOMNode).find(".ui.dropdown1").dropdown(
           JsDropdownOptions
             .onChange { (value: String, text: String) =>
               // The text comes wrapped on react tags

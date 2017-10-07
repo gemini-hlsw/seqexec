@@ -9,7 +9,6 @@ import edu.gemini.seqexec.web.client.actions.{NavigateTo, SelectInstrumentToDisp
 import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, InstrumentStatusFocus}
 import edu.gemini.seqexec.web.client.semanticui._
-import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
@@ -67,6 +66,7 @@ object InstrumentTab {
       Callback {
         // Enable menu on Semantic UI
         import org.querki.jquery.$
+        import edu.gemini.web.client.facades.semanticui.SemanticUITab._
 
         $(ctx.getDOMNode).tab(
           JsTabOptions

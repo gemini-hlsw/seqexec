@@ -122,28 +122,6 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   )
   .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server, edu_gemini_web_server_common)
 
-// Client side project using Scala.js
-/*lazy val btest = project.in(file("modules/btest"))
-  .enablePlugins(ScalaJSPlugin)
-  .enablePlugins(ScalaJSBundlerPlugin)
-  .settings(commonJSSettings: _*)
-  .settings(
-    // artifactPath in (Compile, fastOptJS) := resourceManaged.value / "seqexec.js",
-    version in webpack := "2.2.1",
-    version in startWebpackDevServer := "2.2.0",
-    webpackBundlingMode := BundlingMode.LibraryOnly(),
-    npmDependencies in Compile ++= Seq(
-      "react" -> LibraryVersions.reactJS,
-      "react-dom" -> LibraryVersions.reactJS,
-      "jquery" -> LibraryVersions.jQuery,
-      "semantic-ui" -> LibraryVersions.semanticUI
-    ),
-    useYarn := true,
-    libraryDependencies ++= ReactScalaJS.value,
-    // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
-  )*/
-
 lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
@@ -172,13 +150,20 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     npmDependencies in Compile ++= Seq(
       "react" -> LibraryVersions.reactJS,
       "react-dom" -> LibraryVersions.reactJS,
-      "jquery" -> LibraryVersions.jQuery//,
-      // "semantic-ui-css" -> LibraryVersions.semanticUI
+      "jquery" -> LibraryVersions.jQuery,
+      "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
+      "semantic-ui-modal" -> LibraryVersions.semanticUI,
+      "semantic-ui-progress" -> LibraryVersions.semanticUI,
+      "semantic-ui-tab" -> LibraryVersions.semanticUI,
+      "semantic-ui-visibility" -> LibraryVersions.semanticUI,
+      "semantic-ui-transition" -> LibraryVersions.semanticUI,
+      "semantic-ui-dimmer" -> LibraryVersions.semanticUI
     ),
     // Requires the DOM for tests
     requiresDOM in Test := true,
     // Use yarn as it is faster than npm
     useYarn := true,
+    version in webpack := "3.5.5",
     // crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       JQuery.value,

@@ -76,7 +76,7 @@ object Settings {
     val diode        = "1.1.2"
     val javaTimeJS   = "0.2.2"
     val javaLogJS    = "0.1.2"
-    val scalaJQuery  = "1.0"
+    val scalaJQuery  = "1.2"
 
     // Java libraries
     val scalaZ       = "7.2.15"

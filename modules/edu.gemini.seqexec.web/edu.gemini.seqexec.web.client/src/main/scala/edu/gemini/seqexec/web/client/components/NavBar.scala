@@ -5,7 +5,6 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import diode.react.ReactPot._
-import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import edu.gemini.seqexec.web.client.actions.NavigateTo
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
@@ -67,6 +66,7 @@ object NavBar {
       Callback {
         // Mount the Semantic component using jQuery
         import org.querki.jquery.$
+        import edu.gemini.web.client.facades.semanticui.SemanticUIVisibility._
 
         // Pick the top bar and make it stay visible regardless of scrolling
         $(ctx.getDOMNode).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))

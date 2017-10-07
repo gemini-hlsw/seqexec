@@ -6,7 +6,6 @@ package edu.gemini.seqexec.web.client.components
 import diode.react.ModelProxy
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import edu.gemini.seqexec.web.client.semanticui.elements.modal.{Content, Header}
 import edu.gemini.seqexec.web.client.model._
@@ -49,6 +48,7 @@ object ResourcesBox {
         // the Semantic UI javascript library
         // The calls below use a custom scala.js facade for SemanticUI
         import org.querki.jquery.$
+        import edu.gemini.web.client.facades.semanticui.SemanticUIModal._
 
         // Close the modal box if the model changes
         ctx.currentProps.visible() match {
