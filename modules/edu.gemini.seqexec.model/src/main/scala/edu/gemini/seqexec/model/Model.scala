@@ -85,7 +85,7 @@ object Model {
 
     final case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    final case class ResourcesBusy(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class ResourcesBusy(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // Generic update. It will probably become useless if we have a special Event for every case.
     final case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
@@ -108,7 +108,7 @@ object Model {
     val seViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
         case e @ SequenceStart(_)           => e.copy(view = q)
         case e @ StepExecuted(_)            => e.copy(view = q)
-        case e @ FileIdStepExecuted(i, _)   => e.copy(view = q)
+        case e @ FileIdStepExecuted(_, _)   => e.copy(view = q)
         case e @ SequenceCompleted(_)       => e.copy(view = q)
         case e @ SequenceLoaded(_, v)       => e.copy(view = q)
         case e @ SequenceUnloaded(_, v)     => e.copy(view = q)
@@ -120,7 +120,7 @@ object Model {
         case e @ SequencePauseRequested(_)  => e.copy(view = q)
         case e @ SequencePauseCanceled(_)   => e.copy(view = q)
         case e @ SequenceRefreshed(_)       => e.copy(view = q)
-        case e @ ResourcesBusy(_)           => e.copy(view = q)
+        case e @ ResourcesBusy(_, _)        => e.copy(view = q)
         case e @ SequenceUpdated(_)         => e.copy(view = q)
         case e                              => e
       }

@@ -25,7 +25,7 @@ object SeqexecMain {
 
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
-  private val resourcesBusyConnect = SeqexecCircuit.connect(_.uiModel.resourceConflictBox)
+  private val resourcesBusyConnect = SeqexecCircuit.connect(_.uiModel.resourceConflict)
 
   private val component = ScalaComponent.builder[Props]("SeqexecUI")
     .stateless

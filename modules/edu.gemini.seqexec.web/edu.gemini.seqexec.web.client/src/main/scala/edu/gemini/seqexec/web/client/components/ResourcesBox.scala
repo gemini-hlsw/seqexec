@@ -14,24 +14,23 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.actions.CloseResourcesBox
 import japgolly.scalajs.react.component.Scala.Unmounted
 
-import scalaz.syntax.equal._
-
 /**
   * UI for the model displaying resource conflicts
   */
 object ResourcesBox {
 
-  final case class Props(visible: ModelProxy[SectionVisibilityState])
+  final case class Props(visible: ModelProxy[ResourcesConflict])
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private val component = ScalaComponent.builder[Props]("ResourcesBox")
     .stateless
-    .render_P(p =>
+    .render_P { p =>
+      val ResourcesConflict(_, id) = p.visible()
       <.div(
         ^.cls := "ui tiny modal",
         Header("Resource conflict"),
         Content(
-          <.p("There is a conflict trying to run the sequence"),
+          <.p(s"There is a conflict trying to run the sequence '${id.getOrElse("")}'"),
           <.p("Possibly another sequence is being executed on the same instrument")
         ),
         <.div(
@@ -43,7 +42,7 @@ object ResourcesBox {
           )
         )
       )
-    )
+    }
     .componentDidUpdate(ctx =>
       Callback {
         // To properly handle the model we need to do updates with jQuery and
@@ -52,23 +51,23 @@ object ResourcesBox {
         import org.querki.jquery.$
 
         // Close the modal box if the model changes
-        if (ctx.currentProps.visible() === SectionClosed) {
-          $(ctx.getDOMNode).modal("hide")
-        }
-        if (ctx.currentProps.visible() === SectionOpen) {
-          // Configure the modal to autofocus and to act properly on closing
-          $(ctx.getDOMNode).modal(
-            JsModalOptions
-              .onHidden { () =>
-                // Need to call direct access as this is outside the event loop
-                SeqexecCircuit.dispatch(CloseResourcesBox)
-              }
-          )
-          // Show the modal box
-          $(ctx.getDOMNode).modal("show")
+        ctx.currentProps.visible() match {
+          case ResourcesConflict(SectionClosed, _) =>
+            $(ctx.getDOMNode).modal("hide")
+          case ResourcesConflict(SectionOpen, _)   =>
+            // Configure the modal to autofocus and to act properly on closing
+            $(ctx.getDOMNode).modal(
+              JsModalOptions
+                .onHidden { () =>
+                  // Need to call direct access as this is outside the event loop
+                  SeqexecCircuit.dispatch(CloseResourcesBox)
+                }
+            )
+            // Show the modal box
+            $(ctx.getDOMNode).modal("show")
         }
       }
     ).build
 
-  def apply(v: ModelProxy[SectionVisibilityState]): Unmounted[Props, Unit, Unit] = component(Props(v))
+  def apply(v: ModelProxy[ResourcesConflict]): Unmounted[Props, Unit, Unit] = component(Props(v))
 }

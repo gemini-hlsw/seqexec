@@ -28,6 +28,7 @@ object actions {
   case object CloseLoginBox extends Action
   case object OpenResourcesBox extends Action
   case object CloseResourcesBox extends Action
+  final case class SequenceInConflict(id: SequenceId) extends Action
 
   final case class LoggedIn(u: UserDetails) extends Action
   case object Logout extends Action

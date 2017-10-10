@@ -55,17 +55,18 @@ object circuit {
     private val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
       zoomRW(m => WebSocketsFocus(m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
 
-    private val wsHandler              = new WebSocketHandler(zoomTo(_.ws))
-    private val wsEventsHandler        = new WebSocketEventsHandler(webSocketFocusRW)
-    private val navigationHandler      = new NavigationHandler(zoomTo(_.uiModel.navLocation))
-    private val loginBoxHandler        = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
-    private val resourcesBoxHandler    = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflictBox))
-    private val userLoginHandler       = new UserLoginHandler(zoomTo(_.uiModel.user))
-    private val sequenceDisplayHandler = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
-    private val sequenceExecHandler    = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
-    private val globalLogHandler       = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
-    private val conditionsHandler      = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
-    private val operatorHandler        = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
+    private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
+    private val wsEventsHandler          = new WebSocketEventsHandler(webSocketFocusRW)
+    private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
+    private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
+    private val resourcesBoxHandler      = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflict.visibility))
+    private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
+    private val sequenceDisplayHandler   = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
+    private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
+    private val resourcesConflictHandler = new SequenceInConflictHandler(zoomTo(_.uiModel.resourceConflict.id))
+    private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
+    private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
+    private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -138,6 +139,7 @@ object circuit {
       wsEventsHandler,
       sequenceExecHandler,
       resourcesBoxHandler,
+      resourcesConflictHandler,
       loginBoxHandler,
       userLoginHandler,
       sequenceDisplayHandler,

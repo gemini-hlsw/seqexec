@@ -330,6 +330,16 @@ object handlers {
   }
 
   /**
+    * Handles setting what sequence is in conflict
+    */
+  class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[SequenceId]]) extends ActionHandler(modelRW) with Handlers {
+    override def handle: PartialFunction[Any, ActionResult[M]] = {
+      case SequenceInConflict(id) =>
+        updated(Some(id))
+    }
+  }
+
+  /**
     * Handles the WebSocket connection and performs reconnection if needed
     */
   class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers with ModelBooPicklers {
@@ -471,9 +481,10 @@ object handlers {
     }
 
     val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(ResourcesBusy(sv)) =>
+      case ServerMessage(ResourcesBusy(id, sv)) =>
+        val setConflictE = Effect(Future(SequenceInConflict(id)))
         val openBoxE = Effect(Future(OpenResourcesBox))
-        updated(value.copy(sequences = filterSequences(sv)), openBoxE)
+        updated(value.copy(sequences = filterSequences(sv)), setConflictE >> openBoxE)
     }
 
     val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
