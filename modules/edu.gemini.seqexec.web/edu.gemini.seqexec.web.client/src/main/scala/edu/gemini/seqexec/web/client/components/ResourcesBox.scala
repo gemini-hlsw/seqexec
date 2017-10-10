@@ -7,7 +7,8 @@ import diode.react.ModelProxy
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.web.client.facades.semanticui.SemanticUI._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
+import edu.gemini.seqexec.web.client.semanticui.elements.modal.{Content, Header}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.actions.CloseResourcesBox
@@ -28,12 +29,8 @@ object ResourcesBox {
     .render_P(p =>
       <.div(
         ^.cls := "ui tiny modal",
-        <.div(
-          ^.cls := "header",
-          "Resources conflict"
-        ),
-        <.div(
-          ^.cls :="content",
+        Header("Resource conflict"),
+        Content(
           <.p("There is a conflict trying to run the sequence"),
           <.p("Possibly another sequence is being executed on the same instrument")
         ),

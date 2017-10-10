@@ -183,51 +183,27 @@ object handlers {
   }
 
   /**
-    * Handles actions related to opening/closing the login box
+    * Handles actions related to opening/closing a modal
     */
-  class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
-    def openLoginBox: PartialFunction[Any, ActionResult[M]] = {
-      case OpenLoginBox if value == SectionClosed =>
+  class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
+    def openModal: PartialFunction[Any, ActionResult[M]] = {
+      case x if x == openAction && value === SectionClosed =>
         updated(SectionOpen)
 
-      case OpenLoginBox                           =>
+      case x if x == openAction                            =>
         noChange
     }
 
-    def closeLoginBox: PartialFunction[Any, ActionResult[M]] = {
-      case CloseLoginBox if value == SectionOpen  =>
+    def closeModal: PartialFunction[Any, ActionResult[M]] = {
+      case x if x == closeAction && value === SectionOpen =>
         updated(SectionClosed)
 
-      case CloseLoginBox                          =>
+      case x if x == closeAction                          =>
         noChange
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      openLoginBox |+| closeLoginBox
-  }
-
-  /**
-    * Handles actions related to opening/closing the resources conflict box
-    */
-  class ResourcesBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
-    def openResourcesBox: PartialFunction[Any, ActionResult[M]] = {
-      case OpenResourcesBox if value == SectionClosed =>
-        updated(SectionOpen)
-
-      case OpenResourcesBox                           =>
-        noChange
-    }
-
-    def closeResourcesBox: PartialFunction[Any, ActionResult[M]] = {
-      case CloseResourcesBox if value == SectionOpen  =>
-        updated(SectionClosed)
-
-      case CloseResourcesBox                          =>
-        noChange
-    }
-
-    override def handle: PartialFunction[Any, ActionResult[M]] =
-      openResourcesBox |+| closeResourcesBox
+      openModal |+| closeModal
   }
 
   /**
