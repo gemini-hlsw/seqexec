@@ -319,15 +319,21 @@ final class CaApplySenderImpl implements CaApplySender {
 
         @Override
         public State onCarValChange(CarState val) {
-            if (val == CarState.ERROR) {
-                failCommandWithCarError(cm);
-                return IdleState;
+            switch(val) {
+                case IDLE: {
+                    succedCommand(cm);
+                    return IdleState;
+                }
+                case ERROR:{
+                    failCommandWithCarError(cm);
+                    return IdleState;
+                }
+                case PAUSED: {
+                    pauseCommand(cm);
+                    return IdleState;
+                }
+                default: return this;
             }
-            if (val == CarState.IDLE) {
-                succedCommand(cm);
-                return IdleState;
-            }
-            return this;
         }
 
         @Override
@@ -359,24 +365,24 @@ final class CaApplySenderImpl implements CaApplySender {
     }
 
     private synchronized void onCarClidChange(Integer val) {
-            currentState = currentState.onCarClidChange(val);
-            if (currentState == IdleState && timeoutFuture != null) {
-                timeoutFuture.cancel(true);
-                timeoutFuture = null;
-            }
+        currentState = currentState.onCarClidChange(val);
+        if (currentState == IdleState && timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+            timeoutFuture = null;
+        }
     }
 
     private synchronized void onCarValChange(CarState carState) {
-            currentState = currentState.onCarValChange(carState);
-            if (currentState == IdleState && timeoutFuture != null) {
-                timeoutFuture.cancel(true);
-                timeoutFuture = null;
-            }
+        currentState = currentState.onCarValChange(carState);
+        if (currentState == IdleState && timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+            timeoutFuture = null;
+        }
     }
 
     private synchronized void onTimeout() {
-            timeoutFuture = null;
-            currentState = currentState.onTimeout();
+        timeoutFuture = null;
+        currentState = currentState.onTimeout();
     }
 
     @Override
@@ -395,6 +401,15 @@ final class CaApplySenderImpl implements CaApplySender {
             @Override
             public void run() {
                 cm.completeSuccess();
+            }
+        });
+    }
+
+    private void pauseCommand(final CaCommandMonitorImpl cm) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                cm.completePause();
             }
         });
     }

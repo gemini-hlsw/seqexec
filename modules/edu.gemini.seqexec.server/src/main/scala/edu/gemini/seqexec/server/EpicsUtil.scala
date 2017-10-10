@@ -19,14 +19,15 @@ trait EpicsCommand {
 
   protected val cs: Option[CaCommandSender]
 
-  def post: SeqAction[Unit] =
+  def post: SeqAction[Result] =
     safe {
       EitherT {
-        Task.async[TrySeq[Unit]] { (f: (Throwable \/ TrySeq[Unit]) => Unit) =>
+        Task.async[TrySeq[Result]] { (f: (Throwable \/ TrySeq[Result]) => Unit) =>
           cs.map { ccs =>
             ccs.postCallback {
               new CaCommandListener {
-                override def onSuccess(): Unit = f(TrySeq(()).right)
+                override def onSuccess(): Unit = f(TrySeq(Completed).right)
+                override def onPause(): Unit = f(TrySeq(Paused).right)
                 override def onFailure(cause: Exception): Unit = f(cause.left)
               }
             }
@@ -75,6 +76,11 @@ trait EpicsSystem[T] {
 
 @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object EpicsCommand {
+
+  trait Result
+  object Paused extends Result
+  object Completed extends Result
+
   def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.run.handle {
     case e: Exception => SeqexecException(e).left
   })

@@ -18,7 +18,7 @@ class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
 
   val GCAL_TOP: String = tops.get("gc").getOrElse("")
 
-  def post: SeqAction[Unit] = lampsCmd.post
+  def post: SeqAction[EpicsCommand.Result] = lampsCmd.post
 
   object shutterCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::shutter"))

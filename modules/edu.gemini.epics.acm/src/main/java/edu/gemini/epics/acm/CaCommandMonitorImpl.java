@@ -130,4 +130,18 @@ public final class CaCommandMonitorImpl implements CaCommandMonitor {
         }
     }
 
+    public synchronized void completePause() {
+        lock.lock();
+        if (currentState == State.BUSY) {
+            currentState = State.PAUSE;
+            condition.signalAll();
+            lock.unlock();
+            if (callback != null) {
+                callback.onPause();
+            }
+        } else {
+            lock.unlock();
+        }
+    }
+
 }

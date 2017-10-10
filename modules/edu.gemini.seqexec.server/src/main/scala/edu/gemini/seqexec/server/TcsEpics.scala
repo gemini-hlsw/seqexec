@@ -37,7 +37,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
-  def post: SeqAction[Unit] = m1GuideCmd.post
+  def post: SeqAction[EpicsCommand.Result] = m1GuideCmd.post
 
   object m1GuideCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m1Guide"))

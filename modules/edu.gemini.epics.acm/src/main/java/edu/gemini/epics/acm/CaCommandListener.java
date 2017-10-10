@@ -22,4 +22,9 @@ public interface CaCommandListener {
      * Called when the command completes with an error.
      */
     void onFailure(Exception cause);
+
+    /**
+     * Called when the command is paused.
+     */
+    void onPause();
 }

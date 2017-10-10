@@ -13,7 +13,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   val F2_TOP: String = tops.getOrElse("f2", "")
 
-  def post: SeqAction[Unit] = configCmd.post
+  def post: SeqAction[EpicsCommand.Result] = configCmd.post
 
   object dcConfigCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::dcconfig"))

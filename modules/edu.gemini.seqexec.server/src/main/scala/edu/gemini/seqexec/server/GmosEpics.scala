@@ -20,7 +20,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   val GMOS_TOP: String = tops.getOrElse("gm", "")
 
-  def post: SeqAction[Unit] = configCmd.post
+  def post: SeqAction[EpicsCommand.Result] = configCmd.post
 
   object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))
