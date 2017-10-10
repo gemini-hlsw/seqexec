@@ -17,7 +17,7 @@ import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ResourcesBusy, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
@@ -136,7 +136,6 @@ object handlers {
     }
 
     def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
-      // We could react to these events but we rather wait for the command from the event queue
       case RunStarted(_) =>
         noChange
 
@@ -144,7 +143,6 @@ object handlers {
         noChange
 
       case RunPaused(_) =>
-        // Normally we'd like to wait for the event queue to send us a stop, but that isn't yet working, so this will do
         noChange
 
       case RunPauseFailed(_) =>
@@ -185,27 +183,27 @@ object handlers {
   }
 
   /**
-    * Handles actions related to opening/closing the login box
+    * Handles actions related to opening/closing a modal
     */
-  class LoginBoxHandler[M](modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
-    def openLoginBox: PartialFunction[Any, ActionResult[M]] = {
-      case OpenLoginBox if value == SectionClosed =>
+  class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
+    def openModal: PartialFunction[Any, ActionResult[M]] = {
+      case x if x == openAction && value === SectionClosed =>
         updated(SectionOpen)
 
-      case OpenLoginBox                           =>
+      case x if x == openAction                            =>
         noChange
     }
 
-    def closeLoginBox: PartialFunction[Any, ActionResult[M]] = {
-      case CloseLoginBox if value == SectionOpen  =>
+    def closeModal: PartialFunction[Any, ActionResult[M]] = {
+      case x if x == closeAction && value === SectionOpen =>
         updated(SectionClosed)
 
-      case CloseLoginBox                          =>
+      case x if x == closeAction                          =>
         noChange
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      openLoginBox |+| closeLoginBox
+      openModal |+| closeModal
   }
 
   /**
@@ -328,6 +326,16 @@ object handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] = {
       case AppendToLog(s) =>
         updated(value.copy(log = value.log.append(s)))
+    }
+  }
+
+  /**
+    * Handles setting what sequence is in conflict
+    */
+  class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[SequenceId]]) extends ActionHandler(modelRW) with Handlers {
+    override def handle: PartialFunction[Any, ActionResult[M]] = {
+      case SequenceInConflict(id) =>
+        updated(Some(id))
     }
   }
 
@@ -472,6 +480,13 @@ object handlers {
         updated(value.copy(sequences = filterSequences(s.view)))
     }
 
+    val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(ResourcesBusy(id, sv)) =>
+        val setConflictE = Effect(Future(SequenceInConflict(id)))
+        val openBoxE = Effect(Future(OpenResourcesBox))
+        updated(value.copy(sequences = filterSequences(sv)), setConflictE >> openBoxE)
+    }
+
     val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceLoaded(id, view)) =>
         val observer = value.user.map(_.displayName)
@@ -533,6 +548,7 @@ object handlers {
         observerUpdatedMessage,
         sequenceLoadedMessage,
         sequenceUnloadedMessage,
+        resourceBusyMessage,
         modelUpdateMessage,
         defaultMessage).suml
   }

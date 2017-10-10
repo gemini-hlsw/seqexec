@@ -12,6 +12,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.actions.{CloseLoginBox, LoggedIn}
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.elements.modal.{Content, Header}
 import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -97,12 +98,8 @@ object LoginBox {
     def render(s: State): TagOf[Div] =
       <.div(
         ^.cls := "ui modal",
-        <.div(
-          ^.cls := "header",
-          "Login"
-        ),
-        <.div(
-          ^.cls := "ui content",
+        Header("Login"),
+        Content(
           <.form(
             ^.cls :="ui form",
             ^.id := formId,

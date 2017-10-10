@@ -112,12 +112,18 @@ object model {
   final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage])
 
   /**
+   * Model to display a resource conflict
+   */
+  final case class ResourcesConflict(visibility: SectionVisibilityState, id: Option[SequenceId])
+
+  /**
    * UI model, changes here will update the UI
    */
   final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                             user: Option[UserDetails],
                             sequences: SeqexecAppRootModel.LoadedSequences,
                             loginBox: SectionVisibilityState,
+                            resourceConflict: ResourcesConflict,
                             globalLog: GlobalLog,
                             sequencesOnDisplay: SequencesOnDisplay,
                             firstLoad: Boolean)
@@ -125,7 +131,7 @@ object model {
   object SeqexecUIModel {
     val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-      SectionClosed, GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
+      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
   }
 
   /**
