@@ -10,10 +10,9 @@ import gem.enum.Site
 import gem.math._
 import gem.util.InstantMicros
 
-import cats.Monad
 import cats.implicits._
 import doobie._, doobie.implicits._
-import fs2.Stream
+import fs2.{ Sink, Stream }
 
 object EphemerisDao {
   import CoordinatesComposite._
@@ -30,18 +29,21 @@ object EphemerisDao {
       e.toMap.toList.map { case (i, c) => toRow(k, s, i, c) }
     )
 
-  def streamInsert[M[_]: Monad](k: EphemerisKey, s: Site, sm: Stream[M, Ephemeris.Element], xa: Transactor[M]): Stream[M, Int] =
-    sm.map { case (i, c) => toRow(k, s, i, c) } // Stream[M, EphemerisRow]
-      .segmentN(4096)                           // Stream[M, Segment[EphemerisRow, Unit]]
-      .flatMap { rows =>
-        Stream.eval(Statements.insert.updateMany(rows.toVector).transact(xa))
-      }
+  def streamInsert(k: EphemerisKey, s: Site): Sink[ConnectionIO, Ephemeris.Element] =
+    _.map { case (i, c) => toRow(k, s, i, c) } // Stream[M, EphemerisRow]
+     .segmentN(4096)                           // Stream[M, Segment[EphemerisRow, Unit]]
+     .flatMap { rows =>
+       Stream.eval(Statements.insert.updateMany(rows.toVector).void)
+     }
 
   def delete(k: EphemerisKey, s: Site): ConnectionIO[Int] =
     Statements.delete(k, s).run
 
   def update(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Unit] =
     (delete(k, s) *> insert(k, s, e)).void
+
+  def streamUpdate(k: EphemerisKey, s: Site): Sink[ConnectionIO, Ephemeris.Element] =
+    elems => streamInsert(k, s).apply(Stream.eval_(delete(k, s)) ++ elems)
 
   /** Selects all ephemeris elements associated with the given key and site into
     * an Ephemeris object.
