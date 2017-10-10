@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
  */
 public interface CaCommandMonitor {
     enum State {
-        BUSY, IDLE, ERROR
+        BUSY, IDLE, ERROR, PAUSE
     }
 
     /**

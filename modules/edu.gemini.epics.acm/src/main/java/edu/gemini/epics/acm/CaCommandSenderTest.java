@@ -33,14 +33,17 @@ public final class CaCommandSenderTest {
                 
                 @Override
                 public void onSuccess() {
-                    // TODO Auto-generated method stub
                     System.out.println("Command completed successfully.");
                 }
                 
                 @Override
                 public void onFailure(Exception cause) {
-                    // TODO Auto-generated method stub
                     System.out.println("Command completed with error " + cause.getMessage());
+                }
+
+                @Override
+                public void onPause() {
+                    System.out.println("Command paused.");
                 }
             });
             cm.waitDone();
