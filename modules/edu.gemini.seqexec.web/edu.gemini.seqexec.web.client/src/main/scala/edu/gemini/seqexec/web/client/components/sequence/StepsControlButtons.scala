@@ -16,6 +16,8 @@ import edu.gemini.seqexec.model.operations._
 import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 
+import scalaz.syntax.equal._
+
 /**
  * Contains the control buttons like stop/abort at the row level
  */
@@ -46,9 +48,9 @@ object StepsControlButtons {
           case PauseObservation            =>
             Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
           case StopObservation             =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), disabled = s.stopRequested, onClick = $.runState(handleStop(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), disabled = s.stopRequested || p.sequenceState === SequenceState.Stopping, onClick = $.runState(handleStop(p.id, p.step.id))))
           case AbortObservation            =>
-            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = $.runState(handleAbort(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), disabled = s.stopRequested || p.sequenceState === SequenceState.Stopping, onClick = $.runState(handleAbort(p.id, p.step.id))))
           case ResumeObservation           =>
             Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure")))
           // Hamamatsu operations

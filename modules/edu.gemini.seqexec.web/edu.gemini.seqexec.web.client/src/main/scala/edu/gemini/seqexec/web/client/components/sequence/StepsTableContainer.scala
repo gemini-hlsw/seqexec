@@ -135,13 +135,13 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (SequenceState.Pausing, StepState.Running)=> <.p(state.shows)
-        case (_, StepState.Running | StepState.Paused) => controlButtons(status.isLogged, p, step)
-        case (_, StepState.Completed)                  => <.p(step.status.shows)
-        case (_, StepState.Error(msg))                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
+        case (SequenceState.Pausing, StepState.Running) => <.p(state.shows)
+        case (_, StepState.Running | StepState.Paused)  => controlButtons(status.isLogged, p, step)
+        case (_, StepState.Completed)                   => <.p(step.status.shows)
+        case (_, StepState.Error(msg))                  => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
-        case (_, s) if step.skip                       => <.p(step.status.shows + " - Skipped")
-        case (_, _)                                    => <.p(step.status.shows)
+        case (_, s) if step.skip                        => <.p(step.status.shows + " - Skipped")
+        case (_, _)                                     => <.p(step.status.shows)
       }
 
     def selectRow(step: Step, index: Int): Callback =
