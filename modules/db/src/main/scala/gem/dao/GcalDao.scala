@@ -12,7 +12,7 @@ import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import gem.enum.GcalArc.{ArArc, CuArArc, ThArArc, XeArc}
 import java.time.Duration
 
-/** DAO support for inserting [[gem.config.GcalConfig]] in either step_gcal or
+/** DAO support for inserting `GcalConfig` in either step_gcal or
   * gcal (for smart gcal lookup).
   */
 object GcalDao {

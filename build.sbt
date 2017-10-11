@@ -21,7 +21,9 @@ lazy val slf4jVersion        = "1.7.25"
 lazy val tucoVersion         = "0.3.0-M5"
 
 // our version is determined by the current git state (see project/Version.scala)
-version in ThisBuild := Version.unsafeCurrent
+lazy val imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
+
+version in ThisBuild := imageManifest.formatVersion
 
 // check for library updates whenever the project is [re]load
 onLoad in Global := { s => "dependencyUpdates" :: s }
@@ -34,16 +36,16 @@ addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432
 addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 // Before printing the prompt check git to make sure all is well.
-shellPrompt in ThisBuild := { state =>
-  if (version.value != Version.unsafeCurrent) {
-    import scala.Console.{ RED, RESET }
-    print(RED)
-    println(s"Computed version doesn't match the filesystem anymore.")
-    println(s"Please `reload` to get back in sync.")
-    print(RESET)
-  }
-  "> "
-}
+// shellPrompt in ThisBuild := { state =>
+//   if (version.value != Version.unsafeCurrent) {
+//     import scala.Console.{ RED, RESET }
+//     print(RED)
+//     println(s"Computed version doesn't match the filesystem anymore.")
+//     println(s"Please `reload` to get back in sync.")
+//     print(RESET)
+//   }
+//   "> "
+// }
 
 // sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
@@ -310,19 +312,21 @@ lazy val telnetd = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "tuco-core" % tucoVersion,
+      "org.tpolecat" %% "tuco-core"  % tucoVersion,
       "org.tpolecat" %% "tuco-shell" % tucoVersion
     ),
-    dockerExposedPorts  := List(6666),
-    dockerRepository    := Some("geminihlsw")
+    packageName in Docker := "gem",
+    dockerBaseImage       := "openjdk:8u141",
+    dockerExposedPorts    := List(6666),
+    dockerRepository      := Some("localhost:5000"),
+    dockerLabels          := imageManifest.labels
+    // TODO: don't allow publish if version is wrong
   )
 
 lazy val web = project
   .in(file("modules/web"))
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(service, sql, json)
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(DockerPlugin)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -331,9 +335,7 @@ lazy val web = project
       "org.http4s"    %% "http4s-dsl"          % http4sVersion,
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
       "com.pauldijou" %% "jwt-core"            % jwtVersion
-    ),
-    dockerExposedPorts  := List(6667),
-    dockerRepository    := Some("geminihlsw")
+    )
   )
 
 lazy val ctl = project
