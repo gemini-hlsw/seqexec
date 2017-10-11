@@ -91,7 +91,7 @@ object ImageManifest {
 
   /** Determine whether there are local changes past the current commit. */
   def unstable: IO[Boolean] =
-    IO("git update-index -q --refresh".!).map(_ === 0)
+    IO("git diff-index --quiet HEAD --".!).map(_ =!= 0)
 
   /** Compute the Unix epoch time in SECONDS for the last commit. */
   def instant: IO[Instant] =
