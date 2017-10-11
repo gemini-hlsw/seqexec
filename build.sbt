@@ -264,6 +264,8 @@ lazy val edu_gemini_epics_acm = project
       }
       out.listFiles.toSeq
     }.taskValue
+  ).settings(
+    sources in (Compile,doc) := Seq.empty
   )
 
 /**
@@ -287,6 +289,11 @@ lazy val seqexecCommonSettings = Seq(
   // Specify a different name for the config file
   bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
+  // Copy logback.xml to let users customize it on site
+  mappings in Universal += {
+    val f = (resourceDirectory in (edu_gemini_seqexec_web_server, Compile)).value / "logback.xml"
+    f -> ("conf/" + f.getName)
+  },
   // Launch options
   javaOptions in Universal ++= Seq(
     // -J params will be added as jvm parameters
@@ -339,12 +346,6 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   .settings(seqexecCommonSettings: _*)
   .settings(
     description := "Seqexec server for local testing",
-
-    // Copy logback.xml to let users customize it on site
-    mappings in Universal += {
-      val f = (resourceDirectory in (edu_gemini_seqexec_web_server, Compile)).value / "logback.xml"
-      f -> ("conf/" + f.getName)
-    },
 
     // Put the jar files in the lib dir
     mappings in Universal += {
