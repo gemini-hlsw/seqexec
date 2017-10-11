@@ -85,6 +85,8 @@ object Model {
 
     final case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    final case class ActionStopRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     final case class ResourcesBusy(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // Generic update. It will probably become useless if we have a special Event for every case.
@@ -120,6 +122,7 @@ object Model {
         case e @ SequencePauseRequested(_)  => e.copy(view = q)
         case e @ SequencePauseCanceled(_)   => e.copy(view = q)
         case e @ SequenceRefreshed(_)       => e.copy(view = q)
+        case e @ ActionStopRequested(_)     => e.copy(view = q)
         case e @ ResourcesBusy(_, _)        => e.copy(view = q)
         case e @ SequenceUpdated(_)         => e.copy(view = q)
         case e                              => e
