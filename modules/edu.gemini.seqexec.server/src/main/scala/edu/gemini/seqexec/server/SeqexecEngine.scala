@@ -184,7 +184,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetCloudCover(_, _)    => ConditionsUpdated(svs)
       case engine.Poll                   => SequenceRefreshed(svs)
       case engine.GetState(_)            => NullEvent
-      case engine.ActionStop(_, _)       => NullEvent
+      case engine.ActionStop(_, _)       => ActionStopRequested(svs)
       case engine.Log(msg)               => NewLogMessage(msg)
     }
     case engine.EventSystem(se) => se match {
