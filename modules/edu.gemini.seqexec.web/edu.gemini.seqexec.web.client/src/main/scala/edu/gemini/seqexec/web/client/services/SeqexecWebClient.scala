@@ -104,7 +104,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax.post(
       url = s"$baseUrl/commands/$id/observer/${encodeURI(name)}",
       responseType = "arraybuffer"
-          ).map(unpickle[RegularCommand])
+    ).map(unpickle[RegularCommand])
   }
 
   /**

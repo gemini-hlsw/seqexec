@@ -16,7 +16,7 @@ import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
+import edu.gemini.seqexec.model.Model.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
 import edu.gemini.seqexec.model.Model.SeqexecEvent.{ResourcesBusy, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
@@ -480,11 +480,16 @@ object handlers {
         updated(value.copy(sequences = filterSequences(s.view)))
     }
 
+    val actionStoppedRequestMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(ActionStopRequested(svs)) =>
+        updated(value.copy(sequences = filterSequences(svs)))
+    }
+
     val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(ResourcesBusy(id, sv)) =>
         val setConflictE = Effect(Future(SequenceInConflict(id)))
         val openBoxE = Effect(Future(OpenResourcesBox))
-        updated(value.copy(sequences = filterSequences(sv)), setConflictE >> openBoxE)
+        effectOnly(setConflictE >> openBoxE)
     }
 
     val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -546,6 +551,7 @@ object handlers {
         connectionOpenMessage,
         sequenceCompletedMessage,
         observerUpdatedMessage,
+        actionStoppedRequestMessage,
         sequenceLoadedMessage,
         sequenceUnloadedMessage,
         resourceBusyMessage,
