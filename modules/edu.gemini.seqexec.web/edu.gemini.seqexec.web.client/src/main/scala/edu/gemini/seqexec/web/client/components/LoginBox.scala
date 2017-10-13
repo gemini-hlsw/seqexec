@@ -7,7 +7,6 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-import edu.gemini.web.client.facades.semanticui.SemanticUI._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.actions.{CloseLoginBox, LoggedIn}
@@ -153,6 +152,7 @@ object LoginBox {
         // the Semantic UI javascript library
         // The calls below use a custom scala.js facade for SemanticUI
         import org.querki.jquery.$
+        import edu.gemini.web.client.facades.semanticui.SemanticUIModal._
 
         // Close the modal box if the model changes
         if (ctx.currentProps.visible() === SectionClosed) {

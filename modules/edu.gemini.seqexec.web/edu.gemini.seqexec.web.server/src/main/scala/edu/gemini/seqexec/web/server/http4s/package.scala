@@ -4,6 +4,7 @@
 package edu.gemini.seqexec.web.server
 
 package object http4s {
+  // scalastyle:off
   def index(site: String, devMode: Boolean, builtAtMillis: Long): String = {
     val style = """
                   |   @media screen and (-webkit-min-device-pixel-ratio:0) {
@@ -14,8 +15,9 @@ package object http4s {
                   |        }
                   |      }
                   |"""
-    val deps = if (devMode) "edu_gemini_seqexec_web_client-jsdeps.js" else s"edu_gemini_seqexec_web_client-jsdeps.min.$builtAtMillis.js"
-    val seqexecScript = if (devMode) s"seqexec.js" else s"seqexec-opt.$builtAtMillis.js"
+    val deps = if (devMode) "edu_gemini_seqexec_web_client-fastopt-library.js" else s"edu_gemini_seqexec_web_client-opt-library.$builtAtMillis.js"
+    val loaderScript = if (devMode) s"edu_gemini_seqexec_web_client-fastopt-loader.js" else s"edu_gemini_seqexec_web_client-opt-loader.$builtAtMillis.js"
+    val seqexecScript = if (devMode) s"edu_gemini_seqexec_web_client-fastopt.js" else s"edu_gemini_seqexec_web_client-opt.$builtAtMillis.js"
     val xml =
       <html lang="en">
         <head>
@@ -45,6 +47,19 @@ package object http4s {
           </div>
 
           <script src={s"/$deps"}></script>
+          <script src={s"/$loaderScript"}></script>
+          <script>
+            {"""
+              /* Trick to get semantic ui to talk to jquery loaded via modules */
+              var $ = require('jquery');
+              $.fn.dropdown = require('semantic-ui-dropdown');
+              $.fn.visibility = require('semantic-ui-visibility');
+              $.fn.tab = require('semantic-ui-tab');
+              $.fn.progress = require('semantic-ui-progress');
+              $.fn.dimmer = require('semantic-ui-dimmer');
+              $.fn.transition = require('semantic-ui-transition');
+              $.fn.modal = require('semantic-ui-modal');
+              """} </script>
           <script src={s"/$seqexecScript"}></script>
           <script>
             {s"""SeqexecApp.start('$site');"""}
@@ -53,5 +68,6 @@ package object http4s {
       </html>
     s"<!DOCTYPE html>$xml"
   }
+  // scalastyle:on
 
 }
