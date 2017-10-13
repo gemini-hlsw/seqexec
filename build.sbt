@@ -132,19 +132,6 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
   .settings(
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
-    // This is a not very nice trick to remove js files that exist on the scala tools
-    // library and that conflict with the requested on jsDependencies, in particular
-    // with jquery.js
-    // See http://stackoverflow.com/questions/35374131/scala-js-missing-js-library, UPDATE #1
-    // (scalaJSNativeLibraries in Test) := (scalaJSNativeLibraries in Test).map { l =>
-    //   l.map(virtualFiles => virtualFiles.filter(vf => {
-    //     val f = vf.toURI.toString
-    //     !(f.endsWith(".js") && f.contains("scala/tools"))
-    //   }))
-    // }.value,
-  // Write the generated js to the filename seqexec.js
-    // artifactPath in (Compile, fastOptJS) := (resourceManaged in Compile).value / "seqexec.js",
-    // artifactPath in (Compile, fullOptJS) := (resourceManaged in Compile).value / "seqexec-opt.js",
     webpackBundlingMode := BundlingMode.LibraryOnly(),
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
@@ -164,7 +151,6 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     // Use yarn as it is faster than npm
     useYarn := true,
     version in webpack := "3.5.5",
-    // crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
       JQuery.value,
       ScalaCSS.value,
@@ -281,8 +267,7 @@ lazy val seqexecCommonSettings = Seq(
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
   // Run full opt js on the javascript. They will be placed on the "seqexec" jar
-  resources in Compile += (fullOptJS in (edu_gemini_seqexec_web_client, Compile)).value.data,
-  resources in Compile += (packageMinifiedJSDependencies in (edu_gemini_seqexec_web_client, Compile)).value,
+  resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value.map(_.data),
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
