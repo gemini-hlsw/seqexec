@@ -14,14 +14,19 @@ import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.SeqTranslate.{Settings, Systems}
 import edu.gemini.seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
-import edu.gemini.seqexec.server.TcsController.ScienceFoldPosition
+import edu.gemini.seqexec.server.InstrumentSystem.{AbortObserveCmd, Controllable, StopObserveCmd}
+import edu.gemini.seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
+import edu.gemini.seqexec.server.gcal._
+import edu.gemini.seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
+import edu.gemini.seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
+import edu.gemini.seqexec.server.tcs.{Tcs, TcsController, TcsKeywordsReader, TcsKeywordsReaderImpl, DummyTcsKeywordsReader}
+import edu.gemini.seqexec.server.tcs.TcsController.ScienceFoldPosition
+import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.seqexec.server.InstrumentSystem.{AbortObserveCmd, Controllable, StopObserveCmd}
 
 import scalaz.Scalaz._
 import scalaz._

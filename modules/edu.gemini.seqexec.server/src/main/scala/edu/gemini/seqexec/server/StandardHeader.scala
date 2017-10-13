@@ -10,6 +10,7 @@ import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.KeywordBag
+import edu.gemini.seqexec.server.tcs.{TargetKeywordsReader, TcsKeywordsReader, Tcs}
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}

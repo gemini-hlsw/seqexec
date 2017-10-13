@@ -14,6 +14,19 @@ import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, 
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
+import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.Model.SeqexecEvent._
+import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
+import edu.gemini.seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
+import edu.gemini.seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
+import edu.gemini.seqexec.server.gws.GwsEpics
+import edu.gemini.seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
+import edu.gemini.spModel.core.Peer
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
+import edu.gemini.spModel.obscomp.InstConstants
+import edu.gemini.spModel.core.SPProgramID
+import knobs.Config
 
 import scalaz._
 import Scalaz._
@@ -22,14 +35,6 @@ import scala.concurrent.duration._
 import scalaz.stream.{DefaultScheduler, Process, wye}
 import scalaz.stream.wye._
 import scalaz.stream.time._
-import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.Model.SeqexecEvent._
-import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.spModel.core.Peer
-import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
-import edu.gemini.spModel.obscomp.InstConstants
-import edu.gemini.spModel.core.SPProgramID
-import knobs.Config
 
 /**
   * Created by jluhrs on 10/7/16.
