@@ -16,12 +16,6 @@ import scala.scalajs.js.annotation.JSImport
 object SemanticUITransition {
 
   @js.native
-  @JSImport("semantic-ui-dimmer", JSImport.Default)
-  private object SemanticDimmerModule extends js.Any
-
-  SemanticDimmerModule
-
-  @js.native
   @JSImport("semantic-ui-transition", JSImport.Default)
   private object SemanticTransitionModule extends js.Any
 
@@ -42,6 +36,17 @@ object SemanticUITransition {
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUIModal {
+  @js.native
+  @JSImport("semantic-ui-transition", JSImport.Default)
+  private object SemanticTransitionModule extends js.Any
+
+  SemanticTransitionModule
+
+  @js.native
+  @JSImport("semantic-ui-dimmer", JSImport.Default)
+  private object SemanticDimmerModule extends js.Any
+
+  SemanticDimmerModule
 
   @js.native
   @JSImport("semantic-ui-modal", JSImport.Default)
@@ -67,7 +72,6 @@ object SemanticUIModal {
   trait SemanticModal extends js.Object {
     def modal(s: String): this.type
     def modal(o: JsModalOptions): this.type
-
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
