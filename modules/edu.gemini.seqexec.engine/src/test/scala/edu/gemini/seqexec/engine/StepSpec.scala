@@ -4,17 +4,18 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig, StepState}
-import edu.gemini.seqexec.model.Model.Instrument.F2
+import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 
 import scalaz.syntax.either._
 import org.scalatest._
 import Matchers._
 import Inside._
+import edu.gemini.seqexec.model.Model.Resource.TCS
 
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
 import edu.gemini.seqexec.model.Model.SequenceState.Running
-import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
 import scala.Function.const
 import scalaz.\/-
@@ -32,49 +33,56 @@ class StepSpec extends FlatSpec {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromTask(for {
-    _ <- Task(println("System: Start TCS configuration"))
-    _ <- Task(Thread.sleep(200))
-    _ <- Task(println ("System: Complete TCS configuration"))
-  } yield Result.OK(Result.Configured("TCS")))
+  val configureTcs: Action  = fromTask(ActionType.Configure(TCS),
+    for {
+      _ <- Task(println("System: Start TCS configuration"))
+      _ <- Task(Thread.sleep(200))
+      _ <- Task(println ("System: Complete TCS configuration"))
+    } yield Result.OK(Result.Configured("TCS")))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromTask(for {
-    _ <- Task(println("System: Start Instrument configuration"))
-    _ <- Task(Thread.sleep(150))
-    _ <- Task(println("System: Complete Instrument configuration"))
-  } yield Result.OK(Result.Configured("Instrument")))
+  val configureInst: Action  = fromTask(ActionType.Configure(GmosS),
+    for {
+      _ <- Task(println("System: Start Instrument configuration"))
+      _ <- Task(Thread.sleep(150))
+      _ <- Task(println("System: Complete Instrument configuration"))
+    } yield Result.OK(Result.Configured("Instrument")))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromTask(for {
+  val observe: Action  = fromTask(ActionType.Observe,
+    for {
     _ <- Task(println("System: Start observation"))
     _ <- Task(Thread.sleep(200))
     _ <- Task(println ("System: Complete observation"))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
-  def error(errMsg: String): Action  = fromTask(Task {
-    Thread.sleep(200)
-    Result.Error(errMsg)
-  } )
+  def error(errMsg: String): Action  = fromTask(ActionType.Undefined,
+    Task {
+      Thread.sleep(200)
+      Result.Error(errMsg)
+    }
+  )
 
 
-  def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(for {
-    _ <- q.enqueueOne(Event.pause(seqId, user))
-    // There is not a distinct result for Pause because the Pause action is a
-    // trick for testing but we don't need to support it real life, he pause
-    // input event is enough.
-  } yield Result.OK(Result.Configured("PauseCmdAction")))
+  def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
+    for {
+      _ <- q.enqueueOne(Event.pause(seqId, user))
+      // There is not a distinct result for Pause because the Pause action is a
+      // trick for testing but we don't need to support it in real life, the pause
+      // input event is enough.
+    } yield Result.OK(Result.Configured("PauseCmdAction")))
 
-  def triggerStart(q: async.mutable.Queue[Event]): Action = fromTask(for {
-    _ <- q.enqueueOne(Event.start(seqId, user))
-    // Same case that the pause action
-  } yield Result.OK(Result.Configured("StartCmdAction")))
+  def triggerStart(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
+    for {
+      _ <- q.enqueueOne(Event.start(seqId, user))
+      // Same case that the pause action
+    } yield Result.OK(Result.Configured("StartCmdAction")))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -406,13 +414,15 @@ class StepSpec extends FlatSpec {
                    false,
                    List(
                      List(
-                       fromTask(Task(
-                         Result.Partial(
-                           PartialValDouble(0.5),
-                           fromTask(Task(Result.OK(RetValDouble(1.0)))
+                       fromTask(ActionType.Undefined,
+                         Task(
+                           Result.Partial(
+                             PartialValDouble(0.5),
+                             fromTask(ActionType.Undefined, Task(Result.OK(RetValDouble(1.0)))
+                             )
                            )
-                         )
-                       )).left
+                        )
+                       ).left
                      )
                    )
                  )
@@ -442,7 +452,7 @@ class StepSpec extends FlatSpec {
 
   private val result = Result.OK(Result.Observed("dummyId"))
   private val failure = Result.Error("Dummy error")
-  private val action: Action = fromTask(Task(result))
+  private val action: Action = fromTask(ActionType.Undefined, Task(result))
   private val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) = (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {

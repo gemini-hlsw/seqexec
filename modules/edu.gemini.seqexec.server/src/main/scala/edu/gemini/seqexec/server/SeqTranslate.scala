@@ -7,8 +7,8 @@ import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Observed}
 import edu.gemini.seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromTask}
-import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, StepState}
-import edu.gemini.seqexec.model.Model
+import edu.gemini.seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
+import edu.gemini.seqexec.model.{ActionType, Model}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
@@ -19,7 +19,7 @@ import edu.gemini.seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, F
 import edu.gemini.seqexec.server.gcal._
 import edu.gemini.seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import edu.gemini.seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
-import edu.gemini.seqexec.server.tcs.{Tcs, TcsController, TcsKeywordsReader, TcsKeywordsReaderImpl, DummyTcsKeywordsReader}
+import edu.gemini.seqexec.server.tcs.{DummyTcsKeywordsReader, Tcs, TcsController, TcsKeywordsReader, TcsKeywordsReaderImpl}
 import edu.gemini.seqexec.server.tcs.TcsController.ScienceFoldPosition
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
@@ -81,23 +81,23 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
     for {
       id <- dhsFileId(inst)
-    } yield Result.Partial(FileIdAllocated(id), doObserve(id).toAction)
+    } yield Result.Partial(FileIdAllocated(id), doObserve(id).toAction(ActionType.Observe))
   }
 
   private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
       val initialStepExecutions: List[List[Action]] =
-        if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction))
+        if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
       val lastStepExecutions: List[List[Action]] =
-        if (last) List(List(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored).toAction))
+        if (last) List(List(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
       val regularStepExecutions: List[List[Action]] =
         List(
-          sys.map(x => x.configure(config).map(y => Result.Configured(y.sys.name)).toAction),
-          List(new Action(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult))))
+          sys.map(x => x.configure(config).map(y => Result.Configured(y.sys.name)).toAction(ActionType.Configure(resourceFromSystem((x))))),
+          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)))))
 
       extractStatus(config) match {
         case StepState.Pending =>
@@ -132,8 +132,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       inst      <- toInstrumentSys(stepType.instrument)
       systems   <- calcSystems(stepType)
       headers   <- calcHeaders(config, stepType)
-      resources <- calcResources(stepType)
-    } yield buildStep(inst, systems, headers, resources)
+    } yield buildStep(inst, systems, headers, calcResources(systems))
   }
 
   // Required for untyped objects from java
@@ -215,12 +214,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
-  private def calcResources(stepType: StepType): TrySeq[Set[Resource]] = stepType match {
-    case CelestialObject(inst) => TrySeq(Set(inst, Resource.TCS, Resource.Gcal))
-    case FlatOrArc(inst)       => TrySeq(Set(inst, Resource.Gcal, Resource.TCS))
-    case DarkOrBias(inst)      => TrySeq(Set(inst))
-    case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
-  }
+  private def calcResources(sys: List[System]): Set[Resource] = sys.map(resourceFromSystem).toSet
 
   import TcsController.Subsystem._
 
@@ -240,6 +234,16 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
+  }
+
+  // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
+  // so either I use an unchecked notation, or add a default case that throws an exception.
+  private def resourceFromSystem(s: System): Resource = (s: @unchecked) match {
+    case Tcs(_, _, _)  => Resource.TCS
+    case Gcal(_, _)    => Resource.Gcal
+    case GmosNorth(_)  => Instrument.GmosS
+    case GmosSouth(_)  => Instrument.GmosN
+    case Flamingos2(_) => Instrument.F2
   }
 
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = inst match {
@@ -369,10 +373,10 @@ object SeqTranslate {
   }
 
   implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction: Action = fromTask(x.run.map(_.toResult))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
   }
 
   implicit class ObserveResultToAction(val x: SeqAction[ObserveResult]) extends AnyVal {
-    def toAction: Action = fromTask(x.run.map(_.toResult))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
   }
 }

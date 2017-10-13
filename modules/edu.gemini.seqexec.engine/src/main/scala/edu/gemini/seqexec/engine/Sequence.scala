@@ -5,11 +5,11 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Observer, Resource, SequenceMetadata, SequenceState, StepState}
 import edu.gemini.seqexec.engine.Step._
+import edu.gemini.seqexec.model.ActionType
 
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
-
 import monocle.Lens
 import monocle.macros.GenLens
 
@@ -151,7 +151,7 @@ object Sequence {
                 _.fold(
                   identity,
                   // It should never happen
-                  _ => fromTask(Task(Result.Error("Inconsistent status")))
+                  _ => fromTask(ActionType.Undefined, Task(Result.Error("Inconsistent status")))
                 )
               )
             )

@@ -7,9 +7,10 @@ import java.util.concurrent.Semaphore
 
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
-import edu.gemini.seqexec.model.Model.{Operator, Observer, Resource}
+import edu.gemini.seqexec.model.Model.{Observer, Operator, Resource}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
-import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.Model.Resource.TCS
+import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
 import scala.concurrent.duration._
 import scalaz._
@@ -25,15 +26,17 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromTask(for {
-    _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured("TCS")))
+  val configureTcs: Action  = fromTask(ActionType.Configure(TCS),
+    for {
+      _ <- Task(Thread.sleep(200))
+    } yield Result.OK(Result.Configured("TCS")))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromTask(for {
+  val configureInst: Action  = fromTask(ActionType.Configure(GmosS),
+    for {
     _ <- Task(Thread.sleep(200))
   } yield Result.OK(Result.Configured("Instrument")))
 
@@ -41,11 +44,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromTask(for {
+  val observe: Action  = fromTask(ActionType.Observe,
+  for {
     _ <- Task(Thread.sleep(200))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
-  val faulty: Action  = fromTask(for {
+  val faulty: Action  = fromTask(ActionType.Undefined,
+  for {
     _ <- Task(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
@@ -199,7 +204,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(fromTask(Task.apply{
+              List(fromTask(ActionType.Configure(TCS),
+              Task.apply{
                 startedFlag.release
                 finishFlag.acquire
                 Result.OK(Result.Configured("TCS"))
@@ -223,7 +229,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   "engine" should "not capture fatal errors." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def s0(e: Error) = Engine.State(Conditions.default,
+    def s0(e: Error): Engine.State = Engine.State(Conditions.default,
       None,
       Map((seqId, Sequence.State.init(Sequence(
         "First",
@@ -237,9 +243,10 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(fromTask(Task.apply{
+              List(fromTask(ActionType.Undefined,
+              Task.apply{
                 throw e
-              }).left )
+              }).left)
             )
           )
         )
@@ -270,7 +277,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(new Action(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.map(_.value).getOrElse(""))))).left)
+              List(new Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.map(_.value).getOrElse("")))))).left)
             )
           )
         )

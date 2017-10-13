@@ -20,7 +20,7 @@ import scalaz.\/
   * Created by jluhrs on 8/10/17.
   */
 
-final class GmosNorth(c: GmosNorthController) extends Gmos[NorthTypes](c,
+final case class GmosNorth(c: GmosNorthController) extends Gmos[NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
     override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
     override def extractFilter(config: Config): \/[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] = config.extract(INSTRUMENT_KEY / FILTER_PROP).as[NorthTypes#Filter]
