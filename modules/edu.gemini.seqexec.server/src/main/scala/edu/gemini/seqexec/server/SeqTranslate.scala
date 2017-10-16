@@ -189,23 +189,32 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       })
   }
 
-  def stopObserve(inst: Model.Instrument): Option[Process[Task, Event]] =
-    toInstrumentSys(inst).toOption.flatMap(_.observeControl match {
+  private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] =
+    seqState.current.actions.headOption.flatMap{ _.kind match {
+        case ActionType.Observe => cmd
+        case _                  => None
+      }
+    }
+
+  def stopObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
+    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
       case Controllable(StopObserveCmd(stop), _, _, _) => Some(Process.eval(stop.run.map{
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
       case _                                           => none
     } )
+  )
 
-  def abortObserve(inst: Model.Instrument): Option[Process[Task, Event]] =
-    toInstrumentSys(inst).toOption.flatMap(_.observeControl match {
+  def abortObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
+    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
       case Controllable(_, AbortObserveCmd(abort), _, _) => Some(Process.eval(abort.run.map{
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
       case _                                           => none
     } )
+  )
 
   private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))

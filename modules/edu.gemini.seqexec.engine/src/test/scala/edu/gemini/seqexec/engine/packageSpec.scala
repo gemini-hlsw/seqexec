@@ -277,7 +277,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(new Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.map(_.value).getOrElse("")))))).left)
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.map(_.value).getOrElse("")))))).left)
             )
           )
         )

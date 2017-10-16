@@ -17,7 +17,6 @@ import scalaz.stream.{Process, Sink, merge}
 
 package engine {
 
-
   final case class HandleP[A](run: Handle[(A, Option[Process[Task, Event]])])
   object HandleP {
     def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
