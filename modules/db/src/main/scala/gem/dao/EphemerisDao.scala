@@ -73,6 +73,12 @@ object EphemerisDao {
   def streamRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.selectRange(k, s, start, end).stream
 
+  /** Selects the min and max times for which ephemeris data is available, if
+    * any.
+    */
+  def selectTimes(k: EphemerisKey, s: Site): ConnectionIO[Option[(InstantMicros, InstantMicros)]] =
+    Statements.selectTimes(k, s).unique
+
   /** Create the next UserSupplied ephemeris key value. */
   val nextUserSuppliedKey: ConnectionIO[EphemerisKey.UserSupplied] =
     Statements.selectNextUserSuppliedKey.unique
@@ -132,6 +138,14 @@ object EphemerisDao {
     def selectRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Query0[Ephemeris.Element] =
       (selectFragment(k, s) ++ fr"""AND timestamp >= $start AND timestamp < $end""")
         .query[Ephemeris.Element]
+
+    def selectTimes(k: EphemerisKey, s: Site): Query0[Option[(InstantMicros, InstantMicros)]] =
+      sql"""
+          SELECT min(timestamp),
+                 max(timestamp)
+            FROM ephemeris
+           WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
+      """.query[(Option[InstantMicros], Option[InstantMicros])].map(_.tupled)
 
     val selectNextUserSuppliedKey: Query0[EphemerisKey.UserSupplied] =
       sql"""
