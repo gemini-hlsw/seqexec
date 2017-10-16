@@ -146,6 +146,9 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "semantic-ui-transition" -> LibraryVersions.semanticUI,
       "semantic-ui-dimmer" -> LibraryVersions.semanticUI
     ),
+    npmDevDependencies in Compile += "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs,
+    // Use a different Webpack configuration file for production
+    webpackConfigFile in fullOptJS := Some(baseDirectory.value / "prod.webpack.config.js"),
     // Requires the DOM for tests
     requiresDOM in Test := true,
     // Use yarn as it is faster than npm
