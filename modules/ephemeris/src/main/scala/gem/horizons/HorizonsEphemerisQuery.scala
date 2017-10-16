@@ -132,12 +132,12 @@ object HorizonsEphemerisQuery {
   /** Constructs a List of queries for the given key, site, time range, and step
     * size such that the entire range is covered by the combination of the
     * returned queries. Horizons places a max element count limit on its results
-    * so this constructor provides a way to obtain all the queries necessary to
-    * cover a time range with a given step size.
+    * so this method provides a way to obtain all the queries necessary to cover
+    * a time range with a given step size.
     *
     * Note, Horizons requires a minimum step size of 500ms so 500ms will be used
     * if a smaller value for `step` is requested and sub-millisecond fractions
-    * are rounded up to the nearest millisecond regardless.
+    * are rounded up to the next millisecond regardless.
     *
     * @param key   Unique Horizons designation for the non-sidereal target of
     *              interest
@@ -145,8 +145,8 @@ object HorizonsEphemerisQuery {
     * @param start start time for the first ephemeris element to be returned
     * @param end   nominal end time (the actual last element may happen after
     *              end if the step size doesn't evenly divide the total time)
-    * @param step  time between successive ephemeris elements (a minimum of
-    *              500ms will be used if a smaller time is requested)
+    * @param step  time (ms precision) between successive ephemeris elements (a
+    *              minimum of 500ms will be used if a smaller time is requested)
     *
     * @return List of queries that cover the entire time range
     */

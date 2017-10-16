@@ -179,11 +179,6 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("EphemerisDao should stream insert") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
 
-//      import cats._
-//      import cats.effect._
-//      import cats.effect.implicits._
-//      .translateSync(λ[IO ~> ConnectionIO](_.liftIO[ConnectionIO]))
-
       val mʹ = m + (ks -> e)
       val p  = (mʹ.toList.traverse { case (ks, e) =>
         Stream.emits(e.toMap.toList).covary[ConnectionIO]

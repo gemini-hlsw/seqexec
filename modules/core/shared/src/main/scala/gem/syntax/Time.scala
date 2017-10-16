@@ -6,6 +6,9 @@ package gem.syntax
 import java.time.{ Duration, Instant }
 import java.time.temporal.TemporalAmount
 
+// A bit of syntax to make working with Java Instant and Duration a bit less
+// cumbersome / easier to read.
+
 final class InstantOps(val self: Instant) extends AnyVal {
 
   def +(t: TemporalAmount): Instant =
