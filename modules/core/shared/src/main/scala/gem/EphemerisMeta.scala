@@ -7,6 +7,8 @@ import gem.util.InstantMicros
 
 import cats.{ Eq, Show }
 
+import monocle.macros.Lenses
+
 
 /** Ephemeris meta data related to updates.
   *
@@ -15,12 +17,12 @@ import cats.{ Eq, Show }
   * @param solnRef horizons solution reference, if any (applies to comet and
   *                asteroid ephemeris data fetched from horizons)
   */
-final case class EphemerisMeta(
+@Lenses final case class EphemerisMeta(
   lastUpdate: InstantMicros,
   lastUpdateCheck: InstantMicros,
   solnRef: Option[HorizonsSolutionRef])
 
-
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object EphemerisMeta {
 
   implicit val eqEphemerisMeta: Eq[EphemerisMeta] =

@@ -6,6 +6,7 @@ package gem.horizons
 import gem.EphemerisKey
 import gem.enum.Site.GS
 import gem.math.Ephemeris
+import gem.syntax.time._
 import gem.test.RespectIncludeTags
 import gem.test.Tags._
 import gem.util.InstantMicros
@@ -13,7 +14,7 @@ import gem.util.InstantMicros
 import cats.implicits._
 import cats.tests.CatsSuite
 
-import java.time.{ LocalDateTime, Month }
+import java.time.{ Duration, Instant, LocalDateTime, Month }
 import java.time.ZoneOffset.UTC
 import java.time.temporal.ChronoUnit.DAYS
 
@@ -61,6 +62,97 @@ final class HorizonsEphemerisQuerySpec extends CatsSuite with EphemerisTestSuppo
     assert(e.toMap.size == 0)
   }
 
+  private def checkPaging(start: Instant, end: Instant, expected: HorizonsEphemerisQuery*): org.scalatest.Assertion = {
+    val as = HorizonsEphemerisQuery.paging(titan, GS, start, end, OneMinute)
+    val es = expected.toList
+
+    assert(es.size == as.size && es.zip(as).forall { case (e, a) =>
+      e.startTime    == a.startTime    &&
+      e.endTime      == a.endTime      &&
+      e.elementLimit == a.elementLimit
+    })
+  }
+
+  val Max: Int = HorizonsEphemerisQuery.MaxElements
+
+  test("paging a negative time amount should be empty") {
+    checkPaging(end, start)
+  }
+
+  test("paging a zero time amount should be empty") {
+    checkPaging(start, start)
+  }
+
+  test("paging less time than the step size should produce two elements, one query") {
+    checkPaging(
+      start,
+      start + Duration.ofNanos(1),
+      HorizonsEphemerisQuery(titan, GS, start, start + OneMinute, 2)
+    )
+  }
+
+  test("paging a time that requires < MaxElements should result in one query") {
+    checkPaging(
+      start,
+      end,
+      HorizonsEphemerisQuery(titan, GS, start, end, 61)
+    )
+  }
+
+  test("paging exactly MaxElements should result in a single query") {
+    val end = start + OneMinute * (Max.toLong - 1L) // remember *inclusive*
+
+    checkPaging(
+      start,
+      end,
+      HorizonsEphemerisQuery(titan, GS, start, end, Max)
+    )
+  }
+
+  test("paging MaxElements + 1 should result in two queries") {
+
+    // Produces Max + 1 elements because end is inclusive.
+    val end = start + OneMinute * Max.toLong
+
+    checkPaging(
+      start,
+      end,
+      // Here the first query is shortened so that the last query will have at
+      // least two elements.  There's no way to query for just one element.
+      HorizonsEphemerisQuery(titan, GS, start,           end - OneMinute * 2L, Max - 1),
+      HorizonsEphemerisQuery(titan, GS, end - OneMinute, end,                  2      )
+    )
+  }
+
+  test("paging MaxElements + 2 should result in two queries") {
+
+    // Produces Max + 2 elements because end is inclusive
+    val end = start + OneMinute * (Max + 1).toLong
+
+    checkPaging(
+      start,
+      end,
+      // The first query can contain a full MaxElements page because the second
+      // query will pick up the remaining two.
+      HorizonsEphemerisQuery(titan, GS, start,           end - OneMinute * 2L, Max),
+      HorizonsEphemerisQuery(titan, GS, end - OneMinute, end,                  2  )
+    )
+  }
+
+  test("paging MaxElements + 3 should result in two queries") {
+
+    // Produces Max + 3 elements because end is inclusive
+    val end = start + OneMinute * (Max + 2).toLong
+
+    checkPaging(
+      start,
+      end,
+      // The first query can contain a full MaxElements page because the second
+      // query will pick up the remaining three.
+      HorizonsEphemerisQuery(titan, GS, start,                end - OneMinute * 3L, Max),
+      HorizonsEphemerisQuery(titan, GS, end - OneMinute * 2L, end,                  3  )
+    )
+  }
 }
 
 object HorizonsEphemerisQuerySpec extends EphemerisTestSupport {
@@ -74,6 +166,8 @@ object HorizonsEphemerisQuerySpec extends EphemerisTestSupport {
 
   private val startCoords = ephCoords("17:21:29.110300 -21:55:46.509000", "-2.85225", "-1.61124")
   private val endCoords   = ephCoords("17:21:28.904000 -21:55:48.103000", "-2.87880", "-1.58756")
+
+  private val OneMinute   = Duration.ofMinutes(1)
 
   implicit class QueryOps(q: HorizonsEphemerisQuery) {
     def exec(): Ephemeris =

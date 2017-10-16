@@ -12,14 +12,20 @@ import gem.arb.ArbTime._
 import gem.enum.Site
 import gem.math.Ephemeris
 import gem.util.InstantMicros
+
 import cats.implicits._
+
 import doobie._
 import doobie.implicits._
+
+import fs2.Stream
+
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
+
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
@@ -169,6 +175,46 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       res shouldEqual None
     }
   }
+
+  property("EphemerisDao should stream insert") {
+    forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
+
+      val mʹ = m + (ks -> e)
+      val p  = (mʹ.toList.traverse { case (ks, e) =>
+        Stream.emits(e.toMap.toList).covary[ConnectionIO]
+          .to(EphemerisDao.streamInsert(ks.key, ks.site))
+          .run
+      }) *> EphemerisDao.selectAll(ks.key, ks.site)
+
+      e shouldEqual p.transact(xa).unsafeRunSync
+    }
+  }
+
+  property("EphemerisDao should stream update") {
+    forAll { (ks: KS, e0: Ephemeris, e1: Ephemeris, m: EphemerisMap) =>
+
+      val mʹ = m + (ks -> e0)
+
+      // Setup a program that will insert all the ephemeris maps.
+      val p  = mʹ.toList.traverse { case (ks, e) =>
+        Stream.emits(e.toMap.toList).covary[ConnectionIO]
+          .to(EphemerisDao.streamInsert(ks.key, ks.site))
+          .run
+      }
+
+      // Now stream update the ephemeris elements in e0 to those in e1
+      val pʹ = p *> Stream.emits(e1.toMap.toList).covary[ConnectionIO]
+                      .to(EphemerisDao.streamUpdate(ks.key, ks.site))
+                      .run
+
+      // Select the values with the matching key and site, which should now be
+      // updated
+      val pʹʹ = pʹ *> EphemerisDao.selectAll(ks.key, ks.site)
+
+      e1 shouldEqual pʹʹ.transact(xa).unsafeRunSync
+    }
+  }
+
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals"))

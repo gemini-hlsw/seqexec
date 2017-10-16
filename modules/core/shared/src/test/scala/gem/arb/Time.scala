@@ -12,6 +12,7 @@ import org.scalacheck.Arbitrary._
 
 import scala.collection.JavaConverters._
 import java.time._
+import java.time.temporal.ChronoUnit
 
 // Arbitrary but resonable dates and times.
 trait ArbTime {
@@ -65,6 +66,14 @@ trait ArbTime {
 
   implicit val arbInstantMicros: Arbitrary[InstantMicros] =
     Arbitrary(arbitrary[Instant].map(InstantMicros.truncate))
+
+  implicit val arbDuration: Arbitrary[Duration] =
+    Arbitrary {
+      for {
+        a <- Gen.choose(-10000L, 10000L)
+        u <- Gen.oneOf(ChronoUnit.values.filterNot(_.isDurationEstimated))
+      } yield Duration.of(a, u)
+    }
 
   implicit val cogInstant: Cogen[Instant] =
     Cogen[(Long, Int)].contramap(t => (t.getEpochSecond, t.getNano))

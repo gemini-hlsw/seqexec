@@ -12,7 +12,7 @@ import cats.implicits._
 
 import org.http4s._
 import org.http4s.client.Client
-import org.http4s.client.blaze.PooledHttp1Client
+import org.http4s.client.blaze.{ BlazeClientConfig, PooledHttp1Client }
 
 import fs2.Stream
 import fs2.text.utf8Decode
@@ -24,6 +24,8 @@ import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
 import java.util.Locale.US
 
+import scala.concurrent.duration._
+
 /** A client for interacting with the JPL horizons service.
   */
 object HorizonsClient {
@@ -32,7 +34,10 @@ object HorizonsClient {
     * requests should go through this client.
     */
   val client: Client[IO] =
-    PooledHttp1Client[IO](maxTotalConnections = 1)
+    PooledHttp1Client[IO](
+      maxTotalConnections = 1,
+      config = BlazeClientConfig.defaultConfig.copy(responseHeaderTimeout = 20.seconds)
+    )
 
   /** Horizons service URL. */
   val Url: String =
