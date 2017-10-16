@@ -5,7 +5,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.F2
-import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
 import scala.Function.const
 import scalaz._
@@ -153,7 +153,7 @@ class SequenceSpec extends FlatSpec {
 
   // TODO: Share these fixtures with StepSpec
   val result: Result = Result.OK(Result.Observed("dummyId"))
-  val action: Action = fromTask(Task(result))
+  val action: Action = fromTask(ActionType.Undefined, Task(result))
   val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {

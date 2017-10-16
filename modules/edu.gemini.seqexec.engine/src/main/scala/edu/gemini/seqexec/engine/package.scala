@@ -7,6 +7,7 @@ import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor, Operator, Observer}
 import edu.gemini.seqexec.model.Model.Resource
+import edu.gemini.seqexec.model.ActionType
 import org.log4s.getLogger
 
 import scalaz._
@@ -15,11 +16,13 @@ import scalaz.concurrent.Task
 import scalaz.stream.{Process, Sink, merge}
 
 package engine {
+
   final case class HandleP[A](run: Handle[(A, Option[Process[Task, Event]])])
   object HandleP {
     def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
   }
   final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
+  final case class Action(kind: ActionType, gen: Kleisli[Task, ActionMetadata, Result])
 }
 
 package object engine {
@@ -30,8 +33,7 @@ package object engine {
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
-  type Action = Kleisli[Task, ActionMetadata, Result]
-  def fromTask(t: Task[Result]): Action = new Action(_ => t)
+  def fromTask(kind: ActionType, t: Task[Result]): Action = Action(kind, Kleisli[Task, ActionMetadata, Result](_ => t))
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
@@ -226,8 +228,8 @@ package object engine {
     // Send the expected event when the `Action` is executed
     // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
     def act(t: (Action, Int), cx: ActionMetadata): Process[Task, Event] = t match {
-      case (action, i) =>
-        Process.eval(action(cx)).flatMap {
+      case (Action(_, gen), i) =>
+        Process.eval(gen(cx)).flatMap {
           case r@Result.OK(_)         => Process(completed(id, i, r))
           case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i), cx)
           case e@Result.Error(_)      => Process(failed(id, i, e))

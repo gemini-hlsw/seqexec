@@ -3,15 +3,18 @@
 
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.model.ActionType
+
 import scalaz._
 import Scalaz._
 import org.scalatest._
+
 import scalaz.concurrent.Task
 
 class ExecutionSpec extends FlatSpec with Matchers {
 
   val ok: Result = Result.OK(Result.Observed("dummyId"))
-  val action: Action = fromTask(Task(ok))
+  val action: Action = fromTask(ActionType.Observe, Task(ok))
   val curr: Execution = Execution(List(ok.right, action.left))
 
   "currentify" should "be None only when an Execution is empty" in {

@@ -16,7 +16,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
 import scalaz.\/
 
-final class GmosSouth(c: GmosSouthController) extends Gmos[SouthTypes](c,
+final case class GmosSouth(c: GmosSouthController) extends Gmos[SouthTypes](c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     override def extractFilter(config: Config): \/[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] = config.extract(INSTRUMENT_KEY / FILTER_PROP).as[SouthTypes#Filter]
