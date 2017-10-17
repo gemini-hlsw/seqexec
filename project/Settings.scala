@@ -107,6 +107,7 @@ object Settings {
     val jQuery         = "3.2.1"
     val semanticUI     = "2.2.10"
     val ocsVersion     = "2017101.1.4"
+    val uglifyJs       = "1.0.0-beta.3"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"
