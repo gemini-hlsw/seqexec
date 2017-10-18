@@ -11,8 +11,8 @@ import edu.gemini.seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
 import org.log4s._
 
 import scala.annotation.tailrec
-import scalaz.concurrent.Task
 import scalaz.{EitherT, \/}
+import scalaz.concurrent.Task
 
 private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends GmosController[T] {
   private val Log = getLogger
@@ -43,8 +43,9 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     observeTic(obsid, false, false, 5000)
   })
 
+  private def show(config: GmosConfig[T]): String = s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})"
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
-    Log.info(s"Simulate applying Gmos $name configuration")
+    Log.info(s"Simulate applying Gmos $name configuration ${show(config)}")
     TrySeq(())
   } )
 

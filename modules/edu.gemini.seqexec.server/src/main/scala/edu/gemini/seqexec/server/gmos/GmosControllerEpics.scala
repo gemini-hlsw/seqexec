@@ -75,7 +75,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   private def roiNumUsed(s: RegionsOfInterest): Int = s.rois match {
     case \/-(rois) => rois.length
-    case -\/(b)    => 1
+    case -\/(_)    => 1
   }
 
   // Parameters to define a ROI
