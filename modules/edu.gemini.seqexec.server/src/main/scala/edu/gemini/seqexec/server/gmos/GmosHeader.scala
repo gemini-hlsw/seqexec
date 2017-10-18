@@ -29,7 +29,7 @@ final case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywords
     )
   }
 
-  private val adcKeywords =
+  private def adcKeywords =
     if (gmosReader.isADCInUse) {
       List(
         buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
@@ -43,7 +43,7 @@ final case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywords
       )
     } else Nil
 
-  private val roiKeywords = gmosReader.roiValues.map {
+  private def roiKeywords = gmosReader.roiValues.map {
     case (i, rv) =>
       List(
         buildInt32(rv.xStart, s"DETRO${i}X"),
