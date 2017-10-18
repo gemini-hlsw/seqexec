@@ -73,8 +73,7 @@ object EphemerisDao {
   def streamRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.selectRange(k, s, start, end).stream
 
-  /** Selects the min and max times for which ephemeris data is available, if
-    * any.
+  /** Selects the min and max times for which an ephemeris is available, if any.
     */
   def selectTimes(k: EphemerisKey, s: Site): ConnectionIO[Option[(InstantMicros, InstantMicros)]] =
     Statements.selectTimes(k, s).unique

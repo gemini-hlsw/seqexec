@@ -66,7 +66,11 @@ final case class HorizonsEphemerisUpdater(
       time <- InstantMicros.now
       sem  <- Semester.current(site)
       ctx  <- report(key, site)
-      _    <- calcUpdate(ctx, time, sem).transact(xa)
+      _    <- (if (ctx.isUpToDateFor(sem))
+                 recordUpdateCheck(ctx, time)
+               else
+                 doUpdate(ctx, time, sem)
+              ).transact(xa)
 
     } yield ()
 
@@ -96,41 +100,42 @@ final case class HorizonsEphemerisUpdater(
       .translateSync(λ[IO ~> ConnectionIO](_.liftIO[ConnectionIO]))
   }
 
-  private def calcUpdate(ctx:  Context,
-                         time: InstantMicros,
-                         sem:  Semester): ConnectionIO[Unit] =
+  private def recordUpdateCheck(ctx:  Context,
+                                time: InstantMicros): ConnectionIO[Unit] =
 
-    if (ctx.isUpToDateFor(sem)) {
+    for {
+      _ <- logMessage(s"${ctx.key}@${ctx.site} already up-to-date. Record update check.")
+      _ <- ctx.meta.fold(().pure[ConnectionIO]) { m =>
+            updateMeta(ctx.key, ctx.site, EphemerisMeta.lastUpdateCheck.set(time)(m))
+          }
+    } yield ()
 
-      // Just need to update the last update check time
-      ctx.meta.fold(().pure[ConnectionIO]) { m =>
-        updateMeta(ctx.key, ctx.site, EphemerisMeta.lastUpdateCheck.set(time)(m))
-      }
 
-    } else {
+  private def doUpdate(ctx:  Context,
+                       time: InstantMicros,
+                       sem:  Semester): ConnectionIO[Unit] = {
 
-      // Need to update both meta and ephemeris.  First the new
-      // meta data.
-      val mʹ   = EphemerisMeta(time, time, ctx.soln)
+    // Need to update both meta and ephemeris.  First the new
+    // metadata.
+    val mʹ   = EphemerisMeta(time, time, ctx.soln)
 
-      // The sink for writing the ephemeris data to the database.  Have to pick
-      // either insert or update depending upon whether there is an existing
-      // ephemeris.
-      val sink = ctx.rnge.fold(EphemerisDao.streamInsert(ctx.key, ctx.site)) { _ =>
-        EphemerisDao.streamUpdate(ctx.key, ctx.site)
-      }
-
-      // Update the metadata and stream the ephemeris into the database.
-      for {
-        _ <- logMessage(s"Update ${ctx.key}@${ctx.site}")
-        _ <- ctx.meta.fold(insertMeta(ctx.key, ctx.site, mʹ)) { _ =>
-               updateMeta(ctx.key, ctx.site, mʹ)
-             }
-        _ <- log.log(user, s"streamEphemeris(${ctx.key}, ${ctx.site}, $sem)") {
-               streamEphemeris(ctx.key, ctx.site, sem).to(sink).run
-             }
-      } yield ()
+    // The sink for writing the ephemeris to the database.  Have to pick either
+    // insert or update depending upon whether there is an existing ephemeris.
+    val sink = ctx.rnge.fold(EphemerisDao.streamInsert(ctx.key, ctx.site)) { _ =>
+      EphemerisDao.streamUpdate(ctx.key, ctx.site)
     }
+
+    // Update the metadata and stream the ephemeris into the database.
+    for {
+      _ <- logMessage(s"Update ${ctx.key}@${ctx.site}")
+      _ <- ctx.meta.fold(insertMeta(ctx.key, ctx.site, mʹ)) { _ =>
+             updateMeta(ctx.key, ctx.site, mʹ)
+           }
+      _ <- log.log(user, s"streamEphemeris(${ctx.key}, ${ctx.site}, $sem)") {
+             streamEphemeris(ctx.key, ctx.site, sem).to(sink).run
+           }
+    } yield ()
+  }
 
 }
 
