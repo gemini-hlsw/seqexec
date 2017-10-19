@@ -56,6 +56,14 @@ abstract class Log[M[_]] private (name: String, xa: Transactor[IO]) {
       a       <- disj.fold(t => fail(user, msg, elapsed, t), a => success(user, msg, elapsed, a))
     } yield a
 
+  /**
+   * Constructs a new program in `M` that simply writes a message without an
+   * associated timed action.  Roughly equivalent to `log(user, msg)(().pure[M])`
+   * but guaranteed to record 0 elapsed time.
+   */
+  def logMessage(user: User[_], msg: => String): M[Unit] =
+    success(user, msg, 0, ())
+
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def shutdown(ms: Long): M[Unit] =
     M.delay {

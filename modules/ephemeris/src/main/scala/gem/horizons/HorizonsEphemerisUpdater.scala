@@ -71,9 +71,6 @@ final case class HorizonsEphemerisUpdater(
     } yield ()
 
 
-  private def logMessage(msg: String): ConnectionIO[Unit] =
-    log.log(user, msg)(().pure[ConnectionIO])
-
   private def insertMeta(key: EphemerisKey.Horizons, site: Site, m: EphemerisMeta): ConnectionIO[Unit] =
     log.log(user, s"insertMeta($key, $site, $m)") {
       EphemerisDao.insertMeta(key, site, m).void
@@ -114,7 +111,7 @@ final case class HorizonsEphemerisUpdater(
   ): ConnectionIO[Unit] =
 
     for {
-      _ <- logMessage(s"${ctx.key}@${ctx.site} already up-to-date. Record update check.")
+      _ <- log.logMessage(user, s"${ctx.key}@${ctx.site} already up-to-date. Record update check.")
       _ <- ctx.meta.fold(().pure[ConnectionIO]) { m =>
             updateMeta(ctx.key, ctx.site, EphemerisMeta.lastUpdateCheck.set(time)(m))
           }
@@ -139,7 +136,7 @@ final case class HorizonsEphemerisUpdater(
 
     // Update the metadata and stream the ephemeris into the database.
     for {
-      _ <- logMessage(s"Update ${ctx.key}@${ctx.site}")
+      _ <- log.logMessage(user, s"Update ${ctx.key}@${ctx.site}")
       _ <- ctx.meta.fold(insertMeta(ctx.key, ctx.site, mʹ)) { _ =>
              updateMeta(ctx.key, ctx.site, mʹ)
            }
