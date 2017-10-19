@@ -10,16 +10,13 @@ import gem.ctl.low.docker._
 import gem.ctl.hi.common._
 
 import cats.implicits._
-import scala.util.matching.Regex
 
 /** Constructors for `CtlIO` operations related to the `deploy` command. */
 object deploy {
 
   val PrivateNetwork: String  = "gem-net"
-  val GemOrg: String          = "geminihlsw"
-  val GemImage: String        = "gem-telnetd"
-  val GemProject: String      = "telnetd"
-  val DeployTagRegex: Regex   = "^deploy-\\d+$".r
+  val GemRegistry: String     = "sbfocsdev-lv1.cl.gemini.edu"
+  val GemImage: String        = "gem"
   val Port: Int               = 1234
   val awaitNetRetries: Int    = 9
 
@@ -47,7 +44,7 @@ object deploy {
 
   def getDeployImage(dc: DeployCommit): CtlIO[Image] =
     gosub("Verifying Gem deploy image.") {
-      requireImage(s"$GemOrg/$GemImage:${dc.imageVersion}")
+      requireImage(s"$GemRegistry/$GemImage:${dc.imageVersion}")
     }
 
   def fileContentsAtDeployCommit(cDeploy: DeployCommit, path: String): CtlIO[List[String]] =

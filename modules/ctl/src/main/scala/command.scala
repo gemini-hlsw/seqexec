@@ -24,6 +24,14 @@ object Command {
     force:       Boolean
   ) extends Command
 
+  final case class Deploy2(
+    server: Server,
+    deployRev:   String,
+    standalone:  Boolean,
+    verbose:     Boolean,
+    force:       Boolean
+  ) extends Command
+
   final case class Ps  (    server: Server, verbose: Boolean) extends Command
   final case class Stop(    server: Server, verbose: Boolean) extends Command
   final case class Log (    server: Server, verbose: Boolean, count: Int) extends Command
@@ -104,6 +112,9 @@ object Command {
   private lazy val deploy: Opts[Deploy] =
     (server, deployRevision, standalone, verbose, force) mapN Deploy.apply
 
+  private lazy val deploy2: Opts[Deploy2] =
+    (server, deployRevision, standalone, verbose, force) mapN Deploy2.apply
+
   private lazy val lines: Opts[Int] = {
     val DefaultLines = 50
     Opts.option[Int](
@@ -114,11 +125,17 @@ object Command {
     ).withDefault(DefaultLines)
   }
 
-  private lazy val configCommand: Opts[Command] =
+  private lazy val deployCommand: Opts[Command] =
     Opts.subcommand(
       name = "deploy",
       help = "Deploy an application."
     )(deploy.widen[Command])
+
+  private lazy val deploy2Command: Opts[Command] =
+    Opts.subcommand(
+      name = "deploy2",
+      help = "Deploy an application."
+    )(deploy2.widen[Command])
 
   private lazy val psCommand: Opts[Command] =
     Opts.subcommand(
@@ -148,6 +165,6 @@ object Command {
     Cmd(
       name   = progName,
       header = "Deploy and control gem."
-    )(List(configCommand, psCommand, stopCommand, logCommand, rollbackCommand).foldRight(Opts.never: Opts[Command])(_ orElse _))
+    )(List(deployCommand, deploy2Command, psCommand, stopCommand, logCommand, rollbackCommand).foldRight(Opts.never: Opts[Command])(_ orElse _))
 
 }

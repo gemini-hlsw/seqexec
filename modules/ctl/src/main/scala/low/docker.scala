@@ -17,7 +17,7 @@ object docker {
   final case class Container(hash: String)
 
   def docker(args: String*): CtlIO[Output] =
-    remote("/usr/local/bin/docker", args : _*)
+    remote("/usr/bin/docker", args : _*)
 
   def containerHealth(k: Container): CtlIO[String] = // for now
     isRemote.flatMap { r =>
@@ -67,12 +67,24 @@ object docker {
     }
 
   def getLabelValue(label: String, k: Container): CtlIO[String] =
+    getLabel(label, k.hash)
+
+  def getImageLabel(label: String, img: Image): CtlIO[String] =
+    getLabel(label, img.hash)
+
+  private def getLabel(label: String, obj: String): CtlIO[String] =
     isRemote.flatMap { r =>
       docker("inspect", "--format",
         if (r) s"""'{{ index .Config.Labels "$label"}}'"""
-        else    s"""{{ index .Config.Labels "$label"}}""", k.hash).require {
+        else    s"""{{ index .Config.Labels "$label"}}""", obj).require {
           case Output(0, s :: Nil) if s.nonEmpty => s
         }
+    }
+
+  def ensureImageLabel(label: String, expected: String, img: Image): CtlIO[Unit] =
+    getLabel(label, img.hash).flatMap {
+      case `expected` => info(s"$label is $expected (as expected)")
+      case s          => error(s"$label was $s (expected $expected)") *> exit(-1)
     }
 
   def stopContainer(k: Container): CtlIO[Unit] =
