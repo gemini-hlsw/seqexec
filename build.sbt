@@ -27,6 +27,8 @@ git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
 // check for library updates whenever the project is [re]load
 onLoad in Global := { s => "dependencyUpdates" :: s }
 
+cancelable in Global := true
+
 // some extra commands for us
 addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum; headerCreate")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")

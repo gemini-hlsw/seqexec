@@ -20,4 +20,6 @@ class EphemerisCheck extends Check {
   it should "updateMeta"  in check(updateMeta(Dummy.ephemerisKey, Dummy.site, Dummy.ephemerisMeta))
   it should "deleteMeta"  in check(deleteMeta(Dummy.ephemerisKey, Dummy.site))
   it should "selectMeta"  in check(selectMeta(Dummy.ephemerisKey, Dummy.site))
+
+  it should "selectTimes" in check(selectTimes(Dummy.ephemerisKey, Dummy.site))
 }

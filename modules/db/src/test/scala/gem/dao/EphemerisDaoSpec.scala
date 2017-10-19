@@ -215,6 +215,29 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
+  property("EphemerisDao should select times") {
+    forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
+
+      val p  = EphemerisDao.selectTimes(ks.key, ks.site)
+      val em = e.toMap
+
+      val expected =
+        if (em.isEmpty) Option.empty[(InstantMicros, InstantMicros)]
+        else Some((em.firstKey, em.lastKey))
+
+      expected shouldEqual execTest(m + (ks -> e), p)
+    }
+  }
+
+  property("EphemerisDao should select None times if no matching ephemeris") {
+    forAll { (ks: KS, m: EphemerisMap) =>
+
+      val p  = EphemerisDao.selectTimes(ks.key, ks.site)
+
+      None shouldEqual execTest(m - ks, p)
+    }
+
+  }
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals"))
