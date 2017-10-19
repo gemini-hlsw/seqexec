@@ -97,10 +97,10 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
-
     // Settings to optimize the use of sbt-revolver
     // Allows to read the generated JS on client
     resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
+    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
     // Lets the backend to read the .map file for js
     resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map((x: sbt.Attributed[File]) => new File(x.data.getAbsolutePath + ".map")),
     // Support stopping the running server
@@ -149,10 +149,12 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     npmDevDependencies in Compile += "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs,
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     webpackConfigFile in fullOptJS := Some(baseDirectory.value / "prod.webpack.config.js"),
-    webpackBundlingMode in fullOptJS := BundlingMode.Application,
     emitSourceMaps in fullOptJS := false,
+    emitSourceMaps in Test := false,
     // Requires the DOM for tests
     requiresDOM in Test := true,
+    // Disable tests to speed up builds
+    test := {},
     // Use yarn as it is faster than npm
     useYarn := true,
     version in webpack := "3.5.5",
