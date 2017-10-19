@@ -26,9 +26,9 @@ import scala.math.Ordering.Implicits._
 
 /** Utility for inserting / updating en ephemeris. */
 final case class HorizonsEphemerisUpdater(
-                   user: User[_],
-                   log:  Log[ConnectionIO],
-                   xa:   Transactor.Aux[IO, Unit]) {
+  user: User[_],
+  log:  Log[ConnectionIO],
+  xa:   Transactor[IO]) {
 
   import HorizonsEphemerisUpdater._
 
@@ -37,23 +37,23 @@ final case class HorizonsEphemerisUpdater(
     * whether an update is needed, to see when the last update was performed,
     * and when the last update check happened.
     */
-  def report(key:  EphemerisKey.Horizons, site: Site): IO[Context] =
+  def context(key:  EphemerisKey.Horizons, site: Site): IO[Context] =
 
-    for {
+    (for {
 
       meta <- log.log(user, s"EphemerisDao.selectMeta($key, $site)") {
                 EphemerisDao.selectMeta(key, site)
-              }.transact(xa)
+              }
 
       rnge <- log.log(user, s"EphemerisDao.selectTimes($key, $site)") {
                 EphemerisDao.selectTimes(key, site)
-              }.transact(xa)
+              }
 
       soln <- log.log(user, s"HorizonsSolutionRefQuery($key).lookup") {
                 HorizonsSolutionRefQuery(key).lookup.liftIO[ConnectionIO]
-              }.transact(xa)
+              }
 
-    } yield Context(key, site, meta, rnge, soln)
+    } yield Context(key, site, meta, rnge, soln)).transact(xa)
 
 
   /** Constructs an action that when run will insert a new ephemeris or update
@@ -65,12 +65,8 @@ final case class HorizonsEphemerisUpdater(
 
       time <- InstantMicros.now
       sem  <- Semester.current(site)
-      ctx  <- report(key, site)
-      _    <- (if (ctx.isUpToDateFor(sem))
-                 recordUpdateCheck(ctx, time)
-               else
-                 doUpdate(ctx, time, sem)
-              ).transact(xa)
+      ctx  <- context(key, site)
+      _    <- updateIfNecessary(ctx, time, sem).transact(xa)
 
     } yield ()
 
@@ -89,9 +85,10 @@ final case class HorizonsEphemerisUpdater(
     }
 
   private def streamEphemeris(
-                key:      EphemerisKey.Horizons,
-                site:     Site,
-                semester: Semester): Stream[ConnectionIO, Ephemeris.Element] = {
+    key:      EphemerisKey.Horizons,
+    site:     Site,
+    semester: Semester
+  ): Stream[ConnectionIO, Ephemeris.Element] = {
 
     val qs = HorizonsEphemerisQuery.pagingSemester(key, site, semester, StepSize, Padding)
 
@@ -100,8 +97,21 @@ final case class HorizonsEphemerisUpdater(
       .translateSync(λ[IO ~> ConnectionIO](_.liftIO[ConnectionIO]))
   }
 
-  private def recordUpdateCheck(ctx:  Context,
-                                time: InstantMicros): ConnectionIO[Unit] =
+
+  private def updateIfNecessary(
+    ctx:  Context,
+    time: InstantMicros,
+    sem:  Semester
+  ): ConnectionIO[Unit] =
+
+    if (ctx.isUpToDateFor(sem)) recordUpdateCheck(ctx, time)
+    else doUpdate(ctx, time, sem)
+
+
+  private def recordUpdateCheck(
+    ctx:  Context,
+    time: InstantMicros
+  ): ConnectionIO[Unit] =
 
     for {
       _ <- logMessage(s"${ctx.key}@${ctx.site} already up-to-date. Record update check.")
@@ -111,9 +121,11 @@ final case class HorizonsEphemerisUpdater(
     } yield ()
 
 
-  private def doUpdate(ctx:  Context,
-                       time: InstantMicros,
-                       sem:  Semester): ConnectionIO[Unit] = {
+  private def doUpdate(
+    ctx:  Context,
+    time: InstantMicros,
+    sem:  Semester
+  ): ConnectionIO[Unit] = {
 
     // Need to update both meta and ephemeris.  First the new
     // metadata.
@@ -160,11 +172,12 @@ object HorizonsEphemerisUpdater {
     * @param rnge earliest and latest ephemeris element times, if any
     * @param soln current horizons solution reference from JPL, if any
     */
-  final case class Context(key:  EphemerisKey.Horizons,
-                           site: Site,
-                           meta: Option[EphemerisMeta],
-                           rnge: Option[(InstantMicros, InstantMicros)],
-                           soln: Option[HorizonsSolutionRef]) {
+  final case class Context(
+    key:  EphemerisKey.Horizons,
+    site: Site,
+    meta: Option[EphemerisMeta],
+    rnge: Option[(InstantMicros, InstantMicros)],
+    soln: Option[HorizonsSolutionRef]) {
 
     /** Determines whether the existing ephemeris, if any, covers the given
       * semester.

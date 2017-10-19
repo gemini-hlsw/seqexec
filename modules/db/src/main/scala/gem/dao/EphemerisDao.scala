@@ -144,7 +144,7 @@ object EphemerisDao {
                  max(timestamp)
             FROM ephemeris
            WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
-      """.query[(Option[InstantMicros], Option[InstantMicros])].map(_.tupled)
+      """.query[Option[(InstantMicros, InstantMicros)]]
 
     val selectNextUserSuppliedKey: Query0[EphemerisKey.UserSupplied] =
       sql"""
