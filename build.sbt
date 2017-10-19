@@ -150,8 +150,11 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     webpackConfigFile in fullOptJS := Some(baseDirectory.value / "prod.webpack.config.js"),
     emitSourceMaps in fullOptJS := false,
+    emitSourceMaps in Test := false,
     // Requires the DOM for tests
     requiresDOM in Test := true,
+    // Disable tests to speed up builds
+    test := {},
     // Use yarn as it is faster than npm
     useYarn := true,
     version in webpack := "3.5.5",
