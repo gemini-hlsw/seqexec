@@ -318,7 +318,7 @@ lazy val telnetd = project
     packageName in Docker := "gem",
     dockerBaseImage       := "openjdk:8u141",
     dockerExposedPorts    := List(6666),
-    dockerRepository      := Some("localhost:5000"),
+    dockerRepository      := Some("sbfocsdev.cl.gemini.edu"),
     dockerLabels          := imageManifest.labels
     // TODO: don't allow publish if version is wrong
   )
