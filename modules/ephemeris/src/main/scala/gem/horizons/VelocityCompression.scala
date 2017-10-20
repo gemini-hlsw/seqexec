@@ -3,7 +3,7 @@
 
 package gem.horizons
 
-import gem.math.{ Angle, Ephemeris }
+import gem.math.{ Angle, Ephemeris, Offset }
 
 import fs2.Pipe
 
@@ -23,13 +23,24 @@ trait VelocityCompression {
     * @param µas difference in velocity below this threshold result in
     *            skipping elements
     */
-  def velocityCompression[F[_]](µas: Long): Pipe[F, Ephemeris.Element, Ephemeris.Element] =
+  def velocityCompression[F[_]](µas: Long): Pipe[F, Ephemeris.Element, Ephemeris.Element] = {
+    def µasDouble(e: Ephemeris.Element)(f: Offset => Angle): Double =
+      f(e._2.delta).toSignedMicroarcseconds.toDouble
+
+    def µasP(e: Ephemeris.Element) = µasDouble(e)(_.p.toAngle)
+    def µasQ(e: Ephemeris.Element) = µasDouble(e)(_.q.toAngle)
+
+    def ΔVelocity(e0: Ephemeris.Element, e1: Ephemeris.Element): Long = {
+      val dp = µasP(e0) - µasP(e1)
+      val dq = µasQ(e0) - µasQ(e1)
+      Math.sqrt(dp * dp + dq * dq).round
+    }
+
     _.zipWithNext
-     .map { case (e, on) => (e, e._2.velocity, on.isEmpty) }
-     .filterWithPrevious { case ((_, pv, _), (_, v, last)) =>
-       // always include the last element regardless of Δ velocity
-       last || (pv.toMicroarcseconds - v.toMicroarcseconds).abs >= µas
+     .filterWithPrevious { case ((prev, _), (cur, onext)) =>
+       onext.forall { _ => ΔVelocity(prev, cur) >= µas }
      }.map(_._1)
+  }
 
   /** An `fs2.Pipe` that passes only elements which differ by more than the
     * standard delta velocity.

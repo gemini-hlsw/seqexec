@@ -36,28 +36,25 @@ final class VelocityCompressionSpec extends CatsSuite with EphemerisTestSupport 
     assert(actual == expected)
   }
 
-  // Andy's result: 99%
-  test("2014 UR compresses to 79% of original size", RequiresNetwork) {
+  test("2014 UR compresses to 100% of original size", RequiresNetwork) {
     val start = LocalDate.of(2015, Month.SEPTEMBER, 15)
     val end   = LocalDate.of(2015, Month.NOVEMBER,  15)
 
-    testCompression("2014 UR", ur_2014, 0.79, start, end)
+    testCompression("2014 UR", ur_2014, 1.00, start, end)
   }
 
-  // Andy's result: 34%
-  test("2015 QT3 compresses to 33% of original size", RequiresNetwork) {
+  test("2015 QT3 compresses to 34% of original size", RequiresNetwork) {
     val start = LocalDate.of(2015, Month.AUGUST,  1)
     val end   = LocalDate.of(2015, Month.OCTOBER, 1)
 
-    testCompression("2015 QT3", qt3_2015, 0.33, start, end)
+    testCompression("2015 QT3", qt3_2015, 0.34, start, end)
   }
 
-  // Andy's result: 4%
-  test("Churyumov-Gerasimenko compresses to 3% of original size", RequiresNetwork) {
+  test("Churyumov-Gerasimenko compresses to 4% of original size", RequiresNetwork) {
     val start = LocalDate.of(2015, Month.DECEMBER, 15)
     val end   = LocalDate.of(2016, Month.FEBRUARY, 15)
 
-    testCompression("Churyumov", churyumov, 0.03, start, end)
+    testCompression("Churyumov", churyumov, 0.04, start, end)
   }
 
   test("Titan compresses to 1% of original size", RequiresNetwork) {
@@ -67,20 +64,18 @@ final class VelocityCompressionSpec extends CatsSuite with EphemerisTestSupport 
     testCompression("Titan", titan, 0.01, start, end)
   }
 
-  // Andy's result: 5%
-  test("Beer compresses to 4% of original size", RequiresNetwork) {
+  test("Beer compresses to 5% of original size", RequiresNetwork) {
     val start = LocalDate.of(2015, Month.OCTOBER,  1)
     val end   = LocalDate.of(2015, Month.DECEMBER, 1)
 
-    testCompression("Beer", beer, 0.04, start, end)
+    testCompression("Beer", beer, 0.05, start, end)
   }
 
-  // Andy's result: 24%
-  test("Io compresses to 23% of original size", RequiresNetwork) {
+  test("Io compresses to 24% of original size", RequiresNetwork) {
     val start = LocalDate.of(2015, Month.MARCH, 1)
     val end   = LocalDate.of(2015, Month.MAY,   1)
 
-    testCompression("Io", io, 0.23, start, end)
+    testCompression("Io", io, 0.24, start, end)
   }
 
   def testCompression(
