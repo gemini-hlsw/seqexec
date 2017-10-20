@@ -48,7 +48,6 @@ object Step {
 
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
-    *
     */
   def status(step: Step[Action \/ Result]): StepState = {
     def stepCompleted(s: Action \/ Result): Boolean = s match {

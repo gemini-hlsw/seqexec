@@ -9,7 +9,7 @@ import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
 import edu.gemini.seqexec.model.ActionType
 import edu.gemini.seqexec.model.Model.Instrument.GmosS
 import edu.gemini.seqexec.model.Model.Resource.TCS
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
+import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.server.flamingos2.Flamingos2ControllerSim
 import edu.gemini.seqexec.server.gcal.GcalControllerEpics
 import edu.gemini.seqexec.server.gmos.GmosControllerSim
@@ -57,7 +57,7 @@ class SeqTranslateSpec extends FlatSpec {
           breakpoint = false,
           skip = false,
           List(
-            List(Action(ActionType.Configure(TCS), Kleisli(v => Task(Result.OK(Result.Configured("TCS"))))).left)
+            List(Action(ActionType.Configure(TCS), Kleisli(v => Task(Result.OK(Result.Configured(ActionType.Configure(Resource.TCS)))))).left)
           )
         )
       )
@@ -73,17 +73,17 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.north
   )
 
-  private val translatorSettings = SeqTranslate.Settings(false, false, false, false, false)
+  private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false, gcalKeywords = false, gmosKeywords = false)
 
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
-    assert(!translator.stopObserve(s0).isEmpty)
+    assert(translator.stopObserve(s0).isDefined)
     assert(translator.stopObserve(s1).isEmpty)
   }
 
   "SeqTranslate" should "trigger abortObserve command only if exposure is in progress" in {
-    assert(!translator.abortObserve(s0).isEmpty)
+    assert(translator.abortObserve(s0).isDefined)
     assert(translator.abortObserve(s1).isEmpty)
   }
 

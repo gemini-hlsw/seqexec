@@ -103,7 +103,7 @@ package object engine {
           // No resources being used by other running sequences
           if (seq.status === SequenceState.Idle || SequenceState.isError(seq.status))
             if(seq.toSequence.resources.intersect(other).isEmpty)
-              putS(id)(Sequence.State.status.set(SequenceState.Running)(seq.rollback))*> send(Event.executing(id))
+              putS(id)(Sequence.State.status.set(SequenceState.Running)(seq.rollback)) *> send(Event.executing(id))
           // Some resources are being used
             else send(busy(id))
           else unit
@@ -232,7 +232,7 @@ package object engine {
         Process.eval(gen(cx)).flatMap {
           case r@Result.OK(_)         => Process(completed(id, i, r))
           case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i), cx)
-          case e@Result.Error(_)      => Process(failed(id, i, e))
+          case e@Result.Error(_, _)   => Process(failed(id, i, e))
         }
     }
 
@@ -408,7 +408,7 @@ package object engine {
       def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(
         x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[HandleStateT]
       )
-      def fail[A](err: Throwable) = Catchable[Task].fail(err).liftM[HandleStateT]
+      def fail[A](err: Throwable): HandleStateT[Task, A] = Catchable[Task].fail(err).liftM[HandleStateT]
     }
 
   /**

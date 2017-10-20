@@ -151,7 +151,7 @@ object Sequence {
                 _.fold(
                   identity,
                   // It should never happen
-                  _ => fromTask(ActionType.Undefined, Task(Result.Error("Inconsistent status")))
+                  a => fromTask(ActionType.Undefined, Task(Result.Error(a.kind, "Inconsistent status")))
                 )
               )
             )
@@ -162,7 +162,7 @@ object Sequence {
               _ :+ step.map(
                 _.fold(
                   // It should never happen
-                  _ => Result.Error("Inconsistent status"),
+                  a => Result.Error(a.kind, "Inconsistent status"),
                   identity
                 )
               )
@@ -235,7 +235,7 @@ object Sequence {
 
     val status: Lens[State, SequenceState] =
     // `State` doesn't provide `.copy`
-      Lens[State, SequenceState](_.status)(s => a => a match {
+      Lens[State, SequenceState](_.status)(s => {
         case Zipper(st, _) => Zipper(st, s)
         case Final(st, _)  => Final(st, s)
       })
@@ -327,7 +327,7 @@ object Sequence {
 
       override val pending: List[Step[Action]] = Nil
 
-      override def rollback = self
+      override def rollback: Final = self
 
       override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self
 

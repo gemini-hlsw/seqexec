@@ -10,7 +10,7 @@ import scalaz.syntax.either._
 import org.scalatest._
 import Matchers._
 import Inside._
-import edu.gemini.seqexec.model.Model.Resource.TCS
+import edu.gemini.seqexec.model.Model.Resource
 
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
@@ -33,12 +33,12 @@ class StepSpec extends FlatSpec {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromTask(ActionType.Configure(TCS),
+  val configureTcs: Action  = fromTask(ActionType.Configure(Resource.TCS),
     for {
       _ <- Task(println("System: Start TCS configuration"))
       _ <- Task(Thread.sleep(200))
       _ <- Task(println ("System: Complete TCS configuration"))
-    } yield Result.OK(Result.Configured("TCS")))
+    } yield Result.OK(Result.Configured(ActionType.Configure(Resource.TCS))))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -49,7 +49,7 @@ class StepSpec extends FlatSpec {
       _ <- Task(println("System: Start Instrument configuration"))
       _ <- Task(Thread.sleep(150))
       _ <- Task(println("System: Complete Instrument configuration"))
-    } yield Result.OK(Result.Configured("Instrument")))
+    } yield Result.OK(Result.Configured(ActionType.Configure(GmosS))))
 
   /**
     * Emulates an observation in the real world.
@@ -65,10 +65,9 @@ class StepSpec extends FlatSpec {
   def error(errMsg: String): Action  = fromTask(ActionType.Undefined,
     Task {
       Thread.sleep(200)
-      Result.Error(errMsg)
+      Result.Error(ActionType.Undefined, errMsg)
     }
   )
-
 
   def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
     for {
@@ -76,13 +75,13 @@ class StepSpec extends FlatSpec {
       // There is not a distinct result for Pause because the Pause action is a
       // trick for testing but we don't need to support it in real life, the pause
       // input event is enough.
-    } yield Result.OK(Result.Configured("PauseCmdAction")))
+    } yield Result.OK(Result.Configured(ActionType.Configure(Resource.TCS))))
 
   def triggerStart(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
     for {
       _ <- q.enqueueOne(Event.start(seqId, user))
       // Same case that the pause action
-    } yield Result.OK(Result.Configured("StartCmdAction")))
+    } yield Result.OK(Result.Configured(ActionType.Configure(Resource.TCS))))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -128,8 +127,8 @@ class StepSpec extends FlatSpec {
                    None,
                    config,
                    Set.empty,
-                   false,
-                   false,
+                   breakpoint = false,
+                   skip = false,
                    List(
                      List(configureTcs, configureInst, triggerPause(q)).map(_.left), // Execution
                      List(observe.left) // Execution
@@ -142,9 +141,9 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = (q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
-          a => !isFinished(a._2.sequences(seqId).status)
-        ).runLast)).unsafePerformSync.map(_._2)
+    val qs1 = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLast).unsafePerformSync.map(_._2)
 
 
      inside (qs1.map(_.sequences(seqId))) {
@@ -176,8 +175,8 @@ class StepSpec extends FlatSpec {
                  None,
                  config,
                  Set.empty,
-                 false,
-                 false,
+                 breakpoint = false,
+                 skip = false,
                  Nil,
                  Execution(List(observe.left)),
                  List(List(result, result)),
@@ -220,8 +219,8 @@ class StepSpec extends FlatSpec {
                  None,
                  config,
                  Set.empty,
-                 false,
-                 false,
+                 breakpoint = false,
+                 skip = false,
                  Nil,
                  Execution(List(observe.left)),
                  List(List(result, result)),
@@ -237,7 +236,7 @@ class StepSpec extends FlatSpec {
     val qs1 = process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+      case Some(Sequence.State.Zipper(_, status)) =>
         status should be (Running)
     }
 
@@ -260,8 +259,8 @@ class StepSpec extends FlatSpec {
                    None,
                    config,
                    Set.empty,
-                   false,
-                   false,
+                   breakpoint = false,
+                   skip = false,
                    List(
                      List(configureTcs, configureInst).map(_.left), // Execution
                      List(observe.left) // Execution
@@ -306,8 +305,8 @@ class StepSpec extends FlatSpec {
                    None,
                    config,
                    Set.empty,
-                   false,
-                   false,
+                   breakpoint = false,
+                   skip = false,
                    List(
                      List(configureTcs, configureInst).map(_.left), // Execution
                      List(triggerStart(q).left), // Execution
@@ -321,9 +320,9 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = (q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
-          a => !isFinished(a._2.sequences(seqId).status)
-        ).runLog)).unsafePerformSync
+    val qss = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLog).unsafePerformSync
 
     val actionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Completed[_]) => x}
     assert(actionsCompleted.length == 4)
@@ -359,8 +358,8 @@ class StepSpec extends FlatSpec {
                    None,
                    config,
                    Set.empty,
-                   false,
-                   false,
+                   breakpoint = false,
+                   skip = false,
                    List(
                      List(configureTcs, configureInst).map(_.left), // Execution
                      List(error(errMsg).left),
@@ -391,8 +390,8 @@ class StepSpec extends FlatSpec {
   "engine" should "record a partial result and continue execution." in {
 
     // For result types
-    case class RetValDouble(v: Double) extends Result.RetVal
-    case class PartialValDouble(v: Double) extends Result.PartialVal
+    case class RetValDouble(kind: ActionType, v: Double) extends Result.RetVal
+    case class PartialValDouble(kind: ActionType, v: Double) extends Result.PartialVal
 
     val qs0: Engine.State =
       Engine.State(
@@ -410,15 +409,15 @@ class StepSpec extends FlatSpec {
                    None,
                    config,
                    Set.empty,
-                   false,
-                   false,
+                   breakpoint = false,
+                   skip = false,
                    List(
                      List(
                        fromTask(ActionType.Undefined,
                          Task(
                            Result.Partial(
-                             PartialValDouble(0.5),
-                             fromTask(ActionType.Undefined, Task(Result.OK(RetValDouble(1.0)))
+                             PartialValDouble(ActionType.Undefined, 0.5),
+                             fromTask(ActionType.Undefined, Task(Result.OK(RetValDouble(ActionType.Undefined, 1.0)))
                              )
                            )
                         )
@@ -438,29 +437,29 @@ class StepSpec extends FlatSpec {
     inside (qss.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.focus.execution.headOption) {
-          case Some(\/-(Result.Partial(v, _))) => v shouldEqual PartialValDouble(0.5)
+          case Some(\/-(Result.Partial(v, _))) => v shouldEqual PartialValDouble(ActionType.Undefined, 0.5)
         }
         status shouldBe SequenceState.Running
     }
     inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Final(seq, status)) =>
-        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)) shouldEqual Some(Result.OK(RetValDouble(1.0)))
+        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)) shouldEqual Some(Result.OK(RetValDouble(ActionType.Undefined, 1.0)))
         status shouldBe SequenceState.Completed
     }
 
   }
 
   private val result = Result.OK(Result.Observed("dummyId"))
-  private val failure = Result.Error("Dummy error")
+  private val failure = Result.Error(ActionType.Undefined, "Dummy error")
   private val action: Action = fromTask(ActionType.Undefined, Task(result))
   private val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
-    val rollback: (Execution, List[Actions]) = (done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending) match {
+    val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x.map(_.left)), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, false, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, breakpoint = false, skip = false, pending, focus, done, rollback)
   }
 
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
@@ -494,12 +493,12 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step[Action] = Step(1, None, config, Set.empty, false, false, List(Nil))
-  val step1: Step[Action] = Step(1, None, config, Set.empty, false, false, List(List(action)))
-  val step2: Step[Action] = Step(2, None, config, Set.empty, false, false, List(List(action, action), List(action)))
+  val step0: Step[Action] = Step(1, None, config, Set.empty, breakpoint = false, skip = false, List(Nil))
+  val step1: Step[Action] = Step(1, None, config, Set.empty, breakpoint = false, skip = false, List(List(action)))
+  val step2: Step[Action] = Step(2, None, config, Set.empty, breakpoint = false, skip = false, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, false, false, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, breakpoint = false, skip = false, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
@@ -517,8 +516,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          false,
-          false,
+          breakpoint = false,
+          skip = false,
           Nil,
           Execution(List(action.left, failure.right, result.right)),
           Nil,
@@ -536,8 +535,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          false,
-          false,
+          breakpoint = false,
+          skip = false,
           Nil,
           Execution(List(result.right, result.right, result.right)),
           Nil,
@@ -555,8 +554,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          false,
-          false,
+          breakpoint = false,
+          skip = false,
           Nil,
           Execution(List(result.right, action.left, result.right)),
           Nil,
@@ -574,8 +573,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          false,
-          false,
+          breakpoint = false,
+          skip = false,
           Nil,
           Execution(List(action.left, action.left, action.left)),
           Nil,
