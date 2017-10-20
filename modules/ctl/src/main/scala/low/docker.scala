@@ -92,6 +92,11 @@ object docker {
       case Output(0, s :: Nil) if s === k.hash => ()
     }
 
+  def removeContainer(k: Container): CtlIO[Unit] =
+    docker("rm", k.hash) require {
+      case Output(0, s :: Nil) if s === k.hash => ()
+    }
+
   def startContainer(k: Container): CtlIO[Unit] =
     docker("start", k.hash) require {
       case Output(0, s :: Nil) if s === k.hash => ()

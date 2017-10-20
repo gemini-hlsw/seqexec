@@ -350,5 +350,8 @@ lazy val ctl = project
       "org.typelevel"           %% "cats-effect" % catsEffectVersion,
       "com.monovore"            %% "decline"     % declineVersion,
       "com.github.benhutchison" %% "mouse"       % mouseVersion
-    )
+    ),
+    TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
+      s" gem.ctl.main deploy-test --user rnorris --host sbfocstest-lv1.cl.gemini.edu --deploy ${imageManifest.formatVersion}"
+    } .value
   )

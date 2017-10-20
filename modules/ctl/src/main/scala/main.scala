@@ -13,7 +13,7 @@ import gem.ctl.hi.ps.ps
 import gem.ctl.hi.log.showLog
 import gem.ctl.hi.stop.stop
 import gem.ctl.hi.deploy.deploy
-import gem.ctl.hi.deploy2.deploy2
+import gem.ctl.hi.DeployTest.deployTest
 import gem.ctl.hi.rollback.rollback
 
 object main {
@@ -22,7 +22,7 @@ object main {
   def command(c: Command): CtlIO[Unit] =
     info(s"Target host is ${c.server.userAndHost}").as(c).flatMap {
       case Command.Deploy(u, d, s, v, f) => deploy(d, s, f)
-      case Command.Deploy2(u, d, s, v, f) => deploy2(d)
+      case Command.DeployTest(u, d, s, v, f) => deployTest(d)
       case Command.Ps(_, _)              => ps
       case Command.Stop(_, _)            => stop
       case Command.Log(_, _, n)          => showLog(n)

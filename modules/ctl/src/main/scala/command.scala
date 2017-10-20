@@ -24,7 +24,7 @@ object Command {
     force:       Boolean
   ) extends Command
 
-  final case class Deploy2(
+  final case class DeployTest(
     server: Server,
     deployRev:   String,
     standalone:  Boolean,
@@ -112,8 +112,8 @@ object Command {
   private lazy val deploy: Opts[Deploy] =
     (server, deployRevision, standalone, verbose, force) mapN Deploy.apply
 
-  private lazy val deploy2: Opts[Deploy2] =
-    (server, deployRevision, standalone, verbose, force) mapN Deploy2.apply
+  private lazy val deploy2: Opts[DeployTest] =
+    (server, deployRevision, standalone, verbose, force) mapN DeployTest.apply
 
   private lazy val lines: Opts[Int] = {
     val DefaultLines = 50
@@ -133,8 +133,8 @@ object Command {
 
   private lazy val deploy2Command: Opts[Command] =
     Opts.subcommand(
-      name = "deploy2",
-      help = "Deploy an application."
+      name = "deploy-test",
+      help = "Deploy gem, destroying any existing deployment."
     )(deploy2.widen[Command])
 
   private lazy val psCommand: Opts[Command] =
