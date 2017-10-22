@@ -3,12 +3,13 @@
 
 package edu.gemini.seqexec.server.tcs
 
+import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.tcs.TcsController._
 import edu.gemini.seqexec.server.{ConfigResult, SeqAction, System}
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.guide.StandardGuideOptions
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{TELESCOPE_CONFIG_NAME, TELESCOPE_KEY}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import org.log4s.getLogger
 import squants.space.Millimeters
@@ -26,7 +27,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
   import Tcs._
   import MountGuideOption._
 
-  override val name: String = TELESCOPE_CONFIG_NAME
+  override val resource: Resource = Resource.TCS
 
   private def computeGuideOff(s0: TcsConfig, s1: Requested[TcsConfig]): GuideConfig = {
 

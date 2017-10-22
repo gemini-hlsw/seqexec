@@ -5,7 +5,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Observed}
+import edu.gemini.seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import edu.gemini.seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromTask}
 import edu.gemini.seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.{ActionType, Model}
@@ -99,7 +99,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         List(
           sys.map { x =>
             val kind = ActionType.Configure(resourceFromSystem(x))
-            x.configure(config).map(y => Result.Configured(kind)).toAction(kind)
+            x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
           List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult(ActionType.Observe))))))
 
@@ -379,6 +379,13 @@ object SeqTranslate {
     }
   }
 
+  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ConfigResult) extends AnyVal {
+    def toResult(kind: ActionType): Result = r match {
+      case \/-(r) => Result.OK(Configured(r.sys.resource))
+      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
+    }
+  }
+
   implicit class ObserveResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ObserveResult) extends AnyVal {
     def toResult(kind: ActionType): Result = r match {
       case \/-(r) => Result.OK(Observed(r.dataId))
@@ -391,6 +398,10 @@ object SeqTranslate {
   }
 
   implicit class ObserveResultToAction(val x: SeqAction[ObserveResult]) extends AnyVal {
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
+  }
+
+  implicit class ConfigResultToAction(val x: SeqAction[ConfigResult]) extends AnyVal {
     def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
   }
 }

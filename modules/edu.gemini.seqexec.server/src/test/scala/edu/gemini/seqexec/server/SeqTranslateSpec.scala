@@ -57,7 +57,7 @@ class SeqTranslateSpec extends FlatSpec {
           breakpoint = false,
           skip = false,
           List(
-            List(Action(ActionType.Configure(TCS), Kleisli(v => Task(Result.OK(Result.Configured(ActionType.Configure(Resource.TCS)))))).left)
+            List(Action(ActionType.Configure(TCS), Kleisli(v => Task(Result.OK(Result.Configured(Resource.TCS))))).left)
           )
         )
       )

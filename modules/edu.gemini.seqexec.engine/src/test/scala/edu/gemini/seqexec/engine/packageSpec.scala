@@ -29,7 +29,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val configureTcs: Action  = fromTask(ActionType.Configure(TCS),
     for {
       _ <- Task(Thread.sleep(200))
-    } yield Result.OK(Result.Configured(ActionType.Configure(TCS))))
+    } yield Result.OK(Result.Configured(TCS)))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -38,7 +38,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val configureInst: Action  = fromTask(ActionType.Configure(GmosS),
     for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured(ActionType.Configure(GmosS))))
+  } yield Result.OK(Result.Configured(GmosS)))
 
   /**
     * Emulates an observation in the real world.
@@ -208,7 +208,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
               Task.apply{
                 startedFlag.release()
                 finishFlag.acquire()
-                Result.OK(Result.Configured(ActionType.Configure(TCS)))
+                Result.OK(Result.Configured(TCS))
               }).left )
             )
           )
@@ -277,7 +277,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(ActionType.Configure(TCS)))))).left)
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS))))).left)
             )
           )
         )
@@ -288,7 +288,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
 
-    assertResult(Some(Result.OK(Result.Configured(ActionType.Configure(TCS)))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
+    assertResult(Some(Result.OK(Result.Configured(TCS))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
   }
 
 }

@@ -4,6 +4,7 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.ActionType
+import edu.gemini.seqexec.model.Model.Resource
 
 import scalaz._
 import Scalaz._
@@ -117,7 +118,9 @@ object Result {
   }
 
   sealed trait Response extends RetVal
-  final case class Configured(kind: ActionType.Configure) extends Response
+  final case class Configured(resource: Resource) extends Response {
+    val kind: ActionType = ActionType.Configure(resource)
+  }
   final case class Observed(fileId: FileId) extends Response {
     val kind: ActionType = ActionType.Observe
   }

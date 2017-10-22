@@ -38,7 +38,7 @@ class StepSpec extends FlatSpec {
       _ <- Task(println("System: Start TCS configuration"))
       _ <- Task(Thread.sleep(200))
       _ <- Task(println ("System: Complete TCS configuration"))
-    } yield Result.OK(Result.Configured(ActionType.Configure(Resource.TCS))))
+    } yield Result.OK(Result.Configured(Resource.TCS)))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -49,7 +49,7 @@ class StepSpec extends FlatSpec {
       _ <- Task(println("System: Start Instrument configuration"))
       _ <- Task(Thread.sleep(150))
       _ <- Task(println("System: Complete Instrument configuration"))
-    } yield Result.OK(Result.Configured(ActionType.Configure(GmosS))))
+    } yield Result.OK(Result.Configured(GmosS)))
 
   /**
     * Emulates an observation in the real world.
@@ -75,13 +75,13 @@ class StepSpec extends FlatSpec {
       // There is not a distinct result for Pause because the Pause action is a
       // trick for testing but we don't need to support it in real life, the pause
       // input event is enough.
-    } yield Result.OK(Result.Configured(ActionType.Configure(Resource.TCS))))
+    } yield Result.OK(Result.Configured(Resource.TCS)))
 
   def triggerStart(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
     for {
       _ <- q.enqueueOne(Event.start(seqId, user))
       // Same case that the pause action
-    } yield Result.OK(Result.Configured(ActionType.Configure(Resource.TCS))))
+    } yield Result.OK(Result.Configured(Resource.TCS)))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
