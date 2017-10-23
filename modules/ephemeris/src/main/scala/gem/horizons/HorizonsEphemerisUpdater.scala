@@ -9,7 +9,7 @@ import gem.dao.EphemerisDao
 import gem.enum.Site
 import gem.math.Ephemeris
 import gem.util.InstantMicros
-import gem.horizons.VelocityCompression._
+import gem.horizons.EphemerisCompression._
 
 import cats._
 import cats.effect._
@@ -90,7 +90,7 @@ final case class HorizonsEphemerisUpdater(
     val qs = HorizonsEphemerisQuery.pagingSemester(key, site, semester, StepSize, Padding)
 
     qs.foldMap(_.streamEphemeris)
-      .through(standardVelocityCompression)
+      .through(standardAccelerationCompression)
       .translateSync(λ[IO ~> ConnectionIO](_.liftIO[ConnectionIO]))
   }
 

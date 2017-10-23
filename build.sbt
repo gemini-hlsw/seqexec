@@ -206,7 +206,8 @@ lazy val core = crossProject
       "com.github.benhutchison"    %%% "mouse"          % mouseVersion,
       "com.github.julien-truffaut" %%% "monocle-core"   % monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-macro"  % monocleVersion,
-      "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test"
+      "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test",
+      "co.fs2"                     %%% "fs2-io"         % fs2Version
     )
   )
   .jsSettings(
