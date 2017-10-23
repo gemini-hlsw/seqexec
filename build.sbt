@@ -220,6 +220,10 @@ lazy val core = crossProject
     // Make JS tests run fine on travis
     parallelExecution in Test := false
   )
+  .jvmSettings(
+    libraryDependencies += "co.fs2" %% "fs2-io" % fs2Version
+  )
+
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js

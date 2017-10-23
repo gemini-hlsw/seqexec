@@ -33,15 +33,6 @@ final case class EphemerisCoordinates(
     EphemerisCoordinates(coordʹ, Offset(Offset.P(pʹ), Offset.Q(qʹ)))
   }
 
-  /** Directionless velocity at this coordinate, expressed as an angular
-    * separation per time unit of the change in RA and Dec.
-    */
-  def velocity: Angle = {
-    val p = delta.p.toAngle.toSignedMicroarcseconds.toDouble
-    val q = delta.q.toAngle.toSignedMicroarcseconds.toDouble
-    Angle.fromMicroarcseconds(Math.sqrt(p*p + q*q).round)
-  }
-
 }
 
 object EphemerisCoordinates {
