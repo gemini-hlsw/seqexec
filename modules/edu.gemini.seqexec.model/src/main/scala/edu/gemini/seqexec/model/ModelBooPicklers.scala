@@ -30,7 +30,7 @@ trait ModelBooPicklers {
   implicit val actionStatusPickler = compositePickler[ActionStatus]
     .addConcreteType[ActionStatus.Pending.type]
     .addConcreteType[ActionStatus.Completed.type]
-    .addConcreteType[ActionStatus.Running]
+    .addConcreteType[ActionStatus.Running.type]
 
   implicit val stepStatePickler = compositePickler[StepState]
     .addConcreteType[StepState.Pending.type]

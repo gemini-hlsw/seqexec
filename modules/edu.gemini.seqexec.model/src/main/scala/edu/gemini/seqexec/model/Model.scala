@@ -229,7 +229,7 @@ object Model {
   object ActionStatus {
     case object Pending extends ActionStatus
     case object Completed extends ActionStatus
-    final case class Running(progress: Double) extends ActionStatus
+    case object Running extends ActionStatus
   }
 
   sealed trait Step {
@@ -248,7 +248,7 @@ object Model {
     override val breakpoint: Boolean,
     override val skip: Boolean,
     override val fileId: Option[dhs.ImageFileId],
-    configStatus: Map[SystemName, ActionStatus],
+    configStatus: Map[Resource, ActionStatus],
     observeStatus: ActionStatus
   ) extends Step
   // Other kinds of Steps to be defined.
