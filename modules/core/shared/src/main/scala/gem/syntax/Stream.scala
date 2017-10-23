@@ -25,11 +25,11 @@ final class StreamOps[F[_], O](val self: Stream[F, O]) {
     *
     *
     * @param z initial value for the accumulator
+    * @param f function that combines the current value with the accumulated
+    *          value
     * @param p predicate that determines whether the current element should
     *          be emitted (after being combined with the accumulated value using
     *          `f`)
-    * @param f function that combines the current value with the accumulated
-    *          value
     *
     * @tparam A type of the accumulated value
     *

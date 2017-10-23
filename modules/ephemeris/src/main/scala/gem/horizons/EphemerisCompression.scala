@@ -34,7 +34,7 @@ trait EphemerisCompression {
     def Δv(e0: Element, e1: Element): Long = {
       val dp = e0.µasP - e1.µasP
       val dq = e0.µasQ - e1.µasQ
-      Math.sqrt(dp * dp + dq * dq).round
+      math.hypot(dp, dq).round
     }
 
     _.zipWithNext
@@ -140,7 +140,7 @@ object EphemerisCompression extends EphemerisCompression {
       val dp = (cur.µasP - prev.µasP)/h
       val dq = (cur.µasQ - prev.µasQ)/h
 
-      AvgAcceleration(math.sqrt(dp*dp + dq*dq), h)
+      AvgAcceleration(math.hypot(dp, dq), h)
     }
   }
 
