@@ -206,8 +206,7 @@ lazy val core = crossProject
       "com.github.benhutchison"    %%% "mouse"          % mouseVersion,
       "com.github.julien-truffaut" %%% "monocle-core"   % monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-macro"  % monocleVersion,
-      "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test",
-      "co.fs2"                     %%% "fs2-io"         % fs2Version
+      "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test"
     )
   )
   .jsSettings(
@@ -221,6 +220,10 @@ lazy val core = crossProject
     // Make JS tests run fine on travis
     parallelExecution in Test := false
   )
+  .jvmSettings(
+    libraryDependencies += "co.fs2" %% "fs2-io" % fs2Version
+  )
+
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
