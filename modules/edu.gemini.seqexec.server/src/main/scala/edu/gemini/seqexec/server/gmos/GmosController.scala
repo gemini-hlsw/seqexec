@@ -6,7 +6,7 @@ package edu.gemini.seqexec.server.gmos
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.gmos.GmosController.Config.DCConfig
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
-import edu.gemini.seqexec.server.{SeqAction, SeqexecFailure}
+import edu.gemini.seqexec.server.{ObserveCommand, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import squants.Length
 
@@ -28,7 +28,7 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def applyConfig(config: GmosConfig[T]): SeqAction[Unit]
 
-  def observe(obsid: ImageFileId): SeqAction[ImageFileId]
+  def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result]
 
   def stopObserve: SeqAction[Unit]
 

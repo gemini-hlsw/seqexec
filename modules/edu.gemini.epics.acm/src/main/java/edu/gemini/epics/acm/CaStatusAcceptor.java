@@ -103,6 +103,27 @@ public interface CaStatusAcceptor {
             throws CaException, CAException;
 
     /**
+     * Adds an attribute of type <code>Short</code> to this status acceptor.
+     * If the attribute already exists, the existing object is used. CaException
+     * is thrown if the existing attribute is of a different type or uses a
+     * different EPICS channel.
+     *
+     * @param name
+     *            the name of the attribute.
+     * @param channel
+     *            the full EPICS channel name for the attribute.
+     * @param description
+     *            optional description of the attribute.
+     * @return the attribute.
+     * @throws CaException
+     * @throws CAException
+     */
+    CaAttribute<Short> addShort(String name, String channel, String description)
+            throws CaException, CAException;
+    CaAttribute<Short> addShort(String name, String channel)
+            throws CaException, CAException;
+
+    /**
      * Adds an attribute of type <code>String</code> to this status acceptor. If
      * the attribute already exists, the existing object is used. CaException is
      * thrown if the existing attribute is of a different type or uses a
@@ -181,6 +202,16 @@ public interface CaStatusAcceptor {
      *         a different type.
      */
     CaAttribute<Integer> getIntegerAttribute(String name);
+
+    /**
+     * Retrieves an existing attribute of type <code>Short</code>.
+     *
+     * @param name
+     *            the name of the attribute.
+     * @return the attribute, or <code>null</code> if it does not exist or is of
+     *         a different type.
+     */
+    CaAttribute<Short> getShortAttribute(String name);
 
     /**
      * Retrieves an existing attribute of type <code>String</code>.

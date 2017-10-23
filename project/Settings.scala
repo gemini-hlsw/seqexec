@@ -113,6 +113,10 @@ object Settings {
     val apacheXMLRPC   = "3.1.3"
 
     val opencsv        = "2.1"
+
+    val epicsService   = "0.16"
+    val gmpCommandRecords = "0.6.4"
+    val guava          = "16.0.1"
   }
 
   /**
@@ -197,7 +201,12 @@ object Settings {
     val WDBAClient  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
                       "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC
+
     )
+
+    val EpicsService = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
+    val GmpCommandsRecords = "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords
+    val Guava = "com.google.guava" % "guava" % LibraryVersions.guava
   }
 
   object PluginVersions {

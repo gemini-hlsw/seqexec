@@ -17,6 +17,7 @@ object ActionType {
   // Used in tests
   object Undefined extends ActionType
   final case class Configure(sys: Resource) extends ActionType
+  
+implicit val equal: Equal[ActionType] = Equal.equalA[ActionType]
 
-  implicit val eq: Equal[ActionType] = Equal.equalA[ActionType]
 }

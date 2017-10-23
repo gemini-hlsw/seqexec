@@ -41,6 +41,7 @@ public final class CaService {
     private EpicsService epicsService;
     private final Map<String, CaStatusAcceptorImpl> statusAcceptors;
     private final Map<String, CaApplySenderImpl> applySenders;
+    private final Map<String, CaObserveSenderImpl> observeSenders;
     private final Map<String, CaCommandSenderImpl> commandSenders;
     static private String addrList;
     static private CaService theInstance;
@@ -49,6 +50,7 @@ public final class CaService {
     private CaService(String addrList) {
         statusAcceptors = new HashMap<>();
         applySenders = new HashMap<>();
+        observeSenders = new HashMap<>();
         commandSenders = new HashMap<>();
         epicsService = new EpicsService(addrList);
 
@@ -102,6 +104,9 @@ public final class CaService {
         }
         for (CaApplySenderImpl apply : applySenders.values()) {
             apply.unbind();
+        }
+        for (CaObserveSenderImpl observe : observeSenders.values()) {
+            observe.unbind();
         }
         for (CaCommandSenderImpl cs : commandSenders.values()) {
             cs.unbind();
@@ -175,6 +180,37 @@ public final class CaService {
     public CaApplySender createApplySender(String name, String applyRecord,
             String carRecord) throws CAException {
         return createApplySender(name, applyRecord, carRecord, null);
+    }
+
+    /**
+     * Creates an apply sender specialized for Observe commands. If the apply
+     * sender already exists, it returns the existing object.
+     *
+     * @param name
+     *            the name of the new apply sender.
+     * @param applyRecord
+     *            the name of the EPICS apply record.
+     * @param carRecord
+     *            the name of the EPICS CAR record associated with the apply.
+     * @param description
+     *            optional description for the apply sender.
+     * @return the apply sender.
+     * @throws CAException
+     */
+    public CaApplySender createObserveSender(String name, String applyRecord,
+            String carRecord, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
+        CaObserveSenderImpl observe = observeSenders.get(name);
+        if (observe == null) {
+            observe = new CaObserveSenderImpl(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
+                    description, epicsService);
+            observeSenders.put(name, observe);
+        }
+        return observe;
+    }
+
+    public CaApplySender createObserveSender(String name, String applyRecord,
+            String carRecord) throws CAException {
+        return createObserveSender(name, applyRecord, carRecord, null, null, null);
     }
 
     /**

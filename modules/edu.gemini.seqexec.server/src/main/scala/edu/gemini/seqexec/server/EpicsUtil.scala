@@ -5,8 +5,8 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
-
 import org.log4s._
+
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -32,7 +32,7 @@ trait EpicsCommand {
               }
             }
           // It should call f on all execution paths, thanks @tpolecat
-          }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").left.right))
+          }.void.getOrElse(f(TrySeq.fail(SeqexecFailure.Unexpected("Unable to trigger command.")).right))
         }
       }
     }
@@ -77,7 +77,7 @@ trait EpicsSystem[T] {
 @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object EpicsCommand {
 
-  trait Result
+  sealed trait Result
   object Paused extends Result
   object Completed extends Result
 
@@ -95,6 +95,41 @@ object EpicsCommand {
       p.map(_.set(v).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
     } )
 
+}
+
+trait ObserveCommand {
+  import ObserveCommand._
+
+  protected val os: Option[CaApplySender]
+
+  def post: SeqAction[Result] =
+    EpicsCommand.safe {
+      EitherT {
+        Task.async[TrySeq[Result]] { (f: (Throwable \/ TrySeq[Result]) => Unit) =>
+          os.map { oos =>
+            oos.postCallback {
+              new CaCommandListener {
+                override def onSuccess(): Unit = f(TrySeq(Success).right)
+                override def onPause(): Unit = f(TrySeq(Paused).right)
+                override def onFailure(cause: Exception): Unit = cause match {
+                  case _: CaObserveStopped => f(TrySeq(Stopped).right)
+                  case _: CaObserveAborted => f(TrySeq(Aborted).right)
+                  case _                   => f(cause.left)
+                }
+              }
+            }
+          }.void.getOrElse(f(TrySeq.fail(SeqexecFailure.Unexpected("Unable to trigger command.")).right))
+        }
+      }
+    }
+}
+
+object ObserveCommand {
+  sealed trait Result
+  object Success extends Result
+  object Paused extends Result
+  object Stopped extends Result
+  object Aborted extends Result
 }
 
 object EpicsCodex {

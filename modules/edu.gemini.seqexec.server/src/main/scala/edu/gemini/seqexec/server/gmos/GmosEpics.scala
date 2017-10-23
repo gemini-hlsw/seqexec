@@ -5,10 +5,10 @@ package edu.gemini.seqexec.server.gmos
 
 import java.lang.{Double => JDouble}
 
-import edu.gemini.epics.acm.{CaCommandSender, CaParameter, CaService, CaStatusAcceptor}
+import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.EpicsCommand.setParameter
 import edu.gemini.seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
-import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
+import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import org.log4s.{Logger, getLogger}
 
 import scala.collection.breakOut
@@ -80,8 +80,10 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::abort"))
   }
 
-  object observeCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
+  object observeCmd extends ObserveCommand {
+    private val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
+    override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
+      GMOS_TOP + ":apply", GMOS_TOP + "dc:observeC", GMOS_TOP + "dc:stop", GMOS_TOP + "dc:abort", ""))
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)

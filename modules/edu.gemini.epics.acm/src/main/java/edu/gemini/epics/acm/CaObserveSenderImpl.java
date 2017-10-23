@@ -109,51 +109,42 @@ public class CaObserveSenderImpl implements CaApplySender {
         epicsReader = new EpicsReaderImpl(epicsService);
 
         apply = new CaApplyRecord(applyRecord, epicsService);
-        apply.registerValListener(valListener = new ChannelListener<Integer>() {
-            @Override
-            public void valueChanged(String arg0, List<Integer> newVals) {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaObserveSenderImpl.this.onApplyValChange(newVals.get(0));
-                }
+        apply.registerValListener(valListener = (String arg0, List<Integer> newVals) -> {
+            if (newVals != null && !newVals.isEmpty()) {
+                CaObserveSenderImpl.this.onApplyValChange(newVals.get(0));
             }
         });
         
         car = new CaCarRecord(carRecord, epicsService);
-        car.registerClidListener(carClidListener = new ChannelListener<Integer>() {
-            @Override
-            public void valueChanged(String arg0, List<Integer> newVals) {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaObserveSenderImpl.this.onCarClidChange(newVals.get(0));
-                }
+        car.registerClidListener(carClidListener = (String arg0, List<Integer> newVals) -> {
+            if (newVals != null && !newVals.isEmpty()) {
+                CaObserveSenderImpl.this.onCarClidChange(newVals.get(0));
             }
         });
-        car.registerValListener(carValListener = new ChannelListener<CarState>() {
-            @Override
-            public void valueChanged(String arg0, List<CarState> newVals) {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaObserveSenderImpl.this.onCarValChange(newVals.get(0));
-                }
+        car.registerValListener(carValListener = (String arg0, List<CarState> newVals) -> {
+            if (newVals != null && !newVals.isEmpty()) {
+                CaObserveSenderImpl.this.onCarValChange(newVals.get(0));
             }
         });
 
         if(stopCmd!=null && stopCmd.length()>0) {
             stopMark = epicsReader.getIntegerChannel(stopCmd + CAD_MARK_SUFFIX);
-            stopMark.registerListener(stopMarkListener = ((String arg0, List<Integer> newVals) -> {
+            stopMark.registerListener(stopMarkListener = (String arg0, List<Integer> newVals) -> {
                 if (newVals != null && !newVals.isEmpty()) {
                     CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
                 }
-            }));
+            });
         } else {
             stopMark = null;
         }
 
         if(abortCmd!=null && abortCmd.length()>0) {
             abortMark = epicsReader.getIntegerChannel(abortCmd + CAD_MARK_SUFFIX);
-            abortMark.registerListener(abortMarkListener = ((String arg0, List<Integer> newVals) -> {
+            abortMark.registerListener(abortMarkListener = (String arg0, List<Integer> newVals) -> {
                 if (newVals != null && !newVals.isEmpty()) {
                     CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
                 }
-            }));
+            });
         } else {
             abortMark = null;
         }
