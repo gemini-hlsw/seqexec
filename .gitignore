@@ -3,11 +3,16 @@
 *.iml
 .DS_Store
 *.pem
+*.der
 *.p12
+*.pkcs12
 *.jks
 yarn.lock
 .tags*
 .java-version
+package.json
+package-lock.json
+calibrations/
 
 # sbt specific
 .cache

@@ -201,7 +201,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Failed(_, _, _)                                           => NewLogMessage("Action failed")
       case engine.Busy(id)                                                  => ResourcesBusy(id, svs)
       case engine.Executed(_)                                               => StepExecuted(svs)
-      case engine.Executing(_)                                              => NewLogMessage("Executing")
+      case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
     }
