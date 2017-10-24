@@ -297,11 +297,12 @@ object SeqexecEngine {
   def splitAfter[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p) + 1)
 
+  def kindToResult(kind: ActionType): List[Resource] = kind match {
+    case ActionType.Configure(r) => List(r)
+    case _                       => Nil
+  }
+
   def configStatus(executions: List[List[engine.Action \/ engine.Result]]): Map[Resource, ActionStatus] = {
-    def kindToResult(kind: ActionType): List[Resource] = kind match {
-      case ActionType.Configure(r) => List(r)
-      case _                       => Nil
-    }
     // Split where at least one is running
     val (current, pending) = splitAfter(executions)(ex => ex.lefts.nonEmpty)
 
@@ -328,6 +329,19 @@ object SeqexecEngine {
     configStatus ++ pendingConfig
   }
 
+  def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): Map[Resource, ActionStatus] =
+    executions.map {
+      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResult), _.map(_.kind).flatMap(kindToResult))
+    }.flatMap {
+      x => x._1 ::: x._2
+    }.distinct.strengthR(ActionStatus.Pending).toMap
+
+  def stepConfigStatus(step: StepAR): Map[Resource, ActionStatus] =
+    engine.Step.status(step) match {
+      case StepState.Pending => pendingConfigStatus(step.executions)
+      case _                 => configStatus(step.executions)
+    }
+
   def viewStep(step: StepAR): StandardStep = {
     StandardStep(
       id = step.id,
@@ -337,7 +351,7 @@ object SeqexecEngine {
       breakpoint = step.breakpoint,
       // TODO: Implement skipping at Engine level
       skip = false,
-      configStatus = configStatus(step.executions),
+      configStatus = stepConfigStatus(step),
       // TODO: Implement standard step at Engine level
       observeStatus = ActionStatus.Pending,
       fileId = step.fileId

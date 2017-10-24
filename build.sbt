@@ -100,7 +100,6 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
     // Settings to optimize the use of sbt-revolver
     // Allows to read the generated JS on client
     resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
-    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
     // Lets the backend to read the .map file for js
     resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map((x: sbt.Attributed[File]) => new File(x.data.getAbsolutePath + ".map")),
     // Support stopping the running server
