@@ -326,7 +326,7 @@ lazy val telnetd = project
       case c @ Cmd("USER", args @ _*) =>
         Seq(
           ExecCmd("RUN", "apt-get", "update"),
-          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-bsd"),
+          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-openbsd"),
           c
         )
       case cmd => Seq(cmd)
