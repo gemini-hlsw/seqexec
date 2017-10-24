@@ -352,6 +352,6 @@ lazy val ctl = project
       "com.github.benhutchison" %% "mouse"       % mouseVersion
     ),
     TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
-      s" gem.ctl.main deploy-test --user rnorris --host sbfocstest-lv1.cl.gemini.edu --deploy ${imageManifest.formatVersion}"
+      s" gem.ctl.main deploy-test --verbose --host sbfocstest-lv1.cl.gemini.edu --deploy ${imageManifest.formatVersion}"
     } .value
   )

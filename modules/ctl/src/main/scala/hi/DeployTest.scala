@@ -171,7 +171,8 @@ object DeployTest {
 
   def deployTest(version: String): CtlIO[Unit] =
     for {
-      _  <- info("This is a TEST deployment.")
+      h  <- serverHostName
+      _  <- info(s"This is an test deployment on $h. Any existing deployment will be destroyed!")
       _  <- getNetwork
       gi <- getDeployImage(version)
       pi <- getPostgresImage(gi)
