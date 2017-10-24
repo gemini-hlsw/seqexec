@@ -102,6 +102,8 @@ object DeployTest {
                s"--net=$PrivateNetwork",
                 "--name",    s"$version-G",
                 "--label",   s"gem.version=$version",
+                "--health-cmd", if (r) "\"nc -z localhost 6666\""
+                                else     "nc -z localhost 6666",
                 "--publish", s"$Port:6666",
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://$version-P/gem",
                 iGem.hash
@@ -146,26 +148,11 @@ object DeployTest {
       } yield kDb
     }
 
-  def awaitNet(host: String, port: Int, retries: Int): CtlIO[Unit] =
-    retries match {
-      case 0 => error("Remote port is unavailable. Hm.") *> exit(-1)
-      case n => shell("nc", "-z", host, port.toString).require {
-        case Output(0, _) => true
-        case Output(1, _) => false
-      } flatMap {
-        case true  => info(s"Service is available at $host:$port.")
-        case false =>
-          info(s"Awaiting port availability (remaining retries: $n)") *>
-          shell("sleep", "2") *> awaitNet(host, port, n - 1)
-      }
-    }
-
   def deployGem(version: String, iGem: Image): CtlIO[Container] =
     gosub("Deploying Gem.") {
       for {
         kGem <- createGemContainer(version, iGem)
-        h    <- serverHostName
-        _    <- awaitNet(h, Port, awaitNetRetries)
+        _    <- awaitHealthy(kGem)
       } yield kGem
     }
 
