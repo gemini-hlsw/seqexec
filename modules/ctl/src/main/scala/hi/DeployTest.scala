@@ -95,6 +95,7 @@ object DeployTest {
   def createGemContainer(version: String, iGem: Image): CtlIO[Container] =
     gosub(s"Creating Gem container from image ${iGem.hash}") {
       for {
+        r  <- isRemote // irritating … see below
         k  <- docker("run",
                 "--detach",
                 "--tty",

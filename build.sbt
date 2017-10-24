@@ -321,8 +321,8 @@ lazy val telnetd = project
     dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
     dockerLabels          := imageManifest.labels,
     dockerCommands       ++= Seq(
-      ExecCmd("CMD", "apt-get", "update"),
-      ExecCmd("CMD", "apt-get", "install", "netcat-bsd")
+      ExecCmd("RUN", "apt-get", "update"),
+      ExecCmd("RUN", "apt-get", "install", "netcat-bsd")
     )
     // TODO: don't allow publish if version is wrong
   )
