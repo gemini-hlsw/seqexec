@@ -5,7 +5,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.core.Site
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Observed}
+import edu.gemini.seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import edu.gemini.seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromTask}
 import edu.gemini.seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
 import edu.gemini.seqexec.model.{ActionType, Model}
@@ -84,6 +84,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield Result.Partial(FileIdAllocated(id), doObserve(id).toAction(ActionType.Observe))
   }
 
+  // scalastyle:off
   private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
       val initialStepExecutions: List[List[Action]] =
@@ -96,8 +97,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
       val regularStepExecutions: List[List[Action]] =
         List(
-          sys.map(x => x.configure(config).map(y => Result.Configured(y.sys.name)).toAction(ActionType.Configure(resourceFromSystem((x))))),
-          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)))))
+          sys.map { x =>
+            val kind = ActionType.Configure(resourceFromSystem(x))
+            x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
+          },
+          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult(ActionType.Observe))))))
 
       extractStatus(config) match {
         case StepState.Pending =>
@@ -114,16 +118,16 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         // status is unknown.
         case _ =>
           Step(
-            i,
-            datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-            config.toStepConfig,
+            id = i,
+            fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
+            config = config.toStepConfig,
             // No resources when done
             resources = Set.empty,
             breakpoint = false,
             skip = extractSkipped(config),
             // TODO: Is it possible to reconstruct done executions from the ODB?
             executions = Nil
-            )
+          )
       }
     }
 
@@ -134,6 +138,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       headers   <- calcHeaders(config, stepType)
     } yield buildStep(inst, systems, headers, calcResources(systems))
   }
+  // scalastyle:on
 
   // Required for untyped objects from java
   implicit val objectShow: Show[AnyRef] = Show.showA
@@ -332,7 +337,7 @@ object SeqTranslate {
   private final case class FlatOrArc(override val instrument: Model.Instrument) extends StepType
   private final case class DarkOrBias(override val instrument: Model.Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
-    override val instrument = Model.Instrument.GPI
+    override val instrument: Instrument = Model.Instrument.GPI
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
@@ -361,31 +366,42 @@ object SeqTranslate {
   }
 
   implicit class ResponseToResult(val r: SeqexecFailure \/ Result.Response) extends AnyVal {
-    def toResult: Result = r match {
+    def toResult(kind: ActionType): Result = r match {
       case \/-(r) => Result.OK(r)
-      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
     }
   }
 
   implicit class PartialResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ Result.Partial[A]) extends AnyVal {
-    def toResult: Result = r match {
+    def toResult(kind: ActionType): Result = r match {
       case \/-(r) => r
-      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
+    }
+  }
+
+  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ConfigResult) extends AnyVal {
+    def toResult(kind: ActionType): Result = r match {
+      case \/-(r) => Result.OK(Configured(r.sys.resource))
+      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
     }
   }
 
   implicit class ObserveResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ObserveResult) extends AnyVal {
-    def toResult: Result = r match {
+    def toResult(kind: ActionType): Result = r match {
       case \/-(r) => Result.OK(Observed(r.dataId))
-      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
+      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
     }
   }
 
   implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
   }
 
   implicit class ObserveResultToAction(val x: SeqAction[ObserveResult]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
+  }
+
+  implicit class ConfigResultToAction(val x: SeqAction[ConfigResult]) extends AnyVal {
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
   }
 }

@@ -89,7 +89,6 @@ object Model {
 
     final case class ResourcesBusy(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    // Generic update. It will probably become useless if we have a special Event for every case.
     final case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
@@ -229,7 +228,7 @@ object Model {
   object ActionStatus {
     case object Pending extends ActionStatus
     case object Completed extends ActionStatus
-    final case class Running(progress: Double) extends ActionStatus
+    case object Running extends ActionStatus
   }
 
   sealed trait Step {
@@ -248,7 +247,7 @@ object Model {
     override val breakpoint: Boolean,
     override val skip: Boolean,
     override val fileId: Option[dhs.ImageFileId],
-    configStatus: Map[SystemName, ActionStatus],
+    configStatus: Map[Resource, ActionStatus],
     observeStatus: ActionStatus
   ) extends Step
   // Other kinds of Steps to be defined.

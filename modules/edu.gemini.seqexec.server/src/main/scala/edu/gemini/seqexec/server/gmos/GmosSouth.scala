@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.server.gmos
 
+import edu.gemini.seqexec.model.Model
+import edu.gemini.seqexec.model.Model.Instrument
 import edu.gemini.seqexec.server.ConfigUtilOps
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.gmos.Gmos.SiteSpecifics
@@ -24,7 +26,7 @@ final case class GmosSouth(c: GmosSouthController) extends Gmos[SouthTypes](c,
     override def extractFPU(config: Config): \/[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] = config.extract(INSTRUMENT_KEY / FPU_PROP_NAME).as[SouthTypes#FPU]
     override def extractStageMode(config: Config): \/[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] = config.extract(INSTRUMENT_KEY / STAGE_MODE_PROP).as[SouthTypes#GmosStageMode]
   })(southConfigTypes) {
-  override val name: String = "GMOS-S"
+  override val resource: Model.Resource = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"
 }
 

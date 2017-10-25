@@ -3,10 +3,11 @@
 
 package edu.gemini.seqexec.server
 
+import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.spModel.config2.Config
 
 trait System {
-  val name: String
+  val resource: Resource
 
   /**
     * Called to configure a system, returns a Task[SeqexecFailure \/ ConfigResult]

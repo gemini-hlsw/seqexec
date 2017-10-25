@@ -3,13 +3,14 @@
 
 package edu.gemini.seqexec.server.gcal
 
+import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.gcal.GcalController._
 import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, SeqAction, SeqexecFailure, System, TrySeq}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{CALIBRATION_CONFIG_NAME, CALIBRATION_KEY}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
 
 import scala.Function.const
 import scala.collection.JavaConverters._
@@ -22,7 +23,7 @@ import scalaz.{Equal, \/}
 final case class Gcal(controller: GcalController, isCP: Boolean) extends System {
   import Gcal._
 
-  override val name: String = CALIBRATION_CONFIG_NAME
+  override val resource: Resource = Resource.Gcal
 
   /**
     * Called to configure a system, returns a Task[SeqexecFailure \/ ConfigResult]

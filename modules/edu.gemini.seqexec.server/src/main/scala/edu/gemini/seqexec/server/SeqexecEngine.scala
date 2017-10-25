@@ -16,7 +16,7 @@ import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
-import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import edu.gemini.seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import edu.gemini.seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import edu.gemini.seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
@@ -40,6 +40,7 @@ import scalaz.stream.time._
   * Created by jluhrs on 10/7/16.
   */
 class SeqexecEngine(settings: SeqexecEngine.Settings) {
+  import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
@@ -195,43 +196,21 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
       case engine.Completed(_, _, _)                                        => NewLogMessage("Action completed")
-      case engine.PartialResult(id, _, Partial(FileIdAllocated(fileId), _)) => FileIdStepExecuted(fileId, svs)
+      case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _))  => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
       case engine.Failed(_, _, _)                                           => NewLogMessage("Action failed")
       case engine.Busy(id)                                                  => ResourcesBusy(id, svs)
       case engine.Executed(_)                                               => StepExecuted(svs)
-      case engine.Executing(_)                                              => NewLogMessage("Executing")
+      case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
     }
   }
 
-  // TODO: Better name and move it to `engine`
-  type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
-  type StepAR = engine.Step[engine.Action \/ engine.Result]
 
   def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView = {
 
     def engineSteps(seq: SequenceAR): List[Step] = {
-
-      def viewStep(step: StepAR): StandardStep =
-        StandardStep(
-          step.id,
-          step.config,
-          engine.Step.status(step),
-          // TODO: Implement breakpoints at Engine level
-          breakpoint = step.breakpoint,
-          // TODO: Implement skipping at Engine level
-          skip = false,
-          configStatus = Map.empty,
-          // TODO: Implement standard step at Engine level
-          observeStatus = ActionStatus.Pending,
-          fileId = step.fileId
-        )
-
-      // Couldn't find this on Scalaz
-      def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
-        l.splitAt(l.indexWhere(p))
 
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
@@ -272,7 +251,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
 // Configuration stuff
 object SeqexecEngine {
-
   final case class Settings(site: Site,
                       odbHost: String,
                       date: LocalDate,
@@ -307,6 +285,78 @@ object SeqexecEngine {
     gcalKeywords = false,
     instForceError = false,
     10.seconds)
+
+  // TODO: Better name and move it to `engine`
+  type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
+  type StepAR = engine.Step[engine.Action \/ engine.Result]
+
+  // Couldn't find this on Scalaz
+  def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
+    l.splitAt(l.indexWhere(p))
+
+  def splitAfter[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
+    l.splitAt(l.indexWhere(p) + 1)
+
+  def kindToResult(kind: ActionType): List[Resource] = kind match {
+    case ActionType.Configure(r) => List(r)
+    case _                       => Nil
+  }
+
+  def configStatus(executions: List[List[engine.Action \/ engine.Result]]): Map[Resource, ActionStatus] = {
+    // Split where at least one is running
+    val (current, pending) = splitAfter(executions)(ex => ex.lefts.nonEmpty)
+
+    // Calculate the state up to the current
+    val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) {
+      case (s, e) =>
+        val (a, r) = e.separate
+          .bimap(
+            _.flatMap(a => kindToResult(a.kind).strengthR(ActionStatus.Running)).toMap,
+            _.flatMap(r => kindToResult(r.kind).strengthR(ActionStatus.Completed)).toMap)
+        s ++ a ++ r
+    }
+
+    // Find out systems in the future
+    val presentSystems = configStatus.keys
+    val systemsPending = pending.map {
+      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResult), _.map(_.kind).flatMap(kindToResult))
+    }.flatMap {
+      x => x._1 ::: x._2
+    }.distinct
+
+    // Mark future systems as pending
+    val pendingConfig = systemsPending.diff(presentSystems.toList).strengthR(ActionStatus.Pending)
+    configStatus ++ pendingConfig
+  }
+
+  def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): Map[Resource, ActionStatus] =
+    executions.map {
+      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResult), _.map(_.kind).flatMap(kindToResult))
+    }.flatMap {
+      x => x._1 ::: x._2
+    }.distinct.strengthR(ActionStatus.Pending).toMap
+
+  def stepConfigStatus(step: StepAR): Map[Resource, ActionStatus] =
+    engine.Step.status(step) match {
+      case StepState.Pending => pendingConfigStatus(step.executions)
+      case _                 => configStatus(step.executions)
+    }
+
+  def viewStep(step: StepAR): StandardStep = {
+    StandardStep(
+      id = step.id,
+      config = step.config,
+      status = engine.Step.status(step),
+      // TODO: Implement breakpoints at Engine level
+      breakpoint = step.breakpoint,
+      // TODO: Implement skipping at Engine level
+      skip = false,
+      configStatus = stepConfigStatus(step),
+      // TODO: Implement standard step at Engine level
+      observeStatus = ActionStatus.Pending,
+      fileId = step.fileId
+    )
+  }
 
   private def decodeTops(s: String): Map[String, String] =
     s.split("=|,").grouped(2).collect {

@@ -34,11 +34,11 @@ class ExecutionSpec extends FlatSpec with Matchers {
   }
 
   "marking an index out of bounds" should "not modify the execution" in {
-    assert(curr.mark(3)(Result.Error("")) === curr)
+    assert(curr.mark(3)(Result.Error(ActionType.Undefined, "")) === curr)
   }
 
   "marking an index inbound" should "modify the execution" in {
-    assert(curr.mark(1)(Result.Error("")) !== curr)
+    assert(curr.mark(1)(Result.Error(ActionType.Undefined, "")) !== curr)
   }
 
 }

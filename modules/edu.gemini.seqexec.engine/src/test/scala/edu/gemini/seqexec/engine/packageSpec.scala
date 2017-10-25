@@ -29,7 +29,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val configureTcs: Action  = fromTask(ActionType.Configure(TCS),
     for {
       _ <- Task(Thread.sleep(200))
-    } yield Result.OK(Result.Configured("TCS")))
+    } yield Result.OK(Result.Configured(TCS)))
 
   /**
     * Emulates Instrument configuration in the real world.
@@ -38,7 +38,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val configureInst: Action  = fromTask(ActionType.Configure(GmosS),
     for {
     _ <- Task(Thread.sleep(200))
-  } yield Result.OK(Result.Configured("Instrument")))
+  } yield Result.OK(Result.Configured(GmosS)))
 
   /**
     * Emulates an observation in the real world.
@@ -52,7 +52,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val faulty: Action  = fromTask(ActionType.Undefined,
   for {
     _ <- Task(Thread.sleep(100))
-  } yield Result.Error("There was an error in this action"))
+  } yield Result.Error(ActionType.Undefined, "There was an error in this action"))
 
   val config: StepConfig = Map()
   val seqId: String = "TEST-01"
@@ -206,9 +206,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             List(
               List(fromTask(ActionType.Configure(TCS),
               Task.apply{
-                startedFlag.release
-                finishFlag.acquire
-                Result.OK(Result.Configured("TCS"))
+                startedFlag.release()
+                finishFlag.acquire()
+                Result.OK(Result.Configured(TCS))
               }).left )
             )
           )
@@ -219,8 +219,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val result = Nondeterminism[Task].both(
       List(
         q.enqueueOne(Event.start(seqId, user)),
-        Task.apply(startedFlag.acquire),
-        q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release} *> Task.delay(None)})
+        Task.apply(startedFlag.acquire()),
+        q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release()} *> Task.delay(None)})
       ).sequenceU,
         process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
       ).timed(5.seconds).unsafePerformSyncAttempt
@@ -277,7 +277,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(v.operator.map(_.value).getOrElse("") + "-" + v.observer.map(_.value).getOrElse("")))))).left)
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS))))).left)
             )
           )
         )
@@ -288,7 +288,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
 
-    assertResult(Some(Result.OK(Result.Configured("John-Smith"))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
+    assertResult(Some(Result.OK(Result.Configured(TCS))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
   }
 
 }

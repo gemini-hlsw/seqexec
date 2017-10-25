@@ -3,6 +3,7 @@
 
 package edu.gemini.seqexec.server.gmos
 
+import edu.gemini.seqexec.model.Model.{Instrument, Resource}
 import edu.gemini.seqexec.server.ConfigUtilOps
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.gmos.Gmos.SiteSpecifics
@@ -19,7 +20,6 @@ import scalaz.\/
 /**
   * Created by jluhrs on 8/10/17.
   */
-
 final case class GmosNorth(c: GmosNorthController) extends Gmos[NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
     override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
@@ -28,7 +28,7 @@ final case class GmosNorth(c: GmosNorthController) extends Gmos[NorthTypes](c,
     override def extractFPU(config: Config): \/[ConfigUtilOps.ExtractFailure, GmosNorthType.FPUnitNorth] = config.extract(INSTRUMENT_KEY / FPU_PROP_NAME).as[NorthTypes#FPU]
     override def extractStageMode(config: Config): \/[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] = config.extract(INSTRUMENT_KEY / STAGE_MODE_PROP).as[NorthTypes#GmosStageMode]
   })(northConfigTypes) {
-  override val name: String = "GMOS-N"
+  override val resource: Resource = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"
 }
 

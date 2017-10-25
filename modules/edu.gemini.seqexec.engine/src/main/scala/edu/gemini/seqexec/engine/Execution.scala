@@ -3,6 +3,9 @@
 
 package edu.gemini.seqexec.engine
 
+import edu.gemini.seqexec.model.ActionType
+import edu.gemini.seqexec.model.Model.Resource
+
 import scalaz._
 import Scalaz._
 
@@ -70,8 +73,8 @@ object Execution {
     ar match {
       case (-\/(_)) => false
       case (\/-(r)) => r match {
-        case Result.Error(_) => true
-        case _               => false
+        case Result.Error(_, _) => true
+        case _                  => false
       }
     }
 
@@ -88,28 +91,44 @@ object Execution {
 /**
   * The result of an `Action`.
   */
-
 sealed trait Result {
   val errMsg: Option[String] = None
+  val kind: ActionType
 }
 
 object Result {
 
   // Base traits for results. They make harder to pass the wrong value.
-  trait RetVal
-  trait PartialVal
+  trait RetVal {
+    val kind: ActionType
+  }
+  trait PartialVal {
+    val kind: ActionType
+  }
 
-  final case class OK[R<:RetVal](response: R) extends Result
-  final case class Partial[R<:PartialVal](response: R, continuation: Action) extends Result
+  final case class OK[R <: RetVal](response: R) extends Result {
+    val kind: ActionType = response.kind
+  }
+  final case class Partial[R <: PartialVal](response: R, continuation: Action) extends Result {
+    val kind: ActionType = response.kind
+  }
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
-  final case class Error(msg: String) extends Result {
+  final case class Error(kind: ActionType, msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)
   }
 
   sealed trait Response extends RetVal
-  final case class Configured(r: String) extends Response
-  final case class Observed(fileId: FileId) extends Response
-  object Ignored extends Response
+  final case class Configured(resource: Resource) extends Response {
+    val kind: ActionType = ActionType.Configure(resource)
+  }
+  final case class Observed(fileId: FileId) extends Response {
+    val kind: ActionType = ActionType.Observe
+  }
+  object Ignored extends Response {
+    val kind: ActionType = ActionType.Undefined
+  }
 
-  final case class FileIdAllocated(fileId: FileId) extends PartialVal
+  final case class FileIdAllocated(fileId: FileId) extends PartialVal {
+    val kind: ActionType = ActionType.Observe
+  }
 }
