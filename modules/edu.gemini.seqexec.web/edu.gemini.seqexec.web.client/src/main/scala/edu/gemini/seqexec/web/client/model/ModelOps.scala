@@ -3,10 +3,11 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
+import edu.gemini.seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 
 import scalaz.Show
 import scalaz.syntax.equal._
+import scalaz.syntax.show._
 import scalaz.std.AllInstances._
 
 /**
@@ -30,6 +31,16 @@ object ModelOps {
     case StepState.Error(msg) => s"Error $msg"
     case StepState.Running    => "Running"
     case StepState.Paused     => "Paused"
+  }
+
+  implicit val resourceShow: Show[Resource] = Show.shows[Resource] {
+    case Resource.TCS    => "TCS"
+    case Resource.Gcal   => "GCAL"
+    case Resource.Gems   => "GEMS"
+    case Resource.Altair => "Alt."
+    case Resource.P1     => "P1"
+    case Resource.OI     => "OI"
+    case i: Instrument   => i.shows
   }
 
   implicit class SequenceStateOps(val s: SequenceState) extends AnyVal {
