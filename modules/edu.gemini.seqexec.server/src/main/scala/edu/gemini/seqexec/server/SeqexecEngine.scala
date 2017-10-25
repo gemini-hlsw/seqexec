@@ -173,7 +173,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private def unloadEvent(seqId: SPObservationID): Event = Event.unload(seqId.stringValue)
 
-  private def toSeqexecEvent(ev: engine.Event)(svs: SequencesQueue[SequenceView]): SeqexecEvent = ev match {
+  private def toSeqexecEvent(ev: engine.Event)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_, _)            => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
