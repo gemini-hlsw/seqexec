@@ -195,7 +195,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
-      case engine.Completed(_, _, _)                                        => NewLogMessage("Action completed")
+      case engine.Completed(_, _, _)                                        => SequenceUpdated(svs)
       case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _))  => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
       case engine.Failed(_, _, _)                                           => NewLogMessage("Action failed")
