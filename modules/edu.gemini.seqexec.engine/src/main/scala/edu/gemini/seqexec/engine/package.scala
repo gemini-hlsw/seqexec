@@ -287,12 +287,17 @@ package object engine {
     /**
       * Log info lifted into Handle.
       */
-    def info(msg: String): HandleP[Unit] = pure((logger.info(msg), None)).void
+    def info(msg: => String): HandleP[Unit] = pure((logger.info(msg), None)).void
 
     /**
       * Log warning lifted into Handle.
       */
-    def warning(msg: String): HandleP[Unit] = pure((logger.warn(msg), None)).void
+    def warning(msg: => String): HandleP[Unit] = pure((logger.warn(msg), None)).void
+
+    /**
+      * Log debug lifted into Handle.
+      */
+    def debug(msg: => String): HandleP[Unit] = pure((logger.debug(msg), None)).void
   }
 
   /**
@@ -305,33 +310,33 @@ package object engine {
     */
   private def run(ev: Event): HandleP[Engine.State] = {
     def handleUserEvent(ue: UserEvent): HandleP[Unit] = ue match {
-      case Start(id, _)                => Logger.info("Engine: Started") *> start(id)
-      case Pause(id, _)                => Logger.info("Engine: Pause requested") *> pause(id)
-      case CancelPause(id, _)          => Logger.info("Engine: Pause canceled") *> cancelPause(id)
-      case Load(id, seq)               => Logger.info("Engine: Sequence loaded") *> load(id, seq)
-      case Unload(id)                  => Logger.info("Engine: Sequence unloaded") *> unload(id)
-      case Breakpoint(id, _, step, v)  => Logger.info("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
-      case SetOperator(name, user)     => Logger.info(s"Engine: Setting Operator name to '$name' by ${ue.username}") *> setOperator(name)
-      case SetObserver(id, user, name) => Logger.info(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
-      case SetConditions(conds, user)  => Logger.info("Engine: Setting conditions") *> setConditions(conds)
-      case SetImageQuality(iq, user)   => Logger.info("Engine: Setting image quality") *> setImageQuality(iq)
-      case SetWaterVapor(wv, user)     => Logger.info("Engine: Setting water vapor") *> setWaterVapor(wv)
-      case SetSkyBackground(sb, user)  => Logger.info("Engine: Setting sky background") *> setSkyBackground(sb)
-      case SetCloudCover(cc, user)     => Logger.info("Engine: Setting cloud cover") *> setCloudCover(cc)
-      case Poll                        => Logger.info("Engine: Polling current state")
+      case Start(id, _)                => Logger.debug("Engine: Started") *> start(id)
+      case Pause(id, _)                => Logger.debug("Engine: Pause requested") *> pause(id)
+      case CancelPause(id, _)          => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
+      case Load(id, seq)               => Logger.debug("Engine: Sequence loaded") *> load(id, seq)
+      case Unload(id)                  => Logger.debug("Engine: Sequence unloaded") *> unload(id)
+      case Breakpoint(id, _, step, v)  => Logger.debug("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
+      case SetOperator(name, user)     => Logger.debug(s"Engine: Setting Operator name to '$name' by ${ue.username}") *> setOperator(name)
+      case SetObserver(id, user, name) => Logger.debug(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
+      case SetConditions(conds, user)  => Logger.debug("Engine: Setting conditions") *> setConditions(conds)
+      case SetImageQuality(iq, user)   => Logger.debug("Engine: Setting image quality") *> setImageQuality(iq)
+      case SetWaterVapor(wv, user)     => Logger.debug("Engine: Setting water vapor") *> setWaterVapor(wv)
+      case SetSkyBackground(sb, user)  => Logger.debug("Engine: Setting sky background") *> setSkyBackground(sb)
+      case SetCloudCover(cc, user)     => Logger.debug("Engine: Setting cloud cover") *> setCloudCover(cc)
+      case Poll                        => Logger.debug("Engine: Polling current state")
       case GetState(f)                 => getState(f)
-      case ActionStop(id, f)           => Logger.info("Engine: Action stop requested") *> actionStop(id, f)
-      case Log(msg)                    => Logger.info(msg)
+      case ActionStop(id, f)           => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
+      case Log(msg)                    => Logger.debug(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
-      case Completed(id, i, r)     => Logger.info("Engine: Action completed") *> complete(id, i, r)
-      case PartialResult(id, i, r) => Logger.info("Engine: Partial result") *> partialResult(id, i, r)
-      case Failed(id, i, e)        => Logger.info("Engine: Action failed") *> fail(id)(i, e)
-      case Busy(id)                => Logger.info("Engine: Resources needed for this sequence are in use")
-      case Executed(id)            => Logger.info("Engine: Execution completed") *> next(id)
-      case Executing(id)           => Logger.info("Engine: Executing") *> execute(id)
-      case Finished(id)            => Logger.info("Engine: Finished") *> switch(id)(SequenceState.Completed)
+      case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
+      case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
+      case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
+      case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
+      case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
+      case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)
+      case Finished(id)            => Logger.debug("Engine: Finished") *> switch(id)(SequenceState.Completed)
       case Null                    => unit
     }
 

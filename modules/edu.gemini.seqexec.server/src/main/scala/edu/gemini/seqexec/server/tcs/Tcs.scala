@@ -74,7 +74,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
     //The desired science fold position is passed as a class parameter
     val tcsConfig = configFromSequence.copy(agc = configFromSequence.agc.copy(sfPos = scienceFoldPosition.some))
 
-    Log.info(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(tcsConfig, _))}")
+    Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(tcsConfig, _))}")
 
     if (subsystems.toList.contains(Subsystem.Mount))
       for {

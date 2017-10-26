@@ -27,7 +27,7 @@ object GcalControllerSim extends GcalController {
     s"diffuser = ${config.diffuser}")
 
   override def applyConfig(config: GcalConfig): SeqAction[Unit] = SeqAction.either {
-    Log.info("applyConfig: config is\n" + printConfig(config).mkString("\n"))
+    Log.debug("applyConfig: config is\n" + printConfig(config).mkString("\n"))
     TrySeq(())
   }
 }
