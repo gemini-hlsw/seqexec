@@ -23,6 +23,9 @@ import java.time.Instant
  * This is out of the scala/http4s loop
  */
 class AppenderForClients(out: Topic[SeqexecEvent]) extends AppenderBase[ILoggingEvent] {
+  // Remove some loggers. This is a weak for of protection
+  private val blackListedLoggers = List(""".*\.security\..*""".r)
+
   override def append(event: ILoggingEvent): Unit = {
     // Convert to a seqexec model to send to clients
     val level = event.getLevel match {
@@ -35,6 +38,6 @@ class AppenderForClients(out: Topic[SeqexecEvent]) extends AppenderBase[ILogging
 
     // Send a message to the clients if level is INFO or higher
     // We are outside the normal execution loop, thus we need to call unsafePerformSync directly
-    level.fold(Task.now(()))(l => out.publishOne(ServerLogMessage(l, timestamp, event.getMessage))).unsafePerformSync
+    level.filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined)).fold(Task.now(()))(l => out.publishOne(ServerLogMessage(l, timestamp, event.getMessage))).unsafePerformSync
   }
 }
