@@ -9,6 +9,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
@@ -23,6 +24,7 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
+import scalaz.syntax.std.option._
 import scalaz.std.AllInstances._
 import org.scalajs.dom.html.Div
 
@@ -70,6 +72,29 @@ object StepsTableContainer {
         )
       )
 
+    def labelColor(status: ActionStatus): String = status match {
+      case ActionStatus.Pending   => "gray"
+      case ActionStatus.Running   => "yellow"
+      case ActionStatus.Completed => "green"
+    }
+
+    def labelIcon(status: ActionStatus): Option[Icon] = status match {
+      case ActionStatus.Pending   => None
+      case ActionStatus.Running   => IconCircleNotched.copyIcon(loading = true).some
+      case ActionStatus.Completed => IconCheckmark.some
+    }
+
+    def statusLabel(system: Resource, status: ActionStatus): VdomNode =
+      Label(Label.Props(s"${system.shows}", color = labelColor(status).some, icon = labelIcon(status)))
+
+    def stepSystemsStatus(step: Step): VdomNode =
+      step match {
+        case StandardStep(_, _, _, _, _, _, configStatus, _) =>
+          <.div(configStatus.map(Function.tupled(statusLabel)).toTagMod)
+        case _ =>
+          <.div(step.status.shows)
+      }
+
     def stepProgress(state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
         case (SequenceState.Pausing, StepState.Running) =>
@@ -79,7 +104,7 @@ object StepsTableContainer {
         case (_, StepState.Pending) =>
           step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
         case (_, StepState.Running) =>
-          step.fileId.fold(<.div(state.shows))(fileId =>
+          step.fileId.fold(<.div(stepSystemsStatus(step)))(fileId =>
             <.div(
               ^.cls := "ui small progress vcentered",
               <.div(
@@ -272,7 +297,6 @@ object StepsTableContainer {
       <.div(
         ^.cls := "ui row scroll pane",
         SeqexecStyles.stepsListPane,
-        s"${p.steps.map(_.state)}",
         //^.ref := scrollRef,
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>

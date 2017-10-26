@@ -22,29 +22,29 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {
-      SeqexecEngine.configStatus(Nil) shouldBe Map.empty
+      SeqexecEngine.configStatus(Nil) shouldBe List.empty
     }
     it should "be all running if none has a result" in {
-      val status = Map(Resource.TCS -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Running)
       val executions: List[List[Action \/ Result]] = List(
         List(running(Resource.TCS)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be all running if none has a result 2" in {
-      val status = Map(Resource.TCS -> ActionStatus.Running, Instrument.GmosN -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Running, Instrument.GmosN -> ActionStatus.Running)
       val executions: List[List[Action \/ Result]] = List(
         List(running(Resource.TCS), running(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some running if none has a result even when the previous execution is complete" in {
-      val status = Map(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
       val executions: List[List[Action \/ Result]] = List(
         List(done(Resource.TCS)),
         List(done(Resource.TCS), running(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some pending if one will be done in the future" in {
-      val status = Map(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
       val executions: List[List[Action \/ Result]] = List(
         List(running(Instrument.GmosN)),
         List(done(Resource.TCS), done(Resource.TCS)))
@@ -54,7 +54,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       val executions: List[List[Action \/ Result]] = List(
         List(running(Instrument.GmosN)),
         List(running(Instrument.GmosN), running(Resource.TCS)))
-      val status = Map(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "stop evaluating where at least one is running even while some are done" in {
@@ -62,28 +62,28 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
         List(done(Resource.TCS), running(Instrument.GmosN)),
         List(done(Resource.TCS), running(Instrument.GmosN)),
         List(done(Resource.TCS), running(Instrument.GmosN), running(Resource.Gcal)))
-      val status = Map(Resource.TCS -> ActionStatus.Completed, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Completed, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
       SeqexecEngine.configStatus(executions) shouldBe status
     }
 
   "SeqexecEngine pending configStatus" should
     "build empty without tasks" in {
-      SeqexecEngine.pendingConfigStatus(Nil) shouldBe Map.empty
+      SeqexecEngine.pendingConfigStatus(Nil) shouldBe List.empty
     }
     it should "be all pending while one is running" in {
-      val status = Map(Resource.TCS -> ActionStatus.Pending)
+      val status = List(Resource.TCS -> ActionStatus.Pending)
       val executions: List[List[Action \/ Result]] = List(
         List(running(Resource.TCS)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending with mixed" in {
-      val status = Map(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
       val executions: List[List[Action \/ Result]] = List(
         List(running(Resource.TCS), done(Instrument.GmosN)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending on mixed combinations" in {
-      val status = Map(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
       val executions: List[List[Action \/ Result]] = List(
         List(done(Resource.TCS)),
         List(done(Resource.TCS), running(Instrument.GmosN)))
@@ -94,7 +94,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
         List(done(Resource.TCS), running(Instrument.GmosN)),
         List(done(Resource.TCS), running(Instrument.GmosN)),
         List(done(Resource.TCS), running(Instrument.GmosN), running(Resource.Gcal)))
-      val status = Map(Resource.TCS -> ActionStatus.Pending, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
+      val status = List(Resource.TCS -> ActionStatus.Pending, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
 }

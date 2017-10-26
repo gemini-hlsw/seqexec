@@ -3,10 +3,11 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.model.Model.{SequenceState, SequenceView, Step, StepState, StandardStep}
+import edu.gemini.seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 
 import scalaz.Show
 import scalaz.syntax.equal._
+import scalaz.syntax.show._
 import scalaz.std.AllInstances._
 
 /**
@@ -30,6 +31,16 @@ object ModelOps {
     case StepState.Error(msg) => s"Error $msg"
     case StepState.Running    => "Running"
     case StepState.Paused     => "Paused"
+  }
+
+  implicit val resourceShow: Show[Resource] = Show.shows[Resource] {
+    case Resource.TCS    => "TCS"
+    case Resource.Gcal   => "GCAL"
+    case Resource.Gems   => "GeMS"
+    case Resource.Altair => "Altair"
+    case Resource.P1     => "P1"
+    case Resource.OI     => "OI"
+    case i: Instrument   => i.shows
   }
 
   implicit class SequenceStateOps(val s: SequenceState) extends AnyVal {
@@ -81,9 +92,9 @@ object ModelOps {
       s.steps match {
         case x if x.forall(_.status === StepState.Pending)   => Some(0) // No steps have been executed, start at 0
         case x if x.forall(_.status === StepState.Completed) => None // All steps have been executed
-        case x if x.exists(_.hasError)                      => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =/= -1).map(_ + 1)
+        case x if x.exists(_.hasError)                       => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =/= -1).map(_ + 1)
         case x if x.exists(_.status === StepState.Paused)    => Option(x.indexWhere((s: Step) => s.status =/= StepState.Completed)).filter(_ =/= -1)
-        case x                                              => Option(x.indexWhere((s: Step) => s.status =/= StepState.Completed)).filter(_ =/= -1)
+        case x                                               => Option(x.indexWhere((s: Step) => s.status =/= StepState.Completed)).filter(_ =/= -1)
       }
 
     def isPartiallyExecuted: Boolean = s.steps.exists(_.status === StepState.Completed)

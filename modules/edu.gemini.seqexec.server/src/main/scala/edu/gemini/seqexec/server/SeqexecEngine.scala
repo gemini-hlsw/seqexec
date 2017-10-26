@@ -302,7 +302,7 @@ object SeqexecEngine {
     case _                       => Nil
   }
 
-  def configStatus(executions: List[List[engine.Action \/ engine.Result]]): Map[Resource, ActionStatus] = {
+  def configStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] = {
     // Split where at least one is running
     val (current, pending) = splitAfter(executions)(ex => ex.lefts.nonEmpty)
 
@@ -326,17 +326,17 @@ object SeqexecEngine {
 
     // Mark future systems as pending
     val pendingConfig = systemsPending.diff(presentSystems.toList).strengthR(ActionStatus.Pending)
-    configStatus ++ pendingConfig
+    (configStatus ++ pendingConfig).toList.sortBy(_._1)
   }
 
-  def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): Map[Resource, ActionStatus] =
+  def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] =
     executions.map {
       s => s.separate.bimap(_.map(_.kind).flatMap(kindToResult), _.map(_.kind).flatMap(kindToResult))
     }.flatMap {
       x => x._1 ::: x._2
-    }.distinct.strengthR(ActionStatus.Pending).toMap
+    }.distinct.strengthR(ActionStatus.Pending).sortBy(_._1)
 
-  def stepConfigStatus(step: StepAR): Map[Resource, ActionStatus] =
+  def stepConfigStatus(step: StepAR): List[(Resource, ActionStatus)] =
     engine.Step.status(step) match {
       case StepState.Pending => pendingConfigStatus(step.executions)
       case _                 => configStatus(step.executions)

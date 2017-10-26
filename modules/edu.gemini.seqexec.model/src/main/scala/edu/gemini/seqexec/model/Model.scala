@@ -160,6 +160,23 @@ object Model {
     case object Gems extends Resource
     case object Altair extends Resource
 
+    implicit val order: Order[Resource] = Order.orderBy {
+      case TCS               => 1
+      case Gcal              => 2
+      case Gems              => 3
+      case Altair            => 4
+      case OI                => 5
+      case P1                => 6
+      case Instrument.F2     => 11
+      case Instrument.GmosS  => 12
+      case Instrument.GmosN  => 13
+      case Instrument.GPI    => 14
+      case Instrument.GSAOI  => 15
+      case Instrument.GNIRS  => 16
+      case Instrument.NIRI   => 17
+      case Instrument.NIFS   => 18
+    }
+    implicit val ordering: scala.math.Ordering[Resource] = order.toScalaOrdering
   }
   sealed trait Instrument extends Resource
   object Instrument {
@@ -247,7 +264,7 @@ object Model {
     override val breakpoint: Boolean,
     override val skip: Boolean,
     override val fileId: Option[dhs.ImageFileId],
-    configStatus: Map[Resource, ActionStatus],
+    configStatus: List[(Resource, ActionStatus)],
     observeStatus: ActionStatus
   ) extends Step
   // Other kinds of Steps to be defined.
