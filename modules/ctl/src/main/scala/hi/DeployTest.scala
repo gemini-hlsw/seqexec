@@ -103,8 +103,8 @@ object DeployTest {
                s"--net=$PrivateNetwork",
                 "--name",    s"$version-G",
                 "--label",   s"gem.version=$version",
-                "--health-cmd", if (r) "\"nc -z localhost 6666\""
-                                else     "nc -z localhost 6666",
+                // "--health-cmd", if (r) "\"nc -z localhost 6666\""
+                //                 else     "nc -z localhost 6666",
                 "--publish", s"$Port:6666",
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://$version-P/gem",
                 iGem.hash
@@ -153,7 +153,7 @@ object DeployTest {
     gosub("Deploying Gem.") {
       for {
         kGem <- createGemContainer(version, iGem)
-        _    <- awaitHealthy(kGem)
+        // _    <- awaitHealthy(kGem)
       } yield kGem
     }
 
