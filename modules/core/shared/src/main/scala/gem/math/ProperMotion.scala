@@ -113,6 +113,7 @@ object ProperMotion {
    * @param elapsedYears    elapsed time in epoch years
    * @return (ra, dec) in radians, corrected for proper motion
    */
+  // scalastyle:off method.length
   private def properMotionʹ(
     baseCoordinates: Vec2,
     daysPerYear:     Double,
@@ -166,6 +167,7 @@ object ProperMotion {
     (raʹʹ, decʹ)
 
   }
+  // scalastyle:on method.length
 
 }
 
@@ -188,7 +190,7 @@ object ProperMotionExample {
   def main(args: Array[String]): Unit = {
     (0.0 to 10.0 by 1.0) foreach { y =>
       val cs = Barnard.plusYears(y).baseCoordinates
-      println(s"${2000 + y} -> $cs")
+      println(s"${2000 + y} -> $cs") // scalastyle:off console.io
     }
   }
 
