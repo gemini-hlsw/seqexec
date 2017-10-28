@@ -32,11 +32,11 @@
    <parameter name="regex"><![CDATA[println]]></parameter>
   </parameters>
  </check>
- <check level="error" class="org.scalastyle.scalariform.NumberOfTypesChecker" enabled="true">
+ <!-- <check level="error" class="org.scalastyle.scalariform.NumberOfTypesChecker" enabled="true">
   <parameters>
    <parameter name="maxTypes"><![CDATA[25]]></parameter>
   </parameters>
- </check>
+ </check> -->
  <!-- <check level="error" class="org.scalastyle.scalariform.CyclomaticComplexityChecker" enabled="true">
   <parameters>
    <parameter name="maximum"><![CDATA[10]]></parameter>
