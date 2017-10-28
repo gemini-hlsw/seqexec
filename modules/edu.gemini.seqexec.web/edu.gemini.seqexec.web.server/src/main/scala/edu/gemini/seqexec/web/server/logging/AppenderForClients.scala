@@ -23,7 +23,8 @@ import java.time.Instant
  * This is out of the scala/http4s loop
  */
 class AppenderForClients(out: Topic[SeqexecEvent]) extends AppenderBase[ILoggingEvent] {
-  // Remove some loggers. This is a weak for of protection
+  // Remove some loggers. This is a weak form of protection where he don't send some
+  // loggers to the cilent, e.g. security related logs
   private val blackListedLoggers = List(""".*\.security\..*""".r)
 
   override def append(event: ILoggingEvent): Unit = {
