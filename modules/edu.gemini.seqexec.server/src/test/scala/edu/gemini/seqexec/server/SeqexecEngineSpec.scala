@@ -19,6 +19,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     engine.fromTask(ActionType.Configure(resource), dummyTask).left[Result]
   def done(resource: Resource): Action \/ Result =
     Result.OK(Result.Configured(resource)).right[Action]
+  def observing: Action \/ Result =
+    engine.fromTask(ActionType.Observe, dummyTask).left[Result]
+  def observed: Action \/ Result =
+    Result.OK(Result.Observed("fileId")).right[Action]
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {
@@ -96,5 +100,30 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
         List(done(Resource.TCS), running(Instrument.GmosN), running(Resource.Gcal)))
       val status = List(Resource.TCS -> ActionStatus.Pending, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
+    }
+
+  "SeqexecEngine observeStatus" should
+    "be pending on empty" in {
+      SeqexecEngine.observeStatus(Nil, Nil) shouldBe ActionStatus.Pending
+    }
+    it should "be pending if anything is pending" in {
+      val status = List(Resource.TCS -> ActionStatus.Pending)
+      SeqexecEngine.observeStatus(Nil, status) shouldBe ActionStatus.Pending
+    }
+    it should "be pending if anything is running" in {
+      val status = List(Resource.TCS -> ActionStatus.Pending)
+      SeqexecEngine.observeStatus(Nil, status) shouldBe ActionStatus.Pending
+    }
+    it should "be running if there is an action observe" in {
+      val status = List(Resource.TCS -> ActionStatus.Completed)
+      val executions: List[List[Action \/ Result]] = List(
+        List(done(Resource.TCS), observing))
+      SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Running
+    }
+    it should "be done if there is a result observe" in {
+      val status = List(Resource.TCS -> ActionStatus.Completed)
+      val executions: List[List[Action \/ Result]] = List(
+        List(done(Resource.TCS), observed))
+      SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Completed
     }
 }

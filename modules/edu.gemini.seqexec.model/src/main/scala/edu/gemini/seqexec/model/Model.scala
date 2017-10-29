@@ -246,6 +246,8 @@ object Model {
     case object Pending extends ActionStatus
     case object Completed extends ActionStatus
     case object Running extends ActionStatus
+
+    implicit val equal: Equal[ActionStatus] = Equal.equalA[ActionStatus]
   }
 
   sealed trait Step {
