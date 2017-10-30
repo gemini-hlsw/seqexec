@@ -70,7 +70,7 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom     = "0.9.3"
-    val scalajsReact = "1.1.0"
+    val scalajsReact = "1.1.1"
     val scalaCSS     = "0.5.3"
     val booPickle    = "1.2.6"
     val diode        = "1.1.2"
@@ -79,18 +79,18 @@ object Settings {
     val scalaJQuery  = "1.2"
 
     // Java libraries
-    val scalaZ       = "7.2.15"
+    val scalaZ       = "7.2.16"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
-    val http4s       = "0.16.4a"
+    val http4s       = "0.16.5a"
     val squants      = "1.3.0"
     val argonaut     = "6.2"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
     val jwt          = "0.14.0"
     val slf4j        = "1.7.25"
-    val log4s        = "1.3.6"
+    val log4s        = "1.4.0"
     val logback      = "1.2.3"
     val janino       = "3.0.7"
     val knobs        = "4.0.31-scalaz-7.2"
