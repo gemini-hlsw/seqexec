@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
+import edu.gemini.seqexec.model.Model.{ActionStatus, Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 
 import scalaz.Show
 import scalaz.syntax.equal._
@@ -31,6 +31,19 @@ object ModelOps {
     case StepState.Error(msg) => s"Error $msg"
     case StepState.Running    => "Running"
     case StepState.Paused     => "Paused"
+  }
+
+  implicit val stepShow: Show[Step] = Show.shows[Step] { s =>
+    s.status match {
+      case StepState.Pending                    => "Pending"
+      case StepState.Completed                  => "Done"
+      case StepState.Skipped                    => "Skipped"
+      case StepState.Error(msg)                 => s"Error $msg"
+      case StepState.Running if s.isObserving   => "Observing..."
+      case StepState.Running if s.isConfiguring => "Configuring..."
+      case StepState.Running                    => "Running..."
+      case StepState.Paused                     => "Paused"
+    }
   }
 
   implicit val resourceShow: Show[Resource] = Show.shows[Resource] {
@@ -125,6 +138,16 @@ object ModelOps {
         case StepState.Error(_) => true
         case _                  => false
       }
+
+    def isObserving: Boolean = s match {
+      case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Running
+      case _                                    => false
+    }
+
+    def isConfiguring: Boolean = s match {
+      case StandardStep(_, _, _, _, _, _, c, _) => c.map(_._2).contains(ActionStatus.Running)
+      case _                                    => false
+    }
 
   }
 }
