@@ -50,10 +50,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some pending if one will be done in the future" in {
-      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
+      val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
       val executions: List[List[Action \/ Result]] = List(
         List(running(Instrument.GmosN)),
-        List(done(Resource.TCS), done(Resource.TCS)))
+        List(done(Resource.TCS), done(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "stop at the first with running steps" in {

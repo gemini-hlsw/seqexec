@@ -303,8 +303,12 @@ object SeqexecEngine {
   }
 
   private[server] def configStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] = {
+    // Remove undefined actions
+    val ex = executions.filter {
+      case x => !x.rights.exists(_.kind === ActionType.Undefined)
+    }
     // Split where at least one is running
-    val (current, pending) = splitAfter(executions)(ex => ex.lefts.nonEmpty)
+    val (current, pending) = splitAfter(ex)(ex => ex.lefts.nonEmpty)
 
     // Calculate the state up to the current
     val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) {
@@ -317,16 +321,17 @@ object SeqexecEngine {
     }
 
     // Find out systems in the future
-    val presentSystems = configStatus.keys
+    val presentSystems = configStatus.keys.toList
+    // Calculate status of pending items
     val systemsPending = pending.map {
       s => s.separate.bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
-      x => x._1 ::: x._2
+      x => x._1.strengthR(ActionStatus.Pending) ::: x._2.strengthR(ActionStatus.Completed)
+    }.filter {
+      case (a, b) => !presentSystems.contains(a)
     }.distinct
 
-    // Mark future systems as pending
-    val pendingConfig = systemsPending.diff(presentSystems.toList).strengthR(ActionStatus.Pending)
-    (configStatus ++ pendingConfig).toList.sortBy(_._1)
+    (configStatus ++ systemsPending).toList.sortBy(_._1)
   }
 
   /**
