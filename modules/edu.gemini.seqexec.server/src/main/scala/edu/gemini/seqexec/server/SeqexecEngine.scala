@@ -297,12 +297,12 @@ object SeqexecEngine {
   def splitAfter[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p) + 1)
 
-  def kindToResult(kind: ActionType): List[Resource] = kind match {
+  private def kindToResource(kind: ActionType): List[Resource] = kind match {
     case ActionType.Configure(r) => List(r)
     case _                       => Nil
   }
 
-  def configStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] = {
+  private[server] def configStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] = {
     // Split where at least one is running
     val (current, pending) = splitAfter(executions)(ex => ex.lefts.nonEmpty)
 
@@ -311,15 +311,15 @@ object SeqexecEngine {
       case (s, e) =>
         val (a, r) = e.separate
           .bimap(
-            _.flatMap(a => kindToResult(a.kind).strengthR(ActionStatus.Running)).toMap,
-            _.flatMap(r => kindToResult(r.kind).strengthR(ActionStatus.Completed)).toMap)
+            _.flatMap(a => kindToResource(a.kind).strengthR(ActionStatus.Running)).toMap,
+            _.flatMap(r => kindToResource(r.kind).strengthR(ActionStatus.Completed)).toMap)
         s ++ a ++ r
     }
 
     // Find out systems in the future
     val presentSystems = configStatus.keys
     val systemsPending = pending.map {
-      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResult), _.map(_.kind).flatMap(kindToResult))
+      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
       x => x._1 ::: x._2
     }.distinct
@@ -329,20 +329,50 @@ object SeqexecEngine {
     (configStatus ++ pendingConfig).toList.sortBy(_._1)
   }
 
-  def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] =
+  /**
+   * Calculates the config status for pending steps
+   */
+  private[server] def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] =
     executions.map {
-      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResult), _.map(_.kind).flatMap(kindToResult))
+      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
       x => x._1 ::: x._2
     }.distinct.strengthR(ActionStatus.Pending).sortBy(_._1)
 
-  def stepConfigStatus(step: StepAR): List[(Resource, ActionStatus)] =
+  /**
+   * Overall pending status for a step
+   */
+  private def stepConfigStatus(step: StepAR): List[(Resource, ActionStatus)] =
     engine.Step.status(step) match {
       case StepState.Pending => pendingConfigStatus(step.executions)
       case _                 => configStatus(step.executions)
     }
 
+  protected[server] def observeStatus(executions: List[List[engine.Action \/ engine.Result]], configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
+    def containsPartial(e: List[engine.Action \/ engine.Result]): Boolean =
+      e.rights.exists {
+        case Partial(FileIdAllocated(_), _) => true
+        case _                              => false
+      }
+
+    def containsObserve(e: List[engine.Action \/ engine.Result]): Boolean =
+      e.rights.map(_.kind).contains(ActionType.Observe)
+
+    if (configStatus.forall(_._2 === ActionStatus.Completed)) {
+      // Find one with kind observe
+      executions.filter { e =>
+        val (a, r) = e.separate.bimap(_.map(_.kind), _.map(_.kind))
+        a.contains(ActionType.Observe) || r.contains(ActionType.Observe)
+      }.map {
+        case e if containsPartial(e) => ActionStatus.Running
+        case e if containsObserve(e) => ActionStatus.Completed
+        case _                       => ActionStatus.Running
+      }.headOption.getOrElse(ActionStatus.Pending)
+    } else ActionStatus.Pending
+  }
+
   def viewStep(step: StepAR): StandardStep = {
+    val configStatus = stepConfigStatus(step)
     StandardStep(
       id = step.id,
       config = step.config,
@@ -351,9 +381,8 @@ object SeqexecEngine {
       breakpoint = step.breakpoint,
       // TODO: Implement skipping at Engine level
       skip = false,
-      configStatus = stepConfigStatus(step),
-      // TODO: Implement standard step at Engine level
-      observeStatus = ActionStatus.Pending,
+      configStatus = configStatus,
+      observeStatus = observeStatus(step.executions, configStatus),
       fileId = step.fileId
     )
   }
