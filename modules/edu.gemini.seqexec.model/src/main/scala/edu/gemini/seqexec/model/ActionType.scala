@@ -5,6 +5,8 @@ package edu.gemini.seqexec.model
 
 import edu.gemini.seqexec.model.Model.Resource
 
+import scalaz.Equal
+
 /**
   * Created by jluhrs on 10/13/17.
   */
@@ -15,4 +17,6 @@ object ActionType {
   // Used in tests
   object Undefined extends ActionType
   final case class Configure(sys: Resource) extends ActionType
+
+  implicit val eq: Equal[ActionType] = Equal.equalA[ActionType]
 }

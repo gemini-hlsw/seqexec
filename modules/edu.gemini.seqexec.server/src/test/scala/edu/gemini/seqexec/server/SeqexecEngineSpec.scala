@@ -23,6 +23,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     engine.fromTask(ActionType.Observe, dummyTask).left[Result]
   def observed: Action \/ Result =
     Result.OK(Result.Observed("fileId")).right[Action]
+  def fileId: Action \/ Result =
+    Result.Partial(Result.FileIdAllocated("fileId"), engine.fromTask(ActionType.Observe, dummyTask)).right[Action]
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {
@@ -125,5 +127,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       val executions: List[List[Action \/ Result]] = List(
         List(done(Resource.TCS), observed))
       SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Completed
+    }
+    it should "be running if there is a partial result with the file id" in {
+      val status = List(Resource.TCS -> ActionStatus.Completed)
+      val executions: List[List[Action \/ Result]] = List(
+        List(done(Resource.TCS), fileId))
+      SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Running
     }
 }

@@ -349,15 +349,24 @@ object SeqexecEngine {
     }
 
   protected[server] def observeStatus(executions: List[List[engine.Action \/ engine.Result]], configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
+    def containsPartial(e: List[engine.Action \/ engine.Result]): Boolean =
+      e.rights.exists {
+        case Partial(FileIdAllocated(_), _) => true
+        case _                              => false
+      }
+
+    def containsObserve(e: List[engine.Action \/ engine.Result]): Boolean =
+      e.rights.map(_.kind).contains(ActionType.Observe)
+
     if (configStatus.forall(_._2 === ActionStatus.Completed)) {
       // Find one with kind observe
-      executions.map { e =>
-        e.separate.bimap(_.map(_.kind), _.map(_.kind))
-      }.filter {
-        case (a, r) => a.contains(ActionType.Observe) || r.contains(ActionType.Observe)
+      executions.filter { e =>
+        val (a, r) = e.separate.bimap(_.map(_.kind), _.map(_.kind))
+        a.contains(ActionType.Observe) || r.contains(ActionType.Observe)
       }.map {
-        case (a, r) if r.contains(ActionType.Observe) => ActionStatus.Completed
-        case _                                        => ActionStatus.Running
+        case e if containsPartial(e) => ActionStatus.Running
+        case e if containsObserve(e) => ActionStatus.Completed
+        case _                       => ActionStatus.Running
       }.headOption.getOrElse(ActionStatus.Pending)
     } else ActionStatus.Pending
   }
