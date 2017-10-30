@@ -11,11 +11,14 @@ import edu.gemini.seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
 import org.log4s._
 
 import scala.annotation.tailrec
-import scalaz.{EitherT, \/}
+import scalaz.{Show, EitherT, \/}
 import scalaz.concurrent.Task
+import scalaz.syntax.show._
 
 private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends GmosController[T] {
   private val Log = getLogger
+
+  implicit val configShow: Show[GmosConfig[T]] = Show.shows { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})" }
 
   override def getConfig: SeqAction[GmosConfig[T]] = ??? // scalastyle:ignore
 
@@ -25,9 +28,9 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   private val tic = 200
 
   @tailrec
-  private def observeTic(obsid: ImageFileId, stop: Boolean, abort: Boolean, remain: Int): \/[SeqexecFailure, ImageFileId] =
+  private def observeTic(obsid: ImageFileId, stop: Boolean, abort: Boolean, remain: Int): SeqexecFailure \/ ImageFileId =
     if(remain < tic) {
-      Log.info(s"Simulate Gmos $name observation completed")
+      Log.debug(s"Simulate Gmos $name observation completed")
       TrySeq(obsid)
     } else if(stop) TrySeq.fail(SeqexecFailure.Execution("Exposure stopped by user."))
       else if(abort) TrySeq.fail(SeqexecFailure.Execution("Exposure aborted by user."))
@@ -37,26 +40,26 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
       }
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
-    Log.info(s"Simulate taking Gmos $name observation with label " + obsid)
+    Log.debug(s"Simulate taking Gmos $name observation with label $obsid")
     stopFlag.set(false)
     abortFlag.set(false)
     observeTic(obsid, false, false, 5000)
   })
 
-  private def show(config: GmosConfig[T]): String = s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})"
+
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
-    Log.info(s"Simulate applying Gmos $name configuration ${show(config)}")
+    Log.debug(s"Simulate applying Gmos $name configuration ${config.shows}")
     TrySeq(())
   } )
 
   override def stopObserve: SeqAction[Unit] = EitherT( Task {
-    Log.info(s"Simulate stopping Gmos $name exposure")
+    Log.debug(s"Simulate stopping Gmos $name exposure")
     stopFlag.set(true)
     TrySeq(())
   } )
 
   override def abortObserve: SeqAction[Unit] = EitherT( Task {
-      Log.info(s"Simulate aborting Gmos $name exposure")
+      Log.debug(s"Simulate aborting Gmos $name exposure")
       abortFlag.set(true)
       TrySeq(())
     } )
