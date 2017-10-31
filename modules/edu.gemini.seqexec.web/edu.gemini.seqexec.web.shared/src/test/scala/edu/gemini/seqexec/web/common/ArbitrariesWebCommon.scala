@@ -24,7 +24,7 @@ trait ArbitrariesWebCommon {
     Arbitrary {
       val maxSize = 1000
       for {
-        l <- Gen.choose(0, maxSize)
+        l <- Gen.choose(1, maxSize)
         s <- Gen.choose(0, l - 1)
         d <- Gen.listOfN(s, arbitrary[A])
       } yield FixedLengthBuffer.unsafeFromInt(l, d: _*)
