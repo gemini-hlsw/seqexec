@@ -134,13 +134,13 @@ object StepsTableContainer {
             ^.cls := "left column five wide left floated",
             <.div(
               ^.cls := "ui segment basic running",
-              step.status.shows
+              step.shows
             )
           ),
           <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
-            StepsControlButtons(p.id, p.instrument, p.state, step)
+            StepsControlButtons(p.id, p.instrument, p.state, step).when(step.isObserving)
           ).when(loggedIn && p.state === SequenceState.Running)
         )
       )
@@ -258,7 +258,10 @@ object StepsTableContainer {
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
-          ^.cls := "middle aligned",
+          ^.classSet(
+            "top aligned"    -> step.isObserving,
+            "middle aligned" -> !step.isObserving
+          ),
           stepProgress(state, step)
         ),
         <.td(
