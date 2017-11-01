@@ -66,7 +66,7 @@ object SequenceTabContent {
     .render_P { p =>
       val InstrumentTabContentFocus(instrument, active, sequenceSelected) = p.p()
       <.div(
-        ^.cls := "ui bottom attached tab segment",
+        ^.cls := "ui attached tab segment",
         ^.classSet(
           "active" -> active
         ),
@@ -92,9 +92,17 @@ object SequenceTabsBody {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "twelve wide computer twelve wide tablet sixteen wide mobile column",
-        InstrumentsTabs(p.site),
-        p.instrumentConnects.map(c => c(s => SequenceTabContent(p.site, s))).toList.toTagMod
+        ^.cls := "ui grid",
+        <.div(
+          ^.cls := "stretched row",
+          <.div(
+            ^.cls := "sixteen wide column",
+            <.div(
+              InstrumentsTabs(p.site),
+              p.instrumentConnects.map(c => c(s => SequenceTabContent(p.site, s))).toList.toTagMod
+            )
+          )
+        )
       )
     ).build
 
@@ -110,14 +118,17 @@ object SequenceHeadersAndTable {
   private val component = ScalaComponent.builder[SeqexecSite]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
+      <.div(<.div(
+        ^.cls := "row",
+        SequenceTabsBody(p)
+      ),
       <.div(
         ^.cls := "row",
         <.div(
-          ^.cls := "four wide column computer tablet only",
+          ^.cls := "sixteen wide column computer tablet only",
           headerSideBarConnect(HeadersSideBar.apply)
-        ),
-        SequenceTabsBody(p)
-      )
+        )
+      ))
     )
     .build
 
@@ -135,7 +146,7 @@ object SequenceTabs {
       <.div(
         ^.cls := "ui bottom attached segment",
         <.div(
-          ^.cls := "ui two column vertically divided grid",
+          ^.cls := "ui grid",
           SequenceHeadersAndTable(p)
         )
       )
@@ -158,7 +169,10 @@ object SequenceArea {
       <.div(
         ^.cls := "ui raised segments container",
         TextMenuSegment("Running Sequences", "key.sequences.menu"),
-        SequenceTabs(p)
+        <.div(
+          ^.cls := "ui bottom attached segment",
+          SequenceTabsBody(p)
+        )
       )
     ).build
 
