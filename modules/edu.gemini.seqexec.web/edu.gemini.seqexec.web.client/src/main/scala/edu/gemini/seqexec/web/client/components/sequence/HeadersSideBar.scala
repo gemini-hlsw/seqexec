@@ -71,24 +71,46 @@ object HeadersSideBar {
       val operatorEV = StateSnapshot(~s.currentText)(updateState)
       <.div(
         ^.cls := "ui raised secondary segment",
-        <.h4("Headers"),
         <.div(
           ^.cls := "ui form",
           <.div(
-            ^.cls := "required field",
-            FormLabel(FormLabel.Props("Operator", Some("operator"))),
-            InputEV(InputEV.Props("operator", "operator",
-              operatorEV,
-              placeholder = "Operator...",
-              disabled = !enabled,
-              onBlur = _ => submitIfChanged
-            ))
-          ),
-
-          DropdownMenu(DropdownMenu.Props("Image Quality", p.model().conditions.iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
-          DropdownMenu(DropdownMenu.Props("Cloud Cover", p.model().conditions.cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged)),
-          DropdownMenu(DropdownMenu.Props("Water Vapor", p.model().conditions.wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
-          DropdownMenu(DropdownMenu.Props("Sky Background", p.model().conditions.sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
+            ^.cls := "ui grid",
+            <.div(
+              ^.cls := "row",
+              <.div(
+                ^.cls := "sixteen wide column",
+                <.div(
+                  ^.cls := "required field",
+                  FormLabel(FormLabel.Props("Operator", Some("operator"))),
+                  InputEV(InputEV.Props("operator", "operator",
+                    operatorEV,
+                    placeholder = "Operator...",
+                    disabled = !enabled,
+                    onBlur = _ => submitIfChanged
+                  ))
+                )
+              ),
+            ),
+            <.div(
+              ^.cls := "row",
+              <.div(
+                ^.cls := "four wide column",
+                DropdownMenu(DropdownMenu.Props("Image Quality", p.model().conditions.iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
+              ),
+              <.div(
+                ^.cls := "four wide column",
+                DropdownMenu(DropdownMenu.Props("Cloud Cover", p.model().conditions.cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged)),
+              ),
+              <.div(
+                ^.cls := "four wide column",
+                DropdownMenu(DropdownMenu.Props("Water Vapor", p.model().conditions.wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
+              ),
+              <.div(
+                ^.cls := "four wide column",
+                DropdownMenu(DropdownMenu.Props("Sky Background", p.model().conditions.sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
+              )
+            )
+          )
         )
       )
     }

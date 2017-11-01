@@ -7,7 +7,7 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.actions.WSConnect
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.actions.NavigateSilentTo
-import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
+import edu.gemini.seqexec.web.client.components.sequence.{HeadersArea, SequenceArea}
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
@@ -34,6 +34,7 @@ object SeqexecMain {
         NavBar(p.site),
         QueueArea(p.ctl),
         SequenceArea(p.site),
+        HeadersArea(p.site),
         logConnect(LogArea.apply),
         lbConnect(LoginBox.apply),
         resourcesBusyConnect(ResourcesBox.apply)

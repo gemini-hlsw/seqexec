@@ -3,12 +3,10 @@
 
 package edu.gemini.seqexec.web.client.components.sequence
 
-import diode.ModelR
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.components.TextMenuSegment
 import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
-import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, HeaderSideBarFocus, InstrumentTabContentFocus, ClientStatus}
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
@@ -118,17 +116,18 @@ object SequenceHeadersAndTable {
   private val component = ScalaComponent.builder[SeqexecSite]("SequenceHeadersAndTable")
     .stateless
     .render_P(p =>
-      <.div(<.div(
-        ^.cls := "row",
-        SequenceTabsBody(p)
-      ),
       <.div(
-        ^.cls := "row",
+        ^.cls := "ui grid",
         <.div(
-          ^.cls := "sixteen wide column computer tablet only",
-          headerSideBarConnect(HeadersSideBar.apply)
+          ^.cls := "stretched row",
+          <.div(
+            ^.cls := "sixteen wide column",
+            <.div(
+              headerSideBarConnect(HeadersSideBar.apply)
+            )
+          )
         )
-      ))
+      )
     )
     .build
 
@@ -160,8 +159,6 @@ object SequenceTabs {
  * Top level container of the sequence area
  */
 object SequenceArea {
-  type SequencesModel = ModelR[SeqexecAppRootModel, (ClientStatus, SequencesOnDisplay)]
-  type HeadersSideBarModel = ModelR[SeqexecAppRootModel, HeaderSideBarFocus]
 
   private val component = ScalaComponent.builder[SeqexecSite]("QueueTableSection")
     .stateless
@@ -172,6 +169,26 @@ object SequenceArea {
         <.div(
           ^.cls := "ui bottom attached segment",
           SequenceTabsBody(p)
+        )
+      )
+    ).build
+
+  def apply(site: SeqexecSite): Unmounted[SeqexecSite, Unit, Unit] = component(site)
+}
+
+/**
+ * Top level container of the headers area
+ */
+object HeadersArea {
+  private val component = ScalaComponent.builder[SeqexecSite]("QueueTableSection")
+    .stateless
+    .render_P( p =>
+      <.div(
+        ^.cls := "ui raised segments container",
+        TextMenuSegment("Headers", "key.headers.menu"),
+        <.div(
+          ^.cls := "ui bottom attached segment",
+          SequenceHeadersAndTable(p)
         )
       )
     ).build
