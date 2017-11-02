@@ -29,7 +29,7 @@ object TaskRef {
       @volatile var value = a
       new TaskRef[A] { ref =>
         def get = Task.delay(value)
-        def modify(f: A => A) = Task.delay(ref.synchronized(value = f(value)))
+        def modify(f: A => A) = Task.delay(ref.synchronized{ value = f(value) })
       }
     }
 
