@@ -65,7 +65,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaCommonVersion = "2.12.3"
+    val scalaCommonVersion = "2.12.4"
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
 
     // ScalaJS libraries
@@ -90,7 +90,7 @@ object Settings {
     val unboundId    = "3.2.1"
     val jwt          = "0.14.0"
     val slf4j        = "1.7.25"
-    val log4s        = "1.4.0"
+    val log4s        = "1.3.6"
     val logback      = "1.2.3"
     val janino       = "3.0.7"
     val knobs        = "4.0.31-scalaz-7.2"
