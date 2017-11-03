@@ -37,7 +37,10 @@ public class CaObserveSenderImpl implements CaApplySender {
     private final CaCarRecord car;
     private final ReadOnlyClientEpicsChannel<Short> abortMark;
     private final ReadOnlyClientEpicsChannel<Short> stopMark;
-    
+
+    private final short MRK_PRESET = 2;
+    private final short MRK_IDLE = 0;
+
     private long timeout;
     private TimeUnit timeoutUnit;
     private ScheduledExecutorService executor;
@@ -208,7 +211,7 @@ public class CaObserveSenderImpl implements CaApplySender {
     @Override
     public synchronized CaCommandMonitor post() {
         CaCommandMonitorImpl cm = new CaCommandMonitorImpl();
-        if (currentState != IdleState) {
+        if (!currentState.equals(IdleState)) {
             failCommand(cm, new CaCommandInProgress());
         } else {
             currentState = new CaObserveSenderImpl.WaitPreset(cm);
@@ -442,7 +445,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
         @Override
         public State onStopMarkChange(Short val) {
-            if(stopMark==2 && val == 0) {
+            if(stopMark == MRK_PRESET && val == MRK_IDLE) {
                 return new WaitStopCompletion(cm, clid);
             } else {
                 return new WaitCompletion(cm, clid, val, abortMark);
@@ -451,7 +454,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
         @Override
         public State onAbortMarkChange(Short val) {
-            if(abortMark==2 && val == 0) {
+            if(abortMark == MRK_PRESET && val == MRK_IDLE) {
                 return new WaitAbortCompletion(cm, clid);
             } else {
                 return new WaitCompletion(cm, clid, stopMark, val);
@@ -588,7 +591,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
     private synchronized void onApplyValChange(Integer val) {
         currentState = currentState.onApplyValChange(val);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -596,7 +599,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
     private synchronized void onCarClidChange(Integer val) {
         currentState = currentState.onCarClidChange(val);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -604,7 +607,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
     private synchronized void onCarValChange(CarState carState) {
         currentState = currentState.onCarValChange(carState);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -612,7 +615,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
     private synchronized void onStopMarkChange(Short val) {
         currentState = currentState.onStopMarkChange(val);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -620,7 +623,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
     private synchronized void onAbortMarkChange(Short val) {
         currentState = currentState.onAbortMarkChange(val);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -633,7 +636,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
     @Override
     public synchronized boolean isActive() {
-        return currentState != IdleState;
+        return !currentState.equals(IdleState);
     }
 
     @Override
@@ -651,7 +654,7 @@ public class CaObserveSenderImpl implements CaApplySender {
     }
 
     private void failCommand(final CaCommandMonitorImpl cm, final Exception ex) {
-        executor.execute(() ->cm.completeFailure(ex));
+        executor.execute(() -> cm.completeFailure(ex));
     }
 
     private void failCommandWithApplyError(final CaCommandMonitorImpl cm) {
