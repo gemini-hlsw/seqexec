@@ -83,7 +83,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   object observeCmd extends ObserveCommand {
     private val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
     override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
-      GMOS_TOP + ":apply", GMOS_TOP + "dc:observeC", GMOS_TOP + "dc:stop", GMOS_TOP + "dc:abort", ""))
+      GMOS_TOP + "dc:apply", GMOS_TOP + "dc:observeC", GMOS_TOP + "dc:stop", GMOS_TOP + "dc:abort", ""))
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)

@@ -19,7 +19,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   private val Log = getLogger
 
   implicit val configShow: Show[GmosConfig[T]] = Show.shows { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})" }
-  
+
   override def getConfig: SeqAction[GmosConfig[T]] = ??? // scalastyle:ignore
 
   private val stopFlag = new AtomicBoolean(false)

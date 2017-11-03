@@ -114,8 +114,8 @@ object Settings {
 
     val opencsv        = "2.1"
 
-    val epicsService   = "0.16"
-    val gmpCommandRecords = "0.6.4"
+    val epicsService   = "0.17"
+    val gmpCommandRecords = "0.6.5"
     val guava          = "16.0.1"
   }
 

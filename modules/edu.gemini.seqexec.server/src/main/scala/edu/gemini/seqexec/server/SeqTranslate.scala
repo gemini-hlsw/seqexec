@@ -126,8 +126,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult(ActionType.Observe))))))
 
       extractStatus(config) match {
-        case StepState.Pending =>
-          Step(
+        case StepState.Pending => Step(
             id = i,
             fileId = None,
             config = config.toStepConfig,
@@ -138,8 +137,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           ).map(_.left)
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
-        case _ =>
-          Step(
+        case _                 => Step(
             id = i,
             fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
             config = config.toStepConfig,

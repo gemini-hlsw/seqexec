@@ -35,8 +35,8 @@ public class CaObserveSenderImpl implements CaApplySender {
     private EpicsReader epicsReader;
     private final CaApplyRecord apply;
     private final CaCarRecord car;
-    private final ReadOnlyClientEpicsChannel<Integer> abortMark;
-    private final ReadOnlyClientEpicsChannel<Integer> stopMark;
+    private final ReadOnlyClientEpicsChannel<Short> abortMark;
+    private final ReadOnlyClientEpicsChannel<Short> stopMark;
     
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -45,8 +45,8 @@ public class CaObserveSenderImpl implements CaApplySender {
     private final ChannelListener<Integer> valListener;
     private ChannelListener<Integer> carClidListener;
     private ChannelListener<CarState> carValListener;
-    private ChannelListener<Integer> abortMarkListener;
-    private ChannelListener<Integer> stopMarkListener;
+    private ChannelListener<Short> abortMarkListener;
+    private ChannelListener<Short> stopMarkListener;
     private CaObserveSenderImpl.State currentState;
     private static final CaObserveSenderImpl.State IdleState = new CaObserveSenderImpl.State() {
         @Override
@@ -65,12 +65,12 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onStopMarkChange(Integer val) {
+        public State onStopMarkChange(Short val) {
             return this;
         }
 
         @Override
-        public State onAbortMarkChange(Integer val) {
+        public State onAbortMarkChange(Short val) {
             return this;
         }
 
@@ -80,7 +80,7 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
     };
 
-    private int getMark(ReadOnlyClientEpicsChannel<Integer> ch, int def) {
+    private short getMark(ReadOnlyClientEpicsChannel<Short> ch, short def) {
         if(ch!=null && ch.isValid()) {
             try {
                 return ch.getFirst();
@@ -91,11 +91,11 @@ public class CaObserveSenderImpl implements CaApplySender {
             return def;
         }
     }
-    private int getStopMark() {
-        return getMark(stopMark, 0);
+    private short getStopMark() {
+        return getMark(stopMark, (short)0);
     }
-    private int getAbortMark() {
-        return getMark(abortMark, 0);
+    private short getAbortMark() {
+        return getMark(abortMark, (short)0);
     }
 
 
@@ -128,8 +128,8 @@ public class CaObserveSenderImpl implements CaApplySender {
         });
 
         if(stopCmd!=null && stopCmd.length()>0) {
-            stopMark = epicsReader.getIntegerChannel(stopCmd + CAD_MARK_SUFFIX);
-            stopMark.registerListener(stopMarkListener = (String arg0, List<Integer> newVals) -> {
+            stopMark = epicsReader.getShortChannel(stopCmd + CAD_MARK_SUFFIX);
+            stopMark.registerListener(stopMarkListener = (String arg0, List<Short> newVals) -> {
                 if (newVals != null && !newVals.isEmpty()) {
                     CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
                 }
@@ -139,10 +139,10 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
 
         if(abortCmd!=null && abortCmd.length()>0) {
-            abortMark = epicsReader.getIntegerChannel(abortCmd + CAD_MARK_SUFFIX);
-            abortMark.registerListener(abortMarkListener = (String arg0, List<Integer> newVals) -> {
+            abortMark = epicsReader.getShortChannel(abortCmd + CAD_MARK_SUFFIX);
+            abortMark.registerListener(abortMarkListener = (String arg0, List<Short> newVals) -> {
                 if (newVals != null && !newVals.isEmpty()) {
-                    CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
+                    CaObserveSenderImpl.this.onAbortMarkChange(newVals.get(0));
                 }
             });
         } else {
@@ -220,12 +220,7 @@ public class CaObserveSenderImpl implements CaApplySender {
             }
 
             if (timeout > 0) {
-                timeoutFuture = executor.schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        CaObserveSenderImpl.this.onTimeout();
-                    }
-                }, timeout, timeoutUnit);
+                timeoutFuture = executor.schedule(() ->  CaObserveSenderImpl.this.onTimeout(), timeout, timeoutUnit);
             }
         }
 
@@ -253,9 +248,9 @@ public class CaObserveSenderImpl implements CaApplySender {
 
         CaObserveSenderImpl.State onCarClidChange(Integer val);
 
-        CaObserveSenderImpl.State onStopMarkChange(Integer val);
+        CaObserveSenderImpl.State onStopMarkChange(Short val);
 
-        CaObserveSenderImpl.State onAbortMarkChange(Integer val);
+        CaObserveSenderImpl.State onAbortMarkChange(Short val);
 
         CaObserveSenderImpl.State onTimeout();
     }
@@ -311,12 +306,12 @@ public class CaObserveSenderImpl implements CaApplySender {
             return IdleState;
         }
         @Override
-        public State onStopMarkChange(Integer val) {
+        public State onStopMarkChange(Short val) {
             return this;
         }
 
         @Override
-        public State onAbortMarkChange(Integer val) {
+        public State onAbortMarkChange(Short val) {
             return this;
         }
 
@@ -365,12 +360,12 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onStopMarkChange(Integer val) {
+        public State onStopMarkChange(Short val) {
             return this;
         }
 
         @Override
-        public State onAbortMarkChange(Integer val) {
+        public State onAbortMarkChange(Short val) {
             return this;
         }
 
@@ -393,10 +388,10 @@ public class CaObserveSenderImpl implements CaApplySender {
     private final class WaitCompletion implements CaObserveSenderImpl.State {
         final CaCommandMonitorImpl cm;
         final int clid;
-        final int stopMark;
-        final int abortMark;
+        final short stopMark;
+        final short abortMark;
 
-        WaitCompletion(CaCommandMonitorImpl cm, int clid, int stopMark, int abortMark) {
+        WaitCompletion(CaCommandMonitorImpl cm, int clid, short stopMark, short abortMark) {
             this.cm = cm;
             this.clid = clid;
             this.stopMark = stopMark;
@@ -405,14 +400,7 @@ public class CaObserveSenderImpl implements CaApplySender {
 
         @Override
         public CaObserveSenderImpl.State onApplyValChange(Integer val) {
-            if (val == clid) {
-                return this;
-            } else {
-                failCommand(cm, new CaCommandPostError(
-                        "Another command was triggered in apply record "
-                                + apply.getEpicsName()));
-                return IdleState;
-            }
+            return this;
         }
 
         @Override
@@ -440,8 +428,8 @@ public class CaObserveSenderImpl implements CaApplySender {
                 return this;
             } else {
                 failCommand(cm, new CaCommandPostError(
-                        "Another command was triggered in apply record "
-                                + apply.getEpicsName()));
+                    "Another command was triggered in CAR record "
+                            + apply.getEpicsName()));
                 return IdleState;
             }
         }
@@ -453,23 +441,147 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onStopMarkChange(Integer val) {
+        public State onStopMarkChange(Short val) {
             if(stopMark==2 && val == 0) {
-                failCommand(cm, new CaObserveStopped());
-                return IdleState;
+                return new WaitStopCompletion(cm, clid);
             } else {
                 return new WaitCompletion(cm, clid, val, abortMark);
             }
         }
 
         @Override
-        public State onAbortMarkChange(Integer val) {
+        public State onAbortMarkChange(Short val) {
             if(abortMark==2 && val == 0) {
-                failCommand(cm, new CaObserveAborted());
-                return IdleState;
+                return new WaitAbortCompletion(cm, clid);
             } else {
                 return new WaitCompletion(cm, clid, stopMark, val);
             }
+        }
+
+    }
+
+    private final class WaitStopCompletion implements CaObserveSenderImpl.State {
+        final CaCommandMonitorImpl cm;
+        final int clid;
+
+        WaitStopCompletion(CaCommandMonitorImpl cm, int clid) {
+            this.cm = cm;
+            this.clid = clid;
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onApplyValChange(Integer val) {
+            return this;
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onCarValChange(CarState val) {
+            switch(val) {
+                case IDLE: {
+                    failCommand(cm, new CaObserveStopped());
+                    return IdleState;
+                }
+                case ERROR:{
+                    failCommandWithCarError(cm);
+                    return IdleState;
+                }
+                case PAUSED: {
+                    pauseCommand(cm);
+                    return IdleState;
+                }
+                default: return this;
+            }
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onCarClidChange(Integer val) {
+            if (val == clid) {
+                return this;
+            } else {
+                failCommand(cm, new CaCommandPostError(
+                    "Another command was triggered in CAR record "
+                            + apply.getEpicsName()));
+                return IdleState;
+            }
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onTimeout() {
+            failCommand(cm, new TimeoutException());
+            return IdleState;
+        }
+
+        @Override
+        public State onStopMarkChange(Short val) {
+            return this;
+        }
+
+        @Override
+        public State onAbortMarkChange(Short val) {
+            return this;
+        }
+
+    }
+
+    private final class WaitAbortCompletion implements CaObserveSenderImpl.State {
+        final CaCommandMonitorImpl cm;
+        final int clid;
+
+        WaitAbortCompletion(CaCommandMonitorImpl cm, int clid) {
+            this.cm = cm;
+            this.clid = clid;
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onApplyValChange(Integer val) {
+            return this;
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onCarValChange(CarState val) {
+            switch(val) {
+                case IDLE: {
+                    failCommand(cm, new CaObserveAborted());
+                    return IdleState;
+                }
+                case ERROR:{
+                    failCommandWithCarError(cm);
+                    return IdleState;
+                }
+                case PAUSED: {
+                    pauseCommand(cm);
+                    return IdleState;
+                }
+                default: return this;
+            }
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onCarClidChange(Integer val) {
+            if (val == clid) {
+                return this;
+            } else {
+                failCommand(cm, new CaCommandPostError(
+                    "Another command was triggered in CAR record "
+                            + apply.getEpicsName()));
+                return IdleState;
+            }
+        }
+
+        @Override
+        public CaObserveSenderImpl.State onTimeout() {
+            failCommand(cm, new TimeoutException());
+            return IdleState;
+        }
+
+        @Override
+        public State onStopMarkChange(Short val) {
+            return this;
+        }
+
+        @Override
+        public State onAbortMarkChange(Short val) {
+            return this;
         }
 
     }
@@ -498,7 +610,7 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
     }
 
-    private synchronized void onStopMarkChange(Integer val) {
+    private synchronized void onStopMarkChange(Short val) {
         currentState = currentState.onStopMarkChange(val);
         if (currentState == IdleState && timeoutFuture != null) {
             timeoutFuture.cancel(true);
@@ -506,7 +618,7 @@ public class CaObserveSenderImpl implements CaApplySender {
         }
     }
 
-    private synchronized void onAbortMarkChange(Integer val) {
+    private synchronized void onAbortMarkChange(Short val) {
         currentState = currentState.onAbortMarkChange(val);
         if (currentState == IdleState && timeoutFuture != null) {
             timeoutFuture.cancel(true);
@@ -531,66 +643,45 @@ public class CaObserveSenderImpl implements CaApplySender {
     }
 
     private void succedCommand(final CaCommandMonitorImpl cm) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completeSuccess();
-            }
-        });
+        executor.execute(() -> cm.completeSuccess());
     }
 
     private void pauseCommand(final CaCommandMonitorImpl cm) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completePause();
-            }
-        });
+        executor.execute(() ->cm.completePause());
     }
 
     private void failCommand(final CaCommandMonitorImpl cm, final Exception ex) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completeFailure(ex);
-            }
-        });
+        executor.execute(() ->cm.completeFailure(ex));
     }
 
     private void failCommandWithApplyError(final CaCommandMonitorImpl cm) {
         // I found that if I try to read OMSS or MESS from the same thread that
         // is processing a channel notifications, the reads fails with a
         // timeout. But it works if the read is done later from another thread.
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String msg = null;
-                try {
-                    msg = apply.getMessValue();
-                } catch (CAException | TimeoutException e) {
-                    LOG.warning(e.getMessage());
-                }
-                cm.completeFailure(new CaCommandError(msg));
+        executor.execute(() -> {
+            String msg = null;
+            try {
+                msg = apply.getMessValue();
+            } catch (CAException | TimeoutException e) {
+                LOG.warning(e.getMessage());
             }
-        });
+            cm.completeFailure(new CaCommandError(msg));
+        } );
     }
 
     private void failCommandWithCarError(final CaCommandMonitorImpl cm) {
         // I found that if I try to read OMSS or MESS from the same thread that
         // is processing a channel notifications, the reads fails with a
         // timeout. But it works if the read is done later from another thread.
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String msg = null;
-                try {
-                    msg = car.getOmssValue();
-                } catch (CAException | TimeoutException e) {
-                    LOG.warning(e.getMessage());
-                }
-                cm.completeFailure(new CaCommandError(msg));
+        executor.execute(() -> {
+            String msg = null;
+            try {
+                msg = car.getOmssValue();
+            } catch (CAException | TimeoutException e) {
+                LOG.warning(e.getMessage());
             }
-        });
+            cm.completeFailure(new CaCommandError(msg));
+        } );
     }
 
     @Override
