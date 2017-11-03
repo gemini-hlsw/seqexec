@@ -8,7 +8,7 @@ import edu.gemini.seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _
 import edu.gemini.seqexec.server.gmos.Gmos.SiteSpecifics
 import edu.gemini.seqexec.server.gmos.GmosController.Config._
 import edu.gemini.seqexec.server.gmos.GmosController.SiteDependentTypes
-import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveResult, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
+import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
@@ -69,8 +69,8 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
   ) )
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader {
-    fileId => controller.observe(fileId).map(_ => ObserveResult(fileId))
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
+    fileId => controller.observe(fileId)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =

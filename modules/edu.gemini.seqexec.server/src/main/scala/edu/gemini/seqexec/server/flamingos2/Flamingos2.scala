@@ -7,7 +7,7 @@ import edu.gemini.seqexec.model.Model.{Instrument, Resource}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.flamingos2.Flamingos2Controller._
-import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveResult, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
+import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -32,8 +32,9 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveResult] = Reader {
-    fileId => f2Controller.observe(fileId).map(_ => ObserveResult(fileId))
+  // FLAMINGOS-2 does not support abort or stop.
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
+    fileId => f2Controller.observe(fileId).map(_ => ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =

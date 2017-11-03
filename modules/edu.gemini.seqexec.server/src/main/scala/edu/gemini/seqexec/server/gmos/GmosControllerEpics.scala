@@ -6,7 +6,7 @@ package edu.gemini.seqexec.server.gmos
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.EpicsCodex._
 import edu.gemini.seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam}
-import edu.gemini.seqexec.server.{EpicsCodex, SeqAction, SeqexecFailure}
+import edu.gemini.seqexec.server.{EpicsCodex, ObserveCommand, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
@@ -216,12 +216,12 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- EitherT(Task(Log.info("Completed Gmos configuration").right))
   } yield ()
 
-  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = for {
+  override def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result] = for {
     _ <- EitherT(Task(Log.info("Start Gmos observation").right))
     _ <- GmosEpics.instance.observeCmd.setLabel(obsid)
-    _ <- GmosEpics.instance.observeCmd.post
+    ret <- GmosEpics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
-  } yield obsid
+  } yield ret
 
   override def stopObserve: SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Stop Gmos exposure").right))

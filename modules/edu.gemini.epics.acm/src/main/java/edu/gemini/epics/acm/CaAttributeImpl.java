@@ -208,6 +208,20 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         return attr;
     }
 
+    static public CaAttributeImpl<Short> createShortAttribute(
+            String name, String channel, String description, EpicsReader epicsReader)
+            throws CAException {
+        CaAttributeImpl<Short> attr = new CaAttributeImpl<>(name,
+                channel, Short.class, description, epicsReader);
+        try {
+            attr.bind(epicsReader.getShortChannel(channel));
+        } catch(Throwable e) {
+            LOG.warning(e.getMessage());
+        }
+
+        return attr;
+    }
+
     static public CaAttributeImpl<String> createStringAttribute(
             String name, String channel, String description, EpicsReader epicsReader)
             throws CAException {

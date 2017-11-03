@@ -32,7 +32,7 @@ object SeqexecFailure {
 
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
-    case Execution(errMsg)            => s"Sequence execution failed with error $errMsg"
+    case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
     case SeqexecException(ex)         => "Application exception: " + ex.getMessage
     case InvalidOp(msg)               => s"Invalid operation: $msg"
     case Unexpected(msg)              => s"Unexpected error: $msg"

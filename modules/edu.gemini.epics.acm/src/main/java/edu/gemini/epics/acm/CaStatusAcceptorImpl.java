@@ -26,6 +26,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
     private final Map<String, CaAttributeImpl<Double>> doubleAttributes;
     private final Map<String, CaAttributeImpl<Float>> floatAttributes;
     private final Map<String, CaAttributeImpl<Integer>> integerAttributes;
+    private final Map<String, CaAttributeImpl<Short>> shortAttributes;
     private final Map<String, Object> enumAttributes;
     private EpicsReader epicsReader;
 
@@ -38,6 +39,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
         doubleAttributes = new HashMap<>();
         floatAttributes = new HashMap<>();
         integerAttributes = new HashMap<>();
+        shortAttributes = new HashMap<>();
         enumAttributes = new HashMap<>();
         epicsReader = new EpicsReaderImpl(epicsService);
     }
@@ -127,6 +129,34 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
     }
 
     @Override
+    public CaAttribute<Short> addShort(String name, String channel)
+            throws CaException, CAException {
+        return addShort(name, channel, null);
+    }
+
+    @Override
+    public CaAttribute<Short> addShort(String name, String channel, String description)
+            throws CaException, CAException {
+        CaAttributeImpl<Short> attr = shortAttributes.get(name);
+        if (attr == null) {
+            if (alreadyExist(name)) {
+                throw new CaException(
+                        "Attribute already exists with a different type.");
+            } else {
+                attr = CaAttributeImpl.createShortAttribute(name, channel, description,
+                        epicsReader);
+                shortAttributes.put(name, attr);
+            }
+        } else {
+            if (!channel.equals(attr.channel())) {
+                throw new CaException(
+                        "Attribute already exists for a different channel.");
+            }
+        }
+        return attr;
+    }
+
+    @Override
     public CaAttribute<String> addString(String name, String channel)
             throws CaException, CAException {
         return addString(name, channel, null);
@@ -198,6 +228,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
          return doubleAttributes.containsKey(name)
                 || floatAttributes.containsKey(name)
                 || integerAttributes.containsKey(name)
+                || shortAttributes.containsKey(name)
                 || stringAttributes.containsKey(name);
     }
 
@@ -206,6 +237,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
         doubleAttributes.remove(name);
         floatAttributes.remove(name);
         integerAttributes.remove(name);
+        shortAttributes.remove(name);
         stringAttributes.remove(name);
     }
 
@@ -219,6 +251,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
         Set<String> set = new HashSet<>(doubleAttributes.keySet());
         set.addAll(floatAttributes.keySet());
         set.addAll(integerAttributes.keySet());
+        set.addAll(shortAttributes.keySet());
         set.addAll(stringAttributes.keySet());
         return set;
     }
@@ -241,6 +274,11 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
     @Override
     public CaAttribute<Integer> getIntegerAttribute(String name) {
         return integerAttributes.get(name);
+    }
+
+    @Override
+    public CaAttribute<Short> getShortAttribute(String name) {
+        return shortAttributes.get(name);
     }
 
     public void unbind() {
@@ -274,11 +312,19 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
                 LOG.warning(e.getMessage());
             }
         }
-        
+        for (CaAttributeImpl<?> attr : shortAttributes.values()) {
+            try {
+                attr.unbind();
+            } catch (CAException e) {
+                LOG.warning(e.getMessage());
+            }
+        }
+
         stringAttributes.clear();
         doubleAttributes.clear();
         floatAttributes.clear();
         integerAttributes.clear();
+        shortAttributes.clear();
 
         epicsReader = null;
     }

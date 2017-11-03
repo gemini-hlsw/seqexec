@@ -3,8 +3,8 @@
 
 package edu.gemini.seqexec.server.flamingos2
 
-import edu.gemini.epics.acm.{CaCommandSender, CaParameter, CaService}
-import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
+import edu.gemini.epics.acm._
+import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import org.log4s.{Logger, getLogger}
 
 final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) {
@@ -40,8 +40,9 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::stop"))
   }
 
-  object observeCmd extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::observe"))
+  object observeCmd extends ObserveCommand {
+    private val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::observe"))
+    override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("flamingos2::observeCmd", "flamingos2::apply", F2_TOP + "dc:observeC"))
 
     private val label = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)

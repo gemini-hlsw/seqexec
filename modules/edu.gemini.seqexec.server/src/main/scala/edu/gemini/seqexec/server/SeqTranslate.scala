@@ -43,6 +43,23 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
 
+  private def sendDataStart(obsId: SPObservationID, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
+    systems.odb.datasetStart(obsId, dataId, imageFileId).flatMap{
+      if(_) SeqAction.void
+      else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send DataStart message to ODB."))
+    }
+
+  private def sendDataEnd(obsId: SPObservationID, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
+    systems.odb.datasetComplete(obsId, dataId, imageFileId).flatMap{
+      if(_) SeqAction.void
+      else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send DataEnd message to ODB."))
+    }
+
+  private def sendObservationAborted(obsId: SPObservationID, imageFileId: ImageFileId): SeqAction[Unit] =
+    systems.odb.obsAbort(obsId, imageFileId).flatMap{
+      if(_) SeqAction.void
+      else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))
+    }
   private def observe(config: Config, obsId: SPObservationID, inst: InstrumentSystem,
                       otherSys: List[System], headers: Reader[ActionMetadata,List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
@@ -50,15 +67,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
-    def sendDataStart(imageFileId: ImageFileId): SeqAction[Unit] = for {
-      d <- dataId
-      _ <- systems.odb.datasetStart(obsId, d, imageFileId)
-    } yield ()
-
-    def sendDataEnd(imageFileId: ImageFileId): SeqAction[Unit] = for {
-      d <- dataId
-      _ <- systems.odb.datasetComplete(obsId, d, imageFileId)
-    } yield ()
 
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_ => ())
 
@@ -67,24 +75,38 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
 
-    def doObserve(id: ImageFileId): SeqAction[ObserveResult] =
+    def doObserve(id: ImageFileId): SeqAction[Observed] =
       for {
-        _  <- sendDataStart(id)
+        d   <- dataId
+        _   <- sendDataStart(obsId, id, d)
         _  <- notifyObserveStart
         _  <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
-        _  <- inst.observe(config)(id)
+        r   <- inst.observe(config)(id)
+        ret <- observeTail(id, d, r)
+      } yield ret
+
+    def observeTail(id: ImageFileId, dataId: String, r: ObserveCommand.Result): SeqAction[Observed] = r match {
+      case ObserveCommand.Success => for {
         _  <- notifyObserveEnd
         _  <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
         _  <- closeImage(id, systems.dhs)
-        _  <- sendDataEnd(id)
-      } yield ObserveResult(id)
+        _  <- sendDataEnd(obsId, id, dataId)
+      } yield Observed(id)
+      case ObserveCommand.Stopped => notifyObserveEnd *>
+        headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU *>
+        closeImage(id, systems.dhs) *>
+        SeqAction.fail(SeqexecFailure.Execution(s"Observation $id stopped by user."))
+      case ObserveCommand.Aborted => sendObservationAborted(obsId, id) *>
+        SeqAction.fail(SeqexecFailure.Execution(s"Observation $id aborted by user."))
+      //TODO: Implement pause handling
+      case ObserveCommand.Paused  => SeqAction.fail(SeqexecFailure.Unexpected(s"Observe pause not yet implemented."))
+    }
 
     for {
       id <- dhsFileId(inst)
     } yield Result.Partial(FileIdAllocated(id), doObserve(id).toAction(ActionType.Observe))
   }
 
-  // scalastyle:off
   private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
       val initialStepExecutions: List[List[Action]] =
@@ -104,8 +126,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult(ActionType.Observe))))))
 
       extractStatus(config) match {
-        case StepState.Pending =>
-          Step(
+        case StepState.Pending => Step(
             id = i,
             fileId = None,
             config = config.toStepConfig,
@@ -116,8 +137,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           ).map(_.left)
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
-        case _ =>
-          Step(
+        case _                 => Step(
             id = i,
             fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
             config = config.toStepConfig,
@@ -127,7 +147,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             skip = extractSkipped(config),
             // TODO: Is it possible to reconstruct done executions from the ODB?
             executions = Nil
-          )
+            )
       }
     }
 
@@ -138,7 +158,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       headers   <- calcHeaders(config, stepType)
     } yield buildStep(inst, systems, headers, calcResources(systems))
   }
-  // scalastyle:on
 
   // Required for untyped objects from java
   implicit val objectShow: Show[AnyRef] = Show.showA
@@ -194,12 +213,17 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       })
   }
 
-  private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] =
-    seqState.current.actions.headOption.flatMap{ _.kind match {
-        case ActionType.Observe => cmd
-        case _                  => None
+  private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] = {
+    def isObserving(v: Action\/Result): Boolean = v match {
+      case -\/(l) => l.kind === ActionType.Observe
+      case \/-(r) => r match {
+        case p: Result.Partial[_] => r.kind === ActionType.Observe
+        case _                    => false
       }
     }
+    if(seqState.current.execution.exists(isObserving)) cmd
+    else none
+  }
 
   def stopObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
@@ -386,18 +410,7 @@ object SeqTranslate {
     }
   }
 
-  implicit class ObserveResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ObserveResult) extends AnyVal {
-    def toResult(kind: ActionType): Result = r match {
-      case \/-(r) => Result.OK(Observed(r.dataId))
-      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
-    }
-  }
-
   implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
-  }
-
-  implicit class ObserveResultToAction(val x: SeqAction[ObserveResult]) extends AnyVal {
     def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
   }
 

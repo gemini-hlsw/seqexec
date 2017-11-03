@@ -138,7 +138,7 @@ final class CaApplySenderImpl implements CaApplySender {
     @Override
     public synchronized CaCommandMonitor post() {
         CaCommandMonitorImpl cm = new CaCommandMonitorImpl();
-        if (currentState != IdleState) {
+        if (!currentState.equals(IdleState)) {
             failCommand(cm, new CaCommandInProgress());
         } else {
             currentState = new WaitPreset(cm);
@@ -358,7 +358,7 @@ final class CaApplySenderImpl implements CaApplySender {
 
     private synchronized void onApplyValChange(Integer val) {
         currentState = currentState.onApplyValChange(val);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -366,7 +366,7 @@ final class CaApplySenderImpl implements CaApplySender {
 
     private synchronized void onCarClidChange(Integer val) {
         currentState = currentState.onCarClidChange(val);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -374,7 +374,7 @@ final class CaApplySenderImpl implements CaApplySender {
 
     private synchronized void onCarValChange(CarState carState) {
         currentState = currentState.onCarValChange(carState);
-        if (currentState == IdleState && timeoutFuture != null) {
+        if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);
             timeoutFuture = null;
         }
@@ -387,7 +387,7 @@ final class CaApplySenderImpl implements CaApplySender {
 
     @Override
     public synchronized boolean isActive() {
-        return currentState != IdleState;
+        return !currentState.equals(IdleState);
     }
 
     @Override

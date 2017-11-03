@@ -119,7 +119,7 @@ object ODBProxy {
 
     override def queuedSequences(): SeqAction[Seq[SPObservationID]] = EitherT(
       Task.delay(
-        xmlrpcClient.getObservations(sessionName).toList.map(new SPObservationID(_))
+        xmlrpcClient.getObservations(sessionName).toSeq.map(new SPObservationID(_))
       ).recover
     )
   }

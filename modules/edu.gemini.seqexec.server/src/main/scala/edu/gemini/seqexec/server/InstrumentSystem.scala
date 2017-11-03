@@ -12,7 +12,7 @@ trait InstrumentSystem extends System {
   val contributorName: String
   val dhsInstrumentName: String
   val observeControl: InstrumentSystem.ObserveControl
-  def observe(config: Config): SeqObserve[ImageFileId, ObserveResult]
+  def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result]
 }
 
 object InstrumentSystem {
@@ -27,6 +27,3 @@ object InstrumentSystem {
                                 pause: PauseObserveCmd,
                                 continue: ContinueObserveCmd) extends ObserveControl
 }
-
-//Placeholder for observe response
-final case class ObserveResult(dataId: ImageFileId)

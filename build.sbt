@@ -239,6 +239,9 @@ lazy val edu_gemini_epics_acm = project
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq("xmlunit" % "xmlunit" % "1.5",
+      EpicsService,
+      GmpCommandsRecords,
+      Guava,
       "com.novocode" % "junit-interface" % "0.11" % "test"),
     sourceGenerators in Compile += Def.task {
       import scala.sys.process._
