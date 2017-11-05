@@ -5,7 +5,7 @@ package gem
 package util
 
 import cats.{ Eq, Order }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.kernel.Comparison.{ GreaterThan => GT, LessThan => LT, EqualTo => EQ }
 import cats.tests.CatsSuite
 
@@ -13,7 +13,7 @@ import cats.tests.CatsSuite
 final class LocationSpec extends CatsSuite with Arbitraries {
 
   // Laws
-  checkAll("Location", OrderLaws[Location].order)
+  checkAll("Location", OrderTests[Location].order)
 
   test("Construction should trim trailing min values from Middle") {
     forAll { (l: Location.Middle) =>

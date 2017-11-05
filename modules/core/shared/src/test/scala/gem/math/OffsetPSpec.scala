@@ -5,7 +5,7 @@ package gem.math
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -13,8 +13,8 @@ final class OffsetPSpec extends CatsSuite {
   import ArbOffset._
 
   // Laws
-  checkAll("Offset.P", GroupLaws[Offset.P].commutativeGroup)
-  checkAll("Offset.P", OrderLaws[Offset.P].eqv)
+  checkAll("Offset.P", CommutativeGroupTests[Offset.P].commutativeGroup)
+  checkAll("Offset.P", EqTests[Offset.P].eqv)
 
   test("Equality must be natural") {
     forAll { (a: Offset.P, b: Offset.P) =>

@@ -5,7 +5,7 @@ package gem.math
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 import java.time.LocalDateTime
 
@@ -15,7 +15,7 @@ final class EpochSpec extends CatsSuite {
   import ArbTime._
 
   // Laws
-  checkAll("Epoch", OrderLaws[Epoch].eqv)
+  checkAll("Epoch", EqTests[Epoch].eqv)
 
   test("Epoch.eq.natural") {
     forAll { (a: Epoch, b: Epoch) =>

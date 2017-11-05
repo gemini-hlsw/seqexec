@@ -5,7 +5,7 @@ package gem
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
@@ -13,7 +13,7 @@ final class DatasetLabelSpec extends CatsSuite {
   import ArbDataset._
 
   // Laws
-  checkAll("DatasetLabel", OrderLaws[Dataset.Label].order)
+  checkAll("DatasetLabel", OrderTests[Dataset.Label].order)
 
   test("Equality must be natural") {
     forAll { (a: Dataset.Label, b: Dataset.Label) =>

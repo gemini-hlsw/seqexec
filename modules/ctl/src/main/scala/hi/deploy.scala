@@ -11,7 +11,6 @@ import gem.ctl.hi.common._
 
 import cats.implicits._
 import scala.util.matching.Regex
-import mouse.all._
 
 /** Constructors for `CtlIO` operations related to the `deploy` command. */
 object deploy {
@@ -138,7 +137,10 @@ object deploy {
                case Array("db", s)  => s
                case Array("gem", s) => s
                case _               => ""
-             } .map(_.parseInt.toOption.getOrElse(0)) .foldLeft(0)(_ max _) + 1
+             } .map { s =>
+               try s.toInt
+               catch { case _: NumberFormatException => 0 }
+             } .foldLeft(0)(_ max _) + 1
            }
       _ <- info(s"Deploy number for this host will be $n.")
     } yield n

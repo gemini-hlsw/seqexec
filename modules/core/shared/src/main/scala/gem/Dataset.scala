@@ -6,8 +6,8 @@ package gem
 import cats.{ Order, Show }
 import cats.implicits._
 import gem.imp.TimeInstances._
+import gem.syntax.string._
 import java.time.Instant
-import mouse.all._
 
 /**
  * A labeled, timestamped data file.
@@ -37,7 +37,7 @@ object Dataset {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          b.drop(1).parseInt.toOption.flatMap { n =>
+          b.drop(1).parseIntOption.flatMap { n =>
             Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
           }
       }
@@ -51,8 +51,7 @@ object Dataset {
      * @group Typeclass Instances
      */
     implicit val LabelOrder: Order[Label] =
-      Order[Observation.Id].contramap[Label](_.observationId) whenEqual
-      Order[Int]           .contramap[Label](_.index)
+      Order.by(a => (a.observationId, a.index))
 
     /** @group Typeclass Instances */
     implicit val LabelShow: Show[Label] =
@@ -66,9 +65,7 @@ object Dataset {
    * @group Typeclass Instances
    */
   implicit val DatasetOrder: Order[Dataset] =
-    Order[Label]  .contramap[Dataset](_.label)     whenEqual
-    Order[Instant].contramap[Dataset](_.timestamp) whenEqual
-    Order[String] .contramap[Dataset](_.filename)
+    Order.by(a => (a.label, a.timestamp, a.filename))
 
   /** @group Typeclass Instances */
   implicit val DatasetShow: Show[Dataset] =

@@ -4,7 +4,7 @@
 package gem
 
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
@@ -18,7 +18,7 @@ final class ProgramIdSpec extends CatsSuite {
   import ArbTime._
 
   // Laws
-  checkAll("Program.Id", OrderLaws[Program.Id].order)
+  checkAll("Program.Id", OrderTests[Program.Id].order)
 
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>

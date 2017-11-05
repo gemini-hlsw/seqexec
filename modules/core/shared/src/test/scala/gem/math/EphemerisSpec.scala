@@ -7,7 +7,7 @@ import gem.arb._
 import gem.util.InstantMicros
 
 import cats.Eq
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -17,8 +17,8 @@ final class EphemerisSpec extends CatsSuite {
   import Ephemeris.Element
 
   // Laws
-  checkAll("Ephemeris", GroupLaws[Ephemeris].monoid)
-  checkAll("Ephemeris", OrderLaws[Ephemeris].eqv)
+  checkAll("Ephemeris", MonoidTests[Ephemeris].monoid)
+  checkAll("Ephemeris", EqTests[Ephemeris].eqv)
 
   test("Ephemeris.eq.naturality") {
     forAll { (a: Ephemeris, b: Ephemeris) =>

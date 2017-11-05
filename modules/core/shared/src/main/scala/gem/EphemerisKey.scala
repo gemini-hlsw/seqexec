@@ -6,6 +6,7 @@ package gem
 import gem.enum.EphemerisKeyType
 import gem.parser.EphemerisKeyParsers
 import gem.syntax.parser._
+import gem.syntax.string._
 
 import cats.{ Eq, Show }
 import monocle.macros.Lenses
@@ -116,9 +117,7 @@ object EphemerisKey {
     * @param des human readable designation
     * @group Constructors
     */
-  def fromTypeAndDes(t: EphemerisKeyType, des: String): Option[EphemerisKey] = {
-    import mouse.all._
-
+  def fromTypeAndDes(t: EphemerisKeyType, des: String): Option[EphemerisKey] =
     t match {
       case EphemerisKeyType.Comet        => Some(Comet(des))
       case EphemerisKeyType.AsteroidNew  => Some(AsteroidNew(des))
@@ -126,7 +125,6 @@ object EphemerisKey {
       case EphemerisKeyType.MajorBody    => des.parseIntOption.map(MajorBody(_))
       case EphemerisKeyType.UserSupplied => des.parseIntOption.map(UserSupplied(_))
     }
-  }
 
   def unsafeFromTypeAndDes(t: EphemerisKeyType, des: String): EphemerisKey =
     fromTypeAndDes(t, des).getOrElse(sys.error(s"inavlid ephemeris key ${t}_$des"))

@@ -5,7 +5,7 @@ package gem
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 import gem.imp.TimeInstances._
 import java.time.Instant
@@ -15,7 +15,7 @@ final class DatasetSpec extends CatsSuite {
   import ArbDataset._
 
   // Laws
-  checkAll("DatasetLabel", OrderLaws[Dataset].order)
+  checkAll("DatasetLabel", OrderTests[Dataset].order)
 
   test("Equality must be natural") {
     forAll { (a: Dataset, b: Dataset) =>

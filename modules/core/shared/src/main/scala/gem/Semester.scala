@@ -132,8 +132,7 @@ object Semester {
 
   /** `Semester` is ordered pairwise by its data members. */
   implicit val SemesterOrder: Order[Semester] =
-    Order[Year].contramap[Semester](_.year) whenEqual
-    Order[Half].contramap[Semester](_.half)
+    Order.by(a => (a.year, a.half))
 
   /**
    * `Ordering` instance for Scala standard library.
