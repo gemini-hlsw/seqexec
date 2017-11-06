@@ -163,7 +163,7 @@ object QueueArea {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "sixteen wide column",
+        ^.cls := "twelve wide column",
         QueueTableSection(p)
       )
     )

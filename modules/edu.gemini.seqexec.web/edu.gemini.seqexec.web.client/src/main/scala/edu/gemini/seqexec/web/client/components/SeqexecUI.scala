@@ -7,7 +7,7 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.actions.WSConnect
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.actions.NavigateSilentTo
-import edu.gemini.seqexec.web.client.components.sequence.{HeadersArea, SequenceArea}
+import edu.gemini.seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
@@ -28,6 +28,7 @@ object SeqexecMain {
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val resourcesBusyConnect = SeqexecCircuit.connect(_.uiModel.resourceConflict)
+  private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
 
   private val component = ScalaComponent.builder[Props]("SeqexecUI")
     .stateless
@@ -39,17 +40,19 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            QueueArea(p.ctl)
+            <.div(
+              ^.cls := "ten wide column",
+              QueueTableSection(p.ctl)
+            ),
+            <.div(
+              ^.cls := "six wide column",
+              headerSideBarConnect(HeadersSideBar.apply)
+            )
           ),
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
             SequenceArea(p.site)
-          ),
-          <.div(
-            ^.cls := "ui row",
-            SeqexecStyles.shorterRow,
-            HeadersArea(p.site)
           ),
           <.div(
             ^.cls := "ui row",
