@@ -14,7 +14,6 @@ import java.time.Instant
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
-import org.http4s.implicits._
 import org.http4s.server._
 
 /**
@@ -102,7 +101,7 @@ object Gatekeeper {
    * is a bit more complex than normal services because we must work in OptionT to handle the case
    * where `delegate` doesn't respond.
    */
-  def authenticate(env: Environment, delegate: AuthedService[IO, GemService[IO]]): HttpService[IO] =
+  def authenticate(env: Environment, delegate: AuthedService[GemService[IO], IO]): HttpService[IO] =
     Kleisli[OptionT[IO, ?], Request[IO], Response[IO]] {
       // curl -i -b gem.jwt=... localhost:8080/something/else
       case req =>

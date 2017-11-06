@@ -5,7 +5,7 @@ package gem.math
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -14,7 +14,7 @@ final class DeclinationSpec extends CatsSuite {
   import ArbAngle._
 
   // Laws
-  checkAll("Declination", OrderLaws[Declination].order)
+  checkAll("Declination", OrderTests[Declination].order)
 
   test("Equality must be natural") {
     forAll { (a: Declination, b: Declination) =>

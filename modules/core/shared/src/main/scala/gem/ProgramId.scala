@@ -88,10 +88,7 @@ object ProgramId {
 
     /** `Science` program ids are ordered pairwise by their data members. */
     implicit val ScienceOrder: Order[Science] =
-      Order[Site]       .contramap[Science](_.site)        whenEqual
-      Order[Semester]   .contramap[Science](_.semester)    whenEqual
-      Order[ProgramType].contramap[Science](_.programType) whenEqual
-      Order[Int]        .contramap[Science](_.index)
+      Order.by(a => (a.site, a.semester, a.programType, a.index))
 
   }
 
@@ -153,9 +150,7 @@ object ProgramId {
 
     /** `Daily` program ids are ordered pairwise by their data members. */
     implicit val DailyOrder: Order[Daily] =
-      Order[Site]            .contramap[Daily](_.site)             whenEqual
-      Order[DailyProgramType].contramap[Daily](_.dailyProgramType) whenEqual
-      Order[LocalDate]       .contramap[Daily](_.localDate)
+      Order.by(a => (a.site, a.dailyProgramType, a.localDate))
 
   }
 
@@ -204,10 +199,7 @@ object ProgramId {
 
     /** `Nonstandard` program ids are ordered pairwise by their data members. */
     implicit val NonStandardOrder: Order[Nonstandard] =
-      Order[Option[Site]]       .contramap[Nonstandard](_.siteOption)        whenEqual
-      Order[Option[Semester]]   .contramap[Nonstandard](_.semesterOption)    whenEqual
-      Order[Option[ProgramType]].contramap[Nonstandard](_.programTypeOption) whenEqual
-      Order[String]             .contramap[Nonstandard](_.tail)
+      Order.by(a => (a.siteOption, a.semesterOption, a.programTypeOption, a.tail))
 
   }
 

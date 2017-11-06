@@ -4,7 +4,7 @@
 package gem
 
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Half, Site }
@@ -19,7 +19,7 @@ final class SemesterSpec extends CatsSuite {
   import ArbTime._
 
   // Laws
-  checkAll("Semester", OrderLaws[Semester].order)
+  checkAll("Semester", OrderTests[Semester].order)
 
   test("Equality must be natural") {
     forAll { (a: Semester, b: Semester) =>

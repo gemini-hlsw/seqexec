@@ -43,8 +43,7 @@ object Observation {
 
     /** Observations are ordered by program id and index. */
     implicit val OrderId: Order[Id] =
-      Order[Program.Id].contramap[Id](_.pid)   whenEqual
-      Order[Int]       .contramap[Id](_.index)
+      Order.by(a => (a.pid, a.index))
 
     implicit val OrderingId: scala.math.Ordering[Id] =
       OrderId.toOrdering

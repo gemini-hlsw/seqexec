@@ -4,7 +4,7 @@
 package gem
 
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 
@@ -13,7 +13,7 @@ final class ObservationIdSpec extends CatsSuite {
   import ArbObservation._
 
   // Laws
-  checkAll("Observation.Id", OrderLaws[Observation.Id].order)
+  checkAll("Observation.Id", OrderTests[Observation.Id].order)
 
   test("Equality must be natural") {
     forAll { (a: Observation.Id, b: Observation.Id) =>

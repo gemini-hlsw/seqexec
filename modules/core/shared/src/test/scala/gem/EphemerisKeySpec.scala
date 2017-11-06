@@ -6,14 +6,14 @@ package gem
 import gem.arb.ArbEphemerisKey._
 
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisKeySpec extends CatsSuite {
 
   // Laws
-  checkAll("EphemerisKey", OrderLaws[EphemerisKey].eqv)
+  checkAll("EphemerisKey", EqTests[EphemerisKey].eqv)
 
   test("Equality must be natural") {
     forAll { (a: EphemerisKey, b: EphemerisKey) =>

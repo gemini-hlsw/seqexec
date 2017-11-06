@@ -5,7 +5,7 @@ package gem.math
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -13,8 +13,8 @@ final class AngleSpec extends CatsSuite {
   import ArbAngle._
 
   // Laws
-  checkAll("Angle", GroupLaws[Angle].commutativeGroup)
-  checkAll("Angle", OrderLaws[Angle].eqv)
+  checkAll("Angle", CommutativeGroupTests[Angle].commutativeGroup)
+  checkAll("Angle", EqTests[Angle].eqv)
 
   test("Equality must be natural") {
     forAll { (a: Angle, b: Angle) =>

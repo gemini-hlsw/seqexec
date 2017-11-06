@@ -18,7 +18,7 @@ import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.util.StreamApp
+import org.http4s.util.{ ExitCode, StreamApp }
 import org.http4s.scalaxml.xml
 
 import java.net.URLEncoder
@@ -100,7 +100,7 @@ object ImportServer extends StreamApp[IO] {
   }
 
 
-  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, Nothing] = {
+  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
 
     val hostName = args match {
       case Nil       => "localhost"

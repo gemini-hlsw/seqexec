@@ -5,7 +5,7 @@ package gem.math
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show, Order }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -13,7 +13,7 @@ final class RightAscensionSpec extends CatsSuite {
   import ArbRightAscension._
 
   // Laws
-  checkAll("RightAscension", OrderLaws[RightAscension].order)
+  checkAll("RightAscension", OrderTests[RightAscension].order)
 
   test("Equality must be natural") {
     forAll { (a: RightAscension, b: RightAscension) =>

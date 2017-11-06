@@ -1,16 +1,15 @@
-lazy val circeVersion        = "0.9.0-M1"
-lazy val attoVersion         = "0.6.1-M5"
-lazy val catsEffectVersion   = "0.4"
-lazy val catsVersion         = "1.0.0-MF"
-lazy val declineVersion      = "0.4.0-M1"
-lazy val doobieVersion       = "0.5.0-M8"
+lazy val circeVersion        = "0.9.0-M2"
+lazy val attoVersion         = "0.6.1-M7"
+lazy val catsEffectVersion   = "0.5"
+lazy val catsVersion         = "1.0.0-RC1"
+lazy val declineVersion      = "0.4.0-RC1"
+lazy val doobieVersion       = "0.5.0-M9"
 lazy val flywayVersion       = "4.2.0"
-lazy val fs2Version          = "0.10.0-M6"
-lazy val http4sVersion       = "0.18.0-M2"
-lazy val jwtVersion          = "0.14.0"
+lazy val fs2Version          = "0.10.0-M8"
+lazy val http4sVersion       = "0.18.0-M5"
+lazy val jwtVersion          = "0.14.1"
 lazy val kpVersion           = "0.9.4"
-lazy val monocleVersion      = "1.5.0-cats-M1"
-lazy val mouseVersion        = "0.10-MF"
+lazy val monocleVersion      = "1.5.0-cats-M2"
 lazy val paradiseVersion     = "2.1.1"
 lazy val scalaCheckVersion   = "1.13.5"
 lazy val scalaParsersVersion = "1.0.6"
@@ -18,7 +17,7 @@ lazy val scalaTestVersion    = "3.0.4"
 lazy val scalaXmlVerson      = "1.0.6"
 lazy val shapelessVersion    = "2.3.2"
 lazy val slf4jVersion        = "1.7.25"
-lazy val tucoVersion         = "0.3.0-M3"
+lazy val tucoVersion         = "0.3.0-M5"
 
 enablePlugins(GitVersioning)
 
@@ -203,7 +202,6 @@ lazy val core = crossProject
       "org.typelevel"              %%% "cats-testkit"   % catsVersion % "test",
       "com.chuusai"                %%% "shapeless"      % shapelessVersion,
       "org.tpolecat"               %%% "atto-core"      % attoVersion,
-      "com.github.benhutchison"    %%% "mouse"          % mouseVersion,
       "com.github.julien-truffaut" %%% "monocle-core"   % monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-macro"  % monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test"
@@ -356,11 +354,10 @@ lazy val ctl = project
   .settings (
     resolvers += Resolver.bintrayRepo("bkirwi", "maven"),
     libraryDependencies ++= Seq(
-      "org.typelevel"           %% "cats-core"   % catsVersion,
-      "org.typelevel"           %% "cats-free"   % catsVersion,
-      "org.typelevel"           %% "cats-effect" % catsEffectVersion,
-      "com.monovore"            %% "decline"     % declineVersion,
-      "com.github.benhutchison" %% "mouse"       % mouseVersion
+      "org.typelevel" %% "cats-core"   % catsVersion,
+      "org.typelevel" %% "cats-free"   % catsVersion,
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "com.monovore"  %% "decline"     % declineVersion,
     ),
     addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
   )

@@ -6,7 +6,7 @@ package gem.math
 import gem.arb._
 
 import cats.{ Eq, Show }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
 import org.scalacheck.{ Arbitrary, Gen }
@@ -18,7 +18,7 @@ final class EphemerisCoordinatesSpec extends CatsSuite {
   import EphemerisCoordinatesSpec._
 
   // Laws
-  checkAll("EphemerisCoordinates", OrderLaws[EphemerisCoordinates].eqv)
+  checkAll("EphemerisCoordinates", EqTests[EphemerisCoordinates].eqv)
 
   test("Equality must be natural") {
     forAll { (a: EphemerisCoordinates, b: EphemerisCoordinates) =>

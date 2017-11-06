@@ -6,7 +6,7 @@ package util
 
 import gem.arb.ArbTime._
 
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
 
@@ -14,7 +14,7 @@ import cats.tests.CatsSuite
 final class InstantMicrosSpec extends CatsSuite {
 
   // Laws
-  checkAll("InstantMicro", OrderLaws[InstantMicros].order)
+  checkAll("InstantMicro", OrderTests[InstantMicros].order)
 
   test("Construction should truncate Instant nanoseconds to microseconds") {
     forAll { (i: InstantMicros) =>

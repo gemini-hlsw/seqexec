@@ -7,7 +7,7 @@ package util
 import gem.arb._
 import gem.enum._
 import cats.tests.CatsSuite
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import scala.reflect.ClassTag
 
 final class EnumeratedSpec extends CatsSuite {
@@ -18,7 +18,7 @@ final class EnumeratedSpec extends CatsSuite {
              ct: ClassTag[A]
   ): Unit = {
     val name = ct.runtimeClass.getSimpleName
-    checkAll(name, OrderLaws[A].order)
+    checkAll(name, OrderTests[A].order)
     test(s"$name.enumerated.canonical") {
       val sorted   = en.all
       val shuffled = scala.util.Random.shuffle(sorted)

@@ -5,7 +5,7 @@ package gem.math
 
 import cats.tests.CatsSuite
 import cats.{ Eq, Show, Order }
-import cats.kernel.laws._
+import cats.kernel.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -13,7 +13,7 @@ final class WavelengthSpec extends CatsSuite {
   import ArbWavelength._
 
   // Laws
-  checkAll("Wavelength", OrderLaws[Wavelength].eqv)
+  checkAll("Wavelength", EqTests[Wavelength].eqv)
 
   test("Equality must be natural") {
     forAll { (a: Wavelength, b: Wavelength) =>

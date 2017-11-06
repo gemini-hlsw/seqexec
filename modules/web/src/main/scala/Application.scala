@@ -28,7 +28,7 @@ object Application {
      .replaceAll("\\.", "?")
 
   /** Gem application endpoints. */
-  def service: AuthedService[IO, GemService[IO]] =
+  def service: AuthedService[GemService[IO], IO] =
     AuthedService {
 
       // Select matching program ids and titles.
