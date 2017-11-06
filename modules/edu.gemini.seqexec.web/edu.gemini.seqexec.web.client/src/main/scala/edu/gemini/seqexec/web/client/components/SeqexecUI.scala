@@ -14,6 +14,7 @@ import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
 import japgolly.scalajs.react.component.Scala.Unmounted
+import scalacss.ScalaCssReact._
 
 import scala.scalajs.js.timers.SetTimeoutHandle
 import scalaz.syntax.show._
@@ -37,20 +38,24 @@ object SeqexecMain {
           ^.cls := "ui horizontally padded grid",
           <.div(
             ^.cls := "ui row",
-          QueueArea(p.ctl)
-        ),
+            SeqexecStyles.shorterRow,
+            QueueArea(p.ctl)
+          ),
           <.div(
             ^.cls := "ui row",
-          SequenceArea(p.site)
-        ),
+            SeqexecStyles.shorterRow,
+            SequenceArea(p.site)
+          ),
           <.div(
             ^.cls := "ui row",
-          HeadersArea(p.site)
-        ),
+            SeqexecStyles.shorterRow,
+            HeadersArea(p.site)
+          ),
           <.div(
             ^.cls := "ui row",
-          logConnect(LogArea.apply)
-        ),
+            SeqexecStyles.shorterRow,
+            logConnect(LogArea.apply)
+          )
         ),
         lbConnect(LoginBox.apply),
         resourcesBusyConnect(ResourcesBox.apply)

@@ -116,6 +116,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
+  val shorterRow: StyleA = style(
+    marginBottom(-1.em)
+  )
+
   val hidden: StyleA = style(
     display.none
   )
@@ -184,6 +188,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val gutterIconVisible: StyleA = style(
     visibility.visible
   )
+
   val gutterIconHidden: StyleA = style(
     visibility.hidden
   )
