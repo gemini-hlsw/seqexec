@@ -125,6 +125,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginTop(-1.em).important
   )
 
+  val shorterFields: StyleA = style(
+    marginBottom(-0.2.em).important
+  )
+
   val hidden: StyleA = style(
     display.none
   )
