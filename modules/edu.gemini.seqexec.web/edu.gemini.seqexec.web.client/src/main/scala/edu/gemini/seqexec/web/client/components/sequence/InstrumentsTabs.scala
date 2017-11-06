@@ -48,7 +48,7 @@ object InstrumentTab {
       val color = status.flatMap {
         case SequenceState.Running   => "green".some
         case SequenceState.Completed => "green".some
-        case _                       => none[String]
+        case _                       => "grey".some
       }
       <.a(
         ^.cls := "item",

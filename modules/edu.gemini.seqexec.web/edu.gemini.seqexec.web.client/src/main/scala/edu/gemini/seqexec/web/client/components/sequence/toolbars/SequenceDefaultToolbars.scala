@@ -123,13 +123,15 @@ object SequenceDefaultToolbar {
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .render_P( p =>
-      <.div(
-        ^.cls := "ui row",
         <.div(
+        ^.cls := "ui row",
+        SeqexecStyles.shorterRow,
+        <.div(
+          ^.cls := "ui sixteen wide column",
           p.sequenceObserverConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
         ),
         <.div(
-          ^.cls := "ui two column grid",
+          ^.cls := "ui sixteen wide column",
           <.div(
             ^.cls := "ui left column eight wide computer sixteen wide tablet only",
             SeqexecStyles.controlColumn,

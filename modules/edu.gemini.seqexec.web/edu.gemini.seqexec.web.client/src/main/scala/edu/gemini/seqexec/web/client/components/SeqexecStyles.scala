@@ -51,7 +51,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val activeInstrumentContent: StyleA = style(
-    padding(0.6.em, 0.9.em)
+    padding(0.6.em, 0.9.em),
+    backgroundColor(rgb(243, 244, 245)).important
   )
 
   val fieldsNoBottom: StyleA = style(
@@ -117,7 +118,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val shorterRow: StyleA = style(
-    marginBottom(-1.em)
+    marginBottom(-1.em).important
+  )
+
+  val lowerRow: StyleA = style(
+    marginTop(-1.em).important
   )
 
   val hidden: StyleA = style(

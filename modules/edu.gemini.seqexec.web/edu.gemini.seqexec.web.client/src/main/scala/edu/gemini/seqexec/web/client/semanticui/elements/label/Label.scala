@@ -39,7 +39,7 @@ object Label {
     .stateless
     .renderPC((_, p, c) =>
       <.label(
-        ^.cls := "ui label",
+        ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
         ^.classSet(
           "basic"          -> p.basic,
           "tag"            -> p.tag,
@@ -55,7 +55,6 @@ object Label {
           "left pointing"  -> (p.pointing === Pointing.Left),
           "right pointing" -> (p.pointing === Pointing.Right)
         ),
-        p.color.map(u => ^.cls := u).whenDefined,
         ^.htmlFor :=? p.htmlFor,
         p.icon.whenDefined,
         p.text,
