@@ -13,7 +13,7 @@ final class StringOps(val self: String) extends AnyVal {
   def parseLongOption:    Option[Long]    = parse(_.toLong)
   def parseDoubleOption:  Option[Double]  = parse(_.toDouble)
   def parseBooleanOption: Option[Boolean] = parse(_.toBoolean)
-  def parseBigDecimalOption: Option[BigDecimal] = parse(BigDecimal(_)) 
+  def parseBigDecimalOption: Option[BigDecimal] = parse(BigDecimal(_))
 
 }
 
