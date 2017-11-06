@@ -4,7 +4,6 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.components.TextMenuSegment
 import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
 import edu.gemini.seqexec.web.client.semanticui._
@@ -164,12 +163,8 @@ object SequenceArea {
     .stateless
     .render_P( p =>
       <.div(
-        ^.cls := "ui raised segments container",
-        TextMenuSegment("Running Sequences", "key.sequences.menu"),
-        <.div(
-          ^.cls := "ui bottom attached segment",
-          SequenceTabsBody(p)
-        )
+        ^.cls := "ui sixteen wide column",
+        SequenceTabsBody(p)
       )
     ).build
 
@@ -184,12 +179,8 @@ object HeadersArea {
     .stateless
     .render_P( p =>
       <.div(
-        ^.cls := "ui raised segments container",
-        TextMenuSegment("Headers", "key.headers.menu"),
-        <.div(
-          ^.cls := "ui bottom attached segment",
+        ^.cls := "ui sixteen wide column",
           SequenceHeadersAndTable(p)
-        )
       )
     ).build
 

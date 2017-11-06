@@ -16,8 +16,9 @@ import diode.ModelRO
 import japgolly.scalajs.react.component.Scala.Unmounted
 
 import scala.scalajs.js.timers.SetTimeoutHandle
-import scalaz._
-import Scalaz._
+import scalaz.syntax.show._
+import scalaz.syntax.equal._
+import scalaz.syntax.std.option._
 import scalaz.effect.IO
 
 object SeqexecMain {
@@ -32,10 +33,25 @@ object SeqexecMain {
     .render_P(p =>
       <.div(
         NavBar(p.site),
-        QueueArea(p.ctl),
-        SequenceArea(p.site),
-        HeadersArea(p.site),
-        logConnect(LogArea.apply),
+        <.div(
+          ^.cls := "ui horizontally padded grid",
+          <.div(
+            ^.cls := "ui row",
+          QueueArea(p.ctl)
+        ),
+          <.div(
+            ^.cls := "ui row",
+          SequenceArea(p.site)
+        ),
+          <.div(
+            ^.cls := "ui row",
+          HeadersArea(p.site)
+        ),
+          <.div(
+            ^.cls := "ui row",
+          logConnect(LogArea.apply)
+        ),
+        ),
         lbConnect(LoginBox.apply),
         resourcesBusyConnect(ResourcesBox.apply)
       )
@@ -61,7 +77,7 @@ object SeqexecUI {
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
         .pmap {
           case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
-          case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, none))
+          case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, None))
         }(p => (p.instrument.shows, p.obsId))) {
           case x @ InstrumentPage(i, _) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))

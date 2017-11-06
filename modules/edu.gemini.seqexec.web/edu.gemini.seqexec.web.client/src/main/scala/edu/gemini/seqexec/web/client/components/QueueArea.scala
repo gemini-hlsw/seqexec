@@ -163,21 +163,8 @@ object QueueArea {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui raised segments container",
-        TextMenuSegment("Night Queue", "key.queue.menu"),
-        <.div(
-          ^.cls := "ui attached segment",
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "stretched row",
-              <.div(
-                ^.cls := "sixteen wide column",
-                QueueTableSection(p)
-              )
-            )
-          )
-        )
+        ^.cls := "sixteen wide column",
+        QueueTableSection(p)
       )
     )
     .build

@@ -21,10 +21,10 @@ object LogArea {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui raised segments container",
-        TextMenuSegment("Log", "key.log.menu"),
+        // ^.cls := "ui raised segments container",
+        // TextMenuSegment("Log", "key.log.menu"),
         <.div(
-          ^.cls := "ui secondary segment",
+          ^.cls := "ui sixteen wide column",
           <.div(
             ^.cls := "ui form",
             <.div(
