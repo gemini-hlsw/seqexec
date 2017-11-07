@@ -34,9 +34,20 @@ object SeqexecMain {
     .stateless
     .render_P(p =>
       <.div(
-        NavBar(p.site),
         <.div(
           ^.cls := "ui horizontally padded grid",
+          <.div(
+            ^.cls := "ui row",
+            SeqexecStyles.shorterRow
+          ),
+          <.div(
+            ^.cls := "ui row",
+            SeqexecStyles.shorterRow,
+            <.h4(
+              ^.cls := "ui horizontal divider header",
+              s"Seqexec ${p.site.show}"
+            )
+          ),
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
@@ -61,7 +72,8 @@ object SeqexecMain {
           )
         ),
         lbConnect(LoginBox.apply),
-        resourcesBusyConnect(ResourcesBox.apply)
+        resourcesBusyConnect(ResourcesBox.apply),
+        Footer(p.site)
       )
     ).build
 

@@ -16,9 +16,9 @@ import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 
 /**
-  * Menu at the top bar
+  * Menu with options
   */
-object TopMenu {
+object ControlMenu {
 
   final case class Props(status: ModelProxy[ClientStatus])
 
@@ -26,7 +26,7 @@ object TopMenu {
   def logout[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(Logout)
 
   private def loginButton[A](proxy: ModelProxy[A], enabled: Boolean) =
-    Button(Button.Props(size = Size.Medium, onClick = openLogin(proxy), disabled = !enabled), "Login")
+    Button(Button.Props(size = Size.Medium, onClick = openLogin(proxy), disabled = !enabled, inverted = true), "Login")
 
   private def logoutButton[A](proxy: ModelProxy[A], text: String, enabled: Boolean) =
     Button(Button.Props(size = Size.Medium, onClick = logout(proxy), icon = Some(IconSignOut), disabled = !enabled), text)

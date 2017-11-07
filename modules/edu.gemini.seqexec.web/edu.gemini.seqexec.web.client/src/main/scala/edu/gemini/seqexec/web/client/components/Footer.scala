@@ -25,9 +25,9 @@ import scalaz.syntax.show._
 /**
   * Component for the bar at the top of the page
   */
-object NavBar {
+object Footer {
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
-  private val wsConnect = SeqexecCircuit.connect(_.ws)
+  // private val wsConnect = SeqexecCircuit.connect(_.ws)
 
   private def goHome(e: ReactEvent): Callback = {
     e.preventDefault
@@ -38,28 +38,14 @@ object NavBar {
     .stateless
     .render_P(p =>
       <.div(
-        SeqexecStyles.mainContainer,
-        <.div(
-          ^.cls := "ui container five column stackable grid",
-          <.div(
-            ^.cls := "ui row",
-            HeaderItem(HeaderItem.Props(name = ""),
-              <.a(
-                ^.href := "/#",
-                <.img(
-                  ^.cls := "ui mini image logo",
-                  SeqexecStyles.logo,
-                  ^.src :="/images/launcher.png"
-                ),
-                ^.onClick ==> goHome
-              ),
-              s"Seqexec - ${p.show}"
-            ),
-            HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
-            wsConnect(ConnectionState.apply),
-            userConnect(TopMenu.apply)
-          )
-        )
+        ^.cls := "ui footer inverted menu",
+        <.a(
+          ^.cls := "header item",
+          ^.onClick ==> goHome,
+          s"Seqexec - ${p.show}"
+        ),
+        HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
+        userConnect(ControlMenu.apply)
       )
     )
     .componentDidMount(ctx =>

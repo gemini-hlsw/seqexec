@@ -131,30 +131,6 @@ object SequenceTabsBody {
 }
 
 /**
-  * Component containing the sidebar on the left and the sequence tabs on the right
-  */
-object SequenceHeadersAndTable {
-  private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-
-  private val component = ScalaComponent.builder[SeqexecSite]("SequenceHeadersAndTable")
-    .stateless
-    .render_P(p =>
-      <.div(
-        ^.cls := "ui grid",
-        <.div(
-          ^.cls := "sixteen wide column",
-          <.div(
-            headerSideBarConnect(HeadersSideBar.apply)
-          )
-        )
-    )
-    )
-    .build
-
-  def apply(site: SeqexecSite): Unmounted[SeqexecSite, Unit, Unit] = component(site)
-}
-
-/**
  * Top level container of the sequence area
  */
 object SequenceArea {
@@ -165,22 +141,6 @@ object SequenceArea {
       <.div(
         ^.cls := "ui sixteen wide column",
         SequenceTabsBody(p)
-      )
-    ).build
-
-  def apply(site: SeqexecSite): Unmounted[SeqexecSite, Unit, Unit] = component(site)
-}
-
-/**
- * Top level container of the headers area
- */
-object HeadersArea {
-  private val component = ScalaComponent.builder[SeqexecSite]("QueueTableSection")
-    .stateless
-    .render_P( p =>
-      <.div(
-        ^.cls := "ui sixteen wide column",
-        SequenceHeadersAndTable(p)
       )
     ).build
 

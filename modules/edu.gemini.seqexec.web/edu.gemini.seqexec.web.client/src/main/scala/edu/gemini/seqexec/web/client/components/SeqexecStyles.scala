@@ -16,7 +16,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   private val iconWidth = 16.5
 
   val body: StyleA = style(unsafeRoot("body")(
-    backgroundColor(white)
+    backgroundColor(white),
+    display.flex,
+    flexDirection.column
   ))
 
   val mainContainer: StyleA = style(
@@ -266,6 +268,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
         )
       )
     )
+  )
+
+  val footerSegment: StyleA = style("ui.footer")(
+    position.fixed,
+    bottom(0.px),
+    width(100.%%),
+    marginBottom(0.px),
+    backgroundColor(c"#F5F5F5")
   )
 
   val stepsTable: StyleA = style(
