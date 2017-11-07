@@ -29,7 +29,7 @@ object ControlMenu {
     Button(Button.Props(size = Size.Medium, onClick = openLogin(proxy), disabled = !enabled, inverted = true), "Login")
 
   private def logoutButton[A](proxy: ModelProxy[A], text: String, enabled: Boolean) =
-    Button(Button.Props(size = Size.Medium, onClick = logout(proxy), icon = Some(IconSignOut), disabled = !enabled), text)
+    Button(Button.Props(size = Size.Medium, onClick = logout(proxy), icon = Some(IconSignOut), disabled = !enabled, inverted = true), text)
 
   private val component = ScalaComponent.builder[Props]("SeqexecTopMenu")
     .stateless
