@@ -5,6 +5,6 @@
 
 package edu.gemini.epics.acm;
 
-enum CarState {
+public enum CarState {
     IDLE, PAUSED, BUSY, ERROR
 }

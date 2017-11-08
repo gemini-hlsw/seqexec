@@ -3,9 +3,15 @@
 
 package edu.gemini.seqexec.server
 
+import java.util
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Timer, TimerTask}
+import java.util.concurrent.locks.ReentrantLock
+
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 import org.log4s._
+import squants.Time
 
 import scalaz.Scalaz._
 import scalaz._
@@ -157,5 +163,72 @@ object EpicsCodex {
   }
 
   def decode[T, A](t: T)(implicit e: DecodeEpicsValue[T, A]): A = e.decode(t)
+
+}
+
+
+object EpicsUtil {
+
+  //`locked` gets a piece of code and runs it protected by `lock`
+  private def locked[A](lock: ReentrantLock)(f: => A): A = {
+    lock.lock()
+    try {
+      f
+    } finally {
+      lock.unlock()
+    }
+  }
+
+  def waitForValues[T](attr: CaAttribute[T], vv: Seq[T], timeout: Time, name: String): SeqAction[T] =
+    EpicsCommand.safe(EitherT(Task.async[TrySeq[T]]((f) => {
+      //The task is created with Task.async. So we do whatever we need to do,
+      // and then call `f` to signal the completion of the task.
+
+      //`resultGuard` and `lock` are used for synchronization.
+      val resultGuard = new AtomicInteger(1)
+      val lock = new ReentrantLock()
+
+      // First we verify that the attribute doesn't already have the required value.
+      if (!attr.values().isEmpty && vv.contains(attr.value)) {
+        f(TrySeq(attr.value).right)
+      } else {
+        // If not, we set a timer for the timeout, and a listener for the EPICS
+        // channel. The timer and the listener can both complete the Task. The
+        // first one to do it cancels the other.The use of `resultGuard`
+        // guarantees that only one of them will complete the Task.
+        val timer = new Timer
+        val statusListener = new CaAttributeListener[T] {
+          override def onValueChange(newVals: util.List[T]): Unit = {
+            if (!newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() == 1) {
+              locked(lock) {
+                attr.removeListener(this)
+                timer.cancel()
+              }
+              // This `right` looks a bit confusing because is not related to
+              // the `TrySeq`, but to the result of `Task`.
+              f(TrySeq(newVals.get(0)).right)
+            }
+          }
+
+          override def onValidityChange(newValidity: Boolean): Unit = {}
+        }
+
+        locked(lock) {
+          if (timeout.toMilliseconds.toLong > 0) {
+            timer.schedule(new TimerTask {
+              override def run(): Unit = if (resultGuard.getAndDecrement() == 1) {
+                locked(lock) {
+                  attr.removeListener(statusListener)
+                }
+                f(TrySeq.fail(SeqexecFailure.Timeout(s"waiting for $name.")).right)
+              }
+            }, timeout.toMilliseconds.toLong)
+          }
+          attr.addListener(statusListener)
+        }
+      }
+    })))
+
+  def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).map(_ => ())
 
 }
