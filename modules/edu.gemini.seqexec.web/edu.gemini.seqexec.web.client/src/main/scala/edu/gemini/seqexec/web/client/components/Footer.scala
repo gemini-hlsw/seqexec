@@ -27,7 +27,7 @@ import scalaz.syntax.show._
   */
 object Footer {
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
-  // private val wsConnect = SeqexecCircuit.connect(_.ws)
+  private val wsConnect = SeqexecCircuit.connect(_.ws)
 
   private def goHome(e: ReactEvent): Callback = {
     e.preventDefault
@@ -45,6 +45,7 @@ object Footer {
           s"Seqexec - ${p.show}"
         ),
         HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
+        wsConnect(ConnectionState.apply),
         userConnect(ControlMenu.apply)
       )
     )
@@ -80,10 +81,10 @@ object ConnectionState {
     .stateless
     .render_P( p =>
       <.div(
-        ^.cls := "header item",
+        ^.cls := "ui header item sub",
         p.u.ws.renderPending(t =>
           <.div(
-            IconAttention.copyIcon(size = Size.Large, color = Option("red")),
+            IconAttention.copyIcon(color = Option("red")),
             <.span(
               SeqexecStyles.errorText,
               s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."
