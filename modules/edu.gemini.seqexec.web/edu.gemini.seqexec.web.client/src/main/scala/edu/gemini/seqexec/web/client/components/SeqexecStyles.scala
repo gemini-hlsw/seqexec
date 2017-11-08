@@ -80,12 +80,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginTop(0.px).important
   )
 
-  val searchResultListPane: StyleA = style {
-    maxHeight(10.3.em)
-  }
-
   val stepsListPane: StyleA = style (
-    maxHeight(24.3.em)
+    maxHeight(24.3.em),
+    minHeight(24.3.em)
   )
 
   val stepsListBody: StyleA = style() // Marker css
@@ -121,6 +118,19 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val shorterRow: StyleA = style(
     marginBottom(-1.em).important
+  )
+
+  val emptyInstrumentTab: StyleA = style(
+    minHeight(31.8.em)
+  )
+
+  val instrumentTab: StyleA = style(
+    minWidth(20.%%),
+    textAlign.center
+  )
+
+  val instrumentTabLabel: StyleA = style(
+    width(100.%%)
   )
 
   val lowerRow: StyleA = style(
@@ -279,6 +289,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val stepsTable: StyleA = style(
+    maxHeight(24.3.em),
+    minHeight(24.3.em),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,

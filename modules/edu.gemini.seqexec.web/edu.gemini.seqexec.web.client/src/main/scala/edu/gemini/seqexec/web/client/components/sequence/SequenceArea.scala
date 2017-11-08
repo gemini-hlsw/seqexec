@@ -39,7 +39,7 @@ object SequenceStepsTableContainer {
       <.div(
         ^.cls := "ui grid",
         p.p().stepConfigDisplayed.fold{
-          if (p.p().isLogged)
+          if (p.p().isLogged) {
             List(<.div(
               ^.cls := "ui row",
               SeqexecStyles.shorterRow,
@@ -63,9 +63,9 @@ object SequenceStepsTableContainer {
                 p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
               )
             )).toTagMod
-        //          SequenceDefaultToolbar(p.site, p.p().instrument): VdomElement
-          else
+          } else {
             SequenceAnonymousToolbar(p.site, p.p().instrument): VdomElement
+          }
         }(s => StepConfigToolbar(StepConfigToolbar.Props(p.site, p.p().instrument, p.p().isLogged, s))),
         <.div(
           ^.cls := "ui row",
@@ -101,6 +101,7 @@ object SequenceTabContent {
           "active" -> active
         ),
         dataTab := instrument.shows,
+        SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
         IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
         p.connect(st => SequenceStepsTableContainer(p.site, st)).when(sequenceSelected)
       )
