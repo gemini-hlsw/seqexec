@@ -11,7 +11,6 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.model.WebSocketConnection
 import edu.gemini.seqexec.web.client.model.Pages.Root
 import edu.gemini.seqexec.web.client.OcsBuildInfo
-import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.HeaderItem
 import japgolly.scalajs.react._

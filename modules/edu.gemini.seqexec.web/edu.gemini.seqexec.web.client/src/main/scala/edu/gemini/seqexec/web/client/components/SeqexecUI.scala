@@ -9,10 +9,13 @@ import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.actions.NavigateSilentTo
 import edu.gemini.seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
 import edu.gemini.seqexec.model.Model.SeqexecSite
+import edu.gemini.seqexec.web.client.model.WebSocketConnection
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
+import diode.react.ModelProxy
+import diode.react.ReactPot._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import scalacss.ScalaCssReact._
 
@@ -22,6 +25,32 @@ import scalaz.syntax.equal._
 import scalaz.syntax.std.option._
 import scalaz.effect.IO
 
+object AppTitle {
+  final case class Props(site: SeqexecSite, ws: ModelProxy[WebSocketConnection])
+
+  private val component = ScalaComponent.builder[Props]("SeqexecUI")
+    .stateless
+    .render_P(p =>
+      <.div(
+        ^.cls := "ui row",
+        SeqexecStyles.shorterRow,
+        <.h4(
+          ^.cls := "ui horizontal divider header",
+          s"Seqexec ${p.site.shows}",
+          p.ws().ws.renderPending(_ =>
+            <.div(
+              SeqexecStyles.errorText,
+              SeqexecStyles.blinking,
+              "Connection lost"
+            )
+          )
+        )
+      )
+    ).build
+
+  def apply(site: SeqexecSite, ws: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(site, ws))
+}
+
 object SeqexecMain {
   final case class Props(site: SeqexecSite, ctl: RouterCtl[SeqexecPages])
 
@@ -29,6 +58,7 @@ object SeqexecMain {
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val resourcesBusyConnect = SeqexecCircuit.connect(_.uiModel.resourceConflict)
   private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
+  private val wsConnect = SeqexecCircuit.connect(_.ws)
 
   private val component = ScalaComponent.builder[Props]("SeqexecUI")
     .stateless
@@ -40,14 +70,7 @@ object SeqexecMain {
             ^.cls := "ui row",
             SeqexecStyles.shorterRow
           ),
-          <.div(
-            ^.cls := "ui row",
-            SeqexecStyles.shorterRow,
-            <.h4(
-              ^.cls := "ui horizontal divider header",
-              s"Seqexec ${p.site.show}"
-            )
-          ),
+          wsConnect(ws => AppTitle(p.site, ws)),
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,

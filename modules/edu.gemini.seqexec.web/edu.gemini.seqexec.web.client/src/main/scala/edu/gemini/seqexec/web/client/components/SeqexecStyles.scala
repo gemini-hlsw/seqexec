@@ -4,6 +4,8 @@
 package edu.gemini.seqexec.web.client.components
 
 import scalacss.DevDefaults._
+import scalacss.internal.Keyframes
+import scala.concurrent.duration._
 
 /**
   * Custom CSS for the Seqexec UI
@@ -151,6 +153,22 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val errorTab: StyleA = style(
     borderTop(3.px, red, solid).important
+  )
+
+  val noOpacity: StyleA = style(
+    opacity(0)
+  )
+
+  val blink: Keyframes = keyframes(
+    50.%% -> noOpacity
+  )
+
+  val blinking: StyleA = style(
+    animationName(blink),
+    animationDuration(1.7.seconds),
+    animationIterationCount.infinite,
+    animationTimingFunction.cubicBezier(0.5, 0, 1, 1),
+    animationDirection.alternate
   )
 
   val buttonsRow: StyleA = style(
