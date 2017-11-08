@@ -8,10 +8,8 @@ import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFoc
 import edu.gemini.seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.semanticui.Size
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconCheckmark, IconPlay, IconPause, IconBan}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
@@ -20,7 +18,6 @@ import diode.react.ModelProxy
 
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
-import scalaz.syntax.std.option._
 
 /**
   * Control buttons for the sequence
@@ -82,7 +79,6 @@ object SequenceControl {
           val runContinueTooltip = s"${isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
           val runContinueButton = s"${isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
           List(
-            Label(Label.Props("Sequence Complete", color = "green".some, icon = IconCheckmark.some, size = Size.Big)).when(status === SequenceState.Completed),
             // Sync button
             controlButton(IconRefresh, "purple", $.runState(requestSync(id)), !allowedToExecute || !s.canSync, "Sync sequence", "Sync")
               .when(status === SequenceState.Idle),

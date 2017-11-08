@@ -23,15 +23,9 @@ object SequenceAnonymousToolbar {
     .stateless
     .render_P ( p =>
       <.div(
-        ^.cls := "ui column",
-        <.div(
-          ^.cls := "ui row",
-          SeqexecStyles.shorterRow,
-          <.div(
-            ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            p.instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
-          )
-        )
+        ^.cls := "ui left column bottom aligned sixteen wide",
+        SeqexecStyles.shorterRow,
+        p.instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))
       )
     ).build
 

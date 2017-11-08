@@ -46,7 +46,7 @@ object InstrumentTab {
         case _                       => IconSelectedRadio.some
       }
       val color = status.flatMap {
-        case SequenceState.Running   => "green".some
+        case SequenceState.Running   => "warning".some
         case SequenceState.Completed => "green".some
         case _                       => "grey".some
       }
