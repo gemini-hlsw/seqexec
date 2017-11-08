@@ -53,13 +53,12 @@ object SequenceStepsTableContainer {
               SeqexecStyles.shorterRow,
               SeqexecStyles.lowerRow,
               <.div(
-                ^.cls := "ui left column eight wide computer sixteen wide tablet only",
-                SeqexecStyles.controlColumn,
+                ^.cls := "ui left floated column eight wide computer eight wide tablet only",
                 p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
               ),
               <.div(
-                ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
-                SeqexecStyles.controlColumn,
+                ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
+                SeqexecStyles.observerField.when(p.p().isLogged),
                 p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
               )
             )).toTagMod

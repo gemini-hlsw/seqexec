@@ -96,8 +96,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     display.inline
   }
 
-  val controlColumn: StyleA = style {
-    paddingBottom(0.px).important
+  val observerField: StyleA = style {
+    paddingRight(0.px).important
   }
 
   val noPadding: StyleS = mixin(
