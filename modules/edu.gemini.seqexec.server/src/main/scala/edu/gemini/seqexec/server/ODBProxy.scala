@@ -11,6 +11,8 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 
 import scalaz.{EitherT, \/}
 import scalaz.syntax.either._
+import scalaz.syntax.equal._
+import scalaz.std.anyVal._
 import scalaz.concurrent.Task
 
 /**
@@ -57,6 +59,12 @@ object ODBProxy {
     override def obsPause(obsId: SPObservationID, reason: String): SeqAction[Boolean] = SeqAction(false)
     override def obsStop(obsId: SPObservationID, reason: String): SeqAction[Boolean] = SeqAction(false)
     override def queuedSequences(): SeqAction[Seq[SPObservationID]] = SeqAction(List.empty)
+  }
+
+  implicit class SeqexecSequenceOps(val s: SeqexecSequence) extends AnyVal {
+    def stepsCount: Int = Option(s.config.getAllSteps).map(_.length).getOrElse(0)
+    def executedCount: Int = s.datasets.size
+    def unExecutedSteps: Boolean = stepsCount =/= executedCount
   }
 
   final case class OdbCommandsImpl(host: Peer) extends OdbCommands {

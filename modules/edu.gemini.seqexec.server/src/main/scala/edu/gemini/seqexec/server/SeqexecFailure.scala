@@ -24,6 +24,9 @@ object SeqexecFailure {
   /** Indicates an unexpected problem while performing a Seqexec operation. */
   final case class Unexpected(msg: String) extends SeqexecFailure
 
+  /** Indicates an attempt to enqueue an empty sequence */
+  final case class EmptySequence(title: String) extends SeqexecFailure
+
   /** Timeout */
   final case class Timeout(msg: String) extends SeqexecFailure
 
@@ -37,7 +40,8 @@ object SeqexecFailure {
     case InvalidOp(msg)               => s"Invalid operation: $msg"
     case Unexpected(msg)              => s"Unexpected error: $msg"
     case Timeout(msg)                 => s"Timeout while waiting for $msg"
-    case ODBSeqError(fail)             => SeqFailure.explain(fail)
+    case EmptySequence(title)         => s"Attempt to enqueue empty sequence $title"
+    case ODBSeqError(fail)            => SeqFailure.explain(fail)
   }
 
 }
