@@ -77,8 +77,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueListPane: StyleA = style (
-    maxHeight(13.5.em),
-    minHeight(13.5.em),
+    maxHeight(15.45.em),
+    minHeight(15.45.em),
     marginTop(0.px).important
   )
 
@@ -307,8 +307,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val stepsTable: StyleA = style(
-    maxHeight(24.3.em),
-    minHeight(24.3.em),
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,

@@ -23,7 +23,7 @@ object LogArea {
       <.div(
         ^.cls := "ui sixteen wide column",
         <.div(
-          ^.cls := "ui raised secondary segment",
+          ^.cls := "ui secondary segment",
           <.div(
             ^.cls := "ui form",
             <.div(
