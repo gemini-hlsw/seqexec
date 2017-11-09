@@ -342,6 +342,7 @@ object handlers {
   /**
     * Handles the WebSocket connection and performs reconnection if needed
     */
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers with ModelBooPicklers {
     private implicit val runner = new RunAfterJS
 
@@ -385,6 +386,11 @@ object handlers {
       def onClose(): Unit =
         // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
         if (value.autoReconnect) {
+          // On development mode reload when the connection is broken. This is quite ugly but it helps on development
+          if (scala.scalajs.LinkingInfo.developmentMode) {
+            // reload in 4 seconds
+            scala.scalajs.js.timers.setTimeout(4000) (document.location.reload())
+          }
           SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(200, value.nextAttempt * 2))))
         }
 
