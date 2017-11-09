@@ -4,6 +4,8 @@
 package edu.gemini.seqexec.web.client.components
 
 import scalacss.DevDefaults._
+import scalacss.internal.Keyframes
+import scala.concurrent.duration._
 
 /**
   * Custom CSS for the Seqexec UI
@@ -16,7 +18,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   private val iconWidth = 16.5
 
   val body: StyleA = style(unsafeRoot("body")(
-    backgroundColor(white)
+    backgroundColor(white),
+    display.flex,
+    flexDirection.column
   ))
 
   val mainContainer: StyleA = style(
@@ -51,7 +55,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val activeInstrumentContent: StyleA = style(
-    padding(0.6.em, 0.9.em)
+    padding(0.6.em, 0.9.em),
+    backgroundColor(rgb(243, 244, 245)).important
   )
 
   val fieldsNoBottom: StyleA = style(
@@ -72,17 +77,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueListPane: StyleA = style (
-    maxHeight(13.5.em),
-    minHeight(13.5.em),
+    maxHeight(15.45.em),
+    minHeight(15.45.em),
     marginTop(0.px).important
   )
 
-  val searchResultListPane: StyleA = style {
-    maxHeight(10.3.em)
-  }
-
   val stepsListPane: StyleA = style (
-    maxHeight(24.3.em)
+    maxHeight(24.3.em),
+    minHeight(24.3.em)
   )
 
   val stepsListBody: StyleA = style() // Marker css
@@ -96,8 +98,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     display.inline
   }
 
-  val controlColumn: StyleA = style {
-    paddingBottom(0.px).important
+  val observerField: StyleA = style {
+    paddingRight(0.px).important
   }
 
   val noPadding: StyleS = mixin(
@@ -116,6 +118,31 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
+  val shorterRow: StyleA = style(
+    marginBottom(-1.em).important
+  )
+
+  val emptyInstrumentTab: StyleA = style(
+    minHeight(31.8.em)
+  )
+
+  val instrumentTab: StyleA = style(
+    minWidth(20.%%),
+    textAlign.center
+  )
+
+  val instrumentTabLabel: StyleA = style(
+    width(100.%%)
+  )
+
+  val lowerRow: StyleA = style(
+    marginTop(-1.em).important
+  )
+
+  val shorterFields: StyleA = style(
+    marginBottom(0.2.em).important
+  )
+
   val hidden: StyleA = style(
     display.none
   )
@@ -126,6 +153,22 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val errorTab: StyleA = style(
     borderTop(3.px, red, solid).important
+  )
+
+  val noOpacity: StyleA = style(
+    opacity(0)
+  )
+
+  val blink: Keyframes = keyframes(
+    50.%% -> noOpacity
+  )
+
+  val blinking: StyleA = style(
+    animationName(blink),
+    animationDuration(1.7.seconds),
+    animationIterationCount.infinite,
+    animationTimingFunction.cubicBezier(0.5, 0, 1, 1),
+    animationDirection.alternate
   )
 
   val buttonsRow: StyleA = style(
@@ -184,6 +227,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val gutterIconVisible: StyleA = style(
     visibility.visible
   )
+
   val gutterIconHidden: StyleA = style(
     visibility.hidden
   )
@@ -252,6 +296,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
         )
       )
     )
+  )
+
+  val footerSegment: StyleA = style("ui.footer")(
+    position.fixed,
+    bottom(0.px),
+    width(100.%%),
+    marginBottom(0.px),
+    backgroundColor(c"#F5F5F5")
   )
 
   val stepsTable: StyleA = style(

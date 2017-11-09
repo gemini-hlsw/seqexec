@@ -21,14 +21,14 @@ object LogArea {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui raised segments container",
-        TextMenuSegment("Log", "key.log.menu"),
+        ^.cls := "ui sixteen wide column",
         <.div(
           ^.cls := "ui secondary segment",
           <.div(
             ^.cls := "ui form",
             <.div(
               ^.cls := "field",
+              <.label("Log"),
               <.textarea(
                 ^.readOnly := true,
                 ^.value := p.log.log.map(e => s"${e.timestamp} ${e.msg}").toVector.mkString("\n")

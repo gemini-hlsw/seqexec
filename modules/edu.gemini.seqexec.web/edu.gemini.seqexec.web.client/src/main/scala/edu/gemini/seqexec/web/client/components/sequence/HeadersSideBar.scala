@@ -10,11 +10,13 @@ import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.circuit.{HeaderSideBarFocus, SeqexecCircuit}
 import edu.gemini.seqexec.web.client.actions.{UpdateOperator, UpdateCloudCover, UpdateWaterVapor, UpdateImageQuality, UpdateSkyBackground}
+import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
+import scalacss.ScalaCssReact._
 
 import scalaz.syntax.equal._
 import scalaz.std.string._
@@ -70,25 +72,37 @@ object HeadersSideBar {
 
       val operatorEV = StateSnapshot(~s.currentText)(updateState)
       <.div(
-        ^.cls := "ui raised secondary segment",
-        <.h4("Headers"),
+        ^.cls := "ui secondary segment",
         <.div(
           ^.cls := "ui form",
           <.div(
-            ^.cls := "required field",
-            FormLabel(FormLabel.Props("Operator", Some("operator"))),
-            InputEV(InputEV.Props("operator", "operator",
-              operatorEV,
-              placeholder = "Operator...",
-              disabled = !enabled,
-              onBlur = _ => submitIfChanged
-            ))
+            ^.cls := "fields",
+            SeqexecStyles.fieldsNoBottom,
+            <.div(
+              ^.cls := "sixteen wide field",
+              FormLabel(FormLabel.Props("Operator", Some("operator"))),
+              InputEV(
+                InputEV.Props("operator", "operator",
+                  operatorEV,
+                  placeholder = "Operator...",
+                  disabled = !enabled,
+                  onBlur = _ => submitIfChanged
+                )
+              )
+            )
           ),
-
-          DropdownMenu(DropdownMenu.Props("Image Quality", p.model().conditions.iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
-          DropdownMenu(DropdownMenu.Props("Cloud Cover", p.model().conditions.cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged)),
-          DropdownMenu(DropdownMenu.Props("Water Vapor", p.model().conditions.wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
-          DropdownMenu(DropdownMenu.Props("Sky Background", p.model().conditions.sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
+          <.div(
+            ^.cls := "two fields",
+            SeqexecStyles.fieldsNoBottom,
+            DropdownMenu(DropdownMenu.Props("Image Quality", p.model().conditions.iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
+            DropdownMenu(DropdownMenu.Props("Cloud Cover", p.model().conditions.cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged))
+          ),
+          <.div(
+            ^.cls := "two fields",
+            SeqexecStyles.fieldsNoBottom,
+            DropdownMenu(DropdownMenu.Props("Water Vapor", p.model().conditions.wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
+            DropdownMenu(DropdownMenu.Props("Sky Background", p.model().conditions.sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
+          )
         )
       )
     }

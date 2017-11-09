@@ -5,9 +5,11 @@ package edu.gemini.seqexec.web.client.components.sequence.toolbars
 
 import edu.gemini.seqexec.model.Model.{Instrument, SeqexecSite}
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
+import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
+import scalacss.ScalaCssReact._
 
 /**
   * Toolbar for anonymous users
@@ -24,6 +26,7 @@ object SequenceAnonymousToolbar {
         ^.cls := "ui column",
         <.div(
           ^.cls := "ui row",
+          SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
             p.instrumentConnects.get(p.instrument).whenDefined(_(SequenceInfo.apply))

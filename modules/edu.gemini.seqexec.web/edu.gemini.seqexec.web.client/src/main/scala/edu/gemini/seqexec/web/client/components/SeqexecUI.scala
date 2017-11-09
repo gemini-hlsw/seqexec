@@ -7,18 +7,49 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.actions.WSConnect
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.actions.NavigateSilentTo
-import edu.gemini.seqexec.web.client.components.sequence.SequenceArea
+import edu.gemini.seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
 import edu.gemini.seqexec.model.Model.SeqexecSite
+import edu.gemini.seqexec.web.client.model.WebSocketConnection
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import diode.ModelRO
+import diode.react.ModelProxy
+import diode.react.ReactPot._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import scalacss.ScalaCssReact._
 
 import scala.scalajs.js.timers.SetTimeoutHandle
-import scalaz._
-import Scalaz._
+import scalaz.syntax.show._
+import scalaz.syntax.equal._
+import scalaz.syntax.std.option._
 import scalaz.effect.IO
+
+object AppTitle {
+  final case class Props(site: SeqexecSite, ws: ModelProxy[WebSocketConnection])
+
+  private val component = ScalaComponent.builder[Props]("SeqexecUI")
+    .stateless
+    .render_P(p =>
+      <.div(
+        ^.cls := "ui row",
+        SeqexecStyles.shorterRow,
+        <.h4(
+          ^.cls := "ui horizontal divider header",
+          s"Seqexec ${p.site.shows}",
+          p.ws().ws.renderPending(_ =>
+            <.div(
+              SeqexecStyles.errorText,
+              SeqexecStyles.blinking,
+              "Connection lost"
+            )
+          )
+        )
+      )
+    ).build
+
+  def apply(site: SeqexecSite, ws: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(site, ws))
+}
 
 object SeqexecMain {
   final case class Props(site: SeqexecSite, ctl: RouterCtl[SeqexecPages])
@@ -26,17 +57,46 @@ object SeqexecMain {
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val resourcesBusyConnect = SeqexecCircuit.connect(_.uiModel.resourceConflict)
+  private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
+  private val wsConnect = SeqexecCircuit.connect(_.ws)
 
   private val component = ScalaComponent.builder[Props]("SeqexecUI")
     .stateless
     .render_P(p =>
       <.div(
-        NavBar(p.site),
-        QueueArea(p.ctl),
-        SequenceArea(p.site),
-        logConnect(LogArea.apply),
+        <.div(
+          ^.cls := "ui horizontally padded grid",
+          <.div(
+            ^.cls := "ui row",
+            SeqexecStyles.shorterRow
+          ),
+          wsConnect(ws => AppTitle(p.site, ws)),
+          <.div(
+            ^.cls := "ui row",
+            SeqexecStyles.shorterRow,
+            <.div(
+              ^.cls := "ten wide column",
+              QueueTableSection(p.ctl)
+            ),
+            <.div(
+              ^.cls := "six wide column",
+              headerSideBarConnect(HeadersSideBar.apply)
+            )
+          ),
+          <.div(
+            ^.cls := "ui row",
+            SeqexecStyles.shorterRow,
+            SequenceArea(p.site)
+          ),
+          <.div(
+            ^.cls := "ui row",
+            SeqexecStyles.shorterRow,
+            logConnect(LogArea.apply)
+          )
+        ),
         lbConnect(LoginBox.apply),
-        resourcesBusyConnect(ResourcesBox.apply)
+        resourcesBusyConnect(ResourcesBox.apply),
+        Footer(p.site)
       )
     ).build
 
@@ -60,7 +120,7 @@ object SeqexecUI {
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
         .pmap {
           case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
-          case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, none))
+          case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, None))
         }(p => (p.instrument.shows, p.obsId))) {
           case x @ InstrumentPage(i, _) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))

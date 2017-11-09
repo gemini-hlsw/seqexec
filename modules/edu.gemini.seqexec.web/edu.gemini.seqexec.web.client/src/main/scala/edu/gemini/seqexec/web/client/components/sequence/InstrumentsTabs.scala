@@ -48,19 +48,25 @@ object InstrumentTab {
       val color = status.flatMap {
         case SequenceState.Running   => "green".some
         case SequenceState.Completed => "green".some
-        case _                       => none[String]
+        case _                       => "grey".some
       }
+      val instrumentNoId =
+        <.div(SeqexecStyles.instrumentTabLabel, instrument.shows)
+      val instrumentWithId =
+       <.div(SeqexecStyles.instrumentTabLabel, <.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(tabTitle, color = color, icon = icon)))
+
       <.a(
         ^.cls := "item",
         ^.classSet(
           "active" -> active,
           "error"  -> hasError
         ),
-        SeqexecStyles.activeInstrumentContent.when(sequenceId.isDefined),
+        SeqexecStyles.instrumentTab,
+        SeqexecStyles.activeInstrumentContent.when(active),
         SeqexecStyles.errorTab.when(hasError),
         dataTab := instrument.shows,
         IconAttention.copyIcon(color = Some("red")).when(hasError),
-        sequenceId.fold(instrument.shows: VdomNode){ _ => <.div(<.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(tabTitle, color = color, icon = icon)))}
+        sequenceId.fold(instrumentNoId)(_ => instrumentWithId)
       )
     }.componentDidMount(ctx =>
       Callback {

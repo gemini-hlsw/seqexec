@@ -202,7 +202,7 @@ object StepsTableContainer {
             if (step.breakpoint) {
               Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(id, step))
             } else {
-              Icon.IconCaretDown.copyIcon(link = true, color = Some("gray"), onClick = breakpointAt(id, step))
+              Icon.IconCaretDown.copyIcon(link = true, color = Some("grey"), onClick = breakpointAt(id, step))
             }
           ),
           <.div(

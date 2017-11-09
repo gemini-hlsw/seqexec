@@ -29,7 +29,7 @@ object SequenceInfo {
         ^.cls := "ui form",
         <.div(
           ^.cls := "fields",
-          SeqexecStyles.fieldsNoBottom.unless(isLogged),
+          SeqexecStyles.fieldsNoBottom,
           <.div(
             ^.cls := "field",
             Label(Label.Props(obsName, basic = true))

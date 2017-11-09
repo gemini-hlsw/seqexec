@@ -11,7 +11,6 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.model.WebSocketConnection
 import edu.gemini.seqexec.web.client.model.Pages.Root
 import edu.gemini.seqexec.web.client.OcsBuildInfo
-import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.HeaderItem
 import japgolly.scalajs.react._
@@ -25,7 +24,7 @@ import scalaz.syntax.show._
 /**
   * Component for the bar at the top of the page
   */
-object NavBar {
+object Footer {
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
@@ -38,28 +37,15 @@ object NavBar {
     .stateless
     .render_P(p =>
       <.div(
-        SeqexecStyles.mainContainer,
-        <.div(
-          ^.cls := "ui container five column stackable grid",
-          <.div(
-            ^.cls := "ui row",
-            HeaderItem(HeaderItem.Props(name = ""),
-              <.a(
-                ^.href := "/#",
-                <.img(
-                  ^.cls := "ui mini image logo",
-                  SeqexecStyles.logo,
-                  ^.src :="/images/launcher.png"
-                ),
-                ^.onClick ==> goHome
-              ),
-              s"Seqexec - ${p.show}"
-            ),
-            HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
-            wsConnect(ConnectionState.apply),
-            userConnect(TopMenu.apply)
-          )
-        )
+        ^.cls := "ui footer inverted menu",
+        <.a(
+          ^.cls := "header item",
+          ^.onClick ==> goHome,
+          s"Seqexec - ${p.show}"
+        ),
+        HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
+        wsConnect(ConnectionState.apply),
+        userConnect(ControlMenu.apply)
       )
     )
     .componentDidMount(ctx =>
@@ -94,10 +80,10 @@ object ConnectionState {
     .stateless
     .render_P( p =>
       <.div(
-        ^.cls := "header item",
+        ^.cls := "ui header item sub",
         p.u.ws.renderPending(t =>
           <.div(
-            IconAttention.copyIcon(size = Size.Large, color = Option("red")),
+            IconAttention.copyIcon(color = Option("red")),
             <.span(
               SeqexecStyles.errorText,
               s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."

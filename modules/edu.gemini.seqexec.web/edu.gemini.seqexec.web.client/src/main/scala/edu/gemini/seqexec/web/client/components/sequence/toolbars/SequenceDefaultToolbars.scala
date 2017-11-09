@@ -3,14 +3,13 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.toolbars
 
-import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, SequenceState}
+import edu.gemini.seqexec.model.Model.{SequenceId, SequenceState}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
 import edu.gemini.seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.Size
-import edu.gemini.seqexec.web.client.semanticui.elements.label.{Label}
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconCheckmark, IconPlay, IconPause, IconBan}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -22,8 +21,6 @@ import diode.react.ModelProxy
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
-
-import scalacss.ScalaCssReact._
 
 /**
   * Control buttons for the sequence
@@ -110,39 +107,4 @@ object SequenceControl {
     }.build
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
-}
-
-/**
-  * Component deciding what tooblar to display
-  */
-object SequenceDefaultToolbar {
-  final case class Props(site: SeqexecSite, instrument: Instrument) {
-    protected[sequence] val sequenceObserverConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-    protected[sequence] val sequenceControlConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
-  }
-
-  private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
-    .render_P( p =>
-      <.div(
-        ^.cls := "ui row",
-        <.div(
-          p.sequenceObserverConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
-        ),
-        <.div(
-          ^.cls := "ui two column grid",
-          <.div(
-            ^.cls := "ui left column eight wide computer sixteen wide tablet only",
-            SeqexecStyles.controlColumn,
-            p.sequenceControlConnects.get(p.instrument).whenDefined(c => c(SequenceControl.apply))
-          ),
-          <.div(
-            ^.cls := "ui right column eight wide computer eight wide tablet sixteen wide mobile",
-            SeqexecStyles.controlColumn,
-            p.sequenceObserverConnects.get(p.instrument).whenDefined(c => c(m => SequenceObserverField(m)))
-          )
-        )
-      )
-    ).build
-
-  def apply(site: SeqexecSite, p: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, p))
 }
