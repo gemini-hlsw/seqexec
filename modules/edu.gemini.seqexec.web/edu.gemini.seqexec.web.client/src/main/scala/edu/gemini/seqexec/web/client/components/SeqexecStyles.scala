@@ -220,6 +220,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     color.red
   )
 
+  val runningLabel: StyleA = style(
+    backgroundColor(c"#FFFAF3").important,
+    color(c"#573A08").important
+  )
+
   val smallTextArea: StyleA = style(
     fontSize.smaller
   )
