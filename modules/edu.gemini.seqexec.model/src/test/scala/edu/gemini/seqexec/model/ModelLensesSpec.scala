@@ -5,7 +5,7 @@ package edu.gemini.seqexec.model
 
 import org.typelevel.discipline.scalatest.Discipline
 import org.scalatest.FunSuite
-import monocle.law.discipline.{LensTests, PrismTests, TraversalTests}
+import monocle.law.discipline.{LensTests, OptionalTests, PrismTests, TraversalTests}
 import edu.gemini.seqexec.model.Model.SeqexecEvent
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
@@ -19,9 +19,16 @@ class ModelLensesSpec extends FunSuite with Discipline {
   implicit def arbF[A]: Arbitrary[A => A] = Arbitrary[A => A]((x: A) => x)
 
   checkAll("event observer name lens", LensTests(SeqexecEvent.obsNameL))
-  checkAll("each view traversal", TraversalTests(SeqexecEvent.eachL))
+  checkAll("each view traversal", TraversalTests(SeqexecEvent.eachViewL))
   checkAll("sequence queue lens", LensTests(SeqexecEvent.sequencesQueueL))
   checkAll("queue view lens", LensTests(SeqexecEvent.ssLens))
   checkAll("events prism", PrismTests(SeqexecEvent.sePrism))
   checkAll("sequencename traversal", TraversalTests(SeqexecEvent.sequenceNameL))
+  checkAll("steps lens", LensTests(SeqexecEvent.obsStepsL))
+  checkAll("steps traversal", TraversalTests(SeqexecEvent.eachStepL))
+  checkAll("standard step prism", PrismTests(SeqexecEvent.standardStepL))
+  checkAll("standard step config", LensTests(SeqexecEvent.stepConfigL))
+  checkAll("observe step config", LensTests(SeqexecEvent.observeConfigL))
+  checkAll("target name config", LensTests(SeqexecEvent.targetNameL))
+  checkAll("config target name config", OptionalTests(SeqexecEvent.configTargetNameL))
 }

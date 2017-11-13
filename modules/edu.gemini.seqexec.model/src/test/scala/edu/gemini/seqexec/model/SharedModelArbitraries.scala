@@ -60,4 +60,6 @@ object SharedModelArbitraries {
   implicit val conArb = implicitly[Arbitrary[Conditions]]
   implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
   implicit val smuArb = implicitly[Arbitrary[SeqexecModelUpdate]]
+  implicit val steArb = implicitly[Arbitrary[Step]]
+  implicit val stsArb = implicitly[Arbitrary[StandardStep]]
 }

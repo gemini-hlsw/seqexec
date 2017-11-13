@@ -3,13 +3,17 @@
 
 package edu.gemini.seqexec.model
 
-import scalaz._
-import Scalaz._
-
-import monocle.{Lens, Prism, PTraversal}
+import monocle.{Lens, Optional, Prism}
 import monocle.macros.{GenLens, GenPrism, Lenses}
 import monocle.Traversal
+import monocle.function.At.atMap
+import monocle.function.At.at
+import monocle.std.option.some
+import monocle.Iso
 
+import scalaz.{Equal, Show, Order, NonEmptyList}
+import scalaz.std.list._
+import scalaz.std.anyVal._
 import java.time.Instant
 
 import dhs.ImageFileId
@@ -99,13 +103,36 @@ object Model {
 
     // Some useful Monocle lenses
     val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
-    val eachL: Traversal[List[SequenceView], SequenceView] = Traversal.fromTraverse[List, SequenceView]
+    // From step to standard step
+    val standardStepL: Prism[Step, StandardStep] = GenPrism[Step, StandardStep]
+    val eachStepL: Traversal[List[Step], Step] = Traversal.fromTraverse[List, Step]
+    val obsStepsL: Lens[SequenceView, List[Step]] = GenLens[SequenceView](_.steps)
+    val eachViewL: Traversal[List[SequenceView], SequenceView] = Traversal.fromTraverse[List, SequenceView]
     val sequencesQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] = GenLens[SequencesQueue[SequenceView]](_.queue)
     val ssLens: Lens[SequenceStart, SequencesQueue[SequenceView]] = GenLens[SequenceStart](_.view)
+    // Required for type correctness
+    val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] = Iso.id[Map[SystemName, Parameters]]
+    val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] = Iso.id[Map[ParamName, ParamValue]]
+    // Focus on the target name
+    val targetNameL: Lens[Parameters, Option[TargetName]] =
+      parametersRoot                  ^|-> // map of parameters
+      at("observe:object": ParamName)      // parameter containing the name
+    // Possible set of observe parameters
+    val observeConfigL: Lens[StepConfig, Option[Parameters]] =
+      stepConfigRoot            ^|-> // map of systems
+      at("observe": SystemName)      // subsystem name
+    val configTargetNameL: Optional[StepConfig, TargetName] =
+      observeConfigL ^<-? // observe paramaters
+      some           ^|-> // focus on the option
+      targetNameL    ^<-? // find the target name
+      some                //focus on the option
+    // from standard step to config
+    val stepConfigL: Lens[StandardStep, StepConfig] = GenLens[StandardStep](_.config)
 
     // Prism to focus on only the SeqexecEvents that have a queue
     val sePrism: Prism[SeqexecEvent, SeqexecModelUpdate] = GenPrism[SeqexecEvent, SeqexecModelUpdate]
 
+    // Focus on the sequence view
     val seViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
         case e @ SequenceStart(_)           => e.copy(view = q)
         case e @ StepExecuted(_)            => e.copy(view = q)
@@ -128,7 +155,24 @@ object Model {
       }
     )
     // Composite lens to change the sequence name of an event
-    val sequenceNameL: PTraversal[SeqexecEvent, SeqexecEvent, String, String] = sePrism composeLens seViewL composeLens sequencesQueueL composeTraversal eachL composeLens obsNameL
+    val sequenceNameL: Traversal[SeqexecEvent, ObservationName] =
+      sePrism         ^|->  // Events with model updates
+      seViewL         ^|->  // Find the sequence view
+      sequencesQueueL ^|->> // Find the queue
+      eachViewL       ^|->  // each sequence on the queue
+      obsNameL              // sequence's observation name
+
+    // Composite lens to find the target name
+    val sequenceTargetNameL: Traversal[SeqexecEvent, TargetName] =
+      sePrism           ^|->  // Events with model updates
+      seViewL           ^|->  // Find the sequence view
+      sequencesQueueL   ^|->> // Find the queue
+      eachViewL         ^|->  // each sequence on the queue
+      obsStepsL         ^|->> // sequence steps
+      eachStepL         ^<-?  // each step
+      standardStepL     ^|->  // which is a standard step
+      stepConfigL       ^|-?  // configuration of the step
+      configTargetNameL       // on the configuration find the target name
 
     implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
@@ -141,6 +185,8 @@ object Model {
   // TODO This should be a richer type
   type SequenceId = String
   type StepId = Int
+  type ObservationName = String
+  type TargetName = String
   /**
     * A Seqexec resource represents any system that can be only used by one single agent.
     *
@@ -258,6 +304,9 @@ object Model {
     val skip: Boolean
     val fileId: Option[dhs.ImageFileId]
   }
+  object Step {
+    implicit val equal: Equal[Step] = Equal.equalA[Step]
+  }
 
   final case class StandardStep(
     override val id: StepId,
@@ -269,6 +318,9 @@ object Model {
     configStatus: List[(Resource, ActionStatus)],
     observeStatus: ActionStatus
   ) extends Step
+  object StandardStep {
+    implicit val equal: Equal[StandardStep] = Equal.equalA[StandardStep]
+  }
   // Other kinds of Steps to be defined.
 
   sealed trait SequenceState
