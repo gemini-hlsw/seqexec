@@ -164,8 +164,8 @@ object Model {
       eachViewL       ^|->  // each sequence on the queue
       obsNameL              // sequence's observation name
 
-    // Composite lens to find the target name
-    val sequenceTargetNameL: Traversal[SeqexecEvent, TargetName] =
+    // Composite lens to find the step config
+    val sequenceConfigL: Traversal[SeqexecEvent, StepConfig] =
       sePrism           ^|->  // Events with model updates
       seViewL           ^|->  // Find the sequence view
       sequencesQueueL   ^|->> // Find the queue
@@ -173,8 +173,17 @@ object Model {
       obsStepsL         ^|->> // sequence steps
       eachStepL         ^<-?  // each step
       standardStepL     ^|->  // which is a standard step
-      stepConfigL       ^|-?  // configuration of the step
+      stepConfigL             // configuration of the step
+
+    // Composite lens to find the target name on observation
+    val observeTargetNameL: Traversal[SeqexecEvent, TargetName] =
+      sequenceConfigL                                 ^|-?  // configuration of the step
       configTargetNameL(SystemName.observe, "object")       // on the configuration find the target name
+
+    // Composite lens to find the target name on telescope
+    val telescopeTargetNameL: Traversal[SeqexecEvent, TargetName] =
+      sequenceConfigL                                 ^|-?  // configuration of the step
+      configTargetNameL(SystemName.telescope, "Base:name")       // on the configuration find the target name
 
     implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
