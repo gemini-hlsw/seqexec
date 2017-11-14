@@ -11,6 +11,7 @@ import diode._
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.handlers._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.ModelOps._
@@ -33,7 +34,7 @@ object circuit {
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: SeqexecSite, firstLoad: Boolean) extends UseValueEq
-  final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, runningStep: Option[(Int, Int)]) extends UseValueEq
+  final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[String], runningStep: Option[(Int, Int)]) extends UseValueEq
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
@@ -75,7 +76,9 @@ object circuit {
       zoom { c =>
         val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
           val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
-          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, s.runningStep)
+          val targetName = firstScienceTargetNameL.headOption(s)
+          println(targetName)
+          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, targetName, s.runningStep)
         }
         StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue)
       }

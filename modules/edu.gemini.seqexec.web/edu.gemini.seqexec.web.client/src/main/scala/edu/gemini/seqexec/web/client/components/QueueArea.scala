@@ -42,6 +42,9 @@ object QueueTableBody {
       <.td(nbsp),
       <.td(
         SeqexecStyles.notInMobile,
+        nbsp).when(isLogged),
+      <.td(
+        SeqexecStyles.notInMobile,
         nbsp).when(isLogged)
     )
   }
@@ -62,6 +65,7 @@ object QueueTableBody {
             TableHeader("Obs ID"),
             TableHeader("State"),
             TableHeader("Instrument"),
+            TableHeader("Target").when(isLogged),
             TableHeader("Obs. Name").when(isLogged)
           )
         ),
@@ -77,6 +81,7 @@ object QueueTableBody {
                 }
               val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
               val inProcess = s.status.isInProcess
+              val targetName = s.targetName.getOrElse("*****")
               val selectableRowCls = List(
                   ^.classSet(
                     "selectable" -> !inProcess
@@ -115,6 +120,12 @@ object QueueTableBody {
                   p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.instrument.shows).unless(inProcess),
                   s.instrument.shows.when(inProcess)
                 ),
+                <.td(
+                  selectableRowCls.toTagMod,
+                  SeqexecStyles.notInMobile,
+                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(targetName).unless(inProcess),
+                  targetName.when(inProcess)
+                ).when(isLogged),
                 <.td(
                   selectableRowCls.toTagMod,
                   SeqexecStyles.notInMobile,
