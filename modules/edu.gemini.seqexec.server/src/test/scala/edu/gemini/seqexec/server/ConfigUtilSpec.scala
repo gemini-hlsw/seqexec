@@ -5,6 +5,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import edu.gemini.spModel.seqcomp.SeqConfigNames
+import edu.gemini.seqexec.model.Model.SystemName
 import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
@@ -72,7 +73,7 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
     it should "convert to StepConfig" in {
       forAll { (c: Config) =>
         // Not much to check but at least verify the amount of subsystems
-        val subsystems = c.getKeys.map(_.getRoot.getName).distinct
+        val subsystems = c.getKeys.map(_.getRoot.getName).map(SystemName.unsafeFromString).distinct
         c.toStepConfig.keys should contain theSameElementsAs subsystems
       }
     }

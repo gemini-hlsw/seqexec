@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
-import edu.gemini.seqexec.model.Model.StepConfig
+import edu.gemini.seqexec.model.Model.{StepConfig, SystemName}
 
 import java.beans.PropertyDescriptor
 
@@ -72,7 +72,7 @@ object ConfigUtilOps {
     def toStepConfig: StepConfig = {
       c.itemEntries().groupBy(_.getKey.getRoot).map {
         case (subsystem, entries) =>
-          subsystem.getName ->
+          SystemName.unsafeFromString(subsystem.getName) ->
             (entries.toList.map {
               e => (e.getKey.getPath, s"${e.getItemValue}")
             }(breakOut): Map[String, String])
