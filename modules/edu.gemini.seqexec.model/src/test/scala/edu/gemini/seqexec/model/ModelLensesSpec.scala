@@ -6,7 +6,7 @@ package edu.gemini.seqexec.model
 import org.typelevel.discipline.scalatest.Discipline
 import org.scalatest.FunSuite
 import monocle.law.discipline.{LensTests, OptionalTests, PrismTests, TraversalTests}
-import edu.gemini.seqexec.model.Model.SeqexecEvent
+import edu.gemini.seqexec.model.Model.{SeqexecEvent, SystemName}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import SharedModelArbitraries._
@@ -28,8 +28,8 @@ class ModelLensesSpec extends FunSuite with Discipline {
   checkAll("steps traversal", TraversalTests(SeqexecEvent.eachStepL))
   checkAll("standard step prism", PrismTests(SeqexecEvent.standardStepL))
   checkAll("standard step config", LensTests(SeqexecEvent.stepConfigL))
-  checkAll("observe step config", LensTests(SeqexecEvent.observeConfigL))
-  checkAll("target name config", LensTests(SeqexecEvent.targetNameL))
-  checkAll("config target name config", OptionalTests(SeqexecEvent.configTargetNameL))
+  checkAll("observe step config", LensTests(SeqexecEvent.systemConfigL(SystemName.observe)))
+  checkAll("target name config", LensTests(SeqexecEvent.targetNameL("object")))
+  checkAll("config target name config", OptionalTests(SeqexecEvent.configTargetNameL(SystemName.observe, "object")))
   checkAll("targetname traversal", TraversalTests(SeqexecEvent.sequenceTargetNameL))
 }

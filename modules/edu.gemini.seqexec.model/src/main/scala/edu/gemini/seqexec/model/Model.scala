@@ -14,6 +14,7 @@ import monocle.Iso
 import scalaz.{Equal, Show, Order, NonEmptyList}
 import scalaz.std.list._
 import scalaz.std.anyVal._
+import scalaz.syntax.show._
 import java.time.Instant
 
 import dhs.ImageFileId
@@ -114,19 +115,19 @@ object Model {
     val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] = Iso.id[Map[SystemName, Parameters]]
     val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] = Iso.id[Map[ParamName, ParamValue]]
     // Focus on the target name
-    val targetNameL: Lens[Parameters, Option[TargetName]] =
-      parametersRoot                  ^|-> // map of parameters
-      at("observe:object": ParamName)      // parameter containing the name
+    def targetNameL(param: ParamName): Lens[Parameters, Option[TargetName]] =
+      parametersRoot ^|-> // map of parameters
+      at(param)           // parameter containing the name
     // Possible set of observe parameters
-    val observeConfigL: Lens[StepConfig, Option[Parameters]] =
-      stepConfigRoot                     ^|-> // map of systems
-      at(SystemName.observe: SystemName)      // subsystem name
+    def systemConfigL(system: SystemName): Lens[StepConfig, Option[Parameters]] =
+      stepConfigRoot ^|-> // map of systems
+      at(system)          // subsystem name
     // Target name of a StepConfig
-    val configTargetNameL: Optional[StepConfig, TargetName] =
-      observeConfigL ^<-? // observe paramaters
-      some           ^|-> // focus on the option
-      targetNameL    ^<-? // find the target name
-      some                //focus on the option
+    def configTargetNameL(system: SystemName, param: String): Optional[StepConfig, TargetName] =
+      systemConfigL(system)                ^<-? // observe paramaters
+      some                                 ^|-> // focus on the option
+      targetNameL(system.withParam(param)) ^<-? // find the target name
+      some                                       // focus on the option
     // from standard step to config
     val stepConfigL: Lens[StandardStep, StepConfig] = GenLens[StandardStep](_.config)
 
@@ -173,13 +174,15 @@ object Model {
       eachStepL         ^<-?  // each step
       standardStepL     ^|->  // which is a standard step
       stepConfigL       ^|-?  // configuration of the step
-      configTargetNameL       // on the configuration find the target name
+      configTargetNameL(SystemName.observe, "object")       // on the configuration find the target name
 
     implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
 
   // The system name in ocs is a string but we can represent the important ones as an ADT
-  sealed trait SystemName
+  sealed trait SystemName {
+    def withParam(p: String): String = s"${this.shows}:$p"
+  }
   object SystemName {
     case object ocs extends SystemName
     case object observe extends SystemName
@@ -202,6 +205,15 @@ object Model {
 
     val all: List[SystemName] = List(ocs, instrument, telescope, gcal)
 
+    implicit val show: Show[SystemName] = Show.shows {
+      case `ocs`         => "ocs"
+      case `instrument`  => "instrument"
+      case `telescope`   => "telescope"
+      case `gcal`        => "gcal"
+      case `observe`     => "observe"
+      case `calibration` => "calibration"
+      case `meta`        => "meta"
+    }
     implicit val equal: Equal[SystemName] = Equal.equalA[SystemName]
   }
   type ParamName = String
