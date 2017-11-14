@@ -46,15 +46,18 @@ object InstrumentTab {
         case _                       => IconSelectedRadio.some
       }
       val color = status.flatMap {
-        case SequenceState.Running   => "green".some
+        case SequenceState.Running   => "orange".some
         case SequenceState.Completed => "green".some
         case _                       => "grey".some
       }
       val instrumentNoId =
         <.div(SeqexecStyles.instrumentTabLabel, instrument.shows)
       val instrumentWithId =
-       <.div(SeqexecStyles.instrumentTabLabel, <.div(SeqexecStyles.activeInstrumentLabel, instrument.shows), Label(Label.Props(tabTitle, color = color, icon = icon)))
-
+        <.div(
+          SeqexecStyles.instrumentTabLabel,
+          <.div(SeqexecStyles.activeInstrumentLabel, instrument.shows),
+          Label(Label.Props(tabTitle, color = color, icon = icon))
+        )
       <.a(
         ^.cls := "item",
         ^.classSet(

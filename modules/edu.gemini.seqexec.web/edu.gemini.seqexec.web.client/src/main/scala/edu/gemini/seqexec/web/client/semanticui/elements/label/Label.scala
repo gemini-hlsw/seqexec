@@ -8,6 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import scalacss.ScalaCssReact._
 
 import scalaz.Equal
 import scalaz.syntax.equal._
@@ -33,13 +34,15 @@ object Label {
     basic   : Boolean = false,
     size    : Size = Size.NotSized,
     pointing: Pointing = Pointing.None,
-    icon    : Option[Icon] = None)
+    icon    : Option[Icon] = None,
+    extraStyles: List[scalacss.internal.StyleA] = Nil)
 
   private val component = ScalaComponent.builder[Props]("Label")
     .stateless
     .renderPC((_, p, c) =>
       <.label(
         ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
+        p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
         ^.classSet(
           "basic"          -> p.basic,
           "tag"            -> p.tag,
