@@ -27,8 +27,9 @@ object SequenceInfo {
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val StatusAndObserverFocus(isLogged, name, _, _, observer, status) = p.p()
+      val StatusAndObserverFocus(isLogged, name, _, _, observer, status, tName) = p.p()
       val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
+      val targetName = tName.filter(_.nonEmpty).getOrElse("Unknown.")
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -41,6 +42,10 @@ object SequenceInfo {
           <.div(
             ^.cls := "field",
             Label(Label.Props(obsName, basic = true))
+          ).when(isLogged),
+          <.div(
+            ^.cls := "field",
+            Label(Label.Props(targetName, basic = true))
           ).when(isLogged),
           <.div(
             ^.cls := "field",

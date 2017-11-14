@@ -11,12 +11,12 @@ trait ModelLenses {
 
   // Composite lens to find the step config
   def firstScienceTargetNameL: Traversal[SequenceView, TargetName] =
-    obsStepsL           ^|->>
-    eachStepL           ^<-?
-    standardStepL       ^|->
-    stepConfigL         ^|->>
+    obsStepsL           ^|->> // observation steps
+    eachStepL           ^<-?  // each step
+    standardStepL       ^|->  // only standard steps
+    stepConfigL         ^|->> // get step config
     scienceStepL        ^|-?  // science steps
-    scienceTargetNameL        // science target name*/
+    scienceTargetNameL        // science target name
 }
 
 object lenses extends ModelLenses
