@@ -119,8 +119,9 @@ object Model {
       at("observe:object": ParamName)      // parameter containing the name
     // Possible set of observe parameters
     val observeConfigL: Lens[StepConfig, Option[Parameters]] =
-      stepConfigRoot            ^|-> // map of systems
-      at("observe": SystemName)      // subsystem name
+      stepConfigRoot                     ^|-> // map of systems
+      at(SystemName.observe: SystemName)      // subsystem name
+    // Target name of a StepConfig
     val configTargetNameL: Optional[StepConfig, TargetName] =
       observeConfigL ^<-? // observe paramaters
       some           ^|-> // focus on the option
@@ -177,11 +178,37 @@ object Model {
     implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
 
-  type SystemName = String
+  // The system name in ocs is a string but we can represent the important ones as an ADT
+  sealed trait SystemName
+  object SystemName {
+    case object ocs extends SystemName
+    case object observe extends SystemName
+    case object instrument extends SystemName
+    case object telescope extends SystemName
+    case object gcal extends SystemName
+    case object calibration extends SystemName
+    case object meta extends SystemName
+
+    def unsafeFromString(system: String): SystemName = system match {
+      case "ocs"         => ocs
+      case "instrument"  => instrument
+      case "telescope"   => telescope
+      case "gcal"        => gcal
+      case "observe"     => observe
+      case "calibration" => calibration
+      case "meta"        => meta
+      case s             => sys.error(s"Unknown system name $s")
+    }
+
+    val all: List[SystemName] = List(ocs, instrument, telescope, gcal)
+
+    implicit val equal: Equal[SystemName] = Equal.equalA[SystemName]
+  }
   type ParamName = String
   type ParamValue = String
   type Parameters = Map[ParamName, ParamValue]
   type StepConfig = Map[SystemName, Parameters]
+  implicit val stEqual: Equal[StepConfig] = Equal.equalA[StepConfig]
   // TODO This should be a richer type
   type SequenceId = String
   type StepId = Int

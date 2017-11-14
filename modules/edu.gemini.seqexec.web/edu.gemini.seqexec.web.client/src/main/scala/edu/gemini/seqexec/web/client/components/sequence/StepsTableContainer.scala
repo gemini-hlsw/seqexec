@@ -59,8 +59,8 @@ object StepsTableContainer {
                 case (k, v) =>
                   <.tr(
                     ^.classSet(
-                      "positive" -> sub.startsWith("instrument"),
-                      "warning" -> sub.startsWith("telescope")
+                      "positive" -> (sub === SystemName.instrument),
+                      "warning"  -> (sub === SystemName.telescope)
                     ),
                     SeqexecStyles.observeConfig.when(k.startsWith("observe")),
                     SeqexecStyles.observeConfig.when(k.startsWith("ocs")),
