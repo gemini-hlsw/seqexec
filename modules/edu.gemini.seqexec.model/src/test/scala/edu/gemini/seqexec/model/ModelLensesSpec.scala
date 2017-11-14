@@ -33,4 +33,7 @@ class ModelLensesSpec extends FunSuite with Discipline {
   checkAll("config target name config", OptionalTests(SeqexecEvent.configTargetNameL(SystemName.observe, "object")))
   checkAll("observe targetname traversal", TraversalTests(SeqexecEvent.observeTargetNameL))
   checkAll("telescope targetname traversal", TraversalTests(SeqexecEvent.telescopeTargetNameL))
+  checkAll("science step traversal", TraversalTests(SeqexecEvent.scienceStepL))
+  checkAll("science target name optional", OptionalTests(SeqexecEvent.scienceTargetNameL))
+  checkAll("first science target name traversal", TraversalTests(SeqexecEvent.firstScienceTargetNameL))
 }

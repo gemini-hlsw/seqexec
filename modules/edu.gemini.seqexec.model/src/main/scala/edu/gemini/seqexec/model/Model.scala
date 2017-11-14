@@ -3,18 +3,21 @@
 
 package edu.gemini.seqexec.model
 
-import monocle.{Lens, Optional, Prism}
+import monocle.{Lens, Optional, Prism, Traversal}
 import monocle.macros.{GenLens, GenPrism, Lenses}
-import monocle.Traversal
 import monocle.function.At.atMap
 import monocle.function.At.at
 import monocle.std.option.some
 import monocle.Iso
 
-import scalaz.{Equal, Show, Order, NonEmptyList}
+import scalaz.{Applicative, Equal, Show, Order, NonEmptyList}
 import scalaz.std.list._
 import scalaz.std.anyVal._
+import scalaz.std.map._
+import scalaz.syntax.equal._
 import scalaz.syntax.show._
+import scalaz.syntax.applicative._
+import scalaz.syntax.traverse._
 import java.time.Instant
 
 import dhs.ImageFileId
@@ -174,6 +177,31 @@ object Model {
       eachStepL         ^<-?  // each step
       standardStepL     ^|->  // which is a standard step
       stepConfigL             // configuration of the step
+
+    def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
+      new Traversal[Map[K, V], V]{
+        def modifyF[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
+          s.map { case (k, v) =>
+            k -> (if(predicate(k, v)) f(v) else v.pure[F])
+          }.sequenceU
+      }
+
+    // Find the Parameters of the steps containing science steps
+    val scienceStepL: Traversal[StepConfig, Parameters] = filterEntry[SystemName, Parameters] {
+      case (s, p) => s === SystemName.observe && p.exists {
+        case (k, v) => k === SystemName.observe.withParam("observeType") && v === "OBJECT"
+      }
+    }
+
+    val scienceTargetNameL: Optional[Parameters, TargetName] =
+      targetNameL(SystemName.observe.withParam("object")) ^<-? // find the target name
+      some                                                     // focus on the option
+
+    // Composite lens to find the step config
+    val firstScienceTargetNameL: Traversal[SeqexecEvent, TargetName] =
+      sequenceConfigL     ^|->> // sequence configuration
+      scienceStepL        ^|-?  // science steps
+      scienceTargetNameL        // science target name
 
     // Composite lens to find the target name on observation
     val observeTargetNameL: Traversal[SeqexecEvent, TargetName] =
