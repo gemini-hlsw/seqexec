@@ -89,8 +89,8 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping
         def anonymize(e: SeqexecEvent) = {
-            // Hide the name for anonymous users
-            sequenceNameL.set("")(e)
+            // Hide the name and target name for anonymous users
+            (sequenceTargetNameL.modify(_ => "***") andThen sequenceNameL.set(""))(e)
         }
         def filterOutNull = (e: SeqexecEvent) => e match {
           case NullEvent => false

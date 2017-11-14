@@ -31,4 +31,5 @@ class ModelLensesSpec extends FunSuite with Discipline {
   checkAll("observe step config", LensTests(SeqexecEvent.observeConfigL))
   checkAll("target name config", LensTests(SeqexecEvent.targetNameL))
   checkAll("config target name config", OptionalTests(SeqexecEvent.configTargetNameL))
+  checkAll("targetname traversal", TraversalTests(SeqexecEvent.sequenceTargetNameL))
 }
