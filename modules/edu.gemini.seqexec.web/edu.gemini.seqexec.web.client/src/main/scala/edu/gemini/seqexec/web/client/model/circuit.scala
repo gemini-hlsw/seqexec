@@ -76,7 +76,7 @@ object circuit {
       zoom { c =>
         val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
           val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
-          val targetName = firstScienceTargetNameL.headOption(s)
+          val targetName = firstScienceStepTargetNameT.headOption(s)
           SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, targetName, s.runningStep)
         }
         StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue)
@@ -101,7 +101,7 @@ object circuit {
     def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
       statusReader.zip(instrumentTab(i)).zoom {
         case (status, (tab, _)) =>
-          val targetName = tab.sequence.flatMap(firstScienceTargetNameL.headOption)
+          val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
           StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
       }
 
