@@ -258,6 +258,11 @@ object StepsTableContainer {
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
+          ^.cls := "middle aligned",
+          "Settings"
+        ),
+        <.td(
+          ^.onDoubleClick --> selectRow(step, i),
           ^.classSet(
             "top aligned"    -> step.isObserving,
             "middle aligned" -> !step.isObserving
@@ -279,8 +284,9 @@ object StepsTableContainer {
           <.tr(
             TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
             TableHeader(TableHeader.Props(collapsing = true), "Step"),
-            TableHeader(TableHeader.Props(width = Width.Eight), "State"),
-            TableHeader(TableHeader.Props(width = Width.Eight), "File"),
+            TableHeader(TableHeader.Props(width = Width.Four), "State"),
+            TableHeader(TableHeader.Props(width = Width.Eight), "Settings"),
+            TableHeader(TableHeader.Props(width = Width.Four), "Progress"),
             TableHeader(TableHeader.Props(collapsing = true), "Config")
           )
         ),
