@@ -16,6 +16,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep, ShowStep}
+import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
@@ -256,8 +257,8 @@ object StepsTableContainer {
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
-          ^.cls := "middle aligned",
-          "Settings"
+          ^.cls := "right aligned",
+          StepSettings(StepSettings.Props(step))
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
@@ -402,4 +403,31 @@ object StepsTableContainer {
     }.build
 
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
+}
+
+/**
+ * Component to display the settings of a given step
+ */
+object StepSettings {
+
+  final case class Props(s: Step)
+  private val component = ScalaComponent.builder[Props]("StepSettings")
+    .stateless
+    .render_P { p =>
+      val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
+        val stepTypeColor = st match {
+          case StepType.Object      => "green"
+          case StepType.Arc         => "violet"
+          case StepType.Flat        => "grey"
+          case StepType.Bias        => "teal"
+          case StepType.Dark        => "black"
+          case StepType.Calibration => "blue"
+        }
+        Label(Label.Props(st.shows, color = stepTypeColor.some, basic = false))
+      }
+      <.div(stepTypeLabel.whenDefined)
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

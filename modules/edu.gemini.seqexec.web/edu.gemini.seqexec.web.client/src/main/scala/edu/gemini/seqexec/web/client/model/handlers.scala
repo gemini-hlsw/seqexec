@@ -388,8 +388,8 @@ object handlers {
         if (value.autoReconnect) {
           // On development mode reload when the connection is broken. This is quite ugly but it helps on development
           if (scala.scalajs.LinkingInfo.developmentMode) {
-            // reload in 4 seconds
-            scala.scalajs.js.timers.setTimeout(6000) (document.location.reload())
+            // reload in 10 seconds
+            scala.scalajs.js.timers.setTimeout(10000) (document.location.reload())
           }
           SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(200, value.nextAttempt * 2))))
         }

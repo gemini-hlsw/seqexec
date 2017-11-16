@@ -348,14 +348,23 @@ object Model {
     case object Arc extends StepType
     case object Flat extends StepType
     case object Bias extends StepType
+    case object Dark extends StepType
+    case object Calibration extends StepType
 
     implicit val eq: Equal[StepType] = Equal.equalA[StepType]
-    implicit val show: Show[StepType] = Show.showFromToString
+    implicit val show: Show[StepType] = Show.shows {
+      case Object      => "OBJECT"
+      case Arc         => "ARC"
+      case Flat        => "FLAT"
+      case Bias        => "BIAS"
+      case Dark        => "DARK"
+      case Calibration => "CAL"
+    }
 
-    val all: List[StepType] = List(Object, Arc, Flat, Bias)
-    private val names = all.map(x => (x.shows.toUpperCase, x)).toMap
+    val all: List[StepType] = List(Object, Arc, Flat, Bias, Dark, Calibration)
+    private val names = all.map(x => (x.shows, x)).toMap
 
-    def fromString(s: String): Option[StepType] = names.get(s.toUpperCase)
+    def fromString(s: String): Option[StepType] = names.get(s)
   }
 
   // Ported from OCS' SPSiteQuality.java
@@ -604,10 +613,14 @@ trait ModelLenses {
 
   val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.shows)
 
-  val stepTypeO: Optional[Parameters, StepType] =
+  val stepTypeO: Optional[Step, StepType] =
+    standardStepP                                            ^|-> // which is a standard step
+    stepConfigL                                              ^|-> // configuration of the step
+    systemConfigL(SystemName.observe)                        ^<-? // Observe config
+    some                                                     ^|-> // some
     paramValueL(SystemName.observe.withParam("observeType")) ^<-? // find the target name
     some                                                     ^<-? // focus on the option
-    stringToStepTypeP
+    stringToStepTypeP                                             // step type
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
