@@ -50,7 +50,7 @@ object SequenceObserverField {
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val observerEV = StateSnapshot(~s.currentText)(updateState)
-      val StatusAndObserverFocus(_, _, instrument, _, _, _) = p.p()
+      val StatusAndObserverFocus(_, _, instrument, _, _, _, _) = p.p()
       <.div(
         ^.cls := "ui form",
         <.div(
