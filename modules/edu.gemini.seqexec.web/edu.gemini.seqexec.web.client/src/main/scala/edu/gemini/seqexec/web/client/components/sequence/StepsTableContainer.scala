@@ -225,12 +225,10 @@ object StepsTableContainer {
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
-        // Available row states: http://semantic-ui.com/collections/table.html#positive--negative
         ^.classSet(
           "positive" -> (step.status === StepState.Completed),
           "warning"  -> (step.status === StepState.Running),
           "negative" -> (step.status === StepState.Paused),
-          // TODO Show error case
           "negative" -> step.hasError,
           "active"   -> (step.status === StepState.Skipped),
           "disabled" -> step.skip

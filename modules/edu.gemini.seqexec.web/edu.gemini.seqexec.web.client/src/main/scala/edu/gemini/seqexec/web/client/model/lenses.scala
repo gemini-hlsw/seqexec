@@ -5,8 +5,6 @@ package edu.gemini.seqexec.web.client
 
 import edu.gemini.seqexec.model.ModelLenses
 
-trait ClientModelLenses extends ModelLenses {
-
-}
+trait ClientModelLenses extends ModelLenses
 
 object lenses extends ClientModelLenses

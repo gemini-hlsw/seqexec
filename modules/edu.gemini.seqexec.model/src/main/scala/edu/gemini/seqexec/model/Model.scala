@@ -341,6 +341,23 @@ object Model {
     implicit def equal[T: Equal]: Equal[SequencesQueue[T]] = Equal.equalA
   }
 
+  // Complements to the science model
+  sealed trait StepType
+  object StepType {
+    case object Object extends StepType
+    case object Arc extends StepType
+    case object Flat extends StepType
+    case object Bias extends StepType
+
+    implicit val eq: Equal[StepType] = Equal.equalA[StepType]
+    implicit val show: Show[StepType] = Show.showFromToString
+
+    val all: List[StepType] = List(Object, Arc, Flat, Bias)
+    private val names = all.map(x => (x.shows.toUpperCase, x)).toMap
+
+    def fromString(s: String): Option[StepType] = names.get(s.toUpperCase)
+  }
+
   // Ported from OCS' SPSiteQuality.java
 
   final case class Conditions(
@@ -585,9 +602,12 @@ trait ModelLenses {
     paramValueL(SystemName.observe.withParam("object")) ^<-? // find the target name
     some                                                     // focus on the option
 
-  val stepTypeO: Optional[Parameters, String] =
+  val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.shows)
+
+  val stepTypeO: Optional[Parameters, StepType] =
     paramValueL(SystemName.observe.withParam("observeType")) ^<-? // find the target name
-    some                                                          // focus on the option
+    some                                                     ^<-? // focus on the option
+    stringToStepTypeP
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =

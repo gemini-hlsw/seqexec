@@ -39,4 +39,6 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
   checkAll("observe targetname traversal", TraversalTests(observeTargetNameT))
   checkAll("telescope targetname traversal", TraversalTests(telescopeTargetNameT))
   checkAll("first science step target name traversal", TraversalTests(firstScienceTargetNameT))
+  checkAll("step type prism", PrismTests(stringToStepTypeP))
+  checkAll("step step type optional", OptionalTests(stepTypeO))
 }
