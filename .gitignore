@@ -1,8 +1,9 @@
 *.class
 *.log
+*.swp
 
 # sbt specific
-dist/*
+dist/
 target/
 lib_managed/
 src_managed/
@@ -17,22 +18,23 @@ project/plugins/project/
 .worksheet/
 bin/
 .settings/
-
-# OS X
-.DS_Store
-
-# Ctags
-.tags
-
-# ENSIME
-.ensime
-.ensime_cache/
-
-archive
-smartgcal
-
 .idea
 *.ipr
 *.iws
 
-*.swp
+# OS X
+.DS_Store
+
+# Tags
+.tags
+GPATH
+GRTAGS
+GTAGS
+
+# ENSIME
+.ensime
+.ensime_cache/
+ensime.sbt
+
+archive
+smartgcal
