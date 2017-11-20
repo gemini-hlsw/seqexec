@@ -6,12 +6,13 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicInteger
-import org.log4s._
 
+import org.log4s._
 import argonaut._
 import Argonaut._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient.{ImageParameters, KeywordBag}
+import edu.gemini.seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
 
@@ -86,7 +87,9 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
       method.releaseConnection()
 
       r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
-    } )
+    }.handle {
+      case e: Exception => SeqexecExceptionWhile("connecting to DHS Server", e).left
+  } )
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   private def createImage(reqBody: Json): SeqAction[ImageFileId] =
