@@ -18,6 +18,9 @@ object SeqexecFailure {
   /** Exception thrown while running a sequence. */
   final case class SeqexecException(ex: Throwable) extends SeqexecFailure
 
+  /** Exception thrown while running a sequence. */
+  final case class SeqexecExceptionWhile(context: String, ex: Throwable) extends SeqexecFailure
+
   /** Invalid operation on a Sequence */
   final case class InvalidOp(errMsg: String) extends SeqexecFailure
 
@@ -36,7 +39,8 @@ object SeqexecFailure {
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
-    case SeqexecException(ex)         => "Application exception: " + ex.getMessage
+    case SeqexecException(ex)         => s"Application exception: ${ex.getMessage}"
+    case SeqexecExceptionWhile(c, e)  => s"Application exception while $c: ${e.getMessage}"
     case InvalidOp(msg)               => s"Invalid operation: $msg"
     case Unexpected(msg)              => s"Unexpected error: $msg"
     case Timeout(msg)                 => s"Timeout while waiting for $msg"
