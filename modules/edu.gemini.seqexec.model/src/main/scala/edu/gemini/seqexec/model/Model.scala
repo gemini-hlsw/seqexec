@@ -105,114 +105,6 @@ object Model {
     final case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String) extends SeqexecEvent
     case object NullEvent extends SeqexecEvent
 
-    // Some useful Monocle lenses
-    val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
-    // From step to standard step
-    val standardStepL: Prism[Step, StandardStep] = GenPrism[Step, StandardStep]
-    val eachStepL: Traversal[List[Step], Step] = Traversal.fromTraverse[List, Step]
-    val obsStepsL: Lens[SequenceView, List[Step]] = GenLens[SequenceView](_.steps)
-    val eachViewL: Traversal[List[SequenceView], SequenceView] = Traversal.fromTraverse[List, SequenceView]
-    val sequencesQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] = GenLens[SequencesQueue[SequenceView]](_.queue)
-    val ssLens: Lens[SequenceStart, SequencesQueue[SequenceView]] = GenLens[SequenceStart](_.view)
-    // Required for type correctness
-    val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] = Iso.id[Map[SystemName, Parameters]]
-    val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] = Iso.id[Map[ParamName, ParamValue]]
-    // Focus on the target name
-    def targetNameL(param: ParamName): Lens[Parameters, Option[TargetName]] =
-      parametersRoot ^|-> // map of parameters
-      at(param)           // parameter containing the name
-    // Possible set of observe parameters
-    def systemConfigL(system: SystemName): Lens[StepConfig, Option[Parameters]] =
-      stepConfigRoot ^|-> // map of systems
-      at(system)          // subsystem name
-    // Target name of a StepConfig
-    def configTargetNameL(system: SystemName, param: String): Optional[StepConfig, TargetName] =
-      systemConfigL(system)                ^<-? // observe paramaters
-      some                                 ^|-> // focus on the option
-      targetNameL(system.withParam(param)) ^<-? // find the target name
-      some                                       // focus on the option
-    // from standard step to config
-    val stepConfigL: Lens[StandardStep, StepConfig] = GenLens[StandardStep](_.config)
-
-    // Prism to focus on only the SeqexecEvents that have a queue
-    val sePrism: Prism[SeqexecEvent, SeqexecModelUpdate] = GenPrism[SeqexecEvent, SeqexecModelUpdate]
-
-    // Focus on the sequence view
-    val seViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
-        case e @ SequenceStart(_)           => e.copy(view = q)
-        case e @ StepExecuted(_)            => e.copy(view = q)
-        case e @ FileIdStepExecuted(_, _)   => e.copy(view = q)
-        case e @ SequenceCompleted(_)       => e.copy(view = q)
-        case e @ SequenceLoaded(_, v)       => e.copy(view = q)
-        case e @ SequenceUnloaded(_, v)     => e.copy(view = q)
-        case e @ StepBreakpointChanged(_)   => e.copy(view = q)
-        case e @ OperatorUpdated(_)         => e.copy(view = q)
-        case e @ ObserverUpdated(_)         => e.copy(view = q)
-        case e @ ConditionsUpdated(_)       => e.copy(view = q)
-        case e @ StepSkipMarkChanged(_)     => e.copy(view = q)
-        case e @ SequencePauseRequested(_)  => e.copy(view = q)
-        case e @ SequencePauseCanceled(_)   => e.copy(view = q)
-        case e @ SequenceRefreshed(_)       => e.copy(view = q)
-        case e @ ActionStopRequested(_)     => e.copy(view = q)
-        case e @ ResourcesBusy(_, _)        => e.copy(view = q)
-        case e @ SequenceUpdated(_)         => e.copy(view = q)
-        case e                              => e
-      }
-    )
-    // Composite lens to change the sequence name of an event
-    val sequenceNameL: Traversal[SeqexecEvent, ObservationName] =
-      sePrism         ^|->  // Events with model updates
-      seViewL         ^|->  // Find the sequence view
-      sequencesQueueL ^|->> // Find the queue
-      eachViewL       ^|->  // each sequence on the queue
-      obsNameL              // sequence's observation name
-
-    // Composite lens to find the step config
-    val sequenceConfigL: Traversal[SeqexecEvent, StepConfig] =
-      sePrism           ^|->  // Events with model updates
-      seViewL           ^|->  // Find the sequence view
-      sequencesQueueL   ^|->> // Find the queue
-      eachViewL         ^|->  // each sequence on the queue
-      obsStepsL         ^|->> // sequence steps
-      eachStepL         ^<-?  // each step
-      standardStepL     ^|->  // which is a standard step
-      stepConfigL             // configuration of the step
-
-    def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
-      new Traversal[Map[K, V], V]{
-        def modifyF[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
-          s.map { case (k, v) =>
-            k -> (if(predicate(k, v)) f(v) else v.pure[F])
-          }.sequenceU
-      }
-
-    // Find the Parameters of the steps containing science steps
-    val scienceStepL: Traversal[StepConfig, Parameters] = filterEntry[SystemName, Parameters] {
-      case (s, p) => s === SystemName.observe && p.exists {
-        case (k, v) => k === SystemName.observe.withParam("observeType") && v === "OBJECT"
-      }
-    }
-
-    val scienceTargetNameL: Optional[Parameters, TargetName] =
-      targetNameL(SystemName.observe.withParam("object")) ^<-? // find the target name
-      some                                                     // focus on the option
-
-    // Composite lens to find the step config
-    val firstScienceTargetNameL: Traversal[SeqexecEvent, TargetName] =
-      sequenceConfigL     ^|->> // sequence configuration
-      scienceStepL        ^|-?  // science steps
-      scienceTargetNameL        // science target name
-
-    // Composite lens to find the target name on observation
-    val observeTargetNameL: Traversal[SeqexecEvent, TargetName] =
-      sequenceConfigL                                 ^|-?  // configuration of the step
-      configTargetNameL(SystemName.observe, "object")       // on the configuration find the target name
-
-    // Composite lens to find the target name on telescope
-    val telescopeTargetNameL: Traversal[SeqexecEvent, TargetName] =
-      sequenceConfigL                                 ^|-?  // configuration of the step
-      configTargetNameL(SystemName.telescope, "Base:name")       // on the configuration find the target name
-
     implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
 
@@ -449,6 +341,32 @@ object Model {
     implicit def equal[T: Equal]: Equal[SequencesQueue[T]] = Equal.equalA
   }
 
+  // Complements to the science model
+  sealed trait StepType
+  object StepType {
+    case object Object extends StepType
+    case object Arc extends StepType
+    case object Flat extends StepType
+    case object Bias extends StepType
+    case object Dark extends StepType
+    case object Calibration extends StepType
+
+    implicit val eq: Equal[StepType] = Equal.equalA[StepType]
+    implicit val show: Show[StepType] = Show.shows {
+      case Object      => "OBJECT"
+      case Arc         => "ARC"
+      case Flat        => "FLAT"
+      case Bias        => "BIAS"
+      case Dark        => "DARK"
+      case Calibration => "CAL"
+    }
+
+    val all: List[StepType] = List(Object, Arc, Flat, Bias, Dark, Calibration)
+    private val names = all.map(x => (x.shows, x)).toMap
+
+    def fromString(s: String): Option[StepType] = names.get(s)
+  }
+
   // Ported from OCS' SPSiteQuality.java
 
   final case class Conditions(
@@ -593,5 +511,140 @@ object Model {
   }
 
   final case class LogMsg(t: LogType, timestamp: Time, msg: String)
+
+}
+
+trait ModelLenses {
+  import Model._
+  import Model.SeqexecEvent._
+
+    // Some useful Monocle lenses
+  val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
+  // From step to standard step
+  val standardStepP: Prism[Step, StandardStep] = GenPrism[Step, StandardStep]
+  val eachStepT: Traversal[List[Step], Step] = Traversal.fromTraverse[List, Step]
+  val obsStepsL: Lens[SequenceView, List[Step]] = GenLens[SequenceView](_.steps)
+  val eachViewT: Traversal[List[SequenceView], SequenceView] = Traversal.fromTraverse[List, SequenceView]
+  val sequencesQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] = GenLens[SequencesQueue[SequenceView]](_.queue)
+  // from standard step to config
+  val stepConfigL: Lens[StandardStep, StepConfig] = GenLens[StandardStep](_.config)
+  // Prism to focus on only the SeqexecEvents that have a queue
+  val sequenceEventsP: Prism[SeqexecEvent, SeqexecModelUpdate] = GenPrism[SeqexecEvent, SeqexecModelUpdate]
+  // Required for type correctness
+  val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] = Iso.id[Map[SystemName, Parameters]]
+  val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] = Iso.id[Map[ParamName, ParamValue]]
+
+  // Focus on a param value
+  def paramValueL(param: ParamName): Lens[Parameters, Option[String]] =
+    parametersRoot ^|-> // map of parameters
+    at(param)           // parameter containing the name
+
+  // Possible set of observe parameters
+  def systemConfigL(system: SystemName): Lens[StepConfig, Option[Parameters]] =
+    stepConfigRoot ^|-> // map of systems
+    at(system)          // subsystem name
+
+  // Param name of a StepConfig
+  def configParamValueO(system: SystemName, param: String): Optional[StepConfig, String] =
+    systemConfigL(system)                ^<-? // observe paramaters
+    some                                 ^|-> // focus on the option
+    paramValueL(system.withParam(param)) ^<-? // find the target name
+    some                                      // focus on the option
+
+  // Focus on the sequence view
+  val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
+      case e @ SequenceStart(_)           => e.copy(view = q)
+      case e @ StepExecuted(_)            => e.copy(view = q)
+      case e @ FileIdStepExecuted(_, _)   => e.copy(view = q)
+      case e @ SequenceCompleted(_)       => e.copy(view = q)
+      case e @ SequenceLoaded(_, v)       => e.copy(view = q)
+      case e @ SequenceUnloaded(_, v)     => e.copy(view = q)
+      case e @ StepBreakpointChanged(_)   => e.copy(view = q)
+      case e @ OperatorUpdated(_)         => e.copy(view = q)
+      case e @ ObserverUpdated(_)         => e.copy(view = q)
+      case e @ ConditionsUpdated(_)       => e.copy(view = q)
+      case e @ StepSkipMarkChanged(_)     => e.copy(view = q)
+      case e @ SequencePauseRequested(_)  => e.copy(view = q)
+      case e @ SequencePauseCanceled(_)   => e.copy(view = q)
+      case e @ SequenceRefreshed(_)       => e.copy(view = q)
+      case e @ ActionStopRequested(_)     => e.copy(view = q)
+      case e @ ResourcesBusy(_, _)        => e.copy(view = q)
+      case e @ SequenceUpdated(_)         => e.copy(view = q)
+      case e                              => e
+    }
+  )
+  // Composite lens to change the sequence name of an event
+  val sequenceNameT: Traversal[SeqexecEvent, ObservationName] =
+    sequenceEventsP         ^|->  // Events with model updates
+    sequenceQueueViewL         ^|->  // Find the sequence view
+    sequencesQueueL ^|->> // Find the queue
+    eachViewT       ^|->  // each sequence on the queue
+    obsNameL              // sequence's observation name
+
+  // Composite lens to find the step config
+  val sequenceConfigT: Traversal[SeqexecEvent, StepConfig] =
+    sequenceEventsP           ^|->  // Events with model updates
+    sequenceQueueViewL           ^|->  // Find the sequence view
+    sequencesQueueL   ^|->> // Find the queue
+    eachViewT         ^|->  // each sequence on the queue
+    obsStepsL         ^|->> // sequence steps
+    eachStepT         ^<-?  // each step
+    standardStepP     ^|->  // which is a standard step
+    stepConfigL             // configuration of the step
+
+  def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
+    new Traversal[Map[K, V], V]{
+      def modifyF[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
+        s.map { case (k, v) =>
+          k -> (if(predicate(k, v)) f(v) else v.pure[F])
+        }.sequenceU
+    }
+
+  // Find the Parameters of the steps containing science steps
+  val scienceStepT: Traversal[StepConfig, Parameters] = filterEntry[SystemName, Parameters] {
+    case (s, p) => s === SystemName.observe && p.exists {
+      case (k, v) => k === SystemName.observe.withParam("observeType") && v === "OBJECT"
+    }
+  }
+
+  val scienceTargetNameO: Optional[Parameters, TargetName] =
+    paramValueL(SystemName.observe.withParam("object")) ^<-? // find the target name
+    some                                                     // focus on the option
+
+  val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.shows)
+
+  val stepTypeO: Optional[Step, StepType] =
+    standardStepP                                            ^|-> // which is a standard step
+    stepConfigL                                              ^|-> // configuration of the step
+    systemConfigL(SystemName.observe)                        ^<-? // Observe config
+    some                                                     ^|-> // some
+    paramValueL(SystemName.observe.withParam("observeType")) ^<-? // find the target name
+    some                                                     ^<-? // focus on the option
+    stringToStepTypeP                                             // step type
+
+  // Composite lens to find the step config
+  val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
+    sequenceConfigT     ^|->> // sequence configuration
+    scienceStepT        ^|-?  // science steps
+    scienceTargetNameO        // science target name
+
+  // Composite lens to find the target name on observation
+  val observeTargetNameT: Traversal[SeqexecEvent, TargetName] =
+    sequenceConfigT                                 ^|-?  // configuration of the step
+    configParamValueO(SystemName.observe, "object")       // on the configuration find the target name
+
+  // Composite lens to find the target name on telescope
+  val telescopeTargetNameT: Traversal[SeqexecEvent, TargetName] =
+    sequenceConfigT                                 ^|-?  // configuration of the step
+    configParamValueO(SystemName.telescope, "Base:name")       // on the configuration find the target name
+
+  // Composite lens to find the first science step and from there the target name
+  val firstScienceStepTargetNameT: Traversal[SequenceView, TargetName] =
+    obsStepsL           ^|->> // observation steps
+    eachStepT           ^<-?  // each step
+    standardStepP       ^|->  // only standard steps
+    stepConfigL         ^|->> // get step config
+    scienceStepT        ^|-?  // science steps
+    scienceTargetNameO        // science target name
 
 }

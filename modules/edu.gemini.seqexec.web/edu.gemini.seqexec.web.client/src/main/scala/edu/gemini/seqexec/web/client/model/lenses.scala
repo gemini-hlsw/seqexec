@@ -3,20 +3,8 @@
 
 package edu.gemini.seqexec.web.client
 
-import monocle.Traversal
-import edu.gemini.seqexec.model.Model.SeqexecEvent._
-import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.ModelLenses
 
-trait ModelLenses {
+trait ClientModelLenses extends ModelLenses
 
-  // Composite lens to find the step config
-  def firstScienceTargetNameL: Traversal[SequenceView, TargetName] =
-    obsStepsL           ^|->> // observation steps
-    eachStepL           ^<-?  // each step
-    standardStepL       ^|->  // only standard steps
-    stepConfigL         ^|->> // get step config
-    scienceStepL        ^|-?  // science steps
-    scienceTargetNameL        // science target name
-}
-
-object lenses extends ModelLenses
+object lenses extends ClientModelLenses

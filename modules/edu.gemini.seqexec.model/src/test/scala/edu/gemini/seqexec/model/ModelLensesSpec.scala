@@ -6,34 +6,39 @@ package edu.gemini.seqexec.model
 import org.typelevel.discipline.scalatest.Discipline
 import org.scalatest.FunSuite
 import monocle.law.discipline.{LensTests, OptionalTests, PrismTests, TraversalTests}
-import edu.gemini.seqexec.model.Model.{SeqexecEvent, SystemName}
+import edu.gemini.seqexec.model.Model.SystemName
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import SharedModelArbitraries._
 
 import scalaz.std.AllInstances._
 
-class ModelLensesSpec extends FunSuite with Discipline {
+class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
 
   // I'm not sure why these are not made available automatically
   implicit def arbF[A]: Arbitrary[A => A] = Arbitrary[A => A]((x: A) => x)
 
-  checkAll("event observer name lens", LensTests(SeqexecEvent.obsNameL))
-  checkAll("each view traversal", TraversalTests(SeqexecEvent.eachViewL))
-  checkAll("sequence queue lens", LensTests(SeqexecEvent.sequencesQueueL))
-  checkAll("queue view lens", LensTests(SeqexecEvent.ssLens))
-  checkAll("events prism", PrismTests(SeqexecEvent.sePrism))
-  checkAll("sequencename traversal", TraversalTests(SeqexecEvent.sequenceNameL))
-  checkAll("steps lens", LensTests(SeqexecEvent.obsStepsL))
-  checkAll("steps traversal", TraversalTests(SeqexecEvent.eachStepL))
-  checkAll("standard step prism", PrismTests(SeqexecEvent.standardStepL))
-  checkAll("standard step config", LensTests(SeqexecEvent.stepConfigL))
-  checkAll("observe step config", LensTests(SeqexecEvent.systemConfigL(SystemName.observe)))
-  checkAll("target name config", LensTests(SeqexecEvent.targetNameL("object")))
-  checkAll("config target name config", OptionalTests(SeqexecEvent.configTargetNameL(SystemName.observe, "object")))
-  checkAll("observe targetname traversal", TraversalTests(SeqexecEvent.observeTargetNameL))
-  checkAll("telescope targetname traversal", TraversalTests(SeqexecEvent.telescopeTargetNameL))
-  checkAll("science step traversal", TraversalTests(SeqexecEvent.scienceStepL))
-  checkAll("science target name optional", OptionalTests(SeqexecEvent.scienceTargetNameL))
-  checkAll("first science target name traversal", TraversalTests(SeqexecEvent.firstScienceTargetNameL))
+  checkAll("event observer name lens", LensTests(obsNameL))
+  checkAll("standard step prism", PrismTests(standardStepP))
+  checkAll("each step traversal", TraversalTests(eachStepT))
+  checkAll("observation steps lens", LensTests(obsStepsL))
+  checkAll("each view traversal", TraversalTests(eachViewT))
+  checkAll("sequence queue lens", LensTests(sequencesQueueL))
+  checkAll("standard step config lens", LensTests(stepConfigL))
+  checkAll("events prism", PrismTests(sequenceEventsP))
+  checkAll("param value lens", LensTests(paramValueL("object")))
+  checkAll("system parameters lens", LensTests(systemConfigL(SystemName.observe)))
+  checkAll("config param value optional", OptionalTests(configParamValueO(SystemName.observe, "object")))
+  checkAll("sequence view Lens", LensTests(sequenceQueueViewL))
+  checkAll("sequencename traversal", TraversalTests(sequenceNameT))
+  checkAll("sequence config traversal", TraversalTests(sequenceConfigT))
+  checkAll("science step traversal", TraversalTests(scienceStepT))
+  checkAll("science target name optional", OptionalTests(scienceTargetNameO))
+  checkAll("step type optional", OptionalTests(stepTypeO))
+  checkAll("first science target name traversal", TraversalTests(firstScienceTargetNameT))
+  checkAll("observe targetname traversal", TraversalTests(observeTargetNameT))
+  checkAll("telescope targetname traversal", TraversalTests(telescopeTargetNameT))
+  checkAll("first science step target name traversal", TraversalTests(firstScienceTargetNameT))
+  checkAll("step type prism", PrismTests(stringToStepTypeP))
+  checkAll("step step type optional", OptionalTests(stepTypeO))
 }

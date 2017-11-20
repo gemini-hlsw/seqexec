@@ -32,7 +32,7 @@ import scalaz.stream.{Exchange, Process}
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers {
+class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelBooPicklers with ModelLenses {
 
   // Logger for client messages
   private val clientLog = getLogger
@@ -90,7 +90,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
         // Stream seqexec events to clients and a ping
         def anonymize(e: SeqexecEvent) = {
             // Hide the name and target name for anonymous users
-            (telescopeTargetNameL.set("*****") andThen observeTargetNameL.set("*****") andThen sequenceNameL.set(""))(e)
+            (telescopeTargetNameT.set("*****") andThen observeTargetNameT.set("*****") andThen sequenceNameT.set(""))(e)
         }
         def filterOutNull = (e: SeqexecEvent) => e match {
           case NullEvent => false

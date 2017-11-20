@@ -63,4 +63,5 @@ object SharedModelArbitraries {
   implicit val snArb  = Arbitrary(Gen.oneOf(SystemName.all))
   implicit val steArb = implicitly[Arbitrary[Step]]
   implicit val stsArb = implicitly[Arbitrary[StandardStep]]
+  implicit val styArb = Arbitrary(Gen.oneOf(StepType.all))
 }
