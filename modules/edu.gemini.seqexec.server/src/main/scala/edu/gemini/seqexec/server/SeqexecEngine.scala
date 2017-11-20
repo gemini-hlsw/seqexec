@@ -458,7 +458,11 @@ object SeqexecEngine {
     }
     val tcsInit  = if (tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics, tops) else taskUnit
     // More instruments to be added to the list here
-    val instInit = Nondeterminism[Task].gatherUnordered(List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics)).filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
+    val instList = site match {
+      case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
+      case Site.GN => List((gmosKeywords, GmosEpics))
+    }
+    val instInit = Nondeterminism[Task].gatherUnordered(instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
     val gwsInit  = if (gwsKeywords) initEpicsSystem(GwsEpics, tops) else taskUnit
     val gcalInit = if (gcalKeywords || !gcalSim) initEpicsSystem(GcalEpics, tops) else taskUnit
 
