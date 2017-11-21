@@ -6,7 +6,7 @@ package edu.gemini.seqexec.model
 import org.typelevel.discipline.scalatest.Discipline
 import org.scalatest.FunSuite
 import monocle.law.discipline.{LensTests, OptionalTests, PrismTests, TraversalTests}
-import edu.gemini.seqexec.model.Model.SystemName
+import edu.gemini.seqexec.model.Model.{OffsetAxis, SystemName}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import SharedModelArbitraries._
@@ -17,6 +17,7 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
 
   // I'm not sure why these are not made available automatically
   implicit def arbF[A]: Arbitrary[A => A] = Arbitrary[A => A]((x: A) => x)
+  private implicit val telescopeOffsetArb = teoArb(OffsetAxis.AxisP)
 
   checkAll("event observer name lens", LensTests(obsNameL))
   checkAll("standard step prism", PrismTests(standardStepP))
@@ -41,4 +42,7 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
   checkAll("first science step target name traversal", TraversalTests(firstScienceTargetNameT))
   checkAll("step type prism", PrismTests(stringToStepTypeP))
   checkAll("step step type optional", OptionalTests(stepTypeO))
+  checkAll("telescope offset prism", PrismTests(telescopeOffsetP(OffsetAxis.AxisP)))
+  checkAll("telescope offset optional", OptionalTests(telescopeOffsetO(OffsetAxis.AxisP)))
+  checkAll("step double prism", PrismTests(stringToDoubleP))
 }

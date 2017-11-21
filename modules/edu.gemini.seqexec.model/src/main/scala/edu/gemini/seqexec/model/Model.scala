@@ -14,6 +14,7 @@ import scalaz.{Applicative, Equal, Show, Order, NonEmptyList}
 import scalaz.std.list._
 import scalaz.std.anyVal._
 import scalaz.std.map._
+import scalaz.syntax.std.string._
 import scalaz.syntax.equal._
 import scalaz.syntax.show._
 import scalaz.syntax.applicative._
@@ -366,6 +367,23 @@ object Model {
 
     def fromString(s: String): Option[StepType] = names.get(s)
   }
+  sealed trait OffsetAxis {
+    val configItem: String
+  }
+  object OffsetAxis {
+    case object AxisP extends OffsetAxis {
+      val configItem = "p"
+    }
+    case object AxisQ extends OffsetAxis {
+      val configItem = "q"
+    }
+  }
+
+  final case class TelescopeOffset(value: Double, axis: OffsetAxis)
+  object TelescopeOffset {
+    implicit val eq: Equal[TelescopeOffset] = Equal.equalA[TelescopeOffset]
+    implicit val show: Show[TelescopeOffset] = Show.showFromToString
+  }
 
   // Ported from OCS' SPSiteQuality.java
 
@@ -612,6 +630,9 @@ trait ModelLenses {
     some                                                     // focus on the option
 
   val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.shows)
+  // Unlawful but useful prism
+  private[model] def telescopeOffsetP(axis: OffsetAxis): Prism[Double, TelescopeOffset] = Prism((d: Double) => Some(TelescopeOffset(d, axis)))(_.value)
+  val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
 
   val stepTypeO: Optional[Step, StepType] =
     standardStepP                                            ^|-> // which is a standard step
@@ -621,6 +642,17 @@ trait ModelLenses {
     paramValueL(SystemName.observe.withParam("observeType")) ^<-? // find the target name
     some                                                     ^<-? // focus on the option
     stringToStepTypeP                                             // step type
+
+  // Lens to find p offset
+  def telescopeOffsetO(x: OffsetAxis): Optional[Step, TelescopeOffset] =
+    standardStepP                                            ^|-> // which is a standard step
+    stepConfigL                                              ^|-> // configuration of the step
+    systemConfigL(SystemName.telescope)                      ^<-? // Observe config
+    some                                                     ^|-> // some
+    paramValueL(SystemName.telescope.withParam(x.configItem))         ^<-? // find the offset
+    some                                                     ^<-? // focus on the option
+    stringToDoubleP  ^<-?                                    // double value
+    telescopeOffsetP(x)
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
@@ -635,8 +667,9 @@ trait ModelLenses {
 
   // Composite lens to find the target name on telescope
   val telescopeTargetNameT: Traversal[SeqexecEvent, TargetName] =
-    sequenceConfigT                                 ^|-?  // configuration of the step
-    configParamValueO(SystemName.telescope, "Base:name")       // on the configuration find the target name
+    sequenceConfigT                                       ^|-?  // configuration of the step
+    configParamValueO(SystemName.telescope, "Base:name")        // on the configuration find the target name
+
 
   // Composite lens to find the first science step and from there the target name
   val firstScienceStepTargetNameT: Traversal[SequenceView, TargetName] =
