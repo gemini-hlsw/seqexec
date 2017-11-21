@@ -69,14 +69,15 @@ object Settings {
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
 
     // ScalaJS libraries
-    val scalaDom     = "0.9.3"
-    val scalajsReact = "1.1.1"
-    val scalaCSS     = "0.5.3"
-    val booPickle    = "1.2.6"
-    val diode        = "1.1.2"
-    val javaTimeJS   = "0.2.2"
-    val javaLogJS    = "0.1.2"
-    val scalaJQuery  = "1.2"
+    val scalaDom                = "0.9.3"
+    val scalajsReact            = "1.1.1"
+    val scalaCSS                = "0.5.3"
+    val booPickle               = "1.2.6"
+    val diode                   = "1.1.2"
+    val javaTimeJS              = "0.2.2"
+    val javaLogJS               = "0.1.2"
+    val scalaJQuery             = "1.2"
+    val scalaJSReactVirtualized = "0.0.1"
 
     // Java libraries
     val scalaZ       = "7.2.16"
@@ -103,11 +104,12 @@ object Settings {
     val discipline            = "0.8"
 
     // Pure JS libraries
-    val reactJS        = "15.6.1"
-    val jQuery         = "3.2.1"
-    val semanticUI     = "2.2.10"
-    val ocsVersion     = "2017101.1.4"
-    val uglifyJs       = "1.0.0-beta.3"
+    val reactJS          = "15.6.1"
+    val jQuery           = "3.2.1"
+    val semanticUI       = "2.2.10"
+    val ocsVersion       = "2017101.1.4"
+    val uglifyJs         = "1.0.0-beta.3"
+    val reactVirtualized = "9.12.0"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"
@@ -181,6 +183,7 @@ object Settings {
     ))
     val ScalaCSS   = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
     val ScalaJSDom = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)
+    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"                 %%% "scalajs-react-virtualized"   % LibraryVersions.scalaJSReactVirtualized)
     val JQuery     = Def.setting("org.querki"                   %%% "jquery-facade" % LibraryVersions.scalaJQuery)
 
     // OCS Libraries, these should become modules in the future

@@ -46,7 +46,8 @@ object Common {
   lazy val commonJSSettings = commonSettings ++ Seq(
     // These settings allow to use TLS with scala.js
     // Remove the dependency on the scalajs-compiler
-    libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler")
+    libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault"
   )
 
   // This function allows triggered compilation to run only when scala files changes
