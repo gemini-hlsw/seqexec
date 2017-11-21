@@ -222,6 +222,16 @@ object StepsTableContainer {
         )
       )
 
+    private def stepIcon(p: StepsTableFocus, step: Step, i: Int): VdomNode =
+      step.status match {
+        case StepState.Completed                  => IconCheckmark
+        case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
+        case StepState.Error(_)                   => IconAttention
+        case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
+        case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+        case _                                    => iconEmpty
+      }
+
     private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step) =
       <.tr(
         SeqexecStyles.trNoBorder,
@@ -237,14 +247,7 @@ object StepsTableContainer {
         SeqexecStyles.stepRunning.when(step.status === StepState.Running),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
-          step.status match {
-            case StepState.Completed                  => IconCheckmark
-            case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
-            case StepState.Error(_)                   => IconAttention
-            case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
-            case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-            case _                                    => iconEmpty
-          }
+          stepIcon(p, step, i)
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
@@ -435,9 +438,9 @@ object StepSettings {
         <.div(
           ^.cls := "stretched row",
           <.div(
-            ^.cls := "left floated column",
-            <.div(^.cls := "left aligned", ~offsetP),
-            <.div(^.cls := "left aligned", ~offsetQ),
+            ^.cls := "left floated three wide column",
+            <.span(^.cls := "right aligned", ~offsetP),
+            <.span(^.cls := "right aligned", ~offsetQ)
           ),
           <.div(
             ^.cls := "middle aligned right floated column",
