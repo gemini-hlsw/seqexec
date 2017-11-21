@@ -20,6 +20,7 @@ import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
+import edu.gemini.web.client.utils._
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
@@ -30,9 +31,37 @@ import scalaz.std.AllInstances._
 import org.scalajs.dom.html.Div
 
 /**
+ * Utility methods to display offsets and calculate their widths
+ */
+trait OffsetFns {
+  def offsetAxis(axis: OffsetAxis): String =
+    f"${axis.shows}:"
+
+  def offsetValueFormat(off: TelescopeOffset): String =
+    f" ${off.value}%003.1f″"
+
+  def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
+
+  def offsetText(axis: OffsetAxis)(step: Step): String = ~telescopeOffsetO(axis).getOption(step).map(offsetValueFormat)
+
+  private val offsetPText = offsetText(OffsetAxis.AxisP) _
+  private val offsetQText = offsetText(OffsetAxis.AxisQ) _
+
+  val pLabelWidth = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
+  val qLabelWidth = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
+
+  // Calculate the widest offset step
+  def sequenceOffsetWidths(steps: List[Step]): (Int, Int) = {
+    steps.map(s => (tableTextWidth(offsetPText(s)), tableTextWidth(offsetQText(s)))).foldLeft((0, 0)) {
+      case ((p1, q1), (p2, q2)) => (p1.max(p2), (q1.max(q2)))
+    }
+  }
+}
+
+/**
   * Container for a table with the steps
   */
-object StepsTableContainer {
+object StepsTableContainer extends OffsetFns {
   final case class State(nextScrollPos  : Double,
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
@@ -40,6 +69,10 @@ object StepsTableContainer {
   final case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
     def steps: Option[StepsTableFocus] = stepsTable()._2
+    val offsetsWidth: Int = {
+      val (p, q) = sequenceOffsetWidths(~steps.map(_.steps))
+      scala.math.max(p, q)
+    }
   }
 
   class Backend($: BackendScope[Props, State]) {
@@ -232,7 +265,7 @@ object StepsTableContainer {
         case _                                    => iconEmpty
       }
 
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step) =
+    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetWidth: Int) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -262,7 +295,7 @@ object StepsTableContainer {
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "right aligned",
           SeqexecStyles.tdNoUpDownPadding,
-          StepSettings(StepSettings.Props(step))
+          StepSettings(StepSettings.Props(step, offsetWidth))
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
@@ -278,7 +311,7 @@ object StepsTableContainer {
         )
       )
 
-    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State): TagMod =
+    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetWidth: Int): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
@@ -299,7 +332,7 @@ object StepsTableContainer {
             case (step, i) =>
               List(
                 gutterCol(p.id, i, step, s),
-                stepCols(status, p, i, p.state, step)
+                stepCols(status, p, i, p.state, step, offsetWidth)
               )
           }.toTagMod
         )
@@ -315,7 +348,7 @@ object StepsTableContainer {
             val step = tab.steps(i)
             configTable(step)
           }.getOrElse {
-            stepsTable(p.status, tab, s)
+            stepsTable(p.status, tab, s, p.offsetsWidth)
           }
         }
       )
@@ -412,16 +445,13 @@ object StepsTableContainer {
 /**
  * Component to display the settings of a given step
  */
-object StepSettings {
-
-  final case class Props(s: Step)
-  def offsetFormat(off: TelescopeOffset): String =
-    f"${off.axis.shows}: ${off.value}%003.1f″"
+object StepSettings extends OffsetFns {
+  final case class Props(s: Step, offsetWidth: Int)
   private val component = ScalaComponent.builder[Props]("StepSettings")
     .stateless
     .render_P { p =>
-      val offsetP = telescopeOffsetO(OffsetAxis.AxisP).getOption(p.s).map(offsetFormat)
-      val offsetQ = telescopeOffsetO(OffsetAxis.AxisQ).getOption(p.s).map(offsetFormat)
+      val offsetP = telescopeOffsetO(OffsetAxis.AxisP).getOption(p.s)
+      val offsetQ = telescopeOffsetO(OffsetAxis.AxisQ).getOption(p.s)
       val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
         val stepTypeColor = st match {
           case StepType.Object      => "green"
@@ -433,14 +463,39 @@ object StepSettings {
         }
         Label(Label.Props(st.shows, color = stepTypeColor.some, basic = false))
       }
+      println(p.offsetWidth)
       <.div(
         ^.cls := "ui two column grid",
         <.div(
           ^.cls := "stretched row",
           <.div(
             ^.cls := "left floated three wide column",
-            <.span(^.cls := "right aligned", ~offsetP),
-            <.span(^.cls := "right aligned", ~offsetQ)
+            <.div(
+              ^.cls := "right aligned",
+              <.div(
+                ^.width := s"${pLabelWidth}px",
+                SeqexecStyles.inlineBlock,
+                offsetAxis(OffsetAxis.AxisP)),
+              <.div(
+                ^.width := s"${p.offsetWidth}px",
+                // ^.width := s"50",
+                SeqexecStyles.inlineBlock,
+                offsetP.map(offsetValueFormat).whenDefined
+              )
+            ),
+            <.div(
+              ^.cls := "right aligned",
+              <.div(
+                ^.width := s"${qLabelWidth}px",
+                SeqexecStyles.inlineBlock,
+                offsetAxis(OffsetAxis.AxisQ)),
+              <.div(
+                ^.width := s"${p.offsetWidth}px",
+                // ^.width := s"50",
+                SeqexecStyles.inlineBlock,
+                offsetQ.map(offsetValueFormat).whenDefined
+              )
+            ),
           ),
           <.div(
             ^.cls := "middle aligned right floated column",

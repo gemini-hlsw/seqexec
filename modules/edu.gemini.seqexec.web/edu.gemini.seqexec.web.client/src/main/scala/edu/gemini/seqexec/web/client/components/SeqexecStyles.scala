@@ -103,6 +103,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     display.inline
   }
 
+  val inlineBlock: StyleA = style {
+    display.inlineBlock
+  }
+
   val observerField: StyleA = style {
     paddingRight(0.px).important
   }

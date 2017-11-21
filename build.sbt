@@ -60,7 +60,7 @@ lazy val edu_gemini_web_client_facades = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies += JQuery.value,
+    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value),
     // And add a custom one
     addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
