@@ -42,7 +42,7 @@ trait OffsetFns {
 
   def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
 
-  def offsetText(axis: OffsetAxis)(step: Step): String = ~telescopeOffsetO(axis).getOption(step).map(offsetValueFormat)
+  def offsetText(axis: OffsetAxis)(step: Step): String = offsetValueFormat(telescopeOffsetO(axis).getOption(step).getOrElse(TelescopeOffset.Zero(axis)))
 
   private val offsetPText = offsetText(OffsetAxis.AxisP) _
   private val offsetQText = offsetText(OffsetAxis.AxisQ) _
@@ -450,8 +450,8 @@ object StepSettings extends OffsetFns {
   private val component = ScalaComponent.builder[Props]("StepSettings")
     .stateless
     .render_P { p =>
-      val offsetP = telescopeOffsetO(OffsetAxis.AxisP).getOption(p.s)
-      val offsetQ = telescopeOffsetO(OffsetAxis.AxisQ).getOption(p.s)
+      val offsetP = telescopeOffsetO(OffsetAxis.AxisP).getOption(p.s).getOrElse(TelescopeOffset.Zero(OffsetAxis.AxisP))
+      val offsetQ = telescopeOffsetO(OffsetAxis.AxisQ).getOption(p.s).getOrElse(TelescopeOffset.Zero(OffsetAxis.AxisQ))
       val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
         val stepTypeColor = st match {
           case StepType.Object      => "green"
@@ -463,7 +463,6 @@ object StepSettings extends OffsetFns {
         }
         Label(Label.Props(st.shows, color = stepTypeColor.some, basic = false))
       }
-      println(p.offsetWidth)
       <.div(
         ^.cls := "ui two column grid",
         <.div(
@@ -475,12 +474,12 @@ object StepSettings extends OffsetFns {
               <.div(
                 ^.width := s"${pLabelWidth}px",
                 SeqexecStyles.inlineBlock,
-                offsetAxis(OffsetAxis.AxisP)),
+                offsetAxis(OffsetAxis.AxisP)
+              ),
               <.div(
                 ^.width := s"${p.offsetWidth}px",
-                // ^.width := s"50",
                 SeqexecStyles.inlineBlock,
-                offsetP.map(offsetValueFormat).whenDefined
+                offsetValueFormat(offsetP)
               )
             ),
             <.div(
@@ -488,14 +487,14 @@ object StepSettings extends OffsetFns {
               <.div(
                 ^.width := s"${qLabelWidth}px",
                 SeqexecStyles.inlineBlock,
-                offsetAxis(OffsetAxis.AxisQ)),
+                offsetAxis(OffsetAxis.AxisQ)
+              ),
               <.div(
                 ^.width := s"${p.offsetWidth}px",
-                // ^.width := s"50",
                 SeqexecStyles.inlineBlock,
-                offsetQ.map(offsetValueFormat).whenDefined
+                offsetValueFormat(offsetQ)
               )
-            ),
+            )
           ),
           <.div(
             ^.cls := "middle aligned right floated column",

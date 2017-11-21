@@ -385,6 +385,7 @@ object Model {
 
   final case class TelescopeOffset(value: Double, axis: OffsetAxis)
   object TelescopeOffset {
+    def Zero(axis: OffsetAxis): TelescopeOffset = TelescopeOffset(0.0, axis)
     implicit val eq: Equal[TelescopeOffset] = Equal.equalA[TelescopeOffset]
     implicit val show: Show[TelescopeOffset] = Show.showFromToString
   }

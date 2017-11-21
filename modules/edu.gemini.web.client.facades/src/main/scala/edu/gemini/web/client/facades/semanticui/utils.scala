@@ -17,8 +17,6 @@ trait utils {
     val ctx = canvas.getContext("2d").asInstanceOf[Ctx2D]
     ctx.font = font
     val metrics = ctx.measureText(text)
-    println(text)
-    println(metrics.width)
     math.round(metrics.width.toFloat)
   }
 }
