@@ -377,6 +377,10 @@ object Model {
     case object AxisQ extends OffsetAxis {
       val configItem = "q"
     }
+    implicit val show: Show[OffsetAxis] = Show.shows {
+      case AxisP => "p"
+      case AxisQ => "q"
+    }
   }
 
   final case class TelescopeOffset(value: Double, axis: OffsetAxis)

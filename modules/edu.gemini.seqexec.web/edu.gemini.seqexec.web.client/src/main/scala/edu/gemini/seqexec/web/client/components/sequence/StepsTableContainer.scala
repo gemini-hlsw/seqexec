@@ -258,6 +258,7 @@ object StepsTableContainer {
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "right aligned",
+          SeqexecStyles.tdNoUpDownPadding,
           StepSettings(StepSettings.Props(step))
         ),
         <.td(
@@ -411,9 +412,13 @@ object StepsTableContainer {
 object StepSettings {
 
   final case class Props(s: Step)
+  def offsetFormat(off: TelescopeOffset): String =
+    f"${off.axis.shows}: ${off.value}%003.1f″"
   private val component = ScalaComponent.builder[Props]("StepSettings")
     .stateless
     .render_P { p =>
+      val offsetP = telescopeOffsetO(OffsetAxis.AxisP).getOption(p.s).map(offsetFormat)
+      val offsetQ = telescopeOffsetO(OffsetAxis.AxisQ).getOption(p.s).map(offsetFormat)
       val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
         val stepTypeColor = st match {
           case StepType.Object      => "green"
@@ -425,7 +430,21 @@ object StepSettings {
         }
         Label(Label.Props(st.shows, color = stepTypeColor.some, basic = false))
       }
-      <.div(stepTypeLabel.whenDefined)
+      <.div(
+        ^.cls := "ui two column grid",
+        <.div(
+          ^.cls := "stretched row",
+          <.div(
+            ^.cls := "left floated column",
+            <.div(^.cls := "left aligned", ~offsetP),
+            <.div(^.cls := "left aligned", ~offsetQ),
+          ),
+          <.div(
+            ^.cls := "middle aligned right floated column",
+            <.div(stepTypeLabel.whenDefined)
+          )
+        )
+      )
     }
     .build
 

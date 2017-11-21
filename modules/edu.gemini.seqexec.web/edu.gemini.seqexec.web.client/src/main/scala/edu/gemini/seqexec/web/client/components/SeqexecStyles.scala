@@ -54,6 +54,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     textAlign.center
   )
 
+  val tdNoUpDownPadding: StyleA = style(
+    paddingBottom(0.em).important,
+    paddingTop(0.em).important
+  )
+
   val activeInstrumentContent: StyleA = style(
     padding(0.6.em, 0.9.em),
     backgroundColor(rgb(243, 244, 245)).important
