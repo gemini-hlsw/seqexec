@@ -37,7 +37,7 @@ object Importer extends DoobieClient {
       for {
         _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](o.id.pid, "", Nil)).as(1))
         _ <- l.log(u, s"remove observation ${o.id}"   )(rmObservation           )
-        _ <- l.log(u, s"insert new version of ${o.id}")(ObservationDao.insert(o))
+        _ <- l.log(u, s"insert new version of ${o.id}")(ObservationDao.insert(o.id, o))
         _ <- l.log(u, s"write datasets for ${o.id}"   )(writeDatasets           )
       } yield ()
   }

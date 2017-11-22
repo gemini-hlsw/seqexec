@@ -20,7 +20,7 @@ object ProgramDao {
 
   /** Insert a complete program. */
   def insert(p: Program[Observation[StaticConfig, Step[DynamicConfig]]]): ConnectionIO[Program.Id] =
-    insertFlat(p) <* p.observations.traverse(ObservationDao.insert)
+    insertFlat(p) <* p.observations.traverse(o => ObservationDao.insert(o.id, o))
 
   private def insertProgramIdSlice(pid: Program.Id): ConnectionIO[Int] =
     pid match {

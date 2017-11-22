@@ -16,7 +16,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservationList(pid, limit = 50)) { obsList =>
       val oids = withProgram {
         for {
-          _ <- obsList.traverse(ObservationDao.insert)
+          _ <- obsList.traverse(o => ObservationDao.insert(o.id, o))
           o <- ObservationDao.selectIds(pid)
         } yield o
       }
@@ -34,7 +34,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservation(oid)) { obsIn =>
       val obsOut = withProgram {
         for {
-          _ <- ObservationDao.insert(obsIn)
+          _ <- ObservationDao.insert(oid, obsIn)
           o <- ObservationDao.selectFlat(oid)
         } yield o
       }
@@ -49,7 +49,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservation(oid)) { obsIn =>
       val obsOut = withProgram {
         for {
-          _ <- ObservationDao.insert(obsIn)
+          _ <- ObservationDao.insert(oid, obsIn)
           o <- ObservationDao.selectStatic(oid)
         } yield o
       }
@@ -64,7 +64,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservation(oid)) { obsIn =>
       val obsOut = withProgram {
         for {
-          _ <- ObservationDao.insert(obsIn)
+          _ <- ObservationDao.insert(oid, obsIn)
           o <- ObservationDao.select(oid)
         } yield o
       }
@@ -77,7 +77,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     forAll(genObservationList(pid, limit = 50)) { obsListIn =>
       val obsListOut = withProgram {
         for {
-          _ <- obsListIn.traverse(ObservationDao.insert)
+          _ <- obsListIn.traverse(o => ObservationDao.insert(o.id, o))
           o <- ObservationDao.selectAll(pid)
         } yield o
       }

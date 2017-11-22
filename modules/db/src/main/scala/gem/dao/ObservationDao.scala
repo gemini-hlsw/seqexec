@@ -20,12 +20,12 @@ object ObservationDao {
    * Construct a program to insert a fully-populated Observation. This program will raise a
    * key violation if an observation with the same id already exists.
    */
-  def insert(o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Unit] =
+  def insert(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Unit] =
     for {
       id <- StaticConfigDao.insert(o.staticConfig)
-      _  <- Statements.insert(o, id).run
+      _  <- Statements.insert(oid, o, id).run
       _  <- o.steps.zipWithIndex.traverse { case (s, i) =>
-              StepDao.insert(o.id, Location.unsafeMiddle((i + 1) * 100), s)
+              StepDao.insert(oid, Location.unsafeMiddle((i + 1) * 100), s)
             }.void
     } yield ()
 
@@ -86,7 +86,7 @@ object ObservationDao {
     implicit val ObservationIndexMeta: Meta[Observation.Index] =
       Distinct.integer("id_index").xmap(Observation.Index.unsafeFromInt, _.toInt)
 
-    def insert(o: Observation[StaticConfig, _], staticId: Int): Update0 =
+    def insert(oid: Observation.Id, o: Observation[StaticConfig, _], staticId: Int): Update0 =
       sql"""
         INSERT INTO observation (observation_id,
                                 program_id,
@@ -94,9 +94,9 @@ object ObservationDao {
                                 title,
                                 static_id,
                                 instrument)
-              VALUES (${o.id},
-                      ${o.id.pid},
-                      ${o.id.index},
+              VALUES (${oid},
+                      ${oid.pid},
+                      ${oid.index},
                       ${o.title},
                       $staticId,
                       ${o.staticConfig.instrument : Instrument})
