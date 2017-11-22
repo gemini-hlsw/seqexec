@@ -111,6 +111,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     paddingRight(0.px).important
   }
 
+  val offsetGrid: StyleA = style {
+    marginRight(1.em).important
+  }
+
   val noPadding: StyleS = mixin(
     padding(0.px).important
   )

@@ -95,7 +95,7 @@ object OffsetGrid {
     .initialState(State(None))
     .render_P ( p =>
       <.canvas(
-        ^.cls := "middle aligned",
+        SeqexecStyles.offsetGrid,
         ^.width := Size.toInt.px,
         ^.height := Size.toInt.px
       )
@@ -112,6 +112,59 @@ object OffsetGrid {
 }
 
 /**
+ * Component to display the offset grid and offset values
+ */
+object OffsetBlock extends OffsetFns {
+  final case class Props(s: Step, offsetWidth: Int)
+  private val component = ScalaComponent.builder[Props]("OffsetValues")
+    .stateless
+    .render_P { p =>
+      val offsetP = telescopeOffsetPO.getOption(p.s).getOrElse(TelescopeOffset.P.Zero)
+      val offsetQ = telescopeOffsetQO.getOption(p.s).getOrElse(TelescopeOffset.Q.Zero)
+
+      <.div(
+        <.div(
+          SeqexecStyles.inlineBlock,
+          OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
+        ),
+        <.div(
+          SeqexecStyles.inlineBlock,
+          <.div(
+            ^.cls := "right aligned",
+            <.div(
+              ^.width := pLabelWidth.px,
+              SeqexecStyles.inlineBlock,
+              offsetAxis(OffsetAxis.AxisP)
+            ),
+            <.div(
+              ^.width := p.offsetWidth.px,
+              SeqexecStyles.inlineBlock,
+              offsetValueFormat(offsetP)
+            )
+          ),
+          <.div(
+            ^.cls := "right aligned",
+              SeqexecStyles.inlineBlock,
+            <.div(
+              ^.width := qLabelWidth.px,
+              SeqexecStyles.inlineBlock,
+              offsetAxis(OffsetAxis.AxisQ)
+            ),
+            <.div(
+              ^.width := p.offsetWidth.px,
+              SeqexecStyles.inlineBlock,
+              offsetValueFormat(offsetQ)
+            )
+          )
+        )
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
  * Component to display the settings of a given step
  */
 object StepSettings extends OffsetFns {
@@ -119,8 +172,6 @@ object StepSettings extends OffsetFns {
   private val component = ScalaComponent.builder[Props]("StepSettings")
     .stateless
     .render_P { p =>
-      val offsetP = telescopeOffsetPO.getOption(p.s).getOrElse(TelescopeOffset.P.Zero)
-      val offsetQ = telescopeOffsetQO.getOption(p.s).getOrElse(TelescopeOffset.Q.Zero)
       val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
         val stepTypeColor = st match {
           case StepType.Object      => "green"
@@ -132,45 +183,17 @@ object StepSettings extends OffsetFns {
         }
         Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
+
       <.div(
         ^.cls := "ui two column grid",
         <.div(
           ^.cls := "row",
           <.div(
-            ^.cls := "left floated middle aligned one wide column",
-            OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
+            ^.cls := "middle aligned left aligned left floated column",
+            OffsetBlock(OffsetBlock.Props(p.s, p.offsetWidth))
           ),
           <.div(
-            ^.cls := "left floated four wide column",
-            <.div(
-              ^.cls := "right aligned",
-              <.div(
-                ^.width := pLabelWidth.px,
-                SeqexecStyles.inlineBlock,
-                offsetAxis(OffsetAxis.AxisP)
-              ),
-              <.div(
-                ^.width := p.offsetWidth.px,
-                SeqexecStyles.inlineBlock,
-                offsetValueFormat(offsetP)
-              )
-            ),
-            <.div(
-              ^.cls := "right aligned",
-              <.div(
-                ^.width := qLabelWidth.px,
-                SeqexecStyles.inlineBlock,
-                offsetAxis(OffsetAxis.AxisQ)
-              ),
-              <.div(
-                ^.width := p.offsetWidth.px,
-                SeqexecStyles.inlineBlock,
-                offsetValueFormat(offsetQ)
-              )
-            )
-          ),
-          <.div(
-            ^.cls := "middle aligned right floated four wide column",
+            ^.cls := "middle aligned right floated column",
             <.div(stepTypeLabel.whenDefined)
           )
         )
