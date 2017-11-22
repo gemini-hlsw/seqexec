@@ -3,9 +3,10 @@
 
 package edu.gemini.seqexec.web.client.components.sequence
 
-import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.ScalazReact._
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
@@ -38,7 +39,7 @@ trait OffsetFns {
     f"${axis.shows}:"
 
   def offsetValueFormat(off: TelescopeOffset): String =
-    f" ${off.value}%003.1f″"
+    f" ${off.value}%003.2f″"
 
   def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
 
@@ -442,6 +443,36 @@ object StepsTableContainer extends OffsetFns {
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
 
+object OffsetGrid {
+  final case class State(canvas: Option[Canvas])
+
+  private val ST = ReactS.Fix[State]
+
+  def render(state: State): Callback = Callback.log(s"$state")
+
+  private val component = ScalaComponent.builder[Unit]("OffsetGrid")
+    .initialState(State(None))
+    .render_P ( p =>
+      <.canvas(
+        ^.width := 40.px,
+        ^.height := 40.px
+      )
+    ).componentWillReceiveProps { ctx =>
+    println(ctx.state)
+    render(ctx.state)
+//      ctx.runState(ST.callbacksT(State(None), render))
+}.componentWillMount { ctx =>
+      println("Will mount")
+      render(ctx.state)
+    }.componentDidMount { ctx =>
+      // Grab a copy of the canvas
+      ctx.runState(ST.set(State(Some(ctx.getDOMNode.domCast[Canvas]))))
+    }.build
+
+  def apply(): Unmounted[Unit, State, Unit] = component()
+
+}
+
 /**
  * Component to display the settings of a given step
  */
@@ -468,16 +499,20 @@ object StepSettings extends OffsetFns {
         <.div(
           ^.cls := "stretched row",
           <.div(
-            ^.cls := "left floated three wide column",
+            ^.cls := "left floated one wide column",
+            OffsetGrid()
+          ),
+          <.div(
+            ^.cls := "left floated four wide column",
             <.div(
               ^.cls := "right aligned",
               <.div(
-                ^.width := s"${pLabelWidth}px",
+                ^.width := pLabelWidth.px,
                 SeqexecStyles.inlineBlock,
                 offsetAxis(OffsetAxis.AxisP)
               ),
               <.div(
-                ^.width := s"${p.offsetWidth}px",
+                ^.width := p.offsetWidth.px,
                 SeqexecStyles.inlineBlock,
                 offsetValueFormat(offsetP)
               )
@@ -485,19 +520,19 @@ object StepSettings extends OffsetFns {
             <.div(
               ^.cls := "right aligned",
               <.div(
-                ^.width := s"${qLabelWidth}px",
+                ^.width := qLabelWidth.px,
                 SeqexecStyles.inlineBlock,
                 offsetAxis(OffsetAxis.AxisQ)
               ),
               <.div(
-                ^.width := s"${p.offsetWidth}px",
+                ^.width := p.offsetWidth.px,
                 SeqexecStyles.inlineBlock,
                 offsetValueFormat(offsetQ)
               )
             )
           ),
           <.div(
-            ^.cls := "middle aligned right floated column",
+            ^.cls := "middle aligned right floated four wide column",
             <.div(stepTypeLabel.whenDefined)
           )
         )
