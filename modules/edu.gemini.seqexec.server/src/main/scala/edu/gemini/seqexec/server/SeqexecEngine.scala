@@ -13,7 +13,6 @@ import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.server.ConfigUtilOps._
-import edu.gemini.seqexec.server.SeqexecFailure.EmptySequence
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.Model.SeqexecEvent._
@@ -23,7 +22,6 @@ import edu.gemini.seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, G
 import edu.gemini.seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import edu.gemini.seqexec.server.gws.GwsEpics
 import edu.gemini.seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
-import edu.gemini.seqexec.server.ODBProxy._
 import edu.gemini.spModel.core.Peer
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import edu.gemini.spModel.obscomp.InstConstants
@@ -162,9 +160,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
     val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action \/ Result]])] = for {
       odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
-      _            <- EitherT(Task.delay(odbSeq.unExecutedSteps.fold(().right[SeqexecFailure], EmptySequence(odbSeq.title).left)))
       progIdString <- EitherT(Task.delay(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
-      progId       <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
+      _            <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
     } yield translator.sequence(seqId, odbSeq)
 
     t.map {
@@ -209,7 +206,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Null                                                      => NullEvent
     }
   }
-
 
   def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView = {
 
