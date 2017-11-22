@@ -54,7 +54,7 @@
             </parameter>
             <parameter name="disperserLambda">
                 <channel>grSelect.C</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Disperser Wavelength</description>
             </parameter>
             <parameter name="filter1">

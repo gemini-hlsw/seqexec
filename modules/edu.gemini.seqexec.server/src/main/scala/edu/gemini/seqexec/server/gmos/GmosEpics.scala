@@ -52,8 +52,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val disperserOrder: Option[CaParameter[String]] = cs.map(_.getString("disperserOrder"))
     def setDisperserOrder(v: String): SeqAction[Unit] = setParameter(disperserOrder, v)
 
-    val disperserLambda: Option[CaParameter[String]] = cs.map(_.getString("disperserLambda"))
-    def setDisperserLambda(v: String): SeqAction[Unit] = setParameter(disperserLambda, v)
+    val disperserLambda: Option[CaParameter[JDouble]] = cs.map(_.getDouble("disperserLambda"))
+    def setDisperserLambda(v: Double): SeqAction[Unit] = setParameter(disperserLambda, JDouble.valueOf(v))
 
     val fpu: Option[CaParameter[String]] = cs.map(_.getString("fpu"))
     def setFpu(v: String): SeqAction[Unit] = setParameter(fpu, v)
