@@ -449,7 +449,7 @@ object StepsTableContainer extends OffsetFns {
 }
 
 object OffsetGrid {
-  private val Size = 40.0
+  private val Size = 33.0
   final case class Props(p: TelescopeOffset.P, q: TelescopeOffset.Q)
   final case class State(canvas: Option[Canvas])
 
@@ -457,22 +457,38 @@ object OffsetGrid {
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   def render(props: Props, state: State): Callback = state.canvas.fold(Callback.empty) { c => Callback {
+    // The canvas API is very imperative and stateful but we are inside a Callback!
     val ctx = c.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
     c.width = Size.toInt
     c.height = Size.toInt
+    // First quadrant
+    ctx.fillStyle = if (props.p > TelescopeOffset.P.Zero && props.q > TelescopeOffset.Q.Zero) "darkgray" else "white"
+    ctx.fillRect(0, 0, Size / 2, Size / 2)
+    // Second quadrant
+    ctx.fillStyle = if (props.p < TelescopeOffset.P.Zero && props.q > TelescopeOffset.Q.Zero) "darkgray" else "white"
+    ctx.fillRect(Size / 2, 0, Size / 2, Size / 2)
+    // Third quadrant
+    ctx.fillStyle = if (props.p < TelescopeOffset.P.Zero && props.q < TelescopeOffset.Q.Zero) "darkgray" else "white"
+    ctx.fillRect(Size / 2, Size / 2, Size / 2, Size / 2)
+    // Fourth quadrant
+    ctx.fillStyle = if (props.p > TelescopeOffset.P.Zero && props.q < TelescopeOffset.Q.Zero) "darkgray" else "white"
+    ctx.fillRect(0, Size / 2, Size / 2, Size / 2)
+    // Grid
+    ctx.fillStyle = "black"
     // Outer border
     ctx.strokeRect(0, 0, Size, Size)
-    // First quadrant
-    ctx.fillStyle = if (props.p > TelescopeOffset.P.Zero) "black" else "white"
-    ctx.fillRect(0, 0, Size/2-1, Size/2-1)
-    ctx.fillStyle = "yellow"
-    ctx.fillRect(Size/2+1, Size/2+1, Size/2-1, Size/2-1)
+    // Inner borders
+    ctx.strokeRect(0, 0, Size / 2, Size / 2)
+    ctx.strokeRect(Size / 2, 0, Size / 2, Size / 2)
+    ctx.strokeRect(0, Size / 2, Size / 2, Size / 2)
+    ctx.strokeRect(Size/2, Size / 2, Size / 2, Size / 2)
   }}
 
   private val component = ScalaComponent.builder[Props]("OffsetGrid")
     .initialState(State(None))
     .render_P ( p =>
       <.canvas(
+        ^.cls := "middle aligned",
         ^.width := Size.toInt.px,
         ^.height := Size.toInt.px
       )
@@ -512,9 +528,9 @@ object StepSettings extends OffsetFns {
       <.div(
         ^.cls := "ui two column grid",
         <.div(
-          ^.cls := "stretched row",
+          ^.cls := "row",
           <.div(
-            ^.cls := "left floated one wide column",
+            ^.cls := "left floated middle aligned one wide column",
             OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
           ),
           <.div(
