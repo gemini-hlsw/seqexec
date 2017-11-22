@@ -30,6 +30,7 @@ import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import scalaz.std.AllInstances._
 import org.scalajs.dom.html.Div
+import org.scalajs.dom.CanvasRenderingContext2D
 
 /**
  * Utility methods to display offsets and calculate their widths
@@ -48,13 +49,13 @@ trait OffsetFns {
   private val offsetPText = offsetText(OffsetAxis.AxisP) _
   private val offsetQText = offsetText(OffsetAxis.AxisQ) _
 
-  val pLabelWidth = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
-  val qLabelWidth = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
+  val pLabelWidth: Int = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
+  val qLabelWidth: Int = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
 
   // Calculate the widest offset step
   def sequenceOffsetWidths(steps: List[Step]): (Int, Int) = {
     steps.map(s => (tableTextWidth(offsetPText(s)), tableTextWidth(offsetQText(s)))).foldLeft((0, 0)) {
-      case ((p1, q1), (p2, q2)) => (p1.max(p2), (q1.max(q2)))
+      case ((p1, q1), (p2, q2)) => (p1.max(p2), q1.max(q2))
     }
   }
 }
@@ -444,29 +445,37 @@ object StepsTableContainer extends OffsetFns {
 }
 
 object OffsetGrid {
+  private val Size = 40.0
   final case class State(canvas: Option[Canvas])
 
   private val ST = ReactS.Fix[State]
 
-  def render(state: State): Callback = Callback.log(s"$state")
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
+  def render(state: State): Callback = state.canvas.fold(Callback.empty) { c => Callback {
+    val ctx = c.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
+    c.width = Size.toInt
+    c.height = Size.toInt
+    // Outer border
+    ctx.strokeRect(0, 0, Size, Size)
+    ctx.fillStyle = "red"
+    ctx.fillRect(0, 0, Size/2-1, Size/2-1)
+    ctx.fillStyle = "yellow"
+    ctx.fillRect(Size/2+1, Size/2+1, Size/2-1, Size/2-1)
+  }}
 
   private val component = ScalaComponent.builder[Unit]("OffsetGrid")
     .initialState(State(None))
     .render_P ( p =>
       <.canvas(
-        ^.width := 40.px,
-        ^.height := 40.px
+        ^.width := Size.toInt.px,
+        ^.height := Size.toInt.px
       )
     ).componentWillReceiveProps { ctx =>
-    println(ctx.state)
-    render(ctx.state)
-//      ctx.runState(ST.callbacksT(State(None), render))
-}.componentWillMount { ctx =>
-      println("Will mount")
       render(ctx.state)
     }.componentDidMount { ctx =>
       // Grab a copy of the canvas
-      ctx.runState(ST.set(State(Some(ctx.getDOMNode.domCast[Canvas]))))
+      val state = State(Some(ctx.getDOMNode.domCast[Canvas]))
+      ctx.runState(ST.set(state)) >> render(state)
     }.build
 
   def apply(): Unmounted[Unit, State, Unit] = component()
@@ -492,7 +501,7 @@ object StepSettings extends OffsetFns {
           case StepType.Dark        => "black"
           case StepType.Calibration => "blue"
         }
-        Label(Label.Props(st.shows, color = stepTypeColor.some, basic = false))
+        Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
       <.div(
         ^.cls := "ui two column grid",
