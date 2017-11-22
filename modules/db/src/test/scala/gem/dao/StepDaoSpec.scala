@@ -23,7 +23,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
       "Untitled Prog",
       List(
         Observation(
-          Observation.Id(pid, 1),
+          Observation.Id(pid, Observation.Index.unsafeFromInt(1)),
           "Untitled Obs",
           StaticConfig.F2(MosPreImaging.IsNotMosPreImaging),
           List(

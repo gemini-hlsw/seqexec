@@ -3,7 +3,11 @@
 
 package gem
 
-import cats.{ Applicative, ApplicativeError, Eval, Order, Show, Bitraverse }
+import gem.syntax.string._
+
+import mouse.boolean._
+
+import cats.{ Applicative, Eval, Order, Show, Bitraverse }
 import cats.implicits._
 
 /**
@@ -21,10 +25,39 @@ final case class Observation[+S, +D](
 
 object Observation {
 
-  /** An observation is identified by its program and a serial index. */
-  final case class Id(pid: Program.Id, index: Int) {
+  /** A positive, non-zero integer for use in ids. */
+  sealed abstract case class Index(toInt: Int) {
     def format: String =
-      s"${pid.format}-$index"
+      s"$toInt"
+  }
+
+  object Index {
+    def fromInt(i: Int): Option[Index] =
+      (i > 0) option new Index(i) {}
+
+    def unsafeFromInt(i: Int): Index =
+      fromInt(i).getOrElse(sys.error(s"Negative index: $i"))
+
+    def fromString(s: String): Option[Index] =
+      s.parseIntOption.filter(_ > 0).map(new Index(_) {})
+
+    def unsafeFromString(s: String): Index =
+      fromString(s).getOrElse(sys.error(s"Malformed observation index: '$s'"))
+
+    implicit val OrderIndex: Order[Index] =
+      Order.by(_.toInt)
+
+    implicit val OrderingIndex: scala.math.Ordering[Index] =
+      OrderIndex.toOrdering
+
+    implicit val showIndex: Show[Index] =
+      Show.fromToString
+  }
+
+  /** An observation is identified by its program and a serial index. */
+  final case class Id(pid: Program.Id, index: Index) {
+    def format: String =
+      s"${pid.format}-${index.format}"
   }
   object Id {
 
@@ -33,8 +66,8 @@ object Observation {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          ApplicativeError[Either[Throwable, ?], Throwable].catchNonFatal(b.drop(1).toInt).toOption.flatMap { n =>
-            Program.Id.fromString(a).map(Observation.Id(_, n))
+          Index.fromString(b.drop(1)).flatMap { i =>
+            Program.Id.fromString(a).map(Observation.Id(_, i))
           }
       }
 

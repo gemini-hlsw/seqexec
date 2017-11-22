@@ -41,7 +41,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val programType      = ProgramType.C
     val dailyProgramId   = Program.Id.Daily(site, DailyProgramType.ENG, LocalDate.now())
     val scienceProgramId = Program.Id.Science(site, semester, programType, 0)
-    val observationId    = Observation.Id(programId, 0)
+    val observationId    = Observation.Id(programId, Observation.Index.unsafeFromInt(1))
     val datasetLabel     = Dataset.Label(observationId, 0)
     val dataset          = Dataset(datasetLabel, "", instant)
     val eventType        = EventType.Abort

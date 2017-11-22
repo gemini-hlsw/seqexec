@@ -90,7 +90,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
     ss.values.toList shouldEqual lookup(m).map(Step.Gcal(f2, _))
   }
 
-  private val oid = Observation.Id(pid, 1)
+  private val oid = Observation.Id(pid, Observation.Index.unsafeFromInt(1))
 
   private def doTest[A](test: ConnectionIO[A]): A =
     withProgram {

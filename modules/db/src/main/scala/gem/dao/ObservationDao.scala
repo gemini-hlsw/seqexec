@@ -81,13 +81,10 @@ object ObservationDao {
 
   object Statements {
 
-    // ObservationIndex has a DISTINCT type due to its check constraint so we need a fine-grained mapping
-    // here to satisfy the query checker.
-    private final case class ObservationIndex(toInt: Int)
-    private object ObservationIndex {
-      implicit val ObservationIndexMeta: Meta[ObservationIndex] =
-        Distinct.integer("id_index").xmap(ObservationIndex(_), _.toInt)
-    }
+    // Observation.Index has a DISTINCT type due to its check constraint so we
+    // need a fine-grained mapping here to satisfy the query checker.
+    implicit val ObservationIndexMeta: Meta[Observation.Index] =
+      Distinct.integer("id_index").xmap(Observation.Index.unsafeFromInt, _.toInt)
 
     def insert(o: Observation[StaticConfig, _], staticId: Int): Update0 =
       sql"""
@@ -99,7 +96,7 @@ object ObservationDao {
                                 instrument)
               VALUES (${o.id},
                       ${o.id.pid},
-                      ${ObservationIndex(o.id.index)},
+                      ${o.id.index},
                       ${o.title},
                       $staticId,
                       ${o.staticConfig.instrument : Instrument})
@@ -137,7 +134,7 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Instrument, Int)]
          .map { case (n, t, i, s) =>
-           (Observation(Observation.Id(pid, n.toInt), t, i, Nil), s)
+           (Observation(Observation.Id(pid, Observation.Index.unsafeFromInt(n.toInt)), t, i, Nil), s)
          }
 
   }

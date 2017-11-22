@@ -24,7 +24,7 @@ final class ObservationIdSpec extends CatsSuite {
   test("Equalty must act pairwise") {
     forAll { (a: Observation.Id, b: Observation.Id) =>
       Eq[Program.Id].eqv(a.pid, b.pid) &&
-      Eq[Int].eqv(a.index, b.index) shouldEqual Eq[Observation.Id].eqv(a, b)
+      Eq[Observation.Index].eqv(a.index, b.index) shouldEqual Eq[Observation.Id].eqv(a, b)
     }
   }
 

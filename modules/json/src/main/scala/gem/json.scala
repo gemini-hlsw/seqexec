@@ -33,6 +33,10 @@ package object json {
   val AngleAsSignedArcsecondsEncoder: Encoder[Angle] = Encoder[BigDecimal].contramap(_.toSignedArcseconds)
   val AngleAsSignedArcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedArcseconds)
 
+  // Observation.Index to Integer.
+  implicit val ObservationIndexEncoder: Encoder[Observation.Index] = Encoder[Int].contramap(_.toInt)
+  implicit val ObservationIndexDecoder: Decoder[Observation.Index] = Decoder[Int].map(Observation.Index.unsafeFromInt)
+
   // Wavelength mapping to integral Angstroms.
   implicit val WavelengthEncoder: Encoder[Wavelength] = Encoder[Int].contramap(_.toAngstroms)
   implicit val WavelengthDecoder: Decoder[Wavelength] = Decoder[Int].map(Wavelength.unsafeFromAngstroms)

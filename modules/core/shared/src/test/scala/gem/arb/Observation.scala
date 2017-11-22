@@ -7,6 +7,7 @@ package arb
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbObservation {
   import ArbProgramId._
@@ -16,11 +17,14 @@ trait ArbObservation {
       for {
         pid <- arbitrary[ProgramId]
         num <- choose(1, 100)
-      } yield Observation.Id(pid, num)
+      } yield Observation.Id(pid, Observation.Index.unsafeFromInt(num))
     }
 
+  implicit val cogObservationIdex: Cogen[Observation.Index] =
+    Cogen[Int].contramap(_.toInt)
+
   implicit val cogObservationId: Cogen[Observation.Id] =
-    Cogen[(ProgramId, Int)].contramap(oid => (oid.pid, oid.index))
+    Cogen[(ProgramId, Observation.Index)].contramap(oid => (oid.pid, oid.index))
 
 }
 object ArbObservation extends ArbObservation
