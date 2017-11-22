@@ -14,13 +14,13 @@ import gem.config.{ StaticConfig, DynamicConfig }
   */
 object Importer extends DoobieClient {
 
-  def writeObservation(o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeObservation(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
-      sql"DELETE FROM observation WHERE observation_id = ${o.id}".update.run.void
+      sql"DELETE FROM observation WHERE observation_id = ${oid}".update.run.void
 
     val lookupStepIds: ConnectionIO[List[Int]] =
-      sql"SELECT step_id FROM step WHERE observation_id = ${o.id} ORDER BY location".query[Int].list
+      sql"SELECT step_id FROM step WHERE observation_id = ${oid} ORDER BY location".query[Int].list
 
     def datasetTuples(sids: List[Int]): List[(Int, Dataset)] = {
       val sidMap = sids.zipWithIndex.map(_.swap).toMap
@@ -35,10 +35,10 @@ object Importer extends DoobieClient {
 
     (u: User[_], l: Log[ConnectionIO]) =>
       for {
-        _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](o.id.pid, "", Nil)).as(1))
-        _ <- l.log(u, s"remove observation ${o.id}"   )(rmObservation           )
-        _ <- l.log(u, s"insert new version of ${o.id}")(ObservationDao.insert(o.id, o))
-        _ <- l.log(u, s"write datasets for ${o.id}"   )(writeDatasets           )
+        _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", Nil)).as(1))
+        _ <- l.log(u, s"remove observation ${oid}"   )(rmObservation                )
+        _ <- l.log(u, s"insert new version of ${oid}")(ObservationDao.insert(oid, o))
+        _ <- l.log(u, s"write datasets for ${oid}"   )(writeDatasets                )
       } yield ()
   }
 
@@ -52,7 +52,7 @@ object Importer extends DoobieClient {
       for {
         _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
         _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
-        _ <- p.observations.traverse(o => writeObservation(o, dsMap(o.id))(u, l))
+        _ <- p.observations.traverse(o => writeObservation(o.id, o, dsMap(o.id))(u, l))
       } yield ()
   }
 
@@ -65,8 +65,8 @@ object Importer extends DoobieClient {
       _ <- l.shutdown(5 * 1000).transact(lxa) // if we're not done soon something is wrong
     } yield ()
 
-  def importObservation(o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): IO[Unit] =
-    doImport(writeObservation(o, ds))
+  def importObservation(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): IO[Unit] =
+    doImport(writeObservation(oid, o, ds))
 
   def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): IO[Unit] =
     doImport(writeProgram(p, ds))
