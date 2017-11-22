@@ -383,9 +383,34 @@ object Model {
     }
   }
 
-  final case class TelescopeOffset(value: Double, axis: OffsetAxis)
+  sealed trait Offset {
+    val value: Double
+  }
+  object Offset {
+    implicit val equal: Equal[Offset] = Equal.equalA
+    def Zero(axis: OffsetAxis): Offset = axis match {
+      case OffsetAxis.AxisP => TelescopeOffset.P.Zero
+      case OffsetAxis.AxisQ => TelescopeOffset.Q.Zero
+    }
+  }
+
+  // Telescope offsets, roughly based on gem
+  final case class TelescopeOffset(p: TelescopeOffset.P, q: TelescopeOffset.Q)
   object TelescopeOffset {
-    def Zero(axis: OffsetAxis): TelescopeOffset = TelescopeOffset(0.0, axis)
+    /** P component of an angular offset.. */
+    final case class P(value: Double) extends Offset
+    object P {
+      val Zero: P = P(0.0)
+      implicit val order: Order[P] = Order.orderBy(_.value)
+
+    }
+    /** Q component of an angular offset.. */
+    final case class Q(value: Double) extends Offset
+    object Q {
+      val Zero: Q = Q(0.0)
+      implicit val order: Order[Q] = Order.orderBy(_.value)
+
+    }
     implicit val eq: Equal[TelescopeOffset] = Equal.equalA[TelescopeOffset]
     implicit val show: Show[TelescopeOffset] = Show.showFromToString
   }
@@ -635,8 +660,8 @@ trait ModelLenses {
     some                                                     // focus on the option
 
   val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.shows)
-  // Unlawful but useful prism
-  private[model] def telescopeOffsetP(axis: OffsetAxis): Prism[Double, TelescopeOffset] = Prism((d: Double) => Some(TelescopeOffset(d, axis)))(_.value)
+  private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] = Iso(TelescopeOffset.P.apply)(_.value)
+  private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] = Iso(TelescopeOffset.Q.apply)(_.value)
   val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
 
   val stepTypeO: Optional[Step, StepType] =
@@ -649,15 +674,17 @@ trait ModelLenses {
     stringToStepTypeP                                             // step type
 
   // Lens to find p offset
-  def telescopeOffsetO(x: OffsetAxis): Optional[Step, TelescopeOffset] =
-    standardStepP                                            ^|-> // which is a standard step
-    stepConfigL                                              ^|-> // configuration of the step
-    systemConfigL(SystemName.telescope)                      ^<-? // Observe config
-    some                                                     ^|-> // some
-    paramValueL(SystemName.telescope.withParam(x.configItem))         ^<-? // find the offset
-    some                                                     ^<-? // focus on the option
-    stringToDoubleP  ^<-?                                    // double value
-    telescopeOffsetP(x)
+  def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
+    standardStepP                                             ^|-> // which is a standard step
+    stepConfigL                                               ^|-> // configuration of the step
+    systemConfigL(SystemName.telescope)                       ^<-? // Observe config
+    some                                                      ^|-> // some
+    paramValueL(SystemName.telescope.withParam(x.configItem)) ^<-? // find the offset
+    some                                                      ^<-? // focus on the option
+    stringToDoubleP                                                // double value
+
+  val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(OffsetAxis.AxisP) ^<-> telescopeOffsetPI
+  val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =

@@ -25,7 +25,7 @@ import edu.gemini.web.client.utils._
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
-import scalaz.syntax.equal._
+import scalaz.syntax.order._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import scalaz.std.AllInstances._
@@ -39,12 +39,16 @@ trait OffsetFns {
   def offsetAxis(axis: OffsetAxis): String =
     f"${axis.shows}:"
 
-  def offsetValueFormat(off: TelescopeOffset): String =
+  def offsetValueFormat(off: Offset): String =
     f" ${off.value}%003.2f″"
 
   def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
 
-  def offsetText(axis: OffsetAxis)(step: Step): String = offsetValueFormat(telescopeOffsetO(axis).getOption(step).getOrElse(TelescopeOffset.Zero(axis)))
+  def offsetText(axis: OffsetAxis)(step: Step): String =
+    offsetValueFormat(axis match {
+      case OffsetAxis.AxisP => telescopeOffsetPO.getOption(step).getOrElse(TelescopeOffset.P.Zero)
+      case OffsetAxis.AxisQ => telescopeOffsetQO.getOption(step).getOrElse(TelescopeOffset.Q.Zero)
+    })
 
   private val offsetPText = offsetText(OffsetAxis.AxisP) _
   private val offsetQText = offsetText(OffsetAxis.AxisQ) _
@@ -446,24 +450,26 @@ object StepsTableContainer extends OffsetFns {
 
 object OffsetGrid {
   private val Size = 40.0
+  final case class Props(p: TelescopeOffset.P, q: TelescopeOffset.Q)
   final case class State(canvas: Option[Canvas])
 
   private val ST = ReactS.Fix[State]
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  def render(state: State): Callback = state.canvas.fold(Callback.empty) { c => Callback {
+  def render(props: Props, state: State): Callback = state.canvas.fold(Callback.empty) { c => Callback {
     val ctx = c.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
     c.width = Size.toInt
     c.height = Size.toInt
     // Outer border
     ctx.strokeRect(0, 0, Size, Size)
-    ctx.fillStyle = "red"
+    // First quadrant
+    ctx.fillStyle = if (props.p > TelescopeOffset.P.Zero) "black" else "white"
     ctx.fillRect(0, 0, Size/2-1, Size/2-1)
     ctx.fillStyle = "yellow"
     ctx.fillRect(Size/2+1, Size/2+1, Size/2-1, Size/2-1)
   }}
 
-  private val component = ScalaComponent.builder[Unit]("OffsetGrid")
+  private val component = ScalaComponent.builder[Props]("OffsetGrid")
     .initialState(State(None))
     .render_P ( p =>
       <.canvas(
@@ -471,14 +477,14 @@ object OffsetGrid {
         ^.height := Size.toInt.px
       )
     ).componentWillReceiveProps { ctx =>
-      render(ctx.state)
+      render(ctx.nextProps, ctx.state)
     }.componentDidMount { ctx =>
       // Grab a copy of the canvas
       val state = State(Some(ctx.getDOMNode.domCast[Canvas]))
-      ctx.runState(ST.set(state)) >> render(state)
+      ctx.runState(ST.set(state)) >> render(ctx.props, state)
     }.build
 
-  def apply(): Unmounted[Unit, State, Unit] = component()
+  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 
 }
 
@@ -490,8 +496,8 @@ object StepSettings extends OffsetFns {
   private val component = ScalaComponent.builder[Props]("StepSettings")
     .stateless
     .render_P { p =>
-      val offsetP = telescopeOffsetO(OffsetAxis.AxisP).getOption(p.s).getOrElse(TelescopeOffset.Zero(OffsetAxis.AxisP))
-      val offsetQ = telescopeOffsetO(OffsetAxis.AxisQ).getOption(p.s).getOrElse(TelescopeOffset.Zero(OffsetAxis.AxisQ))
+      val offsetP = telescopeOffsetPO.getOption(p.s).getOrElse(TelescopeOffset.P.Zero)
+      val offsetQ = telescopeOffsetQO.getOption(p.s).getOrElse(TelescopeOffset.Q.Zero)
       val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
         val stepTypeColor = st match {
           case StepType.Object      => "green"
@@ -509,7 +515,7 @@ object StepSettings extends OffsetFns {
           ^.cls := "stretched row",
           <.div(
             ^.cls := "left floated one wide column",
-            OffsetGrid()
+            OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
           ),
           <.div(
             ^.cls := "left floated four wide column",
