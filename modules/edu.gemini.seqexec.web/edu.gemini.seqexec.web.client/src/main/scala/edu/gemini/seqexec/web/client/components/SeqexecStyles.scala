@@ -335,6 +335,37 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val logTable: StyleA = style(
     fontSize(1.em)
   )
+
+  val logTableHeader: StyleA = style(
+    fontWeight.bold,
+    paddingLeft(0.7.em),
+    paddingRight(0.7.em),
+    paddingBottom(0.928571.em),
+    paddingTop(0.928571.em),
+    color(black),
+    borderLeftWidth(1.px),
+    borderLeftStyle.solid,
+    borderLeftColor(rgba(34, 36, 38, 0.15)),
+  )
+
+  val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
+    fontWeight._700,
+    display.flex,
+    flexDirection.row,
+    alignItems.center,
+    backgroundColor(c"#F9FAFB"),
+    borderWidth(1.px),
+    borderStyle.solid,
+    borderColor(rgba(34, 36, 38, 0.15)),
+    borderTopLeftRadius(0.28571429.rem),
+    borderTopRightRadius(0.28571429.rem)
+  )
+
+  val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
+    borderLeft.none
+  )
+  val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
+  )
 }
 
 object ReactVirtualizedStyles extends scalacss.StyleSheet.Inline {

@@ -65,11 +65,11 @@ object LogArea {
         overscanRowCount = 10,
         height = 300,
         rowCount = p.log().log.size,
-        rowHeight = 40,
+        rowHeight = 30,
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
-        headerClassName = "headerColumn",
-        headerHeight = 30),
+        headerClassName = SeqexecStyles.logTableHeader.htmlClass,
+        headerHeight = 47),
       columns: _*).vdomElement
   }
 
