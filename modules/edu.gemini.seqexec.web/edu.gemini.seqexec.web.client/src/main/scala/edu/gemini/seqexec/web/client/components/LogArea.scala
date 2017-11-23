@@ -66,10 +66,11 @@ object LogArea {
         height = 300,
         rowCount = p.log().log.size,
         rowHeight = 30,
+        rowClassName = SeqexecStyles.logRow.htmlClass,
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
         headerClassName = SeqexecStyles.logTableHeader.htmlClass,
-        headerHeight = 47),
+        headerHeight = 37),
       columns: _*).vdomElement
   }
 

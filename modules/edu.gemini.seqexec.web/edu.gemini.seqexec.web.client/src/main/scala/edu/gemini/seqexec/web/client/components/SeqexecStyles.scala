@@ -336,35 +336,60 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     fontSize(1.em)
   )
 
-  val logTableHeader: StyleA = style(
-    fontWeight.bold,
+  private val tableBorderColor = rgba(34, 36, 38, 0.15)
+
+  private val logTablePaddingMixin: StyleS = mixin(
     paddingLeft(0.7.em),
     paddingRight(0.7.em),
-    paddingBottom(0.928571.em),
-    paddingTop(0.928571.em),
+    paddingBottom(0.7.em),
+    paddingTop(1.em)
+  )
+
+  val logTableHeader: StyleA = style(
+    logTablePaddingMixin,
+    fontWeight.bold,
     color(black),
+    backgroundColor(c"#F9FAFB"),
     borderLeftWidth(1.px),
     borderLeftStyle.solid,
-    borderLeftColor(rgba(34, 36, 38, 0.15)),
+    borderLeftColor(tableBorderColor)
   )
 
   val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
     fontWeight._700,
     display.flex,
     flexDirection.row,
-    alignItems.center,
-    backgroundColor(c"#F9FAFB"),
-    borderWidth(1.px),
-    borderStyle.solid,
-    borderColor(rgba(34, 36, 38, 0.15)),
-    borderTopLeftRadius(0.28571429.rem),
-    borderTopRightRadius(0.28571429.rem)
+    alignItems.center
   )
 
   val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
     borderLeft.none
   )
   val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
+    borderLeft.none
+  )
+  val logRow: StyleA = style(
+    borderLeftWidth(1.px),
+    borderLeftStyle.solid,
+    borderLeftColor(tableBorderColor),
+    borderRightWidth(1.px),
+    borderRightStyle.solid,
+    borderRightColor(tableBorderColor),
+    borderTopWidth(1.px),
+    borderTopStyle.solid,
+    borderTopColor(tableBorderColor),
+    borderCollapse.collapse
+  )
+  val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
+    logTablePaddingMixin,
+    minWidth(0.px),
+    backgroundColor.white,
+    textOverflow := "ellipsis",
+    backgroundColor.white,
+    whiteSpace.nowrap,
+    borderLeftWidth(1.px),
+    borderLeftStyle.solid,
+    borderLeftColor(tableBorderColor)
   )
 }
 
@@ -377,5 +402,27 @@ object ReactVirtualizedStyles extends scalacss.StyleSheet.Inline {
     display.flex,
     flexDirection.row,
     alignItems.center
+  )
+
+  private val firstColumnMixin = mixin(
+    marginLeft(10.px)
+  )
+  val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
+    firstColumnMixin
+  )
+  val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
+    firstColumnMixin
+  )
+  private val columnMixin = mixin(
+    marginRight(10.px),
+    minWidth(0.px)
+  )
+  val headerColumn: StyleA = style("ReactVirtualized__Table__headerColumn")(
+    columnMixin
+  )
+  val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
+    columnMixin,
+    textOverflow := "ellipsis",
+    whiteSpace.nowrap
   )
 }

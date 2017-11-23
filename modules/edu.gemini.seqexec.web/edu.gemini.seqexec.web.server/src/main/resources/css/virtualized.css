@@ -1,34 +1,9 @@
-/* Collection default theme */
-
-.ReactVirtualized__Collection {
-}
-
-.ReactVirtualized__Collection__innerScrollContainer {
-}
-
-/* Grid default theme */
-
-.ReactVirtualized__Grid {
-}
-
-.ReactVirtualized__Grid__innerScrollContainer {
-}
-
-/* Table default theme */
-
 .ReactVirtualized__Table {
 }
 
 .ReactVirtualized__Table__Grid {
 }
 
-.ReactVirtualized__Table__headerRow {
-  font-weight: 700;
-  text-transform: uppercase;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
 .ReactVirtualized__Table__row {
   display: flex;
   flex-direction: row;
@@ -43,20 +18,6 @@
   overflow: hidden;
 }
 
-.ReactVirtualized__Table__headerColumn,
-.ReactVirtualized__Table__rowColumn {
-  margin-right: 10px;
-  min-width: 0px;
-}
-.ReactVirtualized__Table__rowColumn {
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ReactVirtualized__Table__headerColumn:first-of-type,
-.ReactVirtualized__Table__rowColumn:first-of-type {
-  margin-left: 10px;
-}
 .ReactVirtualized__Table__sortableHeaderColumn {
   cursor: pointer;
 }
@@ -70,9 +31,4 @@
   height: 1em;
   width: 1em;
   fill: currentColor;
-}
-
-/* List default theme */
-
-.ReactVirtualized__List {
 }
