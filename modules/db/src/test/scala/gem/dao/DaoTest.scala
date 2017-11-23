@@ -5,7 +5,9 @@ package gem.dao
 
 import cats.effect.IO
 import doobie._, doobie.implicits._
-import gem.{ Program, Step }
+import gem.{ Observation, Program, Step }
+
+import scala.collection.immutable.TreeMap
 
 /** Base trait for DAO test cases.
   */
@@ -24,8 +26,8 @@ trait DaoTest extends gem.Arbitraries {
 
   def withProgram[A](test: ConnectionIO[A]): A =
     (for {
-      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", List.empty[Step[Nothing]]))
+      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", TreeMap.empty[Observation.Index, Step[Nothing]]))
       a <- test
     } yield a).transact(xa).unsafeRunSync()
-    
+
 }

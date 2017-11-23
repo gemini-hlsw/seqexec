@@ -12,6 +12,7 @@ import gem.util.Enumerated
 import io.circe._
 import io.circe.syntax._
 import java.time.Duration
+import scala.collection.immutable.TreeMap
 
 // These json codecs are provided for primitive types that have no natural mapping that would
 // otherwise be inferred via argonaut-shapeless. For now we'll treat the JSON format as an
@@ -78,6 +79,12 @@ package object json {
     Encoder[Map[String, A]].contramap(_.map { case (k, v) => (k.format, v) })
   implicit def programIdKeyedMapDecoder[A: Decoder]: Decoder[Map[Program.Id, A]] =
     Decoder[Map[String, A]].map(_.map { case (k, v) => (Program.Id.unsafeFromString(k), v) })
+
+  // Codec for maps keyed by Observation.Index
+  implicit def observationIndexMapEncoder[A: Encoder]: Encoder[TreeMap[Observation.Index, A]] =
+    Encoder[TreeMap[Int, A]].contramap(_.map { case (k, v) => (k.toInt, v) })
+  implicit def observationIndexMapDecoder[A: Decoder]: Decoder[TreeMap[Observation.Index, A]] =
+    Decoder[TreeMap[Int, A]].map(_.map { case (k, v) => (Observation.Index.unsafeFromInt(k), v) })
 
   // GmosCustomRoiEntry as a quad of shorts
   implicit val GmosCustomRoiEntryEncoder: Encoder[GmosCustomRoiEntry] =

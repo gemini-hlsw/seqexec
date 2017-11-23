@@ -3,12 +3,16 @@
 
 package gem.ocs2
 
-import cats.effect.IO
-import cats.implicits._
-import doobie._, doobie.implicits._
 import gem.dao._
 import gem.{Dataset, Log, Observation, Program, Step, User}
 import gem.config.{ StaticConfig, DynamicConfig }
+
+import cats.effect.IO
+import cats.implicits._
+import doobie._, doobie.implicits._
+
+import scala.collection.immutable.TreeMap
+
 
 /** Support for writing programs and observations to the database.
   */
@@ -35,7 +39,7 @@ object Importer extends DoobieClient {
 
     (u: User[_], l: Log[ConnectionIO]) =>
       for {
-        _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", Nil)).as(1))
+        _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", TreeMap.empty)).as(1))
         _ <- l.log(u, s"remove observation ${oid}"   )(rmObservation                )
         _ <- l.log(u, s"insert new version of ${oid}")(ObservationDao.insert(oid, o))
         _ <- l.log(u, s"write datasets for ${oid}"   )(writeDatasets                )
@@ -52,7 +56,10 @@ object Importer extends DoobieClient {
       for {
         _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
         _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
-        _ <- p.observations.traverse(o => writeObservation(o.id, o, dsMap(o.id))(u, l))
+        _ <- p.observations.toList.traverse { case (i,o) =>
+               val oid = Observation.Id(p.id, i)
+               writeObservation(oid, o, dsMap(oid))(u, l)
+             }
       } yield ()
   }
 

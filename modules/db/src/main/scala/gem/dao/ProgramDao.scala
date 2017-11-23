@@ -4,10 +4,13 @@
 package gem
 package dao
 
-import cats.implicits._
-import doobie._, doobie.implicits._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.dao.meta._
+
+import cats.implicits._
+import doobie._, doobie.implicits._
+
+import scala.collection.immutable.TreeMap
 
 object ProgramDao {
   import EnumeratedMeta._
@@ -20,7 +23,10 @@ object ProgramDao {
 
   /** Insert a complete program. */
   def insert(p: Program[Observation[StaticConfig, Step[DynamicConfig]]]): ConnectionIO[Program.Id] =
-    insertFlat(p) <* p.observations.traverse(o => ObservationDao.insert(o.id, o))
+    insertFlat(p) <* p.observations.toList.traverse { case (i,o) =>
+      val oid = Observation.Id(p.id, i)
+      ObservationDao.insert(oid, o)
+    }
 
   private def insertProgramIdSlice(pid: Program.Id): ConnectionIO[Int] =
     pid match {
@@ -52,7 +58,7 @@ object ProgramDao {
     for {
       opn <- selectFlat(pid)
       os  <- ObservationDao.selectAll(pid)
-    } yield opn.map(_.copy(observations = os))
+    } yield opn.map(_.copy(observations = TreeMap(os.map(o => (o.id.index, o)): _*)))
 
   object Statements {
 
@@ -70,7 +76,7 @@ object ProgramDao {
           FROM program
          WHERE program_id = $pid
       """.query[String]
-         .map(Program(pid, _, Nil))
+         .map(Program(pid, _, TreeMap.empty))
 
     def selectBySubstring(pat: String, max: Int): Query0[Program[Nothing]] =
       sql"""
@@ -80,7 +86,7 @@ object ProgramDao {
       ORDER BY program_id, title
         LIMIT ${max.toLong}
       """.query[(Program.Id, String)]
-        .map { case (pid, title) => Program(pid, title, Nil) }
+        .map { case (pid, title) => Program(pid, title, TreeMap.empty) }
 
     // N.B. assumes semester has been canonicalized
     def insertNonstandardProgramIdSlice(pid: Program.Id.Nonstandard): Update0 =
