@@ -49,14 +49,19 @@ object LogArea {
   def table(p: Props)(size: Size): VdomNode = {
     val columns = List(
       Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
-      Column(Column.props(100, "level", label = "Level", disableSort = true)),
-      Column(Column.props(size.width.toInt - 200 - 100, "msg", label = "Message", disableSort = true, flexGrow = 1))
+      Column(Column.props(80, "level", label = "Level", disableSort = true)),
+      Column(Column.props(size.width.toInt - 200 - 80, "msg", label = "Message", disableSort = true, flexGrow = 1))
     )
 
     Table(
       Table.props(
         disableHeader = false,
-        noRowsRenderer = () => <.div(^.cls := "noRows", "No entries"),
+        noRowsRenderer = () =>
+          <.div(
+            ^.cls := "ui center aligned segment noRows",
+            ^.height := 270.px,
+            "No log entries"
+          ),
         overscanRowCount = 10,
         height = 300,
         rowCount = p.log().log.size,
