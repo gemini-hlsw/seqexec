@@ -58,7 +58,7 @@ object ProgramDao {
     for {
       opn <- selectFlat(pid)
       os  <- ObservationDao.selectAll(pid)
-    } yield opn.map(_.copy(observations = TreeMap(os.map(o => (o.id.index, o)): _*)))
+    } yield opn.map(_.copy(observations = os))
 
   object Statements {
 

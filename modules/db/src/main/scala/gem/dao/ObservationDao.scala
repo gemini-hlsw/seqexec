@@ -11,6 +11,8 @@ import gem.dao.meta._
 import gem.enum.Instrument
 import gem.util.Location
 
+import scala.collection.immutable.TreeMap
+
 object ObservationDao {
   import EnumeratedMeta._
   import ObservationIdMeta._
@@ -56,28 +58,28 @@ object ObservationDao {
    * Construct a program to select all observations for the specified science program, with the
    * instrument and no steps.
    */
-  def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[Instrument, Nothing]]] =
-    Statements.selectAllFlat(pid).list.map(_.map(_._1))
+  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Instrument, Nothing]]] =
+    Statements.selectAllFlat(pid).list.map(lst => TreeMap(lst.map { case (i,o,_) => (i,o) }: _*))
 
   /**
    * Construct a program to select all observations for the specified science program, with the
    * static component and no steps.
    */
-  def selectAllStatic(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Nothing]]] =
+  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[StaticConfig, Nothing]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
-    } yield oss
+    } yield TreeMap(ids.map(_.index).zip(oss): _*)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
    * static component and steps.
    */
-  def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
+  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(select)
-    } yield oss
+    } yield TreeMap(ids.map(_.index).zip(oss): _*)
 
   object Statements {
 
@@ -126,7 +128,7 @@ object ObservationDao {
            (Observation(id, t, i, Nil), s)
          }
 
-    def selectAllFlat(pid: Program.Id): Query0[(Observation[Instrument, Nothing], Int)] =
+    def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Instrument, Nothing], Int)] =
       sql"""
         SELECT observation_index, title, instrument, static_id
           FROM observation
@@ -134,7 +136,8 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Instrument, Int)]
          .map { case (n, t, i, s) =>
-           (Observation(Observation.Id(pid, Observation.Index.unsafeFromInt(n.toInt)), t, i, Nil), s)
+           val idx = Observation.Index.unsafeFromInt(n.toInt)
+           (idx, Observation(Observation.Id(pid, idx), t, i, Nil), s)
          }
 
   }

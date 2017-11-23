@@ -79,10 +79,10 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
         for {
           _ <- obsListIn.traverse(o => ObservationDao.insert(o.id, o))
           o <- ObservationDao.selectAll(pid)
-        } yield o
+        } yield o.values.toList
       }
 
-      obsListOut.sortBy(_.id) shouldEqual obsListIn.sortBy(_.id)
+      obsListOut shouldEqual obsListIn.sortBy(_.id)
     }
   }
 
