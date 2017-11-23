@@ -46,11 +46,27 @@ object LogArea {
     }.getOrElse(LogRow.Zero)
   }
 
-  private val columns = List(
-    Column(Column.props(60, "timestamp", label = "Timestamp", disableSort = true)),
-    Column(Column.props(90, "level", label = "Level", disableSort = true)),
-    Column(Column.props(210, "msg", label = "Message", disableSort = true, flexGrow = 1))
-  )
+  def table(p: Props)(size: Size): VdomNode = {
+    val columns = List(
+      Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
+      Column(Column.props(100, "level", label = "Level", disableSort = true)),
+      Column(Column.props(size.width.toInt - 200 - 100, "msg", label = "Message", disableSort = true, flexGrow = 1))
+    )
+
+    Table(
+      Table.props(
+        disableHeader = false,
+        noRowsRenderer = () => <.div(^.cls := "noRows", "No entries"),
+        overscanRowCount = 10,
+        height = 300,
+        rowCount = p.log().log.size,
+        rowHeight = 40,
+        width = size.width.toInt,
+        rowGetter = p.rowGetter _,
+        headerClassName = "headerColumn",
+        headerHeight = 30),
+      columns: _*).vdomElement
+  }
 
   private val component = ScalaComponent.builder[Props]("LogArea")
     .stateless
@@ -63,23 +79,7 @@ object LogArea {
             ^.cls := "ui form",
             <.div(
               ^.cls := "field",
-              <.label("Log"),
-              AutoSizer(AutoSizer.props(
-                (s: Size) =>
-                  Table(
-                    Table.props(
-                      disableHeader = false,
-                      noRowsRenderer = () => <.div(^.cls := "noRows", "No entries"),
-                      overscanRowCount = 10,
-                      height = 300,
-                      rowCount = p.log().log.size,
-                      rowHeight = 40,
-                      width = s.width.toInt,
-                      rowGetter = p.rowGetter _,
-                      headerClassName = "headerColumn",
-                      headerHeight = 30),
-                    columns: _*).vdomElement
-              , disableHeight = true))
+              AutoSizer(AutoSizer.props(table(p), disableHeight = true))
             )
           )
         )

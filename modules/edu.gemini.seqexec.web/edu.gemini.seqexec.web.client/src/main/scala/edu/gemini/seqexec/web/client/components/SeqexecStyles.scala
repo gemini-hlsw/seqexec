@@ -330,4 +330,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
     backgroundClip.contentBox.paddingBox.important
   )
+
+  // Styles for the log table
+  val logTable: StyleA = style(
+    fontSize(1.em)
+  )
+}
+
+object ReactVirtualizedStyles extends scalacss.StyleSheet.Inline {
+  import dsl._
+
+  val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
+    fontWeight._700,
+    textTransform.uppercase,
+    display.flex,
+    flexDirection.row,
+    alignItems.center
+  )
 }
