@@ -77,7 +77,7 @@ object Settings {
     val javaTimeJS              = "0.2.2"
     val javaLogJS               = "0.1.2"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.0.1"
+    val scalaJSReactVirtualized = "0.0.2"
 
     // Java libraries
     val scalaZ       = "7.2.16"

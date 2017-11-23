@@ -64,19 +64,22 @@ object LogArea {
             <.div(
               ^.cls := "field",
               <.label("Log"),
-              Table(
-                Table.props(
-                  disableHeader = false,
-                  noRowsRenderer = () => <.div(^.cls := "noRows", "No entries"),
-                  overscanRowCount = 10,
-                  height = 500,
-                  rowCount = p.log().log.size,
-                  rowHeight = 40,
-                  width = 1500,
-                  rowGetter = p.rowGetter _,
-                  headerClassName = "headerColumn",
-                  headerHeight = 30),
-                columns: _*)
+              AutoSizer(AutoSizer.props(
+                (s: Size) =>
+                  Table(
+                    Table.props(
+                      disableHeader = false,
+                      noRowsRenderer = () => <.div(^.cls := "noRows", "No entries"),
+                      overscanRowCount = 10,
+                      height = 300,
+                      rowCount = p.log().log.size,
+                      rowHeight = 40,
+                      width = s.width.toInt,
+                      rowGetter = p.rowGetter _,
+                      headerClassName = "headerColumn",
+                      headerHeight = 30),
+                    columns: _*).vdomElement
+              , disableHeight = true))
             )
           )
         )
