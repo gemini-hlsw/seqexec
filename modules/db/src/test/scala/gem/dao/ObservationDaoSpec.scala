@@ -13,15 +13,15 @@ import org.scalatest.Matchers._
 class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   property("ObservationDao should select all observation ids for a program") {
-    forAll(genObservationList(pid, limit = 50)) { obsList =>
+    forAll(genObservationMap(pid, limit = 50)) { obsMap =>
       val oids = withProgram {
         for {
-          _ <- obsList.traverse(o => ObservationDao.insert(o.id, o))
+          _ <- obsMap.toList.traverse { case (i,o) => ObservationDao.insert(Observation.Id(pid, i), o) }
           o <- ObservationDao.selectIds(pid)
         } yield o
       }
 
-      oids.toSet shouldEqual obsList.map(_.id).toSet
+      oids.toSet shouldEqual obsMap.keys.map(idx => Observation.Id(pid, idx)).toSet
     }
   }
 
@@ -74,15 +74,15 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should roundtrip complete observation lists") {
-    forAll(genObservationList(pid, limit = 50)) { obsListIn =>
-      val obsListOut = withProgram {
+    forAll(genObservationMap(pid, limit = 50)) { obsMapIn =>
+      val obsMapOut = withProgram {
         for {
-          _ <- obsListIn.traverse(o => ObservationDao.insert(o.id, o))
+          _ <- obsMapIn.toList.traverse { case (i,o) => ObservationDao.insert(Observation.Id(pid, i), o) }
           o <- ObservationDao.selectAll(pid)
-        } yield o.values.toList
+        } yield o
       }
 
-      obsListOut shouldEqual obsListIn.sortBy(_.id)
+      obsMapOut shouldEqual obsMapIn
     }
   }
 

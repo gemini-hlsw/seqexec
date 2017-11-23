@@ -13,6 +13,8 @@ import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
+import scala.collection.immutable.TreeMap
+
 trait Arbitraries extends gem.config.Arbitraries  {
   import ArbEnumerated._
 
@@ -100,10 +102,10 @@ trait Arbitraries extends gem.config.Arbitraries  {
       o <- genObservationOf(i, id)
     } yield o
 
-  def genObservationList(pid: Program.Id, limit: Int): Gen[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
+  def genObservationMap(pid: Program.Id, limit: Int): Gen[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       count   <- Gen.choose(0, limit)
-      obsIds  <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(i => Observation.Id(pid, Observation.Index.unsafeFromInt(i))))
-      obsList <- obsIds.traverse(genObservation)
-    } yield obsList
+      obsIdxs <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(Observation.Index.unsafeFromInt))
+      obsList <- obsIdxs.traverse(idx => genObservation(Observation.Id(pid, idx)))
+    } yield TreeMap(obsIdxs.zip(obsList): _*)
 }
