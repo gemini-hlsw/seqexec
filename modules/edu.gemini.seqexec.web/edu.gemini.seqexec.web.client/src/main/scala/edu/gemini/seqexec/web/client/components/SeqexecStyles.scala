@@ -345,14 +345,32 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     paddingTop(1.em)
   )
 
-  val logTableHeader: StyleA = style(
-    logTablePaddingMixin,
-    fontWeight.bold,
-    color(black),
-    backgroundColor(c"#F9FAFB"),
+  val leftBorderMixin: StyleS = mixin(
     borderLeftWidth(1.px),
     borderLeftStyle.solid,
     borderLeftColor(tableBorderColor)
+  )
+  val bottomBorderMixin: StyleS = mixin(
+    borderBottomWidth(1.px),
+    borderBottomStyle.solid,
+    borderBottomColor(tableBorderColor)
+  )
+  val topBorderMixin: StyleS = mixin(
+    borderTopWidth(1.px),
+    borderTopStyle.solid,
+    borderTopColor(tableBorderColor)
+  )
+  val rightBorderMixin: StyleS = mixin(
+    borderRightWidth(1.px),
+    borderRightStyle.solid,
+    borderRightColor(tableBorderColor)
+  )
+  val logTableHeader: StyleA = style(
+    leftBorderMixin,
+    logTablePaddingMixin,
+    fontWeight.bold,
+    color(black),
+    backgroundColor(c"#F9FAFB")
   )
 
   val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
@@ -369,27 +387,27 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderLeft.none
   )
   val logRow: StyleA = style(
-    borderLeftWidth(1.px),
-    borderLeftStyle.solid,
-    borderLeftColor(tableBorderColor),
-    borderRightWidth(1.px),
-    borderRightStyle.solid,
-    borderRightColor(tableBorderColor),
-    borderTopWidth(1.px),
-    borderTopStyle.solid,
-    borderTopColor(tableBorderColor),
-    borderCollapse.collapse
+    leftBorderMixin,
+    topBorderMixin,
+    rightBorderMixin
+  )
+  val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
+    topBorderMixin,
+    bottomBorderMixin
+  )
+  val innerScroll: StyleA = style("ReactVirtualized__Grid__innerScrollContainer")(
+    bottomBorderMixin
   )
   val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
     logTablePaddingMixin,
+    leftBorderMixin,
     minWidth(0.px),
     backgroundColor.white,
+    color(rgba(0, 0, 0, 0.95)),
+    fontSize.small,
     textOverflow := "ellipsis",
     backgroundColor.white,
-    whiteSpace.nowrap,
-    borderLeftWidth(1.px),
-    borderLeftStyle.solid,
-    borderLeftColor(tableBorderColor)
+    whiteSpace.nowrap
   )
 }
 
@@ -424,5 +442,9 @@ object ReactVirtualizedStyles extends scalacss.StyleSheet.Inline {
     columnMixin,
     textOverflow := "ellipsis",
     whiteSpace.nowrap
+  )
+  val bottomRow: StyleA = style("ReactVirtualized__Table__Grid")(
+  )
+  val innerScroll: StyleA = style("ReactVirtualized__Grid__innerScrollContainer")(
   )
 }

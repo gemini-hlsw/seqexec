@@ -24,11 +24,13 @@ object LogArea {
   implicit val showLevel: Show[ServerLogLevel] = Show.showFromToString
   implicit val showInstant: Show[Instant] = Show.showFromToString
   // ScalaJS defined trait
+  // scalastyle:off
   trait LogRow extends js.Object {
     var timestamp: String
     var level: String
     var msg: String
   }
+  // scalastyle:on
   object LogRow {
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(timestamp: String, level: String, msg: String): LogRow = {
@@ -47,6 +49,8 @@ object LogArea {
   }
 
   def table(p: Props)(size: Size): VdomNode = {
+    val rowCount = p.log().log.size
+
     val columns = List(
       Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
       Column(Column.props(80, "level", label = "Level", disableSort = true)),
@@ -64,7 +68,7 @@ object LogArea {
           ),
         overscanRowCount = 10,
         height = 300,
-        rowCount = p.log().log.size,
+        rowCount = rowCount,
         rowHeight = 30,
         rowClassName = SeqexecStyles.logRow.htmlClass,
         width = size.width.toInt,
