@@ -85,27 +85,27 @@ trait Arbitraries extends gem.config.Arbitraries  {
 
   // Observation
 
-  def genObservationOf(i: Instrument, id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
+  def genObservationOf(i: Instrument): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
       t <- genTitle
       s <- genStaticConfigOf(i)
       d <- genSequenceOf(i)
-    } yield Observation(id, t, s, d)
+    } yield Observation(t, s, d)
 
-  def genObservation(id: Observation.Id): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
+  val genObservation: Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
       i <- Gen.oneOf(
              Instrument.Flamingos2,
              Instrument.GmosN,
              Instrument.GmosS
            ) // Add more as they become available
-      o <- genObservationOf(i, id)
+      o <- genObservationOf(i)
     } yield o
 
-  def genObservationMap(pid: Program.Id, limit: Int): Gen[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
+  def genObservationMap(limit: Int): Gen[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       count   <- Gen.choose(0, limit)
       obsIdxs <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(Observation.Index.unsafeFromInt))
-      obsList <- obsIdxs.traverse(idx => genObservation(Observation.Id(pid, idx)))
+      obsList <- obsIdxs.traverse(_ => genObservation)
     } yield TreeMap(obsIdxs.zip(obsList): _*)
 }

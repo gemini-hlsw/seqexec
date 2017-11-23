@@ -86,7 +86,7 @@ object ObservationDao {
     // Observation.Index has a DISTINCT type due to its check constraint so we
     // need a fine-grained mapping here to satisfy the query checker.
     implicit val ObservationIndexMeta: Meta[Observation.Index] =
-      Distinct.integer("id_index").xmap(Observation.Index.unsafeFromInt, _.toInt)
+    Distinct.integer("id_index").xmap(Observation.Index.unsafeFromInt, _.toInt)
 
     def insert(oid: Observation.Id, o: Observation[StaticConfig, _], staticId: Int): Update0 =
       sql"""
@@ -101,7 +101,7 @@ object ObservationDao {
                       ${oid.index},
                       ${o.title},
                       $staticId,
-                      ${o.staticConfig.instrument : Instrument})
+                      ${o.staticConfig.instrument: Instrument})
       """.update
 
     def selectIds(pid: Program.Id): Query0[Observation.Id] =
@@ -124,9 +124,7 @@ object ObservationDao {
           FROM observation
          WHERE observation_id = ${id}
       """.query[(String, Instrument, Int)]
-         .map { case (t, i, s) =>
-           (Observation(id, t, i, Nil), s)
-         }
+        .map { case (t, i, s) => (Observation(t, i, Nil), s) }
 
     def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Instrument, Nothing], Int)] =
       sql"""
@@ -135,10 +133,9 @@ object ObservationDao {
          WHERE program_id = ${pid}
       ORDER BY observation_index
       """.query[(Short, String, Instrument, Int)]
-         .map { case (n, t, i, s) =>
-           val idx = Observation.Index.unsafeFromInt(n.toInt)
-           (idx, Observation(Observation.Id(pid, idx), t, i, Nil), s)
-         }
+        .map { case (n, t, i, s) =>
+          (Observation.Index.unsafeFromInt(n.toInt), Observation(t, i, Nil), s)
+        }
 
   }
 }

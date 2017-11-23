@@ -18,7 +18,6 @@ import cats.implicits._
  * @group Program Model
  */
 final case class Observation[+S, +D](
-  id: Observation.Id,
   title: String,
   staticConfig: S,
   steps: List[D])

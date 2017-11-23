@@ -13,7 +13,7 @@ import org.scalatest.Matchers._
 class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   property("ObservationDao should select all observation ids for a program") {
-    forAll(genObservationMap(pid, limit = 50)) { obsMap =>
+    forAll(genObservationMap(limit = 50)) { obsMap =>
       val oids = withProgram {
         for {
           _ <- obsMap.toList.traverse { case (i,o) => ObservationDao.insert(Observation.Id(pid, i), o) }
@@ -31,7 +31,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select flat observations") {
     val oid = Observation.Id(pid, One)
 
-    forAll(genObservation(oid)) { obsIn =>
+    forAll(genObservation) { obsIn =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -46,7 +46,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select static observations") {
     val oid = Observation.Id(pid, One)
 
-    forAll(genObservation(oid)) { obsIn =>
+    forAll(genObservation) { obsIn =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -61,7 +61,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should roundtrip complete observations") {
     val oid = Observation.Id(pid, One)
 
-    forAll(genObservation(oid)) { obsIn =>
+    forAll(genObservation) { obsIn =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -74,7 +74,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should roundtrip complete observation lists") {
-    forAll(genObservationMap(pid, limit = 50)) { obsMapIn =>
+    forAll(genObservationMap(limit = 50)) { obsMapIn =>
       val obsMapOut = withProgram {
         for {
           _ <- obsMapIn.toList.traverse { case (i,o) => ObservationDao.insert(Observation.Id(pid, i), o) }

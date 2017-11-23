@@ -53,7 +53,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val gcalShutter      = GcalShutter.Open
     val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
-    val observation      = Observation[StaticConfig, Nothing](observationId, "", StaticConfig.F2.Default, Nil)
+    val observation      = Observation[StaticConfig, Nothing]("", StaticConfig.F2.Default, Nil)
     val program          = Program(programId, "", TreeMap.empty)
     val f2SmartGcalKey   = DynamicConfig.F2.Default.key
     val gcalLampType     = GcalLampType.Arc

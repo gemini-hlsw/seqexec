@@ -24,8 +24,7 @@ object ProgramDao {
   /** Insert a complete program. */
   def insert(p: Program[Observation[StaticConfig, Step[DynamicConfig]]]): ConnectionIO[Program.Id] =
     insertFlat(p) <* p.observations.toList.traverse { case (i,o) =>
-      val oid = Observation.Id(p.id, i)
-      ObservationDao.insert(oid, o)
+      ObservationDao.insert(Observation.Id(p.id, i), o)
     }
 
   private def insertProgramIdSlice(pid: Program.Id): ConnectionIO[Int] =
