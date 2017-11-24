@@ -181,10 +181,10 @@ object Settings {
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
       "io.suzaku" %%% "diode-react" % LibraryVersions.diode
     ))
-    val ScalaCSS   = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
-    val ScalaJSDom = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)
+    val ScalaCSS                = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
+    val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)
     val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"                 %%% "scalajs-react-virtualized"   % LibraryVersions.scalaJSReactVirtualized)
-    val JQuery     = Def.setting("org.querki"                   %%% "jquery-facade" % LibraryVersions.scalaJQuery)
+    val JQuery                  = Def.setting("org.querki"                   %%% "jquery-facade" % LibraryVersions.scalaJQuery)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion

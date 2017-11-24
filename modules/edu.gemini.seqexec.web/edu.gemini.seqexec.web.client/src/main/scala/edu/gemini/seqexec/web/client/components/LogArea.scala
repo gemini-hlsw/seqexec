@@ -49,6 +49,9 @@ object LogArea {
     }.getOrElse(LogRow.Zero)
   }
 
+  /**
+   * Build the table log
+   */
   def table(p: Props)(size: Size): VdomNode = {
     val rowCount = p.log().log.size
 

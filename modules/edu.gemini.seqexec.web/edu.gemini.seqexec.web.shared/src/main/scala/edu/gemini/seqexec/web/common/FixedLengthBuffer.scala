@@ -52,12 +52,19 @@ object FixedLengthBuffer {
 
   implicit def equal[A]: Equal[FixedLengthBuffer[A]] = Equal.equalA
 
+  /**
+   * @typeclass Functor
+   */
   implicit val functor: Functor[FixedLengthBuffer] = new Functor[FixedLengthBuffer] {
     def map[B, C](fa: FixedLengthBuffer[B])(f: B => C): FixedLengthBuffer[C] = fa match {
         case FixedLengthBufferImpl(max, data) => FixedLengthBufferImpl[C](max, data.map(f))
       }
   }
 
+  /**
+   * @typeclass Foldable
+   * Based on foldable implementation for Set
+   */
   implicit val foldable: Foldable[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] = new Foldable[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] with Foldable.FromFoldr[FixedLengthBuffer] {
     override def length[A](fa: FixedLengthBuffer[A]) = fa.size
     def empty[A] = Zero[A]
@@ -67,11 +74,12 @@ object FixedLengthBuffer {
     @SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.While"))
     def foldRight[A, B](fa: FixedLengthBuffer[A], z: => B)(f: (A, => B) => B) = {
       import scala.collection.mutable.ArrayStack
+      // Faster using a mutable collection
       val s = new ArrayStack[A]
       fa.toVector.foreach(a => s += a)
       var r = z
       while (!s.isEmpty) {
-        // Fixes stack overflow issue (#866)
+        // Fixes stack overflow issue
         val w = r
         r = f(s.pop, w)
       }
@@ -110,7 +118,13 @@ sealed trait FixedLengthBuffer[A] {
    */
   def size: Int
 
+  /**
+   * Indicates if the buffer is empty
+   */
   def isEmpty: Boolean
 
+  /**
+   * Returns a buffer with the values reversed
+   */
   def reverse: FixedLengthBuffer[A]
 }

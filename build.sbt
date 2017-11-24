@@ -166,7 +166,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       JavaLogJS.value,
       ScalaJSReactVirtualized.value
     ) ++ ReactScalaJS.value ++ Diode.value,
-    // And add a custom one
+    // Specify the scalajs-compiler to make it compatbile with TLS
     addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
   )
   .settings(
