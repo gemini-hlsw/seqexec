@@ -280,8 +280,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def resourceFromSystem(s: System): Resource = (s: @unchecked) match {
     case Tcs(_, _, _)  => Resource.TCS
     case Gcal(_, _)    => Resource.Gcal
-    case GmosNorth(_)  => Instrument.GmosS
-    case GmosSouth(_)  => Instrument.GmosN
+    case GmosNorth(_)  => Instrument.GmosN
+    case GmosSouth(_)  => Instrument.GmosS
     case Flamingos2(_) => Instrument.F2
   }
 
