@@ -4,7 +4,7 @@ This bundle contains a web server for the seqexec, it exposes a REST API and can
 
 ## Web backend
 
-In this version we are prototyping with two backends, http4s and play embedded. 
+In this version we are prototyping with two backends, http4s and play embedded.
 
 Each backend exposes the same REST API so the client can use either one
 
@@ -48,7 +48,7 @@ Go to the JVM project
 
 ```
     project edu_gemini_seqexec_web_server
-    ~re-start
+    ~reStart
 ```
 
 Now every time a file is changed in either the server or the client, scala.js will compile the javascript files, the server files will be compiled by scalac, then the server will restart
@@ -60,7 +60,7 @@ The page can be reached at
 ## Calling commands
 
 It is possible to directly call commands on the seqexec using a web api. The following commands are supported and include a sample curl command to execute them with the json response
- 
+
 # Get host
 
 Returns the ODB host

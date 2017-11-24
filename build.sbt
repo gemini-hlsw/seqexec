@@ -107,9 +107,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
     // do a fastOptJS on reStart
     reStart := (reStart dependsOn (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client))).evaluated,
     // This settings makes reStart to rebuild if a scala.js file changes on the client
-    watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value,
-    // On recompilation only consider changes to .scala and .js files
-    watchSources ~= { t:Seq[java.io.File] => {t.filter(includeInTrigger)} }
+    watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -197,8 +195,6 @@ lazy val edu_gemini_seqexec_server = project
           OpenCSV,
           Log4s
       ) ++ SeqexecOdb ++ WDBAClient ++ TestLibs.value
-  ).settings(
-    sources in (Compile,doc) := Seq.empty
   )
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
@@ -265,8 +261,6 @@ lazy val edu_gemini_epics_acm = project
       }
       out.listFiles.toSeq
     }.taskValue
-  ).settings(
-    sources in (Compile,doc) := Seq.empty
   )
 
 /**

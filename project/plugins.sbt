@@ -5,16 +5,16 @@ val scalaJSVersion =
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion)
 
 // sbt revolver lets launching applications from the sbt console
-addSbtPlugin("io.spray"          % "sbt-revolver"           % "0.8.0")
+addSbtPlugin("io.spray"          % "sbt-revolver"           % "0.9.1")
 
 // Extract metadata from sbt and make it available to the code
-addSbtPlugin("com.eed3si9n"      % "sbt-buildinfo"          % "0.6.1")
+addSbtPlugin("com.eed3si9n"      % "sbt-buildinfo"          % "0.7.0")
 
 // Support making distributions
-addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager"    % "1.2.0-M7")
+addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager"    % "1.3.2")
 
 // Check the style with scalastyle
-addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin" % "0.8.0")
+addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin" % "1.0.0")
 
 // add and check headers
 addSbtPlugin("de.heikoseeberger" % "sbt-header"             % "3.0.1")
