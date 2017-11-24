@@ -330,4 +330,95 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
     backgroundClip.contentBox.paddingBox.important
   )
+
+  // Styles for the log table, These styles will make react-virtualized
+  // match the look of SemanticUI tables
+  val logTable: StyleA = style(
+    fontSize(1.em)
+  )
+
+  // Border color
+  private val tableBorderColor = rgba(34, 36, 38, 0.15)
+
+  private val logTablePaddingMixin: StyleS = mixin(
+    paddingLeft(0.7.em),
+    paddingRight(0.7.em),
+    paddingBottom(0.7.em),
+    paddingTop(1.em)
+  )
+
+  val leftBorderMixin: StyleS = mixin(
+    borderLeftWidth(1.px),
+    borderLeftStyle.solid,
+    borderLeftColor(tableBorderColor)
+  )
+
+  val bottomBorderMixin: StyleS = mixin(
+    borderBottomWidth(1.px),
+    borderBottomStyle.solid,
+    borderBottomColor(tableBorderColor)
+  )
+
+  val topBorderMixin: StyleS = mixin(
+    borderTopWidth(1.px),
+    borderTopStyle.solid,
+    borderTopColor(tableBorderColor)
+  )
+
+  val rightBorderMixin: StyleS = mixin(
+    borderRightWidth(1.px),
+    borderRightStyle.solid,
+    borderRightColor(tableBorderColor)
+  )
+
+  val logTableHeader: StyleA = style(
+    leftBorderMixin,
+    logTablePaddingMixin,
+    fontWeight.bold,
+    color(black),
+    backgroundColor(c"#F9FAFB")
+  )
+
+  // Override styles used by react-virtualized
+  val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
+    fontWeight._700,
+    display.flex,
+    flexDirection.row,
+    alignItems.center
+  )
+
+  val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
+    borderLeft.none
+  )
+
+  val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
+    borderLeft.none
+  )
+
+  val logRow: StyleA = style(
+    leftBorderMixin,
+    topBorderMixin,
+    rightBorderMixin
+  )
+
+  val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
+    topBorderMixin,
+    bottomBorderMixin
+  )
+
+  val innerScroll: StyleA = style("ReactVirtualized__Grid__innerScrollContainer")(
+    bottomBorderMixin
+  )
+
+  val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
+    logTablePaddingMixin,
+    leftBorderMixin,
+    minWidth(0.px),
+    backgroundColor.white,
+    color(rgba(0, 0, 0, 0.95)),
+    fontSize.small,
+    textOverflow := "ellipsis",
+    backgroundColor.white,
+    whiteSpace.nowrap
+  )
 }

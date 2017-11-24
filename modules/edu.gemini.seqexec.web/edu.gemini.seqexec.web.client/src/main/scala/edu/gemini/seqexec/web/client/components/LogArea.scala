@@ -3,23 +3,88 @@
 
 package edu.gemini.seqexec.web.client.components
 
+import scala.scalajs.js
 import diode.react.ModelProxy
+import edu.gemini.seqexec.model.Model.ServerLogLevel
 import edu.gemini.seqexec.web.client.model.GlobalLog
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import react.virtualized._
+import java.time.Instant
 
-import scalaz.syntax.functor._
+import scalaz.Show
+import scalaz.syntax.foldable._
+import scalaz.syntax.show._
 
 /**
   * Area to display a sequence's log
   */
 object LogArea {
-  final case class Props(log: GlobalLog)
+  implicit val showLevel: Show[ServerLogLevel] = Show.showFromToString
+  implicit val showInstant: Show[Instant] = Show.showFromToString
+  // ScalaJS defined trait
+  // scalastyle:off
+  trait LogRow extends js.Object {
+    var timestamp: String
+    var level: String
+    var msg: String
+  }
+  // scalastyle:on
+  object LogRow {
+    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
+    def apply(timestamp: String, level: String, msg: String): LogRow = {
+      val p = (new js.Object).asInstanceOf[LogRow]
+      p.timestamp = timestamp
+      p.level = level
+      p.msg = msg
+      p
+    }
+    val Zero: LogRow = apply("", "", "")
+  }
+  final case class Props(log: ModelProxy[GlobalLog]) {
+    private val reverseLog = log().log.reverse
+    def rowGetter(i: Int): LogRow = reverseLog.index(i).map { l =>
+      LogRow(l.timestamp.shows, l.level.shows, l.msg)
+    }.getOrElse(LogRow.Zero)
+  }
+
+  /**
+   * Build the table log
+   */
+  def table(p: Props)(size: Size): VdomNode = {
+    val rowCount = p.log().log.size
+
+    val columns = List(
+      Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
+      Column(Column.props(80, "level", label = "Level", disableSort = true)),
+      Column(Column.props(size.width.toInt - 200 - 80, "msg", label = "Message", disableSort = true, flexGrow = 1))
+    )
+
+    Table(
+      Table.props(
+        disableHeader = false,
+        noRowsRenderer = () =>
+          <.div(
+            ^.cls := "ui center aligned segment noRows",
+            ^.height := 270.px,
+            "No log entries"
+          ),
+        overscanRowCount = 10,
+        height = 300,
+        rowCount = rowCount,
+        rowHeight = 30,
+        rowClassName = SeqexecStyles.logRow.htmlClass,
+        width = size.width.toInt,
+        rowGetter = p.rowGetter _,
+        headerClassName = SeqexecStyles.logTableHeader.htmlClass,
+        headerHeight = 37),
+      columns: _*).vdomElement
+  }
 
   private val component = ScalaComponent.builder[Props]("LogArea")
     .stateless
-    .render_P(p =>
+    .render_P { p =>
       <.div(
         ^.cls := "ui sixteen wide column",
         <.div(
@@ -28,17 +93,13 @@ object LogArea {
             ^.cls := "ui form",
             <.div(
               ^.cls := "field",
-              <.label("Log"),
-              <.textarea(
-                ^.readOnly := true,
-                ^.value := p.log.log.map(e => s"${e.timestamp} ${e.msg}").toVector.mkString("\n")
-              )
+              AutoSizer(AutoSizer.props(table(p), disableHeight = true))
             )
           )
         )
       )
-    )
+    }
     .build
 
-  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, Unit, Unit] = component(Props(p()))
+  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, Unit, Unit] = component(Props(p))
 }

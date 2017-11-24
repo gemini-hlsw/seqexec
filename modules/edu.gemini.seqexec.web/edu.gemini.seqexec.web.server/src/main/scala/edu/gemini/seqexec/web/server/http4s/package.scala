@@ -38,6 +38,7 @@ package object http4s {
           <title>{s"Seqexec - $site"}</title>
 
           <link rel="stylesheet" href={s"/css/semantic.$builtAtMillis.css"}/>
+          <link rel="stylesheet" href={s"/css/virtualized.$builtAtMillis.css"}/>
           <style>{style.stripMargin}</style>
         </head>
 

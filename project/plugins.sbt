@@ -1,6 +1,6 @@
 // Gives support for Scala.js compilation
 val scalaJSVersion =
-  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.20")
+  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.21")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion)
 
