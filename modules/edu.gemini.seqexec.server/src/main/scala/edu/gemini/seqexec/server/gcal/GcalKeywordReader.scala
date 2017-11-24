@@ -28,11 +28,11 @@ object DummyGcalKeywordsReader extends GcalKeywordReader {
 
 object GcalKeywordsReaderImpl extends GcalKeywordReader {
 
-  def getDiffuser: SeqAction[Option[String]] = GcalEpics.instance.diffuser
+  def getDiffuser: SeqAction[Option[String]] = SeqAction(GcalEpics.instance.diffuser)
 
-  def getFilter: SeqAction[Option[String]] = GcalEpics.instance.filter
+  def getFilter: SeqAction[Option[String]] = SeqAction(GcalEpics.instance.filter)
 
-  def getLamp: SeqAction[Option[String]] = {
+  def getLamp: SeqAction[Option[String]] = SeqAction{
     val ar   = GcalEpics.instance.lampAr().filter(_ === BinaryOnOff.ON) *> "Ar".some
     val cuAr = GcalEpics.instance.lampCuAr().filter(_ === BinaryOnOff.ON) *> "CuAr".some
     val ir   = GcalEpics.instance.lampIr().map{
@@ -46,9 +46,9 @@ object GcalKeywordsReaderImpl extends GcalKeywordReader {
     ar.orElse(xe).orElse(cuAr).orElse(thAr).orElse(qh).orElse(ir)
   }
 
-  def getShutter: SeqAction[Option[String]] = GcalEpics.instance.shutter.map{
+  def getShutter: SeqAction[Option[String]] = SeqAction(GcalEpics.instance.shutter.map{
     case "OPEN"  => "OPEN"
     case "CLOSE" => "CLOSED"
     case _       => "INDEF"
-  }
+  })
 }
