@@ -48,6 +48,10 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
   }
 
+  object endObserveCmd extends EpicsCommand {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::endObserve"))
+  }
+
   object configCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::config"))
 

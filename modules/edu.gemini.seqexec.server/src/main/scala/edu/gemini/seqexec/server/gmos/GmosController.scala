@@ -30,6 +30,9 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result]
 
+  // endObserve is to notify the completion of the observation, not to cause its end.
+  def endObserve: SeqAction[Unit]
+
   def stopObserve: SeqAction[Unit]
 
   def abortObserve: SeqAction[Unit]

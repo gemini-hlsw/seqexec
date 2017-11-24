@@ -40,6 +40,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
   override def configure(config: Config): SeqAction[ConfigResult] =
     fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
 
+  override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
 }
 
 object Flamingos2 {

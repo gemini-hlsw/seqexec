@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Records xmlns="http://www.gemini.edu/CaSchema">
-    <Top name="tcs">tcs</Top>
     <Top name="gm">gm</Top>
-    <Top name="ag">ag</Top>
     <Apply name="gmos::apply">
         <top>gm</top>
         <apply>apply</apply>
@@ -243,32 +241,32 @@
             </parameter>
         </command>
         <command name="gmos::pause">
-            <record>dc:pause</record>
+            <record>pause</record>
             <description>Pause observation</description>
         </command>
         <command name="gmos::abort">
-            <record>dc:abort</record>
+            <record>abort</record>
             <description>Abort observation</description>
         </command>
         <command name="gmos::stop">
-            <record>dc:stop</record>
+            <record>stop</record>
             <description>Stop observation</description>
         </command>
     </Apply>
     <Apply name="gmos::observeapply">
         <top>gm</top>
-        <apply>dc:apply</apply>
+        <apply>apply</apply>
         <car>dc:observeC</car>
         <description>Observe Apply Record</description>
         <command name="gmos::continue">
-            <record>dc:continue</record>
+            <record>continue</record>
             <description>Continue observation</description>
         </command>
         <command name="gmos::observe">
-            <record>dc:observe</record>
+            <record>observe</record>
             <description>Observe</description>
             <parameter name="label">
-                <channel>dc:observe.A</channel>
+                <channel>observe.A</channel>
                 <type>STRING</type>
                 <description>DHS data label</description>
             </parameter>

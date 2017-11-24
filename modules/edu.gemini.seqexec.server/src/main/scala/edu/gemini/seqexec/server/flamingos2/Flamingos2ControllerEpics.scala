@@ -141,4 +141,11 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- Flamingos2Epics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 observation").right))
   } yield obsid
+
+  override def endObserve =  for {
+      _ <- EitherT(Task(Log.info("Send endObserve to Flamingos2").right))
+      _ <- Flamingos2Epics.instance.endObserveCmd.mark
+      _ <- Flamingos2Epics.instance.endObserveCmd.post
+    } yield ()
+
 }

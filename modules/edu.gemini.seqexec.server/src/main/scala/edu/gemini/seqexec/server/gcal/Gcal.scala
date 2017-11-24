@@ -30,6 +30,10 @@ final case class Gcal(controller: GcalController, isCP: Boolean) extends System 
     */
   override def configure(config: Config): SeqAction[ConfigResult] = ^(controller.getConfig, fromSequenceConfig(config, isCP))(diffConfiguration)
     .flatMap(controller.applyConfig).map(const(ConfigResult(this)))
+
+  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+
+  override def notifyObserveEnd: SeqAction[Unit] = SeqAction.void
 }
 
 object Gcal {
