@@ -43,7 +43,8 @@ object LogArea {
     val Zero: LogRow = apply("", "", "")
   }
   final case class Props(log: ModelProxy[GlobalLog]) {
-    def rowGetter(i: Int): LogRow = log().log.index(i).map { l =>
+    private val reverseLog = log().log.reverse
+    def rowGetter(i: Int): LogRow = reverseLog.index(i).map { l =>
       LogRow(l.timestamp.shows, l.level.shows, l.msg)
     }.getOrElse(LogRow.Zero)
   }

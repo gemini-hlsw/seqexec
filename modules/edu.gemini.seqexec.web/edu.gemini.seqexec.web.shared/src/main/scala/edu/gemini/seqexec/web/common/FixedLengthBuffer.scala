@@ -31,6 +31,8 @@ object FixedLengthBuffer {
     def size: Int = data.size
 
     def isEmpty: Boolean = data.isEmpty
+
+    def reverse: FixedLengthBuffer[A] = FixedLengthBufferImpl(maxLength, data.reverse)
   }
 
   def apply[A](maxLength: Int, initial: A*): Option[FixedLengthBuffer[A]] = {
@@ -109,4 +111,6 @@ sealed trait FixedLengthBuffer[A] {
   def size: Int
 
   def isEmpty: Boolean
+
+  def reverse: FixedLengthBuffer[A]
 }
