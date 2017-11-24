@@ -3,36 +3,36 @@
 
 package edu.gemini.seqexec.web.client.components.sequence
 
-import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.semanticui._
-import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
-import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
-import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep, ShowStep}
-import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.ModelOps._
+import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, ShowStep}
+import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.semanticui._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import org.scalajs.dom.html.Div
 
 import scalacss.ScalaCssReact._
-import scalaz.syntax.show._
+import scalaz.std.AllInstances._
 import scalaz.syntax.equal._
+import scalaz.syntax.show._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
-import scalaz.std.AllInstances._
-import org.scalajs.dom.html.Div
+
 
 /**
   * Container for a table with the steps
   */
-object StepsTableContainer {
+object StepsTableContainer extends OffsetFns {
   final case class State(nextScrollPos  : Double,
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
@@ -40,6 +40,10 @@ object StepsTableContainer {
   final case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
     def steps: Option[StepsTableFocus] = stepsTable()._2
+    val offsetsWidth: Int = {
+      val (p, q) = sequenceOffsetWidths(~steps.map(_.steps))
+      scala.math.max(p, q)
+    }
   }
 
   class Backend($: BackendScope[Props, State]) {
@@ -222,7 +226,17 @@ object StepsTableContainer {
         )
       )
 
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step) =
+    private def stepIcon(p: StepsTableFocus, step: Step, i: Int): VdomNode =
+      step.status match {
+        case StepState.Completed                  => IconCheckmark
+        case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
+        case StepState.Error(_)                   => IconAttention
+        case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
+        case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+        case _                                    => iconEmpty
+      }
+
+    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetWidth: Int) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -237,14 +251,7 @@ object StepsTableContainer {
         SeqexecStyles.stepRunning.when(step.status === StepState.Running),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
-          step.status match {
-            case StepState.Completed                  => IconCheckmark
-            case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
-            case StepState.Error(_)                   => IconAttention
-            case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
-            case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-            case _                                    => iconEmpty
-          }
+          stepIcon(p, step, i)
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
@@ -258,7 +265,8 @@ object StepsTableContainer {
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "right aligned",
-          StepSettings(StepSettings.Props(step))
+          SeqexecStyles.tdNoUpDownPadding,
+          StepSettings(StepSettings.Props(step, offsetWidth))
         ),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
@@ -274,7 +282,7 @@ object StepsTableContainer {
         )
       )
 
-    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State): TagMod =
+    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetWidth: Int): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
@@ -295,7 +303,7 @@ object StepsTableContainer {
             case (step, i) =>
               List(
                 gutterCol(p.id, i, step, s),
-                stepCols(status, p, i, p.state, step)
+                stepCols(status, p, i, p.state, step, offsetWidth)
               )
           }.toTagMod
         )
@@ -311,7 +319,7 @@ object StepsTableContainer {
             val step = tab.steps(i)
             configTable(step)
           }.getOrElse {
-            stepsTable(p.status, tab, s)
+            stepsTable(p.status, tab, s, p.offsetsWidth)
           }
         }
       )
@@ -405,29 +413,3 @@ object StepsTableContainer {
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
 
-/**
- * Component to display the settings of a given step
- */
-object StepSettings {
-
-  final case class Props(s: Step)
-  private val component = ScalaComponent.builder[Props]("StepSettings")
-    .stateless
-    .render_P { p =>
-      val stepTypeLabel = stepTypeO.getOption(p.s).map { st =>
-        val stepTypeColor = st match {
-          case StepType.Object      => "green"
-          case StepType.Arc         => "violet"
-          case StepType.Flat        => "grey"
-          case StepType.Bias        => "teal"
-          case StepType.Dark        => "black"
-          case StepType.Calibration => "blue"
-        }
-        Label(Label.Props(st.shows, color = stepTypeColor.some, basic = false))
-      }
-      <.div(stepTypeLabel.whenDefined)
-    }
-    .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
-}
