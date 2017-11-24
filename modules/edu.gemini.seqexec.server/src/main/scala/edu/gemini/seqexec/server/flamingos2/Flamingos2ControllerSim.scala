@@ -28,6 +28,11 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
     Log.info(s"Applying Flamingos-2 configuration $config")
     TrySeq(())
   } )
+
+  override def endObserve = EitherT( Task {
+    Log.info("Sending endObserve to Flamingos-2")
+    TrySeq(())
+  } )
 }
 
 object Flamingos2ControllerSimBad extends Flamingos2Controller {
@@ -45,5 +50,10 @@ object Flamingos2ControllerSimBad extends Flamingos2Controller {
   override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( Task {
     Log.info(s"Applying Flamingos-2 configuration $config")
     TrySeq.fail(Execution("simulated error"))
+  } )
+
+  override def endObserve = EitherT( Task {
+    Log.info("Sending endObserve to Flamingos-2")
+    TrySeq(())
   } )
 }

@@ -44,7 +44,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     stopFlag.set(false)
     abortFlag.set(false)
     observeTic(obsid, false, false, 5000)
-  })
+  } )
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
     Log.debug(s"Simulate applying Gmos $name configuration ${config.shows}")
@@ -58,10 +58,15 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   } )
 
   override def abortObserve: SeqAction[Unit] = EitherT( Task {
-      Log.debug(s"Simulate aborting Gmos $name exposure")
-      abortFlag.set(true)
-      TrySeq(())
-    } )
+    Log.debug(s"Simulate aborting Gmos $name exposure")
+    abortFlag.set(true)
+    TrySeq(())
+  } )
+
+  override def endObserve: SeqAction[Unit] = EitherT( Task {
+    Log.debug("Simulate sending endObserve to Gmos")
+    TrySeq(())
+  } )
 }
 
 object GmosControllerSim {

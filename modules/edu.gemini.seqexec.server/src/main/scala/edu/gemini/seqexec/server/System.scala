@@ -14,9 +14,9 @@ trait System {
     */
   def configure(config: Config): SeqAction[ConfigResult]
 
-  def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+  def notifyObserveStart: SeqAction[Unit]
 
-  def notifyObserveEnd: SeqAction[Unit] = SeqAction.void
+  def notifyObserveEnd: SeqAction[Unit]
 }
 
 //Placeholder for config response

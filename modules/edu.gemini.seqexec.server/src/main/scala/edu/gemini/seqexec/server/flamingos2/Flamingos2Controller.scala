@@ -21,6 +21,8 @@ trait Flamingos2Controller {
   def applyConfig(config: Flamingos2Config): SeqAction[Unit]
 
   def observe(obsid: ImageFileId): SeqAction[ImageFileId]
+
+  def endObserve: SeqAction[Unit]
 }
 
 object Flamingos2Controller {

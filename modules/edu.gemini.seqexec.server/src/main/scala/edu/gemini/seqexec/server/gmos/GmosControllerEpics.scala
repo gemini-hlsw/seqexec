@@ -236,6 +236,11 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- GmosEpics.instance.abortCmd.post
   } yield ()
 
+  override def endObserve: SeqAction[Unit] = for {
+    _ <- EitherT(Task(Log.info("Send endObserve to Gmos").right))
+    _ <- GmosEpics.instance.endObserveCmd.mark
+    _ <- GmosEpics.instance.endObserveCmd.post
+  } yield ()
 }
 
 object GmosControllerEpics {

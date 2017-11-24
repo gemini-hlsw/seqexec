@@ -70,7 +70,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_ => ())
 
-    def notifyObserveEnd: SeqAction[Unit] = otherSys.map(_.notifyObserveEnd).sequenceU.map(_ => ())
+    // endObserve must be sent to the instrument too.
+    def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequenceU.map(_ => ())
 
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)

@@ -13,6 +13,8 @@ trait InstrumentSystem extends System {
   val dhsInstrumentName: String
   val observeControl: InstrumentSystem.ObserveControl
   def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result]
+
+  override def notifyObserveStart = SeqAction.void
 }
 
 object InstrumentSystem {
