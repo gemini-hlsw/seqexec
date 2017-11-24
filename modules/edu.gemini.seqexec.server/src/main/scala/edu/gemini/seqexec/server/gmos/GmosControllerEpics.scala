@@ -164,7 +164,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def setDisperser(d: GmosController.Config[T]#GmosDisperser): SeqAction[Unit] = {
-    val disperserMode = "Select Grating and Tilt"
+    // TODO: add support for Enum parameters in acm, and then define Enum type for disperserMode
+    val disperserMode = "WLEN"
     CC.setDisperser(encoders.disperser.encode(d.disperser)) *>
       CC.setDisperserMode(disperserMode) *>
       d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o))) *>
