@@ -1,10 +1,11 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package edu.gemini.seqexec.web.client.components.sequence
+package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, ShowStep}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
@@ -28,6 +29,53 @@ import scalaz.syntax.show._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 
+/**
+ * Component to wrap the progress bar
+ */
+object ObservationProgressBar {
+  private val component = ScalaComponent.builder[ImageFileId]("ObservationProgressBar")
+    .stateless
+    .render_P(fileId =>
+      <.div(
+        ^.cls := "ui small progress vcentered",
+        <.div(
+          ^.cls := "bar",
+          <.div(
+            ^.cls := "progress")
+        ),
+        <.div(
+          ^.cls := "label",
+          fileId
+        )
+      )
+    )
+    .build
+
+  def apply(p: ImageFileId): Unmounted[ImageFileId, Unit, Unit] = component(p)
+}
+
+/**
+ * Headers of the steps table
+ */
+object StepsTableHeader {
+  private val component = ScalaComponent.builder[Unit]("StepsTableHeader")
+    .stateless
+    .render_P(fileId =>
+      <.thead(
+        <.tr(
+          TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
+          TableHeader(TableHeader.Props(collapsing = true), "Step"),
+          TableHeader(TableHeader.Props(width = Width.Four), "State"),
+          TableHeader(TableHeader.Props(width = Width.Eight), "Settings"),
+          TableHeader(TableHeader.Props(width = Width.Four), "Progress"),
+          TableHeader(TableHeader.Props(collapsing = true), "Config")
+        )
+      )
+    )
+    .build
+
+  def apply(): Unmounted[Unit, Unit, Unit] = component()
+}
 
 /**
   * Container for a table with the steps
@@ -109,20 +157,7 @@ object StepsTableContainer extends OffsetFns {
         case (_, StepState.Pending) =>
           step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
         case (_, StepState.Running) =>
-          step.fileId.fold(<.div(stepSystemsStatus(step)))(fileId =>
-            <.div(
-              ^.cls := "ui small progress vcentered",
-              <.div(
-                ^.cls := "bar",
-                <.div(
-                  ^.cls := "progress")
-              ),
-              <.div(
-                ^.cls := "label",
-                fileId
-              )
-            )
-          )
+          step.fileId.fold(<.div(stepSystemsStatus(step)): VdomNode)(fileId => ObservationProgressBar(fileId): VdomNode)
         case (_, StepState.Completed) =>
           step.fileId.getOrElse(""): String
         case _ =>
@@ -131,26 +166,10 @@ object StepsTableContainer extends OffsetFns {
 
 
     def controlButtons(loggedIn: Boolean, p: StepsTableFocus, step: Step): VdomNode =
-      <.div(
-        ^.cls := "ui two column grid stackable",
-        <.div(
-          ^.cls := "ui row",
-          <.div(
-            ^.cls := "left column five wide left floated",
-            <.div(
-              ^.cls := "ui segment basic running",
-              step.shows
-            )
-          ),
-          <.div(
-            ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
-            SeqexecStyles.buttonsRow,
-            StepsControlButtons(p.id, p.instrument, p.state, step).when(step.isObserving)
-          ).when(loggedIn && p.state === SequenceState.Running)
-        )
-      )
+      StepsControlButtonsWrapper(StepsControlButtonsWrapper.Props(loggedIn, p, step))
 
-    def isPartiallyExecuted(p: StepsTableFocus): Boolean = p.steps.exists(_.status === StepState.Completed)
+    def isPartiallyExecuted(p: StepsTableFocus): Boolean =
+      p.steps.exists(_.status === StepState.Completed)
 
     def stepInError(loggedIn: Boolean, isPartiallyExecuted: Boolean, msg: String): VdomNode =
       <.div(
@@ -187,7 +206,7 @@ object StepsTableContainer extends OffsetFns {
       $.modState(_.copy(onHover = None))
 
     def markAsSkipped(id: SequenceId, step: Step): Callback =
-      $.props >>= {p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipSkipStep(id, step))) }
+      $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipSkipStep(id, step))) }
 
     def breakpointAt(id: SequenceId, step: Step): Callback =
       $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipBreakpointStep(id, step))) }
@@ -236,18 +255,20 @@ object StepsTableContainer extends OffsetFns {
         case _                                    => iconEmpty
       }
 
+    private def classSet(step: Step): List[(String, Boolean)] = List(
+      "positive" -> (step.status === StepState.Completed),
+      "warning"  -> (step.status === StepState.Running),
+      "negative" -> (step.status === StepState.Paused),
+      "negative" -> step.hasError,
+      "active"   -> (step.status === StepState.Skipped),
+      "disabled" -> step.skip
+    )
+
     private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetWidth: Int) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
-        ^.classSet(
-          "positive" -> (step.status === StepState.Completed),
-          "warning"  -> (step.status === StepState.Running),
-          "negative" -> (step.status === StepState.Paused),
-          "negative" -> step.hasError,
-          "active"   -> (step.status === StepState.Skipped),
-          "disabled" -> step.skip
-        ),
+        ^.classSet(classSet(step): _*),
         SeqexecStyles.stepRunning.when(step.status === StepState.Running),
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
@@ -287,16 +308,7 @@ object StepsTableContainer extends OffsetFns {
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         ^.onMouseLeave  --> mouseLeave,
-        <.thead(
-          <.tr(
-            TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
-            TableHeader(TableHeader.Props(collapsing = true), "Step"),
-            TableHeader(TableHeader.Props(width = Width.Four), "State"),
-            TableHeader(TableHeader.Props(width = Width.Eight), "Settings"),
-            TableHeader(TableHeader.Props(width = Width.Four), "Progress"),
-            TableHeader(TableHeader.Props(collapsing = true), "Config")
-          )
-        ),
+        StepsTableHeader(),
         <.tbody(
           SeqexecStyles.stepsListBody,
           p.steps.zipWithIndex.flatMap {
@@ -412,4 +424,3 @@ object StepsTableContainer extends OffsetFns {
 
   def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
-

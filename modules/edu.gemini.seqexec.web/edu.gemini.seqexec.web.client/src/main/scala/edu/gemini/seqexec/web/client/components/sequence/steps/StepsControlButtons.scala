@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package edu.gemini.seqexec.web.client.components.sequence
+package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -10,13 +10,49 @@ import japgolly.scalajs.react.ScalazReact._
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPause, IconPlay, IconStop, IconTrash}
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StepsTableFocus}
+import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.operations.ObservationOperations._
 import edu.gemini.seqexec.model.operations._
-import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
-import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 
 import scalaz.syntax.equal._
+import scalaz.syntax.show._
+import scalacss.ScalaCssReact._
+
+/**
+ * Component to wrap the steps control buttons
+ */
+object StepsControlButtonsWrapper {
+  final case class Props(loggedIn: Boolean, p: StepsTableFocus, step: Step)
+  private val component = ScalaComponent.builder[Props]("StepsControlButtonsWrapper")
+    .stateless
+    .render_P(props =>
+      <.div(
+        ^.cls := "ui two column grid stackable",
+        <.div(
+          ^.cls := "ui row",
+          <.div(
+            ^.cls := "left column five wide left floated",
+            <.div(
+              ^.cls := "ui segment basic running",
+              props.step.shows
+            )
+          ),
+          <.div(
+            ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
+            SeqexecStyles.buttonsRow,
+            StepsControlButtons(props.p.id, props.p.instrument, props.p.state, props.step).when(props.step.isObserving)
+          ).when(props.loggedIn && props.p.state === SequenceState.Running)
+        )
+      )
+    )
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
 
 /**
  * Contains the control buttons like stop/abort at the row level
@@ -40,7 +76,7 @@ object StepsControlButtons {
     ST.retM(requestAbort(id, stepId)) >> ST.mod(_.copy(abortRequested = true, stopRequested = true)).liftCB
 
   private val component = ScalaComponent.builder[Props]("StepsControlButtons")
-    .initialState(State(false, false))
+    .initialState(State(stopRequested = false, abortRequested = false))
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui icon buttons",

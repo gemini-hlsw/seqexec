@@ -10,6 +10,7 @@ import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.components.sequence.steps.StepsTableContainer
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
