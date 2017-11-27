@@ -16,6 +16,8 @@ import gem.math._
 import java.time.LocalDate
 import org.scalatest._
 
+import scala.collection.immutable.TreeMap
+
 
 /** Trait for tests that check statement syntax and mappings. */
 trait Check extends FlatSpec with Matchers with IOChecker {
@@ -41,7 +43,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val programType      = ProgramType.C
     val dailyProgramId   = Program.Id.Daily(site, DailyProgramType.ENG, LocalDate.now())
     val scienceProgramId = Program.Id.Science(site, semester, programType, 0)
-    val observationId    = Observation.Id(programId, 0)
+    val observationId    = Observation.Id(programId, Observation.Index.unsafeFromInt(1))
     val datasetLabel     = Dataset.Label(observationId, 0)
     val dataset          = Dataset(datasetLabel, "", instant)
     val eventType        = EventType.Abort
@@ -51,8 +53,8 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val gcalShutter      = GcalShutter.Open
     val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
-    val observation      = Observation[StaticConfig, Nothing](observationId, "", StaticConfig.F2.Default, Nil)
-    val program          = Program(programId, "", Nil)
+    val observation      = Observation[StaticConfig, Nothing]("", StaticConfig.F2.Default, Nil)
+    val program          = Program(programId, "", TreeMap.empty)
     val f2SmartGcalKey   = DynamicConfig.F2.Default.key
     val gcalLampType     = GcalLampType.Arc
     val gcalBaselineType = GcalBaselineType.Day

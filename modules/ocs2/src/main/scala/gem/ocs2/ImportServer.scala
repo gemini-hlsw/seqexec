@@ -64,7 +64,7 @@ final class ImportServer(ocsHost: String) {
 
   def importObservation(obsIdStr: String): IO[Response[IO]] = {
     val checkId = Observation.Id.fromString(obsIdStr) toRight badRequest(obsIdStr, "observation")
-    checkId.as { fetchDecodeAndStore[Obs](obsIdStr, Importer.importObservation) }.merge
+    checkId.map { oid => fetchDecodeAndStore[Obs](obsIdStr, Importer.importObservation(oid, _, _)) }.merge
   }
 
   def importProgram(pidStr: String): IO[Response[IO]] = {

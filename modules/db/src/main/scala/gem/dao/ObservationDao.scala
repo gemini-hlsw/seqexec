@@ -11,6 +11,8 @@ import gem.dao.meta._
 import gem.enum.Instrument
 import gem.util.Location
 
+import scala.collection.immutable.TreeMap
+
 object ObservationDao {
   import EnumeratedMeta._
   import ObservationIdMeta._
@@ -20,12 +22,12 @@ object ObservationDao {
    * Construct a program to insert a fully-populated Observation. This program will raise a
    * key violation if an observation with the same id already exists.
    */
-  def insert(o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Unit] =
+  def insert(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Unit] =
     for {
       id <- StaticConfigDao.insert(o.staticConfig)
-      _  <- Statements.insert(o, id).run
+      _  <- Statements.insert(oid, o, id).run
       _  <- o.steps.zipWithIndex.traverse { case (s, i) =>
-              StepDao.insert(o.id, Location.unsafeMiddle((i + 1) * 100), s)
+              StepDao.insert(oid, Location.unsafeMiddle((i + 1) * 100), s)
             }.void
     } yield ()
 
@@ -56,40 +58,37 @@ object ObservationDao {
    * Construct a program to select all observations for the specified science program, with the
    * instrument and no steps.
    */
-  def selectAllFlat(pid: Program.Id): ConnectionIO[List[Observation[Instrument, Nothing]]] =
-    Statements.selectAllFlat(pid).list.map(_.map(_._1))
+  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Instrument, Nothing]]] =
+    Statements.selectAllFlat(pid).list.map(lst => TreeMap(lst.map { case (i,o,_) => (i,o) }: _*))
 
   /**
    * Construct a program to select all observations for the specified science program, with the
    * static component and no steps.
    */
-  def selectAllStatic(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Nothing]]] =
+  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[StaticConfig, Nothing]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
-    } yield oss
+    } yield TreeMap(ids.map(_.index).zip(oss): _*)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
    * static component and steps.
    */
-  def selectAll(pid: Program.Id): ConnectionIO[List[Observation[StaticConfig, Step[DynamicConfig]]]] =
+  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(select)
-    } yield oss
+    } yield TreeMap(ids.map(_.index).zip(oss): _*)
 
   object Statements {
 
-    // ObservationIndex has a DISTINCT type due to its check constraint so we need a fine-grained mapping
-    // here to satisfy the query checker.
-    private final case class ObservationIndex(toInt: Int)
-    private object ObservationIndex {
-      implicit val ObservationIndexMeta: Meta[ObservationIndex] =
-        Distinct.integer("id_index").xmap(ObservationIndex(_), _.toInt)
-    }
+    // Observation.Index has a DISTINCT type due to its check constraint so we
+    // need a fine-grained mapping here to satisfy the query checker.
+    implicit val ObservationIndexMeta: Meta[Observation.Index] =
+    Distinct.integer("id_index").xmap(Observation.Index.unsafeFromInt, _.toInt)
 
-    def insert(o: Observation[StaticConfig, _], staticId: Int): Update0 =
+    def insert(oid: Observation.Id, o: Observation[StaticConfig, _], staticId: Int): Update0 =
       sql"""
         INSERT INTO observation (observation_id,
                                 program_id,
@@ -97,12 +96,12 @@ object ObservationDao {
                                 title,
                                 static_id,
                                 instrument)
-              VALUES (${o.id},
-                      ${o.id.pid},
-                      ${ObservationIndex(o.id.index)},
+              VALUES (${oid},
+                      ${oid.pid},
+                      ${oid.index},
                       ${o.title},
                       $staticId,
-                      ${o.staticConfig.instrument : Instrument})
+                      ${o.staticConfig.instrument: Instrument})
       """.update
 
     def selectIds(pid: Program.Id): Query0[Observation.Id] =
@@ -125,20 +124,18 @@ object ObservationDao {
           FROM observation
          WHERE observation_id = ${id}
       """.query[(String, Instrument, Int)]
-         .map { case (t, i, s) =>
-           (Observation(id, t, i, Nil), s)
-         }
+        .map { case (t, i, s) => (Observation(t, i, Nil), s) }
 
-    def selectAllFlat(pid: Program.Id): Query0[(Observation[Instrument, Nothing], Int)] =
+    def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Instrument, Nothing], Int)] =
       sql"""
         SELECT observation_index, title, instrument, static_id
           FROM observation
          WHERE program_id = ${pid}
       ORDER BY observation_index
       """.query[(Short, String, Instrument, Int)]
-         .map { case (n, t, i, s) =>
-           (Observation(Observation.Id(pid, n.toInt), t, i, Nil), s)
-         }
+        .map { case (n, t, i, s) =>
+          (Observation.Index.unsafeFromInt(n.toInt), Observation(t, i, Nil), s)
+        }
 
   }
 }

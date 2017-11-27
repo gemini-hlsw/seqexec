@@ -10,6 +10,7 @@ lazy val http4sVersion       = "0.18.0-M5"
 lazy val jwtVersion          = "0.14.1"
 lazy val kpVersion           = "0.9.4"
 lazy val monocleVersion      = "1.5.0-cats-M2"
+lazy val mouseVersion        = "0.12"
 lazy val paradiseVersion     = "2.1.1"
 lazy val scalaCheckVersion   = "1.13.5"
 lazy val scalaParsersVersion = "1.0.6"
@@ -200,6 +201,7 @@ lazy val core = crossProject
       "org.typelevel"              %%% "cats-core"      % catsVersion,
       "org.typelevel"              %%% "cats-effect"    % catsEffectVersion,
       "org.typelevel"              %%% "cats-testkit"   % catsVersion % "test",
+      "org.typelevel"              %%% "mouse"          % mouseVersion,
       "com.chuusai"                %%% "shapeless"      % shapelessVersion,
       "org.tpolecat"               %%% "atto-core"      % attoVersion,
       "com.github.julien-truffaut" %%% "monocle-core"   % monocleVersion,
