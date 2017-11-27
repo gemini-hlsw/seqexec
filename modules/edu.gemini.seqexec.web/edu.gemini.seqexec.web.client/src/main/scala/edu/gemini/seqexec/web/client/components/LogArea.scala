@@ -6,7 +6,9 @@ package edu.gemini.seqexec.web.client.components
 import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.ServerLogLevel
+import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.model.GlobalLog
+import edu.gemini.web.common.FixedLengthBuffer
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -27,25 +29,29 @@ object LogArea {
   // scalastyle:off
   trait LogRow extends js.Object {
     var timestamp: String
-    var level: String
+    var level: ServerLogLevel
     var msg: String
   }
   // scalastyle:on
   object LogRow {
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(timestamp: String, level: String, msg: String): LogRow = {
+    def apply(timestamp: String, level: ServerLogLevel, msg: String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
       p.timestamp = timestamp
       p.level = level
       p.msg = msg
       p
     }
-    val Zero: LogRow = apply("", "", "")
+
+    def unapply(l: LogRow): Option[(String, ServerLogLevel, String)] =
+      Some((l.timestamp, l.level, l.msg))
+
+    val Zero: LogRow = apply("", ServerLogLevel.INFO, "")
   }
   final case class Props(log: ModelProxy[GlobalLog]) {
-    private val reverseLog = log().log.reverse
+    val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
     def rowGetter(i: Int): LogRow = reverseLog.index(i).map { l =>
-      LogRow(l.timestamp.shows, l.level.shows, l.msg)
+      LogRow(l.timestamp.shows, l.level, l.msg)
     }.getOrElse(LogRow.Zero)
   }
 
@@ -61,6 +67,12 @@ object LogArea {
       Column(Column.props(size.width.toInt - 200 - 80, "msg", label = "Message", disableSort = true, flexGrow = 1))
     )
 
+    def rowClassName(i: Int): String = p.reverseLog.index(i).map {
+      case ServerLogMessage(ServerLogLevel.INFO, _, _)  => SeqexecStyles.infoLog
+      case ServerLogMessage(ServerLogLevel.WARN, _, _)  => SeqexecStyles.warningLog
+      case ServerLogMessage(ServerLogLevel.ERROR, _, _) => SeqexecStyles.errorLog
+    }.map(_.htmlClass).getOrElse(SeqexecStyles.logRow.htmlClass)
+
     Table(
       Table.props(
         disableHeader = false,
@@ -74,7 +86,7 @@ object LogArea {
         height = 300,
         rowCount = rowCount,
         rowHeight = 30,
-        rowClassName = SeqexecStyles.logRow.htmlClass,
+        rowClassName = rowClassName _,
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
         headerClassName = SeqexecStyles.logTableHeader.htmlClass,

@@ -395,10 +395,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderLeft.none
   )
 
-  val logRow: StyleA = style(
+  val logRowMixin: StyleS = mixin(
     leftBorderMixin,
     topBorderMixin,
     rightBorderMixin
+  )
+
+  val logRow: StyleA = style(
+    logRowMixin
   )
 
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
@@ -414,11 +418,26 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     logTablePaddingMixin,
     leftBorderMixin,
     minWidth(0.px),
-    backgroundColor.white,
-    color(rgba(0, 0, 0, 0.95)),
     fontSize.small,
     textOverflow := "ellipsis",
-    backgroundColor.white,
     whiteSpace.nowrap
+  )
+
+  val infoLog: StyleA = style(
+    logRowMixin,
+    backgroundColor.white,
+    color(rgba(0, 0, 0, 0.95))
+  )
+
+  val errorLog: StyleA = style(
+    logRowMixin,
+    backgroundColor(c"#fff6f6").important,
+    color(c"#9f3a38").important
+  )
+
+  val warningLog: StyleA = style(
+    logRowMixin,
+    backgroundColor(c"#fffaf3").important,
+    color(c"#573a08").important
   )
 }
