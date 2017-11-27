@@ -3,24 +3,23 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.ScalazReact._
-import edu.gemini.seqexec.web.client.semanticui._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPause, IconPlay, IconStop, IconTrash}
-import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
-import edu.gemini.seqexec.web.client.components.SeqexecStyles
-import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
-import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StepsTableFocus}
-import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.operations.ObservationOperations._
 import edu.gemini.seqexec.model.operations._
+import edu.gemini.seqexec.web.client.ModelOps._
+import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StepsTableFocus}
+import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPause, IconPlay, IconStop, IconTrash}
+import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 
+import scalacss.ScalaCssReact._
 import scalaz.syntax.equal._
 import scalaz.syntax.show._
-import scalacss.ScalaCssReact._
 
 /**
  * Component to wrap the steps control buttons

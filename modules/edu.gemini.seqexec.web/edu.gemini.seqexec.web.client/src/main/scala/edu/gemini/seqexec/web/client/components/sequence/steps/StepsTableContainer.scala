@@ -10,6 +10,7 @@ import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, ShowStep}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.lenses.stepTypeO
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -60,14 +61,15 @@ object ObservationProgressBar {
 object StepsTableHeader {
   private val component = ScalaComponent.builder[Unit]("StepsTableHeader")
     .stateless
-    .render_P(fileId =>
+    .render_P(_ =>
       <.thead(
         <.tr(
           TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
           TableHeader(TableHeader.Props(collapsing = true), "Step"),
           TableHeader(TableHeader.Props(width = Width.Four), "State"),
-          TableHeader(TableHeader.Props(width = Width.Eight), "Settings"),
-          TableHeader(TableHeader.Props(width = Width.Four), "Progress"),
+          TableHeader(TableHeader.Props(width = Width.Two), "Offset"),
+          TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
+          TableHeader(TableHeader.Props(width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
         )
       )
@@ -264,31 +266,54 @@ object StepsTableContainer extends OffsetFns {
       "disabled" -> step.skip
     )
 
+
+    private def stepTypeLabel(step: Step): Option[Unmounted[Label.Props, Unit, Unit]] =
+      stepTypeO.getOption(step).map { st =>
+        val stepTypeColor = st match {
+          case StepType.Object      => "green"
+          case StepType.Arc         => "violet"
+          case StepType.Flat        => "grey"
+          case StepType.Bias        => "teal"
+          case StepType.Dark        => "black"
+          case StepType.Calibration => "blue"
+        }
+        Label(Label.Props(st.shows, color = stepTypeColor.some))
+      }
+
     private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetWidth: Int) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
         ^.classSet(classSet(step): _*),
         SeqexecStyles.stepRunning.when(step.status === StepState.Running),
+        // Column step icon
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           stepIcon(p, step, i)
         ),
+        // Column step number
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           i + 1
         ),
+        // Column step status
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "middle aligned",
           stepDisplay(status, p, state, step)
         ),
+        // Column step offset
+        <.td(
+          ^.onDoubleClick --> selectRow(step, i),
+          OffsetBlock(OffsetBlock.Props(step, offsetWidth))
+        ),
+        // Column object type
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "right aligned",
-          SeqexecStyles.tdNoUpDownPadding,
-          StepSettings(StepSettings.Props(step, offsetWidth))
+          stepTypeLabel(step).whenDefined
         ),
+        // Column progress
         <.td(
           ^.onDoubleClick --> selectRow(step, i),
           ^.classSet(
@@ -297,6 +322,7 @@ object StepsTableContainer extends OffsetFns {
           ),
           stepProgress(state, step)
         ),
+        // Column link to details
         <.td(
           ^.cls := "collapsing right aligned",
           IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
