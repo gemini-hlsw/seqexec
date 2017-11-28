@@ -10,8 +10,9 @@ import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.slider.Slider
 import edu.gemini.seqexec.web.client.model.GlobalLog
 import edu.gemini.web.common.FixedLengthBuffer
-import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.virtualized._
 import java.time.Instant
@@ -24,7 +25,6 @@ import scalaz.syntax.show._
   * Area to display a sequence's log
   */
 object LogArea {
-  implicit val showLevel: Show[ServerLogLevel] = Show.showFromToString
   implicit val showInstant: Show[Instant] = Show.showFromToString
   // ScalaJS defined trait
   // scalastyle:off
@@ -55,6 +55,9 @@ object LogArea {
       LogRow(l.timestamp.shows, l.level, l.msg)
     }.getOrElse(LogRow.Zero)
   }
+  final case class State(infoSelected: Boolean)
+
+  private val ST = ReactS.Fix[State]
 
   /**
    * Build the table log
@@ -95,9 +98,12 @@ object LogArea {
       columns: _*).vdomElement
   }
 
+  private def updateState(level: ServerLogLevel)(value: Boolean) =
+    ST.set(State(value)).liftCB >> ST.retM(Callback.log(s"$level $value"))
+
   private val component = ScalaComponent.builder[Props]("LogArea")
-    .stateless
-    .render_P { p =>
+    .initialState(State(true))
+    .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui sixteen wide column",
         <.div(
@@ -108,16 +114,16 @@ object LogArea {
               ^.cls := "fields",
               <.div(
                 ^.cls := "inline field",
-                Slider(Slider.Props("INFO"))
+                Slider(Slider.Props("INFO", s.infoSelected, v => $.runState(updateState(ServerLogLevel.INFO)(v))))
               ),
-              <.div(
+              /*<.div(
                 ^.cls := "inline field",
                 Slider(Slider.Props("WARN"))
               ),
               <.div(
                 ^.cls := "inline field",
                 Slider(Slider.Props("ERROR"))
-              )
+              )*/
             ),
             <.div(
               ^.cls := "field",
@@ -129,5 +135,5 @@ object LogArea {
     }
     .build
 
-  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, State, Unit] = component(Props(p))
 }
