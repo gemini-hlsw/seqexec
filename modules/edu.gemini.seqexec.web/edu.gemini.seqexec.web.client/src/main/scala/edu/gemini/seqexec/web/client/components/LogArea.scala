@@ -7,6 +7,7 @@ import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.ServerLogLevel
 import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.web.client.semanticui.elements.slider.Slider
 import edu.gemini.seqexec.web.client.model.GlobalLog
 import edu.gemini.web.common.FixedLengthBuffer
 import japgolly.scalajs.react.ScalaComponent
@@ -103,6 +104,21 @@ object LogArea {
           ^.cls := "ui secondary segment",
           <.div(
             ^.cls := "ui form",
+            <.div(
+              ^.cls := "fields",
+              <.div(
+                ^.cls := "inline field",
+                Slider(Slider.Props("INFO"))
+              ),
+              <.div(
+                ^.cls := "inline field",
+                Slider(Slider.Props("WARN"))
+              ),
+              <.div(
+                ^.cls := "inline field",
+                Slider(Slider.Props("ERROR"))
+              )
+            ),
             <.div(
               ^.cls := "field",
               AutoSizer(AutoSizer.props(table(p), disableHeight = true))
