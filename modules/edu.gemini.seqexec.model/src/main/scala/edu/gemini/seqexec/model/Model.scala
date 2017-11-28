@@ -38,6 +38,8 @@ object Model {
     case object WARN extends ServerLogLevel
     case object ERROR extends ServerLogLevel
 
+    val all: List[ServerLogLevel] = List(INFO, WARN, ERROR)
+
     implicit val show: Show[ServerLogLevel] = Show.shows {
       case INFO  => "INFO"
       case WARN  => "WARNING"

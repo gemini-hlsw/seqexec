@@ -55,7 +55,14 @@ object LogArea {
       LogRow(l.timestamp.shows, l.level, l.msg)
     }.getOrElse(LogRow.Zero)
   }
-  final case class State(infoSelected: Boolean)
+
+  final case class State(selectedLevels: Map[ServerLogLevel, Boolean]) {
+    def updateLevel(level: ServerLogLevel, value: Boolean): State = copy(selectedLevels + (level -> value))
+  }
+
+  object State {
+    val Zero: State = State(ServerLogLevel.all.map(_ -> true).toMap)
+  }
 
   private val ST = ReactS.Fix[State]
 
@@ -99,10 +106,10 @@ object LogArea {
   }
 
   private def updateState(level: ServerLogLevel)(value: Boolean) =
-    ST.set(State(value)).liftCB >> ST.retM(Callback.log(s"$level $value"))
+    ST.mod(_.updateLevel(level, value)).liftCB
 
   private val component = ScalaComponent.builder[Props]("LogArea")
-    .initialState(State(true))
+    .initialState(State.Zero)
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui sixteen wide column",
@@ -111,19 +118,17 @@ object LogArea {
           <.div(
             ^.cls := "ui form",
             <.div(
-              ^.cls := "fields",
-              <.div(
-                ^.cls := "inline field",
-                Slider(Slider.Props("INFO", s.infoSelected, v => $.runState(updateState(ServerLogLevel.INFO)(v))))
-              ),
-              /*<.div(
-                ^.cls := "inline field",
-                Slider(Slider.Props("WARN"))
-              ),
-              <.div(
-                ^.cls := "inline field",
-                Slider(Slider.Props("ERROR"))
-              )*/
+              ^.cls := "right floated fields",
+              s.selectedLevels.map {
+                case (l, s) =>
+                <.div(
+                  ^.cls := "right floated inline field",
+                  Slider(Slider.Props(l.shows, s, v => $.runState(updateState(l)(v))))
+                )
+              }.mkTagMod(
+                <.div(
+                  ^.cls := "inline field")
+              )
             ),
             <.div(
               ^.cls := "field",

@@ -31,14 +31,14 @@ object Slider {
     ST.mod(_.flip).liftCB >> ST.get.liftCB.flatMap {v => ST.retM(c(v.checked))}
 
   private def component = ScalaComponent.builder[Props]("Slider")
-    .initialStateFromProps(p => {println(s"state $p");State(p.checked)})
+    .initialStateFromProps(p => State(p.checked))
     .renderPCS(($, p, c, s) =>
       <.div(
         ^.cls := "ui slider checkbox",
         (^.cls := "checked").when(s.checked),
         p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
-        ^.onClick --> $.runState(onChange(p.onChange)),
         <.input.checkbox(
+          ^.onChange --> $.runState(onChange(p.onChange)),
           ^.checked := s.checked
         ),
         <.label(p.label),
