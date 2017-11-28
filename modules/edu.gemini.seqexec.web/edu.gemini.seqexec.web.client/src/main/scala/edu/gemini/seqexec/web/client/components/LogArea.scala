@@ -6,7 +6,7 @@ package edu.gemini.seqexec.web.client.components
 import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.ServerLogLevel
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.slider.Slider
 import edu.gemini.seqexec.web.client.model.GlobalLog
 import edu.gemini.web.common.FixedLengthBuffer
@@ -52,7 +52,8 @@ object LogArea {
     val Zero: LogRow = apply("", ServerLogLevel.INFO, "")
   }
   final case class Props(log: ModelProxy[GlobalLog]) {
-    private val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
+    val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
+    // Filter according to the levels on the controls
     private def levelFilter(s: State)(m: ServerLogMessage): Boolean = s.allowedLevel(m.level)
     def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter(levelFilter(s) _).index(i).map { l =>
       LogRow(l.timestamp.shows, l.level, l.msg)
