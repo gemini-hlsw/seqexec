@@ -3,7 +3,7 @@
 
 package edu.gemini.web.common
 
-import scalaz.{Show, Equal, Foldable, IsEmpty, Functor}
+import scalaz.{Show, Equal, Foldable, IsEmpty, Functor, MonadPlus}
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.equal._
 import scalaz.std.AllInstances._
@@ -65,7 +65,7 @@ object FixedLengthBuffer {
    * @typeclass Foldable
    * Based on foldable implementation for Set
    */
-  implicit val foldable: Foldable[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] = new Foldable[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] with Foldable.FromFoldr[FixedLengthBuffer] {
+  implicit val foldable: Foldable[FixedLengthBuffer] with MonadPlus[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] = new Foldable[FixedLengthBuffer] with MonadPlus[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] with Foldable.FromFoldr[FixedLengthBuffer] {
     override def length[A](fa: FixedLengthBuffer[A]) = fa.size
     def empty[A] = Zero[A]
     def plus[A](a: FixedLengthBuffer[A], b: => FixedLengthBuffer[A]) = FixedLengthBufferImpl(a.maxLength + b.maxLength, a.toVector ++ b.toVector)
@@ -89,6 +89,11 @@ object FixedLengthBuffer {
       fa.toVector.forall(f)
     override def any[A](fa: FixedLengthBuffer[A])(f: A => Boolean) =
       fa.toVector.exists(f)
+    def point[A](a: => A): FixedLengthBuffer[A] = new FixedLengthBufferImpl(1, Vector(a))
+    def bind[A, B](fa: FixedLengthBuffer[A])(f: A => FixedLengthBuffer[B]) = fa.toVector match {
+      case y +: ys => plus(f(y), bind(new FixedLengthBufferImpl(fa.maxLength, ys))(f))
+      case _       => Zero[B]
+    }
   }
 
 }

@@ -20,6 +20,7 @@ import scalacss.ScalaCssReact._
 
 import scalaz.Show
 import scalaz.syntax.foldable._
+import scalaz.syntax.monadPlus.{^ => _, _}
 import scalaz.syntax.show._
 
 /**
@@ -51,14 +52,17 @@ object LogArea {
     val Zero: LogRow = apply("", ServerLogLevel.INFO, "")
   }
   final case class Props(log: ModelProxy[GlobalLog]) {
-    val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
-    def rowGetter(i: Int): LogRow = reverseLog.index(i).map { l =>
+    private val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
+    private def levelFilter(s: State)(m: ServerLogMessage): Boolean = s.allowedLevel(m.level)
+    def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter(levelFilter(s) _).index(i).map { l =>
       LogRow(l.timestamp.shows, l.level, l.msg)
     }.getOrElse(LogRow.Zero)
+    def rowCount(s: State): Int = reverseLog.filter(levelFilter(s) _).size
   }
 
   final case class State(selectedLevels: Map[ServerLogLevel, Boolean]) {
     def updateLevel(level: ServerLogLevel, value: Boolean): State = copy(selectedLevels + (level -> value))
+    def allowedLevel(level: ServerLogLevel): Boolean = selectedLevels.getOrElse(level, false)
   }
 
   object State {
@@ -70,20 +74,19 @@ object LogArea {
   /**
    * Build the table log
    */
-  def table(p: Props)(size: Size): VdomNode = {
-    val rowCount = p.log().log.size
-
+  def table(p: Props, s: State)(size: Size): VdomNode = {
     val columns = List(
       Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
       Column(Column.props(80, "level", label = "Level", disableSort = true)),
       Column(Column.props(size.width.toInt - 200 - 80, "msg", label = "Message", disableSort = true, flexGrow = 1))
     )
 
-    def rowClassName(i: Int): String = p.reverseLog.index(i).map {
-      case ServerLogMessage(ServerLogLevel.INFO, _, _)  => SeqexecStyles.infoLog
-      case ServerLogMessage(ServerLogLevel.WARN, _, _)  => SeqexecStyles.warningLog
-      case ServerLogMessage(ServerLogLevel.ERROR, _, _) => SeqexecStyles.errorLog
-    }.map(_.htmlClass).getOrElse(SeqexecStyles.logRow.htmlClass)
+    def rowClassName(s: State)(i: Int): String = (p.rowGetter(s)(i) match {
+      case LogRow(_, ServerLogLevel.INFO, _)  => SeqexecStyles.infoLog
+      case LogRow(_, ServerLogLevel.WARN, _)  => SeqexecStyles.warningLog
+      case LogRow(_, ServerLogLevel.ERROR, _) => SeqexecStyles.errorLog
+      case _                                  => SeqexecStyles.logRow
+    }).htmlClass
 
     Table(
       Table.props(
@@ -96,11 +99,11 @@ object LogArea {
           ),
         overscanRowCount = 10,
         height = 300,
-        rowCount = rowCount,
+        rowCount = p.rowCount(s),
         rowHeight = 30,
-        rowClassName = rowClassName _,
+        rowClassName = rowClassName(s) _,
         width = size.width.toInt,
-        rowGetter = p.rowGetter _,
+        rowGetter = p.rowGetter(s) _,
         headerClassName = SeqexecStyles.logTableHeader.htmlClass,
         headerHeight = 37),
       columns: _*).vdomElement
@@ -131,7 +134,7 @@ object LogArea {
             ),
             <.div(
               ^.cls := "field",
-              AutoSizer(AutoSizer.props(table(p), disableHeight = true))
+              AutoSizer(AutoSizer.props(table(p, s), disableHeight = true))
             )
           )
         )
