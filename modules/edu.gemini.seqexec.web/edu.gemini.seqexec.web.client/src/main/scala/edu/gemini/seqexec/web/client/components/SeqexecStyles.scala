@@ -440,4 +440,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     backgroundColor(c"#fffaf3").important,
     color(c"#573a08").important
   )
+
+  val selectorFields: StyleA = style(
+    float.right
+  )
 }

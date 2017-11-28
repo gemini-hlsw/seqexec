@@ -16,6 +16,7 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.virtualized._
 import java.time.Instant
+import scalacss.ScalaCssReact._
 
 import scalaz.Show
 import scalaz.syntax.foldable._
@@ -118,17 +119,15 @@ object LogArea {
           <.div(
             ^.cls := "ui form",
             <.div(
-              ^.cls := "right floated fields",
+              ^.cls := "fields",
+              SeqexecStyles.selectorFields,
               s.selectedLevels.map {
                 case (l, s) =>
                 <.div(
-                  ^.cls := "right floated inline field",
+                  ^.cls := "inline field",
                   Slider(Slider.Props(l.shows, s, v => $.runState(updateState(l)(v))))
                 )
-              }.mkTagMod(
-                <.div(
-                  ^.cls := "inline field")
-              )
+              }.toTagMod
             ),
             <.div(
               ^.cls := "field",
