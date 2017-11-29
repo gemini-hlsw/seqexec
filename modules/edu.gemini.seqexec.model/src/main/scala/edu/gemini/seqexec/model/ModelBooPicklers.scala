@@ -5,7 +5,8 @@ package edu.gemini.seqexec.model
 
 import boopickle.Default._
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.Model.SeqexecEvent._
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent._
 
 import java.time.Instant
 
@@ -58,7 +59,7 @@ trait ModelBooPicklers {
 
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
-  implicit val eventsPickler = compositePickler[Model.SeqexecEvent]
+  implicit val eventsPickler = compositePickler[SeqexecEvent]
     .addConcreteType[ConnectionOpenEvent]
     .addConcreteType[SequenceStart]
     .addConcreteType[StepExecuted]
@@ -110,7 +111,7 @@ trait ModelBooPicklers {
     * This method trims the binary array to be sent on the WS channel
     */
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  def trimmedArray(e: Model.SeqexecEvent): Array[Byte] = {
+  def trimmedArray(e: SeqexecEvent): Array[Byte] = {
     val byteBuffer = Pickle.intoBytes(e)
     val bytes = new Array[Byte](byteBuffer.limit())
     byteBuffer.get(bytes, 0, byteBuffer.limit)

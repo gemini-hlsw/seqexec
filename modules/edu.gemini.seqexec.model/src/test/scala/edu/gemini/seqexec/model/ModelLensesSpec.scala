@@ -45,4 +45,6 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
   checkAll("telescope q offset iso", IsoTests(telescopeOffsetQI))
   checkAll("telescope offset optional", OptionalTests(telescopeOffsetO(OffsetAxis.AxisP)))
   checkAll("step double prism", PrismTests(stringToDoubleP))
+  checkAll("param guiding prism", PrismTests(stringToGuidingP))
+  checkAll("telescope guiding traversal", TraversalTests(telescopeGuidingWithT))
 }

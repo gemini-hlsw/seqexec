@@ -7,7 +7,7 @@ import diode.RootModelR
 import diode.data.{Empty, Pot, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.web.common.FixedLengthBuffer
 import org.scalajs.dom.WebSocket
 

@@ -12,12 +12,13 @@ import diode.data.{Pending, Pot, Ready}
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.{ResourcesBusy, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}

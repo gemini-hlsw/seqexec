@@ -3,9 +3,11 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{Offset, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{Guiding, Offset, OffsetAxis, Step, TelescopeOffset}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
-import edu.gemini.seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO}
+import edu.gemini.seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
+import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react._
@@ -17,6 +19,7 @@ import org.scalajs.dom.html.Canvas
 import scalacss.ScalaCssReact._
 import scalaz.syntax.order._
 import scalaz.syntax.show._
+import scalaz.syntax.std.option._
 
 /**
   * Utility methods to display offsets and calculate their widths
@@ -162,3 +165,25 @@ object OffsetBlock extends OffsetFns {
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
+/**
+ * Component to display the Guiding state of the step
+ */
+object GuidingBlock extends OffsetFns {
+  final case class Props(s: Step, offsetWidth: Int)
+  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Big)
+  private val noGuidingIcon = IconBan.copyIcon(size = Size.Big)
+  private val component = ScalaComponent.builder[Props]("OffsetValues")
+    .stateless
+    .render_P { p =>
+      val guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(p.s)
+
+      <.div(
+        ^.cls := "center aligned",
+        guidingIcon.when(guiding),
+        noGuidingIcon.unless(guiding)
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}

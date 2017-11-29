@@ -6,8 +6,9 @@ package edu.gemini.seqexec.web.server.logging
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.Level
 import ch.qos.logback.core.AppenderBase
-import edu.gemini.seqexec.model.Model.{ServerLogLevel, SeqexecEvent}
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.Model.ServerLogLevel
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import scalaz.stream.async.mutable.Topic
 
 import scalaz._

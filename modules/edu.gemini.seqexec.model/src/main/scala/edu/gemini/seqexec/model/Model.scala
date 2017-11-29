@@ -6,9 +6,9 @@ package edu.gemini.seqexec.model
 import monocle.macros.Lenses
 import scalaz.{Equal, Show, Order, NonEmptyList}
 import scalaz.std.anyVal._
+import scalaz.std.option._
 import scalaz.syntax.show._
-import java.time.Instant
-import dhs.ImageFileId
+import scalaz.syntax.std.option._
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
 // scalastyle:off
@@ -37,64 +37,6 @@ object Model {
     case object INFO extends ServerLogLevel
     case object WARN extends ServerLogLevel
     case object ERROR extends ServerLogLevel
-  }
-
-  sealed trait SeqexecEvent
-  sealed trait SeqexecModelUpdate extends SeqexecEvent {
-    def view: SequencesQueue[SequenceView]
-  }
-
-  object SeqexecModelUpdate {
-    implicit val equal: Equal[SeqexecModelUpdate] = Equal.equalA
-  }
-  object SeqexecEvent {
-    final case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
-
-    final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    object SequenceStart {
-      implicit val equal: Equal[SequenceStart] = Equal.equalA
-    }
-
-    final case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class FileIdStepExecuted(fileId: ImageFileId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequenceCompleted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequenceLoaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequenceUnloaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class StepBreakpointChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class OperatorUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class ConditionsUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class StepSkipMarkChanged(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequencePauseRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequencePauseCanceled(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class ActionStopRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class ResourcesBusy(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    final case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
-
-    // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
-    // has to be embedded in a `Task`
-    final case class NewLogMessage(msg: String) extends SeqexecEvent
-    final case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String) extends SeqexecEvent
-    case object NullEvent extends SeqexecEvent
-
-    implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
 
   // The system name in ocs is a string but we can represent the important ones as an ADT
@@ -379,6 +321,30 @@ object Model {
     def Zero(axis: OffsetAxis): Offset = axis match {
       case OffsetAxis.AxisP => TelescopeOffset.P.Zero
       case OffsetAxis.AxisQ => TelescopeOffset.Q.Zero
+    }
+  }
+
+  sealed trait Guiding {
+    val configValue: String
+  }
+  object Guiding {
+    case object Guide extends Guiding {
+      val configValue: String = "guide"
+    }
+    case object Park extends Guiding {
+      val configValue: String = "park"
+    }
+    case object Freeze extends Guiding {
+      val configValue: String = "freeze"
+    }
+
+    implicit val equal: Equal[Guiding] = Equal.equalA
+
+    def fromString(s: String): Option[Guiding] = s match {
+      case "guide"  => Guiding.Guide.some
+      case "park"   => Guiding.Park.some
+      case "freeze" => Guiding.Freeze.some
+      case _        => none
     }
   }
 

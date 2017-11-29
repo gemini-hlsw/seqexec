@@ -7,8 +7,9 @@ import org.log4s._
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.{Conditions, SeqexecEvent, SequenceId, SequencesQueue}
-import edu.gemini.seqexec.model.Model.SeqexecEvent._
+import edu.gemini.seqexec.model.Model.{Conditions, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent._
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.common._
