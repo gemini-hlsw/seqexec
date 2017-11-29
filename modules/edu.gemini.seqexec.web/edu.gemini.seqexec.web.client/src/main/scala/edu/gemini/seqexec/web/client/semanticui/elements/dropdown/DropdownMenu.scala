@@ -59,7 +59,7 @@ object DropdownMenu {
         import org.querki.jquery.$
         import edu.gemini.web.client.facades.semanticui.SemanticUIDropDown._
 
-        $(ctx.getDOMNode).find(".ui.dropdown1").dropdown(
+        $(ctx.getDOMNode).find(".ui.dropdown").dropdown(
           JsDropdownOptions
             .onChange { (value: String, text: String) =>
               // The text comes wrapped on react tags
