@@ -10,8 +10,8 @@ import java.time.temporal.ChronoUnit
 
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.seqexec.engine.Event
-import edu.gemini.seqexec.model.Model.SeqexecEvent
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ConnectionOpenEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecEngine
 import org.http4s._

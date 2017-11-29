@@ -15,7 +15,8 @@ import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.Model.SeqexecEvent._
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent._
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import edu.gemini.seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import edu.gemini.seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}

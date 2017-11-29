@@ -9,7 +9,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}

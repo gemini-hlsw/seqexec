@@ -7,8 +7,9 @@ package edu.gemini.seqexec.web.client
 import diode.Action
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.model.Model.SeqexecEvent.ServerLogMessage
 import org.scalajs.dom.WebSocket
 
 object actions {
