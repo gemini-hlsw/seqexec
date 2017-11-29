@@ -3,7 +3,7 @@
 
 package edu.gemini.web.common
 
-import scalaz.{Show, Equal, Foldable, IsEmpty, Functor}
+import scalaz.{Show, Equal, Foldable, IsEmpty, Functor, MonadPlus}
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.equal._
 import scalaz.std.AllInstances._
@@ -33,6 +33,10 @@ object FixedLengthBuffer {
     def isEmpty: Boolean = data.isEmpty
 
     def reverse: FixedLengthBuffer[A] = FixedLengthBufferImpl(maxLength, data.reverse)
+
+    def flatMap[B](f: A => FixedLengthBuffer[B]): FixedLengthBuffer[B] =
+      FixedLengthBufferImpl(maxLength, this.toVector.flatMap(f(_).toVector))
+
   }
 
   def apply[A](maxLength: Int, initial: A*): Option[FixedLengthBuffer[A]] = {
@@ -65,14 +69,14 @@ object FixedLengthBuffer {
    * @typeclass Foldable
    * Based on foldable implementation for Set
    */
-  implicit val foldable: Foldable[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] = new Foldable[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] with Foldable.FromFoldr[FixedLengthBuffer] {
+  implicit val foldable: Foldable[FixedLengthBuffer] with MonadPlus[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] = new Foldable[FixedLengthBuffer] with MonadPlus[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] with Foldable.FromFoldr[FixedLengthBuffer] {
     override def length[A](fa: FixedLengthBuffer[A]) = fa.size
-    def empty[A] = Zero[A]
-    def plus[A](a: FixedLengthBuffer[A], b: => FixedLengthBuffer[A]) = FixedLengthBufferImpl(a.maxLength + b.maxLength, a.toVector ++ b.toVector)
-    def isEmpty[A](fa: FixedLengthBuffer[A]) = fa.isEmpty
+    override def empty[A] = Zero[A]
+    override def plus[A](a: FixedLengthBuffer[A], b: => FixedLengthBuffer[A]) = FixedLengthBufferImpl(Vector(a.maxLength, b.maxLength, a.size + b.size).max, a.toVector ++ b.toVector)
+    override def isEmpty[A](fa: FixedLengthBuffer[A]) = fa.isEmpty
 
     @SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.While"))
-    def foldRight[A, B](fa: FixedLengthBuffer[A], z: => B)(f: (A, => B) => B) = {
+    override def foldRight[A, B](fa: FixedLengthBuffer[A], z: => B)(f: (A, => B) => B) = {
       import scala.collection.mutable.ArrayStack
       // Faster using a mutable collection
       val s = new ArrayStack[A]
@@ -89,6 +93,9 @@ object FixedLengthBuffer {
       fa.toVector.forall(f)
     override def any[A](fa: FixedLengthBuffer[A])(f: A => Boolean) =
       fa.toVector.exists(f)
+    override def point[A](a: => A): FixedLengthBuffer[A] = new FixedLengthBufferImpl(1, Vector(a))
+    override def bind[A, B](fa: FixedLengthBuffer[A])(f: A => FixedLengthBuffer[B]) =
+      fa.flatMap(f)
   }
 
 }
@@ -127,4 +134,6 @@ sealed trait FixedLengthBuffer[A] {
    * Returns a buffer with the values reversed
    */
   def reverse: FixedLengthBuffer[A]
+
+  def flatMap[B](f: A => FixedLengthBuffer[B]): FixedLengthBuffer[B]
 }

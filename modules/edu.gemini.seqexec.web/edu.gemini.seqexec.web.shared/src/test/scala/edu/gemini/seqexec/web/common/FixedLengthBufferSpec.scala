@@ -54,4 +54,24 @@ class FixedLengthBufferSpec extends FlatSpec with Matchers with PropertyChecks w
         e.map(f map g) === e.map(f).map(g) shouldBe true
       }
     }
+    it should "support flatMap left identity" in {
+      forAll { (e: Int) =>
+        val f = (x: Int) => FixedLengthBuffer.unsafeFromInt[Int](10, x)
+        FixedLengthBuffer.unsafeFromInt(1, e).flatMap(f) === f(e)
+      }
+    }
+    it should "support flatMap right identity" in {
+      forAll { (e: Int) =>
+        val base = FixedLengthBuffer.unsafeFromInt(1, e)
+        base.flatMap(FixedLengthBuffer.unsafeFromInt(1, _)) === base
+      }
+    }
+    it should "support flatMap associativity" in {
+      forAll { (e: Int) =>
+        val f = (x: Int) => FixedLengthBuffer.unsafeFromInt[Int](10, x)
+        val g = (x: Int) => FixedLengthBuffer.unsafeFromInt[Int](10, x + 1)
+        val base = FixedLengthBuffer.unsafeFromInt(1, e)
+        base.flatMap(f).flatMap(g) === base.flatMap(x => f(x).flatMap(g))
+      }
+    }
 }

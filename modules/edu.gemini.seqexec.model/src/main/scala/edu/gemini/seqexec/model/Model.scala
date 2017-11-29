@@ -37,6 +37,14 @@ object Model {
     case object INFO extends ServerLogLevel
     case object WARN extends ServerLogLevel
     case object ERROR extends ServerLogLevel
+
+    val all: List[ServerLogLevel] = List(INFO, WARN, ERROR)
+
+    implicit val show: Show[ServerLogLevel] = Show.shows {
+      case INFO  => "INFO"
+      case WARN  => "WARNING"
+      case ERROR => "ERROR"
+    }
   }
 
   // The system name in ocs is a string but we can represent the important ones as an ADT

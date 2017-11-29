@@ -77,7 +77,7 @@ object Settings {
     val javaTimeJS              = "0.2.2"
     val javaLogJS               = "0.1.2"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.0.2"
+    val scalaJSReactVirtualized = "0.0.3"
 
     // Java libraries
     val scalaZ       = "7.2.16"
@@ -109,7 +109,7 @@ object Settings {
     val semanticUI       = "2.2.10"
     val ocsVersion       = "2018001.1.0"
     val uglifyJs         = "1.0.0-beta.3"
-    val reactVirtualized = "9.12.0"
+    val reactVirtualized = "9.13.0"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"
