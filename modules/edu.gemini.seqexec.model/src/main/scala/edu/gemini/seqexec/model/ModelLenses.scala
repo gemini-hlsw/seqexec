@@ -4,7 +4,8 @@
 package edu.gemini.seqexec.model
 
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.Model.SeqexecEvent._
+import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
+import edu.gemini.seqexec.model.events.SeqexecEvent._
 
 import monocle.{Lens, Optional, Prism, Traversal}
 import monocle.macros.{GenLens, GenPrism}
@@ -24,9 +25,6 @@ import scalaz.syntax.applicative._
 import scalaz.syntax.traverse._
 
 trait ModelLenses {
-  import Model._
-  import events.{SeqexecEvent, SeqexecModelUpdate}
-  import events.SeqexecEvent._
 
     // Some useful Monocle lenses
   val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
@@ -130,6 +128,7 @@ trait ModelLenses {
   private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] = Iso(TelescopeOffset.P.apply)(_.value)
   private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] = Iso(TelescopeOffset.Q.apply)(_.value)
   val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
+  val stringToGuidingP: Prism[String, Guiding] = Prism(Guiding.fromString)(_.configValue)
 
   val stepTypeO: Optional[Step, StepType] =
     standardStepP                                            ^|-> // which is a standard step
@@ -154,14 +153,13 @@ trait ModelLenses {
   val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
 
   // Lens to find guidingWith configurations
-  def telescopeGuidingWithT(x: OffsetAxis): Optional[Step, Double] =
+  val telescopeGuidingWithT: Traversal[Step, Guiding] =
     standardStepP                                                         ^|->  // which is a standard step
     stepConfigL                                                           ^|->  // configuration of the step
     systemConfigL(SystemName.telescope)                                   ^<-?  // Observe config
     some                                                                  ^|->> // some
     paramValuesWithPrefixT(SystemName.telescope.withParam("guidingWith")) ^<-?  // find the guiding with params
-    some                                                                  ^<-? // focus on the option
-    stringToDoubleP                                                // double value
+    stringToGuidingP                                                            // to guiding
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =

@@ -67,4 +67,5 @@ object SharedModelArbitraries {
   implicit val styArb = Arbitrary(Gen.oneOf(StepType.all))
   implicit val ofpArb = implicitly[Arbitrary[TelescopeOffset.P]]
   implicit val ofqArb = implicitly[Arbitrary[TelescopeOffset.Q]]
+  implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide))
 }

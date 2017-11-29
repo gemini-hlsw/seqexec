@@ -6,7 +6,9 @@ package edu.gemini.seqexec.model
 import monocle.macros.Lenses
 import scalaz.{Equal, Show, Order, NonEmptyList}
 import scalaz.std.anyVal._
+import scalaz.std.option._
 import scalaz.syntax.show._
+import scalaz.syntax.std.option._
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
 // scalastyle:off
@@ -319,6 +321,26 @@ object Model {
     def Zero(axis: OffsetAxis): Offset = axis match {
       case OffsetAxis.AxisP => TelescopeOffset.P.Zero
       case OffsetAxis.AxisQ => TelescopeOffset.Q.Zero
+    }
+  }
+
+  sealed trait Guiding {
+    val configValue: String
+  }
+  object Guiding {
+    case object Guide extends Guiding {
+      val configValue: String = "guide"
+    }
+    case object Park extends Guiding {
+      val configValue: String = "park"
+    }
+
+    implicit val equal: Equal[Guiding] = Equal.equalA
+
+    def fromString(s: String): Option[Guiding] = s match {
+      case "guide" => Guiding.Guide.some
+      case "park"  => Guiding.Park.some
+      case _       => none
     }
   }
 
