@@ -34,6 +34,8 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
     case Filter.SII_G0317               => ("SII_G0317", "open2-8")
     case Filter.OIII_G0318              => ("OIII_G0318", "open2-8")
     case Filter.OIIIC_G0319             => ("OIIIC_G0319", "open2-8")
+    case Filter.OVI_G0345               => ("OVI_G0345", "")
+    case Filter.OVIC_G0346              => ("OVIC_G0346", "")
     case Filter.HeII_G0320              => ("open1-6", "HeII_G0320")
     case Filter.HeIIC_G0321             => ("open1-6", "HeIIC_G0321")
     case Filter.HartmannA_G0313_r_G0303 => ("HartmannA_G0313", "r_G0303")
