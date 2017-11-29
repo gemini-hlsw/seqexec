@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.docker._
+
 lazy val circeVersion        = "0.9.0-M2"
 lazy val attoVersion         = "0.6.1-M7"
 lazy val catsEffectVersion   = "0.5"
@@ -356,11 +358,10 @@ lazy val ctl = project
   .settings (
     resolvers += Resolver.bintrayRepo("bkirwi", "maven"),
     libraryDependencies ++= Seq(
-      "org.typelevel"           %% "cats-core"   % catsVersion,
-      "org.typelevel"           %% "cats-free"   % catsVersion,
-      "org.typelevel"           %% "cats-effect" % catsEffectVersion,
-      "com.monovore"            %% "decline"     % declineVersion,
-      "com.github.benhutchison" %% "mouse"       % mouseVersion
+      "org.typelevel" %% "cats-core"   % catsVersion,
+      "org.typelevel" %% "cats-free"   % catsVersion,
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "com.monovore"  %% "decline"     % declineVersion
     ),
     TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
       s" gem.ctl.main deploy-test --verbose --host sbfocstest-lv1.cl.gemini.edu --deploy ${imageManifest.formatVersion}"
