@@ -334,13 +334,17 @@ object Model {
     case object Park extends Guiding {
       val configValue: String = "park"
     }
+    case object Freeze extends Guiding {
+      val configValue: String = "freeze"
+    }
 
     implicit val equal: Equal[Guiding] = Equal.equalA
 
     def fromString(s: String): Option[Guiding] = s match {
-      case "guide" => Guiding.Guide.some
-      case "park"  => Guiding.Park.some
-      case _       => none
+      case "guide"  => Guiding.Guide.some
+      case "park"   => Guiding.Park.some
+      case "freeze" => Guiding.Freeze.some
+      case _        => none
     }
   }
 

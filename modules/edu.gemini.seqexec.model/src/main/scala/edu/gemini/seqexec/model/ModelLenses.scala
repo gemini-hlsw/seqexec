@@ -154,12 +154,12 @@ trait ModelLenses {
 
   // Lens to find guidingWith configurations
   val telescopeGuidingWithT: Traversal[Step, Guiding] =
-    standardStepP                                                         ^|->  // which is a standard step
-    stepConfigL                                                           ^|->  // configuration of the step
-    systemConfigL(SystemName.telescope)                                   ^<-?  // Observe config
-    some                                                                  ^|->> // some
-    paramValuesWithPrefixT(SystemName.telescope.withParam("guidingWith")) ^<-?  // find the guiding with params
-    stringToGuidingP                                                            // to guiding
+    standardStepP                                                       ^|->  // which is a standard step
+    stepConfigL                                                         ^|->  // configuration of the step
+    systemConfigL(SystemName.telescope)                                 ^<-?  // Observe config
+    some                                                                ^|->> // some
+    paramValuesWithPrefixT(SystemName.telescope.withParam("guideWith")) ^<-?  // find the guiding with params
+    stringToGuidingP                                                          // to guiding
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =

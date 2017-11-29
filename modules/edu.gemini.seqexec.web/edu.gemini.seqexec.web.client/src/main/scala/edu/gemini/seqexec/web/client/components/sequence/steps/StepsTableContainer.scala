@@ -66,10 +66,11 @@ object StepsTableHeader {
         <.tr(
           TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
           TableHeader(TableHeader.Props(collapsing = true), "Step"),
-          TableHeader(TableHeader.Props(width = Width.Four), "State"),
+          TableHeader(TableHeader.Props(width = Width.Two), "State"),
           TableHeader(TableHeader.Props(width = Width.Two), "Offset"),
+          TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
-          TableHeader(TableHeader.Props(width = Width.Eight), "Progress"),
+          TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
         )
       )
@@ -286,35 +287,33 @@ object StepsTableContainer extends OffsetFns {
         ^.onMouseOver --> mouseEnter(i),
         ^.classSet(classSet(step): _*),
         SeqexecStyles.stepRunning.when(step.status === StepState.Running),
-        // Column step icon
-        <.td(
+        <.td( // Column step icon
           ^.onDoubleClick --> selectRow(step, i),
           stepIcon(p, step, i)
         ),
-        // Column step number
-        <.td(
+        <.td( // Column step number
           ^.onDoubleClick --> selectRow(step, i),
           i + 1
         ),
-        // Column step status
-        <.td(
+        <.td( // Column step status
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "middle aligned",
           stepDisplay(status, p, state, step)
         ),
-        // Column step offset
-        <.td(
+        <.td( // Column step offset
           ^.onDoubleClick --> selectRow(step, i),
           OffsetBlock(OffsetBlock.Props(step, offsetWidth))
         ),
-        // Column object type
-        <.td(
+        <.td( // Column step guiding
+          ^.onDoubleClick --> selectRow(step, i),
+          GuidingBlock(GuidingBlock.Props(step, offsetWidth))
+        ),
+        <.td( // Column object type
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "right aligned",
           stepTypeLabel(step).whenDefined
         ),
-        // Column progress
-        <.td(
+        <.td( // Column progress
           ^.onDoubleClick --> selectRow(step, i),
           ^.classSet(
             "top aligned"    -> step.isObserving,
@@ -322,8 +321,7 @@ object StepsTableContainer extends OffsetFns {
           ),
           stepProgress(state, step)
         ),
-        // Column link to details
-        <.td(
+        <.td( // Column link to details
           ^.cls := "collapsing right aligned",
           IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
         )
