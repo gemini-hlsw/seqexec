@@ -10,6 +10,7 @@ import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, ShowStep}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses.stepTypeO
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
@@ -59,31 +60,33 @@ object ObservationProgressBar {
  * Headers of the steps table
  */
 object StepsTableHeader {
-  private val component = ScalaComponent.builder[Unit]("StepsTableHeader")
+  private val component = ScalaComponent.builder[OffsetsDisplay]("StepsTableHeader")
     .stateless
-    .render_P(_ =>
+    .render_P { p =>
+      val displayOffsets = p === OffsetsDisplay.NoDisplay
+      val stateWidth = displayOffsets.fold(Width.Two, Width.Three)
       <.thead(
         <.tr(
           TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
           TableHeader(TableHeader.Props(collapsing = true), "Step"),
-          TableHeader(TableHeader.Props(width = Width.Two), "State"),
-          TableHeader(TableHeader.Props(width = Width.Two), "Offset"),
+          TableHeader(TableHeader.Props(width = stateWidth), "State"),
+          TableHeader(TableHeader.Props(width = Width.Three), "Offset").unless(displayOffsets),
           TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
           TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
         )
       )
-    )
+    }
     .build
 
-  def apply(): Unmounted[Unit, Unit, Unit] = component()
+  def apply(p: OffsetsDisplay): Unmounted[OffsetsDisplay, Unit, Unit] = component(p)
 }
 
 /**
   * Container for a table with the steps
   */
-object StepsTableContainer extends OffsetFns {
+object StepsTableContainer {
   final case class State(nextScrollPos  : Double,
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
@@ -91,10 +94,9 @@ object StepsTableContainer extends OffsetFns {
   final case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
     def steps: Option[StepsTableFocus] = stepsTable()._2
-    val offsetsWidth: Int = {
-      val (p, q) = sequenceOffsetWidths(~steps.map(_.steps))
-      scala.math.max(p, q)
-    }
+    private val stepsList: List[Step] = ~steps.map(_.steps)
+    // Find out if offsets should be displayed
+    val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
   }
 
   class Backend($: BackendScope[Props, State]) {
@@ -281,7 +283,7 @@ object StepsTableContainer extends OffsetFns {
         Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
 
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetWidth: Int) =
+    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -300,13 +302,17 @@ object StepsTableContainer extends OffsetFns {
           ^.cls := "middle aligned",
           stepDisplay(status, p, state, step)
         ),
-        <.td( // Column step offset
-          ^.onDoubleClick --> selectRow(step, i),
-          OffsetBlock(OffsetBlock.Props(step, offsetWidth))
-        ),
+        offsetsDisplay match {
+          case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
+            <.td( // Column step offset
+              ^.onDoubleClick --> selectRow(step, i),
+              OffsetBlock(OffsetBlock.Props(step, offsetWidth))
+            )
+          case _ => EmptyVdom
+        },
         <.td( // Column step guiding
           ^.onDoubleClick --> selectRow(step, i),
-          GuidingBlock(GuidingBlock.Props(step, offsetWidth))
+          GuidingBlock(GuidingBlock.Props(step))
         ),
         <.td( // Column object type
           ^.onDoubleClick --> selectRow(step, i),
@@ -327,19 +333,19 @@ object StepsTableContainer extends OffsetFns {
         )
       )
 
-    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetWidth: Int): TagMod =
+    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetsDisplay: OffsetsDisplay): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         ^.onMouseLeave  --> mouseLeave,
-        StepsTableHeader(),
+        StepsTableHeader(offsetsDisplay),
         <.tbody(
           SeqexecStyles.stepsListBody,
           p.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
                 gutterCol(p.id, i, step, s),
-                stepCols(status, p, i, p.state, step, offsetWidth)
+                stepCols(status, p, i, p.state, step, offsetsDisplay)
               )
           }.toTagMod
         )
@@ -355,7 +361,7 @@ object StepsTableContainer extends OffsetFns {
             val step = tab.steps(i)
             configTable(step)
           }.getOrElse {
-            stepsTable(p.status, tab, s, p.offsetsWidth)
+            stepsTable(p.status, tab, s, p.offsetsDisplay)
           }
         }
       )

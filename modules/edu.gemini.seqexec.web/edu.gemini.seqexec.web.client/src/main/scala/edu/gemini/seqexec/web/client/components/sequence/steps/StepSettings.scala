@@ -3,8 +3,9 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{Guiding, Offset, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{Guiding, OffsetAxis, Step, TelescopeOffset}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
@@ -18,40 +19,7 @@ import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.order._
-import scalaz.syntax.show._
 import scalaz.syntax.std.option._
-
-/**
-  * Utility methods to display offsets and calculate their widths
-  */
-trait OffsetFns {
-  def offsetAxis(axis: OffsetAxis): String =
-    f"${axis.shows}:"
-
-  def offsetValueFormat(off: Offset): String =
-    f" ${off.value}%003.2f″"
-
-  def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
-
-  def offsetText(axis: OffsetAxis)(step: Step): String =
-    offsetValueFormat(axis match {
-      case OffsetAxis.AxisP => telescopeOffsetPO.getOption(step).getOrElse(TelescopeOffset.P.Zero)
-      case OffsetAxis.AxisQ => telescopeOffsetQO.getOption(step).getOrElse(TelescopeOffset.Q.Zero)
-    })
-
-  private val offsetPText = offsetText(OffsetAxis.AxisP) _
-  private val offsetQText = offsetText(OffsetAxis.AxisQ) _
-
-  val pLabelWidth: Int = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
-  val qLabelWidth: Int = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
-
-  // Calculate the widest offset step
-  def sequenceOffsetWidths(steps: List[Step]): (Int, Int) = {
-    steps.map(s => (tableTextWidth(offsetPText(s)), tableTextWidth(offsetQText(s)))).foldLeft((0, 0)) {
-      case ((p1, q1), (p2, q2)) => (p1.max(p2), q1.max(q2))
-    }
-  }
-}
 
 /**
   * Component to draw a grid for the offsets using canvas
@@ -115,7 +83,7 @@ object OffsetGrid {
 /**
  * Component to display the offset grid and offset values
  */
-object OffsetBlock extends OffsetFns {
+object OffsetBlock {
   final case class Props(s: Step, offsetWidth: Int)
   private val component = ScalaComponent.builder[Props]("OffsetValues")
     .stateless
@@ -168,8 +136,8 @@ object OffsetBlock extends OffsetFns {
 /**
  * Component to display the Guiding state of the step
  */
-object GuidingBlock extends OffsetFns {
-  final case class Props(s: Step, offsetWidth: Int)
+object GuidingBlock {
+  final case class Props(s: Step)
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Big)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Big)
   private val component = ScalaComponent.builder[Props]("OffsetValues")
