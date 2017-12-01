@@ -135,6 +135,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "react" -> LibraryVersions.reactJS,
       "react-dom" -> LibraryVersions.reactJS,
       "react-virtualized" -> LibraryVersions.reactVirtualized,
+      "react-copy-to-clipboard" -> LibraryVersions.reactClipboard,
       "jquery" -> LibraryVersions.jQuery,
       "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
       "semantic-ui-modal" -> LibraryVersions.semanticUI,
@@ -162,7 +163,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       ScalaJSDom.value,
       JavaTimeJS.value,
       JavaLogJS.value,
-      ScalaJSReactVirtualized.value
+      ScalaJSReactVirtualized.value,
+      ScalaJSReactClipboard.value
     ) ++ ReactScalaJS.value ++ Diode.value,
     // Specify the scalajs-compiler to make it compatbile with TLS
     addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
