@@ -38,6 +38,8 @@ object EnumDef {
 
     implicit def caseOptionWavelengthNm[S <: Symbol] = at[(S, Option[Wavelength.Nm])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
     implicit def caseOptionWavelengthUm[S <: Symbol] = at[(S, Option[Wavelength.Um])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
+
+    implicit def caseMagnitudeSystem  [S <: Symbol] = at[(S, MagnitudeSystem)  ] { case (s, _) => s"  val ${s.name}: gem.enum.MagnitudeSystem"}
     // scalastyle:on method.type
   }
 
@@ -54,6 +56,7 @@ object EnumDef {
 
     implicit val caseWavelengthNm = at[Wavelength.Nm ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
     implicit val caseWavelengthUm = at[Wavelength.Um ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
+    implicit val caseMagnitudeSystem = at[MagnitudeSystem](a => s"gem.enum.MagnitudeSystem.${a.id}")
 
     implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
     implicit val caseOptionDegrees = at[Option[Degrees]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleDegrees(${aʹ.toDegrees}))"))
