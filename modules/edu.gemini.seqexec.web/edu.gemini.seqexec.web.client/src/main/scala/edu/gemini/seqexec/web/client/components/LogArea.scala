@@ -8,6 +8,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SeqexecSite, ServerLogLevel}
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.checkbox.Checkbox
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconCopy
 import edu.gemini.seqexec.web.client.model.GlobalLog
 import edu.gemini.web.common.FixedLengthBuffer
 import japgolly.scalajs.react._
@@ -15,6 +16,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.virtualized._
+import react.clipboard._
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scalacss.ScalaCssReact._
@@ -35,6 +37,7 @@ object LogArea {
     var timestamp: String // Store the timestamp formatted
     var level: ServerLogLevel
     var msg: String
+    var clip: String
   }
   // scalastyle:on
   object LogRow {
@@ -44,6 +47,7 @@ object LogArea {
       p.timestamp = timestamp
       p.level = level
       p.msg = msg
+      p.clip = ""
       p
     }
 
@@ -82,10 +86,18 @@ object LogArea {
    * Build the table log
    */
   def table(p: Props, s: State)(size: Size): VdomNode = {
+    val clipboardHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) => <.div(^.cls := "middle aligned", IconCopy)
+    val clipboardCellRenderer: CellRenderer[js.Object, js.Object, LogRow] = (_, _, _, row: LogRow, _) => {
+      // Simple csv export
+      // TODO use local tiems
+      val toCsv = s"${row.timestamp}, ${row.level}, ${row.msg}"
+      CopyToClipboard(CopyToClipboard.props(toCsv), <.div(^.cls := "middle aligned", IconCopy))}
+
     val columns = List(
       Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
       Column(Column.props(80, "level", label = "Level", disableSort = true)),
-      Column(Column.props(size.width.toInt - 200 - 80, "msg", label = "Message", disableSort = true, flexGrow = 1))
+      Column(Column.props(size.width.toInt - 200 - 80 - 30, "msg", label = "Message", disableSort = true)),
+      Column(Column.props(30, "clip", label = "", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
     )
 
     def rowClassName(s: State)(i: Int): String = (p.rowGetter(s)(i) match {
