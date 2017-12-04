@@ -19,7 +19,9 @@ import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.order._
+import scalaz.syntax.show._
 import scalaz.syntax.std.option._
+import scalaz.std.anyVal._
 
 /**
   * Component to draw a grid for the offsets using canvas
@@ -143,13 +145,17 @@ object ExposureTime {
       val exposureTime = observeExposureTimeO.getOption(p)
       val coadds = observeCoaddsO.getOption(p)
 
-      val displayedText: String = (coadds, exposureTime) match {
-        case (Some(c), Some(e)) => s"$c \u2A2F $e [s]"
-        case (None, Some(e)) => s"$e [s]"
-        case _ => ""
+      // TODO Find a better way to output math-style text
+      val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
+
+      val displayedText: TagMod = (coadds, exposureTime) match {
+        case (Some(c), Some(e)) => (List(<.span(^.display := "inline-block", s"${c.shows} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"$e")) ::: seconds).toTagMod
+        case (None, Some(e))    => ((s"$e": VdomNode) :: seconds).toTagMod
+        case _                  => EmptyVdom
       }
 
       <.div(
+        ^.cls := "center aligned",
         displayedText
       )
     }

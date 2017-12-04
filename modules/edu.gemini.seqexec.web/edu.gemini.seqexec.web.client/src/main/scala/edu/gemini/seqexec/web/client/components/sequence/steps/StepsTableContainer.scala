@@ -317,7 +317,6 @@ object StepsTableContainer {
         ),
         <.td( // Column exposure time
           ^.onDoubleClick --> selectRow(step, i),
-          ^.cls := "middle aligned",
           ExposureTime(step)
         ),
         <.td( // Column object type
