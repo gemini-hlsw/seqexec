@@ -129,6 +129,7 @@ trait ModelLenses {
   private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] = Iso(TelescopeOffset.Q.apply)(_.value)
   val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
   val stringToGuidingP: Prism[String, Guiding] = Prism(Guiding.fromString)(_.configValue)
+  val stringToIntP: Prism[String, Int] = Prism((x: String) => x.parseInt.toOption)(_.shows)
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
     standardStepP                            ^|-> // which is a standard step
@@ -145,6 +146,10 @@ trait ModelLenses {
   // Composite lens to find the observe exposure time
   val observeExposureTimeO: Optional[Step, Double] =
     stepObserveOptional(SystemName.observe, "exposureTime", stringToDoubleP)
+
+  // Composite lens to find the observe coadds
+  val observeCoaddsO: Optional[Step, Int] =
+    stepObserveOptional(SystemName.observe, "coadds", stringToIntP)
 
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
