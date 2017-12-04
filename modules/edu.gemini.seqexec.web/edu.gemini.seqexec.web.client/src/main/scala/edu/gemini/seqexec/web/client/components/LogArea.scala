@@ -7,7 +7,7 @@ import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.ServerLogLevel
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
-import edu.gemini.seqexec.web.client.semanticui.elements.slider.Slider
+import edu.gemini.seqexec.web.client.semanticui.elements.checkbox.Checkbox
 import edu.gemini.seqexec.web.client.model.GlobalLog
 import edu.gemini.web.common.FixedLengthBuffer
 import japgolly.scalajs.react._
@@ -129,7 +129,7 @@ object LogArea {
                 case (l, s) =>
                 <.div(
                   ^.cls := "inline field",
-                  Slider(Slider.Props(l.shows, s, v => $.runState(updateState(l)(v))))
+                  Checkbox(Checkbox.Props(l.shows, s, v => $.runState(updateState(l)(v))))
                 )
               }.toTagMod
             ),
