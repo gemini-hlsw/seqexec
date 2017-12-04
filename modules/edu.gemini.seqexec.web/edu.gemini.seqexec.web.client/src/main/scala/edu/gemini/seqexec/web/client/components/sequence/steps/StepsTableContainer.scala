@@ -72,6 +72,7 @@ object StepsTableHeader {
           TableHeader(TableHeader.Props(width = stateWidth), "State"),
           TableHeader(TableHeader.Props(width = Width.Three), "Offset").unless(displayOffsets),
           TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
+          TableHeader(TableHeader.Props(width = Width.One), "Exposure"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
           TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
@@ -313,6 +314,11 @@ object StepsTableContainer {
         <.td( // Column step guiding
           ^.onDoubleClick --> selectRow(step, i),
           GuidingBlock(GuidingBlock.Props(step))
+        ),
+        <.td( // Column exposure time
+          ^.onDoubleClick --> selectRow(step, i),
+          ^.cls := "middle aligned",
+          ExposureTime(step)
         ),
         <.td( // Column object type
           ^.onDoubleClick --> selectRow(step, i),

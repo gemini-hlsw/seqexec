@@ -6,7 +6,7 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 import edu.gemini.seqexec.model.Model.{Guiding, OffsetAxis, Step, TelescopeOffset}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-import edu.gemini.seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
+import edu.gemini.seqexec.web.client.lenses.{observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
@@ -131,6 +131,31 @@ object OffsetBlock {
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display the exposure time and coadds
+ */
+object ExposureTime {
+  private val component = ScalaComponent.builder[Step]("ExposureTime")
+    .stateless
+    .render_P { p =>
+      val exposureTime = observeExposureTimeO.getOption(p)
+      val coadds = observeCoaddsO.getOption(p)
+
+      val displayedText: String = (coadds, exposureTime) match {
+        case (Some(c), Some(e)) => s"$c \u2A2F $e [s]"
+        case (None, Some(e)) => s"$e [s]"
+        case _ => ""
+      }
+
+      <.div(
+        displayedText
+      )
+    }
+    .build
+
+  def apply(p: Step): Unmounted[Step, Unit, Unit] = component(p)
 }
 
 /**
