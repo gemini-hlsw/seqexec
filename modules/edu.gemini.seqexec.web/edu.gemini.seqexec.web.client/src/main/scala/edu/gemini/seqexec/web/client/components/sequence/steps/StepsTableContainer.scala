@@ -318,7 +318,7 @@ object StepsTableContainer {
         ),
         <.td( // Column exposure time
           ^.onDoubleClick --> selectRow(step, i),
-          ExposureTime(step)
+          ExposureTime(ExposureTime.Props(step, p.instrument))
         ),
         <.td( // Column object type
           ^.onDoubleClick --> selectRow(step, i),
