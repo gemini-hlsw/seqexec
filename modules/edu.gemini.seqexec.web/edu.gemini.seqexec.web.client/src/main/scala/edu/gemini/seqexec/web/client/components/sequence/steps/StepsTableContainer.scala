@@ -284,6 +284,7 @@ object StepsTableContainer {
         Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
 
+    // scalastyle:off
     private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
@@ -337,6 +338,7 @@ object StepsTableContainer {
           IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
         )
       )
+      // scalastyle:on
 
     def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetsDisplay: OffsetsDisplay): TagMod =
       <.table(
