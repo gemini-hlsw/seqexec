@@ -449,4 +449,12 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val selectorFields: StyleA = style(
     float.right
   )
+
+  val logIconHeader: StyleA = style(
+    margin(0.px, 0.px, 10.px, 0.px).important
+  )
+
+  val logIconRow: StyleA = style(
+    margin(0.px, 0.px, 13.px, 2.px).important
+  )
 }

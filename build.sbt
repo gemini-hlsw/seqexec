@@ -140,6 +140,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
       "semantic-ui-modal" -> LibraryVersions.semanticUI,
       "semantic-ui-progress" -> LibraryVersions.semanticUI,
+      "semantic-ui-popup" -> LibraryVersions.semanticUI,
       "semantic-ui-tab" -> LibraryVersions.semanticUI,
       "semantic-ui-visibility" -> LibraryVersions.semanticUI,
       "semantic-ui-transition" -> LibraryVersions.semanticUI,

@@ -28,6 +28,20 @@ import scalaz.syntax.show._
 /**
   * Area to display a sequence's log
   */
+object CopyLogToClipboard {
+  private val component = ScalaComponent.builder[String]("CopyLogToClipboard")
+    .stateless
+    .render_PS { (p, s) =>
+      // Callback
+      val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $s")
+      CopyToClipboard(CopyToClipboard.props(p, onCopy = onCopy), <.div(^.cls := "copydiv", IconCopy.copyIcon(link = true, extraStyles = List(SeqexecStyles.logIconRow))))
+    }.build
+
+  def apply(p: String): Unmounted[String, Unit, Unit] = component(p)
+}
+/**
+  * Area to display a sequence's log
+  */
 object LogArea {
   // Date time formatter
   private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
@@ -51,8 +65,8 @@ object LogArea {
       p
     }
 
-    def unapply(l: LogRow): Option[(String, ServerLogLevel, String)] =
-      Some((l.timestamp, l.level, l.msg))
+    def unapply(l: LogRow): Option[(String, ServerLogLevel, String, String)] =
+      Some((l.timestamp, l.level, l.msg, l.clip))
 
     val Zero: LogRow = apply("", ServerLogLevel.INFO, "")
   }
@@ -86,25 +100,30 @@ object LogArea {
    * Build the table log
    */
   def table(p: Props, s: State)(size: Size): VdomNode = {
-    val clipboardHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) => <.div(^.cls := "middle aligned", IconCopy)
+
+    // Custom renderers for the last column
+    val clipboardHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
+      IconCopy.copyIcon(extraStyles = List(SeqexecStyles.logIconHeader))
+
     val clipboardCellRenderer: CellRenderer[js.Object, js.Object, LogRow] = (_, _, _, row: LogRow, _) => {
       // Simple csv export
       // TODO use local tiems
       val toCsv = s"${row.timestamp}, ${row.level}, ${row.msg}"
-      CopyToClipboard(CopyToClipboard.props(toCsv), <.div(^.cls := "middle aligned", IconCopy))}
+      CopyLogToClipboard(toCsv)
+    }
 
     val columns = List(
       Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
       Column(Column.props(80, "level", label = "Level", disableSort = true)),
-      Column(Column.props(size.width.toInt - 200 - 80 - 30, "msg", label = "Message", disableSort = true)),
-      Column(Column.props(30, "clip", label = "", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
+      Column(Column.props(size.width.toInt - 200 - 80 - 37, "msg", label = "Message", disableSort = true)),
+      Column(Column.props(37, "clip", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
     )
 
     def rowClassName(s: State)(i: Int): String = (p.rowGetter(s)(i) match {
-      case LogRow(_, ServerLogLevel.INFO, _)  => SeqexecStyles.infoLog
-      case LogRow(_, ServerLogLevel.WARN, _)  => SeqexecStyles.warningLog
-      case LogRow(_, ServerLogLevel.ERROR, _) => SeqexecStyles.errorLog
-      case _                                  => SeqexecStyles.logRow
+      case LogRow(_, ServerLogLevel.INFO, _, _)  => SeqexecStyles.infoLog
+      case LogRow(_, ServerLogLevel.WARN, _, _)  => SeqexecStyles.warningLog
+      case LogRow(_, ServerLogLevel.ERROR, _, _) => SeqexecStyles.errorLog
+      case _                                     => SeqexecStyles.logRow
     }).htmlClass
 
     Table(

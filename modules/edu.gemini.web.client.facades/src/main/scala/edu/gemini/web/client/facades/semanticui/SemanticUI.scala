@@ -139,3 +139,35 @@ object SemanticUIProgress {
   }
 
 }
+
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+object SemanticUIPopup {
+
+  @js.native
+  @JSImport("semantic-ui-popup", JSImport.Namespace)
+  private object SemanticPopupModule extends js.Any
+
+  SemanticPopupModule
+
+  @js.native
+  trait JsPopupOptions extends js.Object
+
+  object JsPopupOptions extends JsPopupOptionBuilder(noOpts)
+
+  class JsPopupOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsPopupOptions, JsPopupOptionBuilder](new JsPopupOptionBuilder(_)) {
+    def on(v: String): JsPopupOptionBuilder = jsOpt("on", v)
+    def content(v: String): JsPopupOptionBuilder = jsOpt("content", v)
+  }
+
+  @js.native
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
+  trait SemanticPopup extends JQuery {
+    def popup(o: JsPopupOptions): this.type
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
+  implicit def jq2Semantic($: JQuery): SemanticPopup = {
+    $.asInstanceOf[SemanticPopup]
+  }
+
+}
