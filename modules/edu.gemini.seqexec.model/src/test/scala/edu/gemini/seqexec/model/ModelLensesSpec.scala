@@ -47,4 +47,5 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
   checkAll("step double prism", PrismTests(stringToDoubleP))
   checkAll("param guiding prism", PrismTests(stringToGuidingP))
   checkAll("telescope guiding traversal", TraversalTests(telescopeGuidingWithT))
+  checkAll("observe exposure time O", OptionalTests(observeExposureTimeO))
 }

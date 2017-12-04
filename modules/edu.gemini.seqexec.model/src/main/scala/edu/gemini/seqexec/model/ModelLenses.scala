@@ -130,24 +130,25 @@ trait ModelLenses {
   val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
   val stringToGuidingP: Prism[String, Guiding] = Prism(Guiding.fromString)(_.configValue)
 
+  def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
+    standardStepP                            ^|-> // which is a standard step
+    stepConfigL                              ^|-> // configuration of the step
+    systemConfigL(systemName)                ^<-? // Observe config
+    some                                     ^|-> // some
+    paramValueL(systemName.withParam(param)) ^<-? // find the target name
+    some                                     ^<-? // focus on the option
+    prism                                         // step type
+
   val stepTypeO: Optional[Step, StepType] =
-    standardStepP                                            ^|-> // which is a standard step
-    stepConfigL                                              ^|-> // configuration of the step
-    systemConfigL(SystemName.observe)                        ^<-? // Observe config
-    some                                                     ^|-> // some
-    paramValueL(SystemName.observe.withParam("observeType")) ^<-? // find the target name
-    some                                                     ^<-? // focus on the option
-    stringToStepTypeP                                             // step type
+    stepObserveOptional(SystemName.observe, "observeType", stringToStepTypeP)
+
+  // Composite lens to find the observe exposure time
+  val observeExposureTimeO: Optional[Step, Double] =
+    stepObserveOptional(SystemName.observe, "exposureTime", stringToDoubleP)
 
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
-    standardStepP                                             ^|-> // which is a standard step
-    stepConfigL                                               ^|-> // configuration of the step
-    systemConfigL(SystemName.telescope)                       ^<-? // Observe config
-    some                                                      ^|-> // some
-    paramValueL(SystemName.telescope.withParam(x.configItem)) ^<-? // find the offset
-    some                                                      ^<-? // focus on the option
-    stringToDoubleP                                                // double value
+    stepObserveOptional(SystemName.telescope, x.configItem, stringToDoubleP)
 
   val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(OffsetAxis.AxisP) ^<-> telescopeOffsetPI
   val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
