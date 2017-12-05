@@ -22,6 +22,7 @@ import scalaz.syntax.order._
 import scalaz.syntax.show._
 import scalaz.syntax.std.option._
 import scalaz.std.anyVal._
+import scalaz.std.string._
 
 /**
   * Component to draw a grid for the offsets using canvas
@@ -146,13 +147,7 @@ object ExposureTime {
     .render_P { p =>
       def formatExposureTime(e: Double): String = p.i match {
         case Instrument.GmosN | Instrument.GmosS                => f"$e%.0f"
-        case Instrument.F2 | Instrument.GNIRS | Instrument.NIFS => f"$e%.1f"
         case _                                                  => f"$e%.2f"
-      }
-
-      def supportCoadds: Boolean = p.i match {
-        case Instrument.GmosN | Instrument.GmosS | Instrument.F2 => false
-        case _                                                   => true
       }
 
       val exposureTime = observeExposureTimeO.getOption(p.s)
@@ -162,10 +157,9 @@ object ExposureTime {
       val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (_, Some(e)) if !supportCoadds => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
-        case (None, Some(e))                => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
-        case (Some(c), Some(e))             => (List(<.span(^.display := "inline-block", s"${c.shows} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
-        case _                              => EmptyVdom
+        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
+        case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
+        case _                               => EmptyVdom
       }
 
       <.div(
