@@ -140,24 +140,31 @@ object OffsetBlock {
  */
 object ExposureTime {
   final case class Props(s: Step, i: Instrument)
+
   private val component = ScalaComponent.builder[Props]("ExposureTime")
     .stateless
     .render_P { p =>
-      val exposureTime = observeExposureTimeO.getOption(p.s)
-      val coadds = observeCoaddsO.getOption(p.s)
-
       def formatExposureTime(e: Double): String = p.i match {
         case Instrument.GmosN | Instrument.GmosS => f"$e%.0f"
         case Instrument.F2                       => f"$e%.1f"
         case _                                   => f"$e%.1f"
       }
 
+      def supportCoadds: Boolean = p.i match {
+        case Instrument.GmosN | Instrument.GmosS | Instrument.F2 => false
+        case _                                                   => true
+      }
+
+      val exposureTime = observeExposureTimeO.getOption(p.s)
+      val coadds = observeCoaddsO.getOption(p.s)
+
       // TODO Find a better way to output math-style text
       val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (Some(c), Some(e)) => (List(<.span(^.display := "inline-block", s"${c.shows} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
-        case (None, Some(e))    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
+        case (_, Some(e)) if !supportCoadds => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
+        case (None, Some(e))                => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
+        case (Some(c), Some(e))             => (List(<.span(^.display := "inline-block", s"${c.shows} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
         case _                  => EmptyVdom
       }
 
