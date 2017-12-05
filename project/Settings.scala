@@ -74,7 +74,7 @@ object Settings {
     val scalaCSS                = "0.5.4"
     val booPickle               = "1.2.6"
     val diode                   = "1.1.3"
-    val javaTimeJS              = "0.2.2"
+    val javaTimeJS              = "2.0.0-M12"
     val javaLogJS               = "0.1.2"
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.0.3"
@@ -152,7 +152,7 @@ object Settings {
 
     val Squants     = Def.setting("org.typelevel" %%% "squants"              % LibraryVersions.squants)
     val BooPickle   = Def.setting("io.suzaku"     %%% "boopickle"            % LibraryVersions.booPickle)
-    val JavaTimeJS  = Def.setting("org.scala-js"  %%% "scalajs-java-time"    % LibraryVersions.javaTimeJS)
+    val JavaTimeJS  = Def.setting("io.github.cquiroz"  %%% "scala-java-time"    % LibraryVersions.javaTimeJS)
     val JavaLogJS   = Def.setting("org.scala-js"  %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
