@@ -13,6 +13,7 @@ import org.scalajs.dom.document
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import java.util.logging.{Level, Logger}
+import java.time.ZoneId
 
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.OnUnmount
@@ -26,10 +27,9 @@ import japgolly.scalajs.react.extra.router.Resolution
 object SeqexecApp {
   private val defaultFmt = "[%4$s] %1s - %5$s"
 
-
-  // On JS args is always empty
   @JSExport
   def start(site: String): Unmounted[Unit, Resolution[Pages.SeqexecPages], OnUnmount.Backend]#Mounted = {
+    // TODO: Initialize on an effect
     // Set the global formatting for log messages
     System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
     // Using the root logger setup the handlers
@@ -47,9 +47,8 @@ object SeqexecApp {
 
     // Not to happy about this but the alternatives are complicated
     val seqexecSite = site match {
-      case "GN" => SeqexecSite.SeqexecGN
-      case "GS" => SeqexecSite.SeqexecGS
-      case _    => SeqexecSite.SeqexecGS // Default to something reasonable
+      case "GN" => SeqexecSite.SeqexecGN(ZoneId.of("Pacific/Honolulu"))
+      case _    => SeqexecSite.SeqexecGS(ZoneId.of("America/Santiago"))
     }
 
     // Set the instruments before adding it to the dom

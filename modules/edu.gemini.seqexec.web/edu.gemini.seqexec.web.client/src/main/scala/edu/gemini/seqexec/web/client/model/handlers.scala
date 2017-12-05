@@ -230,7 +230,7 @@ object handlers {
   /**
     * Handles actions related to the changing the selection of the displayed sequence
     */
-  class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences, SeqexecSite)]) extends ActionHandler(modelRW) with Handlers {
+  class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences, Option[SeqexecSite])]) extends ActionHandler(modelRW) with Handlers {
     def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
       case SelectInstrumentToDisplay(i) =>
         updated(value.copy(_1 = value._1.focusOnInstrument(i)))
@@ -242,7 +242,7 @@ object handlers {
 
     def handleInitialize: PartialFunction[Any, ActionResult[M]] = {
       case Initialize(site) =>
-        updated(value.copy(_1 = value._1.withSite(site), _3 = site))
+        updated(value.copy(_1 = value._1.withSite(site), _3 = Some(site)))
     }
 
     def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
@@ -461,7 +461,7 @@ object handlers {
     // but we don't know how to display them, so let's filter them out
     private def filterSequences(sequences: LoadedSequences): LoadedSequences =
       sequences.copy(queue = sequences.queue.filter {
-        case SequenceView(_, metadata, _, _, _) => value.site.instruments.list.toList.contains(metadata.instrument)
+        case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.list.toList.contains(metadata.instrument)).getOrElse(false)
       })
 
     val logMessage: PartialFunction[Any, ActionResult[M]] = {

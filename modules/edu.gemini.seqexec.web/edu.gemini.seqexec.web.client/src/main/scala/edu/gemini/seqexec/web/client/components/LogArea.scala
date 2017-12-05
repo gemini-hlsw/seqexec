@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components
 
 import scala.scalajs.js
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.ServerLogLevel
+import edu.gemini.seqexec.model.Model.{SeqexecSite, ServerLogLevel}
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.checkbox.Checkbox
 import edu.gemini.seqexec.web.client.model.GlobalLog
@@ -15,10 +15,10 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.virtualized._
-import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import scalacss.ScalaCssReact._
 
-import scalaz.Show
 import scalaz.syntax.foldable._
 import scalaz.syntax.monadPlus.{^ => _, _}
 import scalaz.syntax.show._
@@ -27,11 +27,12 @@ import scalaz.syntax.show._
   * Area to display a sequence's log
   */
 object LogArea {
-  implicit val showInstant: Show[Instant] = Show.showFromToString
+  // Date time formatter
+  private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
   // ScalaJS defined trait
   // scalastyle:off
   trait LogRow extends js.Object {
-    var timestamp: String
+    var timestamp: String // Store the timestamp formatted
     var level: ServerLogLevel
     var msg: String
   }
@@ -51,13 +52,18 @@ object LogArea {
 
     val Zero: LogRow = apply("", ServerLogLevel.INFO, "")
   }
-  final case class Props(log: ModelProxy[GlobalLog]) {
+
+  final case class Props(site: SeqexecSite, log: ModelProxy[GlobalLog]) {
     val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
+
     // Filter according to the levels on the controls
     private def levelFilter(s: State)(m: ServerLogMessage): Boolean = s.allowedLevel(m.level)
+
     def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter(levelFilter(s) _).index(i).map { l =>
-      LogRow(l.timestamp.shows, l.level, l.msg)
-    }.getOrElse(LogRow.Zero)
+        val localTime = LocalDateTime.ofInstant(l.timestamp, site.timeZone)
+        LogRow(formatter.format(localTime), l.level, l.msg)
+      }.getOrElse(LogRow.Zero)
+
     def rowCount(s: State): Int = reverseLog.filter(levelFilter(s) _).size
   }
 
@@ -143,5 +149,5 @@ object LogArea {
     }
     .build
 
-  def apply(p: ModelProxy[GlobalLog]): Unmounted[Props, State, Unit] = component(Props(p))
+  def apply(site: SeqexecSite, p: ModelProxy[GlobalLog]): Unmounted[Props, State, Unit] = component(Props(site, p))
 }

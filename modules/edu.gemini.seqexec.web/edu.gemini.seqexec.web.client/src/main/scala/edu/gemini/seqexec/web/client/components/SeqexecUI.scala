@@ -91,7 +91,7 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            logConnect(LogArea.apply)
+            logConnect(l => LogArea(p.site, l))
           )
         ),
         lbConnect(LoginBox.apply),
