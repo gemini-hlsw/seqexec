@@ -66,7 +66,7 @@ object StepsTableHeader {
     .stateless
     .render_P { p =>
       val displayOffsets = p === OffsetsDisplay.NoDisplay
-      val stateWidth = displayOffsets.fold(Width.Two, Width.Three)
+      val stateWidth = displayOffsets.fold(Width.Three, Width.Four)
       <.thead(
         <.tr(
           TableHeader(TableHeader.Props(collapsing = true, aligned = Aligned.Center, colSpan = Some(2)), IconSettings),
@@ -75,6 +75,7 @@ object StepsTableHeader {
           TableHeader(TableHeader.Props(width = Width.Three), "Offset").unless(displayOffsets),
           TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
           TableHeader(TableHeader.Props(width = Width.One), "Exposure"),
+          TableHeader(TableHeader.Props(width = Width.One), "FPU"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
           TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
@@ -293,61 +294,86 @@ object StepsTableContainer {
         Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
 
-    // scalastyle:off
-    private def stepCols(router: RouterCtl[SeqexecPages], status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
+    private def stepIconCell(p: StepsTableFocus, step: Step, i: Int) =
+      <.td( // Column step icon
+        ^.onDoubleClick --> selectRow(step, i),
+        stepIcon(p, step, i)
+      )
+
+    private def stepNumberCell(step: Step, i: Int) =
+      <.td( // Column step number
+        ^.onDoubleClick --> selectRow(step, i),
+        i + 1
+      )
+
+    private def stepStatusCell(status: ClientStatus, p: StepsTableFocus, step: Step, state: SequenceState, i: Int) =
+      <.td( // Column step status
+        ^.onDoubleClick --> selectRow(step, i),
+        ^.cls := "middle aligned",
+        stepDisplay(status, p, state, step)
+      )
+
+    private def offsetDisplayCell(offsetsDisplay: OffsetsDisplay, step: Step, i: Int) =
+      offsetsDisplay match {
+        case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
+          <.td( // Column step offset
+            ^.onDoubleClick --> selectRow(step, i),
+            OffsetBlock(OffsetBlock.Props(step, offsetWidth))
+          )
+        case _ => EmptyVdom
+      }
+
+    private def stepGuidingCell(step: Step, i: Int) =
+      <.td( // Column step guiding
+        ^.onDoubleClick --> selectRow(step, i),
+        GuidingBlock(GuidingBlock.Props(step))
+      )
+
+    private def stepExposureTimeCell(instrument: Instrument, step: Step, i: Int) =
+      <.td( // Column exposure time
+        ^.onDoubleClick --> selectRow(step, i),
+        ExposureTime(ExposureTime.Props(step, instrument))
+      )
+
+    private def stepObjectTypeCell(step: Step, i: Int) =
+      <.td( // Column object type
+        ^.onDoubleClick --> selectRow(step, i),
+        ^.cls := "right aligned",
+        stepTypeLabel(step).whenDefined
+      )
+
+    private def stepProgressCell(step: Step, state: SequenceState, i: Int) =
+      <.td( // Column progress
+        ^.onDoubleClick --> selectRow(step, i),
+        ^.classSet(
+          "top aligned"    -> step.isObserving,
+          "middle aligned" -> !step.isObserving
+        ),
+        stepProgress(state, step)
+      )
+
+    private def stepDetailsCell(id: SequenceId, i: Int) =
+      <.td( // Column link to details
+        ^.cls := "collapsing right aligned",
+	router.link(SequenceConfigPage(p.instrument, p.id, i + 1))(IconCaretRight.copyIcon(color = "black".some, onClick = displayStepDetails(p.instrument, p.id, i)))
+      )
+
+    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
         ^.classSet(classSet(step): _*),
         SeqexecStyles.stepRunning.when(step.status === StepState.Running),
-        <.td( // Column step icon
-          ^.onDoubleClick --> selectRow(step, i),
-          stepIcon(p, step, i)
-        ),
-        <.td( // Column step number
-          ^.onDoubleClick --> selectRow(step, i),
-          i + 1
-        ),
-        <.td( // Column step status
-          ^.onDoubleClick --> selectRow(step, i),
-          ^.cls := "middle aligned",
-          stepDisplay(status, p, state, step)
-        ),
-        offsetsDisplay match {
-          case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
-            <.td( // Column step offset
-              ^.onDoubleClick --> selectRow(step, i),
-              OffsetBlock(OffsetBlock.Props(step, offsetWidth))
-            )
-          case _ => EmptyVdom
-        },
-        <.td( // Column step guiding
-          ^.onDoubleClick --> selectRow(step, i),
-          GuidingBlock(GuidingBlock.Props(step))
-        ),
-        <.td( // Column exposure time
-          ^.onDoubleClick --> selectRow(step, i),
-          ExposureTime(ExposureTime.Props(step, p.instrument))
-        ),
-        <.td( // Column object type
-          ^.onDoubleClick --> selectRow(step, i),
-          ^.cls := "right aligned",
-          stepTypeLabel(step).whenDefined
-        ),
-        <.td( // Column progress
-          ^.onDoubleClick --> selectRow(step, i),
-          ^.classSet(
-            "top aligned"    -> step.isObserving,
-            "middle aligned" -> !step.isObserving
-          ),
-          stepProgress(state, step)
-        ),
-        <.td( // Column link to details
-          ^.cls := "collapsing right aligned",
-          router.link(SequenceConfigPage(p.instrument, p.id, i + 1))(IconCaretRight.copyIcon(color = "black".some, onClick = displayStepDetails(p.instrument, p.id, i)))
-        )
+        stepIconCell(p, step, i),
+        stepNumberCell(step, i),
+        stepStatusCell(status, p, step, state, i),
+        offsetDisplayCell(offsetsDisplay, step, i),
+        stepGuidingCell(step, i),
+        stepExposureTimeCell(p.instrument, step, i),
+        stepObjectTypeCell(step, i),
+        stepProgressCell(step, state, i),
+        stepDetailsCell(p.id, i)
       )
-      // scalastyle:on
 
     def stepsTable(props: Props, p: StepsTableFocus, s: State): TagMod =
       <.table(
