@@ -145,9 +145,9 @@ object ExposureTime {
     .stateless
     .render_P { p =>
       def formatExposureTime(e: Double): String = p.i match {
-        case Instrument.GmosN | Instrument.GmosS => f"$e%.0f"
-        case Instrument.F2                       => f"$e%.1f"
-        case _                                   => f"$e%.1f"
+        case Instrument.GmosN | Instrument.GmosS                => f"$e%.0f"
+        case Instrument.F2 | Instrument.GNIRS | Instrument.NIFS => f"$e%.1f"
+        case _                                                  => f"$e%.2f"
       }
 
       def supportCoadds: Boolean = p.i match {
@@ -165,7 +165,7 @@ object ExposureTime {
         case (_, Some(e)) if !supportCoadds => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
         case (None, Some(e))                => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
         case (Some(c), Some(e))             => (List(<.span(^.display := "inline-block", s"${c.shows} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
-        case _                  => EmptyVdom
+        case _                              => EmptyVdom
       }
 
       <.div(
