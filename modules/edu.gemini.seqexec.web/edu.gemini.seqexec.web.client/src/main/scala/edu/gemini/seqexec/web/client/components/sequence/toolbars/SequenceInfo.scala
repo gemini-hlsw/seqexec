@@ -29,7 +29,7 @@ object SequenceInfo {
     .render_P { p =>
       val StatusAndObserverFocus(isLogged, name, _, _, observer, status, tName) = p.p()
       val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
-      val targetName = tName.filter(_.nonEmpty).getOrElse("Unknown.")
+      val targetName = tName.filter(_.nonEmpty).getOrElse("DAYCAL")
       <.div(
         ^.cls := "ui form",
         <.div(

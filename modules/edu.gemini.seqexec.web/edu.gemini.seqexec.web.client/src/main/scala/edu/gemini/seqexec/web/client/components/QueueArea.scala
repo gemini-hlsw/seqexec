@@ -81,7 +81,8 @@ object QueueTableBody {
                 }
               val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
               val inProcess = s.status.isInProcess
-              val targetName = s.targetName.getOrElse("*****")
+              // Let's assume if the target name is not found, we are doing a calibration
+              val targetName = s.targetName.getOrElse("DAYCAL")
               val selectableRowCls = List(
                   ^.classSet(
                     "selectable" -> !inProcess
