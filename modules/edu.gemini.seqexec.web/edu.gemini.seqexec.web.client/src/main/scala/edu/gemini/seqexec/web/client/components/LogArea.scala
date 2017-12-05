@@ -96,6 +96,10 @@ object LogArea {
 
   private val ST = ReactS.Fix[State]
 
+  private val TimestampWidth = 200
+  private val LevelWidth     = 80
+  private val ClipboardWidth = 37
+
   /**
    * Build the table log
    */
@@ -113,10 +117,10 @@ object LogArea {
     }
 
     val columns = List(
-      Column(Column.props(200, "timestamp", label = "Timestamp", disableSort = true)),
-      Column(Column.props(80, "level", label = "Level", disableSort = true)),
-      Column(Column.props(size.width.toInt - 200 - 80 - 37, "msg", label = "Message", disableSort = true)),
-      Column(Column.props(37, "clip", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
+      Column(Column.props(TimestampWidth, "timestamp", label = "Timestamp", disableSort = true)),
+      Column(Column.props(LevelWidth, "level", label = "Level", disableSort = true)),
+      Column(Column.props(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", disableSort = true)),
+      Column(Column.props(ClipboardWidth, "clip", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
     )
 
     def rowClassName(s: State)(i: Int): String = (p.rowGetter(s)(i) match {
