@@ -3,10 +3,10 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{Guiding, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-import edu.gemini.seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
+import edu.gemini.seqexec.web.client.lenses.{observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
@@ -19,7 +19,10 @@ import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.order._
+import scalaz.syntax.show._
 import scalaz.syntax.std.option._
+import scalaz.std.anyVal._
+import scalaz.std.string._
 
 /**
   * Component to draw a grid for the offsets using canvas
@@ -126,6 +129,42 @@ object OffsetBlock {
             )
           )
         )
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display the exposure time and coadds
+ */
+object ExposureTime {
+  final case class Props(s: Step, i: Instrument)
+
+  private val component = ScalaComponent.builder[Props]("ExposureTime")
+    .stateless
+    .render_P { p =>
+      def formatExposureTime(e: Double): String = p.i match {
+        case Instrument.GmosN | Instrument.GmosS                => f"$e%.0f"
+        case _                                                  => f"$e%.2f"
+      }
+
+      val exposureTime = observeExposureTimeO.getOption(p.s)
+      val coadds = observeCoaddsO.getOption(p.s)
+
+      // TODO Find a better way to output math-style text
+      val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
+
+      val displayedText: TagMod = (coadds, exposureTime) match {
+        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
+        case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
+        case _                               => EmptyVdom
+      }
+
+      <.div(
+        ^.cls := "center aligned",
+        displayedText
       )
     }
     .build

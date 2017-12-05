@@ -72,6 +72,7 @@ object StepsTableHeader {
           TableHeader(TableHeader.Props(width = stateWidth), "State"),
           TableHeader(TableHeader.Props(width = Width.Three), "Offset").unless(displayOffsets),
           TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
+          TableHeader(TableHeader.Props(width = Width.One), "Exposure"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
           TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
@@ -283,6 +284,7 @@ object StepsTableContainer {
         Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
 
+    // scalastyle:off
     private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
@@ -314,6 +316,10 @@ object StepsTableContainer {
           ^.onDoubleClick --> selectRow(step, i),
           GuidingBlock(GuidingBlock.Props(step))
         ),
+        <.td( // Column exposure time
+          ^.onDoubleClick --> selectRow(step, i),
+          ExposureTime(ExposureTime.Props(step, p.instrument))
+        ),
         <.td( // Column object type
           ^.onDoubleClick --> selectRow(step, i),
           ^.cls := "right aligned",
@@ -332,6 +338,7 @@ object StepsTableContainer {
           IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
         )
       )
+      // scalastyle:on
 
     def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetsDisplay: OffsetsDisplay): TagMod =
       <.table(
