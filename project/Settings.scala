@@ -150,10 +150,10 @@ object Settings {
     val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
     val OpenCSV     = "net.sf.opencsv"     %  "opencsv"                           % LibraryVersions.opencsv
 
-    val Squants     = Def.setting("org.typelevel" %%% "squants"              % LibraryVersions.squants)
-    val BooPickle   = Def.setting("io.suzaku"     %%% "boopickle"            % LibraryVersions.booPickle)
-    val JavaTimeJS  = Def.setting("io.github.cquiroz"  %%% "scala-java-time"    % LibraryVersions.javaTimeJS)
-    val JavaLogJS   = Def.setting("org.scala-js"  %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
+    val Squants     = Def.setting("org.typelevel"     %%% "squants"              % LibraryVersions.squants)
+    val BooPickle   = Def.setting("io.suzaku"         %%% "boopickle"            % LibraryVersions.booPickle)
+    val JavaTimeJS  = Def.setting("io.github.cquiroz" %%% "scala-java-time"      % LibraryVersions.javaTimeJS)
+    val JavaLogJS   = Def.setting("org.scala-js"      %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
     val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"         % LibraryVersions.scalaZ)
