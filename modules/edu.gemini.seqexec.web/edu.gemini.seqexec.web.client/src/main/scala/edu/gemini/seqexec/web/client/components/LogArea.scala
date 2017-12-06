@@ -17,7 +17,7 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.virtualized._
 import react.clipboard._
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import scalacss.ScalaCssReact._
 
@@ -44,11 +44,12 @@ object CopyLogToClipboard {
   */
 object LogArea {
   // Date time formatter
-  private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
+  private val formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
   // ScalaJS defined trait
   // scalastyle:off
   trait LogRow extends js.Object {
-    var timestamp: String // Store the timestamp formatted
+    var local: String // Formatted string
+    var timestamp: Instant
     var level: ServerLogLevel
     var msg: String
     var clip: String
@@ -56,8 +57,9 @@ object LogArea {
   // scalastyle:on
   object LogRow {
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(timestamp: String, level: ServerLogLevel, msg: String): LogRow = {
+    def apply(local: String, timestamp: Instant, level: ServerLogLevel, msg: String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
+      p.local =local
       p.timestamp = timestamp
       p.level = level
       p.msg = msg
@@ -65,10 +67,10 @@ object LogArea {
       p
     }
 
-    def unapply(l: LogRow): Option[(String, ServerLogLevel, String, String)] =
+    def unapply(l: LogRow): Option[(Instant, ServerLogLevel, String, String)] =
       Some((l.timestamp, l.level, l.msg, l.clip))
 
-    val Zero: LogRow = apply("", ServerLogLevel.INFO, "")
+    val Zero: LogRow = apply("", Instant.MAX, ServerLogLevel.INFO, "")
   }
 
   final case class Props(site: SeqexecSite, log: ModelProxy[GlobalLog]) {
@@ -79,10 +81,12 @@ object LogArea {
 
     def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter(levelFilter(s) _).index(i).map { l =>
         val localTime = LocalDateTime.ofInstant(l.timestamp, site.timeZone)
-        LogRow(formatter.format(localTime), l.level, l.msg)
+        LogRow(formatter.format(localTime), l.timestamp, l.level, l.msg)
       }.getOrElse(LogRow.Zero)
 
-    def rowCount(s: State): Int = reverseLog.filter(levelFilter(s) _).size
+    def rowCount(s: State): Int =
+      reverseLog.filter(levelFilter(s) _).size
+
   }
 
   final case class State(selectedLevels: Map[ServerLogLevel, Boolean]) {
@@ -111,13 +115,13 @@ object LogArea {
 
     val clipboardCellRenderer: CellRenderer[js.Object, js.Object, LogRow] = (_, _, _, row: LogRow, _) => {
       // Simple csv export
-      // TODO use local tiems
-      val toCsv = s"${row.timestamp}, ${row.level}, ${row.msg}"
+      val localTime = LocalDateTime.ofInstant(row.timestamp, p.site.timeZone)
+      val toCsv = s"${formatter.format(localTime)}, ${row.level}, ${row.msg}"
       CopyLogToClipboard(toCsv)
     }
 
     val columns = List(
-      Column(Column.props(TimestampWidth, "timestamp", label = "Timestamp", disableSort = true)),
+      Column(Column.props(TimestampWidth, "local", label = "Timestamp", disableSort = true)),
       Column(Column.props(LevelWidth, "level", label = "Level", disableSort = true)),
       Column(Column.props(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", disableSort = true)),
       Column(Column.props(ClipboardWidth, "clip", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
