@@ -117,6 +117,12 @@ object SeqexecUI {
 
       (emptyRule
       | staticRoute(root, Root) ~> renderR(r => SeqexecMain(site, r))
+      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
+        .pmap {
+          case (i, s, step) => instrumentNames.get(i).map(SequenceConfigPage(_, s, step))
+        }(p => (p.instrument.shows, p.obsId, p.step))) {
+          case x @ SequenceConfigPage(i, _, _) if site.instruments.list.toList.contains(i) => x
+        } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
         .pmap {
           case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
@@ -124,7 +130,8 @@ object SeqexecUI {
         }(p => (p.instrument.shows, p.obsId))) {
           case x @ InstrumentPage(i, _) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+")).pmap(i => instrumentNames.get(i).map(InstrumentPage(_, None)))(p => p.instrument.shows)) {
+      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+"))
+        .pmap(i => instrumentNames.get(i).map(InstrumentPage(_, None)))(p => p.instrument.shows)) {
           case x @ InstrumentPage(i, _) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       )

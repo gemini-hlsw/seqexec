@@ -7,7 +7,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, ShowStep}
+import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, SelectSequenceConfig}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -374,7 +374,7 @@ object StepsTableContainer {
     }
   }
 
-  def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
+  def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(SelectSequenceConfig(s, i))}
 
   // Reference to the specifc DOM marked by the name `scrollRef`
   //private val scrollRef = Ref[HTMLElement]("scrollRef")
