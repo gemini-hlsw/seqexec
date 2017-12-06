@@ -3,11 +3,11 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
 import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-import edu.gemini.seqexec.web.client.lenses.{instrumentFPUO, observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
+import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
@@ -153,11 +153,13 @@ object FPUCell {
         case Instrument.F2    => enumerations.fpu.Flamingos2
         case _                => Map.empty
       }
-      val fpuValue: Option[String] =
-        for {
-          fpuS <- instrumentFPUO.getOption(p.s)
-          fpu <- nameMapper.get(fpuS)
-        } yield fpu
+
+      val fpuValue = for {
+        mode <- instrumentFPUModeO.getOption(p.s).orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
+        fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO else instrumentFPUCustomMaskO
+        fpu  <- fpuL.getOption(p.s)
+      } yield nameMapper.getOrElse(fpu, fpu)
+
       <.div(
         ^.cls := "center aligned",
         SeqexecStyles.fpuLabel,

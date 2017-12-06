@@ -128,7 +128,6 @@ trait ModelLenses {
   private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] = Iso(TelescopeOffset.P.apply)(_.value)
   private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] = Iso(TelescopeOffset.Q.apply)(_.value)
   val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
-  val stringToGuidingP: Prism[String, Guiding] = Prism(Guiding.fromString)(_.configValue)
   val stringToIntP: Prism[String, Int] = Prism((x: String) => x.parseInt.toOption)(_.shows)
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
@@ -151,9 +150,18 @@ trait ModelLenses {
   val observeCoaddsO: Optional[Step, Int] =
     stepObserveOptional(SystemName.observe, "coadds", stringToIntP)
 
-  // Composite lens to find the observe fpu
+  val stringToFPUModeP: Prism[String, FPUMode] = Prism(FPUMode.fromString)(_.shows)
+  // Composite lens to find the instrument fpu model
+  val instrumentFPUModeO: Optional[Step, FPUMode] =
+    stepObserveOptional(SystemName.instrument, "fpuMode", stringToFPUModeP)
+
+  // Composite lens to find the instrument fpu
   val instrumentFPUO: Optional[Step, String] =
     stepObserveOptional(SystemName.instrument, "fpu", Iso.id[String].asPrism)
+
+  // Composite lens to find the instrument fpu custom mask
+  val instrumentFPUCustomMaskO: Optional[Step, String] =
+    stepObserveOptional(SystemName.instrument, "fpuCustomMask", Iso.id[String].asPrism)
 
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
@@ -161,6 +169,8 @@ trait ModelLenses {
 
   val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(OffsetAxis.AxisP) ^<-> telescopeOffsetPI
   val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
+
+  val stringToGuidingP: Prism[String, Guiding] = Prism(Guiding.fromString)(_.configValue)
 
   // Lens to find guidingWith configurations
   val telescopeGuidingWithT: Traversal[Step, Guiding] =

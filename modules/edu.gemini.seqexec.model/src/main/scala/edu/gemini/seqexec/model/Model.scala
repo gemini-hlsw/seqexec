@@ -358,6 +358,20 @@ object Model {
       case _        => none
     }
   }
+  sealed trait FPUMode
+  object FPUMode {
+    case object BuiltIn extends FPUMode
+    case object Custom extends FPUMode
+
+    implicit val equal: Equal[FPUMode] = Equal.equalA
+    implicit val show: Show[FPUMode] = Show.showFromToString
+
+    def fromString(s: String): Option[FPUMode] = s match {
+      case "BUILTIN"     => FPUMode.BuiltIn.some
+      case "CUSTOM_MASK" => FPUMode.Custom.some
+      case _             => none
+    }
+  }
 
   // Telescope offsets, roughly based on gem
   final case class TelescopeOffset(p: TelescopeOffset.P, q: TelescopeOffset.Q)

@@ -50,4 +50,6 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
   checkAll("observe exposure time Optional", OptionalTests(observeExposureTimeO))
   checkAll("observe coadds Optional", OptionalTests(observeCoaddsO))
   checkAll("instrument fpu Optional", OptionalTests(instrumentFPUO))
+  checkAll("instrument fpu mode Optional", OptionalTests(instrumentFPUModeO))
+  checkAll("instrument fpu custom mask Optional", OptionalTests(instrumentFPUCustomMaskO))
 }
