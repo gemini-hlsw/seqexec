@@ -96,6 +96,7 @@ object Model {
   type StepId = Int
   type ObservationName = String
   type TargetName = String
+  val DaytimeCalibrationTargetName = "Daytime calibration"
   /**
     * A Seqexec resource represents any system that can be only used by one single agent.
     *

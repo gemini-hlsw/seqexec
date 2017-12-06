@@ -8,7 +8,7 @@ import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import edu.gemini.seqexec.web.client.semanticui.Size
-import edu.gemini.seqexec.model.Model.SequenceState
+import edu.gemini.seqexec.model.Model.{DaytimeCalibrationTargetName, SequenceState}
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -29,7 +29,9 @@ object SequenceInfo {
     .render_P { p =>
       val StatusAndObserverFocus(isLogged, name, _, _, observer, status, tName) = p.p()
       val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
-      val targetName = tName.filter(_.nonEmpty).getOrElse("DAYCAL")
+      val daytimeCalibrationTargetName: TagMod =
+        Label(Label.Props(DaytimeCalibrationTargetName, basic = true, extraStyles = List(SeqexecStyles.daytimeCal)))
+      val targetName = tName.filter(_.nonEmpty).fold(daytimeCalibrationTargetName)(t => Label(Label.Props(t, basic = true)))
       <.div(
         ^.cls := "ui form",
         <.div(
@@ -45,7 +47,7 @@ object SequenceInfo {
           ).when(isLogged),
           <.div(
             ^.cls := "field",
-            Label(Label.Props(targetName, basic = true))
+            targetName
           ).when(isLogged),
           <.div(
             ^.cls := "field",
