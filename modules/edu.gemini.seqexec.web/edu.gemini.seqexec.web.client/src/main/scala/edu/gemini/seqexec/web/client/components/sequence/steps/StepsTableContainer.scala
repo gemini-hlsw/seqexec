@@ -195,7 +195,7 @@ object StepsTableContainer {
         case (_, StepState.Completed)                   => <.p(step.status.shows)
         case (_, StepState.Error(msg))                  => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
-        case (_, s) if step.skip                        => <.p(step.status.shows + " - Skipped")
+        case (_, s) if step.skip                        => <.p("Skipped")
         case (_, _)                                     => <.p(step.status.shows)
       }
 
@@ -262,24 +262,23 @@ object StepsTableContainer {
       }
 
     private def classSet(step: Step): List[(String, Boolean)] = List(
-      "positive" -> (step.status === StepState.Completed),
+      "disabled" -> (step.skip || step.status === StepState.Completed),
       "warning"  -> (step.status === StepState.Running),
       "negative" -> (step.status === StepState.Paused),
       "negative" -> step.hasError,
-      "active"   -> (step.status === StepState.Skipped),
-      "disabled" -> step.skip
+      "active"   -> (step.status === StepState.Skipped)
     )
-
 
     private def stepTypeLabel(step: Step): Option[Unmounted[Label.Props, Unit, Unit]] =
       stepTypeO.getOption(step).map { st =>
         val stepTypeColor = st match {
-          case StepType.Object      => "green"
-          case StepType.Arc         => "violet"
-          case StepType.Flat        => "grey"
-          case StepType.Bias        => "teal"
-          case StepType.Dark        => "black"
-          case StepType.Calibration => "blue"
+          case _ if step.status === StepState.Completed => "light gray"
+          case StepType.Object                          => "green"
+          case StepType.Arc                             => "violet"
+          case StepType.Flat                            => "grey"
+          case StepType.Bias                            => "teal"
+          case StepType.Dark                            => "black"
+          case StepType.Calibration                     => "blue"
         }
         Label(Label.Props(st.shows, color = stepTypeColor.some))
       }
