@@ -77,7 +77,8 @@ object Settings {
     val javaTimeJS              = "2.0.0-M12"
     val javaLogJS               = "0.1.2"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.0.3"
+    val scalaJSReactVirtualized = "0.0.6"
+    val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
     val scalaZ       = "7.2.16"
@@ -110,6 +111,7 @@ object Settings {
     val ocsVersion       = "2018001.1.0"
     val uglifyJs         = "1.0.0-beta.3"
     val reactVirtualized = "9.13.0"
+    val reactClipboard   = "5.0.0"
 
     //Apache XMLRPC
     val apacheXMLRPC   = "3.1.3"
@@ -181,10 +183,11 @@ object Settings {
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
       "io.suzaku" %%% "diode-react" % LibraryVersions.diode
     ))
-    val ScalaCSS                = Def.setting("com.github.japgolly.scalacss" %%% "core"          % LibraryVersions.scalaCSS)
-    val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"   % LibraryVersions.scalaDom)
-    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"                 %%% "scalajs-react-virtualized"   % LibraryVersions.scalaJSReactVirtualized)
-    val JQuery                  = Def.setting("org.querki"                   %%% "jquery-facade" % LibraryVersions.scalaJQuery)
+    val ScalaCSS                = Def.setting("com.github.japgolly.scalacss" %%% "core"                      % LibraryVersions.scalaCSS)
+    val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"               % LibraryVersions.scalaDom)
+    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"            %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
+    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz"            %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)
+    val JQuery                  = Def.setting("org.querki"                   %%% "jquery-facade"             % LibraryVersions.scalaJQuery)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion
