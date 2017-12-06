@@ -49,4 +49,5 @@ class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
   checkAll("telescope guiding traversal", TraversalTests(telescopeGuidingWithT))
   checkAll("observe exposure time Optional", OptionalTests(observeExposureTimeO))
   checkAll("observe coadds Optional", OptionalTests(observeCoaddsO))
+  checkAll("instrument fpu Optional", OptionalTests(instrumentFPUO))
 }

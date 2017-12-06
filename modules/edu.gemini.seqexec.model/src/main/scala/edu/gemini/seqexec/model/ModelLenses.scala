@@ -151,6 +151,10 @@ trait ModelLenses {
   val observeCoaddsO: Optional[Step, Int] =
     stepObserveOptional(SystemName.observe, "coadds", stringToIntP)
 
+  // Composite lens to find the observe fpu
+  val instrumentFPUO: Optional[Step, String] =
+    stepObserveOptional(SystemName.instrument, "fpu", Iso.id[String].asPrism)
+
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
     stepObserveOptional(SystemName.telescope, x.configItem, stringToDoubleP)
