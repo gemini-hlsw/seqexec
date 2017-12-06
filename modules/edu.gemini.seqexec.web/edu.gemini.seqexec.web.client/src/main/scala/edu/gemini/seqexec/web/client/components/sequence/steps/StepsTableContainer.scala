@@ -335,6 +335,13 @@ object StepsTableContainer {
         ExposureTime(ExposureTime.Props(step, instrument))
       )
 
+    private def stepFPUCell(step: Step, i: Int) =
+      <.td( // Column object type
+        ^.onDoubleClick --> selectRow(step, i),
+        ^.cls := "right aligned",
+        stepTypeLabel(step).whenDefined
+      )
+
     private def stepObjectTypeCell(step: Step, i: Int) =
       <.td( // Column object type
         ^.onDoubleClick --> selectRow(step, i),
@@ -370,6 +377,7 @@ object StepsTableContainer {
         offsetDisplayCell(offsetsDisplay, step, i),
         stepGuidingCell(step, i),
         stepExposureTimeCell(p.instrument, step, i),
+        stepFPUCell(step, i),
         stepObjectTypeCell(step, i),
         stepProgressCell(step, state, i),
         stepDetailsCell(p.id, i)
