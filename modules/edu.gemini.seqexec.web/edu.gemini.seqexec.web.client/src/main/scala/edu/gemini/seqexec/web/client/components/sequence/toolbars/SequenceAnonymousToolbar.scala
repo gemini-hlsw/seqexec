@@ -16,7 +16,8 @@ import scalacss.ScalaCssReact._
   */
 object SequenceAnonymousToolbar {
   final case class Props(site: SeqexecSite, instrument: Instrument) {
-    protected[sequence] val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+    protected[sequence] val instrumentConnects =
+     site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")

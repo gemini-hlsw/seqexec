@@ -331,6 +331,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     backgroundClip.contentBox.paddingBox.important
   )
 
+  val daytimeCal: StyleA = style(
+    fontWeight.bold,
+    fontStyle.italic
+  )
+
   // Styles for the log table, These styles will make react-virtualized
   // match the look of SemanticUI tables
   val logTable: StyleA = style(

@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.SequenceState
+import edu.gemini.seqexec.model.Model.{DaytimeCalibrationTargetName, SequenceState}
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.model.Pages._
@@ -81,7 +81,12 @@ object QueueTableBody {
                 }
               val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
               val inProcess = s.status.isInProcess
-              val targetName = s.targetName.getOrElse("*****")
+              // Let's assume if the target name is not found, we are doing a calibration
+              val daytimeCalibrationTargetName: TagMod =
+                <.span(
+                  SeqexecStyles.daytimeCal,
+                  DaytimeCalibrationTargetName)
+              val targetName = s.targetName.fold(daytimeCalibrationTargetName)(x => x: TagMod)
               val selectableRowCls = List(
                   ^.classSet(
                     "selectable" -> !inProcess
