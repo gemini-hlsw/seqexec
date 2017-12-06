@@ -86,25 +86,12 @@ object StepsTableHeader {
   def apply(p: OffsetsDisplay): Unmounted[OffsetsDisplay, Unit, Unit] = component(p)
 }
 
-/**
-  * Container for a table with the steps
-  */
-object StepsTableContainer {
-  final case class State(nextScrollPos  : Double,
-                   onHover        : Option[Int],
-                   autoScrolled   : Boolean)
+object StepConfigTable {
+  final case class Props(step: Step)
 
-  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
-    def status: ClientStatus = stepsTable()._1
-    def steps: Option[StepsTableFocus] = stepsTable()._2
-    private val stepsList: List[Step] = ~steps.map(_.steps)
-    // Find out if offsets should be displayed
-    val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
-  }
-
-  class Backend($: BackendScope[Props, State]) {
-
-    def configTable(step: Step): TagMod =
+  private val component = ScalaComponent.builder[Props]("StepConfigTable")
+    .stateless
+    .render_P ( p =>
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
@@ -114,7 +101,7 @@ object StepsTableContainer {
           )
         ),
         <.tbody(
-          step.config.flatMap {
+          p.step.config.flatMap {
             case (sub, c) =>
               c.map {
                 case (k, v) =>
@@ -132,6 +119,27 @@ object StepsTableContainer {
           }.toSeq.toTagMod
         )
       )
+    ).build
+
+  def apply(s: Step): Unmounted[Props, Unit, Unit] = component(Props(s))
+}
+/**
+  * Container for a table with the steps
+  */
+object StepsTableContainer {
+  final case class State(nextScrollPos  : Double,
+                   onHover        : Option[Int],
+                   autoScrolled   : Boolean)
+
+  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
+    def status: ClientStatus = stepsTable()._1
+    def steps: Option[StepsTableFocus] = stepsTable()._2
+    private val stepsList: List[Step] = ~steps.map(_.steps)
+    // Find out if offsets should be displayed
+    val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
+  }
+
+  class Backend($: BackendScope[Props, State]) {
 
     def labelColor(status: ActionStatus): String = status match {
       case ActionStatus.Pending   => "gray"
@@ -367,7 +375,7 @@ object StepsTableContainer {
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
             val step = tab.steps(i)
-            configTable(step)
+            StepConfigTable(step): TagMod
           }.getOrElse {
             stepsTable(p, tab, s)
           }
