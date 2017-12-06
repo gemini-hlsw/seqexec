@@ -54,7 +54,7 @@ object handlers {
         val effect = page match {
           case InstrumentPage(i, None)         => Effect(Future(SelectInstrumentToDisplay(i)))
           case InstrumentPage(_, Some(id))     => Effect(Future(SelectIdToDisplay(id)))
-          case SequenceConfigPage(_, id, step) => Effect(Future(SelectSequenceConfig(id, step)))
+          case SequenceConfigPage(_, id, step) => Effect(Future(ShowStep(id, step)))
           case _                               => Effect(Future(NoAction: Action))
         }
         updatedSilent(page, effect)
@@ -67,7 +67,7 @@ object handlers {
           case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
           case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
-            effectOnly(Effect(Future(SelectSequenceConfig(s.id, step))))
+            effectOnly(Effect(Future(ShowStep(s.id, step))))
           case _ =>
             noChange
         }
@@ -251,9 +251,9 @@ object handlers {
     }
 
     def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-      case SelectSequenceConfig(id, step) =>
+      case ShowStep(id, step) =>
         val seq = SeqexecCircuit.sequenceRef(id)
-        updated(value.copy(_1 = value._1.focusOnSequence(seq).showStep(step)))
+        updated(value.copy(_1 = value._1.focusOnSequence(seq).showStep(step - 1)))
 
       case UnShowStep(instrument) =>
         if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {

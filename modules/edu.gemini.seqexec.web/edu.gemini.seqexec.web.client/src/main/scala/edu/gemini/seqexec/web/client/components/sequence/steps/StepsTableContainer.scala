@@ -7,7 +7,8 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, SelectSequenceConfig}
+import edu.gemini.seqexec.web.client.model.Pages.SequenceConfigPage
+import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, FlipBreakpointStep, FlipSkipStep}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -334,7 +335,7 @@ object StepsTableContainer {
         ),
         <.td( // Column link to details
           ^.cls := "collapsing right aligned",
-          IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
+          IconCaretRight.copyIcon(onClick = displayStepDetails(p.instrument, p.id, i))
         )
       )
       // scalastyle:on
@@ -374,7 +375,8 @@ object StepsTableContainer {
     }
   }
 
-  def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(SelectSequenceConfig(s, i))}
+  def displayStepDetails(i: Instrument, id: SequenceId, step: Int): Callback =
+    Callback{ SeqexecCircuit.dispatch(NavigateSilentTo(SequenceConfigPage(i, id, step + 1))) }
 
   // Reference to the specifc DOM marked by the name `scrollRef`
   //private val scrollRef = Ref[HTMLElement]("scrollRef")

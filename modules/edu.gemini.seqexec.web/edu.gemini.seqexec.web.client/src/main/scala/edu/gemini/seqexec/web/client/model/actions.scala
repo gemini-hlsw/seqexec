@@ -37,7 +37,7 @@ object actions {
   // Action to select a sequence for display
   final case class SelectIdToDisplay(id: SequenceId) extends Action
   final case class SelectInstrumentToDisplay(i: Instrument) extends Action
-  final case class SelectSequenceConfig(s: SequenceId, i: Int) extends Action
+  final case class SelectSequenceConfig(id: SequenceId, step: Int) extends Action
 
   // Actions related to executing sequences
   final case class RequestRun(s: SequenceId) extends Action
@@ -60,6 +60,7 @@ object actions {
   final case class RunAbort(s: SequenceId) extends Action
   final case class RunAbortFailed(s: SequenceId) extends Action
 
+  final case class ShowStep(id: SequenceId, step: Int) extends Action
   final case class UnShowStep(i: Instrument) extends Action
   final case class RememberCompleted(s: SequenceView) extends Action
 
