@@ -52,7 +52,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val faulty: Action  = fromTask(ActionType.Undefined,
   for {
     _ <- Task(Thread.sleep(100))
-  } yield Result.Error(ActionType.Undefined, "There was an error in this action"))
+  } yield Result.Error("There was an error in this action"))
 
   val config: StepConfig = Map()
   val seqId: String = "TEST-01"
@@ -75,8 +75,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                  breakpoint = false,
                  skip = false,
                  List(
-                   List(configureTcs.left, configureInst.left), // Execution
-                   List(observe.left) // Execution
+                   List(configureTcs, configureInst), // Execution
+                   List(observe) // Execution
                  )
                ),
                Step(
@@ -87,8 +87,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                  breakpoint = false,
                  skip = false,
                  List(
-                   List(configureTcs.left, configureInst.left), // Execution
-                   List(observe.left) // Execution
+                   List(configureTcs, configureInst), // Execution
+                   List(observe) // Execution
                  )
                )
              )
@@ -112,8 +112,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(configureTcs.left, configureInst.left), // Execution
-              List(observe.left) // Execution
+              List(configureTcs, configureInst), // Execution
+              List(observe) // Execution
             )
           )
         )
@@ -209,7 +209,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 startedFlag.release()
                 finishFlag.acquire()
                 Result.OK(Result.Configured(TCS))
-              }).left )
+              }) )
             )
           )
         )
@@ -246,7 +246,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
               List(fromTask(ActionType.Undefined,
               Task.apply{
                 throw e
-              }).left)
+              }))
             )
           )
         )
@@ -277,7 +277,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS))))).left)
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS)))), Action.Idle))
             )
           )
         )
@@ -288,7 +288,15 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
 
-    assertResult(Some(Result.OK(Result.Configured(TCS))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
+    assertResult(Some(Action.Completed(Result.Configured(TCS)))){
+      for {
+        st <- sf
+        sq <- st.sequences.get(seqId)
+        st <- sq.done.headOption
+        as <- st.executions.headOption
+        ac <- as.headOption
+      } yield ac.state
+    }
   }
 
 }

@@ -17,7 +17,6 @@ import edu.gemini.seqexec.server.tcs.TcsControllerEpics
 import edu.gemini.spModel.core.{Peer, Site}
 import org.scalatest.FlatSpec
 
-import scalaz.syntax.either._
 import scalaz.Kleisli
 import scalaz.concurrent.Task
 
@@ -40,7 +39,7 @@ class SeqTranslateSpec extends FlatSpec {
           breakpoint = false,
           skip = false,
           List(
-            List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed("DummyFileId"))))).left)
+            List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed("DummyFileId")))), Action.Idle))
           )
         )
       )
@@ -57,7 +56,7 @@ class SeqTranslateSpec extends FlatSpec {
           breakpoint = false,
           skip = false,
           List(
-            List(Action(ActionType.Configure(TCS), Kleisli(v => Task(Result.OK(Result.Configured(Resource.TCS))))).left)
+            List(Action(ActionType.Configure(TCS), Kleisli(v => Task(Result.OK(Result.Configured(Resource.TCS)))), Action.Idle))
           )
         )
       )

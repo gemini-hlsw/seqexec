@@ -105,11 +105,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
     for {
       id <- dhsFileId(inst)
-    } yield Result.Partial(FileIdAllocated(id), doObserve(id).toAction(ActionType.Observe))
+    } yield Result.Partial(FileIdAllocated(id), Kleisli(_ => doObserve(id).run.map(_.toResult)))
   }
 
-  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step[Action \/ Result]] = {
-    def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step[Action \/ Result] = {
+  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
+    def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
@@ -124,7 +124,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             val kind = ActionType.Configure(resourceFromSystem(x))
             x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
-          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult(ActionType.Observe))))))
+          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.Idle)))
 
       extractStatus(config) match {
         case StepState.Pending => Step(
@@ -135,7 +135,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             breakpoint = false,
             skip = false,
             executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
-          ).map(_.left)
+          )
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
         case _                 => Step(
@@ -186,7 +186,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
 
   def sequence(obsId: SPObservationID, sequence: SeqexecSequence):
-      (List[SeqexecFailure], Option[Sequence[Action \/ Result]]) = {
+      (List[SeqexecFailure], Option[Sequence]) = {
 
     val configs = sequence.config.getAllSteps.toList
 
@@ -204,7 +204,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             None
           else
             Some(
-              Sequence[Action \/ Result](
+              Sequence(
                 obsId.stringValue(),
                 SequenceMetadata(i, None, sequence.title),
                 ss
@@ -215,13 +215,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] = {
-    def isObserving(v: Action\/Result): Boolean = v match {
-      case -\/(l) => l.kind === ActionType.Observe
-      case \/-(r) => r match {
-        case p: Result.Partial[_] => r.kind === ActionType.Observe
-        case _                    => false
-      }
-    }
+    def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state match {
+      case Action.Idle                  => true
+      case Action.PartiallyCompleted(_) => true
+      case _                            => false
+    })
     if(seqState.current.execution.exists(isObserving)) cmd
     else none
   }
@@ -391,31 +389,31 @@ object SeqTranslate {
   }
 
   implicit class ResponseToResult(val r: SeqexecFailure \/ Result.Response) extends AnyVal {
-    def toResult(kind: ActionType): Result = r match {
+    def toResult: Result = r match {
       case \/-(r) => Result.OK(r)
-      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
+      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
     }
   }
 
   implicit class PartialResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ Result.Partial[A]) extends AnyVal {
-    def toResult(kind: ActionType): Result = r match {
+    def toResult: Result = r match {
       case \/-(r) => r
-      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
+      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
     }
   }
 
   implicit class ConfigResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ConfigResult) extends AnyVal {
-    def toResult(kind: ActionType): Result = r match {
+    def toResult: Result = r match {
       case \/-(r) => Result.OK(Configured(r.sys.resource))
-      case -\/(e) => Result.Error(kind, SeqexecFailure.explain(e))
+      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
     }
   }
 
   implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
   }
 
   implicit class ConfigResultToAction(val x: SeqAction[ConfigResult]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult(kind)))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
   }
 }

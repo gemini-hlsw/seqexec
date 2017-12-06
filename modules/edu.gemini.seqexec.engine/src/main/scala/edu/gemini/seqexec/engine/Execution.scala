@@ -3,7 +3,6 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.ActionType
 import edu.gemini.seqexec.model.Model.Resource
 
 import scalaz._
@@ -14,30 +13,24 @@ import Scalaz._
   * information about which `Action`s have been completed.
   *
   */
-final case class Execution(execution: List[Action \/ Result]) {
+final case class Execution(execution: List[Action]) {
 
   import Execution._
 
   val isEmpty: Boolean = execution.isEmpty
 
-  val actions: Actions = {
-    def lefts[L, R](xs: List[L \/ R]): List[L] = xs.collect { case -\/(l) => l }
-    lefts(execution)
-  }
+  val actions: List[Action] = execution.filter(_.state === Action.Idle)
 
-  val results: Results = {
-    def rights[L, R](xs: List[L \/ R]): List[R] = xs.collect { case \/-(r) => r }
-    rights(execution)
-  }
+  val results: List[Action] = execution.filter(Action.finished)
 
   /**
     * Calculate `Execution` `Status` based on the underlying `Action`s.
     *
     */
   def status: Status =
-    if (execution.forall(_.isLeft)) Status.Waiting
+    if (execution.forall(_.state === Action.Idle)) Status.Waiting
     // Empty execution is handled here
-    else if (execution.all(finished)) Status.Completed
+    else if (finished(this)) Status.Completed
     else if (isEmpty) Status.Completed
     else Status.Running
 
@@ -45,8 +38,8 @@ final case class Execution(execution: List[Action \/ Result]) {
     * Obtain the resulting `Execution` only if all actions have been completed.
     *
     */
-  val uncurrentify: Option[Results] =
-    (execution.nonEmpty && execution.all(_.isRight)).option(results)
+  val uncurrentify: Option[Actions] =
+    (execution.nonEmpty && finished(this)).option(results)
 
   /**
     * Set the `Result` for the given `Action` index in `Current`.
@@ -54,7 +47,9 @@ final case class Execution(execution: List[Action \/ Result]) {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result): Execution =
-    Execution(PLens.listNthPLens(i).setOr(execution, r.right, execution))
+    Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = actionStateFromResult(r)), execution).getOrElse(execution))
+
+  def start(i: Int): Execution = Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = Action.Started), execution).getOrElse(execution))
 }
 
 object Execution {
@@ -64,28 +59,27 @@ object Execution {
   /**
     * Make an `Execution` `Current` only if all the `Action`s in the execution
     * are pending.
-    *
     */
   def currentify(as: Actions): Option[Execution] =
-    as.nonEmpty.option(Execution(as.map(_.left)))
+    (as.nonEmpty && as.forall((_.state === Action.Idle))).option(Execution(as))
 
-  def errored(ar: Action \/ Result): Boolean =
-    ar match {
-      case (-\/(_)) => false
-      case (\/-(r)) => r match {
-        case Result.Error(_, _) => true
-        case _                  => false
-      }
-    }
+  def errored(ex: Execution): Boolean = ex.execution.exists(_.state match {
+    case Action.Failed(_) => true
+    case _ => false
+  })
 
-  def finished(ar: Action \/ Result): Boolean =
-    ar match {
-      case (-\/(_)) => false
-      case (\/-(r)) => r match {
-        case Result.Partial(_, _) => false
-        case _                    => true
-      }
-    }
+  def finished(ex: Execution): Boolean = ex.execution.all(_.state match {
+    case Action.Completed(_) => true
+    case Action.Failed(_)    => true
+    case _ => false
+  })
+
+  def actionStateFromResult(r: Result): Action.ActionState = r match {
+    case Result.OK(x)         => Action.Completed(x)
+    case Result.Partial(x, _) => Action.PartiallyCompleted(x)
+    case Result.Paused        => Action.Paused
+    case e@Result.Error(_)    => Action.Failed(e)
+  }
 }
 
 /**
@@ -93,42 +87,26 @@ object Execution {
   */
 sealed trait Result {
   val errMsg: Option[String] = None
-  val kind: ActionType
 }
 
 object Result {
 
   // Base traits for results. They make harder to pass the wrong value.
-  trait RetVal {
-    val kind: ActionType
-  }
-  trait PartialVal {
-    val kind: ActionType
-  }
+  trait RetVal
+  trait PartialVal
 
-  final case class OK[R <: RetVal](response: R) extends Result {
-    val kind: ActionType = response.kind
-  }
-  final case class Partial[R <: PartialVal](response: R, continuation: Action) extends Result {
-    val kind: ActionType = response.kind
-  }
+  final case class OK[R <: RetVal](response: R) extends Result
+  final case class Partial[R <: PartialVal](response: R, continuation: ActionGen) extends Result
+  object Paused extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
-  final case class Error(kind: ActionType, msg: String) extends Result {
+  final case class Error(msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)
   }
 
   sealed trait Response extends RetVal
-  final case class Configured(resource: Resource) extends Response {
-    val kind: ActionType = ActionType.Configure(resource)
-  }
-  final case class Observed(fileId: FileId) extends Response {
-    val kind: ActionType = ActionType.Observe
-  }
-  object Ignored extends Response {
-    val kind: ActionType = ActionType.Undefined
-  }
+  final case class Configured(resource: Resource) extends Response
+  final case class Observed(fileId: FileId) extends Response
+  object Ignored extends Response
 
-  final case class FileIdAllocated(fileId: FileId) extends PartialVal {
-    val kind: ActionType = ActionType.Observe
-  }
+  final case class FileIdAllocated(fileId: FileId) extends PartialVal
 }

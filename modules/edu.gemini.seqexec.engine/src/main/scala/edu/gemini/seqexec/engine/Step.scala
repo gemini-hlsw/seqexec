@@ -5,10 +5,10 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Resource, StepConfig, StepState}
 
-import scalaz.{Monoid, Functor, Foldable, \/, \/-}
 import scalaz.syntax.apply._
 import scalaz.syntax.foldable._
-import scalaz.syntax.either._
+import scalaz.syntax.std.option._
+import scalaz.syntax.equal._
 import scalaz.std.AllInstances._
 
 import monocle.Lens
@@ -17,57 +17,42 @@ import monocle.macros.GenLens
 /**
   * A list of `Executions` grouped by observation.
   */
-final case class Step[+A](
+final case class Step(
   id: Int,
   fileId: Option[FileId],
   config: StepConfig,
   resources: Set[Resource],
   breakpoint: Boolean,
   skip: Boolean,
-  executions: List[List[A]]
+  executions: List[List[Action]]
 )
 
 object Step {
 
   type Id = Int
 
-  implicit val stepFunctor: Functor[Step] = new Functor[Step] {
-    def map[A, B](step: Step[A])(f: A => B): Step[B] =
-      step.copy(executions = step.executions.map(_.map(f)))
-  }
-
-  // TODO: Proof Foldable laws
-  implicit val stepFoldable: Foldable[Step] = new Foldable[Step] {
-    def foldMap[A, B](fa: Step[A])(f: A => B)(implicit F: Monoid[B]): B =
-      // TODO: Foldable composition?
-      fa.executions.foldMap(_.foldMap(f))
-
-    def foldRight[A, B](fa: Step[A], z: => B)(f: (A, => B) => B): B =
-      fa.executions.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
-  }
-
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     */
-  def status(step: Step[Action \/ Result]): StepState = {
-    def stepCompleted(s: Action \/ Result): Boolean = s match {
-      case \/-(Result.OK(_)) => true
-      case _                 => false
+  def status(step: Step): StepState = {
+    def stepCompleted(s: Action): Boolean = s.state match {
+      case Action.Completed(_) => true
+      case _                   => false
     }
 
     // Find an error in the Step
-    step.findLeft(Execution.errored).flatMap(
-      // Get the message if there is one
-      _.fold(_ => None, _.errMsg)
+    step.executions.flatten.find(Action.errored).flatMap { x => x.state match {
+      case Action.Failed(Result.Error(msg)) => msg.some
+      case _ => None
       // Return error or continue with the rest of the checks
-    ).map(StepState.Error).getOrElse(
+    }}.map(StepState.Error).getOrElse(
       // It's possible to have a Step with empty executions when a completed
       // Step is loaded from the ODB.
       if (step.executions.isEmpty || step.executions.all(_.isEmpty)) StepState.Completed
       // All actions in this Step are pending.
-      else if (step.all(_.isLeft)) StepState.Pending
+      else if (step.executions.flatten.all(_.state === Action.Idle)) StepState.Pending
       // All actions in this Step were completed successfully.
-      else if (step.all(stepCompleted)) StepState.Completed
+      else if (step.executions.flatten.all(stepCompleted)) StepState.Completed
       // Not all actions are completed or pending.
       else StepState.Running
     )
@@ -87,7 +72,7 @@ object Step {
     skip: Boolean,
     pending: List[Actions],
     focus: Execution,
-    done: List[Results],
+    done: List[Actions],
     rolledback: (Execution, List[Actions])
   ) { self =>
 
@@ -115,7 +100,7 @@ object Step {
       * This is a special way of *unzipping* a `Zipper`.
       *
       */
-    val uncurrentify: Option[Step[Result]] =
+    val uncurrentify: Option[Step] =
       if (pending.isEmpty) focus.uncurrentify.map(
         x => Step(id, fileId, config, resources, breakpoint, skip, x :: done)
       )
@@ -125,7 +110,7 @@ object Step {
       * Unzip a `Zipper`. This creates a single `Step` with either completed
       * `Exection`s or pending `Execution`s.
       */
-    val toStep: Step[Action \/ Result] =
+    val toStep: Step =
       Step(
         id,
         fileId,
@@ -134,10 +119,9 @@ object Step {
         breakpoint,
         skip,
         // TODO: Functor composition?
-        done.map(_.map(_.right)) ++
+        done ++
           List(focus.execution) ++
-          pending.map(_.map(_.left)
-          )
+          pending
       )
   }
 
@@ -148,7 +132,7 @@ object Step {
       * pending. This is a special way of *zipping* a `Step`.
       *
       */
-    def currentify(step: Step[Action]): Option[Zipper] =
+    def currentify(step: Step): Option[Zipper] =
       step.executions match {
         case Nil         => None
         case exe :: exes =>

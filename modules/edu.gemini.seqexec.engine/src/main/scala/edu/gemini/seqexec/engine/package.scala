@@ -4,16 +4,19 @@
 package edu.gemini.seqexec
 
 import edu.gemini.seqexec.engine.Event._
-import edu.gemini.seqexec.engine.Result.{PartialVal, RetVal}
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceState, SkyBackground, WaterVapor, Operator, Observer}
+import edu.gemini.seqexec.engine.Result.{Error, PartialVal, RetVal}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.seqexec.model.ActionType
 import org.log4s.getLogger
 
+import scalaz.Monad
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, Sink, merge}
+//import scalaz.syntax.traverse._
+//import scalaz.syntax.foldable._
 
 package engine {
 
@@ -22,7 +25,45 @@ package engine {
     def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
   }
   final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
-  final case class Action(kind: ActionType, gen: Kleisli[Task, ActionMetadata, Result])
+
+
+  final case class Action(
+    kind: ActionType,
+    gen: ActionGen,
+    state: Action.ActionState
+  )
+  object Action {
+
+    sealed trait ActionState
+
+    object ActionState {
+      implicit val equal: Equal[ActionState] = Equal.equalA
+    }
+
+    object Idle extends ActionState
+
+    object Started extends ActionState
+
+    final case class PartiallyCompleted[V <: PartialVal](pr: V) extends ActionState
+
+    object Paused extends ActionState
+
+    final case class Completed[V <: RetVal](r: V) extends ActionState
+
+    final case class Failed(e: Error) extends ActionState
+
+    def errored(ar: Action): Boolean = ar.state match {
+      case Action.Failed(_) => true
+      case _ => false
+    }
+
+    def finished(ar: Action): Boolean = ar.state match {
+      case Action.Failed(_) => true
+      case Action.Completed(_) => true
+      case _ => false
+    }
+  }
+
 }
 
 package object engine {
@@ -33,13 +74,15 @@ package object engine {
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
-  def fromTask(kind: ActionType, t: Task[Result]): Action = Action(kind, Kleisli[Task, ActionMetadata, Result](_ => t))
+  def fromTask(kind: ActionType, t: Task[Result]): Action = Action(kind, Kleisli[Task, ActionMetadata, Result](_ => t), Action.Idle)
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
     * an `Execution` with a single `Action`.
     */
   type Actions = List[Action]
+
+  type ActionGen = Kleisli[Task, ActionMetadata, Result]
 
   type Results = List[Result]
 
@@ -128,7 +171,6 @@ package object engine {
 
   def setOperator(name: Operator): HandleP[Unit] =
     modify(_.copy(operator = name.some))
-
   def setObserver(id: Sequence.Id)(name: Observer): HandleP[Unit] =
     modifyS(id)(_.setObserver(name))
 
@@ -150,7 +192,7 @@ package object engine {
   /**
     * Load a Sequence
     */
-  def load(id: Sequence.Id, seq: Sequence[Action \/ Result]): HandleP[Unit] =
+  def load(id: Sequence.Id, seq: Sequence): HandleP[Unit] =
     modify(
       st => Engine.State(
         st.conditions,
@@ -227,12 +269,13 @@ package object engine {
 
     // Send the expected event when the `Action` is executed
     // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
-    def act(t: (Action, Int), cx: ActionMetadata): Process[Task, Event] = t match {
-      case (Action(_, gen), i) =>
+    def act(t: (ActionGen, Int), cx: ActionMetadata): Process[Task, Event] = t match {
+      case (gen, i) =>
         Process.eval(gen(cx)).flatMap {
           case r@Result.OK(_)         => Process(completed(id, i, r))
           case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i), cx)
-          case e@Result.Error(_, _)   => Process(failed(id, i, e))
+          case e@Result.Error(_)      => Process(failed(id, i, e))
+          case Result.Paused          => Process(paused(id, i))
         }
     }
 
@@ -241,9 +284,10 @@ package object engine {
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
       case seq =>
-        val u = seq.current.actions.zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
+        val u = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
         val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed(id))
-        HandleP.fromProcess(v)
+        val w = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
+        w.sequenceU *> HandleP.fromProcess(v)
     }.getOrElse(unit)
     )
   }
@@ -263,6 +307,8 @@ package object engine {
   def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(r))
 
   def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
+
+  def actionPause(id: Sequence.Id, i: Int): HandleP[Unit] = modifyS(id)(_.mark(i)(Result.Paused))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
@@ -326,12 +372,14 @@ package object engine {
       case Poll                        => Logger.debug("Engine: Polling current state")
       case GetState(f)                 => getState(f)
       case ActionStop(id, f)           => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
+      case ActionResume(id, i, cont)   => Logger.debug("Engine: Action resume requested")
       case Log(msg)                    => Logger.debug(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
+      case Paused(id, i)           => Logger.debug("Engine: Action paused")
       case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
       case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)

@@ -3,8 +3,6 @@
 
 package edu.gemini.seqexec.engine
 
-import scalaz._
-
 import monocle.Lens
 import monocle.macros.GenLens
 
@@ -13,16 +11,16 @@ import edu.gemini.seqexec.model.Model.{Conditions, Operator}
 /**
   * A Map of `Sequence`s.
   */
-final case class Engine[+A](sequences: Map[Sequence.Id, Sequence[A]])
+final case class Engine(sequences: Map[Sequence.Id, Sequence])
 
 object Engine {
 
   type Id = String
 
-  def sequences[A]: Lens[Engine[A], Map[Sequence.Id, Sequence[A]]] =
-    GenLens[Engine[A]](_.sequences)
+  def sequences[A]: Lens[Engine, Map[Sequence.Id, Sequence]] =
+    GenLens[Engine](_.sequences)
 
-  def empty[A]: Engine[A] = Engine(Map.empty)
+  def empty: Engine = Engine(Map.empty)
 
 // This fails to compile with the error "not found: type $anon"
 //  implicit val engineFunctor = new Functor[Engine] {

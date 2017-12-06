@@ -146,12 +146,16 @@ object StepsTableContainer {
       case ActionStatus.Pending   => "gray"
       case ActionStatus.Running   => "yellow"
       case ActionStatus.Completed => "green"
+      case ActionStatus.Paused    => "orange"
+      case ActionStatus.Failed    => "red"
     }
 
     def labelIcon(status: ActionStatus): Option[Icon] = status match {
       case ActionStatus.Pending   => None
       case ActionStatus.Running   => IconCircleNotched.copyIcon(loading = true).some
       case ActionStatus.Completed => IconCheckmark.some
+      case ActionStatus.Paused    => IconPause.some
+      case ActionStatus.Failed    => IconStopCircle.some
     }
 
     def statusLabel(system: Resource, status: ActionStatus): VdomNode =

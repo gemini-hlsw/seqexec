@@ -4,22 +4,19 @@
 package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Observer, Resource, SequenceMetadata, SequenceState, StepState}
-import edu.gemini.seqexec.engine.Step._
-import edu.gemini.seqexec.model.ActionType
 
 import scalaz._
 import Scalaz._
-import scalaz.concurrent.Task
 import monocle.Lens
 import monocle.macros.GenLens
 
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-final case class Sequence[+A](
+final case class Sequence(
   id: Sequence.Id,
   metadata: SequenceMetadata,
-  steps: List[Step[A]]
+  steps: List[Step]
 ) {
 
   // The Monoid mappend of a Set is a Set union
@@ -31,23 +28,10 @@ object Sequence {
 
   type Id = String
 
-  def empty[A](id: Id, m: SequenceMetadata): Sequence[A] = Sequence(id, m, Nil)
+  def empty[A](id: Id, m: SequenceMetadata): Sequence = Sequence(id, m, Nil)
 
-  implicit val sequenceFunctor: Functor[Sequence] = new Functor[Sequence] {
-    def map[A, B](fa: Sequence[A])(f: A => B): Sequence[B] =
-      Sequence(fa.id, fa.metadata, fa.steps.map(_.map(f)))
-  }
-
-  implicit val stepFoldable: Foldable[Sequence] = new Foldable[Sequence] {
-    def foldMap[A, B](fa: Sequence[A])(f: A => B)(implicit F: Monoid[B]): B =
-      fa.steps.foldMap(_.foldMap(f))
-
-    def foldRight[A, B](fa: Sequence[A], z: => B)(f: (A, => B) => B): B =
-      fa.steps.foldRight(z)((l, b) => l.foldRight(b)(f(_, _)))
-  }
-
-  def metadata[A]: Lens[Sequence[A], SequenceMetadata] =
-    GenLens[Sequence[A]](_.metadata)
+  def metadata[A]: Lens[Sequence, SequenceMetadata] =
+    GenLens[Sequence](_.metadata)
 
   /**
     * Sequence Zipper. This structure is optimized for the actual `Sequence`
@@ -57,9 +41,9 @@ object Sequence {
   final case class Zipper(
     id: Id,
     metadata: SequenceMetadata,
-    pending: List[Step[Action]],
+    pending: List[Step],
     focus: Step.Zipper,
-    done: List[Step[Result]]
+    done: List[Step]
   ) {
 
     /**
@@ -92,7 +76,7 @@ object Sequence {
       * This is a special way of *unzipping* a `Zipper`.
       *
       */
-    val uncurrentify: Option[Sequence[Result]] =
+    val uncurrentify: Option[Sequence] =
       if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, metadata, done :+ x))
       else None
 
@@ -100,14 +84,12 @@ object Sequence {
       * Unzip a `Zipper`. This creates a single `Sequence` with either
       * completed `Step`s or pending `Step`s.
       */
-    val toSequence: Sequence[Action \/ Result] =
+    val toSequence: Sequence =
       Sequence(
         id,
         metadata,
         // TODO: Functor composition?
-        done.map(_.map(_.right)) ++
-          List(focus.toStep) ++
-          pending.map(_.map(_.left))
+        done ++ List(focus.toStep) ++ pending
       )
   }
 
@@ -118,7 +100,7 @@ object Sequence {
       * `Sequence` are pending. This is a special way of *zipping* a `Sequence`.
       *
       */
-    def currentify(seq: Sequence[Action]): Option[Zipper] =
+    def currentify(seq: Sequence): Option[Zipper] =
       seq.steps match {
         case Nil           => None
         case step :: steps =>
@@ -127,7 +109,7 @@ object Sequence {
           )
       }
 
-    def zipper(seq: Sequence[Action \/ Result]): Option[Zipper] =
+    def zipper(seq: Sequence): Option[Zipper] =
       separate(seq).flatMap {
         case (pending, done)   => pending match {
           case Nil             => None
@@ -140,34 +122,14 @@ object Sequence {
 
     // We would use MonadPlus' `separate` if we wanted to separate Actions or
     // Results, but here we want only Steps.
-    private def separate(seq: Sequence[Action \/ Result]): Option[(List[Step[Action]], List[Step[Result]])] = {
+    private def separate(seq: Sequence): Option[(List[Step], List[Step])] = {
 
-      seq.steps.foldLeftM[Option, (List[Step[Action]], List[Step[Result]])]((Nil, Nil))(
+      seq.steps.foldLeftM[Option, (List[Step], List[Step])]((Nil, Nil))(
         (acc, step) =>
         if (Step.status(step) === StepState.Pending)
-          Some(
-            acc.leftMap(
-              _ :+ step.map(
-                _.fold(
-                  identity,
-                  // It should never happen
-                  a => fromTask(ActionType.Undefined, Task(Result.Error(a.kind, "Inconsistent status")))
-                )
-              )
-            )
-          )
+          Some(acc.leftMap(_ :+ step))
         else if (Step.status(step) === StepState.Completed)
-          Some(
-            acc.rightMap(
-              _ :+ step.map(
-                _.fold(
-                  // It should never happen
-                  a => Result.Error(a.kind, "Inconsistent status"),
-                  identity
-                )
-              )
-            )
-          )
+          Some(acc.rightMap(_ :+ step))
         else None
       )
 
@@ -198,7 +160,7 @@ object Sequence {
 
     val status: SequenceState
 
-    val pending: List[Step[Action]]
+    val pending: List[Step]
 
     def rollback: State
 
@@ -213,7 +175,7 @@ object Sequence {
       */
     val current: Execution
 
-    val done: List[Step[Result]]
+    val done: List[Step]
 
     /**
       * Given an index of a current `Action` it replaces such `Action` with the
@@ -223,11 +185,13 @@ object Sequence {
       */
     def mark(i: Int)(r: Result): State
 
+    def start(i: Int): State
+
     /**
       * Unzip `State`. This creates a single `Sequence` with either completed `Step`s
       * or pending `Step`s.
       */
-    val toSequence: Sequence[Action \/ Result]
+    val toSequence: Sequence
 
   }
 
@@ -244,7 +208,7 @@ object Sequence {
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence[Action \/ Result]): State =
+    def init(q: Sequence): State =
       Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
         .getOrElse(Final(Sequence.empty(q.id, q.metadata), SequenceState.Idle))
 
@@ -271,7 +235,7 @@ object Sequence {
           // Execution
           .focus
 
-      override val pending: List[Step[Action]] = zipper.pending
+      override val pending: List[Step] = zipper.pending
 
       override def rollback: Zipper = self.copy(zipper = zipper.rollback)
 
@@ -283,7 +247,7 @@ object Sequence {
 
       override def setObserver(name: Observer): State = observerL.set(name.some)(self)
 
-      override val done: List[Step[Result]] = zipper.done
+      override val done: List[Step] = zipper.done
 
       private val zipperL: Lens[Zipper, Sequence.Zipper] =
         GenLens[Zipper](_.zipper)
@@ -310,7 +274,16 @@ object Sequence {
 
       }
 
-      override val toSequence: Sequence[Action \/ Result] = zipper.toSequence
+      override def start(i: Int): State = {
+
+        val currentExecutionL: Lens[Zipper, Execution] = zipperL ^|-> Sequence.Zipper.current
+
+        currentExecutionL.modify(_.start(i))(self)
+
+      }
+
+
+      override val toSequence: Sequence = zipper.toSequence
 
     }
 
@@ -319,13 +292,13 @@ object Sequence {
       * only completed `Step`s.
       *
       */
-    final case class Final(seq: Sequence[Result], status: SequenceState) extends State { self =>
+    final case class Final(seq: Sequence, status: SequenceState) extends State { self =>
 
       override val next: Option[State] = None
 
       override val current: Execution = Execution.empty
 
-      override val pending: List[Step[Action]] = Nil
+      override val pending: List[Step] = Nil
 
       override def rollback: Final = self
 
@@ -335,13 +308,15 @@ object Sequence {
 
       override def setObserver(name: Observer): State = observerL.set(name.some)(self)
 
-      override val done: List[Step[Result]] = seq.steps
+      override val done: List[Step] = seq.steps
 
       override def mark(i: Int)(r: Result): State = self
 
-      override val toSequence: Sequence[Action \/ Result] = seq.map(_.right)
+      override def start(i: Int): State = self
 
-      private val sequenceL: Lens[Final, Sequence[Result]] =
+      override val toSequence: Sequence = seq
+
+      private val sequenceL: Lens[Final, Sequence] =
         GenLens[Final](_.seq)
 
       private val metadataL: Lens[Final, SequenceMetadata] =

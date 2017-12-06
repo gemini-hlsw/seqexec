@@ -14,6 +14,7 @@ import edu.gemini.seqexec.engine.Result.{OK, Partial, PartialVal, RetVal}
 sealed trait SystemEvent
 final case class Completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]) extends SystemEvent
 final case class PartialResult[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]) extends SystemEvent
+final case class Paused(id: Sequence.Id, i: Int) extends SystemEvent
 final case class Failed(id: Sequence.Id, i: Int, e: Result.Error) extends SystemEvent
 final case class Busy(id: Sequence.Id) extends SystemEvent
 final case class Executed(id: Sequence.Id) extends SystemEvent
