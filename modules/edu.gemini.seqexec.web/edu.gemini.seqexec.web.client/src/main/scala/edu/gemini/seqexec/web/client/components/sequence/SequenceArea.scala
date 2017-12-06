@@ -6,6 +6,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceInfo, SequenceControl, SequenceObserverField, StepConfigToolbar, SequenceAnonymousToolbar}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
+import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
@@ -15,13 +16,14 @@ import edu.gemini.seqexec.model.Model.SeqexecSite
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.ScalazReact._
 import scalacss.ScalaCssReact._
 
 import scalaz.syntax.show._
 
 object SequenceStepsTableContainer {
-  final case class Props(site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
     protected[sequence] val sequenceControlConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
     private[sequence] val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i)))).toMap
     protected[sequence] val sequenceObserverConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
@@ -32,7 +34,6 @@ object SequenceStepsTableContainer {
 
   def updateStepToRun(step: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.set(State(step)).liftCB
-
 
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
     .initialState(State(0))
@@ -73,13 +74,14 @@ object SequenceStepsTableContainer {
           <.div(
             ^.cls := "ui sixteen wide column",
             p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
-                StepsTableContainer(StepsTableContainer.Props(m, x => $.runState(updateStepToRun(x))))))
+                StepsTableContainer(StepsTableContainer.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
           )
         )
       )
     }.build
 
-  def apply(site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]): Unmounted[Props, State, Unit] = component(Props(site, p))
+  def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]): Unmounted[Props, State, Unit] =
+    component(Props(router, site, p))
 }
 
 /**
@@ -87,7 +89,7 @@ object SequenceStepsTableContainer {
 */
 object SequenceTabContent {
 
-  final case class Props(site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]) {
     protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
   }
 
@@ -103,19 +105,20 @@ object SequenceTabContent {
         dataTab := instrument.shows,
         SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
         IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
-        p.connect(st => SequenceStepsTableContainer(p.site, st)).when(sequenceSelected)
+        p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
       )
     }
     .build
 
-    def apply(site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]): Unmounted[Props, Unit, Unit] = component(Props(site, p))
+    def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]): Unmounted[Props, Unit, Unit] =
+      component(Props(router, site, p))
 }
 
 /**
  * Contains the area with tabs and the sequence body
  */
 object SequenceTabsBody {
-  final case class Props(site: SeqexecSite) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite) {
     protected[sequence] val instrumentConnects = site.instruments.list.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
   }
 
@@ -124,26 +127,28 @@ object SequenceTabsBody {
     .render_P(p =>
       <.div(
         InstrumentsTabs(p.site),
-        p.instrumentConnects.map(c => c(s => SequenceTabContent(p.site, s))).toList.toTagMod
+        p.instrumentConnects.map(c => c(s => SequenceTabContent(p.router, p.site, s))).toList.toTagMod
       )
     ).build
 
-  def apply(site: SeqexecSite): Unmounted[Props, Unit, Unit] = component(Props(site))
+  def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite): Unmounted[Props, Unit, Unit] =
+    component(Props(router, site))
 }
 
 /**
  * Top level container of the sequence area
  */
 object SequenceArea {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite)
 
-  private val component = ScalaComponent.builder[SeqexecSite]("QueueTableSection")
+  private val component = ScalaComponent.builder[Props]("QueueTableSection")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui sixteen wide column",
-        SequenceTabsBody(p)
+        SequenceTabsBody(p.router, p.site)
       )
     ).build
 
-  def apply(site: SeqexecSite): Unmounted[SeqexecSite, Unit, Unit] = component(site)
+  def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite): Unmounted[Props, Unit, Unit] = component(Props(router, site))
 }

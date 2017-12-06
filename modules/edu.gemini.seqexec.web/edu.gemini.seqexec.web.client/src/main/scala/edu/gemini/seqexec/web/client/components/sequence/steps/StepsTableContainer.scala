@@ -7,7 +7,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.model.Pages.SequenceConfigPage
+import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
 import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, FlipBreakpointStep, FlipSkipStep}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -21,6 +21,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
@@ -93,7 +94,7 @@ object StepsTableContainer {
                    onHover        : Option[Int],
                    autoScrolled   : Boolean)
 
-  final case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
+  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
     def steps: Option[StepsTableFocus] = stepsTable()._2
     private val stepsList: List[Step] = ~steps.map(_.steps)
@@ -285,7 +286,7 @@ object StepsTableContainer {
       }
 
     // scalastyle:off
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
+    private def stepCols(router: RouterCtl[SeqexecPages], status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -335,24 +336,24 @@ object StepsTableContainer {
         ),
         <.td( // Column link to details
           ^.cls := "collapsing right aligned",
-          IconCaretRight.copyIcon(onClick = displayStepDetails(p.instrument, p.id, i))
+          router.link(SequenceConfigPage(p.instrument, p.id, i + 1))(IconCaretRight.copyIcon(color = "black".some, onClick = displayStepDetails(p.instrument, p.id, i)))
         )
       )
       // scalastyle:on
 
-    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetsDisplay: OffsetsDisplay): TagMod =
+    def stepsTable(props: Props, p: StepsTableFocus, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         ^.onMouseLeave  --> mouseLeave,
-        StepsTableHeader(offsetsDisplay),
+        StepsTableHeader(props.offsetsDisplay),
         <.tbody(
           SeqexecStyles.stepsListBody,
           p.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
                 gutterCol(p.id, i, step, s),
-                stepCols(status, p, i, p.state, step, offsetsDisplay)
+                stepCols(props.router, props.status, p, i, p.state, step, props.offsetsDisplay)
               )
           }.toTagMod
         )
@@ -368,7 +369,7 @@ object StepsTableContainer {
             val step = tab.steps(i)
             configTable(step)
           }.getOrElse {
-            stepsTable(p.status, tab, s, p.offsetsDisplay)
+            stepsTable(p, tab, s)
           }
         }
       )
