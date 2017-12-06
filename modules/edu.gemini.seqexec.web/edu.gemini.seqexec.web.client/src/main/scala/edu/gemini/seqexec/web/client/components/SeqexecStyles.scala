@@ -336,6 +336,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     fontStyle.italic
   )
 
+  val fpuLabel: StyleA = style(
+    fontSize.smaller,
+    textOverflow := "ellipsis",
+    overflow.hidden,
+    wordWrap.breakWord,
+    whiteSpace.nowrap
+  )
+
   // Styles for the log table, These styles will make react-virtualized
   // match the look of SemanticUI tables
   val logTable: StyleA = style(

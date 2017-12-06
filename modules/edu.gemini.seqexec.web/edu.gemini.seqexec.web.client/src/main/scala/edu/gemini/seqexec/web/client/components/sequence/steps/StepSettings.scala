@@ -4,9 +4,10 @@
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.Model.{Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.enumerations._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-import edu.gemini.seqexec.web.client.lenses.{observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
+import edu.gemini.seqexec.web.client.lenses.{instrumentFPUO, observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
@@ -136,6 +137,27 @@ object OffsetBlock {
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
+/**
+ * Component to display the FPU
+ */
+object FPUCell {
+  final case class Props(s: Step, i: Instrument)
+
+  private val component = ScalaComponent.builder[Props]("FPUCell")
+    .stateless
+    .render_P { p =>
+
+      val fpu: Option[String] = instrumentFPUO.getOption(p.s).flatMap(GmosSFPU.get)
+      <.div(
+        ^.cls := "center aligned",
+        SeqexecStyles.fpuLabel,
+        fpu.getOrElse("Unknown"): String
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
 /**
  * Component to display the exposure time and coadds
  */

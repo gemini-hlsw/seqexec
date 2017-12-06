@@ -75,7 +75,7 @@ object StepsTableHeader {
           TableHeader(TableHeader.Props(width = Width.Three), "Offset").unless(displayOffsets),
           TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
           TableHeader(TableHeader.Props(width = Width.One), "Exposure"),
-          TableHeader(TableHeader.Props(width = Width.One), "FPU"),
+          TableHeader(TableHeader.Props(width = Width.Two), "FPU"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
           TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
           TableHeader(TableHeader.Props(collapsing = true), "Config")
@@ -335,11 +335,11 @@ object StepsTableContainer {
         ExposureTime(ExposureTime.Props(step, instrument))
       )
 
-    private def stepFPUCell(step: Step, i: Int) =
+    private def stepFPUCell(instrument: Instrument, step: Step, i: Int) =
       <.td( // Column object type
         ^.onDoubleClick --> selectRow(step, i),
         ^.cls := "right aligned",
-        stepTypeLabel(step).whenDefined
+        FPUCell(FPUCell.Props(step, instrument))
       )
 
     private def stepObjectTypeCell(step: Step, i: Int) =
@@ -377,7 +377,7 @@ object StepsTableContainer {
         offsetDisplayCell(offsetsDisplay, step, i),
         stepGuidingCell(step, i),
         stepExposureTimeCell(p.instrument, step, i),
-        stepFPUCell(step, i),
+        stepFPUCell(p.instrument, step, i),
         stepObjectTypeCell(step, i),
         stepProgressCell(step, state, i),
         stepDetailsCell(p.id, i)
