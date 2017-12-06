@@ -19,12 +19,12 @@ object interpreter {
     def server:  Server
   }
 
-  final case class InterpreterState(indentation: Int, machineHostCache: Map[Host.Machine, String]) {
+  final case class InterpreterState(indentation: Int) {
     def indent: InterpreterState = copy(indentation = indentation + 1)
     def outdent:InterpreterState = copy(indentation = indentation - 1)
   }
   object InterpreterState {
-    val initial: InterpreterState = InterpreterState(0, Map.empty)
+    val initial: InterpreterState = InterpreterState(0)
   }
 
   /**
@@ -39,12 +39,7 @@ object interpreter {
         case Server.Local =>
           doShell(cmd, c.verbose, state)
 
-        case Server.Remote(m @ Host.Machine(h), u) =>
-          machineHost(m, c.verbose, state).flatMap { h =>
-            doRemoteShell(s"${u.getOrElse("docker")}@$h", cmd, c, state)
-          }
-
-        case Server.Remote(Host.Network(h), u) =>
+        case Server.Remote(Host(h), u) =>
           doRemoteShell(u.map(u =>  s"$u@$h").getOrElse(h), cmd, c, state)
 
       }
@@ -85,23 +80,6 @@ object interpreter {
    */
   private def doLog(level: Level, msg: String, state: IORef[InterpreterState]): EitherT[IO, Int, Unit] =
     EitherT.right(doLogʹ(level, msg, state))
-
-  /** Machine name to IP-address. */
-  private def machineHost(machine: Host.Machine, verbose: Boolean, state: IORef[InterpreterState]): EitherT[IO, Int, String] =
-    EitherT.right(state.read.map(_.machineHostCache.get(machine))).flatMap {
-      case Some(s) => s.pure[EitherT[IO, Int, ?]]
-      case None =>
-        doShell(Right(List("docker-machine", "ip", machine.name)), verbose, state).flatMap {
-          case Output(0, s :: Nil) =>
-            doLog(Level.Info, s"Address of docker machine '${machine.name}' is $s." , state) *>
-            EitherT.right {
-              state.mod(is => is.copy(machineHostCache = is.machineHostCache + (machine -> s))).as(s)
-            }
-          case _ =>
-            doLog(Level.Error, "couldn't get ip-address for machine ", state) *>
-            EitherT.left(-1.pure[IO])
-        }
-    }
 
   private def doRemoteShell(uh: String, cmd: Either[String, List[String]], c: Config, state: IORef[InterpreterState]): EitherT[IO, Int, Output] =
     doShell(cmd.bimap(s => s"ssh $uh $s", "ssh" :: uh :: _), c.verbose, state)

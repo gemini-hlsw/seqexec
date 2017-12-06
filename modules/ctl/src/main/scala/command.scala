@@ -46,7 +46,7 @@ object Command {
 
   private lazy val server: Opts[Server] =
     (host, user) mapN {
-      case (Some(h), ou) => Server.Remote(Host.Network(h), ou)
+      case (Some(h), ou) => Server.Remote(Host(h), ou)
       case (None,    _ ) => Server.Local
     }
 
