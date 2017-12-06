@@ -12,12 +12,15 @@ import cats.implicits._
 /** Low-level constructors for `CtlIO` operations related to docker. */
 object docker {
 
-  final case class Network(hash: String)
+  final case class Network(hash: String, name: String)
   final case class Image(hash: String)
   final case class Container(hash: String)
 
   def docker(args: String*): CtlIO[Output] =
-    remote("/usr/bin/docker", args : _*)
+    isRemote.map {
+      case true  => "/usr/bin/docker"
+      case false => "/usr/local/bin/docker"
+    } .flatMap(remote(_, args : _*))
 
   def containerHealth(k: Container): CtlIO[String] = // for now
     isRemote.flatMap { r =>
@@ -31,12 +34,12 @@ object docker {
   def findNetwork(name: String): CtlIO[Option[Network]] =
     docker("network", "ls", "-q", "--filter", s"name=$name").require {
       case Output(0, Nil)     => None
-      case Output(0, List(h)) => Some(Network(h))
+      case Output(0, List(h)) => Some(Network(h, name))
     }
 
   def createNetwork(name: String): CtlIO[Network] =
     docker("network", "create", name).require {
-      case Output(0, List(h)) => Network(h)
+      case Output(0, List(h)) => Network(h, name)
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.TraversableOps")) // .last below
@@ -96,6 +99,9 @@ object docker {
     docker("rm", k.hash) require {
       case Output(0, s :: Nil) if s === k.hash => ()
     }
+
+  def destroyContainer(k: Container): CtlIO[Unit] =
+    stopContainer(k) *> removeContainer(k)
 
   def startContainer(k: Container): CtlIO[Unit] =
     docker("start", k.hash) require {

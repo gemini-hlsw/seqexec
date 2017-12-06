@@ -9,25 +9,11 @@ import cats.effect._
 import gem.ctl.free.ctl._
 import gem.ctl.free.interpreter.{ interpreter, InterpreterState }
 
-import gem.ctl.hi.ps.ps
-import gem.ctl.hi.log.showLog
-import gem.ctl.hi.stop.stop
-import gem.ctl.hi.deploy.deploy
-import gem.ctl.hi.DeployTest.deployTest
-import gem.ctl.hi.rollback.rollback
-
 object main {
 
   /** Map a `Command` to a corresponding program in `CtlIO`. */
   def command(c: Command): CtlIO[Unit] =
-    info(s"Target host is ${c.server.userAndHost}").as(c).flatMap {
-      case Command.Deploy(u, d, s, v, f) => deploy(d, s, f)
-      case Command.DeployTest(u, d, s, v, f) => deployTest(d)
-      case Command.Ps(_, _)              => ps
-      case Command.Stop(_, _)            => stop
-      case Command.Log(_, _, n)          => showLog(n)
-      case Command.Rollback(_, _)        => rollback
-    }
+    info(s"Target host is ${c.server.userAndHost}") *> c.impl
 
   /** Entry point. Parse the commandline args and do what's asked, if possible. */
   def mainʹ(args: List[String]): IO[Unit] =

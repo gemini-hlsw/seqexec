@@ -3,39 +3,27 @@
 
 package gem.ctl
 
-import com.monovore.decline.{ Command => Cmd, _ }
-
 import cats.implicits._, cats.effect.IO
-
-import gem.ctl.free.ctl.{ Server, Host }
+import com.monovore.decline.{ Command => Cmd, _ }
+import gem.ctl.free.ctl.{ CtlIO, Server, Host }
 import gem.ctl.free.interpreter.Config
+import gem.ctl.hi._
 
 /** A command to be interpreted by gemctl. */
-sealed trait Command extends Config
+sealed trait Command extends Config {
+  def impl: CtlIO[Unit]
+}
 
 /** Module of constructors of `Command`, and a parser too. */
 object Command {
 
-  final case class Deploy(
-    server: Server,
-    deployRev:   String,
-    standalone:  Boolean,
-    verbose:     Boolean,
-    force:       Boolean
-  ) extends Command
-
   final case class DeployTest(
-    server: Server,
-    deployRev:   String,
-    standalone:  Boolean,
-    verbose:     Boolean,
-    force:       Boolean
-  ) extends Command
-
-  final case class Ps  (    server: Server, verbose: Boolean) extends Command
-  final case class Stop(    server: Server, verbose: Boolean) extends Command
-  final case class Log (    server: Server, verbose: Boolean, count: Int) extends Command
-  final case class Rollback(server: Server, verbose: Boolean) extends Command
+    verbose: Boolean,
+    server:  Server,
+    version: String
+  ) extends Command {
+    val impl = Deploy.deployTest(version)
+  }
 
   /**
    * Construct a program to parse commandline `args` into a `Command`, or show help information if
@@ -48,28 +36,18 @@ object Command {
       case Left(h) => IO(Console.println(Console.BLUE + h.toString + Console.RESET)).as(none[Command]) // scalastyle:ignore
     }
 
-  // Opts implementation below
-
-  private lazy val machine: Opts[Boolean] =
-    Opts.flag(
-      short = "m",
-      long  = "machine",
-      help  = "Use docker machine. Use with -H to specify a machine other than 'default'."
-    ).orFalse
-
   private lazy val host: Opts[Option[String]] =
     Opts.option[String](
       short   = "H",
       long    = "host",
       metavar = "HOST",
-      help    = "Use the specified docker host (machine when given with -m)."
+      help    = "Remote docker host."
     ).orNone
 
   private lazy val server: Opts[Server] =
-    (machine, host, user) mapN {
-      case (true,  oh,      ou) => Server.Remote(Host.Machine(oh.getOrElse("default")), ou)
-      case (false, Some(h), ou) => Server.Remote(Host.Network(h), ou)
-      case (false, None,    _ ) => Server.Local
+    (host, user) mapN {
+      case (Some(h), ou) => Server.Remote(Host.Network(h), ou)
+      case (None,    _ ) => Server.Local
     }
 
   private lazy val user: Opts[Option[String]] =
@@ -77,30 +55,11 @@ object Command {
       short = "u",
       long  = "user",
       metavar = "USER",
-      help = "Server user. Default value is 'docker' with -m, otherwise current user, ignored if neither -H nor -m is specified."
+      help = "Remote docker user (ignored unless -H is also specified)."
     ).orNone
 
-  private lazy val deployRevision: Opts[String] =
-    Opts.option[String](
-      short   = "d",
-      long    = "deploy",
-      metavar = "REVISION",
-      help    = "Revision to deploy, HEAD if unspecified."
-    ).withDefault("HEAD")
-
-  private lazy val standalone: Opts[Boolean] =
-    Opts.flag(
-      short = "s",
-      long  = "standalone",
-      help  = "Deploy standalone; do not attempt an upgrade. Cannot be specified with --base"
-    ).orFalse
-
-  private lazy val force: Opts[Boolean] =
-    Opts.flag(
-      short = "f",
-      long  = "force",
-      help  = "Force an upgrade, even if base and deploy revisions are identical."
-    ).orFalse
+  private lazy val version: Opts[String] =
+    Opts.argument[String](metavar = "VERSION")
 
   private lazy val verbose: Opts[Boolean] =
     Opts.flag(
@@ -109,62 +68,19 @@ object Command {
       help  = "Show details about what we're doing under the hood."
     ).orFalse
 
-  private lazy val deploy: Opts[Deploy] =
-    (server, deployRevision, standalone, verbose, force) mapN Deploy.apply
+  private lazy val deployTest: Opts[DeployTest] =
+    (verbose, server, version) mapN DeployTest.apply
 
-  private lazy val deploy2: Opts[DeployTest] =
-    (server, deployRevision, standalone, verbose, force) mapN DeployTest.apply
-
-  private lazy val lines: Opts[Int] = {
-    val DefaultLines = 50
-    Opts.option[Int](
-      short   = "n",
-      long    = "lines",
-      metavar = "LINES",
-      help    = s"Number of lines to show from tail of log (default $DefaultLines)"
-    ).withDefault(DefaultLines)
-  }
-
-  private lazy val deployCommand: Opts[Command] =
-    Opts.subcommand(
-      name = "deploy",
-      help = "Deploy an application."
-    )(deploy.widen[Command])
-
-  private lazy val deploy2Command: Opts[Command] =
+  private lazy val deployTestCommand: Opts[Command] =
     Opts.subcommand(
       name = "deploy-test",
       help = "Deploy gem, destroying any existing deployment."
-    )(deploy2.widen[Command])
-
-  private lazy val psCommand: Opts[Command] =
-    Opts.subcommand(
-      name = "ps",
-      help = "Get the status of a gem deployment."
-    )((server, verbose).mapN(Ps).widen[Command])
-
-  private lazy val stopCommand: Opts[Command] =
-    Opts.subcommand(
-      name = "stop",
-      help = "Stop a gem deployment."
-    )((server, verbose).mapN(Stop).widen[Command])
-
-  private lazy val logCommand: Opts[Command] =
-    Opts.subcommand(
-      name = "log",
-      help = "Show the Gem server log."
-    )((server, verbose, lines).mapN(Log).widen[Command])
-
-  private lazy val rollbackCommand: Opts[Command] =
-    Opts.subcommand(
-      name = "rollback",
-      help = "Roll the current gem deployment back to the previous one, if possible."
-    )((server, verbose).mapN(Rollback).widen[Command])
+    )(deployTest.widen[Command])
 
   private def mainParser(progName: String): Cmd[Command] =
     Cmd(
       name   = progName,
       header = "Deploy and control gem."
-    )(List(deployCommand, deploy2Command, psCommand, stopCommand, logCommand, rollbackCommand).foldRight(Opts.never: Opts[Command])(_ orElse _))
+    )(List(deployTestCommand).foldRight(Opts.never: Opts[Command])(_ orElse _))
 
 }
