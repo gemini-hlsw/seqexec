@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.Model.{Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
-import edu.gemini.seqexec.model.enumerations._
+import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses.{instrumentFPUO, observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
@@ -147,11 +147,21 @@ object FPUCell {
     .stateless
     .render_P { p =>
 
-      val fpu: Option[String] = instrumentFPUO.getOption(p.s).flatMap(GmosSFPU.get)
+      val nameMapper: Map[String, String] = p.i match {
+        case Instrument.GmosS => enumerations.fpu.GmosSFPU
+        case Instrument.GmosN => enumerations.fpu.GmosNFPU
+        case Instrument.F2    => enumerations.fpu.Flamingos2
+        case _                => Map.empty
+      }
+      val fpuValue: Option[String] =
+        for {
+          fpuS <- instrumentFPUO.getOption(p.s)
+          fpu <- nameMapper.get(fpuS)
+        } yield fpu
       <.div(
         ^.cls := "center aligned",
         SeqexecStyles.fpuLabel,
-        fpu.getOrElse("Unknown"): String
+        fpuValue.getOrElse("Unknown"): String
       )
     }
     .build
