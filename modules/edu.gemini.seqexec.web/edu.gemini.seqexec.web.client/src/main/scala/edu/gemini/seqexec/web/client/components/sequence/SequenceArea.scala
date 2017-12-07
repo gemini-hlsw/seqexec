@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
-import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceInfo, SequenceControl, SequenceObserverField, StepConfigToolbar, SequenceAnonymousToolbar}
+import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
 import edu.gemini.seqexec.web.client.semanticui._
@@ -41,37 +41,13 @@ object SequenceStepsTableContainer {
       <.div(
         p.p().stepConfigDisplayed.fold{
           if (p.p().isLogged) {
-            <.div(
-              ^.cls := "ui grid",
-              <.div(
-              ^.cls := "ui row",
-                SeqexecStyles.shorterRow,
-                <.div(
-                  ^.cls := "ui sixteen wide column",
-                  p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(SequenceInfo.apply))
-                )
-              ),
-              <.div(
-                ^.cls := "ui row",
-                SeqexecStyles.shorterRow,
-                SeqexecStyles.lowerRow,
-                <.div(
-                  ^.cls := "ui left floated column eight wide computer eight wide tablet only",
-                  p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
-                ),
-                <.div(
-                  ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
-                  SeqexecStyles.observerField.when(p.p().isLogged),
-                  p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
-                )
-              )
-            )
+            SequenceDefaultToolbar(p): VdomElement
           } else {
             SequenceAnonymousToolbar(p.site, p.p().instrument): VdomElement
           }
         }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, p.p().id, s))),
-        <.div(
-          ^.cls := "ui grid",
+          <.div(
+            ^.cls := "ui grid",
             <.div(
               ^.cls := "ui row",
               SeqexecStyles.lowerRow,
@@ -81,7 +57,7 @@ object SequenceStepsTableContainer {
                     StepsTableContainer(StepsTableContainer.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
               )
             )
-        )
+          )
       )
     }.build
 

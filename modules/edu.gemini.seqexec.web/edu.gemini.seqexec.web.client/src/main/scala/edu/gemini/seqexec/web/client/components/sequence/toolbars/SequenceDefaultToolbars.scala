@@ -7,6 +7,8 @@ import edu.gemini.seqexec.model.Model.{SequenceId, SequenceState}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
 import edu.gemini.seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import edu.gemini.seqexec.web.client.ModelOps._
+import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.components.sequence.SequenceStepsTableContainer
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
@@ -15,6 +17,7 @@ import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
+import scalacss.ScalaCssReact._
 
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
@@ -103,4 +106,41 @@ object SequenceControl {
     }.build
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
+}
+
+/**
+  * Toolbar log logged in users
+  */
+object SequenceDefaultToolbar {
+  private val component = ScalaComponent.builder[SequenceStepsTableContainer.Props]("SequenceDefaultToolbar")
+    .stateless
+    .render_P ( p =>
+      <.div(
+        ^.cls := "ui grid",
+        <.div(
+        ^.cls := "ui row",
+          SeqexecStyles.shorterRow,
+          <.div(
+            ^.cls := "ui sixteen wide column",
+            p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(SequenceInfo.apply))
+          )
+        ),
+        <.div(
+          ^.cls := "ui row",
+          SeqexecStyles.shorterRow,
+          SeqexecStyles.lowerRow,
+          <.div(
+            ^.cls := "ui left floated column eight wide computer eight wide tablet only",
+            p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
+          ),
+          <.div(
+            ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
+            SeqexecStyles.observerField.when(p.p().isLogged),
+            p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+          )
+        )
+      )
+    ).build
+
+  def apply(p: SequenceStepsTableContainer.Props): Unmounted[SequenceStepsTableContainer.Props, Unit, Unit] = component(p)
 }
