@@ -13,10 +13,10 @@ package object sql {
     Meta[Long].xmap(Duration.ofMillis, _.toMillis)
 
   implicit val ArcsecondsMeta: Meta[Arcseconds] =
-    Meta[Double].xmap(Arcseconds.fromArcsecs, _.toArcsecs)
+    Meta[BigDecimal].xmap(Arcseconds.fromArcsecs, _.toArcsecs)
 
   implicit val DegreesMeta: Meta[Degrees] =
-    Meta[Double].xmap(Degrees.fromDegrees, _.toDegrees)
+    Meta[BigDecimal].xmap(Degrees.fromDegrees, _.toDegrees)
 
   implicit val WavelengthNmMeta: Meta[Wavelength.Nm] =
     Meta[BigDecimal].xmap(Wavelength.fromNm, _.toBigDecimal)

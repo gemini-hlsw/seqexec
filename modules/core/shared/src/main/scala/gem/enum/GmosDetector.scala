@@ -26,7 +26,7 @@ sealed abstract class GmosDetector(
 
 object GmosDetector {
 
-  /** @group Constructors */ case object E2V extends GmosDetector("E2V", "E2V", "E2V", gem.math.Angle.fromDoubleArcseconds(0.0727), gem.math.Angle.fromDoubleArcseconds(0.073), 1536, 6144, 4608, 4)
+  /** @group Constructors */ case object E2V extends GmosDetector("E2V", "E2V", "E2V", gem.math.Angle.fromDoubleArcseconds(0.0727), gem.math.Angle.fromDoubleArcseconds(0.0730), 1536, 6144, 4608, 4)
   /** @group Constructors */ case object HAMAMATSU extends GmosDetector("HAMAMATSU", "Hamamatsu", "Hamamatsu", gem.math.Angle.fromDoubleArcseconds(0.0809), gem.math.Angle.fromDoubleArcseconds(0.0809), 1392, 6144, 4224, 5)
 
   /** All members of GmosDetector, in canonical order. */
