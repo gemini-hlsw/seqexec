@@ -7,12 +7,11 @@ import cats.implicits._
 import gem.ctl.free.ctl._
 import gem.ctl.low.docker._
 
-final case class Deployment(gem: Container, postgres: Container)
-
-/** Constructors for `CtlIO` operations related to the `deploy` command. */
 object Deploy {
 
-  def destroyDeployment: CtlIO[Unit] =
+  final case class Deployment(gem: Container, postgres: Container)
+
+  private def destroyDeployment: CtlIO[Unit] =
     gosub("Destroying current deployment, if any.") {
       findRunningContainersWithLabel("gem.version").flatMap {
         case Nil => info("None found, nothing to do!")
@@ -22,7 +21,7 @@ object Deploy {
       }
     }
 
-  def deployDatabase(version: String, iPg: Image, n: Network): CtlIO[Container] =
+  private def deployDatabase(version: String, iPg: Image, n: Network): CtlIO[Container] =
     gosub("Deploying postgres.") {
       for {
         kDb <- Containers.createDatabaseContainer(version, iPg, n)
@@ -31,7 +30,7 @@ object Deploy {
       } yield kDb
     }
 
-  def deployGem(version: String, iGem: Image, n: Network): CtlIO[Container] =
+  private def deployGem(version: String, iGem: Image, n: Network): CtlIO[Container] =
     gosub("Deploying Gem.") {
       for {
         kGem <- Containers.createGemContainer(version, iGem, n)
@@ -39,7 +38,7 @@ object Deploy {
       } yield kGem
     }
 
-  def currentDeployment: CtlIO[Option[Deployment]] =
+  private def currentDeployment: CtlIO[Option[Deployment]] =
     gosub("Finding current deployment.") {
       findRunningContainersWithLabel("gem.version").flatMap {
         case Nil          => info("No current deployment.").as(None)
@@ -58,6 +57,18 @@ object Deploy {
       }
     }
 
+  private def verifyCompatibility(curr: Container, next: Image): CtlIO[Unit] =
+    gosub("Verifying upgrade compatibility.") {
+      for {
+        _  <- info(s"Old gem container is ${curr.hash}")
+        _  <- info(s"New gem image is ${next.hash}")
+        c  <- getLabelValue("gem.commit", curr)
+        cs <- getImageLabel("gem.history", next).map(_.split(",").toSet)
+        _  <- if (cs.contains(c)) info("They are compatible. The schema can be upgraded.")
+              else error(s"New deployment is incompatible; missing commit: $c") *> exit(-1)
+      } yield ()
+    }
+
   def deployTest(version: String): CtlIO[Deployment] =
     for {
       h  <- serverHostName
@@ -65,30 +76,35 @@ object Deploy {
       n  <- Networks.getPrivateNetwork
       gi <- Images.getGemImage(version)
       pi <- Images.getPostgresImage(gi)
-      d  <- currentDeployment
-      _  <- exit[Int](-1)
       _  <- destroyDeployment
       pk <- deployDatabase(version, pi, n)
       gk <- deployGem(version, gi, n)
     } yield Deployment(gk, pk)
 
+  def verifyNewVersion(current: Deployment, newVersion: String): CtlIO[Unit] =
+    getLabelValue("gem.version", current.gem).flatMap {
+      case `newVersion` => info("The requested version is already deployed here. Nothing to do.") *> exit(0)
+      case _            => ().pure[CtlIO]
+    }
 
-  // def deployProduction(version: String): CtlIO[Deployment] =
-  //   for {
-  //     h  <- serverHostName
-  //     _  <- info(s"This is a production upgrade on $h.")
-  //     n  <- Networks.getPrivateNetwork
-  //     gi <- Images.getGemImage(version)
-  //     pi <- Images.getPostgresImage(gi)
-  //     d  <- currentDeployment
-  //     // verify upgrade path
-  //     pk <- deployDatabase(version, pi, n) // specify prior container
-  //     // stop d.gem
-  //     // log "production system is down. current time is ..."
-  //     // stream data from d.postgres
-  //     // shut down d.postgres
-  //     gk <- deployGem(version, gi, n) // specify prior container
-  //     // log "upgrade successful, total downtime:..."
-  //   } yield Deployment(gk, pk)
+  def deployProduction(version: String): CtlIO[Deployment] =
+    for {
+      h  <- serverHostName
+      _  <- info(s"This is a production upgrade on $h.")
+      n  <- Networks.getPrivateNetwork
+      gi <- Images.getGemImage(version)
+      pi <- Images.getPostgresImage(gi)
+      od <- currentDeployment
+      d  <- od.fold(error("No current deployment. Use deploy-test to bootstrap.") *> exit[Deployment](-1))(_.pure[CtlIO])
+      _  <- verifyNewVersion(d, version)
+      _  <- verifyCompatibility(d.gem, gi)
+      // pk <- deployDatabase(version, pi, n) // specify prior container
+      // stop d.gem
+      // log "production system is down. current time is ..."
+      // stream data from d.postgres
+      // shut down d.postgres
+      // gk <- deployGem(version, gi, n) // specify prior container
+      // log "upgrade successful, total downtime:..."
+    } yield d // FIX THIS
 
 }

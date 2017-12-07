@@ -25,6 +25,14 @@ object Command {
     val impl = Deploy.deployTest(version).void
   }
 
+  final case class DeployProduction(
+    verbose: Boolean,
+    server:  Server,
+    version: String
+  ) extends Command {
+    val impl = Deploy.deployProduction(version).void
+  }
+
   /**
    * Construct a program to parse commandline `args` into a `Command`, or show help information if
    * parsing fails. The `progName` argument is only used for help messages, and should match the
@@ -77,10 +85,19 @@ object Command {
       help = "Deploy gem, destroying any existing deployment."
     )(deployTest.widen[Command])
 
+  private lazy val deployProduction: Opts[DeployProduction] =
+    (verbose, server, version) mapN DeployProduction.apply
+
+  private lazy val deployProductionCommand: Opts[Command] =
+    Opts.subcommand(
+      name = "deploy-production",
+      help = "Deploy gem, upgrading from any existing deployment, which will be shut down."
+    )(deployProduction.widen[Command])
+
   private def mainParser(progName: String): Cmd[Command] =
     Cmd(
       name   = progName,
       header = "Deploy and control gem."
-    )(List(deployTestCommand).foldRight(Opts.never: Opts[Command])(_ orElse _))
+    )(List(deployTestCommand, deployProductionCommand).foldRight(Opts.never: Opts[Command])(_ orElse _))
 
 }
