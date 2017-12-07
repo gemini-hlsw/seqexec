@@ -36,6 +36,7 @@ object Event {
   val poll: Event = EventUser(Poll)
   def getState(f: (Engine.State) => Task[Option[Process[Task, Event]]]): Event = EventUser(GetState(f))
   def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(ActionStop(id, f))
+  def actionResume(id: Sequence.Id, i: Int, c: Task[Result]): Event = EventUser(ActionResume(id, i, c))
   def logMsg(msg: String): Event = EventUser(Log(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))

@@ -15,8 +15,6 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, Sink, merge}
-//import scalaz.syntax.traverse._
-//import scalaz.syntax.foldable._
 
 package engine {
 
@@ -25,7 +23,9 @@ package engine {
     def fromProcess(p: Process[Task, Event]): HandleP[Unit] = HandleP(Applicative[Handle].pure[(Unit, Option[Process[Task, Event]])](((), Some(p))))
   }
   final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
-
+  object ActionMetadata {
+    val default: ActionMetadata = ActionMetadata(Conditions.default, None, None)
+  }
 
   final case class Action(
     kind: ActionType,
@@ -59,6 +59,11 @@ package engine {
 
     def finished(ar: Action): Boolean = ar.state match {
       case Action.Failed(_) => true
+      case Action.Completed(_) => true
+      case _ => false
+    }
+
+    def completed(ar: Action): Boolean = ar.state match {
       case Action.Completed(_) => true
       case _ => false
     }
@@ -265,27 +270,26 @@ package object engine {
     * Executes all actions in the `Current` `Execution` in parallel. When all are done it emits the `Executed` event.
     * It also updates the `State` as needed.
     */
+  // Send the expected event when the `Action` is executed
+  // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
+  private def act(id: Sequence.Id, t: (ActionGen, Int), cx: ActionMetadata): Process[Task, Event] = t match {
+    case (gen, i) =>
+      Process.eval(gen(cx)).flatMap {
+        case r@Result.OK(_)         => Process(completed(id, i, r))
+        case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act(id, (c, i), cx)
+        case e@Result.Error(_)      => Process(failed(id, i, e))
+        case Result.Paused          => Process(paused(id, i))
+      }
+  }
+
   private def execute(id: Sequence.Id): HandleP[Unit] = {
-
-    // Send the expected event when the `Action` is executed
-    // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
-    def act(t: (ActionGen, Int), cx: ActionMetadata): Process[Task, Event] = t match {
-      case (gen, i) =>
-        Process.eval(gen(cx)).flatMap {
-          case r@Result.OK(_)         => Process(completed(id, i, r))
-          case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act((c, i), cx)
-          case e@Result.Error(_)      => Process(failed(id, i, e))
-          case Result.Paused          => Process(paused(id, i))
-        }
-    }
-
     get.flatMap(st => st.sequences.get(id).map {
       case seq@Sequence.State.Final(_, _) =>
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
       case seq =>
-        val u = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
-        val v = merge.mergeN(Process.emitAll(u)) ++ Process(executed(id))
+        val u = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
+        val v = merge.mergeN(Process.emitAll(u))
         val w = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
         w.sequenceU *> HandleP.fromProcess(v)
     }.getOrElse(unit)
@@ -304,11 +308,21 @@ package object engine {
     *
     * When the index doesn't exist it does nothing.
     */
-  def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(r))
+  def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(r)) *>
+    getS(id).flatMap(_.flatMap{
+      _.current.execution.all(Action.completed).option(HandleP.fromProcess(Process(executed(id))))
+    }.getOrElse(unit))
 
   def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 
   def actionPause(id: Sequence.Id, i: Int): HandleP[Unit] = modifyS(id)(_.mark(i)(Result.Paused))
+
+  def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit] = getS(id).flatMap(_.map{ s =>
+    if (s.status === SequenceState.Running &&
+      s.current.execution.index(i).map(_.state === Action.Paused).getOrElse(false))
+      modifyS(id)(_.start(i)) *> HandleP.fromProcess(act(id, (Kleisli(_ => cont), i), ActionMetadata.default))
+    else unit
+  }.getOrElse(unit))
 
   /**
     * For now it only changes the `Status` to `Paused` and returns the new
@@ -372,14 +386,14 @@ package object engine {
       case Poll                        => Logger.debug("Engine: Polling current state")
       case GetState(f)                 => getState(f)
       case ActionStop(id, f)           => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
-      case ActionResume(id, i, cont)   => Logger.debug("Engine: Action resume requested")
+      case ActionResume(id, i, cont)   => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
       case Log(msg)                    => Logger.debug(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
-      case Paused(id, i)           => Logger.debug("Engine: Action paused")
+      case Paused(id, i)           => Logger.debug("Engine: Action paused")  *> actionPause(id, i)
       case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
       case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
