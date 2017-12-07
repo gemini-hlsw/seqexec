@@ -13,7 +13,7 @@ object Images {
   private val GemImage: String    = "gem"
 
   private def requireImage(nameAndVersion: String): CtlIO[Image] = {
-    info(s"Looking for $nameAndVersion") *>
+    info(s"Looking for local image $nameAndVersion") *>
     findImage(nameAndVersion).flatMap {
       case None    =>
         warn(s"Cannot find image locally. Pulling (could take a few minutes).") *> pullImage(nameAndVersion).flatMap {
@@ -24,20 +24,20 @@ object Images {
     }
   }
 
-  def getDeployImage(version: String): CtlIO[Image] =
-    gosub("Setting up Gem image.") {
+  def getGemImage(version: String): CtlIO[Image] =
+    gosub(s"Finding and verifying Gem image for version $version.") {
       for {
         i <- requireImage(s"$GemRegistry/$GemImage:$version")
         _ <- ensureImageLabel("gem.version", version, i)
         r <- isRemote
-        _ <- ensureImageLabel("gem.unstable", false.toString, i).whenA(r)
+        _ <- ensureImageLabel("gem.unstable", false.toString, i).whenA(r) // remote deploy must be stable
       } yield i
     }
 
-  def getPostgresImage(gi: Image): CtlIO[Image] =
-    gosub("Setting up Postgres image.") {
+  def getPostgresImage(gemImage: Image): CtlIO[Image] =
+    gosub(s"Finding Postgres image specified by Gem image ${gemImage.hash}.") {
       for {
-        n <- getImageLabel("gem.postgres", gi)
+        n <- getImageLabel("gem.postgres", gemImage)
         _ <- info(s"Gem image requires $n")
         i <- requireImage(n)
       } yield i

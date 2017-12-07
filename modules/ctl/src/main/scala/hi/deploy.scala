@@ -10,8 +10,8 @@ import gem.ctl.low.docker._
 /** Constructors for `CtlIO` operations related to the `deploy` command. */
 object Deploy {
 
-  def stopDeployment: CtlIO[Unit] =
-    gosub("Stopping current deployment, if any.") {
+  def destroyDeployment: CtlIO[Unit] =
+    gosub("Destroying current deployment, if any.") {
       findRunningContainersWithLabel("gem.version").flatMap {
         case Nil => info("None found, nothing to do!")
         case cs  => cs.traverse { c =>
@@ -42,9 +42,9 @@ object Deploy {
       h  <- serverHostName
       _  <- info(s"This is a test deployment on $h. Any existing deployment will be destroyed!")
       n  <- Networks.getPrivateNetwork
-      gi <- Images.getDeployImage(version)
+      gi <- Images.getGemImage(version)
       pi <- Images.getPostgresImage(gi)
-      _  <- stopDeployment
+      _  <- destroyDeployment
       pk <- deployDatabase(version, pi, n)
       gk <- deployGem(version, gi, n)
     } yield ()

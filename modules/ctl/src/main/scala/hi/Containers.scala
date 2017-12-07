@@ -26,7 +26,8 @@ object Containers {
                   "--health-timeout", "2s",
                   iPg.hash
              ).require { case Output(0, List(s)) => Container(s) }
-        _ <- info(s"Container is $version-P ${c.hash}.")
+        _ <- info(s"Container name is $version-P")
+        _ <- info(s"Container hash is ${c.hash}.")
       } yield c
     }
 
@@ -34,7 +35,7 @@ object Containers {
     gosub(s"Creating Gem container from image ${iGem.hash}") {
       for {
         r  <- isRemote // irritating … see below
-        k  <- docker("run",
+        c  <- docker("run",
                 "--detach",
                 "--tty",
                 "--interactive",
@@ -47,8 +48,9 @@ object Containers {
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://$version-P/gem",
                 iGem.hash
               ).require { case Output(0, List(s)) => Container(s) }
-        _ <- info(s"Container is $version-G ${k.hash}.")
-      } yield k
+        _ <- info(s"Container name is $version-G")
+        _ <- info(s"Container hash is ${c.hash}.")
+      } yield c
     }
 
   def awaitHealthy(k: Container): CtlIO[Unit] =
