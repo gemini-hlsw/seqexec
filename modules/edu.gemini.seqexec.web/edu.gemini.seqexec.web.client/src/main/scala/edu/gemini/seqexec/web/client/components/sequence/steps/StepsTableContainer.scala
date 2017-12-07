@@ -7,7 +7,8 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, ShowStep}
+import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
+import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, FlipBreakpointStep, FlipSkipStep}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -20,6 +21,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
@@ -84,25 +86,12 @@ object StepsTableHeader {
   def apply(p: OffsetsDisplay): Unmounted[OffsetsDisplay, Unit, Unit] = component(p)
 }
 
-/**
-  * Container for a table with the steps
-  */
-object StepsTableContainer {
-  final case class State(nextScrollPos  : Double,
-                   onHover        : Option[Int],
-                   autoScrolled   : Boolean)
+object StepConfigTable {
+  final case class Props(step: Step)
 
-  final case class Props(stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
-    def status: ClientStatus = stepsTable()._1
-    def steps: Option[StepsTableFocus] = stepsTable()._2
-    private val stepsList: List[Step] = ~steps.map(_.steps)
-    // Find out if offsets should be displayed
-    val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
-  }
-
-  class Backend($: BackendScope[Props, State]) {
-
-    def configTable(step: Step): TagMod =
+  private val component = ScalaComponent.builder[Props]("StepConfigTable")
+    .stateless
+    .render_P ( p =>
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         <.thead(
@@ -112,7 +101,7 @@ object StepsTableContainer {
           )
         ),
         <.tbody(
-          step.config.flatMap {
+          p.step.config.flatMap {
             case (sub, c) =>
               c.map {
                 case (k, v) =>
@@ -130,6 +119,27 @@ object StepsTableContainer {
           }.toSeq.toTagMod
         )
       )
+    ).build
+
+  def apply(s: Step): Unmounted[Props, Unit, Unit] = component(Props(s))
+}
+/**
+  * Container for a table with the steps
+  */
+object StepsTableContainer {
+  final case class State(nextScrollPos  : Double,
+                   onHover        : Option[Int],
+                   autoScrolled   : Boolean)
+
+  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
+    def status: ClientStatus = stepsTable()._1
+    def steps: Option[StepsTableFocus] = stepsTable()._2
+    private val stepsList: List[Step] = ~steps.map(_.steps)
+    // Find out if offsets should be displayed
+    val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
+  }
+
+  class Backend($: BackendScope[Props, State]) {
 
     def labelColor(status: ActionStatus): String = status match {
       case ActionStatus.Pending   => "gray"
@@ -284,7 +294,7 @@ object StepsTableContainer {
       }
 
     // scalastyle:off
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
+    private def stepCols(router: RouterCtl[SeqexecPages], status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -334,24 +344,24 @@ object StepsTableContainer {
         ),
         <.td( // Column link to details
           ^.cls := "collapsing right aligned",
-          IconCaretRight.copyIcon(onClick = displayStepDetails(p.id, i))
+          router.link(SequenceConfigPage(p.instrument, p.id, i + 1))(IconCaretRight.copyIcon(color = "black".some, onClick = displayStepDetails(p.instrument, p.id, i)))
         )
       )
       // scalastyle:on
 
-    def stepsTable(status: ClientStatus, p: StepsTableFocus, s: State, offsetsDisplay: OffsetsDisplay): TagMod =
+    def stepsTable(props: Props, p: StepsTableFocus, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
         SeqexecStyles.stepsTable,
         ^.onMouseLeave  --> mouseLeave,
-        StepsTableHeader(offsetsDisplay),
+        StepsTableHeader(props.offsetsDisplay),
         <.tbody(
           SeqexecStyles.stepsListBody,
           p.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
                 gutterCol(p.id, i, step, s),
-                stepCols(status, p, i, p.state, step, offsetsDisplay)
+                stepCols(props.router, props.status, p, i, p.state, step, props.offsetsDisplay)
               )
           }.toTagMod
         )
@@ -365,16 +375,17 @@ object StepsTableContainer {
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
             val step = tab.steps(i)
-            configTable(step)
+            StepConfigTable(step): TagMod
           }.getOrElse {
-            stepsTable(p.status, tab, s, p.offsetsDisplay)
+            stepsTable(p, tab, s)
           }
         }
       )
     }
   }
 
-  def displayStepDetails(s: SequenceId, i: Int): Callback = Callback {SeqexecCircuit.dispatch(ShowStep(s, i))}
+  def displayStepDetails(i: Instrument, id: SequenceId, step: Int): Callback =
+    Callback{ SeqexecCircuit.dispatch(NavigateSilentTo(SequenceConfigPage(i, id, step + 1))) }
 
   // Reference to the specifc DOM marked by the name `scrollRef`
   //private val scrollRef = Ref[HTMLElement]("scrollRef")

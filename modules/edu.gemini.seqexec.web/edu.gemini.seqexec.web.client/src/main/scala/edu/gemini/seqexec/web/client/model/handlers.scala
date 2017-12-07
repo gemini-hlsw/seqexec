@@ -52,9 +52,10 @@ object handlers {
     def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
       case NavigateSilentTo(page) =>
         val effect = page match {
-          case InstrumentPage(i, None)     => Effect(Future(SelectInstrumentToDisplay(i)))
-          case InstrumentPage(_, Some(id)) => Effect(Future(SelectIdToDisplay(id)))
-          case _                           => Effect(Future(NoAction: Action))
+          case InstrumentPage(i, None)         => Effect(Future(SelectInstrumentToDisplay(i)))
+          case InstrumentPage(i, Some(id))     => Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
+          case SequenceConfigPage(_, id, step) => Effect(Future(ShowStep(id, step)))
+          case _                               => Effect(Future(NoAction: Action))
         }
         updatedSilent(page, effect)
     }
@@ -65,6 +66,8 @@ object handlers {
         value match {
           case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
+          case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
+            effectOnly(Effect(Future(ShowStep(s.id, step))))
           case _ =>
             noChange
         }
@@ -78,6 +81,8 @@ object handlers {
               updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
           case InstrumentPage(_, Some(id))    =>
             effectOnly(Effect(Future(SelectIdToDisplay(id))))
+          case SequenceConfigPage(_, id, step) =>
+            effectOnly(Effect(Future(SelectSequenceConfig(id, step))))
         }
     }
 
@@ -246,12 +251,9 @@ object handlers {
     }
 
     def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-      case ShowStep(s, i) =>
-        if (value._1.instrumentSequences.focus.sequence.exists(_.id === s)) {
-          updated(value.copy(_1 = value._1.showStep(i)))
-        } else {
-          noChange
-        }
+      case ShowStep(id, step) =>
+        val seq = SeqexecCircuit.sequenceRef(id)
+        updated(value.copy(_1 = value._1.focusOnSequence(seq).showStep(step - 1)))
 
       case UnShowStep(instrument) =>
         if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
