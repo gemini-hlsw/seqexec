@@ -10,6 +10,7 @@ import edu.gemini.seqexec.web.client.actions.Initialize
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import org.scalajs.dom.document
+import org.scalajs.dom.raw.Element
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import java.util.logging.{Level, Logger}
@@ -19,19 +20,21 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.OnUnmount
 import japgolly.scalajs.react.extra.router.Resolution
 
+import scalaz.effect.IO
+
 /**
   * Seqexec WebApp entry point
   */
 @JSExportTopLevel("SeqexecApp")
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SeqexecApp {
   private val defaultFmt = "[%4$s] %1s - %5$s"
 
-  @JSExport
-  def start(site: String): Unmounted[Unit, Resolution[Pages.SeqexecPages], OnUnmount.Backend]#Mounted = {
-    // TODO: Initialize on an effect
+  def setupLogFormat: IO[String] = IO {
     // Set the global formatting for log messages
     System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
+  }
+
+  def setupLogger: IO[Unit] = IO {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
@@ -39,22 +42,44 @@ object SeqexecApp {
 
     val log = Logger.getLogger("edu.gemini.seqexec.web.client.SeqexecApp")
     log.info(s"Starting Seqexec Web Client version: ${OcsBuildInfo.version}")
+  }
 
+  def setupCss: IO[Unit] = IO {
     val CssSettings = scalacss.devOrProdDefaults
     import CssSettings._
     // Register CSS styles
     SeqexecStyles.addToDocument()
+  }
 
-    // Not to happy about this but the alternatives are complicated
-    val seqexecSite = site match {
+  def setupSite(site: String): IO[SeqexecSite] = IO {
+    site match {
       case "GN" => SeqexecSite.SeqexecGN(ZoneId.of("Pacific/Honolulu"))
       case _    => SeqexecSite.SeqexecGS(ZoneId.of("America/Santiago"))
     }
+  }
 
+  def initializeDataModel(seqexecSite: SeqexecSite): IO[Unit] = IO {
     // Set the instruments before adding it to the dom
     SeqexecCircuit.dispatch(Initialize(seqexecSite))
+  }
 
+  def renderingNode: IO[Element] = IO {
+    // Find the node where we render
+    document.getElementById("content")
+  }
+
+  @JSExport
+  def start(site: String): Unmounted[Unit, Resolution[Pages.SeqexecPages], OnUnmount.Backend]#Mounted = {
     // Render the UI using React
-    SeqexecUI.router(seqexecSite)().renderIntoDOM(document.getElementById("content"))
+    val program = for {
+      _           <- setupLogFormat
+      _           <- setupLogger
+      _           <- setupCss
+      seqexecSite <- setupSite(site)
+      _           <- initializeDataModel(seqexecSite)
+      router      <- SeqexecUI.router(seqexecSite)
+      node        <- renderingNode
+    } yield router().renderIntoDOM(node)
+    program.unsafePerformIO
   }
 }

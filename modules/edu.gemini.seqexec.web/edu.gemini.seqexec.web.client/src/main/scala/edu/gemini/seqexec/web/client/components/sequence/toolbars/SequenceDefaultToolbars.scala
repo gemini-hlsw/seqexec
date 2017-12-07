@@ -109,7 +109,7 @@ object SequenceControl {
 }
 
 /**
-  * Toolbar log logged in users
+  * Toolbar for logged in users
   */
 object SequenceDefaultToolbar {
   private val component = ScalaComponent.builder[SequenceStepsTableContainer.Props]("SequenceDefaultToolbar")

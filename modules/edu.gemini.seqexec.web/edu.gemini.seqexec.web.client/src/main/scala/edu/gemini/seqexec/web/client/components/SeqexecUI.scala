@@ -109,7 +109,8 @@ object SeqexecMain {
 object SeqexecUI {
   final case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
-  def router(site: SeqexecSite): Router[SeqexecPages] = {
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+  def router(site: SeqexecSite): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.shows, i)).list.toList.toMap
 
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
@@ -148,17 +149,14 @@ object SeqexecUI {
       scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
     }
 
-    @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-    val run =
-      for {
-        r                     <- IO(Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig))
-        (router, routerLogic) = r
-        // subscribe to navigation changes
-        _                     <- IO(SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(routerLogic, x);()}))
-         // Initiate the WebSocket connection
-        _                     <- IO(SeqexecCircuit.dispatch(WSConnect(0)))
-      } yield router
-    run.unsafePerformIO
+    for {
+      r                     <- IO(Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig))
+      (router, routerLogic) = r
+      // subscribe to navigation changes
+      _                     <- IO(SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(routerLogic, x);()}))
+        // Initiate the WebSocket connection
+      _                     <- IO(SeqexecCircuit.dispatch(WSConnect(0)))
+    } yield router
   }
 
 }
