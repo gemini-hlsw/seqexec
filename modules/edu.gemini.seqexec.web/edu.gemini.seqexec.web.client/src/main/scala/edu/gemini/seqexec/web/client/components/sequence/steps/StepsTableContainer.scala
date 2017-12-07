@@ -359,13 +359,14 @@ object StepsTableContainer {
         stepProgress(state, step)
       )
 
-    private def stepDetailsCell(id: SequenceId, i: Int) =
+    private def stepDetailsCell(router: RouterCtl[SeqexecPages], instrument: Instrument, id: SequenceId, i: Int) =
       <.td( // Column link to details
         ^.cls := "collapsing right aligned",
-	router.link(SequenceConfigPage(p.instrument, p.id, i + 1))(IconCaretRight.copyIcon(color = "black".some, onClick = displayStepDetails(p.instrument, p.id, i)))
+        router.link(SequenceConfigPage(instrument, id, i + 1))
+          (IconCaretRight.copyIcon(color = "black".some, onClick = displayStepDetails(instrument, id, i)))
       )
 
-    private def stepCols(status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
+    private def stepCols(router: RouterCtl[SeqexecPages], status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
         ^.onMouseOver --> mouseEnter(i),
@@ -380,7 +381,7 @@ object StepsTableContainer {
         stepFPUCell(p.instrument, step, i),
         stepObjectTypeCell(step, i),
         stepProgressCell(step, state, i),
-        stepDetailsCell(p.id, i)
+        stepDetailsCell(router, p.instrument, p.id, i)
       )
 
     def stepsTable(props: Props, p: StepsTableFocus, s: State): TagMod =
