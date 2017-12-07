@@ -3,10 +3,11 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-import edu.gemini.seqexec.web.client.lenses.{observeCoaddsO, observeExposureTimeO, telescopeOffsetPO, telescopeOffsetQO, telescopeGuidingWithT}
+import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
@@ -136,6 +137,39 @@ object OffsetBlock {
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
+/**
+ * Component to display the FPU
+ */
+object FPUCell {
+  final case class Props(s: Step, i: Instrument)
+
+  private val component = ScalaComponent.builder[Props]("FPUCell")
+    .stateless
+    .render_P { p =>
+
+      val nameMapper: Map[String, String] = p.i match {
+        case Instrument.GmosS => enumerations.fpu.GmosSFPU
+        case Instrument.GmosN => enumerations.fpu.GmosNFPU
+        case Instrument.F2    => enumerations.fpu.Flamingos2
+        case _                => Map.empty
+      }
+
+      val fpuValue = for {
+        mode <- instrumentFPUModeO.getOption(p.s).orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
+        fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO else instrumentFPUCustomMaskO
+        fpu  <- fpuL.getOption(p.s)
+      } yield nameMapper.getOrElse(fpu, fpu)
+
+      <.div(
+        ^.cls := "center aligned",
+        SeqexecStyles.fpuLabel,
+        fpuValue.getOrElse("Unknown"): String
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
 /**
  * Component to display the exposure time and coadds
  */

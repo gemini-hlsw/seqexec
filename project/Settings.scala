@@ -113,14 +113,11 @@ object Settings {
     val reactVirtualized = "9.13.0"
     val reactClipboard   = "5.0.0"
 
-    //Apache XMLRPC
-    val apacheXMLRPC   = "3.1.3"
-
-    val opencsv        = "2.1"
-
-    val epicsService   = "0.17"
+    val apacheXMLRPC      = "3.1.3"
+    val opencsv           = "2.1"
+    val epicsService      = "0.17"
     val gmpCommandRecords = "0.6.5"
-    val guava          = "16.0.1"
+    val guava             = "16.0.1"
   }
 
   /**

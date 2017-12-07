@@ -68,4 +68,5 @@ object SharedModelArbitraries {
   implicit val ofpArb = implicitly[Arbitrary[TelescopeOffset.P]]
   implicit val ofqArb = implicitly[Arbitrary[TelescopeOffset.Q]]
   implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
+  implicit val fpmArb = Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
 }
