@@ -30,4 +30,19 @@ object Postgres {
            }
     } yield ()
 
+  def copyData(from: Container, to: Container): CtlIO[Unit] =
+    getContainerName(from).flatMap { fromName =>
+      gosub(s"Copying data from $fromName") {
+        isRemote.flatMap { r =>
+          docker(
+            "exec", to.hash,
+            "sh", "-c", if (r) s"'pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem'"
+                        else    s"pg_dump -h $fromName -U postgres gem | psql -q -U postgres -d gem"
+          ) require {
+            case Output(0, _) => ()
+          }
+        }
+      }
+    }
+
 }

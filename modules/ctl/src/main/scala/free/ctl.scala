@@ -43,6 +43,7 @@ object ctl {
           case object GetConfig                                                 extends CtlOp[Config]
     final case class  Gosub[A](level: Level, msg: String, fa: CtlIO[A])         extends CtlOp[A]
     final case class  Shell(remote: Boolean, cmd: Either[String, List[String]]) extends CtlOp[Output]
+          case object Now                                                       extends CtlOp[Long]
   }
 
   /** Combinator that applies a check to command output. */
@@ -100,6 +101,9 @@ object ctl {
 
   def logMessage(level: Level, msg: String): CtlIO[Unit] =
     Free.liftF(CtlOp.Gosub(level, msg, ().pure[CtlIO]))
+
+  def now: CtlIO[Long] =
+    Free.liftF(CtlOp.Now)
 
   def info (msg: String): CtlIO[Unit] = logMessage(Level.Info,  msg)
   def warn (msg: String): CtlIO[Unit] = logMessage(Level.Warn,  msg)

@@ -52,6 +52,7 @@ object interpreter {
         a <- fa.foldMap(this)
         _ <- EitherT.right(state.mod(_.outdent))
       } yield a
+    case CtlOp.Now => EitherT.right(IO(System.currentTimeMillis))
   }
 
   /**

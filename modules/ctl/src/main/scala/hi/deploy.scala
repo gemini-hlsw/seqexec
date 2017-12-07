@@ -47,12 +47,13 @@ object Deploy {
             r1 <- getLabelValue("gem.role", c1)
             r2 <- getLabelValue("gem.role", c2)
             d  <- (r1, r2) match {
-              case ("gem", "db") => Some(Deployment(c1, c2)).pure[CtlIO]
-              case ("db", "gem") => Some(Deployment(c2, c1)).pure[CtlIO]
-              case p             => error(s"Unexpected 'gem.role' labels: $p") *> exit[Option[Deployment]](-1)
+              case ("gem", "db") => Deployment(c1, c2).pure[CtlIO]
+              case ("db", "gem") => Deployment(c2, c1).pure[CtlIO]
+              case p             => error(s"Unexpected 'gem.role' labels: $p") *> exit[Deployment](-1)
             }
-            _  <- info(s"Found current deployment: $d")
-          } yield d
+            _  <- info(s"Current Gem container is ${d.gem.hash}.")
+            _  <- info(s"Current Postgres container is ${d.postgres.hash}.")
+          } yield Some(d)
         case cs => error(s"Expected exactly zero or two containers; found ${cs.length}.") *> exit(-1)
       }
     }
@@ -60,13 +61,19 @@ object Deploy {
   private def verifyCompatibility(curr: Container, next: Image): CtlIO[Unit] =
     gosub("Verifying upgrade compatibility.") {
       for {
-        _  <- info(s"Old gem container is ${curr.hash}")
+        _  <- info(s"Current gem container is ${curr.hash}")
         _  <- info(s"New gem image is ${next.hash}")
         c  <- getLabelValue("gem.commit", curr)
         cs <- getImageLabel("gem.history", next).map(_.split(",").toSet)
         _  <- if (cs.contains(c)) info("They are compatible. The schema can be upgraded.")
               else error(s"New deployment is incompatible; missing commit: $c") *> exit(-1)
       } yield ()
+    }
+
+  private def verifyNewVersion(current: Deployment, newVersion: String): CtlIO[Unit] =
+    getLabelValue("gem.version", current.gem).flatMap {
+      case `newVersion` => info("The requested version is already deployed here. Nothing to do.") *> exit(0)
+      case _            => ().pure[CtlIO]
     }
 
   def deployTest(version: String): CtlIO[Deployment] =
@@ -81,12 +88,6 @@ object Deploy {
       gk <- deployGem(version, gi, n)
     } yield Deployment(gk, pk)
 
-  def verifyNewVersion(current: Deployment, newVersion: String): CtlIO[Unit] =
-    getLabelValue("gem.version", current.gem).flatMap {
-      case `newVersion` => info("The requested version is already deployed here. Nothing to do.") *> exit(0)
-      case _            => ().pure[CtlIO]
-    }
-
   def deployProduction(version: String): CtlIO[Deployment] =
     for {
       h  <- serverHostName
@@ -98,13 +99,14 @@ object Deploy {
       d  <- od.fold(error("No current deployment. Use deploy-test to bootstrap.") *> exit[Deployment](-1))(_.pure[CtlIO])
       _  <- verifyNewVersion(d, version)
       _  <- verifyCompatibility(d.gem, gi)
-      // pk <- deployDatabase(version, pi, n) // specify prior container
-      // stop d.gem
-      // log "production system is down. current time is ..."
-      // stream data from d.postgres
-      // shut down d.postgres
-      // gk <- deployGem(version, gi, n) // specify prior container
-      // log "upgrade successful, total downtime:..."
-    } yield d // FIX THIS
+      pk <- deployDatabase(version, pi, n)
+      ms <- now
+      _  <- info("Stopping Gem container. Downtime starting now.") *> stopContainer(d.gem)
+      _  <- Postgres.copyData(d.postgres, pk)
+      _  <- stopContainer(d.postgres)
+      gk <- deployGem(version, gi, n)
+      dt <- now.map(_ - ms)
+      _  <- info(s"Upgrade successful. Total downtime ${dt / 1000} seconds.")
+    } yield Deployment(gk, pk)
 
 }
