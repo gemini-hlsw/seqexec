@@ -39,43 +39,48 @@ object SequenceStepsTableContainer {
     .initialState(State(0))
     .renderP { ($, p) =>
       <.div(
-        ^.cls := "ui grid",
         p.p().stepConfigDisplayed.fold{
           if (p.p().isLogged) {
-            List(<.div(
-              ^.cls := "ui row",
-              SeqexecStyles.shorterRow,
-              <.div(
-                ^.cls := "ui sixteen wide column",
-                p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(SequenceInfo.apply))
-              )
-            ),
             <.div(
-              ^.cls := "ui row",
-              SeqexecStyles.shorterRow,
-              SeqexecStyles.lowerRow,
+              ^.cls := "ui grid",
               <.div(
-                ^.cls := "ui left floated column eight wide computer eight wide tablet only",
-                p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
+              ^.cls := "ui row",
+                SeqexecStyles.shorterRow,
+                <.div(
+                  ^.cls := "ui sixteen wide column",
+                  p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(SequenceInfo.apply))
+                )
               ),
               <.div(
-                ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
-                SeqexecStyles.observerField.when(p.p().isLogged),
-                p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+                ^.cls := "ui row",
+                SeqexecStyles.shorterRow,
+                SeqexecStyles.lowerRow,
+                <.div(
+                  ^.cls := "ui left floated column eight wide computer eight wide tablet only",
+                  p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
+                ),
+                <.div(
+                  ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
+                  SeqexecStyles.observerField.when(p.p().isLogged),
+                  p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+                )
               )
-            )).toTagMod
+            )
           } else {
             SequenceAnonymousToolbar(p.site, p.p().instrument): VdomElement
           }
         }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, p.p().id, s))),
         <.div(
-          ^.cls := "ui row",
-          SeqexecStyles.lowerRow,
-          <.div(
-            ^.cls := "ui sixteen wide column",
-            p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
-                StepsTableContainer(StepsTableContainer.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
-          )
+          ^.cls := "ui grid",
+            <.div(
+              ^.cls := "ui row",
+              SeqexecStyles.lowerRow,
+              <.div(
+                ^.cls := "ui sixteen wide column",
+                p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
+                    StepsTableContainer(StepsTableContainer.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
+              )
+            )
         )
       )
     }.build

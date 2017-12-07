@@ -30,20 +30,34 @@ object StepConfigToolbar {
     .stateless
     .render_P( p =>
       <.div(
+        ^.cls := "ui grid",
         <.div(
           ^.cls := "ui row",
+          SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
             p.sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
           )
         ),
         <.div(
-          ^.cls := "row",
-          p.router.link(InstrumentPage(p.instrument, p.id))(Button(Button.Props(icon = Some(IconChevronLeft), onClick = backToSequence(p.instrument, p.id)), "Back")),
-          <.h5(
-            ^.cls := "ui header",
-            SeqexecStyles.inline,
-            s" Configuration for step ${p.step + 1}"
+          ^.cls := "ui row",
+          SeqexecStyles.shorterRow,
+          SeqexecStyles.lowerRow,
+          <.div(
+            ^.cls := "ui left floated two wide column",
+            SeqexecStyles.shorterFields,
+            <.div(
+              p.router.link(InstrumentPage(p.instrument, p.id))
+                (Button(Button.Props(icon = Some(IconChevronLeft), labeled = true, onClick = backToSequence(p.instrument, p.id)), "Back"))
+            )
+          ),
+          <.div(
+            ^.cls := "ui left middle aligned floated fourteen wide column",
+            <.h5(
+              ^.cls := "ui header",
+              SeqexecStyles.inline,
+              s" Configuration for step ${p.step + 1}"
+            )
           )
         )
       )
