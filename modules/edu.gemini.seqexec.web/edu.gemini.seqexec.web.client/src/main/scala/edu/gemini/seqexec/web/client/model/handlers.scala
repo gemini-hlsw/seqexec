@@ -53,7 +53,7 @@ object handlers {
       case NavigateSilentTo(page) =>
         val effect = page match {
           case InstrumentPage(i, None)         => Effect(Future(SelectInstrumentToDisplay(i)))
-          case InstrumentPage(_, Some(id))     => Effect(Future(SelectIdToDisplay(id)))
+          case InstrumentPage(i, Some(id))     => Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
           case SequenceConfigPage(_, id, step) => Effect(Future(ShowStep(id, step)))
           case _                               => Effect(Future(NoAction: Action))
         }

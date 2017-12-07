@@ -67,7 +67,7 @@ object SequenceStepsTableContainer {
           } else {
             SequenceAnonymousToolbar(p.site, p.p().instrument): VdomElement
           }
-        }(s => StepConfigToolbar(StepConfigToolbar.Props(p.site, p.p().instrument, p.p().isLogged, s))),
+        }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, p.p().id, s))),
         <.div(
           ^.cls := "ui row",
           SeqexecStyles.lowerRow,

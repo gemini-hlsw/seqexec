@@ -40,7 +40,7 @@ object circuit {
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
   final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean) extends UseValueEq
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
-  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, stepConfigDisplayed: Option[Int]) extends UseValueEq
+  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
@@ -107,7 +107,7 @@ object circuit {
 
     def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
       statusReader.zip(instrumentTab(i)).zoom {
-        case (status, (tab, _)) => StatusAndStepFocus(status.isLogged, i, tab.stepConfigDisplayed)
+        case (status, (tab, _)) => StatusAndStepFocus(status.isLogged, i, tab.sequence.map(_.id), tab.stepConfigDisplayed)
       }
 
     def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, (ClientStatus, Option[StepsTableFocus])] =
