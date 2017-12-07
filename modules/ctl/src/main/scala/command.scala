@@ -22,7 +22,7 @@ object Command {
     server:  Server,
     version: String
   ) extends Command {
-    val impl = Deploy.deployTest(version)
+    val impl = Deploy.deployTest(version).void
   }
 
   /**

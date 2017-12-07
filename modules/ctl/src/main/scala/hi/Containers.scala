@@ -19,6 +19,7 @@ object Containers {
                  s"--net=${n.name}",
                   "--name", s"$version-P",
                   "--label", s"gem.version=$version",
+                  "--label", s"gem.role=db",
                   "--health-cmd", if (r) "\"psql -U postgres -d gem -c 'select 1'\""
                                   else     "psql -U postgres -d gem -c 'select 1'",
                   "--health-interval", "10s",
@@ -40,8 +41,9 @@ object Containers {
                 "--tty",
                 "--interactive",
                s"--net=${n.name}",
-                "--name",    s"$version-G",
-                "--label",   s"gem.version=$version",
+                "--name",  s"$version-G",
+                "--label", s"gem.version=$version",
+                "--label", s"gem.role=gem",
                 // "--health-cmd", if (r) "\"nc -z localhost 6666\""
                 //                 else     "nc -z localhost 6666",
                 "--publish", s"1234:6666",

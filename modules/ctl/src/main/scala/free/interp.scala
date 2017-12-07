@@ -20,8 +20,8 @@ object interpreter {
   }
 
   final case class InterpreterState(indentation: Int) {
-    def indent: InterpreterState = copy(indentation = indentation + 1)
-    def outdent:InterpreterState = copy(indentation = indentation - 1)
+    def indent:  InterpreterState = copy(indentation = indentation + 1)
+    def outdent: InterpreterState = copy(indentation = indentation - 1)
   }
   object InterpreterState {
     val initial: InterpreterState = InterpreterState(0)

@@ -7,6 +7,8 @@ import cats.implicits._
 import gem.ctl.free.ctl._
 import gem.ctl.low.docker._
 
+final case class Deployment(gem: Container, postgres: Container)
+
 /** Constructors for `CtlIO` operations related to the `deploy` command. */
 object Deploy {
 
@@ -37,16 +39,56 @@ object Deploy {
       } yield kGem
     }
 
-  def deployTest(version: String): CtlIO[Unit] =
+  def currentDeployment: CtlIO[Option[Deployment]] =
+    gosub("Finding current deployment.") {
+      findRunningContainersWithLabel("gem.version").flatMap {
+        case Nil          => info("No current deployment.").as(None)
+        case List(c1, c2) =>
+          for {
+            r1 <- getLabelValue("gem.role", c1)
+            r2 <- getLabelValue("gem.role", c2)
+            d  <- (r1, r2) match {
+              case ("gem", "db") => Some(Deployment(c1, c2)).pure[CtlIO]
+              case ("db", "gem") => Some(Deployment(c2, c1)).pure[CtlIO]
+              case p             => error(s"Unexpected 'gem.role' labels: $p") *> exit[Option[Deployment]](-1)
+            }
+            _  <- info(s"Found current deployment: $d")
+          } yield d
+        case cs => error(s"Expected exactly zero or two containers; found ${cs.length}.") *> exit(-1)
+      }
+    }
+
+  def deployTest(version: String): CtlIO[Deployment] =
     for {
       h  <- serverHostName
       _  <- info(s"This is a test deployment on $h. Any existing deployment will be destroyed!")
       n  <- Networks.getPrivateNetwork
       gi <- Images.getGemImage(version)
       pi <- Images.getPostgresImage(gi)
+      d  <- currentDeployment
+      _  <- exit[Int](-1)
       _  <- destroyDeployment
       pk <- deployDatabase(version, pi, n)
       gk <- deployGem(version, gi, n)
-    } yield ()
+    } yield Deployment(gk, pk)
+
+
+  // def deployProduction(version: String): CtlIO[Deployment] =
+  //   for {
+  //     h  <- serverHostName
+  //     _  <- info(s"This is a production upgrade on $h.")
+  //     n  <- Networks.getPrivateNetwork
+  //     gi <- Images.getGemImage(version)
+  //     pi <- Images.getPostgresImage(gi)
+  //     d  <- currentDeployment
+  //     // verify upgrade path
+  //     pk <- deployDatabase(version, pi, n) // specify prior container
+  //     // stop d.gem
+  //     // log "production system is down. current time is ..."
+  //     // stream data from d.postgres
+  //     // shut down d.postgres
+  //     gk <- deployGem(version, gi, n) // specify prior container
+  //     // log "upgrade successful, total downtime:..."
+  //   } yield Deployment(gk, pk)
 
 }
