@@ -186,7 +186,7 @@ object SmartGcalImporter extends DoobieClient {
 
     val prog = (lines(GcalLampType.Arc) ++ lines(GcalLampType.Flat))
       .segmentN(4096)
-      .flatMap { v => writer(v.toVector).transact(lxa) }
+      .flatMap { v => writer(v.force.toVector).transact(lxa) }
 
     for {
       _ <- IO(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore

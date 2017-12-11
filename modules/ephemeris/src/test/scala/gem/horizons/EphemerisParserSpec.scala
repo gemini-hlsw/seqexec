@@ -3,7 +3,7 @@
 
 package gem.horizons
 
-import gem.math.{ Coordinates, Ephemeris, EphemerisCoordinates }
+import gem.math.{ Ephemeris, EphemerisCoordinates }
 import gem.util.InstantMicros
 
 import cats.effect.IO
@@ -66,10 +66,10 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
   }
 
   test("Must handle errors") {
-    val z = InstantMicros.ofEpochMilli(0L) -> Coordinates.Zero
+    val z = InstantMicros.ofEpochMilli(0L) -> EphemerisCoordinates.Zero
     val s = stream("borrelly-error")
              .through(EphemerisParser.elements[IO])
-             .onError(_ => Stream(z))
+             .handleErrorWith(_ => Stream(z))
     assert(Vector(Some(z)) == s.last.runLog.unsafeRunSync)
   }
 

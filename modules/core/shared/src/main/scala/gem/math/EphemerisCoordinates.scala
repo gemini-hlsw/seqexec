@@ -37,6 +37,9 @@ final case class EphemerisCoordinates(
 
 object EphemerisCoordinates {
 
+  val Zero: EphemerisCoordinates =
+    EphemerisCoordinates(Coordinates.Zero, Offset.Zero)
+
   /** @group Typeclass Instances */
   implicit val EphemerisCoordinatesEqual: Eq[EphemerisCoordinates] =
     Eq.fromUniversalEquals
@@ -46,4 +49,3 @@ object EphemerisCoordinates {
     Show.fromToString
 
 }
-
