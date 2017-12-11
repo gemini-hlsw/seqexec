@@ -33,7 +33,7 @@ object EphemerisDao {
     _.map { case (i, c) => toRow(k, s, i, c) } // Stream[M, EphemerisRow]
      .segmentN(4096)                           // Stream[M, Segment[EphemerisRow, Unit]]
      .flatMap { rows =>
-       Stream.eval(Statements.insert.updateMany(rows.toVector).void)
+       Stream.eval(Statements.insert.updateMany(rows.force.toVector).void)
      }
 
   def delete(k: EphemerisKey, s: Site): ConnectionIO[Int] =

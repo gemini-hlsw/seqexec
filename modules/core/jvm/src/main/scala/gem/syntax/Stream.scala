@@ -49,7 +49,7 @@ final class StreamOps[F[_], O](val self: Stream[F, O]) {
             val aʹ = f(a, o)
             if (p(aʹ)) (matching :+ o, z) else (matching, aʹ)
           }).flatMap { case (matching, aʹ) =>
-            Pull.output(Chunk.vector(matching)) *> go(aʹ, tl)
+            Pull.outputChunk(Chunk.vector(matching)) >> go(aʹ, tl)
           }
       }
 

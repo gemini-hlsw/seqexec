@@ -73,7 +73,7 @@ object SmartGcalDao {
     Stream.emits(entries.map(t => (t._1, t._2, t._3)))          // Stream[Pure, (Lamp, Baseline, Key)]
       .zip(GcalDao.bulkInsertSmartGcal(entries.map(_._4)))      // Stream[ConnectionIO, ((Lamp, Baseline, Key), Id)]
       .segmentN(4096)                                           // Stream[ConnectionIO, Segment[((Lamp, Baseline, Key), Id)]]
-      .flatMap { rows => Stream.eval(update.updateMany(rows.toVector)) } // Stream[ConnectionIO, Int]
+      .flatMap { rows => Stream.eval(update.updateMany(rows.force.toVector)) } // Stream[ConnectionIO, Int]
 
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
