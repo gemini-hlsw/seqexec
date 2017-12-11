@@ -363,9 +363,8 @@ object SeqexecEngine {
       case _                 => configStatus(step.executions)
     }
 
-  //protected[server] def observeStatus(executions: List[List[engine.Action]]): ActionStatus = executions.flatten.find(x => x.kind === ActionType.Observe).map(x => actionStateToStatus(x.state)).getOrElse(ActionStatus.Pending)
-
-  protected[server] def observeStatus(executions: List[List[engine.Action]], configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
+  protected[server] def observeStatus(executions: List[List[engine.Action]],
+                                      configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
     def containsPartial(e: List[engine.Action]): Boolean =
       e.map(_.state).exists {
         case Action.PartiallyCompleted(_) => true

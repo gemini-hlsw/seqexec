@@ -271,7 +271,7 @@ package object engine {
     * It also updates the `State` as needed.
     */
   // Send the expected event when the `Action` is executed
-  // It doesn't catch run time exceptions. If desired, the Action as to do it itself.
+  // It doesn't catch run time exceptions. If desired, the Action has to do it itself.
   private def act(id: Sequence.Id, t: (ActionGen, Int), cx: ActionMetadata): Process[Task, Event] = t match {
     case (gen, i) =>
       Process.eval(gen(cx)).flatMap {

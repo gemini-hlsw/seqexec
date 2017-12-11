@@ -43,7 +43,7 @@ object Step {
     // Find an error in the Step
     step.executions.flatten.find(Action.errored).flatMap { x => x.state match {
       case Action.Failed(Result.Error(msg)) => msg.some
-      case _ => None
+      case _                                => None
       // Return error or continue with the rest of the checks
     }}.map(StepState.Error).getOrElse(
       // It's possible to have a Step with empty executions when a completed
@@ -118,10 +118,7 @@ object Step {
         resources,
         breakpoint,
         skip,
-        // TODO: Functor composition?
-        done ++
-          List(focus.execution) ++
-          pending
+        done ++ List(focus.execution) ++ pending
       )
   }
 
