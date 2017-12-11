@@ -17,7 +17,7 @@ import scalaz._
 import Scalaz._
 import scalaz.Nondeterminism
 import scalaz.concurrent.Task
-import scalaz.stream.{Cause, Process, async}
+import scalaz.stream.{Process, async}
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
@@ -52,7 +52,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val faulty: Action  = fromTask(ActionType.Undefined,
   for {
     _ <- Task(Thread.sleep(100))
-  } yield Result.Error(ActionType.Undefined, "There was an error in this action"))
+  } yield Result.Error("There was an error in this action"))
 
   val config: StepConfig = Map()
   val seqId: String = "TEST-01"
@@ -75,8 +75,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                  breakpoint = false,
                  skip = false,
                  List(
-                   List(configureTcs.left, configureInst.left), // Execution
-                   List(observe.left) // Execution
+                   List(configureTcs, configureInst), // Execution
+                   List(observe) // Execution
                  )
                ),
                Step(
@@ -87,8 +87,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                  breakpoint = false,
                  skip = false,
                  List(
-                   List(configureTcs.left, configureInst.left), // Execution
-                   List(observe.left) // Execution
+                   List(configureTcs, configureInst), // Execution
+                   List(observe) // Execution
                  )
                )
              )
@@ -112,8 +112,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(configureTcs.left, configureInst.left), // Execution
-              List(observe.left) // Execution
+              List(configureTcs, configureInst), // Execution
+              List(observe) // Execution
             )
           )
         )
@@ -143,37 +143,71 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "be in Running status after starting" in {
     val p = Process.eval(Task.now(Event.start(seqId, user)))
     val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.map(_._2)
-    assert(qs.map(_.sequences(seqId).status).forall(_ === SequenceState.Running))
+    assert(qs.map(_.sequences(seqId).status === SequenceState.Running).getOrElse(false))
   }
 
   it should "be 0 pending executions after execution" in {
     val qs = runToCompletion(qs1)
-    assert(qs.map(_.sequences(seqId).pending).forall(_.isEmpty))
+    assert(qs.map(_.sequences(seqId).pending.isEmpty).getOrElse(false))
   }
 
   it should "be 2 Steps done after execution" in {
     val qs = runToCompletion(qs1)
-    assert(qs.map(_.sequences(seqId).done.length).forall(_ === 2))
+    assert(qs.map(_.sequences(seqId).done.length === 2).getOrElse(false))
   }
 
-  ignore should "Print execution" in {
-    val p = Process.eval(Task(Event.start(seqId, user)))
-    intercept[Cause.Terminated](
-      process(p)(qs1).run.unsafePerformSync
+  private def actionPause: Option[Engine.State] = {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step(
+            1,
+            None,
+            config,
+            Set(GmosS),
+            breakpoint = false,
+            skip = false,
+            List(
+              List(fromTask(ActionType.Undefined,
+              Task(Result.Paused)))
+            )
+          )
+        )
+      ) ) ) )
     )
+    val p = Process.eval(Task.now(Event.start(seqId, user)))
+
+    process(p)(s0).runLast.unsafePerformSync.map(_._2)
   }
 
-  ignore should "Print execution with pause" in {
-    val p = Process.emitAll(List(Event.start(seqId, user), Event.pause(seqId, user), Event.start(seqId, user))).evalMap(Task.now(_))
-    intercept[Cause.Terminated](
-       process(p)(qs1).run.unsafePerformSync
-    )
+  "sequence state" should "stay as running when action pauses itself" in {
+    assert(actionPause.map(_.sequences(seqId).status === SequenceState.Running).getOrElse(false))
+  }
+
+  "action state" should "change to Paused if output is Paused" in {
+    assert(actionPause.map(_.sequences(seqId).current.execution.forall(_.state === Action.Paused)).getOrElse(false))
+  }
+
+  "engine" should "run sequence to completion after resuming a paused action" in {
+    val p = Process.eval(Task.now(Event.actionResume(seqId, 0, Task(Result.OK(Result.Configured(GmosS))))))
+
+    val result = actionPause.map(process(p)(_).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).runLast.timed(5.seconds).unsafePerformSyncAttempt)
+    val qso = result.map(_.map(_.map(_._2)))
+
+    assert(qso.map(qs => qs.isRight && qs.forall(x => x.isDefined && x.map(_.sequences(seqId).current.actions.isEmpty).getOrElse(false) &&
+      x.map(_.sequences(seqId).status === SequenceState.Completed).getOrElse(false))).getOrElse(false))
+
   }
 
   it should "not run 2nd sequence because it's using the same resource" in {
     val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId2, user))).evalMap(Task.now(_))
     assert(
-      process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).forall(_.status === SequenceState.Idle)
+      process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).map(_.status === SequenceState.Idle)getOrElse(false)
     )
   }
 
@@ -181,7 +215,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId3, user))).evalMap(Task.now(_))
 
     assert(
-      process(p)(qs3).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId3)).forall(_.status === SequenceState.Running)
+      process(p)(qs3).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId3).status === SequenceState.Running).getOrElse(false)
     )
   }
 
@@ -209,7 +243,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 startedFlag.release()
                 finishFlag.acquire()
                 Result.OK(Result.Configured(TCS))
-              }).left )
+              }) )
             )
           )
         )
@@ -246,7 +280,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
               List(fromTask(ActionType.Undefined,
               Task.apply{
                 throw e
-              }).left)
+              }))
             )
           )
         )
@@ -277,7 +311,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS))))).left)
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS)))), Action.Idle))
             )
           )
         )
@@ -288,7 +322,15 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
 
-    assertResult(Some(Result.OK(Result.Configured(TCS))))(sf.flatMap(_.sequences.get(seqId).flatMap(_.done.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)))))
+    assertResult(Some(Action.Completed(Result.Configured(TCS)))){
+      for {
+        st <- sf
+        sq <- st.sequences.get(seqId)
+        st <- sq.done.headOption
+        as <- st.executions.headOption
+        ac <- as.headOption
+      } yield ac.state
+    }
   }
 
 }

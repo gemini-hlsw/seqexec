@@ -8,8 +8,6 @@ import edu.gemini.seqexec.model.Model.Instrument.F2
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
 import scala.Function.const
-import scalaz._
-import Scalaz._
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
@@ -58,7 +56,7 @@ class SequenceSpec extends FlatSpec {
   private val metadata = SequenceMetadata(F2, None, "")
   private val user = UserDetails("telops", "Telops")
 
-  def simpleStep(id: Int, breakpoint: Boolean): Step[Action \/ Result] =
+  def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step(
       id,
       None,
@@ -67,8 +65,8 @@ class SequenceSpec extends FlatSpec {
       breakpoint,
       false,
       List(
-        List(action.left, action.left), // Execution
-        List(action.left) // Execution
+        List(action, action), // Execution
+        List(action) // Execution
       )
     )
 
@@ -152,25 +150,27 @@ class SequenceSpec extends FlatSpec {
   }
 
   // TODO: Share these fixtures with StepSpec
-  val result: Result = Result.OK(Result.Observed("dummyId"))
-  val action: Action = fromTask(ActionType.Undefined, Task(result))
-  val config: StepConfig = Map()
+  private val observeResult: Result.Response = Result.Observed("dummyId")
+  private val result: Result = Result.OK(observeResult)
+  private val action: Action = fromTask(ActionType.Undefined, Task(result))
+  private val completedAction: Action = action.copy(state = Action.Completed(observeResult))
+  private val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
-      case x::xs => (Execution(x.map(_.left)), xs)
+      case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, false, pending, focus, done, rollback)
+    Step.Zipper(1, None, config, Set.empty, breakpoint = false, false, pending, focus, done.map(_.map(r => fromTask(ActionType.Observe, Task(r)).copy(state = Execution.actionStateFromResult(r)))), rollback)
   }
   val stepz0: Step.Zipper   = simpleStep2(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep2(List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper  = simpleStep2(List(List(action)), Execution(List(result.right)), Nil)
+  val stepza1: Step.Zipper  = simpleStep2(List(List(action)), Execution(List(completedAction)), Nil)
   val stepzr0: Step.Zipper  = simpleStep2(Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper  = simpleStep2(Nil, Execution(List(result.right, result.right)), Nil)
-  val stepzr2: Step.Zipper  = simpleStep2(Nil, Execution(List(result.right, result.right)), List(List(result)))
-  val stepzar0: Step.Zipper = simpleStep2(Nil, Execution(List(result.right, action.left)), Nil)
-  val stepzar1: Step.Zipper = simpleStep2(List(List(action)), Execution(List(result.right, result.right)), List(List(result)))
+  val stepzr1: Step.Zipper  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), Nil)
+  val stepzr2: Step.Zipper  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), List(List(result)))
+  val stepzar0: Step.Zipper = simpleStep2(Nil, Execution(List(completedAction, action)), Nil)
+  val stepzar1: Step.Zipper = simpleStep2(List(List(action)), Execution(List(completedAction, completedAction)), List(List(result)))
 
   def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, metadata, Nil, focus, Nil)
   val seqz0: Sequence.Zipper   = simpleSequenceZipper(stepz0)

@@ -10,7 +10,7 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Site
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Result, Sequence}
+import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Sequence}
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
@@ -159,7 +159,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
   private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
-    val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence[Action \/ Result]])] = for {
+    val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence])] = for {
       odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
       progIdString <- EitherT(Task.delay(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
       _            <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
@@ -193,6 +193,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.GetState(_)            => NullEvent
       case engine.ActionStop(_, _)       => ActionStopRequested(svs)
       case engine.Log(msg)               => NewLogMessage(msg)
+      case engine.ActionResume(_, _, _)  => NullEvent
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
@@ -205,12 +206,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
+      case engine.Paused(_, _)                                              => NullEvent
     }
   }
 
-  def viewSequence(seq: SequenceAR, st: SequenceState): SequenceView = {
+  def viewSequence(seq: Sequence, st: SequenceState): SequenceView = {
 
-    def engineSteps(seq: SequenceAR): List[Step] = {
+    def engineSteps(seq: Sequence): List[Step] = {
 
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
@@ -286,10 +288,6 @@ object SeqexecEngine {
     instForceError = false,
     10.seconds)
 
-  // TODO: Better name and move it to `engine`
-  type SequenceAR = engine.Sequence[engine.Action \/ engine.Result]
-  type StepAR = engine.Step[engine.Action \/ engine.Result]
-
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -297,24 +295,36 @@ object SeqexecEngine {
   def splitAfter[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p) + 1)
 
+  private[server] def actionStateToStatus(s: engine.Action.ActionState): ActionStatus = s match {
+    case engine.Action.Idle                  => ActionStatus.Pending
+    case engine.Action.Completed(_)          => ActionStatus.Completed
+    case engine.Action.Started               => ActionStatus.Running
+    case engine.Action.PartiallyCompleted(_) => ActionStatus.Running
+    case engine.Action.Paused                => ActionStatus.Paused
+    case engine.Action.Failed(_)             => ActionStatus.Failed
+  }
+
   private def kindToResource(kind: ActionType): List[Resource] = kind match {
     case ActionType.Configure(r) => List(r)
     case _                       => Nil
   }
 
-  private[server] def configStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] = {
+  private[server] def separateActions(ls: List[Action]): (List[Action], List[Action]) =  ls.partition{ _.state match {
+    case engine.Action.Completed(_) => false
+    case engine.Action.Failed(_)    => false
+    case _                          => true
+  } }
+
+  private[server] def configStatus(executions: List[List[engine.Action]]): List[(Resource, ActionStatus)] = {
     // Remove undefined actions
-    val ex = executions.filter {
-      case x => !x.rights.exists(_.kind === ActionType.Undefined)
-    }
+    val ex = executions.filter { !separateActions(_)._2.exists(_.kind === ActionType.Undefined) }
     // Split where at least one is running
-    val (current, pending) = splitAfter(ex)(ex => ex.lefts.nonEmpty)
+    val (current, pending) = splitAfter(ex)(separateActions(_)._1.nonEmpty)
 
     // Calculate the state up to the current
     val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) {
       case (s, e) =>
-        val (a, r) = e.separate
-          .bimap(
+        val (a, r) = separateActions(e).bimap(
             _.flatMap(a => kindToResource(a.kind).strengthR(ActionStatus.Running)).toMap,
             _.flatMap(r => kindToResource(r.kind).strengthR(ActionStatus.Completed)).toMap)
         s ++ a ++ r
@@ -324,7 +334,7 @@ object SeqexecEngine {
     val presentSystems = configStatus.keys.toList
     // Calculate status of pending items
     val systemsPending = pending.map {
-      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
+      s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
       x => x._1.strengthR(ActionStatus.Pending) ::: x._2.strengthR(ActionStatus.Completed)
     }.filter {
@@ -337,9 +347,9 @@ object SeqexecEngine {
   /**
    * Calculates the config status for pending steps
    */
-  private[server] def pendingConfigStatus(executions: List[List[engine.Action \/ engine.Result]]): List[(Resource, ActionStatus)] =
+  private[server] def pendingConfigStatus(executions: List[List[engine.Action]]): List[(Resource, ActionStatus)] =
     executions.map {
-      s => s.separate.bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
+      s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
       x => x._1 ::: x._2
     }.distinct.strengthR(ActionStatus.Pending).sortBy(_._1)
@@ -347,26 +357,27 @@ object SeqexecEngine {
   /**
    * Overall pending status for a step
    */
-  private def stepConfigStatus(step: StepAR): List[(Resource, ActionStatus)] =
+  private def stepConfigStatus(step: engine.Step): List[(Resource, ActionStatus)] =
     engine.Step.status(step) match {
       case StepState.Pending => pendingConfigStatus(step.executions)
       case _                 => configStatus(step.executions)
     }
 
-  protected[server] def observeStatus(executions: List[List[engine.Action \/ engine.Result]], configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
-    def containsPartial(e: List[engine.Action \/ engine.Result]): Boolean =
-      e.rights.exists {
-        case Partial(FileIdAllocated(_), _) => true
-        case _                              => false
+  protected[server] def observeStatus(executions: List[List[engine.Action]],
+                                      configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
+    def containsPartial(e: List[engine.Action]): Boolean =
+      e.map(_.state).exists {
+        case Action.PartiallyCompleted(_) => true
+        case _                            => false
       }
 
-    def containsObserve(e: List[engine.Action \/ engine.Result]): Boolean =
-      e.rights.map(_.kind).contains(ActionType.Observe)
+    def containsObserve(e: List[engine.Action]): Boolean =
+      separateActions(e)._2.map(_.kind).contains(ActionType.Observe)
 
     if (configStatus.forall(_._2 === ActionStatus.Completed)) {
       // Find one with kind observe
       executions.filter { e =>
-        val (a, r) = e.separate.bimap(_.map(_.kind), _.map(_.kind))
+        val (a, r) = separateActions(e).bimap(_.map(_.kind), _.map(_.kind))
         a.contains(ActionType.Observe) || r.contains(ActionType.Observe)
       }.map {
         case e if containsPartial(e) => ActionStatus.Running
@@ -376,7 +387,7 @@ object SeqexecEngine {
     } else ActionStatus.Pending
   }
 
-  def viewStep(step: StepAR): StandardStep = {
+  def viewStep(step: engine.Step): StandardStep = {
     val configStatus = stepConfigStatus(step)
     StandardStep(
       id = step.id,

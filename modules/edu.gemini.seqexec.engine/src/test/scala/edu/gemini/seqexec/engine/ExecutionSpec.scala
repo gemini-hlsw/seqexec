@@ -5,17 +5,17 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.ActionType
 
-import scalaz._
-import Scalaz._
 import org.scalatest._
 
 import scalaz.concurrent.Task
 
 class ExecutionSpec extends FlatSpec with Matchers {
 
-  val ok: Result = Result.OK(Result.Observed("dummyId"))
-  val action: Action = fromTask(ActionType.Observe, Task(ok))
-  val curr: Execution = Execution(List(ok.right, action.left))
+  private val observeResult: Result.Response = Result.Observed("dummyId")
+  private val ok: Result = Result.OK(observeResult)
+  private val completedAction: Action = fromTask(ActionType.Observe, Task(ok)).copy(state = Action.Completed(observeResult))
+  private val action: Action = fromTask(ActionType.Observe, Task(ok))
+  private val curr: Execution = Execution(List(completedAction, action))
 
   "currentify" should "be None only when an Execution is empty" in {
     assert(Execution.currentify(List(action, action)).nonEmpty)
@@ -34,11 +34,11 @@ class ExecutionSpec extends FlatSpec with Matchers {
   }
 
   "marking an index out of bounds" should "not modify the execution" in {
-    assert(curr.mark(3)(Result.Error(ActionType.Undefined, "")) === curr)
+    assert(curr.mark(3)(Result.Error("")) === curr)
   }
 
   "marking an index inbound" should "modify the execution" in {
-    assert(curr.mark(1)(Result.Error(ActionType.Undefined, "")) !== curr)
+    assert(curr.mark(1)(Result.Error("")) !== curr)
   }
 
 }

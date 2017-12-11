@@ -6,7 +6,6 @@ package edu.gemini.seqexec.engine
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 
-import scalaz.\/
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 import scalaz.std.string._
@@ -26,7 +25,7 @@ sealed trait UserEvent {
 final case class Start(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent
 final case class Pause(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent
 final case class CancelPause(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent
-final case class Load(id: Sequence.Id, sequence: Sequence[Action \/ Result]) extends UserEvent {
+final case class Load(id: Sequence.Id, sequence: Sequence) extends UserEvent {
   val user: Option[UserDetails] = None
 }
 final case class Unload(id: Sequence.Id) extends UserEvent {
@@ -53,6 +52,12 @@ final case class GetState(f: (Engine.State) => Task[Option[Process[Task, Event]]
 final case class ActionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]) extends UserEvent {
   val user: Option[UserDetails] = None
 }
+
+// Uses `cont` to resume execution of a paused Action. If the Action is not paused, it does nothing.
+final case class ActionResume(id: Sequence.Id, i: Int, cont: Task[Result]) extends UserEvent {
+  val user: Option[UserDetails] = None
+}
+
 final case class Log(msg: String) extends UserEvent {
   val user: Option[UserDetails] = None
 }

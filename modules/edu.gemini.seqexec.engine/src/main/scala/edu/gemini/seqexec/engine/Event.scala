@@ -3,7 +3,6 @@
 
 package edu.gemini.seqexec.engine
 
-import scalaz._
 import scalaz.syntax.std.option._
 
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor, Operator, Observer}
@@ -24,7 +23,7 @@ object Event {
   def start(id: Sequence.Id, user: UserDetails): Event = EventUser(Start(id, user.some))
   def pause(id: Sequence.Id, user: UserDetails): Event = EventUser(Pause(id, user.some))
   def cancelPause(id: Sequence.Id, user: UserDetails): Event = EventUser(CancelPause(id, user.some))
-  def load(id: Sequence.Id, sequence: Sequence[Action \/ Result]): Event = EventUser(Load(id, sequence))
+  def load(id: Sequence.Id, sequence: Sequence): Event = EventUser(Load(id, sequence))
   def unload(id: Sequence.Id): Event = EventUser(Unload(id))
   def breakpoint(id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, user.some, step, v))
   def setOperator(name: Operator, user: UserDetails): Event = EventUser(SetOperator(name, user.some))
@@ -37,11 +36,13 @@ object Event {
   val poll: Event = EventUser(Poll)
   def getState(f: (Engine.State) => Task[Option[Process[Task, Event]]]): Event = EventUser(GetState(f))
   def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(ActionStop(id, f))
+  def actionResume(id: Sequence.Id, i: Int, c: Task[Result]): Event = EventUser(ActionResume(id, i, c))
   def logMsg(msg: String): Event = EventUser(Log(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
   def completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]): Event = EventSystem(Completed(id, i, r))
   def partial[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]): Event = EventSystem(PartialResult(id, i, r))
+  def paused(id: Sequence.Id, i: Int): Event = EventSystem(Paused(id, i))
   def busy(id: Sequence.Id): Event = EventSystem(Busy(id))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
