@@ -3,10 +3,12 @@
 
 package edu.gemini.seqexec.web.client
 
+import java.time.ZoneId
+
 import diode.ActionResult.ModelUpdate
 import diode.RootModelRW
 import edu.gemini.seqexec.model.Model.{SeqexecSite, SequenceView}
-import edu.gemini.seqexec.web.client.model.{SequencesOnDisplay, SeqexecUIModel}
+import edu.gemini.seqexec.web.client.model.{SeqexecUIModel, SequencesOnDisplay}
 import edu.gemini.seqexec.web.client.handlers.SequenceDisplayHandler
 import edu.gemini.seqexec.web.client.actions.SelectIdToDisplay
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
@@ -21,7 +23,7 @@ class SequenceDisplayHandlerSpec extends FlatSpec with Matchers with PropertyChe
 
   "SequenceDisplayHandler" should "ignore setting a sequence for an unknown sequence" in {
     forAll { (sequence: SequenceView) =>
-      val handler = new SequenceDisplayHandler(new RootModelRW((SequencesOnDisplay.empty, SeqexecUIModel.noSequencesLoaded, SeqexecSite.SeqexecGS)))
+      val handler = new SequenceDisplayHandler(new RootModelRW((SequencesOnDisplay.empty, SeqexecUIModel.noSequencesLoaded, SeqexecSite.SeqexecGS(ZoneId.of("America/Santiago")).some)))
       val result = handler.handle(SelectIdToDisplay(sequence.id))
       result should matchPattern {
         case ModelUpdate((SequencesOnDisplay(t), _, _)) if t.findNext(_.sequence === SeqexecCircuit.sequenceRef(sequence.id)).isEmpty =>
