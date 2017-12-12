@@ -36,6 +36,8 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
   def stopObserve: SeqAction[Unit]
 
   def abortObserve: SeqAction[Unit]
+
+  def pauseObserve: SeqAction[Unit]
 }
 
 object GmosController {

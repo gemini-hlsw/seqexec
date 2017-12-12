@@ -7,7 +7,7 @@ import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.operations.ObservationOperations._
 import edu.gemini.seqexec.model.operations._
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestStop}
+import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestObsPause, RequestStop}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -68,11 +68,17 @@ object StepsControlButtons {
   def requestAbort(id: SequenceId, stepId: Int): Callback =
     Callback(SeqexecCircuit.dispatch(RequestAbort(id, stepId)))
 
+  def requestObsPause(id: SequenceId, stepId: Int): Callback =
+    Callback(SeqexecCircuit.dispatch(RequestObsPause(id, stepId)))
+
   def handleStop(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestStop(id, stepId)) >> ST.mod(_.copy(stopRequested = true, abortRequested = true)).liftCB
 
   def handleAbort(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestAbort(id, stepId)) >> ST.mod(_.copy(abortRequested = true, stopRequested = true)).liftCB
+
+  def handleObsPause(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+    ST.retM(requestObsPause(id, stepId)) >> ST.mod(_.copy(stopRequested = true, abortRequested = true)).liftCB
 
   private val component = ScalaComponent.builder[Props]("StepsControlButtons")
     .initialState(State(stopRequested = false, abortRequested = false))
@@ -81,7 +87,7 @@ object StepsControlButtons {
         ^.cls := "ui icon buttons",
         p.instrument.observationOperations.map {
           case PauseObservation            =>
-            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure")))
+            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"), onClick = $.runState(handleObsPause(p.id, p.step.id))))
           case StopObservation             =>
             Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), disabled = s.stopRequested || p.sequenceState === SequenceState.Stopping, onClick = $.runState(handleStop(p.id, p.step.id))))
           case AbortObservation            =>

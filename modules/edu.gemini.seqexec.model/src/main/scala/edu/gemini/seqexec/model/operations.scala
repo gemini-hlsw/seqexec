@@ -49,7 +49,7 @@ object operations {
   }
 
   private val GmosSupportedOperations = new SupportedOperations {
-    def observationOperations: List[ObservationOperations] = List(ObservationOperations.StopObservation, ObservationOperations.AbortObservation)
+    def observationOperations: List[ObservationOperations] = List(ObservationOperations.PauseObservation, ObservationOperations.ResumeObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation)
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 

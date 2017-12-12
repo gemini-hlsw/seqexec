@@ -14,7 +14,7 @@ import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.SeqTranslate.{Settings, Systems}
 import edu.gemini.seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
-import edu.gemini.seqexec.server.InstrumentSystem.{AbortObserveCmd, Controllable, StopObserveCmd}
+import edu.gemini.seqexec.server.InstrumentSystem.{AbortObserveCmd, Controllable, PauseObserveCmd, StopObserveCmd}
 import edu.gemini.seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import edu.gemini.seqexec.server.gcal._
 import edu.gemini.seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
@@ -76,7 +76,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
 
-    def doObserve(id: ImageFileId): SeqAction[Observed] =
+    def doObserve(id: ImageFileId): SeqAction[Result] =
       for {
         d   <- dataId
         _   <- sendDataStart(obsId, id, d)
@@ -86,13 +86,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         ret <- observeTail(id, d, r)
       } yield ret
 
-    def observeTail(id: ImageFileId, dataId: String, r: ObserveCommand.Result): SeqAction[Observed] = r match {
+    def observeTail(id: ImageFileId, dataId: String, r: ObserveCommand.Result): SeqAction[Result] = r match {
       case ObserveCommand.Success => for {
         _  <- notifyObserveEnd
         _  <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
         _  <- closeImage(id, systems.dhs)
         _  <- sendDataEnd(obsId, id, dataId)
-      } yield Observed(id)
+      } yield Result.OK(Observed(id))
       case ObserveCommand.Stopped => notifyObserveEnd *>
         headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU *>
         closeImage(id, systems.dhs) *>
@@ -100,7 +100,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case ObserveCommand.Aborted => sendObservationAborted(obsId, id) *>
         SeqAction.fail(SeqexecFailure.Execution(s"Observation $id aborted by user."))
       //TODO: Implement pause handling
-      case ObserveCommand.Paused  => SeqAction.fail(SeqexecFailure.Unexpected(s"Observe pause not yet implemented."))
+      case ObserveCommand.Paused  => SeqAction(Result.Paused)
     }
 
     for {
@@ -216,7 +216,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] = {
     def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state match {
-      case Action.Idle                  => true
+      case Action.Started               => true
       case Action.PartiallyCompleted(_) => true
       case _                            => false
     })
@@ -240,7 +240,17 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
-      case _                                           => none
+      case _                                             => none
+    } )
+  )
+
+  def pauseObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
+    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
+      case Controllable(_, _, PauseObserveCmd(pause), _) => Some(Process.eval(pause.run.map{
+        case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
+        case _      => Event.nullEvent
+      }))
+      case _                                             => none
     } )
   )
 
@@ -395,7 +405,7 @@ object SeqTranslate {
     }
   }
 
-  implicit class PartialResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ Result.Partial[A]) extends AnyVal {
+  implicit class ResultToResult(val r: SeqexecFailure \/ Result) extends AnyVal {
     def toResult: Result = r match {
       case \/-(r) => r
       case -\/(e) => Result.Error(SeqexecFailure.explain(e))

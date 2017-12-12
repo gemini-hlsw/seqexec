@@ -46,6 +46,7 @@ object actions {
   final case class RequestCancelPause(s: SequenceId) extends Action
   final case class RequestStop(id: SequenceId, step: Int) extends Action
   final case class RequestAbort(id: SequenceId, step: Int) extends Action
+  final case class RequestObsPause(id: SequenceId, step: Int) extends Action
 
   final case class RunStarted(s: SequenceId) extends Action
   final case class RunPaused(s: SequenceId) extends Action
@@ -59,6 +60,8 @@ object actions {
   final case class RunStopFailed(s: SequenceId) extends Action
   final case class RunAbort(s: SequenceId) extends Action
   final case class RunAbortFailed(s: SequenceId) extends Action
+  final case class RunObsPause(s: SequenceId) extends Action
+  final case class RunObsPauseFailed(s: SequenceId) extends Action
 
   final case class ShowStep(id: SequenceId, step: Int) extends Action
   final case class UnShowStep(i: Instrument) extends Action

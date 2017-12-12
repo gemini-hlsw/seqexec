@@ -140,6 +140,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     Event.actionStop(seqId.stringValue, translator.abortObserve)
   )
 
+  def pauseObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+    Event.actionStop(seqId.stringValue, translator.pauseObserve)
+  )
+
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
     def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).map(_.right).handle{
       case e: Exception => SeqexecFailure.SeqexecException(e).left

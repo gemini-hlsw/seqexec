@@ -35,17 +35,17 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override val contributorName: String = "gmosdc"
 
   override val observeControl: InstrumentSystem.ObserveControl = Controllable(StopObserveCmd(controller.stopObserve), AbortObserveCmd(controller.abortObserve),
-    PauseObserveCmd(SeqAction.void), ContinueObserveCmd(SeqAction.void))
+    PauseObserveCmd(controller.pauseObserve), ContinueObserveCmd(SeqAction.void))
 
   val Log: Logger = getLogger
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
-      case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
-      case FPUnitMode.CUSTOM_MASK => m match {
-        case Some(u) => GmosController.Config.CustomMaskFPU(u)
-        case _       => GmosController.Config.UnknownFPU
-      }
+    case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
+    case FPUnitMode.CUSTOM_MASK => m match {
+      case Some(u) => GmosController.Config.CustomMaskFPU(u)
+      case _       => GmosController.Config.UnknownFPU
     }
+  }
 
   private def ccConfigFromSequenceConfig(config: Config): TrySeq[configTypes.CCConfig] =
     (for {
