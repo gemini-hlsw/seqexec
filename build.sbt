@@ -28,7 +28,10 @@ lazy val imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
 version in ThisBuild := imageManifest.formatVersion
 
 // check for library updates whenever the project is [re]load
-onLoad in Global := { s => "dependencyUpdates" :: s }
+onLoad in Global := { s => 
+  if (sys.props.contains("gem.skipDependencyUpdates")) s
+  else "dependencyUpdates" :: s 
+}
 
 cancelable in Global := true
 
