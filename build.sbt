@@ -83,6 +83,9 @@ lazy val commonSettings = Seq(
        |""".stripMargin
   )),
 
+  // Don't build javadoc when we're packaging.
+  mappings in (Compile, packageDoc) := Seq(),
+
   // We don't care to see updates about the scala language itself
   dependencyUpdatesFilter -= moduleFilter(name = "scala-library"),
   dependencyUpdatesFilter -= moduleFilter(name = "scala-reflect"),
