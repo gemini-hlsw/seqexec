@@ -83,7 +83,7 @@ lazy val commonSettings = Seq(
        |""".stripMargin
   )),
 
-  // Don't build javadoc when we're packaging.
+  // Don't build javadoc when we're packaging the docker image.
   mappings in (Compile, packageDoc) := Seq(),
 
   // We don't care to see updates about the scala language itself
