@@ -124,7 +124,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             val kind = ActionType.Configure(resourceFromSystem(x))
             x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
-          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.Idle)))
+          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.State(Action.Idle, List()))))
 
       extractStatus(config) match {
         case StepState.Pending => Step(
@@ -215,9 +215,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] = {
-    def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state match {
+    def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case Action.Started               => true
-      case Action.PartiallyCompleted(_) => true
       case _                            => false
     })
     if(seqState.current.execution.exists(isObserving)) cmd

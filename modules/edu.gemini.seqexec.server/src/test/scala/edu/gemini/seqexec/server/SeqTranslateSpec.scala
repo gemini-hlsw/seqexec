@@ -27,7 +27,7 @@ class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
-  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed(fileId)))), state))
+  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed(fileId)))), Action.State(state, List())))
   private val s: Sequence.State = Sequence.State.status.set(SequenceState.Running)(Sequence.State.init(Sequence(
     "First",
     SequenceMetadata(GmosS, None, ""),
@@ -51,7 +51,7 @@ class SeqTranslateSpec extends FlatSpec {
   // Observe completed
   private val s2: Sequence.State = s.mark(0)(Result.OK(Result.Observed(fileId)))
   // Observe started, but with file Id already allocated
-  private val s3: Sequence.State = s.mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_=>Task(Result.OK(Result.Observed(fileId))))))
+  private val s3: Sequence.State = s.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_=>Task(Result.OK(Result.Observed(fileId))))))
   // Observe paused
   private val s4: Sequence.State = s.mark(0)(Result.Paused)
   // Observe failed

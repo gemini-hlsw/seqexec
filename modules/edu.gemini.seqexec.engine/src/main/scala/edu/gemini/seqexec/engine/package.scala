@@ -30,9 +30,11 @@ package engine {
   final case class Action(
     kind: ActionType,
     gen: ActionGen,
-    state: Action.ActionState
+    state: Action.State
   )
   object Action {
+
+    final case class State(runState: ActionState, partials: List[PartialVal])
 
     sealed trait ActionState
 
@@ -44,26 +46,24 @@ package engine {
 
     object Started extends ActionState
 
-    final case class PartiallyCompleted[V <: PartialVal](pr: V) extends ActionState
-
     object Paused extends ActionState
 
     final case class Completed[V <: RetVal](r: V) extends ActionState
 
     final case class Failed(e: Error) extends ActionState
 
-    def errored(ar: Action): Boolean = ar.state match {
+    def errored(ar: Action): Boolean = ar.state.runState match {
       case Action.Failed(_) => true
       case _ => false
     }
 
-    def finished(ar: Action): Boolean = ar.state match {
+    def finished(ar: Action): Boolean = ar.state.runState match {
       case Action.Failed(_) => true
       case Action.Completed(_) => true
       case _ => false
     }
 
-    def completed(ar: Action): Boolean = ar.state match {
+    def completed(ar: Action): Boolean = ar.state.runState match {
       case Action.Completed(_) => true
       case _ => false
     }
@@ -79,7 +79,7 @@ package object engine {
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
-  def fromTask(kind: ActionType, t: Task[Result]): Action = Action(kind, Kleisli[Task, ActionMetadata, Result](_ => t), Action.Idle)
+  def fromTask(kind: ActionType, t: Task[Result]): Action = Action(kind, Kleisli[Task, ActionMetadata, Result](_ => t), Action.State(Action.Idle, List()))
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
@@ -319,7 +319,7 @@ package object engine {
 
   def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit] = getS(id).flatMap(_.map{ s =>
     if (s.status === SequenceState.Running &&
-      s.current.execution.index(i).map(_.state === Action.Paused).getOrElse(false))
+      s.current.execution.index(i).map(_.state.runState === Action.Paused).getOrElse(false))
       modifyS(id)(_.start(i)) *> HandleP.fromProcess(act(id, (Kleisli(_ => cont), i), ActionMetadata.default))
     else unit
   }.getOrElse(unit))

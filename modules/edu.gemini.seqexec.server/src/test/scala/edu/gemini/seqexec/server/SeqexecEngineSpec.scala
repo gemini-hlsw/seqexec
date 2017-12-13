@@ -15,12 +15,12 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   def configureTask(resource: Resource): Task[Result] = Task.delay(Result.OK(Result.Configured(resource)))
   def pendingAction(resource: Resource): Action =
     engine.fromTask(ActionType.Configure(resource), configureTask(resource))
-  def running(resource: Resource): Action = pendingAction(resource).copy(state = Action.Started)
-  def done(resource: Resource): Action = pendingAction(resource).copy(state = Action.Completed(Result.Configured(resource)))
+  def running(resource: Resource): Action = pendingAction(resource).copy(state = Action.State(Action.Started, List()))
+  def done(resource: Resource): Action = pendingAction(resource).copy(state = Action.State(Action.Completed(Result.Configured(resource)), List()))
   val fileId = "fileId"
   def observing: Action = engine.fromTask(ActionType.Observe, Task.delay(Result.OK(Result.Observed(fileId))))
-  def fileIdReady: Action = observing.copy(state = Action.PartiallyCompleted(Result.FileIdAllocated(fileId)))
-  def observed: Action = observing.copy(state = Action.Completed(Result.Observed(fileId)))
+  def fileIdReady: Action = observing.copy(state = Action.State(Action.Started, List(Result.FileIdAllocated(fileId))))
+  def observed: Action = observing.copy(state = Action.State(Action.Completed(Result.Observed(fileId)), List(Result.FileIdAllocated(fileId))))
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {

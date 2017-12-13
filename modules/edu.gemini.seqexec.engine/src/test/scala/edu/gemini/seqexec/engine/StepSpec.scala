@@ -436,13 +436,13 @@ class StepSpec extends FlatSpec {
     inside (qss.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.focus.execution.headOption) {
-          case Some(Action(_, _, Action.PartiallyCompleted(v))) => v shouldEqual PartialValDouble(0.5)
+          case Some(Action(_, _, Action.State(Action.Started, v::_))) => v shouldEqual PartialValDouble(0.5)
         }
         status shouldBe SequenceState.Running
     }
     inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Final(seq, status)) =>
-        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)).map(_.state) shouldEqual Some(Action.Completed(RetValDouble(1.0)))
+        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)).map(_.state.runState) shouldEqual Some(Action.Completed(RetValDouble(1.0)))
         status shouldBe SequenceState.Completed
     }
 
@@ -451,9 +451,9 @@ class StepSpec extends FlatSpec {
   private val observeResult = Result.Observed("dummyId")
   private val result = Result.OK(observeResult)
   private val failure = Result.Error("Dummy error")
-  private val actionFailed =  fromTask(ActionType.Undefined, Task(failure)).copy(state = Action.Failed(failure))
+  private val actionFailed =  fromTask(ActionType.Undefined, Task(failure)).copy(state = Action.State(Action.Failed(failure), List()))
   private val action: Action = fromTask(ActionType.Undefined, Task(result))
-  private val actionCompleted: Action = action.copy(state = Action.Completed(observeResult))
+  private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), List()))
   private val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
@@ -461,7 +461,10 @@ class StepSpec extends FlatSpec {
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, skip = false, pending, focus, done.map(_.map(r => fromTask(ActionType.Observe, Task(r)).copy(state = Execution.actionStateFromResult(r)))), rollback)
+    Step.Zipper(1, None, config, Set.empty, breakpoint = false, skip = false, pending, focus, done.map(_.map{r =>
+      val x = fromTask(ActionType.Observe, Task(r))
+      x.copy(state = Execution.actionStateFromResult(r)(x.state))
+    }), rollback)
   }
 
   val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
