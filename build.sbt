@@ -370,6 +370,6 @@ lazy val ctl = project
       "com.monovore"  %% "decline"     % declineVersion
     ),
     TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
-      s" gem.ctl.main --verbose --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
+      s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
     } .value
   )
