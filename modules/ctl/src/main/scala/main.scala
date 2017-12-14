@@ -14,11 +14,11 @@ object main {
   def mainʹ(args: List[String]): IO[Unit] =
     for {
       _  <- IO(Console.println) // scalastyle:ignore
-      c  <- Command.parse("gemctl", args)
-      _  <- c.traverse { c =>
+      c  <- Parsers.parse("gemctl", args)
+      _  <- c.traverse { case (config, impl) =>
               IORef(InterpreterState.initial)
-                .map(interpreter(c, _))
-                .flatMap(c.impl.foldMap(_).value)
+                .map(interpreter(config, _))
+                .flatMap(impl.foldMap(_).value)
             }
       _  <- IO(Console.println) // scalastyle:ignore
     } yield ()
