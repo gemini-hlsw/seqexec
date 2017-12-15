@@ -11,19 +11,19 @@ import gem.ctl.free.interpreter.{ interpreter, InterpreterState }
 object main {
 
   /** Entry point. Parse the commandline args and do what's asked, if possible. */
-  def mainʹ(args: List[String]): IO[Unit] =
+  def mainʹ(args: List[String]): IO[Int] =
     for {
       _  <- IO(Console.println) // scalastyle:ignore
       c  <- Parsers.parse("gemctl", args)
-      _  <- c.traverse { case (config, impl) =>
+      n  <- c.traverse { case (config, impl) =>
               IORef(InterpreterState.initial)
                 .map(interpreter(config, _))
                 .flatMap(impl.foldMap(_).value)
             }
       _  <- IO(Console.println) // scalastyle:ignore
-    } yield ()
+    } yield n.fold(0)(_.fold(identity, _ => 0))
 
-  def main(args: Array[String]): Unit =
-    mainʹ(args.toList).unsafeRunSync
+  def main(args: Array[String]): Unit = 
+    sys.exit(mainʹ(args.toList).unsafeRunSync)
 
 }

@@ -32,29 +32,30 @@ object interpreter {
    * Construct an interpreter of `CtlIO` given a `Config` and an `IORef` for the initial state. We
    * carry our state in an `IORef` because it needs to be visible from multiple threads.
    */
-  def interpreter(c: Config, state: IORef[InterpreterState]): CtlOp ~> EitherT[IO, Int, ?] = λ[CtlOp ~> EitherT[IO, Int, ?]] {
-    case CtlOp.Shell(false, cmd) => doShell(cmd, c.verbose, c.ansi, state)
-    case CtlOp.Shell(true,  cmd) =>
-      c.server match {
+  def interpreter(c: Config, state: IORef[InterpreterState]): CtlOp ~> EitherT[IO, Int, ?] =
+    λ[CtlOp ~> EitherT[IO, Int, ?]] {
+      case CtlOp.Shell(false, cmd) => doShell(cmd, c.verbose, c.ansi, state)
+      case CtlOp.Shell(true,  cmd) =>
+        c.server match {
 
-        case Server.Local =>
-          doShell(cmd, c.verbose, c.ansi, state)
+          case Server.Local =>
+            doShell(cmd, c.verbose, c.ansi, state)
 
-        case Server.Remote(Host(h), u) =>
-          doRemoteShell(u.map(u =>  s"$u@$h").getOrElse(h), cmd, c, state)
+          case Server.Remote(Host(h), u) =>
+            doRemoteShell(u.map(u =>  s"$u@$h").getOrElse(h), cmd, c, state)
 
-      }
-    case CtlOp.Exit(exitCode)    => EitherT.left(exitCode.pure[IO])
-    case CtlOp.GetConfig         => c.pure[EitherT[IO, Int, ?]]
-    case CtlOp.Gosub(level, msg, fa) =>
-      for {
-        _ <- doLog(c.ansi, level, msg, state)
-        _ <- EitherT.right(state.mod(_.indent))
-        a <- fa.foldMap(this)
-        _ <- EitherT.right(state.mod(_.outdent))
-      } yield a
-    case CtlOp.Now => EitherT.right(IO(System.currentTimeMillis))
-  }
+        }
+      case CtlOp.Exit(exitCode)    => EitherT.left(exitCode.pure[IO])
+      case CtlOp.GetConfig         => c.pure[EitherT[IO, Int, ?]]
+      case CtlOp.Gosub(level, msg, fa) =>
+        for {
+          _ <- doLog(c.ansi, level, msg, state)
+          _ <- EitherT.right(state.mod(_.indent))
+          a <- fa.foldMap(this)
+          _ <- EitherT.right(state.mod(_.outdent))
+        } yield a
+      case CtlOp.Now => EitherT.right(IO(System.currentTimeMillis))
+    }
 
   /**
    * Construct a program to log a message to the console at the given log level and indentation.

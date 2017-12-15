@@ -371,5 +371,6 @@ lazy val ctl = project
     ),
     TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
       s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
-    } .value
+    } .value,
+    fork in run := true
   )
