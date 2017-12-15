@@ -23,7 +23,7 @@ lazy val slf4jVersion        = "1.7.25"
 lazy val tucoVersion         = "0.3.0-M5"
 
 // our version is determined by the current git state (see project/Version.scala)
-lazy val imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
+def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
 
 version in ThisBuild := imageManifest.formatVersion
 
@@ -41,16 +41,16 @@ addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432
 addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 // Before printing the prompt check git to make sure all is well.
-// shellPrompt in ThisBuild := { state =>
-//   if (version.value != Version.unsafeCurrent) {
-//     import scala.Console.{ RED, RESET }
-//     print(RED)
-//     println(s"Computed version doesn't match the filesystem anymore.")
-//     println(s"Please `reload` to get back in sync.")
-//     print(RESET)
-//   }
-//   "> "
-// }
+shellPrompt in ThisBuild := { state =>
+  if (version.value != imageManifest.formatVersion) {
+    import scala.Console.{ RED, RESET }
+    print(RED)
+    println(s"Computed version doesn't match the filesystem anymore.")
+    println(s"Please `reload` to get back in sync.")
+    print(RESET)
+  }
+  "> "
+}
 
 // sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
