@@ -4,10 +4,10 @@
 package gem.ocs2
 
 import cats.implicits._
-import gem.{Dataset, Observation, Program}
+import gem.{ Dataset, Observation, Program }
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
-import gem.math.{ Angle, Offset, Wavelength }
+import gem.math._
 
 /** String parsers for our model types.
   */
@@ -31,6 +31,54 @@ object Parsers {
 
   val angstroms: PioParse[Wavelength] =
     int.map(Wavelength.unsafeFromAngstroms)
+
+  val magnitudeSystem: PioParse[MagnitudeSystem] =
+    enumFromTag(MagnitudeSystem.all)
+
+  val magnitudeBand: PioParse[MagnitudeBand] = enum(
+    "u"  -> MagnitudeBand.SloanU,
+    "g"  -> MagnitudeBand.SloanG,
+    "r"  -> MagnitudeBand.SloanR,
+    "i"  -> MagnitudeBand.SloanI,
+    "z"  -> MagnitudeBand.SloanZ,
+    "U"  -> MagnitudeBand.U,
+    "B"  -> MagnitudeBand.B,
+    "V"  -> MagnitudeBand.V,
+    "UC" -> MagnitudeBand.Uc,
+    "R"  -> MagnitudeBand.R,
+    "I"  -> MagnitudeBand.I,
+    "Y"  -> MagnitudeBand.Y,
+    "J"  -> MagnitudeBand.J,
+    "H"  -> MagnitudeBand.H,
+    "K"  -> MagnitudeBand.K,
+    "L"  -> MagnitudeBand.L,
+    "M"  -> MagnitudeBand.M,
+    "N"  -> MagnitudeBand.N,
+    "Q"  -> MagnitudeBand.Q,
+    "AP" -> MagnitudeBand.Ap
+  )
+
+  val ra: PioParse[RightAscension] =
+    double.map(Angle.fromDoubleDegrees)
+          .map(_.toHourAngle)
+          .map(RightAscension.fromHourAngle)
+
+  val dec: PioParse[Declination] =
+    double.map(Angle.fromDoubleDegrees)
+          .map(Declination.unsafeFromAngle)
+
+  // Anything else blows up, which is ok since we don't support anything else
+  val epoch: PioParse[Epoch] = enum(
+    "1950.0" -> Epoch.B1950,
+    "2000.0" -> Epoch.J2000
+  )
+
+  val ephemerisKeyType: PioParse[EphemerisKeyType] = enum(
+    "asteroid"           -> EphemerisKeyType.AsteroidNew,
+    "asteroid-old-style" -> EphemerisKeyType.AsteroidOld,
+    "comet"              -> EphemerisKeyType.Comet,
+    "major-body"         -> EphemerisKeyType.MajorBody
+  )
 
   val instrument: PioParse[Instrument] = enum(
     "AcqCam"     -> gem.enum.Instrument.AcqCam,

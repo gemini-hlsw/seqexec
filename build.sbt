@@ -282,6 +282,7 @@ lazy val ocs2 = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
+      "org.typelevel"          %% "cats-testkit"             % catsVersion % "test",
       "co.fs2"                 %% "fs2-io"                   % fs2Version,
       "org.scala-lang.modules" %% "scala-xml"                % scalaXmlVerson,
       "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersVersion,

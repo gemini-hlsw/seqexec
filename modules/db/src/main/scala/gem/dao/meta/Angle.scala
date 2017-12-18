@@ -8,15 +8,21 @@ import gem.math.{ Angle, HourAngle }
 
 trait AngleMeta {
 
+  private def signedBigDecimal(d: Int): Meta[Angle] =
+    Meta[java.math.BigDecimal]
+      .xmap[Angle](
+        b => Angle.fromMicroarcseconds(b.movePointRight(d).longValue),
+        a => new java.math.BigDecimal(a.toSignedMicroarcseconds).movePointLeft(d)
+      )
+
   // Angle mapping to signed arcseconds via NUMERIC. NOT implicit. We're mapping a type that
   // is six orders of magnitude more precise than the database column, so we will shift
   // the decimal pure back and forth.
   val AngleMetaAsSignedArcseconds: Meta[Angle] =
-    Meta[java.math.BigDecimal]
-      .xmap[Angle](
-        b => Angle.fromMicroarcseconds(b.movePointRight(6).longValue),
-        a => new java.math.BigDecimal(a.toSignedMicroarcseconds).movePointLeft(6)
-      )
+    signedBigDecimal(6)
+
+  val AngleMetaAsSignedMilliarcseconds: Meta[Angle] =
+    signedBigDecimal(3)
 
   val AngleMetaAsMicroarcseconds: Meta[Angle] =
     Meta[Long].xmap[Angle](Angle.fromMicroarcseconds, _.toMicroarcseconds)

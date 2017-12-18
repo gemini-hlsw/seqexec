@@ -3,9 +3,11 @@
 
 package gem.ocs2.pio
 
+import gem.syntax.string._
+import gem.util.Enumerated
+
 import cats.Functor
 import cats.implicits._
-import gem.syntax.string._
 import java.time.{ Duration, Instant }
 
 final case class PioParse[A](run: String => Option[A]) {
@@ -22,6 +24,14 @@ object PioParse {
 
   def enum[A](dictionary: (String, A)*): PioParse[A] =
     PioParse(dictionary.toMap.lift)
+
+  /** Builds a PioParse for an `Enumerated` instance, assuming that the enum
+    * tags will be used as the lookup keys.  In other words, this is an option
+    * for enumerations whose OCS2 export happen to match the new model enum
+    * tags.
+    */
+  def enumFromTag[A](as: List[A])(implicit ev: Enumerated[A]): PioParse[A] =
+    PioParse(as.map(a => ev.tag(a) -> a).toMap.lift)
 
   // ********  Primitives
 

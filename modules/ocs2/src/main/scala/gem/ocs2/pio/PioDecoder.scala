@@ -48,6 +48,16 @@ object PioDecoder {
       } yield (a, b)
     }
 
+  implicit def decode3[A, B, C](implicit da: PioDecoder[A], db: PioDecoder[B], dc: PioDecoder[C]): PioDecoder[(A, B, C)] =
+    PioDecoder { n =>
+      for {
+        a <- da.decode(n)
+        b <- db.decode(n)
+        c <- dc.decode(n)
+      } yield (a, b, c)
+    }
+
+  implicit val DoubleDecoder: PioDecoder[Double]   = fromParse(PioParse.double )
   implicit val StringDecoder: PioDecoder[String]   = fromParse(PioParse.string )
   implicit val IntDecoder: PioDecoder[Int]         = fromParse(PioParse.int    )
   implicit val LongDecoder: PioDecoder[Long]       = fromParse(PioParse.long   )

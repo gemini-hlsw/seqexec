@@ -10,12 +10,17 @@ import gem.dao.meta._
 import gem.dao.composite._
 import gem.enum.TrackType
 
-object TargetDao {
-  import EnumeratedMeta._
+object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the priority - see MetaTrackType below and issue #170 */ {
+
   import EphemerisKeyComposite._
   import ProperMotionComposite._
   import TaggedCoproduct._
   import Track._
+
+  // MetaTrackType is a workaround until issue #170 is implemented.
+  import doobie.postgres.implicits._
+  implicit val MetaTrackType: Meta[TrackType] =
+    pgEnumString("e_track_type", TrackType.unsafeFromTag, _.tag)
 
   def select(id: Int): ConnectionIO[Option[Target]] =
     Statements.select(id).option

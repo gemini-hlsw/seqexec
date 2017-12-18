@@ -4,7 +4,7 @@
 package gem.ocs2
 
 import gem.dao._
-import gem.{Dataset, Log, Observation, Program, Step, User}
+import gem.{ Dataset, Log, Observation, Program, Step, Target, User }
 import gem.config.{ StaticConfig, DynamicConfig }
 
 import cats.effect.IO
@@ -46,7 +46,7 @@ object Importer extends DoobieClient {
       } yield ()
   }
 
-  def writeProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], ts: List[Target]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
 
@@ -59,6 +59,9 @@ object Importer extends DoobieClient {
         _ <- p.observations.toList.traverse { case (i,o) =>
                val oid = Observation.Id(p.id, i)
                writeObservation(oid, o, dsMap(oid))(u, l)
+             }
+        _ <- l.log(u, s"insert targets from ${p.id}") {
+               ts.traverse_(TargetDao.insert)
              }
       } yield ()
   }
@@ -75,6 +78,6 @@ object Importer extends DoobieClient {
   def importObservation(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): IO[Unit] =
     doImport(writeObservation(oid, o, ds))
 
-  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): IO[Unit] =
-    doImport(writeProgram(p, ds))
+  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], ts: List[Target]): IO[Unit] =
+    doImport(writeProgram(p, ds, ts))
 }

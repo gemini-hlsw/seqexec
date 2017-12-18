@@ -27,9 +27,9 @@ private object ProperMotionCompositeLemmas {
   import EpochMeta._
   import RadialVelocityMeta._
 
-  // The parallax member is an angle, which we will store as microarcseconds
-  private implicit lazy val AngleMeta: Meta[Angle] =
-    Meta[Long].xmap(Angle.fromMicroarcseconds, _.toMicroarcseconds)
+  // The parallax member is an angle, which we will store as signed milliarcseconds
+  private implicit lazy val AngleMasMeta: Meta[Angle] =
+    AngleMeta.AngleMetaAsSignedMilliarcseconds
 
   val ProperMotionComposite: Composite[ProperMotion] = implicitly
   val ProperMotionOptionComposite: Composite[Option[ProperMotion]] = implicitly

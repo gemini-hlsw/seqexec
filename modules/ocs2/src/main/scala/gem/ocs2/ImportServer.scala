@@ -7,9 +7,9 @@ import Decoders._
 
 import cats.effect.IO, cats.implicits._
 
-import gem.{Dataset, Observation, Program, Step }
+import gem.{ Dataset, Observation, Program, Step, Target }
 import gem.config.{ StaticConfig, DynamicConfig }
-import gem.ocs2.pio.{PioDecoder, PioError}
+import gem.ocs2.pio.{ PioDecoder, PioError }
 import gem.ocs2.pio.PioError._
 
 import fs2.{ Stream, StreamApp }
@@ -44,10 +44,10 @@ final class ImportServer(ocsHost: String) {
   private def badRequest(id: String, idType: String): IO[Response[IO]] =
     BadRequest(s"Could not parse $idType id '$id'")
 
-  private def fetchDecodeAndStore[A](id: String, f: (A, List[Dataset]) => IO[Unit])(implicit ev: PioDecoder[A]): IO[Response[IO]] = {
+  private def fetchDecodeAndStore[A](id: String, f: (A, List[Dataset], List[Target]) => IO[Unit])(implicit ev: PioDecoder[A]): IO[Response[IO]] = {
     def decodeAndStore(xml: Node): IO[Response[IO]] =
-      PioDecoder[(A, List[Dataset])].decode(xml).leftMap(_.toResponse(id)).traverse { case (a, ds) =>
-        f(a, ds).as(Ok(s"Imported $id"))
+      PioDecoder[(A, List[Dataset], List[Target])].decode(xml).leftMap(_.toResponse(id)).traverse { case (a, ds, ts) =>
+        f(a, ds, ts).as(Ok(s"Imported $id"))
       }.flatMap(_.merge)
 
     // TODO: add timeout
@@ -63,7 +63,7 @@ final class ImportServer(ocsHost: String) {
 
   def importObservation(obsIdStr: String): IO[Response[IO]] = {
     val checkId = Observation.Id.fromString(obsIdStr) toRight badRequest(obsIdStr, "observation")
-    checkId.map { oid => fetchDecodeAndStore[Obs](obsIdStr, Importer.importObservation(oid, _, _)) }.merge
+    checkId.map { oid => fetchDecodeAndStore[Obs](obsIdStr, (a, ds, _) => Importer.importObservation(oid, a, ds)) }.merge
   }
 
   def importProgram(pidStr: String): IO[Response[IO]] = {
