@@ -12,25 +12,18 @@ import cats.free.Free, cats.implicits._
 /** Module of constructors for the control language. */
 object ctl {
 
-  sealed trait Host {
-    def name: String
-  }
-  object Host {
-    final case class Machine(name: String) extends Host
-    final case class Network(name: String) extends Host
-  }
+  final case class Host(name: String)
 
   sealed trait Server {
     def userAndHost: String =
       this match {
-        case Server.Local                       => "localhost"
-        case Server.Remote(Host.Machine(h), u)  => u.map(_ + "@" + h).getOrElse(h) + " (docker machine)"
-        case Server.Remote(Host.Network(h), u)  => u.map(_ + "@" + h).getOrElse(h)
+        case Server.Local               => "localhost"
+        case Server.Remote(Host(h), u)  => u.map(_ + "@" + h).getOrElse(h)
       }
   }
   object Server {
     case object Local extends Server
-    final case class  Remote(host: Host, user: Option[String]) extends Server
+    final case class Remote(host: Host, user: Option[String]) extends Server
   }
 
 
@@ -50,6 +43,7 @@ object ctl {
           case object GetConfig                                                 extends CtlOp[Config]
     final case class  Gosub[A](level: Level, msg: String, fa: CtlIO[A])         extends CtlOp[A]
     final case class  Shell(remote: Boolean, cmd: Either[String, List[String]]) extends CtlOp[Output]
+          case object Now                                                       extends CtlOp[Long]
   }
 
   /** Combinator that applies a check to command output. */
@@ -76,13 +70,9 @@ object ctl {
   // Constructors
 
   def serverHostName: CtlIO[String] =
-    server.flatMap {
-      case Server.Local => "localhost".pure[CtlIO]
-      case Server.Remote(Host.Network(name), _) => name.pure[CtlIO]
-      case Server.Remote(Host.Machine(name), _) =>
-        shell("docker-machine", "ip", name).require {
-          case Output(0, s :: Nil) => s
-        }
+    server.map {
+      case Server.Local                 => "localhost"
+      case Server.Remote(Host(name), _) => name
     }
 
   def shell(c: String, cs: String*): CtlIO[Output] =
@@ -111,6 +101,9 @@ object ctl {
 
   def logMessage(level: Level, msg: String): CtlIO[Unit] =
     Free.liftF(CtlOp.Gosub(level, msg, ().pure[CtlIO]))
+
+  def now: CtlIO[Long] =
+    Free.liftF(CtlOp.Now)
 
   def info (msg: String): CtlIO[Unit] = logMessage(Level.Info,  msg)
   def warn (msg: String): CtlIO[Unit] = logMessage(Level.Warn,  msg)

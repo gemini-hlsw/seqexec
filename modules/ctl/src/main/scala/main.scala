@@ -6,41 +6,24 @@ package gem.ctl
 import cats.implicits._
 import cats.effect._
 
-import gem.ctl.free.ctl._
 import gem.ctl.free.interpreter.{ interpreter, InterpreterState }
-
-import gem.ctl.hi.ps.ps
-import gem.ctl.hi.log.showLog
-import gem.ctl.hi.stop.stop
-import gem.ctl.hi.deploy.deploy
-import gem.ctl.hi.rollback.rollback
 
 object main {
 
-  /** Map a `Command` to a corresponding program in `CtlIO`. */
-  def command(c: Command): CtlIO[Unit] =
-    info(s"Target host is ${c.server.userAndHost}").as(c).flatMap {
-      case Command.Deploy(u, d, s, v, f) => deploy(d, s, f)
-      case Command.Ps(_, _)              => ps
-      case Command.Stop(_, _)            => stop
-      case Command.Log(_, _, n)          => showLog(n)
-      case Command.Rollback(_, _)        => rollback
-    }
-
   /** Entry point. Parse the commandline args and do what's asked, if possible. */
-  def mainʹ(args: List[String]): IO[Unit] =
+  def mainʹ(args: List[String]): IO[Int] =
     for {
       _  <- IO(Console.println) // scalastyle:ignore
-      c  <- Command.parse("gemctl", args)
-      _  <- c.traverse { c =>
+      c  <- Parsers.parse("gemctl", args)
+      n  <- c.traverse { case (config, impl) =>
               IORef(InterpreterState.initial)
-                .map(interpreter(c, _))
-                .flatMap(command(c).foldMap(_).value)
+                .map(interpreter(config, _))
+                .flatMap(impl.foldMap(_).value)
             }
       _  <- IO(Console.println) // scalastyle:ignore
-    } yield ()
+    } yield n.fold(0)(_.fold(identity, _ => 0))
 
   def main(args: Array[String]): Unit =
-    mainʹ(args.toList).unsafeRunSync
+    sys.exit(mainʹ(args.toList).unsafeRunSync)
 
 }

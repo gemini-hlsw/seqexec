@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.docker._
+
 lazy val circeVersion        = "0.9.0-M2"
 lazy val attoVersion         = "0.6.1-M7"
 lazy val catsEffectVersion   = "0.5"
@@ -20,40 +22,32 @@ lazy val shapelessVersion    = "2.3.2"
 lazy val slf4jVersion        = "1.7.25"
 lazy val tucoVersion         = "0.3.0-M5"
 
-enablePlugins(GitVersioning)
+// our version is determined by the current git state (see project/ImageManifest.scala)
+def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
 
-git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
+version in ThisBuild := imageManifest.formatVersion
 
 // check for library updates whenever the project is [re]load
-onLoad in Global := { s => "dependencyUpdates" :: s }
+onLoad in Global := { s => 
+  if (sys.props.contains("gem.skipDependencyUpdates")) s
+  else "dependencyUpdates" :: s 
+}
 
 cancelable in Global := true
 
 // some extra commands for us
 addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum; headerCreate")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
+addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 // Before printing the prompt check git to make sure all is well.
 shellPrompt in ThisBuild := { state =>
-  import scala.sys.process._
-  import scala.Console.{ RED, RESET }
-  try {
-    val revision = "git rev-parse HEAD".!!.trim
-    val dirty    = "git status -s".!!.trim.length > 0
-    val expected = revision + git.uncommittedSignifier.value.filter(_ => dirty).fold("")("-" + _)
-    val actual   = version.value
-    val stale    = expected != actual
-    if (stale) {
-      print(RED)
-      println(s"Computed version doesn't match the filesystem anymore.")
-      println(s"Please `reload` to get back in sync.")
-      print(RESET)
-    }
-  } catch {
-    case e: Exception =>
-      print(RED)
-      println(s"Couldn't run `git` to check on versioning. Something is amiss.")
-      print(RESET)
+  if (version.value != imageManifest.formatVersion) {
+    import scala.Console.{ RED, RESET }
+    print(RED)
+    println(s"Computed version doesn't match the filesystem anymore.")
+    println(s"Please `reload` to get back in sync.")
+    print(RESET)
   }
   "> "
 }
@@ -88,6 +82,9 @@ lazy val commonSettings = Seq(
        |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
        |""".stripMargin
   )),
+
+  // Don't build javadoc when we're packaging the docker image.
+  mappings in (Compile, packageDoc) := Seq(),
 
   // We don't care to see updates about the scala language itself
   dependencyUpdatesFilter -= moduleFilter(name = "scala-library"),
@@ -323,19 +320,32 @@ lazy val telnetd = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "tuco-core" % tucoVersion,
+      "org.tpolecat" %% "tuco-core"  % tucoVersion,
       "org.tpolecat" %% "tuco-shell" % tucoVersion
     ),
-    dockerExposedPorts  := List(6666),
-    dockerRepository    := Some("geminihlsw")
+    packageName in Docker := "gem",
+    dockerBaseImage       := "openjdk:8u141",
+    dockerExposedPorts    := List(6666),
+    dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
+    dockerLabels          := imageManifest.labels,
+
+    // Install nc before changing the user
+    dockerCommands       ++= dockerCommands.value.flatMap {
+      case c @ Cmd("USER", args @ _*) =>
+        Seq(
+          ExecCmd("RUN", "apt-get", "update"),
+          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-openbsd"),
+          c
+        )
+      case cmd => Seq(cmd)
+    }
+
   )
 
 lazy val web = project
   .in(file("modules/web"))
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(service, sql, json)
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(DockerPlugin)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -344,9 +354,7 @@ lazy val web = project
       "org.http4s"    %% "http4s-dsl"          % http4sVersion,
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
       "com.pauldijou" %% "jwt-core"            % jwtVersion
-    ),
-    dockerExposedPorts  := List(6667),
-    dockerRepository    := Some("geminihlsw")
+    )
   )
 
 lazy val ctl = project
@@ -359,7 +367,10 @@ lazy val ctl = project
       "org.typelevel" %% "cats-core"   % catsVersion,
       "org.typelevel" %% "cats-free"   % catsVersion,
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
-      "com.monovore"  %% "decline"     % declineVersion,
+      "com.monovore"  %% "decline"     % declineVersion
     ),
-    addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")
+    TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
+      s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
+    } .value,
+    fork in run := true
   )

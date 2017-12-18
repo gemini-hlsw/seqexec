@@ -1,8 +1,10 @@
 resolvers  += "Flyway" at "https://davidmweber.github.io/flyway-sbt.repo" // "https://flywaydb.org/repo"
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "42.1.1", // needed by flyway
-  "org.slf4j"      % "slf4j-nop"  % "1.7.21"  // to silence some log messages
+  "org.postgresql" % "postgresql"  % "42.1.1", // needed by flyway
+  "org.slf4j"      % "slf4j-nop"   % "1.7.21", // to silence some log messages
+  "org.typelevel" %% "cats-core"   % "1.0.0-MF",
+  "org.typelevel" %% "cats-effect" % "0.4"
 )
 
 addSbtPlugin("org.flywaydb"      % "flyway-sbt"            % "4.2.0")

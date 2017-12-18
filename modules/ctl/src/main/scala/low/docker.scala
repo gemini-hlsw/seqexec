@@ -12,12 +12,15 @@ import cats.implicits._
 /** Low-level constructors for `CtlIO` operations related to docker. */
 object docker {
 
-  final case class Network(hash: String)
+  final case class Network(hash: String, name: String)
   final case class Image(hash: String)
   final case class Container(hash: String)
 
   def docker(args: String*): CtlIO[Output] =
-    remote("/usr/local/bin/docker", args : _*)
+    isRemote.map {
+      case true  => "/usr/bin/docker"
+      case false => "/usr/local/bin/docker"
+    } .flatMap(remote(_, args : _*))
 
   def containerHealth(k: Container): CtlIO[String] = // for now
     isRemote.flatMap { r =>
@@ -31,12 +34,12 @@ object docker {
   def findNetwork(name: String): CtlIO[Option[Network]] =
     docker("network", "ls", "-q", "--filter", s"name=$name").require {
       case Output(0, Nil)     => None
-      case Output(0, List(h)) => Some(Network(h))
+      case Output(0, List(h)) => Some(Network(h, name))
     }
 
   def createNetwork(name: String): CtlIO[Network] =
     docker("network", "create", name).require {
-      case Output(0, List(h)) => Network(h)
+      case Output(0, List(h)) => Network(h, name)
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.TraversableOps")) // .last below
@@ -67,18 +70,38 @@ object docker {
     }
 
   def getLabelValue(label: String, k: Container): CtlIO[String] =
+    getLabel(label, k.hash)
+
+  def getImageLabel(label: String, img: Image): CtlIO[String] =
+    getLabel(label, img.hash)
+
+  private def getLabel(label: String, obj: String): CtlIO[String] =
     isRemote.flatMap { r =>
       docker("inspect", "--format",
         if (r) s"""'{{ index .Config.Labels "$label"}}'"""
-        else    s"""{{ index .Config.Labels "$label"}}""", k.hash).require {
+        else    s"""{{ index .Config.Labels "$label"}}""", obj).require {
           case Output(0, s :: Nil) if s.nonEmpty => s
         }
+    }
+
+  def ensureImageLabel(label: String, expected: String, img: Image): CtlIO[Unit] =
+    getLabel(label, img.hash).flatMap {
+      case `expected` => info(s"$label is $expected (as expected)")
+      case s          => error(s"$label was $s (expected $expected)") *> exit(-1)
     }
 
   def stopContainer(k: Container): CtlIO[Unit] =
     docker("stop", k.hash) require {
       case Output(0, s :: Nil) if s === k.hash => ()
     }
+
+  def removeContainer(k: Container): CtlIO[Unit] =
+    docker("rm", k.hash) require {
+      case Output(0, s :: Nil) if s === k.hash => ()
+    }
+
+  def destroyContainer(k: Container): CtlIO[Unit] =
+    stopContainer(k) *> removeContainer(k)
 
   def startContainer(k: Container): CtlIO[Unit] =
     docker("start", k.hash) require {
