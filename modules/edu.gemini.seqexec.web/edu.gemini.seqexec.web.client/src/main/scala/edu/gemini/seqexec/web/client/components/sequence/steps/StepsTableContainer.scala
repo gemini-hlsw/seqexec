@@ -262,7 +262,7 @@ object StepsTableContainer {
         <.td(
           if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
           SeqexecStyles.tdNoPadding,
-          ^.colSpan := 5
+          ^.colSpan := 11
         )
       )
 
