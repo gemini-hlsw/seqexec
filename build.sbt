@@ -22,7 +22,7 @@ lazy val shapelessVersion    = "2.3.2"
 lazy val slf4jVersion        = "1.7.25"
 lazy val tucoVersion         = "0.3.0-M5"
 
-// our version is determined by the current git state (see project/Version.scala)
+// our version is determined by the current git state (see project/ImageManifest.scala)
 def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
 
 version in ThisBuild := imageManifest.formatVersion
