@@ -63,7 +63,7 @@ object interpreter {
    */
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   private def doLogʹ(ansi: Boolean, level: Level, msg: String, state: IORef[InterpreterState]): IO[Unit] = {
-    lazy val color = 
+    lazy val color =
       if (ansi) {
         level match {
           case Level.Error => Console.RED
