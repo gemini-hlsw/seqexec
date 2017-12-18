@@ -153,7 +153,7 @@ class SequenceSpec extends FlatSpec {
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val result: Result = Result.OK(observeResult)
   private val action: Action = fromTask(ActionType.Undefined, Task(result))
-  private val completedAction: Action = action.copy(state = Action.Completed(observeResult))
+  private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
@@ -161,7 +161,10 @@ class SequenceSpec extends FlatSpec {
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, false, pending, focus, done.map(_.map(r => fromTask(ActionType.Observe, Task(r)).copy(state = Execution.actionStateFromResult(r)))), rollback)
+    Step.Zipper(1, None, config, Set.empty, breakpoint = false, false, pending, focus, done.map(_.map{r =>
+      val x = fromTask(ActionType.Observe, Task(r))
+      x.copy(state = Execution.actionStateFromResult(r)(x.state))
+    }), rollback)
   }
   val stepz0: Step.Zipper   = simpleStep2(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper  = simpleStep2(List(List(action)), Execution.empty, Nil)

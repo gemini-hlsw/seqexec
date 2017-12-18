@@ -208,7 +208,6 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
   } yield ()
 
-  // TODO: Deal with Pause
   override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
     _ <- setDCConfig(config.dc)
@@ -240,6 +239,12 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- EitherT(Task(Log.info("Send endObserve to Gmos").right))
     _ <- GmosEpics.instance.endObserveCmd.mark
     _ <- GmosEpics.instance.endObserveCmd.post
+  } yield ()
+
+  override def pauseObserve = for {
+    _ <- EitherT(Task(Log.info("Send pause to Gmos").right))
+    _ <- GmosEpics.instance.pauseCmd.mark
+    _ <- GmosEpics.instance.pauseCmd.post
   } yield ()
 }
 

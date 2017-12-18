@@ -140,6 +140,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     Event.actionStop(seqId.stringValue, translator.abortObserve)
   )
 
+  def pauseObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+    Event.actionStop(seqId.stringValue, translator.pauseObserve)
+  )
+
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
     def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).map(_.right).handle{
       case e: Exception => SeqexecFailure.SeqexecException(e).left
@@ -299,7 +303,6 @@ object SeqexecEngine {
     case engine.Action.Idle                  => ActionStatus.Pending
     case engine.Action.Completed(_)          => ActionStatus.Completed
     case engine.Action.Started               => ActionStatus.Running
-    case engine.Action.PartiallyCompleted(_) => ActionStatus.Running
     case engine.Action.Paused                => ActionStatus.Paused
     case engine.Action.Failed(_)             => ActionStatus.Failed
   }
@@ -309,7 +312,7 @@ object SeqexecEngine {
     case _                       => Nil
   }
 
-  private[server] def separateActions(ls: List[Action]): (List[Action], List[Action]) =  ls.partition{ _.state match {
+  private[server] def separateActions(ls: List[Action]): (List[Action], List[Action]) =  ls.partition{ _.state.runState match {
     case engine.Action.Completed(_) => false
     case engine.Action.Failed(_)    => false
     case _                          => true
@@ -365,12 +368,6 @@ object SeqexecEngine {
 
   protected[server] def observeStatus(executions: List[List[engine.Action]],
                                       configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
-    def containsPartial(e: List[engine.Action]): Boolean =
-      e.map(_.state).exists {
-        case Action.PartiallyCompleted(_) => true
-        case _                            => false
-      }
-
     def containsObserve(e: List[engine.Action]): Boolean =
       separateActions(e)._2.map(_.kind).contains(ActionType.Observe)
 
@@ -380,7 +377,6 @@ object SeqexecEngine {
         val (a, r) = separateActions(e).bimap(_.map(_.kind), _.map(_.kind))
         a.contains(ActionType.Observe) || r.contains(ActionType.Observe)
       }.map {
-        case e if containsPartial(e) => ActionStatus.Running
         case e if containsObserve(e) => ActionStatus.Completed
         case _                       => ActionStatus.Running
       }.headOption.getOrElse(ActionStatus.Pending)

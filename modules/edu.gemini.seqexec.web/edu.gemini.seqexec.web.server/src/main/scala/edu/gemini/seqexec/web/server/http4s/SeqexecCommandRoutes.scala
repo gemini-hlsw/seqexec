@@ -88,6 +88,13 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       } yield resp
 
 
+    case POST -> Root / obsId / stepId / "pauseObs" as _ =>
+      for {
+        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        _    <- se.pauseObserve(inputQueue, obs)
+        resp <- Ok(s"Pause observation requested for $obsId on step $stepId")
+      } yield resp
+
     case POST -> Root / "operator" / name as user =>
       se.setOperator(inputQueue, user, Operator(name)) *> Ok(s"Set operator name to '$name'")
 

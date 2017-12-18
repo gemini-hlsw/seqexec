@@ -88,6 +88,16 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
+    * Requests the backend to hold the current exposure
+    */
+  def pauseObs(sid: SequenceId, step: Int): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/$sid/$step/pauseObs",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Requests the backend to set the operator name of a sequence
     */
   def setOperator(name: Operator): Future[RegularCommand] = {

@@ -19,7 +19,7 @@ final case class Execution(execution: List[Action]) {
 
   val isEmpty: Boolean = execution.isEmpty
 
-  val actions: List[Action] = execution.filter(_.state === Action.Idle)
+  val actions: List[Action] = execution.filter(_.state.runState === Action.Idle)
 
   val results: List[Action] = execution.filter(Action.finished)
 
@@ -28,7 +28,7 @@ final case class Execution(execution: List[Action]) {
     *
     */
   def status: Status =
-    if (execution.forall(_.state === Action.Idle)) Status.Waiting
+    if (execution.forall(_.state.runState === Action.Idle)) Status.Waiting
     // Empty execution is handled here
     else if (finished(this)) Status.Completed
     else if (isEmpty) Status.Completed
@@ -47,9 +47,9 @@ final case class Execution(execution: List[Action]) {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result): Execution =
-    Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = actionStateFromResult(r)), execution).getOrElse(execution))
+    Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = actionStateFromResult(r)(a.state)), execution).getOrElse(execution))
 
-  def start(i: Int): Execution = Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = Action.Started), execution).getOrElse(execution))
+  def start(i: Int): Execution = Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = a.state.copy(runState = Action.Started)), execution).getOrElse(execution))
 }
 
 object Execution {
@@ -61,24 +61,24 @@ object Execution {
     * are pending.
     */
   def currentify(as: Actions): Option[Execution] =
-    (as.nonEmpty && as.forall((_.state === Action.Idle))).option(Execution(as))
+    (as.nonEmpty && as.forall((_.state.runState === Action.Idle))).option(Execution(as))
 
-  def errored(ex: Execution): Boolean = ex.execution.exists(_.state match {
+  def errored(ex: Execution): Boolean = ex.execution.exists(_.state.runState match {
     case Action.Failed(_) => true
     case _ => false
   })
 
-  def finished(ex: Execution): Boolean = ex.execution.all(_.state match {
+  def finished(ex: Execution): Boolean = ex.execution.all(_.state.runState match {
     case Action.Completed(_) => true
     case Action.Failed(_)    => true
     case _ => false
   })
 
-  def actionStateFromResult(r: Result): Action.ActionState = r match {
-    case Result.OK(x)         => Action.Completed(x)
-    case Result.Partial(x, _) => Action.PartiallyCompleted(x)
-    case Result.Paused        => Action.Paused
-    case e@Result.Error(_)    => Action.Failed(e)
+  def actionStateFromResult(r: Result): (Action.State => Action.State) = s => r match {
+    case Result.OK(x)         => s.copy(runState = Action.Completed(x))
+    case Result.Partial(x, _) => s.copy(partials = x :: s.partials )
+    case Result.Paused        => s.copy(runState = Action.Paused)
+    case e@Result.Error(_)    => s.copy(runState = Action.Failed(e))
   }
 }
 

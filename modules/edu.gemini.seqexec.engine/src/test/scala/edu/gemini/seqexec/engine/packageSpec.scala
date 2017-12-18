@@ -188,7 +188,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "action state" should "change to Paused if output is Paused" in {
-    assert(actionPause.map(_.sequences(seqId).current.execution.forall(_.state === Action.Paused)).getOrElse(false))
+    assert(actionPause.map(_.sequences(seqId).current.execution.forall(_.state.runState === Action.Paused)).getOrElse(false))
   }
 
   "engine" should "run sequence to completion after resuming a paused action" in {
@@ -311,7 +311,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             breakpoint = false,
             skip = false,
             List(
-              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS)))), Action.Idle))
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS)))), Action.State(Action.Idle, Nil)))
             )
           )
         )
@@ -329,7 +329,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         st <- sq.done.headOption
         as <- st.executions.headOption
         ac <- as.headOption
-      } yield ac.state
+      } yield ac.state.runState
     }
   }
 

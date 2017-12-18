@@ -24,26 +24,28 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
 
   private val stopFlag = new AtomicBoolean(false)
   private val abortFlag = new AtomicBoolean(false)
+  private val pauseFlag = new AtomicBoolean(false)
 
   private val tic = 200
 
   @tailrec
-  private def observeTic(obsid: ImageFileId, stop: Boolean, abort: Boolean, remain: Int): TrySeq[ObserveCommand.Result] =
+  private def observeTic(obsid: ImageFileId, stop: Boolean, abort: Boolean, pause: Boolean, remain: Int): TrySeq[ObserveCommand.Result] =
     if(remain < tic) {
       Log.debug(s"Simulate Gmos $name observation completed")
       TrySeq(ObserveCommand.Success)
     } else if(stop) TrySeq(ObserveCommand.Stopped)
       else if(abort) TrySeq(ObserveCommand.Aborted)
+      else if(pause) TrySeq(ObserveCommand.Paused)
       else {
         Thread.sleep(tic.toLong)
-        observeTic(obsid, stopFlag.get, abortFlag.get, remain-tic)
+        observeTic(obsid, stopFlag.get, abortFlag.get, pauseFlag.get, remain-tic)
       }
 
   override def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result] = EitherT( Task {
     Log.debug(s"Simulate taking Gmos $name observation with label $obsid")
     stopFlag.set(false)
     abortFlag.set(false)
-    observeTic(obsid, false, false, 5000)
+    observeTic(obsid, false, false, false, 5000)
   } )
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
@@ -67,6 +69,13 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     Log.debug("Simulate sending endObserve to Gmos")
     TrySeq(())
   } )
+
+  override def pauseObserve = EitherT( Task {
+    Log.debug(s"Simulate pausing Gmos $name exposure")
+    pauseFlag.set(true)
+    TrySeq(())
+  } )
+
 }
 
 object GmosControllerSim {
