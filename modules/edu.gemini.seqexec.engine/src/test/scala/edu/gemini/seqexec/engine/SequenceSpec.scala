@@ -153,7 +153,7 @@ class SequenceSpec extends FlatSpec {
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val result: Result = Result.OK(observeResult)
   private val action: Action = fromTask(ActionType.Undefined, Task(result))
-  private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), List()))
+  private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {

@@ -13,7 +13,7 @@ class ExecutionSpec extends FlatSpec with Matchers {
 
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val ok: Result = Result.OK(observeResult)
-  private val completedAction: Action = fromTask(ActionType.Observe, Task(ok)).copy(state = Action.State(Action.Completed(observeResult), List()))
+  private val completedAction: Action = fromTask(ActionType.Observe, Task(ok)).copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val action: Action = fromTask(ActionType.Observe, Task(ok))
   private val curr: Execution = Execution(List(completedAction, action))
 

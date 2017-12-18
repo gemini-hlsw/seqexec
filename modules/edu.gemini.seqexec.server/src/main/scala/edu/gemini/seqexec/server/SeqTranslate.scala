@@ -124,7 +124,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             val kind = ActionType.Configure(resourceFromSystem(x))
             x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
-          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.State(Action.Idle, List()))))
+          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.State(Action.Idle, Nil))))
 
       extractStatus(config) match {
         case StepState.Pending => Step(

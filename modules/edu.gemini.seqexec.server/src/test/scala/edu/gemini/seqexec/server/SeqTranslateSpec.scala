@@ -27,7 +27,7 @@ class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
-  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed(fileId)))), Action.State(state, List())))
+  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed(fileId)))), Action.State(state, Nil)))
   private val s: Sequence.State = Sequence.State.status.set(SequenceState.Running)(Sequence.State.init(Sequence(
     "First",
     SequenceMetadata(GmosS, None, ""),

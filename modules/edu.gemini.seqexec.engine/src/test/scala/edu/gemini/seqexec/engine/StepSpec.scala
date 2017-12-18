@@ -451,9 +451,9 @@ class StepSpec extends FlatSpec {
   private val observeResult = Result.Observed("dummyId")
   private val result = Result.OK(observeResult)
   private val failure = Result.Error("Dummy error")
-  private val actionFailed =  fromTask(ActionType.Undefined, Task(failure)).copy(state = Action.State(Action.Failed(failure), List()))
+  private val actionFailed =  fromTask(ActionType.Undefined, Task(failure)).copy(state = Action.State(Action.Failed(failure), Nil))
   private val action: Action = fromTask(ActionType.Undefined, Task(result))
-  private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), List()))
+  private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
