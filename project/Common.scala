@@ -3,6 +3,7 @@ import sbt.Keys._
 import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
+import scalafix.sbt.ScalafixPlugin.autoImport._
 
 /**
   * Define tasks and settings used by module definitions
@@ -18,6 +19,14 @@ object Common {
       Wart.Recursion,          // false positives
       Wart.ImplicitConversion  // we know what we're doing
     )
+
+  lazy val semanticdbScalacSettings = Seq(
+    addCompilerPlugin("org.scalameta" % "semanticdb-scalac_2.12.4" % "2.1.2"),
+    scalacOptions ++= Seq(
+      "-Yrangepos",
+      "-Xplugin-require:semanticdb"
+    )
+  )
 
   lazy val commonSettings = Seq(
     scalaOrganization                       := "org.typelevel",
@@ -40,8 +49,10 @@ object Common {
     // Wartremover in compile and test (not in Console)
     wartremoverErrors in (Compile, compile) := gemWarts,
     wartremoverErrors in (Test,    compile) := gemWarts,
-    sources in (Compile,doc)                := Seq.empty
-  )
+    sources in (Compile,doc)                := Seq.empty,
+    // This is required to overcome certain incompatibilities with TLS scala
+    scalafixEnabled                         := false
+  ) ++ semanticdbScalacSettings
 
   lazy val commonJSSettings = commonSettings ++ Seq(
     // These settings allow to use TLS with scala.js
