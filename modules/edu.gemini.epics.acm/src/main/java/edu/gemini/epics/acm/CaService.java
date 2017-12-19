@@ -198,10 +198,10 @@ public final class CaService {
      * @throws CAException
      */
     public CaApplySender createObserveSender(String name, String applyRecord,
-            String carRecord, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
+            String carRecord, String observeCarRecord, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
         CaObserveSenderImpl observe = observeSenders.get(name);
         if (observe == null) {
-            observe = new CaObserveSenderImpl(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
+            observe = new CaObserveSenderImpl(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
                     description, epicsService);
             observeSenders.put(name, observe);
         }
@@ -209,8 +209,8 @@ public final class CaService {
     }
 
     public CaApplySender createObserveSender(String name, String applyRecord,
-            String carRecord) throws CAException {
-        return createObserveSender(name, applyRecord, carRecord, null, null, null);
+            String carRecord, String observeCarRecord) throws CAException {
+        return createObserveSender(name, applyRecord, carRecord, observeCarRecord, null, null, null);
     }
 
     /**
