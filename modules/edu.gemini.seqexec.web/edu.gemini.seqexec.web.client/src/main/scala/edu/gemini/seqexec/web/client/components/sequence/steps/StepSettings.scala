@@ -162,7 +162,7 @@ object FPUCell {
 
       <.div(
         ^.cls := "center aligned",
-        SeqexecStyles.fpuLabel,
+        SeqexecStyles.componentLabel,
         fpuValue.getOrElse("Unknown"): String
       )
     }
@@ -170,6 +170,40 @@ object FPUCell {
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
+
+/**
+ * Component to display the FPU
+ */
+object FilterCell {
+  final case class Props(s: Step, i: Instrument)
+
+  private val component = ScalaComponent.builder[Props]("FilterCell ")
+    .stateless
+    .render_P { p =>
+
+      val nameMapper: Map[String, String] = p.i match {
+        case Instrument.GmosS => enumerations.filter.GmosSFilter
+        case Instrument.GmosN => enumerations.filter.GmosNFilter
+        case Instrument.F2    => enumerations.filter.F2Filter
+        case _                => Map.empty
+      }
+
+      val filter = for {
+        filter  <- instrumentFilterO.getOption(p.s)
+      } yield nameMapper.getOrElse(filter, filter)
+
+
+      <.div(
+        ^.cls := "center aligned",
+        SeqexecStyles.componentLabel,
+        filter.getOrElse("Unknown"): String
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
 /**
  * Component to display the exposure time and coadds
  */
