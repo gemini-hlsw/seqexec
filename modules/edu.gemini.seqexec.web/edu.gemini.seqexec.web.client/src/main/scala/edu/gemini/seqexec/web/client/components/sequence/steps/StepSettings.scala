@@ -161,8 +161,8 @@ object FPUCell {
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
-        ^.cls := "center aligned",
-        SeqexecStyles.fpuLabel,
+        ^.cls := "left aligned",
+        SeqexecStyles.componentLabel,
         fpuValue.getOrElse("Unknown"): String
       )
     }
@@ -170,6 +170,40 @@ object FPUCell {
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
+
+/**
+ * Component to display the Filter
+ */
+object FilterCell {
+  final case class Props(s: Step, i: Instrument)
+
+  private val component = ScalaComponent.builder[Props]("FilterCell ")
+    .stateless
+    .render_P { p =>
+
+      val nameMapper: Map[String, String] = p.i match {
+        case Instrument.GmosS => enumerations.filter.GmosSFilter
+        case Instrument.GmosN => enumerations.filter.GmosNFilter
+        case Instrument.F2    => enumerations.filter.F2Filter
+        case _                => Map.empty
+      }
+
+      val filter = for {
+        filter  <- instrumentFilterO.getOption(p.s)
+      } yield nameMapper.getOrElse(filter, filter)
+
+
+      <.div(
+        ^.cls := "left aligned",
+        SeqexecStyles.componentLabel,
+        filter.getOrElse("Unknown"): String
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
 /**
  * Component to display the exposure time and coadds
  */
@@ -188,16 +222,17 @@ object ExposureTime {
       val coadds = observeCoaddsO.getOption(p.s)
 
       // TODO Find a better way to output math-style text
-      val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
+      val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "none", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
+        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
         case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
         case _                               => EmptyVdom
       }
 
       <.div(
         ^.cls := "center aligned",
+        SeqexecStyles.componentLabel,
         displayedText
       )
     }
@@ -211,8 +246,8 @@ object ExposureTime {
  */
 object GuidingBlock {
   final case class Props(s: Step)
-  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Big)
-  private val noGuidingIcon = IconBan.copyIcon(size = Size.Big)
+  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
+  private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
   private val component = ScalaComponent.builder[Props]("OffsetValues")
     .stateless
     .render_P { p =>

@@ -336,7 +336,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     fontStyle.italic
   )
 
-  val fpuLabel: StyleA = style(
+  val componentLabel: StyleA = style(
     fontSize.smaller,
     textOverflow := "ellipsis",
     overflow.hidden,

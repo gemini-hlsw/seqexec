@@ -163,6 +163,10 @@ trait ModelLenses {
   val instrumentFPUCustomMaskO: Optional[Step, String] =
     stepObserveOptional(SystemName.instrument, "fpuCustomMask", Iso.id[String].asPrism)
 
+  // Composite lens to find the instrument filter
+  val instrumentFilterO: Optional[Step, String] =
+    stepObserveOptional(SystemName.instrument, "filter", Iso.id[String].asPrism)
+
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
     stepObserveOptional(SystemName.telescope, x.configItem, stringToDoubleP)

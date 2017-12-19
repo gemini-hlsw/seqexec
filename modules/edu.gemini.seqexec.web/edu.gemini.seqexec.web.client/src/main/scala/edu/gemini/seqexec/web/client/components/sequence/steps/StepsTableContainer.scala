@@ -75,6 +75,7 @@ object StepsTableHeader {
           TableHeader(TableHeader.Props(width = Width.Three), "Offset").unless(displayOffsets),
           TableHeader(TableHeader.Props(width = Width.One), "Guiding"),
           TableHeader(TableHeader.Props(width = Width.One), "Exposure"),
+          TableHeader(TableHeader.Props(width = Width.Two), "Filter"),
           TableHeader(TableHeader.Props(width = Width.Two), "FPU"),
           TableHeader(TableHeader.Props(width = Width.Two, aligned = Aligned.Right), "Type"),
           TableHeader(TableHeader.Props(collapsing = true, width = Width.Eight), "Progress"),
@@ -295,18 +296,22 @@ object StepsTableContainer {
           case StepType.Dark                            => "black"
           case StepType.Calibration                     => "blue"
         }
-        Label(Label.Props(st.shows, color = stepTypeColor.some))
+        Label(Label.Props(st.shows, color = stepTypeColor.some, size = Size.Small))
       }
 
     private def stepIconCell(p: StepsTableFocus, step: Step, i: Int) =
       <.td( // Column step icon
         ^.onDoubleClick --> selectRow(step, i),
-        stepIcon(p, step, i)
+        <.div(
+          ^.cls := "center aligned",
+          stepIcon(p, step, i)
+        )
       )
 
     private def stepNumberCell(step: Step, i: Int) =
       <.td( // Column step number
         ^.onDoubleClick --> selectRow(step, i),
+        SeqexecStyles.componentLabel,
         i + 1
       )
 
@@ -314,6 +319,7 @@ object StepsTableContainer {
       <.td( // Column step status
         ^.onDoubleClick --> selectRow(step, i),
         ^.cls := "middle aligned",
+        SeqexecStyles.componentLabel,
         stepDisplay(status, p, state, step)
       )
 
@@ -339,10 +345,15 @@ object StepsTableContainer {
         ExposureTime(ExposureTime.Props(step, instrument))
       )
 
+    private def stepFilterCell(instrument: Instrument, step: Step, i: Int) =
+      <.td( // Column object type
+        ^.onDoubleClick --> selectRow(step, i),
+        FilterCell(FilterCell.Props(step, instrument))
+      )
+
     private def stepFPUCell(instrument: Instrument, step: Step, i: Int) =
       <.td( // Column object type
         ^.onDoubleClick --> selectRow(step, i),
-        ^.cls := "right aligned",
         FPUCell(FPUCell.Props(step, instrument))
       )
 
@@ -357,9 +368,10 @@ object StepsTableContainer {
       <.td( // Column progress
         ^.onDoubleClick --> selectRow(step, i),
         ^.classSet(
-          "top aligned"    -> step.isObserving,
+          "center aligned"    -> step.isObserving,
           "middle aligned" -> !step.isObserving
         ),
+        SeqexecStyles.componentLabel,
         stepProgress(state, step)
       )
 
@@ -382,6 +394,7 @@ object StepsTableContainer {
         offsetDisplayCell(offsetsDisplay, step, i),
         stepGuidingCell(step, i),
         stepExposureTimeCell(p.instrument, step, i),
+        stepFilterCell(p.instrument, step, i),
         stepFPUCell(p.instrument, step, i),
         stepObjectTypeCell(step, i),
         stepProgressCell(step, state, i),
