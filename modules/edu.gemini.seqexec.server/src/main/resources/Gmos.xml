@@ -70,6 +70,31 @@
             <record>endObserve</record>
             <description>End Observe</description>
         </command>
+        <command name="gmos::continue">
+            <record>continue</record>
+            <description>Continue observation</description>
+        </command>
+        <command name="gmos::observe">
+            <record>observe</record>
+            <description>Observe</description>
+            <parameter name="label">
+                <channel>observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+        </command>
+        <command name="gmos::pause">
+            <record>pause</record>
+            <description>Pause observation</description>
+        </command>
+        <command name="gmos::abort">
+            <record>abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="gmos::stop">
+            <record>stop</record>
+            <description>Stop observation</description>
+        </command>
     </Apply>
     <Apply name="gmos::dcapply">
         <top>gm</top>
@@ -238,37 +263,6 @@
                 <channel>dc:roi.G</channel>
                 <type>INTEGER</type>
                 <description>CCD X size</description>
-            </parameter>
-        </command>
-        <command name="gmos::pause">
-            <record>pause</record>
-            <description>Pause observation</description>
-        </command>
-        <command name="gmos::abort">
-            <record>abort</record>
-            <description>Abort observation</description>
-        </command>
-        <command name="gmos::stop">
-            <record>stop</record>
-            <description>Stop observation</description>
-        </command>
-    </Apply>
-    <Apply name="gmos::observeapply">
-        <top>gm</top>
-        <apply>apply</apply>
-        <car>dc:observeC</car>
-        <description>Observe Apply Record</description>
-        <command name="gmos::continue">
-            <record>continue</record>
-            <description>Continue observation</description>
-        </command>
-        <command name="gmos::observe">
-            <record>observe</record>
-            <description>Observe</description>
-            <parameter name="label">
-                <channel>observe.A</channel>
-                <type>STRING</type>
-                <description>DHS data label</description>
             </parameter>
         </command>
     </Apply>
