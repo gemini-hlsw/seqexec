@@ -17,8 +17,8 @@ object MainConfiguration {
 
   val forTesting: MainConfiguration =
     apply(
-      DatabaseConfiguration.forTesting, 
-      WebConfiguration.forTesting, 
+      DatabaseConfiguration.forTesting,
+      WebConfiguration.forTesting,
       TelnetdConfiguration.forTesting
     )
 

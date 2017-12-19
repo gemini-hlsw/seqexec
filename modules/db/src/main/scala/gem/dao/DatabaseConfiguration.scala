@@ -8,9 +8,9 @@ import doobie._
 
 /** Configuration for a database connection. */
 final case class DatabaseConfiguration(
-  driver:     String, 
-  connectUrl: String, 
-  userName:   String, 
+  driver:     String,
+  connectUrl: String,
+  userName:   String,
   password:   String
 ) {
 

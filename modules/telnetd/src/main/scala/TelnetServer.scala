@@ -23,7 +23,7 @@ object TelnetServer {
   /** Single-element stream starting a server, yielding unit, automatically cleaned up. */
   def stream(db: DatabaseConfiguration, telnet: TelnetdConfiguration): Stream[IO, Unit] =
     Stream.eval(Log.newLogIn[SessionIO, IO]("telnetd", db.transactor[IO])).flatMap { log =>
-      server(db, telnet, log)    
+      server(db, telnet, log)
     }
 
 }
