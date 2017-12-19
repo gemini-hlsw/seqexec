@@ -161,7 +161,7 @@ object FPUCell {
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
-        ^.cls := "center aligned",
+        ^.cls := "left aligned",
         SeqexecStyles.componentLabel,
         fpuValue.getOrElse("Unknown"): String
       )
@@ -172,7 +172,7 @@ object FPUCell {
 }
 
 /**
- * Component to display the FPU
+ * Component to display the Filter
  */
 object FilterCell {
   final case class Props(s: Step, i: Instrument)
@@ -194,7 +194,7 @@ object FilterCell {
 
 
       <.div(
-        ^.cls := "center aligned",
+        ^.cls := "left aligned",
         SeqexecStyles.componentLabel,
         filter.getOrElse("Unknown"): String
       )
@@ -222,16 +222,17 @@ object ExposureTime {
       val coadds = observeCoaddsO.getOption(p.s)
 
       // TODO Find a better way to output math-style text
-      val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
+      val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "none", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "text-bottom", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
+        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
         case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
         case _                               => EmptyVdom
       }
 
       <.div(
         ^.cls := "center aligned",
+        SeqexecStyles.componentLabel,
         displayedText
       )
     }
@@ -245,8 +246,8 @@ object ExposureTime {
  */
 object GuidingBlock {
   final case class Props(s: Step)
-  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Big)
-  private val noGuidingIcon = IconBan.copyIcon(size = Size.Big)
+  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
+  private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
   private val component = ScalaComponent.builder[Props]("OffsetValues")
     .stateless
     .render_P { p =>

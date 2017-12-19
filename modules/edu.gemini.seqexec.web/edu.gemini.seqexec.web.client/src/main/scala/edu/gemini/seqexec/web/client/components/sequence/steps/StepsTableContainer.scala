@@ -296,18 +296,22 @@ object StepsTableContainer {
           case StepType.Dark                            => "black"
           case StepType.Calibration                     => "blue"
         }
-        Label(Label.Props(st.shows, color = stepTypeColor.some))
+        Label(Label.Props(st.shows, color = stepTypeColor.some, size = Size.Small))
       }
 
     private def stepIconCell(p: StepsTableFocus, step: Step, i: Int) =
       <.td( // Column step icon
         ^.onDoubleClick --> selectRow(step, i),
-        stepIcon(p, step, i)
+        <.div(
+          ^.cls := "center aligned",
+          stepIcon(p, step, i)
+        )
       )
 
     private def stepNumberCell(step: Step, i: Int) =
       <.td( // Column step number
         ^.onDoubleClick --> selectRow(step, i),
+        SeqexecStyles.componentLabel,
         i + 1
       )
 
@@ -315,6 +319,7 @@ object StepsTableContainer {
       <.td( // Column step status
         ^.onDoubleClick --> selectRow(step, i),
         ^.cls := "middle aligned",
+        SeqexecStyles.componentLabel,
         stepDisplay(status, p, state, step)
       )
 
@@ -343,14 +348,12 @@ object StepsTableContainer {
     private def stepFilterCell(instrument: Instrument, step: Step, i: Int) =
       <.td( // Column object type
         ^.onDoubleClick --> selectRow(step, i),
-        ^.cls := "right aligned",
         FilterCell(FilterCell.Props(step, instrument))
       )
 
     private def stepFPUCell(instrument: Instrument, step: Step, i: Int) =
       <.td( // Column object type
         ^.onDoubleClick --> selectRow(step, i),
-        ^.cls := "right aligned",
         FPUCell(FPUCell.Props(step, instrument))
       )
 
@@ -365,9 +368,10 @@ object StepsTableContainer {
       <.td( // Column progress
         ^.onDoubleClick --> selectRow(step, i),
         ^.classSet(
-          "top aligned"    -> step.isObserving,
+          "center aligned"    -> step.isObserving,
           "middle aligned" -> !step.isObserving
         ),
+        SeqexecStyles.componentLabel,
         stepProgress(state, step)
       )
 
