@@ -11,24 +11,17 @@ import pdi.jwt.algorithms.JwtHmacAlgorithm
  * Static configuration for the server. This is used to construct an Environment. It's not yet
  * clear what should be passed in and what should be hard-coded.
  */
-final case class Configuration(
-  database:  Configuration.Database,
-  jwt:       Configuration.Jwt,
-  webServer: Configuration.WebServer,
-  log:       Configuration.Log
+final case class WebConfiguration(
+  jwt:       WebConfiguration.Jwt,
+  webServer: WebConfiguration.WebServer,
+  log:       WebConfiguration.Log
 )
 
-object Configuration {
+object WebConfiguration {
 
   /** A reasonable configuration for testing with a local database. */
-  val forTesting: Configuration =
-    Configuration(
-      database = Database(
-        driver     = "org.postgresql.Driver",
-        connectUrl = "jdbc:postgresql:gem",
-        userName   = "postgres",
-        password   = ""
-      ),
+  val forTesting: WebConfiguration =
+    WebConfiguration(
       jwt = Jwt(
         algorithm  = JwtAlgorithm.HS256,
         cookieName = "gem.jwt",
@@ -46,9 +39,6 @@ object Configuration {
 
   /** Logger configuration. */
   final case class Log(name: String, shutdownTimeout: Long)
-
-  /** Database configuration. */
-  final case class Database(driver: String, connectUrl: String, userName: String, password: String)
 
   /** JWT configuration. */
   final case class Jwt(algorithm: JwtHmacAlgorithm, cookieName: String, ttlSeconds: Long)

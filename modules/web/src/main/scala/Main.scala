@@ -5,31 +5,18 @@ package gem
 package web
 
 import cats.effect.IO
-import org.http4s.HttpService
-import org.http4s.server.Server
-import org.http4s.server.blaze.BlazeBuilder
+import gem.dao.DatabaseConfiguration
+import fs2.{ Stream, StreamApp }
 
-object Main {
+object Main extends StreamApp[IO] {
+  import StreamApp.ExitCode
 
-  /** Create a new server with the given config, mounting the given root service. */
-  def newServer(cfg: Configuration.WebServer, root: HttpService[IO]): IO[Server[IO]] =
-    BlazeBuilder[IO]
-      .bindHttp(cfg.port, cfg.host)
-      .mountService(root, "/")
-      .start
-
-  /** Entry point. Run the server with a test config, until someone stops it. */
-  def runc: IO[Unit] =
+  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
     for {
-      env <- Environment.quicken(Configuration.forTesting)
-      svr <- newServer(env.config.webServer, Gatekeeper(env)(Application.service))
-      _   <- IO(Console.println("Press a key to exit.")) // scalastyle:off
-      _   <- IO(scala.io.StdIn.readLine())
-      _   <- svr.shutdown
-      _   <- env.shutdown
-    } yield ()
-
-  def main(args: Array[String]): Unit =
-    runc.unsafeRunSync()
+      _ <- WebServer.stream(WebConfiguration.forTesting, DatabaseConfiguration.forTesting)
+      _ <- Stream.eval(IO(Console.println("Press a key to exit."))) // scalastyle:off
+      _ <- Stream.eval(IO(scala.io.StdIn.readLine()))
+      _ <- Stream.eval(requestShutdown)
+    } yield ExitCode(0)
 
 }
