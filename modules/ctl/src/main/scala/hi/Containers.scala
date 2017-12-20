@@ -46,7 +46,8 @@ object Containers {
                 "--label", s"gem.role=gem",
                 // "--health-cmd", if (r) "\"nc -z localhost 6666\""
                 //                 else     "nc -z localhost 6666",
-                "--publish", s"1234:6666",
+                "--publish", s"9090:9090",
+                "--publish", s"9091:9091",
                 "--env",     s"GEM_DB_URL=jdbc:postgresql://$version-P/gem",
                 iGem.hash
               ).require { case Output(0, List(s)) => Container(s) }
