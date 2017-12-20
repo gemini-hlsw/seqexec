@@ -7,7 +7,9 @@ package web
 import cats.implicits._
 import cats.effect.IO
 import doobie.Transactor
+import fs2.Stream
 import gem.{ Service => GemService }
+import gem.dao.DatabaseConfiguration
 import io.circe._
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -23,7 +25,7 @@ import pdi.jwt.algorithms.JwtHmacAlgorithm
  * endpoints don't know about the environment. This has the potential to turn into a God object so
  * we need to keep an eye on it.
  */
-abstract class Environment(val config: Configuration) {
+abstract class Environment(val config: WebConfiguration) {
 
   /** A logger that goes to the database, cc:'d to JDK logging. */
   def log: Log[IO]
@@ -70,15 +72,10 @@ object Environment {
     }
 
   /** Realize a "living" server environment from a static configuration. */
-  def quicken(cfg: Configuration): IO[Environment] = {
+  def quicken(cfg: WebConfiguration, db: DatabaseConfiguration): IO[Environment] = {
 
     // TODO: hikari
-    val xa = Transactor.fromDriverManager[IO](
-      cfg.database.driver,
-      cfg.database.connectUrl,
-      cfg.database.userName,
-      cfg.database.password
-    )
+    val xa = db.transactor[IO]
 
     (randomSecretKey(cfg.jwt.algorithm), Log.newLog[IO](cfg.log.name, xa)).mapN { (sk, lg) =>
       new Environment(cfg) {
@@ -92,5 +89,9 @@ object Environment {
     }
 
   }
+
+  /** A single-element stream yielding an Environment, which will be cleaned up. */
+  def stream(cfg: WebConfiguration, db: DatabaseConfiguration): Stream[IO, Environment] =
+    Stream.bracket(quicken(cfg, db))(a => Stream(a), _.shutdown)
 
 }

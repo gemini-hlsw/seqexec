@@ -186,7 +186,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(commonSettings)
-  .aggregate(coreJVM, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql)
+  .aggregate(coreJVM, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql, main)
 
 lazy val core = crossProject
   .crossType(CrossType.Full)
@@ -316,31 +316,12 @@ lazy val telnetd = project
   .in(file("modules/telnetd"))
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(service, sql)
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(DockerPlugin)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       "org.tpolecat" %% "tuco-core"  % tucoVersion,
       "org.tpolecat" %% "tuco-shell" % tucoVersion
-    ),
-    packageName in Docker := "gem",
-    dockerBaseImage       := "openjdk:8u141",
-    dockerExposedPorts    := List(6666),
-    dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
-    dockerLabels          := imageManifest.labels,
-
-    // Install nc before changing the user
-    dockerCommands       ++= dockerCommands.value.flatMap {
-      case c @ Cmd("USER", args @ _*) =>
-        Seq(
-          ExecCmd("RUN", "apt-get", "update"),
-          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-openbsd"),
-          c
-        )
-      case cmd => Seq(cmd)
-    }
-
+    )
   )
 
 lazy val web = project
@@ -374,4 +355,31 @@ lazy val ctl = project
       s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
     } .value,
     fork in run := true
+  )
+
+lazy val main = project
+  .in(file("modules/main"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(web, telnetd)
+  .settings(commonSettings)
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+  .settings(
+    packageName in Docker := "gem",
+    dockerBaseImage       := "openjdk:8u141",
+    dockerExposedPorts    := List(6666),
+    dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
+    dockerLabels          := imageManifest.labels,
+
+    // Install nc before changing the user
+    dockerCommands       ++= dockerCommands.value.flatMap {
+      case c @ Cmd("USER", args @ _*) =>
+        Seq(
+          ExecCmd("RUN", "apt-get", "update"),
+          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-openbsd"),
+          c
+        )
+      case cmd => Seq(cmd)
+    }
+
   )

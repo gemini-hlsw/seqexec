@@ -4,52 +4,19 @@
 package gem
 package telnetd
 
-import cats.effect.{ IO, Async }
-import tuco._, Tuco._
-import doobie._
-import org.flywaydb.core.Flyway
+import cats.effect.IO
+import gem.dao.DatabaseConfiguration
+import fs2.{ Stream, StreamApp }
 
-/**
- * Entry point for running Gem with a telnet server. This will go away at some point and the telnet
- * server will be one of several services.
- */
-object Main {
+object Main extends StreamApp[IO] {
+  import StreamApp.ExitCode
 
-  /** When we start the app with docker we pass arguments as environment variables. */
-  val ENV_GEM_DB_URL : String = "GEM_DB_URL"
-  val ENV_GEM_DB_USER: String = "GEM_DB_USER"
-  val ENV_GEM_DB_PASS: String = "GEM_DB_PASS"
-
-  /** Get an environment variable. */
-  def getEnv(key: String, default: String): IO[String] =
-    IO(sys.env.getOrElse(key, default))
-
-  /** Construct a transactor with the give effect type. */
-  def xa[M[_]: Async](url: String, user: String, pass: String): Transactor[M] =
-    Transactor.fromDriverManager[M]("org.postgresql.Driver", url, user, pass)
-
-  /** Run migrations. */
-  def migrate(url: String, user: String, pass: String): IO[Int] =
-    IO {
-      val flyway = new Flyway()
-      flyway.setDataSource(url, user, pass);
-      flyway.migrate()
-    }
-
-  def runc: IO[Unit] =
+  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
     for {
-      url  <- getEnv(ENV_GEM_DB_URL,  "jdbc:postgresql:gem")
-      user <- getEnv(ENV_GEM_DB_USER, "postgres")
-      pass <- getEnv(ENV_GEM_DB_PASS,  "")
-      _    <- IO(Console.println(s"Connecting with URL $url, user $user, pass «hidden»")) // scalastyle:off console.io
-      _    <- migrate(url, user, pass)
-      sxa  = xa[SessionIO](url, user, pass)
-      txa  = xa[IO](url, user, pass)
-      log  <- Log.newLogIn[SessionIO, IO]("telnetd", txa)
-      _    <- Config(Interaction.main(sxa, log), 6666).run(simpleServer)
-    } yield ()
-
-  def main(args: Array[String]): Unit =
-    runc.unsafeRunSync()
+      _ <- TelnetServer.stream(DatabaseConfiguration.forTesting, TelnetdConfiguration.forTesting)
+      _ <- Stream.eval(IO(Console.println("Press a key to exit."))) // scalastyle:off
+      _ <- Stream.eval(IO(scala.io.StdIn.readLine()))
+      _ <- Stream.eval(requestShutdown)
+    } yield ExitCode(0)
 
 }

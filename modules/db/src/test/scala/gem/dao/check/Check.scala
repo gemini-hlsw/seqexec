@@ -5,7 +5,7 @@ package gem.dao
 package check
 
 import cats.effect.IO
-import doobie._
+import doobie.Transactor
 import doobie.scalatest.imports._
 import gem._
 import gem.enum._
@@ -22,12 +22,8 @@ import scala.collection.immutable.TreeMap
 /** Trait for tests that check statement syntax and mappings. */
 trait Check extends FlatSpec with Matchers with IOChecker {
 
-  def transactor = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
-  )
+  val transactor: Transactor[IO] =
+    DatabaseConfiguration.forTesting.transactor[IO]
 
   /**
    * Some dummy values to pass to statement constructors. The actual values don't matter because

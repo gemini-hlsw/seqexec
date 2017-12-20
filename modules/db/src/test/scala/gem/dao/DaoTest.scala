@@ -14,15 +14,8 @@ import scala.collection.immutable.TreeMap
 trait DaoTest extends gem.Arbitraries {
   val pid = Program.Id.unsafeFromString("GS-1234A-Q-1")
 
-  protected val xa = Transactor.after.set(
-    Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver",
-      "jdbc:postgresql:gem",
-      "postgres",
-      ""
-    ),
-    HC.rollback
-  )
+  protected val xa: Transactor[IO] = 
+    Transactor.after.set(DatabaseConfiguration.forTesting.transactor[IO], HC.rollback)
 
   def withProgram[A](test: ConnectionIO[A]): A =
     (for {
