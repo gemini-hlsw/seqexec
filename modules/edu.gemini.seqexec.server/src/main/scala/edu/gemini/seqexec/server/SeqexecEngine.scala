@@ -204,7 +204,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Completed(_, _, _)                                        => SequenceUpdated(svs)
       case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _))  => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
-      case engine.Failed(_, _, _)                                           => NewLogMessage("Action failed")
+      case engine.Failed(_, _, _)                                           => SequenceUpdated(svs)
       case engine.Busy(id)                                                  => ResourcesBusy(id, svs)
       case engine.Executed(_)                                               => StepExecuted(svs)
       case engine.Executing(_)                                              => SequenceUpdated(svs)

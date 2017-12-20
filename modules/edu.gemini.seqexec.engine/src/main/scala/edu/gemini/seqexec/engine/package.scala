@@ -315,7 +315,7 @@ package object engine {
 
   def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 
-  def actionPause(id: Sequence.Id, i: Int): HandleP[Unit] = modifyS(id)(_.mark(i)(Result.Paused))
+  def actionPause(id: Sequence.Id, i: Int): HandleP[Unit] = modifyS(id)(s => Sequence.State.status.set(SequenceState.Running)(s).mark(i)(Result.Paused))
 
   def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit] = getS(id).flatMap(_.map{ s =>
     if (s.status === SequenceState.Running &&
