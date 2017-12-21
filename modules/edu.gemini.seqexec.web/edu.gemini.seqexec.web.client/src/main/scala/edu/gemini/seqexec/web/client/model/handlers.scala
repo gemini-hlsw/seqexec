@@ -143,6 +143,9 @@ object handlers {
       case RequestObsPause(id, step) =>
         effectOnly(Effect(SeqexecWebClient.pauseObs(id, step).map(r => if (r.error) RunObsPauseFailed(id) else RunObsPause(id))))
 
+      case RequestObsResume(id, step) =>
+        effectOnly(Effect(SeqexecWebClient.resumeObs(id, step).map(r => if (r.error) RunObsResumeFailed(id) else RunObsPause(id))))
+
     }
 
     def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {

@@ -4,7 +4,7 @@
 package edu.gemini.seqexec
 
 import edu.gemini.seqexec.engine.Event._
-import edu.gemini.seqexec.engine.Result.{Error, PartialVal, RetVal}
+import edu.gemini.seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.seqexec.model.ActionType
@@ -46,7 +46,7 @@ package engine {
 
     object Started extends ActionState
 
-    object Paused extends ActionState
+    final case class Paused[C <: PauseContext](ctx: C) extends ActionState
 
     final case class Completed[V <: RetVal](r: V) extends ActionState
 
@@ -54,18 +54,23 @@ package engine {
 
     def errored(ar: Action): Boolean = ar.state.runState match {
       case Action.Failed(_) => true
-      case _ => false
+      case _                => false
     }
 
     def finished(ar: Action): Boolean = ar.state.runState match {
-      case Action.Failed(_) => true
+      case Action.Failed(_)    => true
       case Action.Completed(_) => true
-      case _ => false
+      case _                   => false
     }
 
     def completed(ar: Action): Boolean = ar.state.runState match {
       case Action.Completed(_) => true
-      case _ => false
+      case _                   => false
+    }
+
+    def paused(ar: Action): Boolean = ar.state.runState match {
+      case Action.Paused(_) => true
+      case _                => false
     }
   }
 
@@ -278,7 +283,7 @@ package object engine {
         case r@Result.OK(_)         => Process(completed(id, i, r))
         case r@Result.Partial(_, c) => Process(partial(id, i, r)) ++ act(id, (c, i), cx)
         case e@Result.Error(_)      => Process(failed(id, i, e))
-        case Result.Paused          => Process(paused(id, i))
+        case r@Result.Paused(_)     => Process(paused(id, i, r))
       }
   }
 
@@ -299,6 +304,9 @@ package object engine {
   private def getState(f: Engine.State => Task[Option[Process[Task, Event]]]): HandleP[Unit] =
     get.flatMap(s => HandleP[Unit](f(s).liftM[HandleStateT].map(((), _))))
 
+  private def getSeqState(id: Sequence.Id, f: Sequence.State => Option[Process[Task, Event]]): HandleP[Unit] =
+    getS(id).flatMap(_.map(s => HandleP[Unit](f(s).pure[Handle].map(((), _)))).getOrElse(unit))
+
   private def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): HandleP[Unit] =
     getS(id).flatMap(_.map(s => if(s.status === SequenceState.Running) HandleP[Unit](f(s).pure[Handle].map(((), _))) *> switch(id)(SequenceState.Stopping) else unit).getOrElse(unit))
 
@@ -315,11 +323,10 @@ package object engine {
 
   def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 
-  def actionPause(id: Sequence.Id, i: Int): HandleP[Unit] = modifyS(id)(s => Sequence.State.status.set(SequenceState.Running)(s).mark(i)(Result.Paused))
+  def actionPause[C<:PauseContext](id: Sequence.Id, i: Int, p: Result.Paused[C]): HandleP[Unit] = modifyS(id)(s => Sequence.State.status.set(SequenceState.Running)(s).mark(i)(p))
 
   def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit] = getS(id).flatMap(_.map{ s =>
-    if (s.status === SequenceState.Running &&
-      s.current.execution.index(i).map(_.state.runState === Action.Paused).getOrElse(false))
+    if (s.status === SequenceState.Running && s.current.execution.index(i).exists(Action.paused))
       modifyS(id)(_.start(i)) *> HandleP.fromProcess(act(id, (Kleisli(_ => cont), i), ActionMetadata.default))
     else unit
   }.getOrElse(unit))
@@ -385,6 +392,7 @@ package object engine {
       case SetCloudCover(cc, user)     => Logger.debug("Engine: Setting cloud cover") *> setCloudCover(cc)
       case Poll                        => Logger.debug("Engine: Polling current state")
       case GetState(f)                 => getState(f)
+      case GetSeqState(id, f)          => getSeqState(id, f)
       case ActionStop(id, f)           => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
       case ActionResume(id, i, cont)   => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
       case Log(msg)                    => Logger.debug(msg)
@@ -393,7 +401,7 @@ package object engine {
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
-      case Paused(id, i)           => Logger.debug("Engine: Action paused")  *> actionPause(id, i)
+      case Paused(id, i, r)           => Logger.debug("Engine: Action paused")  *> actionPause(id, i, r)
       case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
       case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)

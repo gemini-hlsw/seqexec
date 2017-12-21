@@ -14,12 +14,12 @@ import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.{KeywordBag, StringKeyword}
 import edu.gemini.seqexec.server.SeqTranslate.{Settings, Systems}
 import edu.gemini.seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
-import edu.gemini.seqexec.server.InstrumentSystem.{AbortObserveCmd, Controllable, PauseObserveCmd, StopObserveCmd}
+import edu.gemini.seqexec.server.InstrumentSystem._
 import edu.gemini.seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import edu.gemini.seqexec.server.gcal._
 import edu.gemini.seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import edu.gemini.seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
-import edu.gemini.seqexec.server.tcs.{DummyTcsKeywordsReader, Tcs, TcsController, TcsKeywordsReader, TcsKeywordsReaderImpl}
+import edu.gemini.seqexec.server.tcs._
 import edu.gemini.seqexec.server.tcs.TcsController.ScienceFoldPosition
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
@@ -67,7 +67,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
-
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_ => ())
 
     // endObserve must be sent to the instrument too.
@@ -83,24 +82,29 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         _  <- notifyObserveStart
         _  <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
         r   <- inst.observe(config)(id)
-        ret <- observeTail(id, d, r)
+        ret <- observeTail(id, d)(r)
       } yield ret
 
-    def observeTail(id: ImageFileId, dataId: String, r: ObserveCommand.Result): SeqAction[Result] = r match {
-      case ObserveCommand.Success => for {
-        _  <- notifyObserveEnd
-        _  <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
-        _  <- closeImage(id, systems.dhs)
-        _  <- sendDataEnd(obsId, id, dataId)
+    def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
+      val successTail: SeqAction[Result] = for {
+        _ <- notifyObserveEnd
+        _ <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU
+        _ <- closeImage(id, systems.dhs)
+        _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Observed(id))
-      case ObserveCommand.Stopped => notifyObserveEnd *>
+      val stopTail: SeqAction[Result] = notifyObserveEnd *>
         headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU *>
         closeImage(id, systems.dhs) *>
         SeqAction.fail(SeqexecFailure.Execution(s"Observation $id stopped by user."))
-      case ObserveCommand.Aborted => sendObservationAborted(obsId, id) *>
+      val abortTail: SeqAction[Result] = sendObservationAborted(obsId, id) *>
         SeqAction.fail(SeqexecFailure.Execution(s"Observation $id aborted by user."))
-      //TODO: Implement pause handling
-      case ObserveCommand.Paused  => SeqAction(Result.Paused)
+
+      r match {
+        case ObserveCommand.Success => successTail
+        case ObserveCommand.Stopped => stopTail
+        case ObserveCommand.Aborted => abortTail
+        case ObserveCommand.Paused => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId))))
+      }
     }
 
     for {
@@ -252,6 +256,27 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case _                                             => none
     } )
   )
+
+  def resumeObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    val observeIndex: Option[(ObserveContext, Int)] =
+      seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap{ case (a, i) =>
+        a.state.runState match {
+          case Action.Paused(c: ObserveContext) => Some((c, i))
+          case _                                => none
+        }
+      }
+    def resumeTask(c: ObserveContext, resumeCmd: SeqAction[ObserveCommand.Result]): Task[Result] = (for {
+      r <- resumeCmd
+      ret <- c.t(r)
+    } yield ret ).run.map(_.toResult)
+
+    observeIndex.flatMap{ case (c, i) => toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(
+      _.observeControl match {
+        case Controllable(_, _, _, ContinueObserveCmd(f)) => Some(Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, f)))))
+        case _                                            => none
+      }
+    ) }
+  }
 
   private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))
@@ -425,4 +450,6 @@ object SeqTranslate {
   implicit class ConfigResultToAction(val x: SeqAction[ConfigResult]) extends AnyVal {
     def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
   }
+
+  final case class ObserveContext(t: ObserveCommand.Result => SeqAction[Result]) extends Result.PauseContext
 }

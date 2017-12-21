@@ -144,6 +144,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     Event.actionStop(seqId.stringValue, translator.pauseObserve)
   )
 
+  def resumeObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+    Event.getSeqState(seqId.stringValue, translator.resumeObserve(seqId.stringValue))
+  )
+
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
     def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).map(_.right).handle{
       case e: Exception => SeqexecFailure.SeqexecException(e).left
@@ -164,8 +168,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
     val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence])] = for {
-      odbSeq       <- EitherT(Task.delay(odbProxy.read(seqId)))
-      progIdString <- EitherT(Task.delay(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)))
+      odbSeq       <- SeqAction.either(odbProxy.read(seqId))
+      progIdString <- SeqAction.either(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError))
       _            <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
     } yield translator.sequence(seqId, odbSeq)
 
@@ -195,9 +199,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.SetCloudCover(_, _)    => ConditionsUpdated(svs)
       case engine.Poll                   => SequenceRefreshed(svs)
       case engine.GetState(_)            => NullEvent
+      case engine.GetSeqState(_, _)      => NullEvent
       case engine.ActionStop(_, _)       => ActionStopRequested(svs)
       case engine.Log(msg)               => NewLogMessage(msg)
-      case engine.ActionResume(_, _, _)  => NullEvent
+      case engine.ActionResume(_, _, _)  => SequenceUpdated(svs)
     }
     case engine.EventSystem(se) => se match {
       // TODO: Sequence completed event not emited by engine.
@@ -210,7 +215,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
-      case engine.Paused(_, _)                                              => NullEvent
+      case engine.Paused(_, _, _)                                           => SequenceUpdated(svs)
     }
   }
 
@@ -303,7 +308,7 @@ object SeqexecEngine {
     case engine.Action.Idle                  => ActionStatus.Pending
     case engine.Action.Completed(_)          => ActionStatus.Completed
     case engine.Action.Started               => ActionStatus.Running
-    case engine.Action.Paused                => ActionStatus.Paused
+    case engine.Action.Paused(_)             => ActionStatus.Paused
     case engine.Action.Failed(_)             => ActionStatus.Failed
   }
 

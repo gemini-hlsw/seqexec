@@ -11,7 +11,7 @@ import edu.gemini.seqexec.server.{ObserveCommand, SeqAction, TrySeq}
 import org.log4s._
 
 import scala.annotation.tailrec
-import scalaz.{Show, EitherT}
+import scalaz.{EitherT, Show}
 import scalaz.concurrent.Task
 import scalaz.syntax.show._
 
@@ -29,7 +29,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   private val tic = 200
 
   @tailrec
-  private def observeTic(obsid: ImageFileId, stop: Boolean, abort: Boolean, pause: Boolean, remain: Int): TrySeq[ObserveCommand.Result] =
+  private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int): TrySeq[ObserveCommand.Result] =
     if(remain < tic) {
       Log.debug(s"Simulate Gmos $name observation completed")
       TrySeq(ObserveCommand.Success)
@@ -38,14 +38,15 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
       else if(pause) TrySeq(ObserveCommand.Paused)
       else {
         Thread.sleep(tic.toLong)
-        observeTic(obsid, stopFlag.get, abortFlag.get, pauseFlag.get, remain-tic)
+        observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain-tic)
       }
 
   override def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result] = EitherT( Task {
     Log.debug(s"Simulate taking Gmos $name observation with label $obsid")
+    pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
-    observeTic(obsid, false, false, false, 5000)
+    observeTic(false, false, false, 5000)
   } )
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
@@ -70,12 +71,17 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     TrySeq(())
   } )
 
-  override def pauseObserve = EitherT( Task {
+  override def pauseObserve: SeqAction[Unit] = EitherT( Task {
     Log.debug(s"Simulate pausing Gmos $name exposure")
     pauseFlag.set(true)
     TrySeq(())
   } )
 
+  override def resumeObserve: SeqAction[ObserveCommand.Result] = EitherT( Task {
+      Log.debug(s"Simulate resuming Gmos $name observation")
+      pauseFlag.set(false)
+      observeTic(false, false, false, 5000)
+    } )
 }
 
 object GmosControllerSim {

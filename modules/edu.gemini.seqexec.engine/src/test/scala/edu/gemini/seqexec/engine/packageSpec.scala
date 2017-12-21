@@ -172,7 +172,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             skip = false,
             List(
               List(fromTask(ActionType.Undefined,
-              Task(Result.Paused)))
+              Task(Result.Paused(new Result.PauseContext {} ))))
             )
           )
         )
@@ -188,7 +188,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "action state" should "change to Paused if output is Paused" in {
-    assert(actionPause.map(_.sequences(seqId).current.execution.forall(_.state.runState === Action.Paused)).getOrElse(false))
+    assert(actionPause.map(_.sequences(seqId).current.execution.forall{Action.paused}).getOrElse(false))
   }
 
   "engine" should "run sequence to completion after resuming a paused action" in {
