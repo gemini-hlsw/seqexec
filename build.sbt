@@ -70,12 +70,14 @@ lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.we
   .settings(commonSettings: _*)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
+  .disablePlugins(RevolverPlugin)
   .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
+  .disablePlugins(RevolverPlugin)
   .dependsOn(edu_gemini_seqexec_model)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
@@ -125,6 +127,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
+  .disablePlugins(RevolverPlugin)
   .settings(commonJSSettings: _*)
   .settings(
     // Needed for Monocle macros

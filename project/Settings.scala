@@ -95,6 +95,7 @@ object Settings {
     val log4s        = "1.3.6"
     val logback      = "1.2.3"
     val janino       = "3.0.7"
+    val logstash     = "4.11"
     val knobs        = "4.0.31-scalaz-7.2"
     val monocle      = "1.4.0"
 
@@ -140,9 +141,10 @@ object Settings {
     val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
     val JuliSlf4j   = "org.slf4j"          %  "jul-to-slf4j"                      % LibraryVersions.slf4j
     val Logback     = Seq(
-      "ch.qos.logback"      % "logback-core"    % LibraryVersions.logback,
-      "ch.qos.logback"      % "logback-classic" % LibraryVersions.logback,
-      "org.codehaus.janino" % "janino"          % LibraryVersions.janino
+      "ch.qos.logback"       % "logback-core"             % LibraryVersions.logback,
+      "ch.qos.logback"       % "logback-classic"          % LibraryVersions.logback,
+      "org.codehaus.janino"  % "janino"                   % LibraryVersions.janino,
+      "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
     val Log4s       = "org.log4s"          %% "log4s"                             % LibraryVersions.log4s
     val Logging     = Seq(JuliSlf4j, Log4s) ++ Logback
