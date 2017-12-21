@@ -77,7 +77,7 @@ object Execution {
   def actionStateFromResult(r: Result): (Action.State => Action.State) = s => r match {
     case Result.OK(x)         => s.copy(runState = Action.Completed(x))
     case Result.Partial(x, _) => s.copy(partials = x :: s.partials )
-    case Result.Paused        => s.copy(runState = Action.Paused)
+    case Result.Paused(c)     => s.copy(runState = Action.Paused(c))
     case e@Result.Error(_)    => s.copy(runState = Action.Failed(e))
   }
 }
@@ -94,10 +94,11 @@ object Result {
   // Base traits for results. They make harder to pass the wrong value.
   trait RetVal
   trait PartialVal
+  trait PauseContext
 
   final case class OK[R <: RetVal](response: R) extends Result
   final case class Partial[R <: PartialVal](response: R, continuation: ActionGen) extends Result
-  object Paused extends Result
+  final case class Paused[C <: PauseContext](ctx: PauseContext) extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
   final case class Error(msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)

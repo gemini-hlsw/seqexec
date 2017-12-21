@@ -47,9 +47,14 @@ case object Poll extends UserEvent {
 final case class GetState(f: (Engine.State) => Task[Option[Process[Task, Event]]]) extends UserEvent {
   val user: Option[UserDetails] = None
 }
+// Generic event to put a function in the main Process process, which takes an
+// action depending on the current state of a specific sequence
+final case class GetSeqState(id: Sequence.Id, f: Sequence.State => Option[Process[Task, Event]]) extends UserEvent {
+  val user: Option[UserDetails] = None
+}
 // Calls a user given function in the main Process process to stop an Action.
 // It sets the Sequence to be stopped. The user function is called only if the Sequence is running.
-final case class ActionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]) extends UserEvent {
+final case class ActionStop(id: Sequence.Id, f: Sequence.State => Option[Process[Task, Event]]) extends UserEvent {
   val user: Option[UserDetails] = None
 }
 

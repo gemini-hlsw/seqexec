@@ -4,10 +4,9 @@
 package edu.gemini.seqexec.engine
 
 import scalaz.syntax.std.option._
-
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SkyBackground, WaterVapor, Operator, Observer}
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
-import Result.{OK, Partial, PartialVal, RetVal}
+
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 
@@ -35,14 +34,15 @@ object Event {
   def setCloudCover(cc: CloudCover, user: UserDetails): Event = EventUser(SetCloudCover(cc, user.some))
   val poll: Event = EventUser(Poll)
   def getState(f: (Engine.State) => Task[Option[Process[Task, Event]]]): Event = EventUser(GetState(f))
+  def getSeqState(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(GetSeqState(id, f))
   def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(ActionStop(id, f))
   def actionResume(id: Sequence.Id, i: Int, c: Task[Result]): Event = EventUser(ActionResume(id, i, c))
   def logMsg(msg: String): Event = EventUser(Log(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
-  def completed[R<:RetVal](id: Sequence.Id, i: Int, r: OK[R]): Event = EventSystem(Completed(id, i, r))
-  def partial[R<:PartialVal](id: Sequence.Id, i: Int, r: Partial[R]): Event = EventSystem(PartialResult(id, i, r))
-  def paused(id: Sequence.Id, i: Int): Event = EventSystem(Paused(id, i))
+  def completed[R<:Result.RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): Event = EventSystem(Completed(id, i, r))
+  def partial[R<:Result.PartialVal](id: Sequence.Id, i: Int, r: Result.Partial[R]): Event = EventSystem(PartialResult(id, i, r))
+  def paused[C <: Result.PauseContext](id: Sequence.Id, i: Int, c: Result.Paused[C]): Event = EventSystem(Paused(id, i, c))
   def busy(id: Sequence.Id): Event = EventSystem(Busy(id))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))

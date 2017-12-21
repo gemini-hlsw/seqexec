@@ -246,6 +246,13 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- GmosEpics.instance.pauseCmd.mark
     _ <- GmosEpics.instance.pauseCmd.post
   } yield ()
+
+  override def resumeObserve: SeqAction[ObserveCommand.Result] = for {
+      _ <- EitherT(Task(Log.info("Resume Gmos observation").right))
+      _ <- GmosEpics.instance.continueCmd.mark
+      ret <- GmosEpics.instance.continueCmd.post
+      _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
+    } yield ret
 }
 
 object GmosControllerEpics {

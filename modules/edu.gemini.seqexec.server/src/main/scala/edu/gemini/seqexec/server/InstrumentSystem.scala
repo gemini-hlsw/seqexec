@@ -23,7 +23,7 @@ object InstrumentSystem {
   final case class StopObserveCmd(self: SeqAction[Unit]) extends AnyVal
   final case class AbortObserveCmd(self: SeqAction[Unit]) extends AnyVal
   final case class PauseObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class ContinueObserveCmd(self: SeqAction[Unit]) extends AnyVal
+  final case class ContinueObserveCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
   final case class Controllable(stop: StopObserveCmd,
                                 abort: AbortObserveCmd,
                                 pause: PauseObserveCmd,

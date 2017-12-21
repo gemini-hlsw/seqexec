@@ -70,8 +70,10 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::pause"))
   }
 
-  object continueCmd extends EpicsCommand {
+  object continueCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::continue"))
+    override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::continueCmd",
+      GMOS_TOP + "apply", GMOS_TOP + "applyC", GMOS_TOP + "dc:observeC", GMOS_TOP + "stop", GMOS_TOP + "abort", ""))
   }
 
   object stopCmd extends EpicsCommand {
@@ -83,7 +85,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   }
 
   object observeCmd extends ObserveCommand {
-    private val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
     override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
       GMOS_TOP + "apply", GMOS_TOP + "applyC", GMOS_TOP + "dc:observeC", GMOS_TOP + "stop", GMOS_TOP + "abort", ""))
 

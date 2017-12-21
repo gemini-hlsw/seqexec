@@ -98,6 +98,16 @@ object SeqexecWebClient extends ModelBooPicklers {
   }
 
   /**
+    * Requests the backend to resume the current exposure
+    */
+  def resumeObs(sid: SequenceId, step: Int): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/$sid/$step/resumeObs",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Requests the backend to set the operator name of a sequence
     */
   def setOperator(name: Operator): Future[RegularCommand] = {

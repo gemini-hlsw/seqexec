@@ -53,7 +53,7 @@ class SeqTranslateSpec extends FlatSpec {
   // Observe started, but with file Id already allocated
   private val s3: Sequence.State = s.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_=>Task(Result.OK(Result.Observed(fileId))))))
   // Observe paused
-  private val s4: Sequence.State = s.mark(0)(Result.Paused)
+  private val s4: Sequence.State = s.mark(0)(Result.Paused(new Result.PauseContext {}))
   // Observe failed
   private val s5: Sequence.State = s.mark(0)(Result.Error("error"))
 

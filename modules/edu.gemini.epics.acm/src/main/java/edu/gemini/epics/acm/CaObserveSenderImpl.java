@@ -451,7 +451,7 @@ public class CaObserveSenderImpl implements CaApplySender {
                         case IDLE: return new WaitObserveStart(cm);
                         case BUSY: return new WaitObserveCompletion(cm, getStopMark(), getAbortMark());
                         case ERROR: {
-                            failCommandWithCarError(cm);
+                            failCommandWithObserveCarError(cm);
                             return IdleState;
                         }
                         case PAUSED: {
@@ -520,7 +520,7 @@ public class CaObserveSenderImpl implements CaApplySender {
                     return new WaitObserveCompletion(cm, getStopMark(), getAbortMark());
                 }
                 case ERROR: {
-                    failCommandWithCarError(cm);
+                    failCommandWithObserveCarError(cm);
                     return IdleState;
                 }
                 case PAUSED: {
@@ -574,7 +574,7 @@ public class CaObserveSenderImpl implements CaApplySender {
                     return IdleState;
                 }
                 case ERROR:{
-                    failCommandWithCarError(cm);
+                    failCommandWithObserveCarError(cm);
                     return IdleState;
                 }
                 case PAUSED: {
@@ -694,7 +694,7 @@ public class CaObserveSenderImpl implements CaApplySender {
                     return IdleState;
                 }
                 case ERROR:{
-                    failCommandWithCarError(cm);
+                    failCommandWithObserveCarError(cm);
                     return IdleState;
                 }
                 case PAUSED: {
@@ -822,6 +822,21 @@ public class CaObserveSenderImpl implements CaApplySender {
             String msg = null;
             try {
                 msg = car.getOmssValue();
+            } catch (CAException | TimeoutException e) {
+                LOG.warning(e.getMessage());
+            }
+            cm.completeFailure(new CaCommandError(msg));
+        } );
+    }
+
+    private void failCommandWithObserveCarError(final CaCommandMonitorImpl cm) {
+        // I found that if I try to read OMSS or MESS from the same thread that
+        // is processing a channel notifications, the reads fails with a
+        // timeout. But it works if the read is done later from another thread.
+        executor.execute(() -> {
+            String msg = null;
+            try {
+                msg = observeCar.getOmssValue();
             } catch (CAException | TimeoutException e) {
                 LOG.warning(e.getMessage());
             }

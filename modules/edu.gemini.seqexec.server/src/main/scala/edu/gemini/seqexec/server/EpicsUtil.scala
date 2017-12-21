@@ -9,6 +9,7 @@ import java.util.{Timer, TimerTask}
 import java.util.concurrent.locks.ReentrantLock
 
 import edu.gemini.epics.acm._
+import edu.gemini.seqexec.server.EpicsCommand.safe
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 import org.log4s._
 import squants.Time
@@ -106,6 +107,7 @@ object EpicsCommand {
 trait ObserveCommand {
   import ObserveCommand._
 
+  protected val cs: Option[CaCommandSender]
   protected val os: Option[CaApplySender]
 
   def post: SeqAction[Result] =
@@ -128,6 +130,10 @@ trait ObserveCommand {
         }
       }
     }
+
+  def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
+    cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
+  }))
 }
 
 object ObserveCommand {
