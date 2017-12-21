@@ -28,9 +28,9 @@ def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
 version in ThisBuild := imageManifest.formatVersion
 
 // check for library updates whenever the project is [re]load
-onLoad in Global := { s => 
+onLoad in Global := { s =>
   if (sys.props.contains("gem.skipDependencyUpdates")) s
-  else "dependencyUpdates" :: s 
+  else "dependencyUpdates" :: s
 }
 
 cancelable in Global := true
@@ -367,7 +367,7 @@ lazy val main = project
   .settings(
     packageName in Docker := "gem",
     dockerBaseImage       := "openjdk:8u141",
-    dockerExposedPorts    := List(6666),
+    dockerExposedPorts    := List(9090, 9091),
     dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
     dockerLabels          := imageManifest.labels,
 

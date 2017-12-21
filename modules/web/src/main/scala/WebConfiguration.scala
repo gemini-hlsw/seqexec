@@ -28,8 +28,8 @@ object WebConfiguration {
         ttlSeconds = 60 * 5
       ),
       webServer = WebServer(
-        port = 8080,
-        host = "localhost"
+        port = 9090,
+        host = "0.0.0.0"
       ),
       log = Log(
         name            = "web",
