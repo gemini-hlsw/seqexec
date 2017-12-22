@@ -369,8 +369,8 @@ object StepsTableContainer {
       <.td( // Column progress
         ^.onDoubleClick --> selectRow(step, i),
         ^.classSet(
-          "center aligned" -> step.isObserving,
-          "top aligned"    -> !step.isObserving
+          "top aligned"    -> step.isObserving,
+          "center aligned" -> !step.isObserving
         ),
         SeqexecStyles.componentLabel,
         stepProgress(state, step)
