@@ -18,7 +18,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 
 import scalacss.ScalaCssReact._
-import scalaz.syntax.equal._
 import scalaz.syntax.show._
 
 /**
@@ -44,7 +43,7 @@ object StepsControlButtonsWrapper {
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
             StepsControlButtons(props.p.id, props.p.instrument, props.p.state, props.step).when(props.step.isObserving)
-          ).when(props.loggedIn && props.p.state === SequenceState.Running)
+          ).when(props.loggedIn && SequenceState.isRunning(props.p.state))
         )
       )
     )
@@ -95,9 +94,9 @@ object StepsControlButtons {
           case PauseObservation            =>
             Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"), onClick = $.runState(handleObsPause(p.id, p.step.id))))
           case StopObservation             =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), disabled = s.stopRequested || p.sequenceState === SequenceState.Stopping, onClick = $.runState(handleStop(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), disabled = s.stopRequested || SequenceState.internalStopRequested(p.sequenceState), onClick = $.runState(handleStop(p.id, p.step.id))))
           case AbortObservation            =>
-            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), disabled = s.stopRequested || p.sequenceState === SequenceState.Stopping, onClick = $.runState(handleAbort(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), disabled = s.stopRequested || SequenceState.internalStopRequested(p.sequenceState), onClick = $.runState(handleAbort(p.id, p.step.id))))
           case ResumeObservation           =>
             Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure"), onClick = $.runState(handleObsResume(p.id, p.step.id))))
           // Hamamatsu operations

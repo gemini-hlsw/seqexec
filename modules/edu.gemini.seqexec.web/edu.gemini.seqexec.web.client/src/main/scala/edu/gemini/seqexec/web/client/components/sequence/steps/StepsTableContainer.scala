@@ -173,9 +173,9 @@ object StepsTableContainer {
 
     def stepProgress(state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (SequenceState.Pausing, StepState.Running) =>
+        case (s, StepState.Running) if SequenceState.userStopRequested(s) =>
           <.div(state.shows)
-        case (SequenceState.Stopping, _) =>
+        case (s, _) if SequenceState.internalStopRequested(s) =>
           <.div(step.status.shows)
         case (_, StepState.Pending) =>
           step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
@@ -207,10 +207,10 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (SequenceState.Pausing, StepState.Running) => <.p(state.shows)
+        case (s, StepState.Running) if SequenceState.userStopRequested(s) => <.p(state.shows)
         case (_, StepState.Running | StepState.Paused)  => controlButtons(status.isLogged, p, step)
         case (_, StepState.Completed)                   => <.p(step.status.shows)
-        case (_, StepState.Error(msg))                  => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
+        case (_, StepState.Failed(msg))                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
         case (_, s) if step.skip                        => <.p("Skipped")
         case (_, _)                                     => <.p(step.status.shows)
@@ -272,7 +272,7 @@ object StepsTableContainer {
       step.status match {
         case StepState.Completed                  => IconCheckmark
         case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
-        case StepState.Error(_)                   => IconAttention
+        case StepState.Failed(_)                   => IconAttention
         case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
         case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
         case _                                    => iconEmpty

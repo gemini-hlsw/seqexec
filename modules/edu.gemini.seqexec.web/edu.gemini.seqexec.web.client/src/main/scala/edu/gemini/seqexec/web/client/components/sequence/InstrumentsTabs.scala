@@ -41,14 +41,14 @@ object InstrumentTab {
         case _                      => ~sequenceId
       }
       val icon = status.flatMap {
-        case SequenceState.Running   => IconCircleNotched.copyIcon(loading = true).some
-        case SequenceState.Completed => IconCheckmark.some
-        case _                       => IconSelectedRadio.some
+        case SequenceState.Running(_, _) => IconCircleNotched.copyIcon(loading = true).some
+        case SequenceState.Completed     => IconCheckmark.some
+        case _                           => IconSelectedRadio.some
       }
       val color = status.flatMap {
-        case SequenceState.Running   => "orange".some
-        case SequenceState.Completed => "green".some
-        case _                       => "grey".some
+        case SequenceState.Running(_, _) => "orange".some
+        case SequenceState.Completed     => "green".some
+        case _                           => "grey".some
       }
       val instrumentNoId =
         <.div(SeqexecStyles.instrumentTabLabel, instrument.shows)

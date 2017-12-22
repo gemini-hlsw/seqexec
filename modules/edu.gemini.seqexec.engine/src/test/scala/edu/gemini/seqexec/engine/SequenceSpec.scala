@@ -73,7 +73,7 @@ class SequenceSpec extends FlatSpec {
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
     case SequenceState.Completed => true
-    case SequenceState.Error(_)  => true
+    case SequenceState.Failed(_) => true
     case _                       => false
   }
 

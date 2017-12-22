@@ -156,7 +156,7 @@ package object engine {
           // No resources being used by other running sequences
           if (seq.status === SequenceState.Idle || SequenceState.isError(seq.status))
             if(seq.toSequence.resources.intersect(other).isEmpty)
-              putS(id)(Sequence.State.status.set(SequenceState.Running)(seq.rollback)) *> send(Event.executing(id))
+              putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.rollback)) *> send(Event.executing(id))
           // Some resources are being used
             else send(busy(id))
           else unit
@@ -164,15 +164,15 @@ package object engine {
       }
     )
 
-  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Running) Sequence.State.status.set(SequenceState.Pausing)(s) else s)
+  def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
 
-  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)( s => if(s.status === SequenceState.Pausing) Sequence.State.status.set(SequenceState.Running)(s) else s)
+  def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)(Sequence.State.userStopSet(false))
 
   val resources: HandleP[Set[Resource]] =
     gets(_.sequences
           .values
           .toList
-          .filter(_.status === SequenceState.Running)
+          .filter(Sequence.State.isRunning)
           .foldMap(_.toSequence.resources)
     )
 
@@ -207,11 +207,9 @@ package object engine {
       st => Engine.State(
         st.conditions,
         st.operator,
-        st.sequences.get(id).map(
-          t => t.status match {
-            case SequenceState.Running => st.sequences
-            case _                     => st.sequences.updated(id, Sequence.State.init(seq))
-          }
+        st.sequences.get(id).map( t =>
+          if (Sequence.State.isRunning(t)) st.sequences
+          else st.sequences.updated(id, Sequence.State.init(seq))
         ).getOrElse(
           st.sequences.updated(id, Sequence.State.init(seq))
         )
@@ -223,11 +221,9 @@ package object engine {
       st => Engine.State(
         st.conditions,
         st.operator,
-        st.sequences.get(id).map(
-          t => t.status match {
-            case SequenceState.Running => st.sequences
-            case _                     => st.sequences - id
-          }
+        st.sequences.get(id).map( t =>
+          if(Sequence.State.isRunning(t)) st.sequences
+          else st.sequences - id
         ).getOrElse(st.sequences)
       )
     )
@@ -241,19 +237,18 @@ package object engine {
   def next(id: Sequence.Id): HandleP[Unit] =
     getS(id).flatMap(
       _.map { seq =>
-        seq.status match {
-          case SequenceState.Pausing | SequenceState.Stopping =>
-            seq.next match {
-              case None =>
-                send(finished(id))
-              // Final State
-              case Some(qs: Sequence.State.Final) =>
-                putS(id)(qs) *> send(finished(id))
-              // Execution completed
-              case Some(qs) =>
-                putS(id)(qs) *> switch(id)(SequenceState.Idle)
-            }
-          case SequenceState.Running =>
+        if(Sequence.State.anyStopRequested(seq))
+          seq.next match {
+            case None =>
+              send(finished(id))
+            // Final State
+            case Some(qs: Sequence.State.Final) =>
+              putS(id)(qs) *> send(finished(id))
+            // Execution completed
+            case Some(qs) =>
+              putS(id)(qs) *> switch(id)(SequenceState.Idle)
+          }
+        else if(Sequence.State.isRunning(seq))
             seq.next match {
               // Empty state
               case None =>
@@ -266,8 +261,7 @@ package object engine {
                 putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(id)(SequenceState.Idle)
                                  else send(executing(id)))
             }
-          case _ => unit
-        }
+        else  unit
     }.getOrElse(unit)
   )
 
@@ -308,7 +302,7 @@ package object engine {
     getS(id).flatMap(_.map(s => HandleP[Unit](f(s).pure[Handle].map(((), _)))).getOrElse(unit))
 
   private def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): HandleP[Unit] =
-    getS(id).flatMap(_.map(s => if(s.status === SequenceState.Running) HandleP[Unit](f(s).pure[Handle].map(((), _))) *> switch(id)(SequenceState.Stopping) else unit).getOrElse(unit))
+    getS(id).flatMap(_.map(s => if(Sequence.State.isRunning(s)) HandleP[Unit](f(s).pure[Handle].map(((), _))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -323,10 +317,10 @@ package object engine {
 
   def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 
-  def actionPause[C<:PauseContext](id: Sequence.Id, i: Int, p: Result.Paused[C]): HandleP[Unit] = modifyS(id)(s => Sequence.State.status.set(SequenceState.Running)(s).mark(i)(p))
+  def actionPause[C<:PauseContext](id: Sequence.Id, i: Int, p: Result.Paused[C]): HandleP[Unit] = modifyS(id)(s => Sequence.State.internalStopSet(false)(s).mark(i)(p))
 
   def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit] = getS(id).flatMap(_.map{ s =>
-    if (s.status === SequenceState.Running && s.current.execution.index(i).exists(Action.paused))
+    if (Sequence.State.isRunning(s) && s.current.execution.index(i).exists(Action.paused))
       modifyS(id)(_.start(i)) *> HandleP.fromProcess(act(id, (Kleisli(_ => cont), i), ActionMetadata.default))
     else unit
   }.getOrElse(unit))
@@ -338,7 +332,7 @@ package object engine {
     */
   def fail(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit] =
     modifyS(id)(_.mark(i)(e)) *>
-      switch(id)(SequenceState.Error(e.msg))
+      switch(id)(SequenceState.Failed(e.msg))
 
   /**
     * Ask for the current Handle `Status`.

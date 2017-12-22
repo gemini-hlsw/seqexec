@@ -35,24 +35,16 @@ object Step {
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     */
   def status(step: Step): StepState = {
-    def stepCompleted(s: Action): Boolean = s.state.runState match {
-      case Action.Completed(_) => true
-      case _                   => false
-    }
 
     // Find an error in the Step
     step.executions.flatten.find(Action.errored).flatMap { x => x.state.runState match {
       case Action.Failed(Result.Error(msg)) => msg.some
       case _                                => None
       // Return error or continue with the rest of the checks
-    }}.map(StepState.Error).getOrElse(
-      // It's possible to have a Step with empty executions when a completed
-      // Step is loaded from the ODB.
-      if (step.executions.isEmpty || step.executions.all(_.isEmpty)) StepState.Completed
-      // All actions in this Step are pending.
+    }}.map(StepState.Failed).getOrElse(
+      // All actions in this Step were completed successfully, or the Step is empty.
+      if (step.executions.flatten.all(Action.completed)) StepState.Completed
       else if (step.executions.flatten.all(_.state.runState === Action.Idle)) StepState.Pending
-      // All actions in this Step were completed successfully.
-      else if (step.executions.flatten.all(stepCompleted)) StepState.Completed
       // Not all actions are completed or pending.
       else StepState.Running
     )
