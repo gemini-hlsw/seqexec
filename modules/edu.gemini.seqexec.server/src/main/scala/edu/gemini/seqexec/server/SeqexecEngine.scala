@@ -53,7 +53,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
     if (settings.gcalSim) GcalControllerSim else GcalControllerEpics,
     if (settings.instSim) {
-      if (settings.instForceError) Flamingos2ControllerSimBad
+      if (settings.instForceError) Flamingos2ControllerSimBad(settings.failAt)
       else Flamingos2ControllerSim
     } else Flamingos2ControllerEpics,
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
@@ -277,6 +277,7 @@ object SeqexecEngine {
                       gwsKeywords: Boolean,
                       gcalKeywords: Boolean,
                       instForceError: Boolean,
+                      failAt: Int,
                       odbQueuePollingInterval: Duration)
   def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
 
@@ -295,6 +296,7 @@ object SeqexecEngine {
     gwsKeywords = false,
     gcalKeywords = false,
     instForceError = false,
+    failAt = 0,
     10.seconds)
 
   // Couldn't find this on Scalaz
@@ -437,6 +439,7 @@ object SeqexecEngine {
     val gwsKeywords             = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
     val gcalKeywords            = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
+    val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
     val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
@@ -498,6 +501,7 @@ object SeqexecEngine {
                        gwsKeywords,
                        gcalKeywords,
                        instForceError,
+                       failAt,
                        odbQueuePollingInterval)
       )
 

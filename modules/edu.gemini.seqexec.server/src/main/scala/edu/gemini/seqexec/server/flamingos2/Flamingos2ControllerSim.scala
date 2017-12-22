@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.server.flamingos2
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqexecFailure.Execution
 import edu.gemini.seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
@@ -11,6 +13,8 @@ import org.log4s.getLogger
 
 import scalaz.EitherT
 import scalaz.concurrent.Task
+import scalaz.syntax.equal._
+import scalaz.std.anyVal._
 
 object Flamingos2ControllerSim extends Flamingos2Controller {
   private val Log = getLogger
@@ -35,10 +39,15 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
   } )
 }
 
-object Flamingos2ControllerSimBad extends Flamingos2Controller {
+/**
+ * This controller will run correctly but fail at step `failAt`
+ */
+final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Controller {
   private val Log = getLogger
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
+
+  private val counter: AtomicInteger = new AtomicInteger(0)
 
   override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
@@ -49,7 +58,13 @@ object Flamingos2ControllerSimBad extends Flamingos2Controller {
 
   override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( Task {
     Log.info(s"Applying Flamingos-2 configuration $config")
-    TrySeq.fail(Execution("simulated error"))
+    if (counter.addAndGet(1) === failAt) {
+      counter.set(0)
+      Log.error(s"Error applying Flamingos-2 configuration")
+      TrySeq.fail(Execution("simulated error"))
+    } else {
+      TrySeq(())
+    }
   } )
 
   override def endObserve = EitherT( Task {
