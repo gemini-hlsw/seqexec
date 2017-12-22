@@ -79,6 +79,7 @@ trait ModelBooPicklers {
     .addConcreteType[SequenceRefreshed]
     .addConcreteType[ActionStopRequested]
     .addConcreteType[SequenceUpdated]
+    .addConcreteType[SequenceError]
     .addConcreteType[ResourcesBusy]
     .addConcreteType[NewLogMessage]
     .addConcreteType[ServerLogMessage]

@@ -70,8 +70,8 @@ trait ModelLenses {
       case e @ StepExecuted(_)            => e.copy(view = q)
       case e @ FileIdStepExecuted(_, _)   => e.copy(view = q)
       case e @ SequenceCompleted(_)       => e.copy(view = q)
-      case e @ SequenceLoaded(_, v)       => e.copy(view = q)
-      case e @ SequenceUnloaded(_, v)     => e.copy(view = q)
+      case e @ SequenceLoaded(_, _)       => e.copy(view = q)
+      case e @ SequenceUnloaded(_, _)     => e.copy(view = q)
       case e @ StepBreakpointChanged(_)   => e.copy(view = q)
       case e @ OperatorUpdated(_)         => e.copy(view = q)
       case e @ ObserverUpdated(_)         => e.copy(view = q)
@@ -82,6 +82,7 @@ trait ModelLenses {
       case e @ SequenceRefreshed(_)       => e.copy(view = q)
       case e @ ActionStopRequested(_)     => e.copy(view = q)
       case e @ ResourcesBusy(_, _)        => e.copy(view = q)
+      case e @ SequenceError(_, _)        => e.copy(view = q)
       case e @ SequenceUpdated(_)         => e.copy(view = q)
       case e                              => e
     }

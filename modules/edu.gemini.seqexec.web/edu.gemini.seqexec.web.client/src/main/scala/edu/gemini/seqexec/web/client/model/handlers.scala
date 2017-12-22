@@ -14,7 +14,7 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
 import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
@@ -491,6 +491,13 @@ object handlers {
         updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
     }
 
+    val sequenceOnErrorMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(SequenceError(_, sv)) =>
+        // Play audio when the sequence gets into an error state
+        val audioEffect = Effect(Future(new Audio("/sequenceerror.mp3").play()).map(_ => NoAction))
+        updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+    }
+
     val observerUpdatedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(s: ObserverUpdated) =>
         updated(value.copy(sequences = filterSequences(s.view)))
@@ -566,6 +573,7 @@ object handlers {
       List(logMessage,
         connectionOpenMessage,
         sequenceCompletedMessage,
+        sequenceOnErrorMessage,
         observerUpdatedMessage,
         actionStoppedRequestMessage,
         sequenceLoadedMessage,
