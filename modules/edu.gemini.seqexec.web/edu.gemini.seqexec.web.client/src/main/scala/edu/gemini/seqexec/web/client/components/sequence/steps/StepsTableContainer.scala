@@ -41,7 +41,7 @@ object ObservationProgressBar {
     .stateless
     .render_P(fileId =>
       <.div(
-        ^.cls := "ui small progress vcentered",
+        ^.cls := "ui small top aligned progress vcentered",
         <.div(
           ^.cls := "bar",
           <.div(
@@ -49,6 +49,7 @@ object ObservationProgressBar {
         ),
         <.div(
           ^.cls := "label",
+          SeqexecStyles.componentLabel,
           fileId
         )
       )
@@ -368,8 +369,8 @@ object StepsTableContainer {
       <.td( // Column progress
         ^.onDoubleClick --> selectRow(step, i),
         ^.classSet(
-          "center aligned"    -> step.isObserving,
-          "middle aligned" -> !step.isObserving
+          "center aligned" -> step.isObserving,
+          "top aligned"    -> !step.isObserving
         ),
         SeqexecStyles.componentLabel,
         stepProgress(state, step)
