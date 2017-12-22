@@ -122,8 +122,7 @@ object ModelOps {
     def file: Option[String] = None
 
     def canSetBreakpoint: Boolean = s.status match {
-      case StepState.Pending | StepState.Skipped | StepState.Paused => true
-      case _ if hasError                                            => true
+      case StepState.Pending | StepState.Skipped | StepState.Paused => s.id > 0
       case _                                                        => false
     }
 
