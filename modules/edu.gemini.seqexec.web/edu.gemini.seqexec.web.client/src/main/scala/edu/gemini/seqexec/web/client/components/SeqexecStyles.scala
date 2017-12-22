@@ -337,7 +337,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val componentLabel: StyleA = style(
-    fontSize.smaller,
+    fontSize.smaller.important,
     textOverflow := "ellipsis",
     overflow.hidden,
     wordWrap.breakWord,

@@ -84,7 +84,7 @@ object SequenceControl {
           List(
             // Sync button
             controlButton(IconRefresh, "purple", $.runState(requestSync(id)), !allowedToExecute || !s.canSync, "Sync sequence", "Sync")
-              .when(status === SequenceState.Idle),
+              .when(status === SequenceState.Idle || status.isError),
             // Run button
             controlButton(IconPlay, "blue", $.runState(requestRun(id)), !allowedToExecute || !s.canRun, runContinueTooltip, runContinueButton)
               .when(status === SequenceState.Idle || status.isError),
