@@ -5,7 +5,6 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig, StepState}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
-
 import org.scalatest._
 import Matchers._
 import Inside._
@@ -13,7 +12,6 @@ import edu.gemini.seqexec.model.Model.Resource
 
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
-import edu.gemini.seqexec.model.Model.SequenceState.Running
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
 import scala.Function.const
@@ -85,7 +83,7 @@ class StepSpec extends FlatSpec {
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
     case SequenceState.Completed => true
-    case SequenceState.Error(_)  => true
+    case SequenceState.Failed(_) => true
     case _                       => false
   }
 
@@ -196,7 +194,7 @@ class StepSpec extends FlatSpec {
           case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
-        status should be (Running)
+        assert(SequenceState.isRunning(status))
     }
 
   }
@@ -226,7 +224,7 @@ class StepSpec extends FlatSpec {
                  (Execution(List(configureTcs, configureInst)), List(List(observe)))),
                Nil
              ),
-             SequenceState.Pausing
+             SequenceState.Running(true, false)
            )
           )
         )
@@ -235,8 +233,7 @@ class StepSpec extends FlatSpec {
     val qs1 = process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(_, status)) =>
-        status should be (Running)
+      case Some(Sequence.State.Zipper(_, status)) => assert(SequenceState.isRunning(status))
     }
 
   }
@@ -382,7 +379,7 @@ class StepSpec extends FlatSpec {
             assert( Execution(ex1).results.length == 2 && Execution(ex2).results.length == 1 && Execution(ex3).actions.length == 1)
         }
         // And that it ended in error
-        status should be (SequenceState.Error(errMsg))
+        status should be (SequenceState.Failed(errMsg))
     }
   }
 
@@ -438,7 +435,7 @@ class StepSpec extends FlatSpec {
         inside (zipper.focus.focus.execution.headOption) {
           case Some(Action(_, _, Action.State(Action.Started, v::_))) => v shouldEqual PartialValDouble(0.5)
         }
-        status shouldBe SequenceState.Running
+        assert(SequenceState.isRunning(status))
     }
     inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Final(seq, status)) =>
@@ -528,7 +525,7 @@ class StepSpec extends FlatSpec {
           Nil,
           (Execution(List(action, action, action)), Nil)
         ).toStep
-      ) === StepState.Error("Dummy error")
+      ) === StepState.Failed("Dummy error")
     )
   }
 

@@ -126,7 +126,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
             qState.conditions,
             qState.operator,
             qState.sequences.values.map(
-              s => viewSequence(s.toSequence, s.status)
+              s => viewSequence(s.toSequence, s)
             ).toList
           )
         )
@@ -219,7 +219,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
   }
 
-  def viewSequence(seq: Sequence, st: SequenceState): SequenceView = {
+  def viewSequence(seq: Sequence, st: Sequence.State): SequenceView = {
 
     def engineSteps(seq: Sequence): List[Step] = {
 
@@ -229,10 +229,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         // The sequence could be empty
         case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
-        case steps if (st === SequenceState.Running || st === SequenceState.Pausing || st === SequenceState.Stopping) && steps.all(_.status =/= StepState.Running) =>
+        case steps if (Sequence.State.isRunning(st)) && steps.all(_.status =/= StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
           xs ++ (y.copy(status = StepState.Running) :: ys)
-        case steps if st === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
+        case steps if st.status === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
           xs ++ (y.copy(status = StepState.Paused) :: ys)
         case x => x
@@ -240,7 +240,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
     // TODO: Implement willStopIn
-    SequenceView(seq.id, seq.metadata, st, engineSteps(seq), None)
+    SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
 
   private def refreshSequenceList(): Engine.State => Task[Option[Process[Task, Event]]] = (st: Engine.State) => {

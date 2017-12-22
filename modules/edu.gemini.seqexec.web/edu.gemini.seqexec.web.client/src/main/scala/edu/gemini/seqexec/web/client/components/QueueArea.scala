@@ -74,10 +74,10 @@ object QueueTableBody {
             case (Some(s), i) =>
               val leftColumnIcon: TagMod =
                 s.status match {
-                  case SequenceState.Completed => IconCheckmark
-                  case SequenceState.Running   => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                  case SequenceState.Error(_)  => IconAttention
-                  case _                       => if (s.active) IconSelectedRadio else iconEmpty
+                  case SequenceState.Completed     => IconCheckmark
+                  case SequenceState.Running(_, _) => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
+                  case SequenceState.Failed(_)     => IconAttention
+                  case _                           => if (s.active) IconSelectedRadio else iconEmpty
                 }
               val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
               val inProcess = s.status.isInProcess
@@ -96,7 +96,7 @@ object QueueTableBody {
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status === SequenceState.Completed),
-                  "warning"  -> (s.status === SequenceState.Running),
+                  "warning"  -> (SequenceState.isRunning(s.status)),
                   "negative" -> s.status.isError,
                   "active"   -> (s.active && !inProcess)
                 ),

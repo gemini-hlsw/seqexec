@@ -4,7 +4,8 @@
 package edu.gemini.seqexec.model
 
 import monocle.macros.Lenses
-import scalaz.{Equal, Show, Order, NonEmptyList}
+
+import scalaz.{Equal, NonEmptyList, Order, Show}
 import scalaz.std.anyVal._
 import scalaz.std.option._
 import scalaz.syntax.show._
@@ -186,7 +187,7 @@ object Model {
     }
     case object Completed extends StepState
     case object Skipped extends StepState
-    final case class Error(msg: String) extends StepState {
+    final case class Failed(msg: String) extends StepState {
       override val canRunFrom: Boolean = true
     }
     case object Running extends StepState
@@ -243,17 +244,34 @@ object Model {
   sealed trait SequenceState
   object SequenceState {
     case object Completed         extends SequenceState
-    case object Running           extends SequenceState
-    case object Pausing           extends SequenceState
-    case object Stopping          extends SequenceState
     case object Idle              extends SequenceState
-    case object Paused            extends SequenceState
-    final case class Error(msg: String) extends SequenceState
+    case object Stopped           extends SequenceState
+    final case class Running(userStop: Boolean, internalStop: Boolean) extends SequenceState
+    object Running {
+      val init: Running = Running(false, false)
+    }
+    final case class Failed(msg: String) extends SequenceState
 
     def isError(state: SequenceState): Boolean = state match {
-      case Error(_) => true
-      case _        => false
+      case Failed(_) => true
+      case _         => false
     }
+
+    def isRunning(state: SequenceState): Boolean = state match {
+      case Running(_, _) => true
+      case _             => false
+    }
+
+    def userStopRequested(state: SequenceState): Boolean = state match {
+      case SequenceState.Running(true, _) => true
+      case _                              => false
+    }
+
+    def internalStopRequested(state: SequenceState): Boolean = state match {
+      case SequenceState.Running(_, true) => true
+      case _                              => false
+    }
+
 
     implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
   }

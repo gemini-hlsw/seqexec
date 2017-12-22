@@ -90,19 +90,19 @@ object SequenceControl {
               .when(status === SequenceState.Idle || status.isError),
             // Cancel pause button
             controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !allowedToExecute || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")
-              .when(status === SequenceState.Pausing),
+              .when(SequenceState.userStopRequested(status)),
             // Pause button
             controlButton(IconPause, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canPause, "Pause the sequence after the current step completes", "Pause")
-              .when(status === SequenceState.Running),
+              .when(SequenceState.isRunning(status)),
             // Resume
             controlButton(IconPlay, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canResume, "Resume the sequence", s"Continue from step $nextStepToRun")
-              .when(status === SequenceState.Paused)
+              .when(status === SequenceState.Stopped)
           ).toTagMod
         }
       )
     }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
-      Callback.when(f.nextProps.p().control.map(_.status).contains(SequenceState.Running) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
+      Callback.when(f.nextProps.p().control.map(_.status).exists(SequenceState.isRunning) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))

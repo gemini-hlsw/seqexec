@@ -15,20 +15,19 @@ import scalaz.std.AllInstances._
   */
 object ModelOps {
   implicit val sequenceStateShow: Show[SequenceState] = Show.shows[SequenceState] {
-    case SequenceState.Completed => "Complete"
-    case SequenceState.Running   => "Running"
-    case SequenceState.Pausing   => "Pausing..."
-    case SequenceState.Stopping  => "Stopping"
-    case SequenceState.Idle      => "Idle"
-    case SequenceState.Paused    => "Paused"
-    case SequenceState.Error(_)  => s"Error at step "
+    case SequenceState.Completed     => "Complete"
+    case SequenceState.Running(true, _) => "Stopping..."
+    case SequenceState.Running(_, _) => "Running"
+    case SequenceState.Idle          => "Idle"
+    case SequenceState.Stopped       => "Stopped"
+    case SequenceState.Failed(_)     => s"Error at step "
   }
 
   implicit val stepStateShow: Show[StepState] = Show.shows[StepState] {
     case StepState.Pending    => "Pending"
     case StepState.Completed  => "Done"
     case StepState.Skipped    => "Skipped"
-    case StepState.Error(msg) => s"Error $msg"
+    case StepState.Failed(msg) => s"Error $msg"
     case StepState.Running    => "Running"
     case StepState.Paused     => "Paused"
   }
@@ -38,7 +37,7 @@ object ModelOps {
       case StepState.Pending                    => "Pending"
       case StepState.Completed                  => "Done"
       case StepState.Skipped                    => "Skipped"
-      case StepState.Error(msg)                 => s"Error $msg"
+      case StepState.Failed(msg)                => s"Error $msg"
       case StepState.Running if s.isObserving   => "Observing..."
       case StepState.Running if s.isConfiguring => "Configuring..."
       case StepState.Running                    => "Running..."
@@ -57,20 +56,14 @@ object ModelOps {
   }
 
   implicit class SequenceStateOps(val s: SequenceState) extends AnyVal {
-    def isError: Boolean = s match {
-      case SequenceState.Error(_) => true
-      case _                      => false
-    }
+    def isError: Boolean = SequenceState.isError(s)
 
     def isInProcess: Boolean = s match {
       case SequenceState.Idle => false
       case _                  => true
     }
 
-    def isRunning: Boolean = s match {
-      case SequenceState.Running => true
-      case _                     => false
-    }
+    def isRunning: Boolean = SequenceState.isRunning(s)
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
@@ -78,9 +71,9 @@ object ModelOps {
 
     // Returns where on the sequence the execution is at
     def runningStep: Option[(Int, Int)] = s.status match {
-      case SequenceState.Running    => Some(progress)
-      case SequenceState.Error(_)   => Some(progress)
-      case _                        => None
+      case SequenceState.Running(_, _) => Some(progress)
+      case SequenceState.Failed(_)     => Some(progress)
+      case _                           => None
     }
 
     def allStepsDone: Boolean = s.steps.forall(_.status === StepState.Completed)
@@ -95,11 +88,7 @@ object ModelOps {
       case st               => st
     })
 
-    def hasError: Boolean =
-      s.status match {
-        case SequenceState.Error(_) => true
-        case _                      => false
-      }
+    def hasError: Boolean = SequenceState.isError(s.status)
 
     def nextStepToRun: Option[Int] =
       s.steps match {
@@ -134,7 +123,7 @@ object ModelOps {
 
     def hasError: Boolean =
       s.status match {
-        case StepState.Error(_) => true
+        case StepState.Failed(_) => true
         case _                  => false
       }
 

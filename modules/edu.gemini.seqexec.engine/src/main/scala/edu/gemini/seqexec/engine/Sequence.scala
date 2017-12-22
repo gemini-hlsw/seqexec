@@ -204,6 +204,25 @@ object Sequence {
         case Final(st, _)  => Final(st, s)
       })
 
+    def isRunning(st: State): Boolean = SequenceState.isRunning(st.status)
+
+    def userStopRequested(st: State): Boolean = SequenceState.userStopRequested(st.status)
+
+    def anyStopRequested(st: State): Boolean = st.status match {
+      case SequenceState.Running(u, i) => u || i
+      case _                           => false
+    }
+
+    def userStopSet(v: Boolean): State => State = status.modify{
+      case r@SequenceState.Running(_, _) => r.copy(userStop = v)
+      case r                             => r
+    }
+
+    def internalStopSet(v: Boolean): State => State = status.modify{
+      case r@SequenceState.Running(_, _) => r.copy(internalStop = v)
+      case r                             => r
+    }
+
     /**
       * Initialize a `State` passing a `Queue` of pending `Sequence`s.
       */

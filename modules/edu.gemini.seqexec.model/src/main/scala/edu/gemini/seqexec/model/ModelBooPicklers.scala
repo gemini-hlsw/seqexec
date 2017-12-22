@@ -21,11 +21,9 @@ trait ModelBooPicklers {
   // It is not strictly need but reduces the size of the js
   implicit val sequenceStatePickler = compositePickler[SequenceState]
     .addConcreteType[SequenceState.Completed.type]
-    .addConcreteType[SequenceState.Running.type]
-    .addConcreteType[SequenceState.Pausing.type]
-    .addConcreteType[SequenceState.Stopping.type]
-    .addConcreteType[SequenceState.Error]
-    .addConcreteType[SequenceState.Paused.type]
+    .addConcreteType[SequenceState.Running]
+    .addConcreteType[SequenceState.Failed]
+    .addConcreteType[SequenceState.Stopped.type]
     .addConcreteType[SequenceState.Idle.type]
 
   implicit val actionStatusPickler = compositePickler[ActionStatus]
@@ -39,7 +37,7 @@ trait ModelBooPicklers {
     .addConcreteType[StepState.Pending.type]
     .addConcreteType[StepState.Completed.type]
     .addConcreteType[StepState.Skipped.type]
-    .addConcreteType[StepState.Error]
+    .addConcreteType[StepState.Failed]
     .addConcreteType[StepState.Running.type]
     .addConcreteType[StepState.Paused.type]
 
