@@ -4,7 +4,6 @@
 package edu.gemini.seqexec.model
 
 import boopickle.Default._
-// import boopickle.PicklerHelper
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.model.events.SeqexecEvent._
@@ -27,6 +26,8 @@ object ModelBooPicklers {
   implicit val resourcePickler = generatePickler[Resource]
 
   implicit val operatorPickler = generatePickler[Operator]
+
+  implicit val systemNamePickler = generatePickler[SystemName]
 
   implicit val observerPickler = generatePickler[Observer]
 
@@ -85,7 +86,7 @@ object ModelBooPicklers {
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
 
-  implicit val sequnceMetadataPickler = generatePickler[SequenceMetadata]
+  implicit val sequenceMetadataPickler = generatePickler[SequenceMetadata]
 
   implicit val stepConfigPickler = generatePickler[SequenceView]
 
