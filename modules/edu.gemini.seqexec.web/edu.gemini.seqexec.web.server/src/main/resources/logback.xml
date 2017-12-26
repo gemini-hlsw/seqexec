@@ -69,7 +69,6 @@
 
         <root level="DEBUG">
             <appender-ref ref="STDOUT" />
-            <appender-ref ref="logstash" />
         </root>
     </else>
   </if>

@@ -15,8 +15,50 @@ import java.time.Instant
   * Boopickle can auto derived encoders but it is preferred to make
   * them explicitly
   */
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
-trait ModelBooPicklers {
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
+object ModelBooPicklers {
+  //**********************
+  // IMPORTANT The order of the picklers is very relevant to the generated size
+  // add them with care
+  //**********************
+  implicit val instrumentPickler = generatePickler[Instrument]
+
+  implicit val resourcePickler = generatePickler[Resource]
+
+  implicit val operatorPickler = generatePickler[Operator]
+
+  implicit val systemNamePickler = generatePickler[SystemName]
+
+  implicit val observerPickler = generatePickler[Observer]
+
+  implicit val userDetailsPickler = generatePickler[UserDetails]
+
+  implicit val instantPickler = transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
+
+  implicit val cloudCoverPickler = compositePickler[CloudCover]
+    .addConcreteType[CloudCover.Any.type]
+    .addConcreteType[CloudCover.Percent50.type]
+    .addConcreteType[CloudCover.Percent70.type]
+    .addConcreteType[CloudCover.Percent80.type]
+
+  implicit val imageQualityPickler = compositePickler[ImageQuality]
+    .addConcreteType[ImageQuality.Any.type]
+    .addConcreteType[ImageQuality.Percent20.type]
+    .addConcreteType[ImageQuality.Percent70.type]
+    .addConcreteType[ImageQuality.Percent85.type]
+
+  implicit val skyBackgroundPickler = compositePickler[SkyBackground]
+    .addConcreteType[SkyBackground.Any.type]
+    .addConcreteType[SkyBackground.Percent20.type]
+    .addConcreteType[SkyBackground.Percent50.type]
+    .addConcreteType[SkyBackground.Percent80.type]
+
+  implicit val waterVaporPickler = compositePickler[WaterVapor]
+    .addConcreteType[WaterVapor.Any.type]
+    .addConcreteType[WaterVapor.Percent20.type]
+    .addConcreteType[WaterVapor.Percent50.type]
+    .addConcreteType[WaterVapor.Percent80.type]
+
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
   implicit val sequenceStatePickler = compositePickler[SequenceState]
@@ -44,18 +86,18 @@ trait ModelBooPicklers {
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
 
-  implicit val stepConfigPickler = generatePickler[SequenceView]
+  implicit val sequenceMetadataPickler = generatePickler[SequenceMetadata]
 
-  implicit val datePickler = transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
+  implicit val stepConfigPickler = generatePickler[SequenceView]
 
   implicit val serverLogLevelPickler = compositePickler[ServerLogLevel]
     .addConcreteType[ServerLogLevel.INFO.type]
     .addConcreteType[ServerLogLevel.WARN.type]
     .addConcreteType[ServerLogLevel.ERROR.type]
 
-  implicit val operatorPickler = generatePickler[Operator]
-
   implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[SequenceId]]
+
+  implicit val sequenceQueueViewPickler = generatePickler[SequencesQueue[SequenceView]]
 
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
@@ -82,30 +124,6 @@ trait ModelBooPicklers {
     .addConcreteType[NewLogMessage]
     .addConcreteType[ServerLogMessage]
     .addConcreteType[NullEvent.type]
-
-  implicit val cloudCoverPickler = compositePickler[CloudCover]
-    .addConcreteType[CloudCover.Any.type]
-    .addConcreteType[CloudCover.Percent50.type]
-    .addConcreteType[CloudCover.Percent70.type]
-    .addConcreteType[CloudCover.Percent80.type]
-
-  implicit val imageQualityPickler = compositePickler[ImageQuality]
-    .addConcreteType[ImageQuality.Any.type]
-    .addConcreteType[ImageQuality.Percent20.type]
-    .addConcreteType[ImageQuality.Percent70.type]
-    .addConcreteType[ImageQuality.Percent85.type]
-
-  implicit val skyBackgroundPickler = compositePickler[SkyBackground]
-    .addConcreteType[SkyBackground.Any.type]
-    .addConcreteType[SkyBackground.Percent20.type]
-    .addConcreteType[SkyBackground.Percent50.type]
-    .addConcreteType[SkyBackground.Percent80.type]
-
-  implicit val waterVaporPickler = compositePickler[WaterVapor]
-    .addConcreteType[WaterVapor.Any.type]
-    .addConcreteType[WaterVapor.Percent20.type]
-    .addConcreteType[WaterVapor.Percent50.type]
-    .addConcreteType[WaterVapor.Percent80.type]
 
   /**
     * In most cases http4s will use the limit of a byte buffer but not for websockets

@@ -36,7 +36,9 @@ import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import scala.concurrent.duration._
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
-class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with ModelBooPicklers with StringSyntax with NonImplicitAssertions {
+class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with StringSyntax with NonImplicitAssertions {
+  import ModelBooPicklers._
+
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   private val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
   private val authService = AuthenticationService(config)
