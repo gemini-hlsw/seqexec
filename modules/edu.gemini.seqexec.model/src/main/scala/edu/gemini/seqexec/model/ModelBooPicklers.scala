@@ -4,6 +4,7 @@
 package edu.gemini.seqexec.model
 
 import boopickle.Default._
+// import boopickle.PicklerHelper
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.model.events.SeqexecEvent._
@@ -15,8 +16,8 @@ import java.time.Instant
   * Boopickle can auto derived encoders but it is preferred to make
   * them explicitly
   */
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
-trait ModelBooPicklers {
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
+object ModelBooPicklers {
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
   implicit val sequenceStatePickler = compositePickler[SequenceState]

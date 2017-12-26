@@ -9,6 +9,7 @@ import java.time.Instant
 import diode.util.RunAfterJS
 import diode.{Action, ModelRW, NoAction, Effect, ActionHandler, ActionResult}
 import diode.data.{Pending, Pot, Ready}
+import boopickle.DefaultBasic._
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
@@ -25,7 +26,6 @@ import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 
 import org.scalajs.dom._
-import boopickle.Default._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
@@ -353,7 +353,9 @@ object handlers {
     * Handles the WebSocket connection and performs reconnection if needed
     */
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers with ModelBooPicklers {
+  class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers {
+    import ModelBooPicklers._
+
     private implicit val runner = new RunAfterJS
 
     private val logger = Logger.getLogger(this.getClass.getSimpleName)
