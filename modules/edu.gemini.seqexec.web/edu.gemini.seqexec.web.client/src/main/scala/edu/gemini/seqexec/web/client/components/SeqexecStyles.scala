@@ -316,11 +316,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
+  val logArea: StyleA = style(
+    marginBottom(3.em) // Matches the height of the footer
+  )
+
   val footerSegment: StyleA = style("ui.footer")(
     position.fixed,
     bottom(0.px),
     width(100.%%),
     marginBottom(0.px),
+    marginTop(0.px),
     backgroundColor(c"#F5F5F5")
   )
 

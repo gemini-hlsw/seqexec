@@ -90,7 +90,8 @@ object SeqexecMain {
           ),
           <.div(
             ^.cls := "ui row",
-            SeqexecStyles.shorterRow,
+            // Add margin to avoid covering the footer
+            SeqexecStyles.logArea,
             logConnect(l => LogArea(p.site, l))
           )
         ),
