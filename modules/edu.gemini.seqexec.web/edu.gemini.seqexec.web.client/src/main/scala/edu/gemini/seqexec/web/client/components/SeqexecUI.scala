@@ -75,11 +75,11 @@ object SeqexecMain {
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
             <.div(
-              ^.cls := "ten wide column",
+              ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
               QueueTableSection(p.ctl)
             ),
             <.div(
-              ^.cls := "six wide column",
+              ^.cls := "six wide column tablet computer only",
               headerSideBarConnect(HeadersSideBar.apply)
             )
           ),
@@ -90,7 +90,8 @@ object SeqexecMain {
           ),
           <.div(
             ^.cls := "ui row",
-            SeqexecStyles.shorterRow,
+            // Add margin to avoid covering the footer
+            SeqexecStyles.logArea,
             logConnect(l => LogArea(p.site, l))
           )
         ),
