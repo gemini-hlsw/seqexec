@@ -82,9 +82,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueListPane: StyleA = style (
-    maxHeight(15.45.em),
-    minHeight(15.45.em),
-    marginTop(0.px).important
+    marginTop(0.px).important,
+    media.only.screen.maxWidth(767.px)(
+      maxHeight(10.1.em),
+      minHeight(10.1.em)
+    ),
+    media.only.screen.minWidth(767.px)(
+      maxHeight(15.45.em),
+      minHeight(15.45.em)
+    )
   )
 
   val stepsListPane: StyleA = style (
@@ -326,7 +332,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(100.%%),
     marginBottom(0.px),
     marginTop(0.px),
-    backgroundColor(c"#F5F5F5")
+    backgroundColor(c"#F5F5F5"),
+    borderRadius.unset
   )
 
   val stepsTable: StyleA = style(
