@@ -42,7 +42,8 @@ to poke around with the database on the commandline. For real work I recommend a
 
 ### Generating Enumerated Types
 
-There are many enumerated types in the database, represented by tables named `e_whatever`. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files. This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
+There are many enumerated types in the database, represented by tables named `e_whatever`. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files.
+This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
 code in the `sql` project. In any case, you can [re]-generate the enumerated types thus:
 
 ```
@@ -54,7 +55,6 @@ The source files appear in `modules/core/shared/src/main/scala/gem/enum`.
 ### Generating Schema Documentation
 
 You can do `sbt schemaSpy` to generate a little website about the database using [SchemaSpy](http://schemaspy.org/). It will appear in `modules/sql/target/schemaspy`.
-
 
 ### Importing
 
@@ -156,4 +156,16 @@ If you need to update the schema you can just make changes locally and then trun
 ```
 psql -c "truncate log; truncate program cascade; delete from gem_user where id != 'root'" -d gem -U postgres
 pg_dump -U postgres -d gem > create.sql
+```
+
+### Trouble shooting
+
+* If you see this message when setting up the db for the first time:
+```
+ERROR: must be owner of extension plpgsql
+```
+
+Assign super user privileges to postgres
+```
+alter role postgres superuser;
 ```
