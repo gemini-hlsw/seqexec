@@ -8,7 +8,7 @@ import doobie._, doobie.implicits._
 import shapeless.record._
 
 object GpiEnums {
-  // import Angle.Arcseconds
+  import EnumRefs._
 
   val enums: List[ConnectionIO[EnumDef]] =
     List(
@@ -83,9 +83,9 @@ object GpiEnums {
         sql"""SELECT id, id tag, short_name, long_name, value FROM e_gpi_cassegrain""".query[(String, E)]
       },
 
-      EnumDef.fromQuery("GpiObservigMode", "GPI ObservingMode") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
-        sql"""SELECT id, id tag, short_name, long_name FROM e_gpi_observing_mode""".query[(String, E)]
+      EnumDef.fromQuery("GpiObservingMode", "GPI ObservingMode") {
+        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'filter -> Option[EnumRef['GpiFilter]], 'filterIterable -> Boolean, 'apodizer -> Option[EnumRef['GpiApodizer]], 'fpm -> Option[EnumRef['GpiFPM]], 'lyot -> Option[EnumRef['GpiLyot]], 'brightLimitPrism -> Option[Double], 'brightLimitWollaston -> Option[Double], 'obsolete  -> Boolean`.T
+        sql"""SELECT id, id tag, short_name, long_name, filter, filter_iterable, apodizer, fpm, lyot, bright_limit_prism, bright_limit_wollaston, obsolete FROM e_gpi_observing_mode""".query[(String, E)]
       }
 
     )

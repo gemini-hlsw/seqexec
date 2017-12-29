@@ -348,7 +348,7 @@ CREATE TABLE e_gpi_observing_mode (
   lyot                    identifier    REFERENCES e_gpi_lyot,
   bright_limit_prism      numeric(4,3)  NULL,
   bright_limit_wollaston  numeric(4,3)  NULL,
-  corresponding_h_mode    identifier    REFERENCES e_gpi_observing_mode,
+  corresponding_h_mode    identifier    REFERENCES e_gpi_observing_mode, -- To avoid self references, null its assumed to point to itsel	f
   obsolete                boolean       NOT NULL
 );
 
@@ -361,26 +361,26 @@ ALTER TABLE e_gpi_observing_mode OWNER TO postgres;
 COPY e_gpi_observing_mode(id, short_name, long_name, filter, filter_iterable, apodizer, fpm, lyot, bright_limit_prism, bright_limit_wollaston, corresponding_h_mode, obsolete) FROM stdin;
 CORON_Y_BAND	Coronograph Y-band	Coronograph Y-band	Y	false	APOD_Y	FPM_Y	LYOT_080m12_03	0.5	3.0	CORON_H_BAND	f
 CORON_J_BAND	Coronograph J-band	Coronograph J-band	J	false	APOD_J	FPM_J	LYOT_080m12_04	0.5	3.0	CORON_H_BAND	f
-CORON_H_BAND	Coronograph H-band	Coronograph H-band	H	false	APOD_H	FPM_H	LYOT_080m12_04	0.5	3.0	CORON_H_BAND	f
+CORON_H_BAND	Coronograph H-band	Coronograph H-band	H	false	APOD_H	FPM_H	LYOT_080m12_04	0.5	3.0	\N	f
 CORON_K1_BAND	Coronograph K1-band	Coronograph K1-band	K1	false	APOD_K1	FPM_K1	LYOT_080m12_06_03	0.5	3.0	CORON_H_BAND	f
 CORON_K2_BAND	Coronograph K2-band	Coronograph K2-band	K2	false	APOD_K2	FPM_K1	LYOT_080m12_07	0.5	3.0	CORON_H_BAND	f
-H_STAR	H_STAR	H_STAR	H	false	APOD_STAR	FPM_H	LYOT_080m12_03	\N	\N	H_STAR	t
-H_LIWA	H_LIWA	H_LIWA	H	false	APOD_HL	FPM_K1	LYOT_080m12_04	\N	\N	H_LIWA	f
+H_STAR	H_STAR	H_STAR	H	false	APOD_STAR	FPM_H	LYOT_080m12_03	\N	\N	\N	t
+H_LIWA	H_LIWA	H_LIWA	H	false	APOD_HL	FPM_K1	LYOT_080m12_04	\N	\N	\N	f
 DIRECT_Y_BAND	Y direct	Y direct	Y	true	CLEAR	SCIENCE	OPEN	5.5	7.5	DIRECT_H_BAND	f
 DIRECT_J_BAND	J direct	J direct	J	true	CLEAR	SCIENCE	OPEN	5.5	7.5	DIRECT_H_BAND	f
-DIRECT_H_BAND	H direct	H direct	H	true	CLEAR	SCIENCE	OPEN	5.5	7.5	DIRECT_H_BAND	f
+DIRECT_H_BAND	H direct	H direct	H	true	CLEAR	SCIENCE	OPEN	5.5	7.5	\N	f
 DIRECT_K1_BAND	K1 direct	K1 direct	K1	true	CLEAR	SCIENCE	OPEN	5.5	7.5	DIRECT_H_BAND	f
 DIRECT_K2_BAND	K2 direct	K2 direct	K2	true	CLEAR	SCIENCE	OPEN	5.5	7.5	DIRECT_H_BAND	f
 NRM_Y	Non Redundant Mask Y	Non Redundant Mask Y	Y	true	NRM	SCIENCE	OPEN	\N	\N	NRM_H	f
 NRM_J	Non Redundant Mask J	Non Redundant Mask J	J	true	NRM	SCIENCE	OPEN	\N	\N	NRM_H	f
-NRM_H	Non Redundant Mask H	Non Redundant Mask H	H	true	NRM	SCIENCE	OPEN	\N	\N	NRM_H	f
+NRM_H	Non Redundant Mask H	Non Redundant Mask H	H	true	NRM	SCIENCE	OPEN	\N	\N	\N	f
 NRM_K1	Non Redundant Mask K1	Non Redundant Mask K1	K1	true	NRM	SCIENCE	OPEN	\N	\N	NRM_H	f
 NRM_K2	Non Redundant Mask K2	Non Redundant Mask K2	K2	true	NRM	SCIENCE	OPEN	\N	\N	NRM_H	f
-DARK	Dark	Dark	H	false	APOD_H	FPM_H	BLANK	0.5	3.0	DARK	f
-UNBLOCKED_Y	Y Unblocked	Y Unblocked	Y	false	APOD_Y	SCIENCE	LYOT_080m12_03	4.0	6.5	UNBLOCKED_H	f
-UNBLOCKED_J	J Unblocked	J Unblocked	J	false	APOD_J	SCIENCE	LYOT_080m12_04	4.0	6.5	UNBLOCKED_J	f
-UNBLOCKED_H	H Unblocked	H Unblocked	H	false	APOD_H	SCIENCE	LYOT_080m12_04	4.0	6.5	UNBLOCKED_H	f
-UNBLOCKED_K1	K1 Unblocked	K1 Unblocked	K1	false	APOD_K1	SCIENCE	LYOT_080m12_06_03	4.0	6.5	UNBLOCKED_K1	f
-UNBLOCKED_K2	K2 Unblocked	K2 Unblocked	K2	false	APOD_K2	SCIENCE	LYOT_080m12_07	4.0	6.5	UNBLOCKED_K2	f
-NONSTANDARD	Nonstandard	Nonstandard	\N	false	\N	\N	\N	\N	\N	NONSTANDARD	f
+DARK	Dark	Dark	H	false	APOD_H	FPM_H	BLANK	0.5	3.0	\N	f
+UNBLOCKED_Y	Y Unblocked	Y Unblocked	Y	false	APOD_Y	SCIENCE	LYOT_080m12_03	4.0	6.5	\N	f
+UNBLOCKED_J	J Unblocked	J Unblocked	J	false	APOD_J	SCIENCE	LYOT_080m12_04	4.0	6.5	\N	f
+UNBLOCKED_H	H Unblocked	H Unblocked	H	false	APOD_H	SCIENCE	LYOT_080m12_04	4.0	6.5	\N	f
+UNBLOCKED_K1	K1 Unblocked	K1 Unblocked	K1	false	APOD_K1	SCIENCE	LYOT_080m12_06_03	4.0	6.5	\N	f
+UNBLOCKED_K2	K2 Unblocked	K2 Unblocked	K2	false	APOD_K2	SCIENCE	LYOT_080m12_07	4.0	6.5	\N	f
+NONSTANDARD	Nonstandard	Nonstandard	\N	false	\N	\N	\N	\N	\N	\N	f
 \.
