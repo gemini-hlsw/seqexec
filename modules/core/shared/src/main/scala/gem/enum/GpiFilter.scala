@@ -16,17 +16,17 @@ sealed abstract class GpiFilter(
   val tag: String,
   val shortName: String,
   val longName: String,
-  val band: Option[gem.enum.MagnitudeBand],
+  val band: MagnitudeBand,
   val obsolete: Boolean
 ) extends Product with Serializable
 
 object GpiFilter {
 
-  /** @group Constructors */ case object Y extends GpiFilter("Y", "Y", "Y", Some(gem.enum.MagnitudeBand.Y), false)
-  /** @group Constructors */ case object J extends GpiFilter("J", "J", "J", Some(gem.enum.MagnitudeBand.J), false)
-  /** @group Constructors */ case object H extends GpiFilter("H", "H", "H", Some(gem.enum.MagnitudeBand.H), false)
-  /** @group Constructors */ case object K1 extends GpiFilter("K1", "K1", "K1", Some(gem.enum.MagnitudeBand.K), false)
-  /** @group Constructors */ case object K2 extends GpiFilter("K2", "K2", "K2", Some(gem.enum.MagnitudeBand.K), false)
+  /** @group Constructors */ case object Y extends GpiFilter("Y", "Y", "Y", MagnitudeBand.Y, false)
+  /** @group Constructors */ case object J extends GpiFilter("J", "J", "J", MagnitudeBand.J, false)
+  /** @group Constructors */ case object H extends GpiFilter("H", "H", "H", MagnitudeBand.H, false)
+  /** @group Constructors */ case object K1 extends GpiFilter("K1", "K1", "K1", MagnitudeBand.K, false)
+  /** @group Constructors */ case object K2 extends GpiFilter("K2", "K2", "K2", MagnitudeBand.K, false)
 
   /** All members of GpiFilter, in canonical order. */
   val all: List[GpiFilter] =

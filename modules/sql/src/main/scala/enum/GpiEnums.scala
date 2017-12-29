@@ -19,7 +19,7 @@ object GpiEnums {
       },
 
       EnumDef.fromQuery("GpiFilter", "GPI Filter") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'band -> Option[MagnitudeBand], 'obsolete -> Boolean`.T
+        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'band -> EnumRef['MagnitudeBand], 'obsolete -> Boolean`.T
         sql"""SELECT id, id tag, short_name, long_name, band, obsolete FROM e_gpi_filter""".query[(String, E)]
       },
 
