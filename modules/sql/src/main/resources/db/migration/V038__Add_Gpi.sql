@@ -27,7 +27,7 @@ CREATE TABLE e_gpi_filter (
   id          identifier  PRIMARY KEY,
   short_name  text        NOT NULL,
   long_name   text        NOT NULL,
-  band        identifier  REFERENCES e_magnitude_band,
+  band        identifier  NOT NULL REFERENCES e_magnitude_band,
   obsolete    boolean     NOT NULL
 );
 
