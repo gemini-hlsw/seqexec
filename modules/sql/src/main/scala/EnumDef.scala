@@ -39,28 +39,36 @@ object EnumDef {
     implicit def caseOptionWavelengthNm[S <: Symbol] = at[(S, Option[Wavelength.Nm])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
     implicit def caseOptionWavelengthUm[S <: Symbol] = at[(S, Option[Wavelength.Um])] { case (s, _) => s"  val ${s.name}: Option[gem.math.Wavelength]" }
 
-    implicit def caseMagnitudeSystem  [S <: Symbol] = at[(S, MagnitudeSystem)  ] { case (s, _) => s"  val ${s.name}: gem.enum.MagnitudeSystem"}
+    implicit def caseMagnitudeSystem  [S <: Symbol] = at[(S, MagnitudeSystem)  ] { case (s, _) => s"  val ${s.name}: gem.enum.MagnitudeSystem" }
+    implicit def caseMagnitudeBand      [S <: Symbol] = at[(S, MagnitudeBand)    ] { case (s, _) => s"  val ${s.name}: gem.enum.MagnitudeBand" }
+    implicit def caseOptionMagnitudeBand[S <: Symbol] = at[(S, Option[MagnitudeBand])] { case (s, _) => s"  val ${s.name}: Option[gem.enum.MagnitudeBand]" }
     // scalastyle:on method.type
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
   protected[sql] object ToLiteral extends Poly1 {
-    implicit val caseString       = at[String  ](a => "\"" + a + "\"")
-    implicit val caseInt          = at[Int     ](a => a.toString)
-    implicit val caseBoolean      = at[Boolean ](a => a.toString)
-    implicit val caseDouble       = at[Double  ](a => a.toString)
-    implicit val caseDuration     = at[Duration](a => s"java.time.Duration.ofMillis(${a.toMillis})")
-    implicit val caseArcseconds   = at[Arcseconds](a => s"gem.math.Angle.fromDoubleArcseconds(${a.toArcsecs})")
-    implicit val caseDegrees      = at[Degrees](a => s"gem.math.Angle.fromDoubleDegrees(${a.toDegrees})")
-    implicit val caseZoneId       = at[ZoneId  ](a => s"""java.time.ZoneId.of("${a.toString}")""")
+    implicit val caseString       = at[String     ](a => "\"" + a + "\"")
+    implicit val caseInt          = at[Int        ](a => a.toString)
+    implicit val caseBoolean      = at[Boolean    ](a => a.toString)
+    implicit val caseDouble       = at[Double     ](a => a.toString)
+    implicit val caseBigDecimal   = at[BigDecimal ](a => a.toString)
+    implicit val caseDuration     = at[Duration   ](a => s"java.time.Duration.ofMillis(${a.toMillis})")
+    implicit val caseArcseconds   = at[Arcseconds ](a => s"gem.math.Angle.fromDoubleArcseconds(${a.toArcsecs})")
+    implicit val caseDegrees      = at[Degrees    ](a => s"gem.math.Angle.fromDoubleDegrees(${a.toDegrees})")
+    implicit val caseZoneId       = at[ZoneId     ](a => s"""java.time.ZoneId.of("${a.toString}")""")
 
-    implicit val caseWavelengthNm = at[Wavelength.Nm ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
-    implicit val caseWavelengthUm = at[Wavelength.Um ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
+    implicit val caseWavelengthNm    = at[Wavelength.Nm  ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
+    implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"gem.math.Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
     implicit val caseMagnitudeSystem = at[MagnitudeSystem](a => s"gem.enum.MagnitudeSystem.${a.id}")
 
     implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
-    implicit val caseOptionDegrees = at[Option[Degrees]](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleDegrees(${aʹ.toDegrees}))"))
-    implicit val caseOptionDouble = at[Option[Double]](a => a.fold("None")(aʹ => s"Some($aʹ)"))
+    implicit val caseOptionDegrees    = at[Option[Degrees]   ](a => a.fold("Option.empty[gem.math.Angle]")(aʹ => s"Some(gem.math.Angle.fromDoubleDegrees(${aʹ.toDegrees}))"))
+    implicit val caseOptionDouble     = at[Option[Double]    ](a => a.fold("None")(aʹ => s"Some($aʹ)"))
+
+    implicit val caseMagnitudeBand       = at[MagnitudeBand        ](a => s"gem.enum.MagnitudeBand.${a.id}")
+    implicit val caseOptionMagnitudeBand = at[Option[MagnitudeBand]](a =>
+      a.fold("None")(aʹ => s"Some(gem.enum.MagnitudeBand.${aʹ.id})")
+    )
 
     implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
     implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
