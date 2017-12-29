@@ -45,6 +45,7 @@ object EnumDef {
     implicit def caseOptionMagnitudeBand[S <: Symbol] = at[(S, Option[MagnitudeBand])] { case (s, _) => s"  val ${s.name}: Option[gem.enum.MagnitudeBand]" }
 
     implicit def caseEnumRef[T <: Symbol: ValueOf, S <: Symbol]       = at[(S, EnumRef[T])        ] { case (s, _) => s"  val ${s.name}: ${valueOf[T].name}" }
+    implicit def caseLazyEnumRef[T <: Symbol: ValueOf, S <: Symbol]   = at[(S, LazyEnumRef[T])    ] { case (s, _) => s"  val ${s.name}: cats.Eval[${valueOf[T].name}]" }
     implicit def caseOptionEnumRef[T <: Symbol: ValueOf, S <: Symbol] = at[(S, Option[EnumRef[T]])] { case (s, _) => s"  val ${s.name}: Option[${valueOf[T].name}]" }
     // scalastyle:on method.type
   }
@@ -78,7 +79,8 @@ object EnumDef {
     implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
 
     // scalastyle:off method.type
-    implicit def caseEnumRef[T <: Symbol: ValueOf]       = at[EnumRef[T]        ](a => s"${valueOf[T].name}.${a.tag}.tag")
+    implicit def caseEnumRef[T <: Symbol: ValueOf]       = at[EnumRef[T]        ](a => s"${valueOf[T].name}.${a.tag}")
+    implicit def caseLazyEnumRef[T <: Symbol: ValueOf]   = at[LazyEnumRef[T]        ](a => s"""cats.Eval.later(${valueOf[T].name}.unsafeFromTag("${a.tag}"))""")
     implicit def caseOptionEnumRef[T <: Symbol: ValueOf] = at[Option[EnumRef[T]]](a => a.fold(s"Option.empty[${valueOf[T].name}]")(aʹ => s"Some(${valueOf[T].name}.${aʹ.tag})"))
     // scalastyle:on method.type
   }
