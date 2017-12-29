@@ -7,4 +7,5 @@ package gem.sql
  *  enums refering to others like Gpi Observing Mode. */
 object EnumRefs {
   final case class EnumRef[T <: Symbol](tag: String)
+  final case class LazyEnumRef[T <: Symbol](tag: String)
 }
