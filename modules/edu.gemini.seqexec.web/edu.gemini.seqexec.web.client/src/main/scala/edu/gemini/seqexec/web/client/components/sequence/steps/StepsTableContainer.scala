@@ -423,7 +423,8 @@ object StepsTableContainer {
     def render(p: Props, s: State): VdomTagOf[Div] = {
       <.div(
         ^.cls := "ui row scroll pane",
-        SeqexecStyles.stepsListPane,
+        SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
+        SeqexecStyles.stepsListPane.unless(p.status.isLogged),
         //^.ref := scrollRef,
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
