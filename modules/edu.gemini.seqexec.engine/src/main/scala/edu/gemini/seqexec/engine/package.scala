@@ -395,7 +395,7 @@ package object engine {
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
-      case Paused(id, i, r)           => Logger.debug("Engine: Action paused")  *> actionPause(id, i, r)
+      case Paused(id, i, r)        => Logger.debug("Engine: Action paused")  *> actionPause(id, i, r)
       case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
       case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)

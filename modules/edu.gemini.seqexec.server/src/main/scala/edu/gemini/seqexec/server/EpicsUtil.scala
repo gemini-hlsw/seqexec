@@ -142,6 +142,8 @@ object ObserveCommand {
   object Paused extends Result
   object Stopped extends Result
   object Aborted extends Result
+
+  implicit val equal: Equal[Result] = Equal.equalA[Result]
 }
 
 object EpicsCodex {

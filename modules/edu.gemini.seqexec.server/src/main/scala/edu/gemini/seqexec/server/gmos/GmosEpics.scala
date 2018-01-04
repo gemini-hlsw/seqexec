@@ -70,24 +70,38 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::pause"))
   }
 
+  private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::stop"))
+  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
+      GMOS_TOP + "apply", GMOS_TOP + "applyC", GMOS_TOP + "dc:observeC", GMOS_TOP + "stop", GMOS_TOP + "abort", ""))
+
   object continueCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::continue"))
-    override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::continueCmd",
-      GMOS_TOP + "apply", GMOS_TOP + "applyC", GMOS_TOP + "dc:observeC", GMOS_TOP + "stop", GMOS_TOP + "abort", ""))
+    override protected val os: Option[CaApplySender] = observeAS
   }
 
   object stopCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::stop"))
+    override protected val cs: Option[CaCommandSender] = stopCS
   }
 
+  object stopAndWaitCmd extends ObserveCommand {
+    override protected val cs: Option[CaCommandSender] = stopCS
+    override protected val os: Option[CaApplySender] = observeAS
+  }
+
+  private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::abort"))
+
   object abortCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::abort"))
+    override protected val cs: Option[CaCommandSender] = abortCS
+  }
+
+  object abortAndWait extends ObserveCommand {
+    override protected val cs: Option[CaCommandSender] = abortCS
+    override protected val os: Option[CaApplySender] = observeAS
   }
 
   object observeCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
-    override protected val os: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
-      GMOS_TOP + "apply", GMOS_TOP + "applyC", GMOS_TOP + "dc:observeC", GMOS_TOP + "stop", GMOS_TOP + "abort", ""))
+    override protected val os: Option[CaApplySender] = observeAS
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)

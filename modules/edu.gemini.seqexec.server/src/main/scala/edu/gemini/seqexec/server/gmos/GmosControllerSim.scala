@@ -77,11 +77,23 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     TrySeq(())
   } )
 
-  override def resumeObserve: SeqAction[ObserveCommand.Result] = EitherT( Task {
+  override def resumePaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
       Log.debug(s"Simulate resuming Gmos $name observation")
       pauseFlag.set(false)
       observeTic(false, false, false, 5000)
     } )
+
+  override def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
+    Log.debug(s"Simulate stopping Gmos $name paused observation")
+    pauseFlag.set(false)
+    observeTic(true, false, false, 1000)
+  } )
+
+  override def abortPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
+    Log.debug(s"Simulate aborting Gmos $name paused observation")
+    pauseFlag.set(false)
+    observeTic(false, true, false, 5000)
+  } )
 }
 
 object GmosControllerSim {
