@@ -10,7 +10,7 @@ import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.DhsClient.KeywordBag
-import edu.gemini.seqexec.server.tcs.{TargetKeywordsReader, TcsKeywordsReader, Tcs}
+import edu.gemini.seqexec.server.tcs.{TargetKeywordsReader, Tcs, TcsController, TcsKeywordsReader}
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
@@ -216,7 +216,8 @@ class StandardHeader(
   hs: DhsClient,
   obsReader: ObsKeywordsReader,
   tcsReader: TcsKeywordsReader,
-  stateReader: StateKeywordsReader) extends Header {
+  stateReader: StateKeywordsReader,
+  tcsSubsystems: List[TcsController.Subsystem]) extends Header {
 
   import Header._
   import Header.Implicits._
@@ -275,6 +276,16 @@ class StandardHeader(
     case StandardGuideOptions.Value.freeze => "frozen"
   }
 
+  private def optTcsKeyword[A](s: TcsController.Subsystem)(v: SeqAction[A])(implicit d:DefaultValue[A]) : SeqAction[A] =
+    if(tcsSubsystems.contains(s)) v
+    else SeqAction(d.default)
+
+  private def mountTcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.Mount)(v)(d)
+
+  private def m2TcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.M2)(v)(d)
+
+  private def sfTcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.ScienceFold)(v)(d)
+
   private val baseKeywords = List(
     buildString(obsObject.orDefault, "OBJECT"),
     buildString(obsReader.getObsType, "OBSTYPE"),
@@ -285,29 +296,29 @@ class StandardHeader(
     buildString(stateReader.getObserverName, "OBSERVER"),
     buildString(obsReader.getObservatory, "OBSERVAT"),
     buildString(obsReader.getTelescope, "telescope"),
-    buildDouble(tcsReader.getSourceATarget.getParallax.orDefault, "PARALLAX"),
-    buildDouble(tcsReader.getSourceATarget.getRadialVelocity.orDefault, "RADVEL"),
-    buildDouble(tcsReader.getSourceATarget.getEpoch.orDefault, "EPOCH"),
-    buildDouble(tcsReader.getSourceATarget.getEquinox.orDefault, "EQUINOX"),
-    buildDouble(tcsReader.getTrackingEquinox.orDefault, "TRKEQUIN"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getParallax.orDefault), "PARALLAX"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getRadialVelocity.orDefault), "RADVEL"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getEpoch.orDefault), "EPOCH"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getEquinox.orDefault), "EQUINOX"),
+    buildDouble(mountTcsKeyword(tcsReader.getTrackingEquinox.orDefault), "TRKEQUIN"),
     buildString(stateReader.getOperatorName, "SSA"),
-    buildDouble(tcsReader.getSourceATarget.getRA.orDefault, "RA"),
-    buildDouble(tcsReader.getSourceATarget.getDec.orDefault, "DEC"),
-    buildDouble(tcsReader.getElevation.orDefault, "ELEVATIO"),
-    buildDouble(tcsReader.getAzimuth.orDefault, "AZIMUTH"),
-    buildDouble(tcsReader.getCRPositionAngle.orDefault, "CRPA"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getRA.orDefault), "RA"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getDec.orDefault), "DEC"),
+    buildDouble(mountTcsKeyword(tcsReader.getElevation.orDefault), "ELEVATIO"),
+    buildDouble(mountTcsKeyword(tcsReader.getAzimuth.orDefault), "AZIMUTH"),
+    buildDouble(mountTcsKeyword(tcsReader.getCRPositionAngle.orDefault), "CRPA"),
     buildString(tcsReader.getHourAngle.orDefault, "HA"),
     buildString(tcsReader.getLocalTime.orDefault, "LT"),
-    buildString(tcsReader.getTrackingFrame.orDefault, "TRKFRAME"),
-    buildDouble(tcsReader.getTrackingDec.orDefault, "DECTRACK"),
-    buildDouble(tcsReader.getTrackingEpoch.orDefault, "TRKEPOCH"),
-    buildDouble(tcsReader.getTrackingRA.orDefault, "RATRACK"),
-    buildString(tcsReader.getSourceATarget.getFrame.orDefault, "FRAME"),
-    buildDouble(tcsReader.getSourceATarget.getProperMotionDec.orDefault, "PMDEC"),
-    buildDouble(tcsReader.getSourceATarget.getProperMotionRA.orDefault, "PMRA"),
+    buildString(mountTcsKeyword(tcsReader.getTrackingFrame.orDefault), "TRKFRAME"),
+    buildDouble(mountTcsKeyword(tcsReader.getTrackingDec.orDefault), "DECTRACK"),
+    buildDouble(mountTcsKeyword(tcsReader.getTrackingEpoch.orDefault), "TRKEPOCH"),
+    buildDouble(mountTcsKeyword(tcsReader.getTrackingRA.orDefault), "RATRACK"),
+    buildString(mountTcsKeyword(tcsReader.getSourceATarget.getFrame.orDefault), "FRAME"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getProperMotionDec.orDefault), "PMDEC"),
+    buildDouble(mountTcsKeyword(tcsReader.getSourceATarget.getProperMotionRA.orDefault), "PMRA"),
     {
       val x = tcsReader.getSourceATarget.getWavelength.map(_.map(_.length.toAngstroms))
-      buildDouble(x.orDefault, "WAVELENG")
+      buildDouble(mountTcsKeyword(x.orDefault), "WAVELENG")
     },
     buildString(stateReader.getRawImageQuality, "RAWIQ"),
     buildString(stateReader.getRawCloudCover, "RAWCC"),
@@ -318,23 +329,23 @@ class StandardHeader(
     buildString(tcsReader.getCarouselMode.orDefault, "CGUIDMOD"),
     buildString(tcsReader.getUT.orDefault, "UT"),
     buildString(tcsReader.getDate.orDefault, "DATE"),
-    buildString(tcsReader.getM2Baffle.orDefault, "M2BAFFLE"),
-    buildString(tcsReader.getM2CentralBaffle.orDefault, "M2CENBAF"),
+    buildString(m2TcsKeyword(tcsReader.getM2Baffle.orDefault), "M2BAFFLE"),
+    buildString(m2TcsKeyword(tcsReader.getM2CentralBaffle.orDefault), "M2CENBAF"),
     buildString(tcsReader.getST.orDefault, "ST"),
-    buildDouble(tcsReader.getXOffset.orDefault, "XOFFSET"),
-    buildDouble(tcsReader.getYOffset.orDefault, "YOFFSET"),
-    buildDouble(p.orDefault, "POFFSET"),
-    buildDouble(q.orDefault, "QOFFSET"),
-    buildDouble(raoff.orDefault, "RAOFFSET"),
-    buildDouble(decoff.orDefault, "DECOFFSE"),
-    buildDouble(tcsReader.getTrackingRAOffset.orDefault, "RATRGOFF"),
-    buildDouble(tcsReader.getTrackingDecOffset.orDefault, "DECTRGOF"),
-    buildDouble(tcsReader.getInstrumentPA.orDefault, "PA"),
-    buildDouble(tcsReader.getInstrumentAA.orDefault, "IAA"),
-    buildDouble(tcsReader.getSFRotation.orDefault, "SFRT2"),
-    buildDouble(tcsReader.getSFTilt.orDefault, "SFTILT"),
-    buildDouble(tcsReader.getSFLinear.orDefault, "SFLINEAR"),
-    buildString(tcsReader.getAOFoldName.orDefault, "AOFOLD"),
+    buildDouble(mountTcsKeyword(tcsReader.getXOffset.orDefault), "XOFFSET"),
+    buildDouble(mountTcsKeyword(tcsReader.getYOffset.orDefault), "YOFFSET"),
+    buildDouble(mountTcsKeyword(p.orDefault), "POFFSET"),
+    buildDouble(mountTcsKeyword(q.orDefault), "QOFFSET"),
+    buildDouble(mountTcsKeyword(raoff.orDefault), "RAOFFSET"),
+    buildDouble(mountTcsKeyword(decoff.orDefault), "DECOFFSE"),
+    buildDouble(mountTcsKeyword(tcsReader.getTrackingRAOffset.orDefault), "RATRGOFF"),
+    buildDouble(mountTcsKeyword(tcsReader.getTrackingDecOffset.orDefault), "DECTRGOF"),
+    buildDouble(mountTcsKeyword(tcsReader.getInstrumentPA.orDefault), "PA"),
+    buildDouble(mountTcsKeyword(tcsReader.getInstrumentAA.orDefault), "IAA"),
+    buildDouble(sfTcsKeyword(tcsReader.getSFRotation.orDefault), "SFRT2"),
+    buildDouble(sfTcsKeyword(tcsReader.getSFTilt.orDefault), "SFTILT"),
+    buildDouble(sfTcsKeyword(tcsReader.getSFLinear.orDefault), "SFLINEAR"),
+    buildString(mountTcsKeyword(tcsReader.getAOFoldName.orDefault), "AOFOLD"),
     buildString(obsReader.getPwfs1Guide.map(decodeGuide), "PWFS1_ST"),
     buildString(obsReader.getPwfs2Guide.map(decodeGuide), "PWFS2_ST"),
     buildString(obsReader.getOiwfsGuide.map(decodeGuide), "OIWFS_ST"),
@@ -380,7 +391,7 @@ class StandardHeader(
       case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).toList.map(buildDouble(_, keyword))
     }
     if (!requested.isEmpty) sendKeywords(id, inst, hs, requested)
-    else SeqAction(())
+    else SeqAction.void
   }
 
   // scalastyle:of
@@ -402,7 +413,7 @@ class StandardHeader(
         buildDouble(target.getProperMotionRA.orDefault, baseName + "APMRA"),
         buildDouble(target.getParallax.orDefault, baseName + "APARAL")
       ) ++ extras)
-      else SeqAction(())
+      else SeqAction.void
     }
 
     def standardGuiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String,
