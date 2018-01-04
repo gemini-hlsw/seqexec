@@ -9,7 +9,6 @@ import cats.implicits._
 import gem.parser.EpochParsers
 import gem.syntax.parser._
 import java.time._
-import scala.math.floor
 
 /**
  * An epoch, the astronomer's equivalent of `Instant`, based on a fractional year in some temporal
@@ -110,18 +109,8 @@ object Epoch {
      * Convert a `LocalDateTime` to a fractional Julian day.
      * @see The Wikipedia [[https://en.wikipedia.org/wiki/Julian_day article]]
      */
-    def toJulianDay(dt: LocalDateTime): Double = {
-      val a = floor((14.0 - dt.getMonthValue) / 12.0)
-      val y = dt.getYear + 4800.0 - a
-      val m = dt.getMonthValue + 12 * a - 3.0
-      dt.getDayOfMonth +
-      floor((153.0 * m + 2.0) / 5.0) +
-      365 * y +
-      floor(y / 4.0) -
-      floor(y / 100.0) +
-      floor(y / 400.0) -
-      32045.0
-    }
+    def toJulianDay(dt: LocalDateTime): Double =
+      JulianDate.ofLocalDateTime(dt).dayNumber.toDouble
 
     implicit val SchemeEq: Eq[Scheme] =
       Eq.fromUniversalEquals
