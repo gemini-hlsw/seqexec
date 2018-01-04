@@ -44,6 +44,9 @@ object EnumDef {
     implicit def caseMagnitudeBand      [S <: Symbol] = at[(S, MagnitudeBand)        ] { case (s, _) => s"  val ${s.name}: gem.enum.MagnitudeBand" }
     implicit def caseOptionMagnitudeBand[S <: Symbol] = at[(S, Option[MagnitudeBand])] { case (s, _) => s"  val ${s.name}: Option[gem.enum.MagnitudeBand]" }
 
+    implicit def caseMagnitudeValue      [S <: Symbol] = at[(S, MagnitudeValue)        ] { case (s, _) => s"  val ${s.name}: gem.math.MagnitudeValue" }
+    implicit def caseOptionMagnitudeValue[S <: Symbol] = at[(S, Option[MagnitudeValue])] { case (s, _) => s"  val ${s.name}: Option[gem.math.MagnitudeValue]" }
+
     implicit def caseEnumRef[T <: Symbol: ValueOf, S <: Symbol]       = at[(S, EnumRef[T])        ] { case (s, _) => s"  val ${s.name}: ${valueOf[T].name}" }
     implicit def caseLazyEnumRef[T <: Symbol: ValueOf, S <: Symbol]   = at[(S, LazyEnumRef[T])    ] { case (s, _) => s"  val ${s.name}: cats.Eval[${valueOf[T].name}]" }
     implicit def caseOptionEnumRef[T <: Symbol: ValueOf, S <: Symbol] = at[(S, Option[EnumRef[T]])] { case (s, _) => s"  val ${s.name}: Option[${valueOf[T].name}]" }
@@ -71,9 +74,10 @@ object EnumDef {
     implicit val caseOptionDouble     = at[Option[Double]    ](a => a.fold("None")(aʹ => s"Some($aʹ)"))
 
     implicit val caseMagnitudeBand       = at[MagnitudeBand        ](a => s"gem.enum.MagnitudeBand.${a.id}")
-    implicit val caseOptionMagnitudeBand = at[Option[MagnitudeBand]](a =>
-      a.fold("None")(aʹ => s"Some(gem.enum.MagnitudeBand.${aʹ.id})")
-    )
+    implicit val caseOptionMagnitudeBand = at[Option[MagnitudeBand]](a => a.fold("None")(aʹ => s"Some(gem.enum.MagnitudeBand.${aʹ.id})"))
+
+    implicit val caseMagnitudeValue       = at[MagnitudeValue        ](a => s"gem.math.MagnitudeValue(${a.toInt})")
+    implicit val caseOptionMagnitudeValue = at[Option[MagnitudeValue]](a => a.fold("Option.empty[gem.math.MagnitudeValue]")(aʹ => s"Some(gem.math.MagnitudeValue(${aʹ.toInt}))"))
 
     implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
     implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))

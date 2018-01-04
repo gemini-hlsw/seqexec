@@ -27,6 +27,10 @@ package object sql {
   implicit val ZoneIdMeta: Meta[ZoneId] =
     Meta[String].xmap(ZoneId.of, _.toString)
 
-  implicit val MagnitudSystem: Meta[MagnitudeSystem] =
+  implicit val MagnitudSystemMeta: Meta[MagnitudeSystem] =
     Meta[String].xmap(MagnitudeSystem, _.id)
+
+  implicit val MagnitudeValueMeta: Meta[MagnitudeValue] =
+    Meta[BigDecimal].xmap(MagnitudeValue.apply, _.value)
+
 }
