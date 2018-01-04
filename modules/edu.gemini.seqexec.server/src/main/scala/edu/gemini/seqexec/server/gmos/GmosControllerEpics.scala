@@ -247,12 +247,26 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- GmosEpics.instance.pauseCmd.post
   } yield ()
 
-  override def resumeObserve: SeqAction[ObserveCommand.Result] = for {
-      _ <- EitherT(Task(Log.info("Resume Gmos observation").right))
-      _ <- GmosEpics.instance.continueCmd.mark
-      ret <- GmosEpics.instance.continueCmd.post
-      _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
-    } yield ret
+  override def resumePaused: SeqAction[ObserveCommand.Result] = for {
+    _ <- EitherT(Task(Log.info("Resume Gmos observation").right))
+    _ <- GmosEpics.instance.continueCmd.mark
+    ret <- GmosEpics.instance.continueCmd.post
+    _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
+  } yield ret
+
+  override def stopPaused = for {
+    _ <- EitherT(Task(Log.info("Stop Gmos paused observation").right))
+    _ <- GmosEpics.instance.stopAndWaitCmd.mark
+    ret <- GmosEpics.instance.stopAndWaitCmd.post
+    _ <- EitherT(Task(Log.info("Completed stopping Gmos observation").right))
+  } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
+
+  override def abortPaused = for {
+    _ <- EitherT(Task(Log.info("Abort Gmos paused observation").right))
+    _ <- GmosEpics.instance.abortAndWait.mark
+    ret <- GmosEpics.instance.abortAndWait.post
+    _ <- EitherT(Task(Log.info("Completed aborting Gmos observation").right))
+  } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 }
 
 object GmosControllerEpics {

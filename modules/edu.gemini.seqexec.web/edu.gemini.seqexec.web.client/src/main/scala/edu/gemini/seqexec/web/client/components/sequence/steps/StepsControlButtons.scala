@@ -94,9 +94,9 @@ object StepsControlButtons {
           case PauseObservation            =>
             Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"), onClick = $.runState(handleObsPause(p.id, p.step.id))))
           case StopObservation             =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), disabled = s.stopRequested || SequenceState.internalStopRequested(p.sequenceState), onClick = $.runState(handleStop(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = $.runState(handleStop(p.id, p.step.id))))
           case AbortObservation            =>
-            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), disabled = s.stopRequested || SequenceState.internalStopRequested(p.sequenceState), onClick = $.runState(handleAbort(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = $.runState(handleAbort(p.id, p.step.id))))
           case ResumeObservation           =>
             Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure"), onClick = $.runState(handleObsResume(p.id, p.step.id))))
           // Hamamatsu operations

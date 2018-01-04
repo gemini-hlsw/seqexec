@@ -133,11 +133,11 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
   def stopObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
-    Event.actionStop(seqId.stringValue, translator.stopObserve)
+    Event.actionStop(seqId.stringValue, translator.stopObserve(seqId.stringValue))
   )
 
   def abortObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
-    Event.actionStop(seqId.stringValue, translator.abortObserve)
+    Event.actionStop(seqId.stringValue, translator.abortObserve(seqId.stringValue))
   )
 
   def pauseObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
@@ -145,7 +145,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   )
 
   def resumeObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
-    Event.getSeqState(seqId.stringValue, translator.resumeObserve(seqId.stringValue))
+    Event.getSeqState(seqId.stringValue, translator.resumePaused(seqId.stringValue))
   )
 
   private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {

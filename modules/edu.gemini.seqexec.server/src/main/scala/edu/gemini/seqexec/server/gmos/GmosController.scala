@@ -39,7 +39,12 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def pauseObserve: SeqAction[Unit]
 
-  def resumeObserve: SeqAction[ObserveCommand.Result]
+  def resumePaused: SeqAction[ObserveCommand.Result]
+
+  def stopPaused: SeqAction[ObserveCommand.Result]
+
+  def abortPaused: SeqAction[ObserveCommand.Result]
+
 }
 
 object GmosController {

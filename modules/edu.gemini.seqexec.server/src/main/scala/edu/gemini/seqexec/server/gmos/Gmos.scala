@@ -38,7 +38,9 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     StopObserveCmd(controller.stopObserve),
     AbortObserveCmd(controller.abortObserve),
     PauseObserveCmd(controller.pauseObserve),
-    ContinueObserveCmd(controller.resumeObserve)
+    ContinuePausedCmd(controller.resumePaused),
+    StopPausedCmd(controller.stopPaused),
+    AbortPausedCmd(controller.abortPaused)
   )
 
   val Log: Logger = getLogger

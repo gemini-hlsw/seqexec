@@ -227,37 +227,40 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     else none
   }
 
-  def stopObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
+  def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd(
+    seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
-      case Controllable(StopObserveCmd(stop), _, _, _) => Some(Process.eval(stop.run.map{
+      case Controllable(StopObserveCmd(stop), _, _, _, _, _) => Some(Process.eval(stop.run.map{
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
-      case _                                           => none
+      case _                                                 => none
     } )
-  )
+  ).orElse(stopPaused(seqId)(seqState))
 
-  def abortObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
+  def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd(
+    seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
-      case Controllable(_, AbortObserveCmd(abort), _, _) => Some(Process.eval(abort.run.map{
+      case Controllable(_, AbortObserveCmd(abort), _, _, _, _) => Some(Process.eval(abort.run.map{
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
-      case _                                             => none
+      case _                                                   => none
     } )
-  )
+  ).orElse(abortPaused(seqId)(seqState))
 
   def pauseObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
-      case Controllable(_, _, PauseObserveCmd(pause), _) => Some(Process.eval(pause.run.map{
+      case Controllable(_, _, PauseObserveCmd(pause), _, _, _) => Some(Process.eval(pause.run.map{
         case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
-      case _                                             => none
+      case _                                                   => none
     } )
   )
 
-  def resumeObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  private def pausedCommand(seqId: Sequence.Id, f: ObserveControl => Option[SeqAction[ObserveCommand.Result]])
+                           (seqState: Sequence.State): Option[Process[Task, Event]] = {
     val observeIndex: Option[(ObserveContext, Int)] =
       seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap{ case (a, i) =>
         a.state.runState match {
@@ -271,11 +274,35 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield ret ).run.map(_.toResult)
 
     observeIndex.flatMap{ case (c, i) => toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(
-      _.observeControl match {
-        case Controllable(_, _, _, ContinueObserveCmd(f)) => Some(Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, f)))))
-        case _                                            => none
-      }
+      x => f(x.observeControl).map(v => Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, v)))))
     ) }
+  }
+
+  def resumePaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    def f(o: ObserveControl): Option[SeqAction[ObserveCommand.Result]] = o match {
+      case Controllable(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
+      case _                                                 => none
+    }
+
+    pausedCommand(seqId, f)(seqState)
+  }
+
+  private def stopPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    def f(o: ObserveControl): Option[SeqAction[ObserveCommand.Result]] = o match {
+      case Controllable(_, _, _, _, StopPausedCmd(a), _) => Some(a)
+      case _                                             => none
+    }
+
+    pausedCommand(seqId, f)(seqState)
+  }
+
+  private def abortPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    def f(o: ObserveControl): Option[SeqAction[ObserveCommand.Result]] = o match {
+      case Controllable(_, _, _, _, _, AbortPausedCmd(a)) => Some(a)
+      case _                                              => none
+    }
+
+    pausedCommand(seqId, f)(seqState)
   }
 
   private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
