@@ -325,10 +325,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                      => false
   }
 
+  private def flatOrArcTcsSubsystems(inst: Model.Instrument) = NonEmptyList[TcsController.Subsystem](ScienceFold) :::> (if(hasOI(inst)) IList(OIWFS) else IList.empty)
+
   private def calcSystems(stepType: StepType): TrySeq[List[System]] = {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, all, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, NonEmptyList[TcsController.Subsystem](ScienceFold) :::> (if(hasOI(inst)) IList(OIWFS) else IList.empty), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
@@ -355,24 +357,29 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                       =>  TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
-  private def commonHeaders(config: Config)(ctx: ActionMetadata): Header = new StandardHeader(systems.dhs,
+  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem])(ctx: ActionMetadata): Header = new StandardHeader(
+    systems.dhs,
     ObsKeywordReaderImpl(config, site.displayName.replace(' ', '-')),
     if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
-    StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer)
+    StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer),
+    tcsSubsystems
   )
 
   private val gwsHeaders: Header = new GwsHeader(systems.dhs,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader
   )
 
-  private val gcalHeader: Header = new GcalHeader(
-    systems.dhs,
-    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader)
+  private val gcalHeader: Header = new GcalHeader(systems.dhs,
+    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader
+  )
 
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[Reader[ActionMetadata, List[Header]]] = stepType match {
-    case CelestialObject(inst) => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gwsHeaders, h)))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gcalHeader, gwsHeaders, h)))
-    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config)(ctx), gwsHeaders, h)))
+    case CelestialObject(inst) => calcInstHeader(config, inst).map(h => Reader(ctx =>
+      List(commonHeaders(config, all.toList)(ctx), gwsHeaders, h)))
+    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(h => Reader(ctx =>
+      List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList)(ctx), gcalHeader, gwsHeaders, h)))
+    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(h => Reader(ctx =>
+      List(commonHeaders(config, Nil)(ctx), gwsHeaders, h)))
     case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
   }
 
