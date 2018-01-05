@@ -7,15 +7,16 @@ import cats.{ Order, Show }
 import cats.instances.int._
 
 /**
- * Exact magnitude value represented as unsigned integral
+ * Exact magnitude value represented as an int with the original value scaled up
  * @param value This magnitude integral value
  */
-final case class MagnitudeValue(val value: Int)
+final case class MagnitudeValue(val value: Int) extends Product with Serializable
 
 object MagnitudeValue {
 
   final lazy val ZeroMagnitude = MagnitudeValue(0)
 
+  /** @group Typeclass Instances */
   implicit val MagnitudeValueShow: Show[MagnitudeValue] =
     Show.fromToString
 
