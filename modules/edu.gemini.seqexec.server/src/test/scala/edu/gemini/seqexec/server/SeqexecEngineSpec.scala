@@ -5,6 +5,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.engine.{Action, Result}
 import edu.gemini.seqexec.engine
+import edu.gemini.seqexec.engine.Result.PauseContext
 import edu.gemini.seqexec.model.ActionType
 import edu.gemini.seqexec.model.Model.{ActionStatus, Instrument, Resource}
 import org.scalatest.{FlatSpec, Matchers}
@@ -18,9 +19,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   def running(resource: Resource): Action = pendingAction(resource).copy(state = Action.State(Action.Started, Nil))
   def done(resource: Resource): Action = pendingAction(resource).copy(state = Action.State(Action.Completed(Result.Configured(resource)), Nil))
   val fileId = "fileId"
-  def observing: Action = engine.fromTask(ActionType.Observe, Task.delay(Result.OK(Result.Observed(fileId))))
+  def observing: Action = engine.fromTask(ActionType.Observe, Task.delay(Result.OK(Result.Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
   def fileIdReady: Action = observing.copy(state = Action.State(Action.Started, List(Result.FileIdAllocated(fileId))))
   def observed: Action = observing.copy(state = Action.State(Action.Completed(Result.Observed(fileId)), List(Result.FileIdAllocated(fileId))))
+  def paused: Action = observing.copy(state = Action.State(Action.Paused(new PauseContext{}), List(Result.FileIdAllocated(fileId))))
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {
@@ -104,32 +106,26 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
 
   "SeqexecEngine observeStatus" should
     "be pending on empty" in {
-      SeqexecEngine.observeStatus(Nil, Nil) shouldBe ActionStatus.Pending
-    }
-    it should "be pending if anything is pending" in {
-      val status = List(Resource.TCS -> ActionStatus.Pending)
-      SeqexecEngine.observeStatus(Nil, status) shouldBe ActionStatus.Pending
-    }
-    it should "be pending if anything is running" in {
-      val status = List(Resource.TCS -> ActionStatus.Pending)
-      SeqexecEngine.observeStatus(Nil, status) shouldBe ActionStatus.Pending
+      SeqexecEngine.observeStatus(Nil) shouldBe ActionStatus.Pending
     }
     it should "be running if there is an action observe" in {
-      val status = List(Resource.TCS -> ActionStatus.Completed)
       val executions: List[List[Action]] = List(
         List(done(Resource.TCS), observing))
-      SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Running
+      SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Running
     }
     it should "be done if there is a result observe" in {
-      val status = List(Resource.TCS -> ActionStatus.Completed)
       val executions: List[List[Action]] = List(
         List(done(Resource.TCS), observed))
-      SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Completed
+      SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Completed
     }
     it should "be running if there is a partial result with the file id" in {
-      val status = List(Resource.TCS -> ActionStatus.Completed)
       val executions: List[List[Action]] = List(
         List(done(Resource.TCS), fileIdReady))
-      SeqexecEngine.observeStatus(executions, status) shouldBe ActionStatus.Running
+      SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Running
+    }
+    it should "be paused if there is a paused observe" in {
+      val executions: List[List[Action]] = List(
+        List(done(Resource.TCS), paused))
+      SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 }
