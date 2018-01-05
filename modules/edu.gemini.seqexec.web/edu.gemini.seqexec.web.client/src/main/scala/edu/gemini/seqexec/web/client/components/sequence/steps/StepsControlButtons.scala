@@ -42,7 +42,7 @@ object StepsControlButtonsWrapper {
           <.div(
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
-            StepsControlButtons(props.p.id, props.p.instrument, props.p.state, props.step).when(props.step.isObserving)
+            StepsControlButtons(props.p.id, props.p.instrument, props.p.state, props.step).when(props.step.isObserving || props.step.isObservePaused)
           ).when(props.loggedIn && SequenceState.isRunning(props.p.state))
         )
       )

@@ -39,6 +39,7 @@ object ModelOps {
       case StepState.Skipped                    => "Skipped"
       case StepState.Failed(msg)                => s"Error $msg"
       case StepState.Running if s.isObserving   => "Observing..."
+      case StepState.Running if s.isObservePaused => "Exposure paused"
       case StepState.Running if s.isConfiguring => "Configuring..."
       case StepState.Running                    => "Running..."
       case StepState.Paused                     => "Paused"
@@ -129,6 +130,11 @@ object ModelOps {
 
     def isObserving: Boolean = s match {
       case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Running
+      case _                                    => false
+    }
+
+    def isObservePaused: Boolean = s match {
+      case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Paused
       case _                                    => false
     }
 
