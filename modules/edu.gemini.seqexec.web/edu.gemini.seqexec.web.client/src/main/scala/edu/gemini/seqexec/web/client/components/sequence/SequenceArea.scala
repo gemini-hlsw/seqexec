@@ -85,6 +85,7 @@ object SequenceTabContent {
         ),
         dataTab := instrument.shows,
         SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
+        SeqexecStyles.instrumentTabSegment,
         IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
         p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
       )

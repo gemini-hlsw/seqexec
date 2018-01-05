@@ -144,7 +144,7 @@ object LogArea {
             "No log entries"
           ),
         overscanRowCount = 10,
-        height = 300,
+        height = 200,
         rowCount = p.rowCount(s),
         rowHeight = 30,
         rowClassName = rowClassName(s) _,

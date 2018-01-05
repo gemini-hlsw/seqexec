@@ -94,8 +94,18 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val stepsListPane: StyleA = style (
-    maxHeight(24.3.em),
-    minHeight(24.3.em)
+    (maxHeight :=! "calc(100vh - 52.5em)"),
+    minHeight(21.3.em)
+  )
+
+  val instrumentTabSegment: StyleA = style (
+    (height :=! "calc(100vh - 48.2em)"),
+    minHeight(25.4.em)
+  )
+
+  val stepsListPaneWithControls: StyleA = style (
+    (maxHeight :=! "calc(100vh - 55.5em)"),
+    minHeight(18.1.em)
   )
 
   val stepsListBody: StyleA = style() // Marker css
@@ -141,9 +151,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginBottom(-1.em).important
   )
 
-  val emptyInstrumentTab: StyleA = style(
-    minHeight(31.8.em)
-  )
+  val emptyInstrumentTab: StyleA = style()
 
   val instrumentTab: StyleA = style(
     minWidth(20.%%),
