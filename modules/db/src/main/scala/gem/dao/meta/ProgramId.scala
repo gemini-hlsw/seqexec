@@ -7,10 +7,11 @@ import doobie._
 import gem.Program
 
 trait ProgramIdMeta {
+  import FormatMeta._
 
-  // Program.Id as string
+  // Program.Id as standard formatted string.
   implicit val ProgramIdMeta: Meta[Program.Id] =
-    Meta[String].xmap(Program.Id.unsafeFromString, _.format)
+    Program.Id.Formats.Standard.asMeta
 
 }
 object ProgramIdMeta extends ProgramIdMeta
