@@ -9,5 +9,5 @@ import java.math.RoundingMode.HALF_UP
   * tables.
   */
 final case class MagnitudeValue(value: BigDecimal) extends Product with Serializable {
-  def toInt: Int = value.underlying.scaleByPowerOfTen(2).setScale(0, HALF_UP).intValue
+  def toScaledInt: Int = value.underlying.scaleByPowerOfTen(2).setScale(0, HALF_UP).intValue
 }

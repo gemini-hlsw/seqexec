@@ -76,8 +76,8 @@ object EnumDef {
     implicit val caseMagnitudeBand       = at[MagnitudeBand        ](a => s"gem.enum.MagnitudeBand.${a.id}")
     implicit val caseOptionMagnitudeBand = at[Option[MagnitudeBand]](a => a.fold("None")(aʹ => s"Some(gem.enum.MagnitudeBand.${aʹ.id})"))
 
-    implicit val caseMagnitudeValue       = at[MagnitudeValue        ](a => s"gem.math.MagnitudeValue(${a.toInt})")
-    implicit val caseOptionMagnitudeValue = at[Option[MagnitudeValue]](a => a.fold("Option.empty[gem.math.MagnitudeValue]")(aʹ => s"Some(gem.math.MagnitudeValue(${aʹ.toInt}))"))
+    implicit val caseMagnitudeValue       = at[MagnitudeValue        ](a => s"gem.math.MagnitudeValue(${a.toScaledInt})")
+    implicit val caseOptionMagnitudeValue = at[Option[MagnitudeValue]](a => a.fold("Option.empty[gem.math.MagnitudeValue]")(aʹ => s"Some(gem.math.MagnitudeValue(${aʹ.toScaledInt}))"))
 
     implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
     implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[gem.math.Wavelength]")(aʹ => s"Some(gem.math.Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))

@@ -13,7 +13,7 @@ final class MagnitudeValueSpec extends CatsSuite {
   import ArbMagnitudeValue._
 
   // Laws
-  checkAll("MagnitudeValue", OrderTests[MagnitudeValue].eqv)
+  checkAll("MagnitudeValue", OrderTests[MagnitudeValue].order)
 
   test("Equality must be natural") {
     forAll { (a: MagnitudeValue, b: MagnitudeValue) =>
@@ -21,9 +21,9 @@ final class MagnitudeValueSpec extends CatsSuite {
     }
   }
 
-  test("Order must be consistent with .value") {
+  test("Order must be consistent with .scaledValue") {
     forAll { (a: MagnitudeValue, b: MagnitudeValue) =>
-      Order[Int].comparison(a.value, b.value) shouldEqual
+      Order[Int].comparison(a.scaledValue, b.scaledValue) shouldEqual
       Order[MagnitudeValue].comparison(a, b)
     }
   }
@@ -31,6 +31,12 @@ final class MagnitudeValueSpec extends CatsSuite {
   test("Show must be natural") {
     forAll { (a: MagnitudeValue) =>
       a.toString shouldEqual Show[MagnitudeValue].show(a)
+    }
+  }
+
+  test("Can extract the magnitude as a double") {
+    forAll { (a: MagnitudeValue) =>
+      a.toDouble shouldEqual a.scaledValue / 100.0
     }
   }
 

@@ -16,7 +16,7 @@ trait ArbMagnitudeValue {
   }
 
   implicit val cogMagnitudeValue: Cogen[MagnitudeValue] =
-    Cogen[Int].contramap(_.value)
+    Cogen[Int].contramap(_.scaledValue)
 
 }
 

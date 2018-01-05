@@ -10,7 +10,9 @@ import cats.instances.int._
  * Exact magnitude value represented as an int with the original value scaled up
  * @param value This magnitude integral value
  */
-final case class MagnitudeValue(val value: Int) extends Product with Serializable
+final case class MagnitudeValue(private[gem] val scaledValue: Int) extends Product with Serializable {
+  def toDouble: Double = scaledValue / 100.0
+}
 
 object MagnitudeValue {
 
@@ -22,6 +24,6 @@ object MagnitudeValue {
 
   /** @group Typeclass Instances */
   implicit val MagnitudeValueOrder: Order[MagnitudeValue] =
-    Order.by(_.value)
+    Order.by(_.scaledValue)
 
 }
