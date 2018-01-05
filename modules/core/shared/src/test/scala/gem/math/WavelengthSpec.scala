@@ -13,7 +13,7 @@ final class WavelengthSpec extends CatsSuite {
   import ArbWavelength._
 
   // Laws
-  checkAll("Wavelength", EqTests[Wavelength].eqv)
+  checkAll("Wavelength", OrderTests[Wavelength].order)
 
   test("Equality must be natural") {
     forAll { (a: Wavelength, b: Wavelength) =>

@@ -84,7 +84,7 @@ object GpiEnums {
       },
 
       EnumDef.fromQuery("GpiObservingMode", "GPI ObservingMode") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'filter -> Option[EnumRef['GpiFilter]], 'filterIterable -> Boolean, 'apodizer -> Option[EnumRef['GpiApodizer]], 'fpm -> Option[EnumRef['GpiFPM]], 'lyot -> Option[EnumRef['GpiLyot]], 'brightLimitPrism -> Option[Double], 'brightLimitWollaston -> Option[Double], 'correspondingHMode -> LazyEnumRef['GpiObservingMode], 'obsolete  -> Boolean`.T
+        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'filter -> Option[EnumRef['GpiFilter]], 'filterIterable -> Boolean, 'apodizer -> Option[EnumRef['GpiApodizer]], 'fpm -> Option[EnumRef['GpiFPM]], 'lyot -> Option[EnumRef['GpiLyot]], 'brightLimitPrism -> Option[MagnitudeValue], 'brightLimitWollaston -> Option[MagnitudeValue], 'correspondingHMode -> LazyEnumRef['GpiObservingMode], 'obsolete  -> Boolean`.T
         sql"""SELECT id, id tag, short_name, long_name, filter, filter_iterable, apodizer, fpm, lyot, bright_limit_prism, bright_limit_wollaston, corresponding_h_mode, obsolete FROM e_gpi_observing_mode""".query[(String, E)]
       }
 
