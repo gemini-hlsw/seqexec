@@ -36,7 +36,7 @@ final class MagnitudeValueSpec extends CatsSuite {
 
   test("Can extract the magnitude as a double") {
     forAll { (a: MagnitudeValue) =>
-      a.toDouble shouldEqual a.scaledValue / 100.0
+      a.toDoubleValue shouldEqual a.scaledValue / 100.0
     }
   }
 

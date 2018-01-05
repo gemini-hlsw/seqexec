@@ -8,10 +8,12 @@ import cats.instances.int._
 
 /**
  * Exact magnitude value represented as an int with the original value scaled up
- * @param value This magnitude integral value
+ *
+ * @param scaledValue This magnitude integral value, as the original multiplied by 100. value is dimensionless
+ * @see The Wikipedia [[https://en.wikipedia.org/wiki/Apparent_magnitude]]
  */
 final case class MagnitudeValue(private[gem] val scaledValue: Int) extends Product with Serializable {
-  def toDouble: Double = scaledValue / 100.0
+  def toDoubleValue: Double = scaledValue / 100.0
 }
 
 object MagnitudeValue {
