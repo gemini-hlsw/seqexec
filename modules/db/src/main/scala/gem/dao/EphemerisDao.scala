@@ -51,13 +51,13 @@ object EphemerisDao {
   def selectAll(k: EphemerisKey, s: Site): ConnectionIO[Ephemeris] =
     runSelect(Statements.select(k, s))
 
-  /** Selects all ephemeris elements that fall between start (inclusive) and end
-    * (exclusive) into an Ephemeris object.
+  /** Selects all ephemeris elements that fall between start and end (inclusive)
+    * into an Ephemeris object.
     *
     * @param k     ephemeris key to match
     * @param s     site to match
     * @param start start time (inclusive)
-    * @param end   end time (exclusive
+    * @param end   end time (inclusive)
     *
     * @return Ephemeris object with just the matching elements
     */
@@ -72,6 +72,15 @@ object EphemerisDao {
 
   def streamRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.selectRange(k, s, start, end).stream
+
+  /** Selects the time just before (or at) start and just after (or at) end for
+    * which ephemeris elements are defined for the given key and site.
+    */
+  def bracketRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): ConnectionIO[(InstantMicros, InstantMicros)] =
+    for {
+      startʹ <- Statements.selectTimeLE(k, s, start).unique
+      endʹ   <- Statements.selectTimeGE(k, s, end  ).unique
+    } yield (startʹ.getOrElse(start), endʹ.getOrElse(end))
 
   /** Selects the min and max times for which an ephemeris is available, if any.
     */
@@ -93,6 +102,9 @@ object EphemerisDao {
 
   def selectMeta(k: EphemerisKey, s: Site): ConnectionIO[Option[EphemerisMeta]] =
     Statements.selectMeta(k, s).option
+
+  def selectKeys(s: Site): ConnectionIO[Set[EphemerisKey]] =
+    Statements.selectKeys(s).to[Set]
 
   object Statements {
 
@@ -135,8 +147,22 @@ object EphemerisDao {
       selectFragment(k, s).query[Ephemeris.Element]
 
     def selectRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Query0[Ephemeris.Element] =
-      (selectFragment(k, s) ++ fr"""AND timestamp >= $start AND timestamp < $end""")
+      (selectFragment(k, s) ++ fr"""AND timestamp >= $start AND timestamp <= $end""")
         .query[Ephemeris.Element]
+
+    def selectTimeLE(k: EphemerisKey, s: Site, start: InstantMicros): Query0[Option[InstantMicros]] =
+      sql"""
+        SELECT max(timestamp)
+          FROM ephemeris
+         WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s AND timestamp <= $start
+      """.query[Option[InstantMicros]]
+
+    def selectTimeGE(k: EphemerisKey, s: Site, end: InstantMicros): Query0[Option[InstantMicros]] =
+      sql"""
+        SELECT min(timestamp)
+          FROM ephemeris
+         WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s AND timestamp >= $end
+      """.query[Option[InstantMicros]]
 
     def selectTimes(k: EphemerisKey, s: Site): Query0[Option[(InstantMicros, InstantMicros)]] =
       sql"""
@@ -185,5 +211,13 @@ object EphemerisDao {
           FROM ephemeris_meta
          WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
       """.query[EphemerisMeta]
+
+    def selectKeys(s: Site): Query0[EphemerisKey] =
+      sql"""
+        SELECT key_type,
+               key
+          FROM ephemeris_meta
+         WHERE site = ${s}
+      """.query[EphemerisKey]
   }
 }

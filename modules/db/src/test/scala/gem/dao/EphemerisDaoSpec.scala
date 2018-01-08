@@ -229,6 +229,36 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
+  property("EphemerisDao bracketRange") {
+    forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
+      import InstantMicros.{ Max, Min }
+
+      val em = e.toMap
+
+      val ((qMin, qMax), (eMin, eMax)) =
+        if (em.isEmpty) ((Min, Max), (Min, Max))
+        else ((em.firstKey.plusMicros(1L), em.lastKey.plusMicros(-1L)), (em.firstKey, em.lastKey))
+
+      val p = EphemerisDao.bracketRange(ks.key, ks.site, qMin, qMax)
+
+      (eMin, eMax) shouldEqual execTest(m + (ks -> e), p)
+    }
+  }
+
+  property("EphemerisDao bracketRange exact") {
+    forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
+      import InstantMicros.{ Max, Min }
+
+      val em = e.toMap
+
+      val (min, max) = if (em.isEmpty) (Min, Max) else (em.firstKey, em.lastKey)
+
+      val p = EphemerisDao.bracketRange(ks.key, ks.site, min, max)
+
+      (min, max) shouldEqual execTest(m + (ks -> e), p)
+    }
+  }
+
   property("EphemerisDao should select None times if no matching ephemeris") {
     forAll { (ks: KS, m: EphemerisMap) =>
 
@@ -237,6 +267,25 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       None shouldEqual execTest(m - ks, p)
     }
 
+  }
+
+  property("EphemerisDao should select all keys") {
+    forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int) =>
+
+      val env = EphemerisMetaTestEnv(head, tail, i)
+
+      // The keys we expect to select from the database.
+      val expectedKeys = (head :: tail).collect {
+        case (KS(k, s), _) if s == env.site => k
+      }.toSet
+
+      val selectKeys = EphemerisDao.selectKeys(env.site)
+
+      // Run the test
+      val res = (env.insertAll *> selectKeys).transact(xa).unsafeRunSync
+
+      res shouldEqual expectedKeys
+    }
   }
 }
 

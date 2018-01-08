@@ -21,5 +21,9 @@ class EphemerisCheck extends Check {
   it should "deleteMeta"  in check(deleteMeta(Dummy.ephemerisKey, Dummy.site))
   it should "selectMeta"  in check(selectMeta(Dummy.ephemerisKey, Dummy.site))
 
-  it should "selectTimes" in check(selectTimes(Dummy.ephemerisKey, Dummy.site))
+  it should "selectTimes"  in check(selectTimes(Dummy.ephemerisKey, Dummy.site))
+  it should "selectTimeLE" in check(selectTimeLE(Dummy.ephemerisKey, Dummy.site, InstantMicros.Max))
+  it should "selectTimeGE" in check(selectTimeGE(Dummy.ephemerisKey, Dummy.site, InstantMicros.Min))
+
+  it should "selectKeys"  in check(selectKeys(Dummy.site))
 }
