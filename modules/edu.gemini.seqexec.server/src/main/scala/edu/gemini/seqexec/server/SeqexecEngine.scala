@@ -373,22 +373,8 @@ object SeqexecEngine {
       case _                 => configStatus(step.executions)
     }
 
-  protected[server] def observeStatus(executions: List[List[engine.Action]],
-                                      configStatus: List[(Resource, ActionStatus)]): ActionStatus = {
-    def containsObserve(e: List[engine.Action]): Boolean =
-      separateActions(e)._2.map(_.kind).contains(ActionType.Observe)
-
-    if (configStatus.forall(_._2 === ActionStatus.Completed)) {
-      // Find one with kind observe
-      executions.filter { e =>
-        val (a, r) = separateActions(e).bimap(_.map(_.kind), _.map(_.kind))
-        a.contains(ActionType.Observe) || r.contains(ActionType.Observe)
-      }.map {
-        case e if containsObserve(e) => ActionStatus.Completed
-        case _                       => ActionStatus.Running
-      }.headOption.getOrElse(ActionStatus.Pending)
-    } else ActionStatus.Pending
-  }
+  protected[server] def observeStatus(executions: List[List[engine.Action]]): ActionStatus =
+    executions.flatten.find(_.kind === ActionType.Observe).map(a => actionStateToStatus(a.state.runState)).getOrElse(ActionStatus.Pending)
 
   def viewStep(step: engine.Step): StandardStep = {
     val configStatus = stepConfigStatus(step)
@@ -396,12 +382,11 @@ object SeqexecEngine {
       id = step.id,
       config = step.config,
       status = engine.Step.status(step),
-      // TODO: Implement breakpoints at Engine level
       breakpoint = step.breakpoint,
       // TODO: Implement skipping at Engine level
       skip = false,
       configStatus = configStatus,
-      observeStatus = observeStatus(step.executions, configStatus),
+      observeStatus = observeStatus(step.executions),
       fileId = step.fileId
     )
   }
