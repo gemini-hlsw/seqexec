@@ -186,7 +186,8 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       val p  = (mʹ.toList.traverse { case (ks, e) =>
         Stream.emits(e.toMap.toList).covary[ConnectionIO]
           .to(EphemerisDao.streamInsert(ks.key, ks.site))
-          .run
+          .compile
+          .drain
       }) *> EphemerisDao.selectAll(ks.key, ks.site)
 
       e shouldEqual p.transact(xa).unsafeRunSync
@@ -202,13 +203,15 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       val p  = mʹ.toList.traverse { case (ks, e) =>
         Stream.emits(e.toMap.toList).covary[ConnectionIO]
           .to(EphemerisDao.streamInsert(ks.key, ks.site))
-          .run
+          .compile
+          .drain
       }
 
       // Now stream update the ephemeris elements in e0 to those in e1
       val pʹ = p *> Stream.emits(e1.toMap.toList).covary[ConnectionIO]
                       .to(EphemerisDao.streamUpdate(ks.key, ks.site))
-                      .run
+                      .compile
+                      .drain
 
       // Select the values with the matching key and site, which should now be
       // updated

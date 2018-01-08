@@ -171,6 +171,6 @@ object HorizonsEphemerisQuerySpec extends EphemerisTestSupport {
 
   implicit class QueryOps(q: HorizonsEphemerisQuery) {
     def exec(): Ephemeris =
-      Ephemeris.fromFoldable[Vector](q.streamEphemeris.runLog.unsafeRunSync)
+      Ephemeris.fromFoldable[Vector](q.streamEphemeris.compile.toVector.unsafeRunSync)
   }
 }

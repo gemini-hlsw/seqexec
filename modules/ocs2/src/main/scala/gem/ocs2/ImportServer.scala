@@ -16,7 +16,7 @@ import fs2.{ Stream, StreamApp }
 
 import org.http4s._
 import org.http4s.dsl.io._
-import org.http4s.client.blaze.PooledHttp1Client
+import org.http4s.client.blaze.Http1Client
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.scalaxml.xml
 
@@ -36,7 +36,7 @@ final class ImportServer(ocsHost: String) {
 
   import ImportServer._
 
-  private val client = PooledHttp1Client[IO]()
+  private val client = Http1Client[IO]()
 
   private def uri(id: String): String =
     s"${fetchServiceUrl(ocsHost)}/${URLEncoder.encode(id, "UTF-8")}"
@@ -51,10 +51,11 @@ final class ImportServer(ocsHost: String) {
       }.flatMap(_.merge)
 
     // TODO: add timeout
-    client.expect[Elem](uri(id))
-          .flatMap(decodeAndStore)
-          .attempt
-          .unsafeRunSync match {
+    client.flatMap { c =>
+      c.expect[Elem](uri(id))
+       .flatMap(decodeAndStore)
+       .attempt
+    }.unsafeRunSync match {
       case Right(r) => IO.pure(r)
       case Left(ex) => InternalServerError(s"Problem importing '$id': ${ex.getMessage}")
     }

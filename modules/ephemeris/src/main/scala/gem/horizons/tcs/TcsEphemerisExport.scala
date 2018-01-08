@@ -62,7 +62,8 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
       .append(Stream.emit("\n"))
       .through(text.utf8Encode)
       .to(file.writeAll(path, List(CREATE, TRUNCATE_EXISTING)))
-      .run
+      .compile
+      .drain
   }
 
   /** Exports all ephemerides for the given site for the given time period. File

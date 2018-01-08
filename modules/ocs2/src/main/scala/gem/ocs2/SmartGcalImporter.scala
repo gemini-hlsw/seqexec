@@ -191,7 +191,7 @@ object SmartGcalImporter extends DoobieClient {
     for {
       _ <- IO(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore
       _ <- unindexer.transact(lxa)
-      _ <- prog.run
+      _ <- prog.compile.drain
       _ <- indexer.transact(lxa)
     } yield ()
   }

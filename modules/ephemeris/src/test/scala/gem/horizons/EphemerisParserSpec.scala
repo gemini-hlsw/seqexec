@@ -60,7 +60,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly").through(EphemerisParser.elements[IO])
-    val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
+    val m = TreeMap(s.take(head.size.toLong).compile.toVector.unsafeRunSync: _*)
 
     assert(m == head)
   }
@@ -70,7 +70,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     val s = stream("borrelly-error")
              .through(EphemerisParser.elements[IO])
              .handleErrorWith(_ => Stream(z))
-    assert(Vector(Some(z)) == s.last.runLog.unsafeRunSync)
+    assert(Vector(Some(z)) == s.last.compile.toVector.unsafeRunSync)
   }
 
   test("Must stream eitherElements") {
@@ -81,7 +81,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly-error").through(EphemerisParser.eitherElements[IO])
-    val m = s.take(head.size.toLong).runLog.unsafeRunSync()
+    val m = s.take(head.size.toLong).compile.toVector.unsafeRunSync()
 
     assert(m == head)
   }
@@ -94,7 +94,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly-error").through(EphemerisParser.validElements[IO])
-    val m = TreeMap(s.take(head.size.toLong).runLog.unsafeRunSync: _*)
+    val m = TreeMap(s.take(head.size.toLong).compile.toVector.unsafeRunSync: _*)
 
     assert(m == head)
   }

@@ -12,7 +12,7 @@ import cats.implicits._
 
 import org.http4s._
 import org.http4s.client.Client
-import org.http4s.client.blaze.{ BlazeClientConfig, PooledHttp1Client }
+import org.http4s.client.blaze.{ BlazeClientConfig, Http1Client }
 
 import fs2.Stream
 import fs2.text.utf8Decode
@@ -33,11 +33,8 @@ object HorizonsClient {
   /** Horizons permits only one request at a time from a given host, so all
     * requests should go through this client.
     */
-  val client: Client[IO] =
-    PooledHttp1Client[IO](
-      maxTotalConnections = 1,
-      config = BlazeClientConfig.defaultConfig.copy(responseHeaderTimeout = 20.seconds)
-    )
+  val client: IO[Client[IO]] =
+    Http1Client[IO](BlazeClientConfig.defaultConfig.copy(responseHeaderTimeout = 20.seconds))
 
   /** Horizons service URL. */
   val Url: String =
@@ -90,9 +87,10 @@ object HorizonsClient {
 
   /** Creates a `Stream` of results from the horizons server when executed. */
   val stream: ParamReader[Stream[IO, String]] =
-    request.map { client.streaming(_) { _.body.through(utf8Decode) } }
+    request.map { r => Stream.eval(client).flatMap { c => c.streaming(r) { _.body.through(utf8Decode) } } }
 
   /** Retrieves all the horizons server outout into a single String. */
   val fetch: ParamReader[IO[String]] =
-    request.map { client.expect[String](_) }
+    request.map { r => client.flatMap(_.expect[String](r)) }
 }
+
