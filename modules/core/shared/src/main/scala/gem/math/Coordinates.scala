@@ -87,7 +87,7 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
     (ra.toRadians, dec.toRadians)
 
   override def toString =
-    Coordinates.Formats.HmsDms.productToString(this)
+    Coordinates.Optics.fromHmsDms.productToString(this)
 
 }
 
@@ -111,10 +111,10 @@ object Coordinates {
   implicit val ShowCoordinates: Show[Coordinates] =
     Show.fromToString
 
-  object Formats {
+  object Optics {
 
     /** Format as a String like "17 57 48.49803 +04 41 36.2072". */
-    val HmsDms: Format[String, Coordinates] = Format(
+    val fromHmsDms: Format[String, Coordinates] = Format(
       CoordinateParsers.coordinates.parseExact, 
       cs => s"${cs.ra.format} ${cs.dec.format}"
     )

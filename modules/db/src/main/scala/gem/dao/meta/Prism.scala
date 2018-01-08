@@ -4,14 +4,14 @@
 package gem.dao.meta
 
 import doobie._
-import gem.util._
+import monocle.Prism
 import scala.reflect.runtime.universe.TypeTag
 
 /**
- * Given an Format[A, B] and a Meta[A] for the external format, we can create a Meta[B] that will
+ * Given an Prism[A, B] and a Meta[A] for the external Prism, we can create a Meta[B] that will
  * raise an exception if validation fails on read.
  */ 
-class FormatOps[A, B](f: Format[A, B]) {
+class PrismOps[A, B](f: Prism[A, B]) {
   def asMeta(
     implicit mb: Meta[A],
              ta: TypeTag[B]
@@ -19,9 +19,9 @@ class FormatOps[A, B](f: Format[A, B]) {
     mb.xmap(f.getOption(_).getOrElse(sys.error("Validation failed.")), f.reverseGet)
 }
 
-trait FormatMeta {
-  implicit def toFormatOps[A, B](f: Format[A, B]): FormatOps[A, B] =
-    new FormatOps(f)
+trait PrismMeta {
+  implicit def toPrismOps[A, B](f: Prism[A, B]): PrismOps[A, B] =
+    new PrismOps(f)
 }
 
-object FormatMeta extends FormatMeta
+object PrismMeta extends PrismMeta

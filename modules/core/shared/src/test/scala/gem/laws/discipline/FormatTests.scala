@@ -7,7 +7,7 @@ package discipline
 import cats.Eq
 import cats.instances.option._
 import gem.util.Format
-import org.scalacheck.Arbitrary
+import org.scalacheck.{ Arbitrary, Gen }
 import org.scalacheck.Prop._
 import org.typelevel.discipline.Laws
 
@@ -21,8 +21,16 @@ trait FormatTests[A, B] extends Laws {
     new SimpleRuleSet("format",
       "normalize"        -> forAll((a: A) => laws.normalize(a)),
       "parse roundtrip"  -> forAll((a: A) => laws.parseRoundTrip(a)),
-      "format roundtrip" -> forAll((b: B) => laws.formatRoundTrip(b))
+      "format roundtrip" -> forAll((b: B) => laws.formatRoundTrip(b)),
+      "coverage"         -> exists((a: A) => laws.demonstratesNormalization(a))
     )
+
+  /** Convenience constructor that allows passing an explicit generator for input values. */
+  def formatWith(ga: Gen[A])(
+    implicit ea: Eq[A],
+             ab: Arbitrary[B], eb: Eq[B]
+  ): RuleSet =
+    format(Arbitrary(ga), ea, ab, eb)
 
 }
 

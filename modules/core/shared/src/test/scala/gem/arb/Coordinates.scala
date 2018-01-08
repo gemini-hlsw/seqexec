@@ -10,10 +10,11 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen._
 
 trait ArbCoordinates {
+  import ArbAngle._
   import ArbRightAscension._
   import ArbDeclination._
 
-  implicit val ArbCoordinates: Arbitrary[Coordinates] =
+  implicit val arbCoordinates: Arbitrary[Coordinates] =
     Arbitrary {
       for {
         ra  <- arbitrary[RightAscension]
@@ -23,6 +24,14 @@ trait ArbCoordinates {
 
   implicit val cogCoordinates: Cogen[Coordinates] =
     Cogen[(RightAscension, Declination)].contramap(cs => (cs.ra, cs.dec))
+
+  // Strings that are often parsable as Coordinates
+  val strings: Gen[String] =
+    for {
+      hms <- stringsHMS
+      dms <- stringsDMS
+      n   <- Gen.choose(1,5)
+    } yield hms + (" " * n) + dms
 
 }
 object ArbCoordinates extends ArbCoordinates

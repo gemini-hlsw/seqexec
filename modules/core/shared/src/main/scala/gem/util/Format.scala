@@ -8,23 +8,23 @@ import monocle.{ Iso, Prism }
 
 /**
  * A normalizing optic, isomorphic to Prism but with different laws, specifically `getOption` 
- * (here called `parse) need not be injective; i.e., distinct inputs may have the same parse
- * result, which combined with a subsequent `reverseGet` (here called `format`) yield a normalized
- * form for A. Composition with stronger optics (`Prism` and `Iso`) yields another `Format`.
+ * need not be injective; i.e., distinct inputs may have the same getOption result, which combined
+ * with a subsequent `reverseGet` yield a normalized form for A. Composition with stronger optics 
+ * (`Prism` and `Iso`) yields another `Format`.
  */
-final case class Format[A, B](parse: A => Option[B], format: B => A) {
+final case class Format[A, B](getOption: A => Option[B], reverseGet: B => A) {
 
   /** Compose with another Format. */
   def composeFormat[C](f: Format[B, C]): Format[A, C] =
-    Format(parse(_).flatMap(f.parse), format compose f.format)
+    Format(getOption(_).flatMap(f.getOption), reverseGet compose f.reverseGet)
 
   /** Compose with another Format. */
   def composePrism[C](f: Prism[B, C]): Format[A, C] =
-    Format(parse(_).flatMap(f.getOption), format compose f.reverseGet)
+    Format(getOption(_).flatMap(f.getOption), reverseGet compose f.reverseGet)
 
   /** Compose with another Format. */
   def composeIso[C](f: Iso[B, C]): Format[A, C] =
-    Format(parse(_).map(f.get), format compose f.reverseGet)
+    Format(getOption(_).map(f.get), reverseGet compose f.reverseGet)
 
   /** Alias to composeFormat. */
   def ^<-*[C](f: Format[B, C]): Format[A, C] =
@@ -40,20 +40,20 @@ final case class Format[A, B](parse: A => Option[B], format: B => A) {
 
   /** Format is an invariant functor over A. */
   def imapA[C](f: C => B, g: B => C): Format[A, C] =
-    Format(parse(_).map(g), f andThen format)
+    Format(getOption(_).map(g), f andThen reverseGet)
 
   /** Format is an invariant functor over B. */
   def imapB[C](f: A => C, g: C => A): Format[C, B] =
-    Format(g andThen parse, format andThen f)
+    Format(g andThen getOption, reverseGet andThen f)
 
   /**
-   * Parse and format, yielding a normalized formatted value. Subsequent parse/format cycles are
+   * getOption and reverseGet, yielding a normalized formatted value. Subsequent getOption/reverseGet cycles are
    * idempotent.
    */
   def normalize(b: A): Option[A] =
-    parse(b).map(format)
+    getOption(b).map(reverseGet)
 
-  /** If we can format a Product as a String we can implement a tagged toString like "Foo(stuff)". */
+  /** If we can reverseGet a Product as a String we can implement a tagged toString like "Foo(stuff)". */
   def productToString(b: B)(
     implicit as: A =:= String,
              bp: B <:< Product
@@ -61,7 +61,7 @@ final case class Format[A, B](parse: A => Option[B], format: B => A) {
     taggedToString(b.productPrefix, b)
 
   /**
-   * If we provide a tag like "Foo" and format as a String we can implement a nice toString like
+   * If we provide a tag like "Foo" and reverseGet as a String we can implement a nice toString like
    * "Foo(stuff)".
    */
   def taggedToString(tag: String, b: B)(
@@ -69,7 +69,7 @@ final case class Format[A, B](parse: A => Option[B], format: B => A) {
   ): String =
     new StringBuilder(tag)
       .append('(')
-      .append(as(format(b)))
+      .append(as(reverseGet(b)))
       .append(')')
       .toString
 

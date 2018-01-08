@@ -14,6 +14,10 @@ package object arb {
     def collectUntil[B](f: PartialFunction[A, B]): Gen[B] =
       g.map(a => f.lift(a)).retryUntil(_.isDefined).map(_.get)
 
+    /** Branch randomly. */
+    def flatMapOneOf[B](f: A => Gen[B], fs: (A => Gen[B])*): Gen[B] =
+      Gen.oneOf(f +: fs).flatMap(g.flatMap)
+
   }
 
   // This isn't in scalacheck for whatever reason
