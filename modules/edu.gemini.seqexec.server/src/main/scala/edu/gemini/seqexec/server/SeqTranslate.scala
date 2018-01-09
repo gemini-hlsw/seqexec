@@ -92,10 +92,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         _ <- closeImage(id, systems.dhs)
         _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Observed(id))
-      val stopTail: SeqAction[Result] = notifyObserveEnd *>
-        headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequenceU *>
-        closeImage(id, systems.dhs) *>
-        SeqAction.fail(SeqexecFailure.Execution(s"Observation $id stopped by user."))
+      val stopTail: SeqAction[Result] = successTail
       val abortTail: SeqAction[Result] = sendObservationAborted(obsId, id) *>
         SeqAction.fail(SeqexecFailure.Execution(s"Observation $id aborted by user."))
 
