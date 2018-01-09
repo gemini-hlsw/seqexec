@@ -73,6 +73,9 @@ final class CaCommandSenderImpl implements CaCommandSender {
         return set;
     }
 
+    @Override
+    public CaApplySender getApplySender() { return apply; }
+
     public void unbind() {
         assert (epicsWriter != null);
 

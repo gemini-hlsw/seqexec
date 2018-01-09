@@ -15,6 +15,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import org.log4s.{Logger, getLogger}
+import squants.{Time, Seconds}
 import squants.space.LengthConversions._
 
 import scala.concurrent.duration._
@@ -38,7 +39,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     StopObserveCmd(controller.stopObserve),
     AbortObserveCmd(controller.abortObserve),
     PauseObserveCmd(controller.pauseObserve),
-    ContinuePausedCmd(controller.resumePaused),
+    ContinuePausedCmd{t: Time => controller.resumePaused(t)},
     StopPausedCmd(controller.stopPaused),
     AbortPausedCmd(controller.abortPaused)
   )
@@ -76,13 +77,16 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   ) )
 
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => controller.observe(fileId)
+    fileId => controller.observe(fileId, calcObserveTimeout(config))
   }
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 
   override def configure(config: Config): SeqAction[ConfigResult] =
     fromSequenceConfig(config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
+
+  override def calcObserveTimeout(config: Config): Time =
+    config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
 }
 
 object Gmos {

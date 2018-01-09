@@ -32,6 +32,7 @@ import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
+import squants.Time
 
 /**
   * Created by jluhrs on 9/14/16.
@@ -100,7 +101,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case ObserveCommand.Success => successTail
         case ObserveCommand.Stopped => stopTail
         case ObserveCommand.Aborted => abortTail
-        case ObserveCommand.Paused => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId))))
+        case ObserveCommand.Paused => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId), inst.calcObserveTimeout(config))))
       }
     }
 
@@ -256,7 +257,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } )
   )
 
-  private def pausedCommand(seqId: Sequence.Id, f: ObserveControl => Option[SeqAction[ObserveCommand.Result]])
+  private def pausedCommand(seqId: Sequence.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]])
                            (seqState: Sequence.State): Option[Process[Task, Event]] = {
     val observeIndex: Option[(ObserveContext, Int)] =
       seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap{ case (a, i) =>
@@ -271,12 +272,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield ret ).run.map(_.toResult)
 
     observeIndex.flatMap{ case (c, i) => toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(
-      x => f(x.observeControl).map(v => Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, v)))))
+      x => f(x.observeControl).map(v => Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, v(c.expTime))))))
     ) }
   }
 
   def resumePaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
-    def f(o: ObserveControl): Option[SeqAction[ObserveCommand.Result]] = o match {
+    def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case Controllable(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
       case _                                                 => none
     }
@@ -285,8 +286,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def stopPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
-    def f(o: ObserveControl): Option[SeqAction[ObserveCommand.Result]] = o match {
-      case Controllable(_, _, _, _, StopPausedCmd(a), _) => Some(a)
+    def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
+      case Controllable(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                             => none
     }
 
@@ -294,8 +295,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def abortPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
-    def f(o: ObserveControl): Option[SeqAction[ObserveCommand.Result]] = o match {
-      case Controllable(_, _, _, _, _, AbortPausedCmd(a)) => Some(a)
+    def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
+      case Controllable(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                              => none
     }
 
@@ -482,5 +483,5 @@ object SeqTranslate {
     def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
   }
 
-  final case class ObserveContext(t: ObserveCommand.Result => SeqAction[Result]) extends Result.PauseContext
+  final case class ObserveContext(t: ObserveCommand.Result => SeqAction[Result], expTime: Time) extends Result.PauseContext
 }

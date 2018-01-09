@@ -5,6 +5,7 @@ package edu.gemini.seqexec.server
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.spModel.config2.Config
+import squants.Time
 
 trait InstrumentSystem extends System {
   // The name used for this instrument in the science fold configuration
@@ -13,6 +14,7 @@ trait InstrumentSystem extends System {
   val dhsInstrumentName: String
   val observeControl: InstrumentSystem.ObserveControl
   def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result]
+  def calcObserveTimeout(config: Config): Time
 
   override def notifyObserveStart = SeqAction.void
 }
@@ -23,7 +25,7 @@ object InstrumentSystem {
   final case class StopObserveCmd(self: SeqAction[Unit]) extends AnyVal
   final case class AbortObserveCmd(self: SeqAction[Unit]) extends AnyVal
   final case class PauseObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class ContinuePausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
+  final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result]) extends AnyVal
   final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
   final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
   final case class Controllable(stop: StopObserveCmd,

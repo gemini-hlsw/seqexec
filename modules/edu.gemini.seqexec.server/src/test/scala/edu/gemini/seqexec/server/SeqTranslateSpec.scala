@@ -16,6 +16,7 @@ import edu.gemini.seqexec.server.gmos.GmosControllerSim
 import edu.gemini.seqexec.server.tcs.TcsControllerEpics
 import edu.gemini.spModel.core.{Peer, Site}
 import org.scalatest.FlatSpec
+import squants.time.Seconds
 
 import scalaz.Kleisli
 import scalaz.concurrent.Task
@@ -55,7 +56,7 @@ class SeqTranslateSpec extends FlatSpec {
   // Observe started, but with file Id already allocated
   private val s3: Sequence.State = s.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_=>Task(Result.OK(Result.Observed(fileId))))))
   // Observe paused
-  private val s4: Sequence.State = s.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))))))
+  private val s4: Sequence.State = s.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1))))
   // Observe failed
   private val s5: Sequence.State = s.mark(0)(Result.Error("error"))
 
