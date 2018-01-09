@@ -7,9 +7,9 @@ import cats.arrow._
 import monocle.{ Iso, Prism }
 
 /**
- * A normalizing optic, isomorphic to Prism but with different laws, specifically `getOption` 
+ * A normalizing optic, isomorphic to Prism but with different laws, specifically `getOption`
  * need not be injective; i.e., distinct inputs may have the same getOption result, which combined
- * with a subsequent `reverseGet` yield a normalized form for A. Composition with stronger optics 
+ * with a subsequent `reverseGet` yield a normalized form for A. Composition with stronger optics
  * (`Prism` and `Iso`) yields another `Format`.
  */
 final case class Format[A, B](getOption: A => Option[B], reverseGet: B => A) {
@@ -84,7 +84,7 @@ object Format {
   /** An Iso is trivially a Format. */
   def fromIso[A, B](p: Iso[A, B]): Format[A, B] =
     Format(a => Some(p.get(a)), p.reverseGet)
-    
+
   /** Format forms a category. */
   implicit def FormatCategory: Category[Format] =
     new Category[Format] {

@@ -10,7 +10,7 @@ import scala.reflect.runtime.universe.TypeTag
 /**
  * Given an Format[A, B] and a Meta[A] for the external format, we can create a Meta[B] that will
  * raise an exception if validation fails on read.
- */ 
+ */
 class FormatOps[A, B](f: Format[A, B]) {
   def asMeta(
     implicit mb: Meta[A],

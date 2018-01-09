@@ -115,7 +115,7 @@ object Coordinates {
 
     /** Format as a String like "17 57 48.49803 +04 41 36.2072". */
     val fromHmsDms: Format[String, Coordinates] = Format(
-      CoordinateParsers.coordinates.parseExact, 
+      CoordinateParsers.coordinates.parseExact,
       cs => s"${cs.ra.format} ${cs.dec.format}"
     )
 

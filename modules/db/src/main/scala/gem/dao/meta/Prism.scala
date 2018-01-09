@@ -10,7 +10,7 @@ import scala.reflect.runtime.universe.TypeTag
 /**
  * Given an Prism[A, B] and a Meta[A] for the external Prism, we can create a Meta[B] that will
  * raise an exception if validation fails on read.
- */ 
+ */
 class PrismOps[A, B](f: Prism[A, B]) {
   def asMeta(
     implicit mb: Meta[A],
