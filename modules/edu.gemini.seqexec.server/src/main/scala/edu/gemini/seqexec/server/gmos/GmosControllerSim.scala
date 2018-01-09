@@ -51,7 +51,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
-    observeTic(false, false, false, 50000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
+    observeTic(false, false, false, 5000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
   } )
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {

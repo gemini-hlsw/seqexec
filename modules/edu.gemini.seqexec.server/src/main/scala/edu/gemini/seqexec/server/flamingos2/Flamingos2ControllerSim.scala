@@ -15,13 +15,14 @@ import scalaz.EitherT
 import scalaz.concurrent.Task
 import scalaz.syntax.equal._
 import scalaz.std.anyVal._
+import squants.Time
 
 object Flamingos2ControllerSim extends Flamingos2Controller {
   private val Log = getLogger
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
-  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
+  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
     Thread.sleep(5000)
     Log.info("Flamingos-2 observation completed")
@@ -49,7 +50,7 @@ final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Contr
 
   private val counter: AtomicInteger = new AtomicInteger(0)
 
-  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = EitherT( Task {
+  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
     Log.info("Taking Flamingos-2 observation with label " + obsid)
     Thread.sleep(5000)
     Log.info("Flamingos-2 observation completed")
