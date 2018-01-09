@@ -61,7 +61,7 @@ final class ImportServer(ocsHost: String) {
           .attempt
         }
       }.compile.last.map(_.getOrElse(Left(new RuntimeException("Impossible: empty stream"))))
-    
+
     io.unsafeRunSync match {
       case Right(r) => IO.pure(r)
       case Left(ex) => InternalServerError(s"Problem importing '$id': ${ex.getMessage}")

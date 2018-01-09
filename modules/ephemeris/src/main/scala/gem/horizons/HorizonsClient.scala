@@ -100,6 +100,6 @@ object HorizonsClient {
         Stream.eval(c.expect[String](r))
       }.compile.last.map(_.getOrElse(sys.error("unpossible: empty stream")))
     }
-    
+
 }
 
