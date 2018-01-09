@@ -31,13 +31,19 @@ import scala.concurrent.duration._
   */
 object HorizonsClient {
 
-  /** A stream that emits a single client that will be shut down automatically. An internal global
-    * mutex ensures that only one such stream exists at a time.
+  /** A global mutex for limiting concurrent connections to Horizons. */
+  private val mutex: Semaphore[IO] =
+    Semaphore[IO](1L)(implicitly, scala.concurrent.ExecutionContext.global).unsafeRunSync // note
+
+  /** A stream that emits a single client that will be shut down automatically. An global mutex
+    * ensures that only one such stream exists at a time.
     */
   val client: Stream[IO, Client[IO]] = {
-    val mutex  = Semaphore[IO](1L)(implicitly, scala.concurrent.ExecutionContext.global).unsafeRunSync // note
+    // By using the singleton type here we prove that the mutex is a constant value. This guards
+    // against someone accidentally refactoring it into a method.
+    val mutexʹ: mutex.type = mutex
     val client = Http1Client.stream[IO](BlazeClientConfig.defaultConfig.copy(responseHeaderTimeout = 20.seconds))
-    Stream.bracket(mutex.decrement)(_ => client, _ =>  mutex.increment)
+    Stream.bracket(mutexʹ.decrement)(_ => client, _ => mutexʹ.increment)
   }
 
   /** Horizons service URL. */
