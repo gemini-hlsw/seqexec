@@ -20,6 +20,9 @@ import doobie.implicits._
 
 import fs2.Stream
 
+import java.time.ZonedDateTime
+import java.time.ZoneOffset.UTC
+
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 import org.scalatest._
@@ -229,10 +232,14 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
+  // TODO: this is a temporary fix to cleanup failing test cases in master
+  // InstantMicros must be limited to what is supported by postgres in a
+  // timestamp.
+  private val Min = InstantMicros.truncate(ZonedDateTime.of( -4712,  1,  1,  0,  0,  0, 0, UTC).toInstant)
+  private val Max = InstantMicros.truncate(ZonedDateTime.of(294275, 12, 31, 23, 59, 59, 0, UTC).toInstant)
+
   property("EphemerisDao bracketRange") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
-      import InstantMicros.{ Max, Min }
-
       val em = e.toMap
 
       val ((qMin, qMax), (eMin, eMax)) =
@@ -247,8 +254,6 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   property("EphemerisDao bracketRange exact") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
-      import InstantMicros.{ Max, Min }
-
       val em = e.toMap
 
       val (min, max) = if (em.isEmpty) (Min, Max) else (em.firstKey, em.lastKey)
