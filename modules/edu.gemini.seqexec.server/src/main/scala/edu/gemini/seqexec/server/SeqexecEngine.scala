@@ -216,6 +216,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
       case engine.Paused(id, _, _)                                          => SequencePaused(id, svs)
+      case engine.BreakpointReached(id)                                     => SequencePaused(id, svs)
     }
   }
 

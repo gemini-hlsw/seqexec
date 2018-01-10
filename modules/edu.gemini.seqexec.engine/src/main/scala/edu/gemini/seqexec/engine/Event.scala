@@ -43,6 +43,7 @@ object Event {
   def completed[R<:Result.RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): Event = EventSystem(Completed(id, i, r))
   def partial[R<:Result.PartialVal](id: Sequence.Id, i: Int, r: Result.Partial[R]): Event = EventSystem(PartialResult(id, i, r))
   def paused[C <: Result.PauseContext](id: Sequence.Id, i: Int, c: Result.Paused[C]): Event = EventSystem(Paused(id, i, c))
+  def breakpointReached(id: Sequence.Id): Event = EventSystem(BreakpointReached(id))
   def busy(id: Sequence.Id): Event = EventSystem(Busy(id))
   def executed(id: Sequence.Id): Event = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event = EventSystem(Executing(id))
