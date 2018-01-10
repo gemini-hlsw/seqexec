@@ -69,40 +69,40 @@ object Settings {
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
 
     // ScalaJS libraries
-    val scalaDom                = "0.9.3"
+    val scalaDom                = "0.9.4"
     val scalajsReact            = "1.1.1"
     val scalaCSS                = "0.5.4"
     val booPickle               = "1.2.6"
     val diode                   = "1.1.3"
     val javaTimeJS              = "2.0.0-M12"
-    val javaLogJS               = "0.1.2"
+    val javaLogJS               = "0.1.3"
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.0.6"
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.16"
+    val scalaZ       = "7.2.18"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
-    val http4s       = "0.16.5a"
+    val http4s       = "0.16.6a"
     val squants      = "1.3.0"
-    val argonaut     = "6.2"
+    val argonaut     = "6.2.1"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
     val jwt          = "0.14.1"
     val slf4j        = "1.7.25"
-    val log4s        = "1.3.6"
+    val log4s        = "1.4.0"
     val logback      = "1.2.3"
-    val janino       = "3.0.7"
+    val janino       = "3.0.8"
     val logstash     = "4.11"
     val knobs        = "4.0.31-scalaz-7.2"
-    val monocle      = "1.4.0"
+    val monocle      = "1.5.0"
 
     // test libraries
     val scalaTest             = "3.0.4"
     val scalaCheck            = "1.13.5"
-    val scalaCheckShapeless   = "1.1.7"
+    val scalaCheckShapeless   = "1.1.8"
     val discipline            = "0.8"
 
     // Pure JS libraries
