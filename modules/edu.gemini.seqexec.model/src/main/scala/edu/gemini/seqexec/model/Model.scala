@@ -9,6 +9,7 @@ import scalaz.{Equal, NonEmptyList, Order, Show}
 import scalaz.std.anyVal._
 import scalaz.std.option._
 import scalaz.syntax.show._
+import scalaz.syntax.equal._
 import scalaz.syntax.std.option._
 import java.time.ZoneId
 
@@ -224,6 +225,48 @@ object Model {
   }
   object Step {
     implicit val equal: Equal[Step] = Equal.equalA[Step]
+
+    implicit class StepOps(val s: Step) extends AnyVal {
+      def flipBreakpoint: Step = s match {
+        case st: StandardStep => st.copy(breakpoint = !st.breakpoint)
+        case st               => st
+      }
+
+      def file: Option[String] = None
+
+      def canSetBreakpoint: Boolean = s.status match {
+        case StepState.Pending | StepState.Skipped | StepState.Paused => s.id > 0
+        case _                                                        => false
+      }
+
+      def canSetSkipmark: Boolean = s.status match {
+        case StepState.Pending | StepState.Skipped | StepState.Paused => true
+        case _ if hasError                                            => true
+        case _                                                        => false
+      }
+
+      def hasError: Boolean =
+        s.status match {
+          case StepState.Failed(_) => true
+          case _                  => false
+        }
+
+      def isObserving: Boolean = s match {
+        case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Running
+        case _                                    => false
+      }
+
+      def isObservePaused: Boolean = s match {
+        case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Paused
+        case _                                    => false
+      }
+
+      def isConfiguring: Boolean = s match {
+        case StandardStep(_, _, _, _, _, _, c, _) => c.map(_._2).contains(ActionStatus.Running)
+        case _                                    => false
+      }
+
+    }
   }
 
   final case class StandardStep(

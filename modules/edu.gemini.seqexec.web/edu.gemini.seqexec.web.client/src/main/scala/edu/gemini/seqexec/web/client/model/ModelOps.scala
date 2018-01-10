@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.model.Model.{ActionStatus, Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
+import edu.gemini.seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 
 import scalaz.Show
 import scalaz.syntax.equal._
@@ -90,45 +90,4 @@ object ModelOps {
     def isPartiallyExecuted: Boolean = s.steps.exists(_.status === StepState.Completed)
   }
 
-  implicit class StepOps(val s: Step) extends AnyVal {
-    def flipBreakpoint: Step = s match {
-      case st: StandardStep => st.copy(breakpoint = !st.breakpoint)
-      case st               => st
-    }
-
-    def file: Option[String] = None
-
-    def canSetBreakpoint: Boolean = s.status match {
-      case StepState.Pending | StepState.Skipped | StepState.Paused => s.id > 0
-      case _                                                        => false
-    }
-
-    def canSetSkipmark: Boolean = s.status match {
-      case StepState.Pending | StepState.Skipped | StepState.Paused => true
-      case _ if hasError                                            => true
-      case _                                                        => false
-    }
-
-    def hasError: Boolean =
-      s.status match {
-        case StepState.Failed(_) => true
-        case _                  => false
-      }
-
-    def isObserving: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Running
-      case _                                    => false
-    }
-
-    def isObservePaused: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Paused
-      case _                                    => false
-    }
-
-    def isConfiguring: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, c, _) => c.map(_._2).contains(ActionStatus.Running)
-      case _                                    => false
-    }
-
-  }
 }

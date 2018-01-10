@@ -3,8 +3,10 @@
 
 package edu.gemini.seqexec.model
 
-import edu.gemini.seqexec.model.Model.Instrument
+import edu.gemini.seqexec.model.Model.{Instrument, Step}
 import edu.gemini.seqexec.model.Model.Instrument._
+
+import scalaz.syntax.std.boolean._
 
 object operations {
   // Operations possible at the sequence level
@@ -35,7 +37,7 @@ object operations {
     /**
      * Sorted list of operations supported at the sequence level
      */
-    def observationOperations: List[ObservationOperations]
+    def observationOperations(s: Step): List[ObservationOperations]
 
     /**
      * Sorted list of operations supported at the observation (row) level
@@ -44,17 +46,19 @@ object operations {
   }
 
   private val F2SupportedOperations = new SupportedOperations {
-    def observationOperations: List[ObservationOperations] = Nil
+    def observationOperations(s: Step): List[ObservationOperations] = Nil
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val GmosSupportedOperations = new SupportedOperations {
-    def observationOperations: List[ObservationOperations] = List(ObservationOperations.PauseObservation, ObservationOperations.ResumeObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation)
+    def observationOperations(s: Step): List[ObservationOperations] =
+      s.isObservePaused.fold(List(ObservationOperations.ResumeObservation), List(ObservationOperations.PauseObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation))
+
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val NilSupportedOperations = new SupportedOperations {
-    def observationOperations: List[ObservationOperations] = Nil
+    def observationOperations(s: Step): List[ObservationOperations] = Nil
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
@@ -64,13 +68,11 @@ object operations {
     (GmosN -> GmosSupportedOperations)
   )
 
-  final class SupportedOperationsOps(val i: Instrument) extends AnyVal {
-    def observationOperations: List[ObservationOperations] =
-      instrumentOperations.getOrElse(i, NilSupportedOperations).observationOperations
+  final implicit class SupportedOperationsOps(val i: Instrument) extends AnyVal {
+    def observationOperations(s: Step): List[ObservationOperations] =
+      instrumentOperations.getOrElse(i, NilSupportedOperations).observationOperations(s)
     def sequenceOperations: List[SequenceOperations] =
       instrumentOperations.getOrElse(i, NilSupportedOperations).sequenceOperations
   }
 
-  implicit def operationsSyntax(i: Instrument): SupportedOperationsOps =
-    new SupportedOperationsOps(i)
 }
