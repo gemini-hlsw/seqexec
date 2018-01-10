@@ -101,7 +101,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case ObserveCommand.Success => successTail
         case ObserveCommand.Stopped => stopTail
         case ObserveCommand.Aborted => abortTail
-        case ObserveCommand.Paused => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId), inst.calcObserveTimeout(config))))
+        case ObserveCommand.Paused => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId), inst.calcObserveTime(config))))
       }
     }
 

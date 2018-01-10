@@ -14,7 +14,8 @@ trait InstrumentSystem extends System {
   val dhsInstrumentName: String
   val observeControl: InstrumentSystem.ObserveControl
   def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result]
-  def calcObserveTimeout(config: Config): Time
+  //Expected total observe lapse, used to calculate timeout
+  def calcObserveTime(config: Config): Time
 
   override def notifyObserveStart = SeqAction.void
 }

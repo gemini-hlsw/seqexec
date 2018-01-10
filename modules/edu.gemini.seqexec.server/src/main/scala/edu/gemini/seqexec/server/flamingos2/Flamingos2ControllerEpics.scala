@@ -132,7 +132,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- EitherT(Task(Log.info("Start Flamingos2 configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
-    _ <- Flamingos2Epics.instance.configCmd.setTimeout(configTimeout)
+    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout)
     _ <- Flamingos2Epics.instance.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 configuration").right))
   } yield ()
@@ -140,20 +140,20 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
     _ <- EitherT(Task(Log.info("Start Flamingos2 observation").right))
     _ <- Flamingos2Epics.instance.observeCmd.setLabel(obsid)
-    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime+readoutTimeout)
+    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime+ReadoutTimeout)
     _ <- Flamingos2Epics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 observation").right))
   } yield obsid
 
   override def endObserve =  for {
       _ <- EitherT(Task(Log.info("Send endObserve to Flamingos2").right))
-      _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(defaultTimeout)
+      _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
       _ <- Flamingos2Epics.instance.endObserveCmd.mark
       _ <- Flamingos2Epics.instance.endObserveCmd.post
     } yield ()
 
-  val readoutTimeout: Time = Seconds(300)
-  val defaultTimeout: Time = Seconds(60)
-  val configTimeout: Time = Seconds(400)
+  val ReadoutTimeout: Time = Seconds(300)
+  val DefaultTimeout: Time = Seconds(60)
+  val ConfigTimeout: Time = Seconds(400)
 
 }

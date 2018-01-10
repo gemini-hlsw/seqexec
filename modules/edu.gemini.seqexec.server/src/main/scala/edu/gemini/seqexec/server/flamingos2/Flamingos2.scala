@@ -35,7 +35,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   // FLAMINGOS-2 does not support abort or stop.
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => f2Controller.observe(fileId, calcObserveTimeout(config)).map(_ => ObserveCommand.Success)
+    fileId => f2Controller.observe(fileId, calcObserveTime(config)).map(_ => ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =
@@ -43,7 +43,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
 
-  override def calcObserveTimeout(config: Config) = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
+  override def calcObserveTime(config: Config) = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
 }
 
 object Flamingos2 {

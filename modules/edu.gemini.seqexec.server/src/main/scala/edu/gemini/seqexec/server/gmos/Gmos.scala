@@ -77,7 +77,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   ) )
 
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => controller.observe(fileId, calcObserveTimeout(config))
+    fileId => controller.observe(fileId, calcObserveTime(config))
   }
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
@@ -85,7 +85,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override def configure(config: Config): SeqAction[ConfigResult] =
     fromSequenceConfig(config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
 
-  override def calcObserveTimeout(config: Config): Time =
+  override def calcObserveTime(config: Config): Time =
     config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
 }
 
