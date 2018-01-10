@@ -204,9 +204,9 @@ object Sequence {
         case Final(st, _)  => Final(st, s)
       })
 
-    def isRunning(st: State): Boolean = SequenceState.isRunning(st.status)
+    def isRunning(st: State): Boolean = st.status.isRunning
 
-    def userStopRequested(st: State): Boolean = SequenceState.userStopRequested(st.status)
+    def userStopRequested(st: State): Boolean = st.status.userStopRequested
 
     def anyStopRequested(st: State): Boolean = st.status match {
       case SequenceState.Running(u, i) => u || i

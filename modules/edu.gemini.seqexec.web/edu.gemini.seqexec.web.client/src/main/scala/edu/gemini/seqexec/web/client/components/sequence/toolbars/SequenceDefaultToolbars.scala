@@ -6,7 +6,6 @@ package edu.gemini.seqexec.web.client.components.sequence.toolbars
 import edu.gemini.seqexec.model.Model.{SequenceId, SequenceState}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
 import edu.gemini.seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
-import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.SequenceStepsTableContainer
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
@@ -84,16 +83,16 @@ object SequenceControl {
           List(
             // Sync button
             controlButton(IconRefresh, "purple", $.runState(requestSync(id)), !allowedToExecute || !s.canSync, "Sync sequence", "Sync")
-              .when(status === SequenceState.Idle || status.isError),
+              .when(status.isIdle || status.isError),
             // Run button
             controlButton(IconPlay, "blue", $.runState(requestRun(id)), !allowedToExecute || !s.canRun, runContinueTooltip, runContinueButton)
-              .when(status === SequenceState.Idle || status.isError),
+              .when(status.isIdle || status.isError),
             // Cancel pause button
             controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !allowedToExecute || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")
-              .when(SequenceState.userStopRequested(status)),
+              .when(status.userStopRequested),
             // Pause button
             controlButton(IconPause, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canPause, "Pause the sequence after the current step completes", "Pause")
-              .when(SequenceState.isRunning(status)),
+              .when(status.isRunning),
             // Resume
             controlButton(IconPlay, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canResume, "Resume the sequence", s"Continue from step $nextStepToRun")
               .when(status === SequenceState.Stopped)
@@ -102,7 +101,7 @@ object SequenceControl {
       )
     }.componentWillReceiveProps { f =>
       // Update state of run requested depending on the run state
-      Callback.when(f.nextProps.p().control.map(_.status).exists(SequenceState.isRunning) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
+      Callback.when(f.nextProps.p().control.map(_.status).exists(_.isRunning) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))

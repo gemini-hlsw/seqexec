@@ -252,26 +252,39 @@ object Model {
     }
     final case class Failed(msg: String) extends SequenceState
 
-    def isError(state: SequenceState): Boolean = state match {
-      case Failed(_) => true
-      case _         => false
-    }
-
-    def isRunning(state: SequenceState): Boolean = state match {
-      case Running(_, _) => true
-      case _             => false
-    }
-
-    def userStopRequested(state: SequenceState): Boolean = state match {
-      case SequenceState.Running(true, _) => true
-      case _                              => false
-    }
-
     def internalStopRequested(state: SequenceState): Boolean = state match {
       case SequenceState.Running(_, true) => true
       case _                              => false
     }
 
+    // Operations on the sequence state
+    implicit class SequenceStateOps(val state: SequenceState) extends AnyVal {
+      def isError: Boolean = state match {
+        case Failed(_) => true
+        case _         => false
+      }
+
+      def isInProcess: Boolean = state match {
+        case SequenceState.Idle => false
+        case _                  => true
+      }
+
+      def isRunning: Boolean = state match {
+        case Running(_, _) => true
+        case _             => false
+      }
+
+      def isIdle: Boolean = state match {
+        case Idle => true
+        case _    => false
+      }
+
+      def userStopRequested: Boolean = state match {
+        case SequenceState.Running(true, _) => true
+        case _                              => false
+      }
+
+    }
 
     implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
   }
