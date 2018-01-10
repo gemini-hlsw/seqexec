@@ -82,6 +82,10 @@ class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks {
       // events
       testPickleUnpickle[SequenceError]
     }
+    it should "pickle/depickle SequencePaused" in {
+      // events
+      testPickleUnpickle[SequencePaused
+    }
     it should "pickle/depickle NewLogMessage" in {
       // events
       testPickleUnpickle[NewLogMessage]
