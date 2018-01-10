@@ -19,12 +19,13 @@ import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
+import scalaz.syntax.std.boolean._
 
 /**
  * Component to wrap the steps control buttons
  */
 object StepsControlButtonsWrapper {
-  final case class Props(loggedIn: Boolean, p: StepsTableFocus, step: Step)
+  final case class Props(loggedIn: Boolean, p: StepsTableFocus, step: Step, userStopRequested: Boolean)
   private val component = ScalaComponent.builder[Props]("StepsControlButtonsWrapper")
     .stateless
     .render_P(props =>
@@ -36,7 +37,8 @@ object StepsControlButtonsWrapper {
             ^.cls := "left column five wide left floated",
             <.div(
               ^.cls := "ui segment basic running",
-              props.step.shows
+              // We need both sequence state and step state to decide what to display
+              props.userStopRequested.fold("Stopping...", props.step.shows)
             )
           ),
           <.div(
