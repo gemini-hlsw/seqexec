@@ -141,7 +141,7 @@ final case class HorizonsEphemerisUpdater(
              updateMeta(ctx.key, ctx.site, mʹ)
            }
       _ <- log.log(user, s"streamEphemeris(${ctx.key}, ${ctx.site}, $sem)") {
-             streamEphemeris(ctx.key, ctx.site, sem).to(sink).run
+             streamEphemeris(ctx.key, ctx.site, sem).to(sink).compile.drain
            }
     } yield ()
   }

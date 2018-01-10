@@ -32,8 +32,8 @@ final class EphemerisCompressionSpec extends CatsSuite with EphemerisTestSupport
     val e = stream("borrelly-compressed")
               .through(EphemerisParser.elements[IO])
 
-    val actual   = a.runLog.unsafeRunSync
-    val expected = e.runLog.unsafeRunSync
+    val actual   = a.compile.toVector.unsafeRunSync
+    val expected = e.compile.toVector.unsafeRunSync
 
     assert(actual == expected)
   }
@@ -162,7 +162,7 @@ object EphemerisCompressionSpec {
   implicit class QueryOps(q: HorizonsEphemerisQuery) {
     def exec(compression: Pipe[IO, Ephemeris.Element, Ephemeris.Element]): Ephemeris = {
       val s = q.streamEphemeris.through(compression)
-      Ephemeris.fromFoldable[Vector](s.runLog.unsafeRunSync)
+      Ephemeris.fromFoldable[Vector](s.compile.toVector.unsafeRunSync)
     }
   }
 }
