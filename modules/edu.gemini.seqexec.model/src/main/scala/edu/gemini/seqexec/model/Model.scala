@@ -245,11 +245,10 @@ object Model {
         case _                                                        => false
       }
 
-      def hasError: Boolean =
-        s.status match {
-          case StepState.Failed(_) => true
-          case _                  => false
-        }
+      def hasError: Boolean = s.status match {
+        case StepState.Failed(_) => true
+        case _                  => false
+      }
 
       def isObserving: Boolean = s match {
         case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Running

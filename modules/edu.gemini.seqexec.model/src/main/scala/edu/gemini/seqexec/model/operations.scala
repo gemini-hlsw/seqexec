@@ -52,7 +52,7 @@ object operations {
 
   private val GmosSupportedOperations = new SupportedOperations {
     def observationOperations(s: Step): List[ObservationOperations] =
-      s.isObservePaused.fold(List(ObservationOperations.ResumeObservation), List(ObservationOperations.PauseObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation))
+      s.isObservePaused.fold(List(ObservationOperations.ResumeObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation), List(ObservationOperations.PauseObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation))
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }
