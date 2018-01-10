@@ -43,7 +43,7 @@ object StepsControlButtonsWrapper {
             ^.cls := "right floated right aligned eleven wide computer sixteen wide tablet only",
             SeqexecStyles.buttonsRow,
             StepsControlButtons(props.p.id, props.p.instrument, props.p.state, props.step).when(props.step.isObserving || props.step.isObservePaused)
-          ).when(props.loggedIn && SequenceState.isRunning(props.p.state))
+          ).when(props.loggedIn && props.p.state.isRunning)
         )
       )
     )
@@ -57,7 +57,18 @@ object StepsControlButtonsWrapper {
  */
 object StepsControlButtons {
   final case class Props(id: SequenceId, instrument: Instrument, sequenceState: SequenceState, step: Step)
-  final case class State(stopRequested: Boolean, abortRequested: Boolean)
+  final case class State(stopRequested: Boolean, abortRequested: Boolean, pauseRequested: Boolean, resumeRequested: Boolean) {
+    val canPause: Boolean = !stopRequested && !abortRequested
+    val canAbort: Boolean = !stopRequested && !pauseRequested && !resumeRequested
+    val canStop: Boolean = !abortRequested && !pauseRequested && !resumeRequested
+    val canResume: Boolean = canPause
+  }
+
+  val StopRequested: State = State(stopRequested = true, abortRequested = false, pauseRequested = false, resumeRequested = false)
+  val AbortRequested: State = State(stopRequested = false, abortRequested = true, pauseRequested = false, resumeRequested = false)
+  val PauseRequested: State = State(stopRequested = false, abortRequested = false, pauseRequested = true, resumeRequested = false)
+  val ResumeRequested: State = State(stopRequested = false, abortRequested = false, pauseRequested = false, resumeRequested = true)
+  val NoneRequested: State = State(stopRequested = false, abortRequested = false, pauseRequested = false, resumeRequested = false)
 
   private val ST = ReactS.Fix[State]
 
@@ -74,31 +85,31 @@ object StepsControlButtons {
     Callback(SeqexecCircuit.dispatch(RequestObsResume(id, stepId)))
 
   def handleStop(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestStop(id, stepId)) >> ST.mod(_.copy(stopRequested = true, abortRequested = true)).liftCB
+    ST.retM(requestStop(id, stepId)) >> ST.set(StopRequested).liftCB
 
   def handleAbort(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestAbort(id, stepId)) >> ST.mod(_.copy(abortRequested = true, stopRequested = true)).liftCB
+    ST.retM(requestAbort(id, stepId)) >> ST.set(AbortRequested).liftCB
 
   def handleObsPause(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestObsPause(id, stepId)) >> ST.mod(_.copy(stopRequested = true, abortRequested = true)).liftCB
+    ST.retM(requestObsPause(id, stepId)) >> ST.set(PauseRequested).liftCB
 
   def handleObsResume(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestObsResume(id, stepId)) >> ST.mod(_.copy(stopRequested = true, abortRequested = true)).liftCB
+    ST.retM(requestObsResume(id, stepId)) >> ST.set(ResumeRequested).liftCB
 
   private val component = ScalaComponent.builder[Props]("StepsControlButtons")
-    .initialState(State(stopRequested = false, abortRequested = false))
+    .initialState(NoneRequested)
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui icon buttons",
-        p.instrument.observationOperations.map {
+        p.instrument.observationOperations(p.step).map {
           case PauseObservation            =>
-            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"), onClick = $.runState(handleObsPause(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"), onClick = $.runState(handleObsPause(p.id, p.step.id)), disabled = !s.canPause || p.step.isObservePaused))
           case StopObservation             =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = $.runState(handleStop(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = $.runState(handleStop(p.id, p.step.id)), disabled = !s.canStop))
           case AbortObservation            =>
-            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = $.runState(handleAbort(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = $.runState(handleAbort(p.id, p.step.id)), disabled = !s.canAbort))
           case ResumeObservation           =>
-            Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure"), onClick = $.runState(handleObsResume(p.id, p.step.id))))
+            Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure"), onClick = $.runState(handleObsResume(p.id, p.step.id)), disabled = !s.canResume || !p.step.isObservePaused))
           // Hamamatsu operations
           case PauseImmediatelyObservation =>
             Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
@@ -110,6 +121,13 @@ object StepsControlButtons {
             Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
         }.toTagMod
       )
+    }.componentWillReceiveProps { f =>
+      f.runState(f.nextProps.step match {
+        case s if s.isObservePaused =>
+          ST.set(NoneRequested)
+        case _ =>
+          ST.nop
+      })
     }.build
 
   def apply(id: SequenceId, instrument: Instrument, state: SequenceState, step: Step): Unmounted[Props, State, Unit] = component(Props(id, instrument, state, step))

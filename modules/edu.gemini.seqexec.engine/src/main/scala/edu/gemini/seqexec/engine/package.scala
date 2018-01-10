@@ -154,7 +154,7 @@ package object engine {
       other => getS(id).flatMap {
         case Some(seq) =>
           // No resources being used by other running sequences
-          if (seq.status === SequenceState.Idle || SequenceState.isError(seq.status))
+          if (seq.status.isIdle || seq.status.isError)
             if(seq.toSequence.resources.intersect(other).isEmpty)
               putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.rollback)) *> send(Event.executing(id))
           // Some resources are being used

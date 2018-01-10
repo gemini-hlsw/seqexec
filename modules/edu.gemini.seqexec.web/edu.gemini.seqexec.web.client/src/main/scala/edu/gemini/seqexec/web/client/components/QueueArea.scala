@@ -96,7 +96,7 @@ object QueueTableBody {
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status === SequenceState.Completed),
-                  "warning"  -> (SequenceState.isRunning(s.status)),
+                  "warning"  -> s.status.isRunning,
                   "negative" -> s.status.isError,
                   "active"   -> (s.active && !inProcess)
                 ),

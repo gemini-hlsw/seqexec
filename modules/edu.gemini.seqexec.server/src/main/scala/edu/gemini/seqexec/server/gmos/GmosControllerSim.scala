@@ -35,7 +35,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   @tailrec
   private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): TrySeq[ObserveCommand.Result] =
     if(remain < tic) {
-      Log.debug(s"Simulate Gmos $name observation completed")
+      Log.info(s"Simulate Gmos $name observation completed")
       TrySeq(ObserveCommand.Success)
     } else if(stop) TrySeq(ObserveCommand.Stopped)
       else if(abort) TrySeq(ObserveCommand.Aborted)
@@ -47,7 +47,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
       }
 
   override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
-    Log.debug(s"Simulate taking Gmos $name observation with label $obsid")
+    Log.info(s"Simulate taking Gmos $name observation with label $obsid")
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
@@ -55,47 +55,47 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   } )
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
-    Log.debug(s"Simulate applying Gmos $name configuration ${config.shows}")
+    Log.info(s"Simulate applying Gmos $name configuration ${config.shows}")
     TrySeq(())
   } )
 
   override def stopObserve: SeqAction[Unit] = EitherT( Task {
-    Log.debug(s"Simulate stopping Gmos $name exposure")
+    Log.info(s"Simulate stopping Gmos $name exposure")
     stopFlag.set(true)
     TrySeq(())
   } )
 
   override def abortObserve: SeqAction[Unit] = EitherT( Task {
-    Log.debug(s"Simulate aborting Gmos $name exposure")
+    Log.info(s"Simulate aborting Gmos $name exposure")
     abortFlag.set(true)
     TrySeq(())
   } )
 
   override def endObserve: SeqAction[Unit] = EitherT( Task {
-    Log.debug("Simulate sending endObserve to Gmos")
+    Log.info("Simulate sending endObserve to Gmos")
     TrySeq(())
   } )
 
   override def pauseObserve: SeqAction[Unit] = EitherT( Task {
-    Log.debug(s"Simulate pausing Gmos $name exposure")
+    Log.info(s"Simulate pausing Gmos $name exposure")
     pauseFlag.set(true)
     TrySeq(())
   } )
 
   override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
-      Log.debug(s"Simulate resuming Gmos $name observation")
+      Log.info(s"Simulate resuming Gmos $name observation")
       pauseFlag.set(false)
       observeTic(false, false, false, 5000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
     } )
 
   override def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
-    Log.debug(s"Simulate stopping Gmos $name paused observation")
+    Log.info(s"Simulate stopping Gmos $name paused observation")
     pauseFlag.set(false)
     observeTic(true, false, false, 1000, None)
   } )
 
   override def abortPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
-    Log.debug(s"Simulate aborting Gmos $name paused observation")
+    Log.info(s"Simulate aborting Gmos $name paused observation")
     pauseFlag.set(false)
     observeTic(false, true, false, 1000, None)
   } )

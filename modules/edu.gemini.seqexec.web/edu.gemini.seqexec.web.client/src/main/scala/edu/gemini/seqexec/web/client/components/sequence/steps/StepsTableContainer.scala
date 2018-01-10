@@ -173,7 +173,7 @@ object StepsTableContainer {
 
     def stepProgress(state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (s, StepState.Running) if SequenceState.userStopRequested(s) =>
+        case (s, StepState.Running) if s.userStopRequested =>
           <.div(state.shows)
         case (s, _) if SequenceState.internalStopRequested(s) =>
           <.div(step.status.shows)
@@ -207,13 +207,13 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (s, StepState.Running) if SequenceState.userStopRequested(s) => <.p(state.shows)
-        case (_, StepState.Running | StepState.Paused)  => controlButtons(status.isLogged, p, step)
-        case (_, StepState.Completed)                   => <.p(step.status.shows)
-        case (_, StepState.Failed(msg))                 => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
+        case (s, StepState.Running) if s.userStopRequested => <.p(state.shows)
+        case (_, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
+        case (_, StepState.Completed)                      => <.p(step.status.shows)
+        case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
-        case (_, s) if step.skip                        => <.p("Skipped")
-        case (_, _)                                     => <.p(step.status.shows)
+        case (_, s) if step.skip                           => <.p("Skipped")
+        case (_, _)                                        => <.p(step.status.shows)
       }
 
     def selectRow(step: Step, index: Int): Callback =

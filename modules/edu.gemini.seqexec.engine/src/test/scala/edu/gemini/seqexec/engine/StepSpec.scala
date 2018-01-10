@@ -194,7 +194,7 @@ class StepSpec extends FlatSpec {
           case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
-        assert(SequenceState.isRunning(status))
+        assert(status.isRunning)
     }
 
   }
@@ -233,7 +233,7 @@ class StepSpec extends FlatSpec {
     val qs1 = process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(_, status)) => assert(SequenceState.isRunning(status))
+      case Some(Sequence.State.Zipper(_, status)) => assert(status.isRunning)
     }
 
   }
@@ -435,7 +435,7 @@ class StepSpec extends FlatSpec {
         inside (zipper.focus.focus.execution.headOption) {
           case Some(Action(_, _, Action.State(Action.Started, v::_))) => v shouldEqual PartialValDouble(0.5)
         }
-        assert(SequenceState.isRunning(status))
+        assert(status.isRunning)
     }
     inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Final(seq, status)) =>

@@ -33,7 +33,7 @@ object InstrumentTab {
       val tab = p.t()
       val active = tab.active
       val status = tab.idState.map(_._2)
-      val hasError = status.exists(SequenceState.isError)
+      val hasError = status.exists(_.isError)
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
       val tabTitle = tab.runningStep match {
