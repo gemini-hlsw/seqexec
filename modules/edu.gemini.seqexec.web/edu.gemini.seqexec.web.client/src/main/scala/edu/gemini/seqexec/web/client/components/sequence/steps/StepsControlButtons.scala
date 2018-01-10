@@ -25,7 +25,7 @@ import scalaz.syntax.std.boolean._
  * Component to wrap the steps control buttons
  */
 object StepsControlButtonsWrapper {
-  final case class Props(loggedIn: Boolean, p: StepsTableFocus, step: Step, userStopRequested: Boolean)
+  final case class Props(loggedIn: Boolean, p: StepsTableFocus, step: Step)
   private val component = ScalaComponent.builder[Props]("StepsControlButtonsWrapper")
     .stateless
     .render_P(props =>
@@ -38,7 +38,7 @@ object StepsControlButtonsWrapper {
             <.div(
               ^.cls := "ui segment basic running",
               // We need both sequence state and step state to decide what to display
-              props.userStopRequested.fold("Stopping...", props.step.shows)
+              props.p.state.userStopRequested.fold(props.p.state.shows, props.step.shows)
             )
           ),
           <.div(

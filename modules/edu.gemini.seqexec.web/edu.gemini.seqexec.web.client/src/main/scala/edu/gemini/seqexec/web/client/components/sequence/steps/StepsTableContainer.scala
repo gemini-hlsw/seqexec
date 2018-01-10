@@ -187,9 +187,8 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-
-    def controlButtons(loggedIn: Boolean, p: StepsTableFocus, step: Step, userStopRequested: Boolean): VdomNode =
-      StepsControlButtonsWrapper(StepsControlButtonsWrapper.Props(loggedIn, p, step, userStopRequested))
+    def controlButtons(loggedIn: Boolean, p: StepsTableFocus, step: Step): VdomNode =
+      StepsControlButtonsWrapper(StepsControlButtonsWrapper.Props(loggedIn, p, step))
 
     def isPartiallyExecuted(p: StepsTableFocus): Boolean =
       p.steps.exists(_.status === StepState.Completed)
@@ -207,7 +206,7 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step, s.userStopRequested)
+        case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
         case (_, StepState.Completed)                      => <.p(step.status.shows)
         case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine

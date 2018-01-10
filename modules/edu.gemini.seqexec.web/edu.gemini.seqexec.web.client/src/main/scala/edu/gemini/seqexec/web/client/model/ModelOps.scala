@@ -16,7 +16,7 @@ import scalaz.std.AllInstances._
 object ModelOps {
   implicit val sequenceStateShow: Show[SequenceState] = Show.shows[SequenceState] {
     case SequenceState.Completed        => "Complete"
-    case SequenceState.Running(true, _) => "Stopping..."
+    case SequenceState.Running(true, _) => "Pausing..."
     case SequenceState.Running(_, _)    => "Running"
     case SequenceState.Idle             => "Idle"
     case SequenceState.Stopped          => "Stopped"
