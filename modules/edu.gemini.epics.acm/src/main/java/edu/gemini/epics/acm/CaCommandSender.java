@@ -36,6 +36,14 @@ public interface CaCommandSender {
     Set<String> getInfo();
 
     /**
+     * Access the associated CaApplySender object.
+     *
+     * @return set of parameter names.
+     */
+    CaApplySender getApplySender();
+
+
+    /**
      * Marks this command for execution. Useful for commands without parameters.
      */
     void mark() throws TimeoutException;

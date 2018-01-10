@@ -8,7 +8,7 @@ import edu.gemini.seqexec.server.gmos.GmosController.Config.DCConfig
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
 import edu.gemini.seqexec.server.{ObserveCommand, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-import squants.Length
+import squants.{Length, Time}
 
 import scala.concurrent.duration.Duration
 import scalaz.syntax.equal._
@@ -28,7 +28,7 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def applyConfig(config: GmosConfig[T]): SeqAction[Unit]
 
-  def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result]
+  def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
   def endObserve: SeqAction[Unit]
@@ -39,7 +39,7 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def pauseObserve: SeqAction[Unit]
 
-  def resumePaused: SeqAction[ObserveCommand.Result]
+  def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result]
 
   def stopPaused: SeqAction[ObserveCommand.Result]
 

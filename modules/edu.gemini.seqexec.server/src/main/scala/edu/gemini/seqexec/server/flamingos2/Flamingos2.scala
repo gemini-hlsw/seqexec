@@ -12,6 +12,7 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import squants.time.Seconds
 
 import scala.concurrent.duration.{Duration, SECONDS}
 import scalaz.concurrent.Task
@@ -34,13 +35,15 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   // FLAMINGOS-2 does not support abort or stop.
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => f2Controller.observe(fileId).map(_ => ObserveCommand.Success)
+    fileId => f2Controller.observe(fileId, calcObserveTime(config)).map(_ => ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =
     fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
+
+  override def calcObserveTime(config: Config) = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
 }
 
 object Flamingos2 {

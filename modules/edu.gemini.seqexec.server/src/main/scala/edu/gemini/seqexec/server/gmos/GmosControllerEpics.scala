@@ -14,7 +14,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 import org.log4s.getLogger
-import squants.Length
+import squants.{Length, Seconds, Time}
 
 import scalaz.Scalaz._
 import scalaz._
@@ -212,43 +212,50 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
+    _ <- GmosEpics.instance.configCmd.setTimeout(ConfigTimeout)
     _ <- GmosEpics.instance.post
     _ <- EitherT(Task(Log.info("Completed Gmos configuration").right))
   } yield ()
 
-  override def observe(obsid: ImageFileId): SeqAction[ObserveCommand.Result] = for {
+  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
     _ <- EitherT(Task(Log.info("Start Gmos observation").right))
     _ <- GmosEpics.instance.observeCmd.setLabel(obsid)
+    _ <- GmosEpics.instance.observeCmd.setTimeout(expTime+ReadoutTimeout)
     ret <- GmosEpics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
   } yield ret
 
   override def stopObserve: SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Stop Gmos exposure").right))
+    _ <- GmosEpics.instance.stopCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.stopCmd.mark
     _ <- GmosEpics.instance.stopCmd.post
   } yield ()
 
   override def abortObserve: SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Abort Gmos exposure").right))
+    _ <- GmosEpics.instance.abortCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.abortCmd.mark
     _ <- GmosEpics.instance.abortCmd.post
   } yield ()
 
   override def endObserve: SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Send endObserve to Gmos").right))
+    _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.endObserveCmd.mark
     _ <- GmosEpics.instance.endObserveCmd.post
   } yield ()
 
   override def pauseObserve = for {
     _ <- EitherT(Task(Log.info("Send pause to Gmos").right))
+    _ <- GmosEpics.instance.pauseCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.pauseCmd.mark
     _ <- GmosEpics.instance.pauseCmd.post
   } yield ()
 
-  override def resumePaused: SeqAction[ObserveCommand.Result] = for {
+  override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = for {
     _ <- EitherT(Task(Log.info("Resume Gmos observation").right))
+    _ <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout)
     _ <- GmosEpics.instance.continueCmd.mark
     ret <- GmosEpics.instance.continueCmd.post
     _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
@@ -256,6 +263,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   override def stopPaused = for {
     _ <- EitherT(Task(Log.info("Stop Gmos paused observation").right))
+    _ <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.stopAndWaitCmd.mark
     ret <- GmosEpics.instance.stopAndWaitCmd.post
     _ <- EitherT(Task(Log.info("Completed stopping Gmos observation").right))
@@ -263,6 +271,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   override def abortPaused = for {
     _ <- EitherT(Task(Log.info("Abort Gmos paused observation").right))
+    _ <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.abortAndWait.mark
     ret <- GmosEpics.instance.abortAndWait.post
     _ <- EitherT(Task(Log.info("Completed aborting Gmos observation").right))
@@ -281,5 +290,9 @@ object GmosControllerEpics {
     case OutOfBeam => "OUT-OF-BEAM"
     case InBeam    => "IN-BEAM"
   }
+
+  val DefaultTimeout: Time = Seconds(60)
+  val ReadoutTimeout: Time = Seconds(300)
+  val ConfigTimeout: Time = Seconds(600)
 
 }

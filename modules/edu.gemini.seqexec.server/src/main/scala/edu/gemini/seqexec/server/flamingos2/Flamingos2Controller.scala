@@ -8,6 +8,7 @@ import edu.gemini.seqexec.server.SeqAction
 
 import scala.concurrent.duration.Duration
 import scalaz.Equal
+import squants.Time
 
 trait Flamingos2Controller {
   import Flamingos2Controller._
@@ -20,7 +21,7 @@ trait Flamingos2Controller {
 
   def applyConfig(config: Flamingos2Config): SeqAction[Unit]
 
-  def observe(obsid: ImageFileId): SeqAction[ImageFileId]
+  def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId]
 
   def endObserve: SeqAction[Unit]
 }

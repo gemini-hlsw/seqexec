@@ -7,6 +7,7 @@ import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Timer, TimerTask}
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.EpicsCommand.safe
@@ -48,6 +49,8 @@ trait EpicsCommand {
       cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
     })
   )
+
+  def setTimeout(t: Time): SeqAction[Unit] = EpicsUtil.setTimeout(cs.map(_.getApplySender), t)
 }
 
 trait EpicsSystem[T] {
@@ -134,6 +137,8 @@ trait ObserveCommand {
   def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
     cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
   }))
+
+  def setTimeout(t: Time): SeqAction[Unit] = EpicsUtil.setTimeout(cs.map(_.getApplySender), t)
 }
 
 object ObserveCommand {
@@ -238,5 +243,9 @@ object EpicsUtil {
     })))
 
   def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).map(_ => ())
+
+  def setTimeout(os: Option[CaApplySender], t: Time):SeqAction[Unit] = SeqAction.either{
+    os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).right).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").left)
+  }
 
 }

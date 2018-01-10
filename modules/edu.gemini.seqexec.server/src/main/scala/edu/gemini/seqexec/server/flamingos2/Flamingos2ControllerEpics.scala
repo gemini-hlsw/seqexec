@@ -7,6 +7,7 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.{EpicsCodex, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
+import squants.{Time, Seconds}
 
 import scalaz.EitherT
 import scalaz.Scalaz._
@@ -131,21 +132,28 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- EitherT(Task(Log.info("Start Flamingos2 configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
+    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout)
     _ <- Flamingos2Epics.instance.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 configuration").right))
   } yield ()
 
-  override def observe(obsid: ImageFileId): SeqAction[ImageFileId] = for {
+  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
     _ <- EitherT(Task(Log.info("Start Flamingos2 observation").right))
     _ <- Flamingos2Epics.instance.observeCmd.setLabel(obsid)
+    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime+ReadoutTimeout)
     _ <- Flamingos2Epics.instance.observeCmd.post
     _ <- EitherT(Task(Log.info("Completed Flamingos2 observation").right))
   } yield obsid
 
   override def endObserve =  for {
       _ <- EitherT(Task(Log.info("Send endObserve to Flamingos2").right))
+      _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
       _ <- Flamingos2Epics.instance.endObserveCmd.mark
       _ <- Flamingos2Epics.instance.endObserveCmd.post
     } yield ()
+
+  val ReadoutTimeout: Time = Seconds(300)
+  val DefaultTimeout: Time = Seconds(60)
+  val ConfigTimeout: Time = Seconds(400)
 
 }
