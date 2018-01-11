@@ -36,5 +36,13 @@ trait ArbDataset {
   implicit val cogDataset: Cogen[Dataset] =
     Cogen[(Dataset.Label, String, Instant)].contramap(ds => (ds.label, ds.filename, ds.timestamp))
 
+  // Strings that are often parsable as Labels
+  val strings: Gen[String] =
+    arbitrary[Dataset.Label].map(_.format).flatMapOneOf(
+      Gen.const,                            // Do nothing, or
+      s => arbitrary[String],               // Replace with an arbitrary String, or
+      s => Gen.const(s.replace("-0", "-")), // remove a leading zero.
+    )
+
 }
 object ArbDataset extends ArbDataset
