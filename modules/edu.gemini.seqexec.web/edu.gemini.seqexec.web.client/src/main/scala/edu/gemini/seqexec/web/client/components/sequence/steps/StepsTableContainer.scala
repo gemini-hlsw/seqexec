@@ -187,7 +187,6 @@ object StepsTableContainer {
           step.file.getOrElse(""): String
       }
 
-
     def controlButtons(loggedIn: Boolean, p: StepsTableFocus, step: Step): VdomNode =
       StepsControlButtonsWrapper(StepsControlButtonsWrapper.Props(loggedIn, p, step))
 
@@ -207,8 +206,7 @@ object StepsTableContainer {
 
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
-        case (s, StepState.Running) if s.userStopRequested => <.p(state.shows)
-        case (_, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
+        case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
         case (_, StepState.Completed)                      => <.p(step.status.shows)
         case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         // TODO Remove the 2 conditions below when supported by the engine
@@ -365,16 +363,18 @@ object StepsTableContainer {
         stepTypeLabel(step).whenDefined
       )
 
-    private def stepProgressCell(step: Step, state: SequenceState, i: Int) =
+    private def stepProgressCell(step: Step, state: SequenceState, i: Int) = {
+      val isObserving = (step.isObserving || step.isObserving) && !state.userStopRequested
       <.td( // Column progress
         ^.onDoubleClick --> selectRow(step, i),
         ^.classSet(
-          "top aligned"    -> (step.isObserving || step.isObservePaused),
-          "center aligned" -> (!step.isObserving && !step.isObservePaused)
+          "top aligned"    -> isObserving,
+          "center aligned" -> !isObserving
         ),
         SeqexecStyles.componentLabel,
         stepProgress(state, step)
       )
+    }
 
     private def stepDetailsCell(router: RouterCtl[SeqexecPages], instrument: Instrument, id: SequenceId, i: Int) =
       <.td( // Column link to details

@@ -15,21 +15,21 @@ import scalaz.std.AllInstances._
   */
 object ModelOps {
   implicit val sequenceStateShow: Show[SequenceState] = Show.shows[SequenceState] {
-    case SequenceState.Completed     => "Complete"
-    case SequenceState.Running(true, _) => "Stopping..."
-    case SequenceState.Running(_, _) => "Running"
-    case SequenceState.Idle          => "Idle"
-    case SequenceState.Stopped       => "Stopped"
-    case SequenceState.Failed(_)     => s"Error at step "
+    case SequenceState.Completed        => "Complete"
+    case SequenceState.Running(true, _) => "Pausing..."
+    case SequenceState.Running(_, _)    => "Running"
+    case SequenceState.Idle             => "Idle"
+    case SequenceState.Stopped          => "Stopped"
+    case SequenceState.Failed(_)        => s"Error at step "
   }
 
   implicit val stepStateShow: Show[StepState] = Show.shows[StepState] {
-    case StepState.Pending    => "Pending"
-    case StepState.Completed  => "Done"
-    case StepState.Skipped    => "Skipped"
+    case StepState.Pending     => "Pending"
+    case StepState.Completed   => "Done"
+    case StepState.Skipped     => "Skipped"
     case StepState.Failed(msg) => s"Error $msg"
-    case StepState.Running    => "Running"
-    case StepState.Paused     => "Paused"
+    case StepState.Running     => "Running"
+    case StepState.Paused      => "Paused"
   }
 
   implicit val stepShow: Show[Step] = Show.shows[Step] { s =>
