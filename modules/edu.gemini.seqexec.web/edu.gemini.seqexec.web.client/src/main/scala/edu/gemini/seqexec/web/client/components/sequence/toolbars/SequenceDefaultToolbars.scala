@@ -92,7 +92,7 @@ object SequenceControl {
               .when(status.userStopRequested),
             // Pause button
             controlButton(IconPause, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canPause, "Pause the sequence after the current step completes", "Pause")
-              .when(status.isRunning),
+              .when(status.isRunning && !status.userStopRequested),
             // Resume
             controlButton(IconPlay, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canResume, "Resume the sequence", s"Continue from step $nextStepToRun")
               .when(status === SequenceState.Stopped)

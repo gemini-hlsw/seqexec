@@ -306,20 +306,16 @@ object Model {
         case _         => false
       }
 
-      def isInProcess: Boolean = state match {
-        case SequenceState.Idle => false
-        case _                  => true
-      }
+      def isInProcess: Boolean = state =/= SequenceState.Idle
 
       def isRunning: Boolean = state match {
         case Running(_, _) => true
         case _             => false
       }
 
-      def isIdle: Boolean = state match {
-        case Idle => true
-        case _    => false
-      }
+      def isIdle: Boolean = state === SequenceState.Idle
+
+      def isStopped: Boolean = state === SequenceState.Stopped
 
       def userStopRequested: Boolean = state match {
         case SequenceState.Running(true, _) => true
