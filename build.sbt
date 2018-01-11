@@ -152,8 +152,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     npmDevDependencies in Compile += "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs,
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     webpackConfigFile in fullOptJS := Some(baseDirectory.value / "prod.webpack.config.js"),
-    emitSourceMaps in fullOptJS := false,
-    emitSourceMaps in Test := false,
+    webpackEmitSourceMaps := false,
+    emitSourceMaps := false,
     // Requires the DOM for tests
     requiresDOM in Test := true,
     // Disable tests to speed up builds
