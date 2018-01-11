@@ -11,7 +11,6 @@ import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.imp.TimeInstances._
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._
-import monocle.Prism
 
 /**
  * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
@@ -240,10 +239,5 @@ object ProgramId {
 
   implicit val ProgramIdShow: Show[ProgramId] =
     Show.fromToString
-
-  object Optics {
-    val fromString: Prism[String, ProgramId] =
-      Prism(ProgramId.fromString)(_.format)
-  }
 
 }

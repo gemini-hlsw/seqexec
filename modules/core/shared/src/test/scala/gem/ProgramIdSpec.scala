@@ -5,7 +5,6 @@ package gem
 
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
-import monocle.law.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
@@ -20,7 +19,6 @@ final class ProgramIdSpec extends CatsSuite {
 
   // Laws
   checkAll("Program.Id", OrderTests[Program.Id].order)
-  checkAll("Program.Id.Formats.Standard", PrismTests(ProgramId.Optics.fromString))
 
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>
@@ -95,6 +93,12 @@ final class ProgramIdSpec extends CatsSuite {
   test("Nonstandard must reparse") {
     forAll { (nid: Nonstandard) =>
       Nonstandard.fromString(nid.format) shouldEqual Some(nid)
+    }
+  }
+
+  test("ProgramId must reparse") {
+    forAll { (pid: ProgramId) =>
+      ProgramId.fromString(pid.format) shouldEqual Some(pid)
     }
   }
 
