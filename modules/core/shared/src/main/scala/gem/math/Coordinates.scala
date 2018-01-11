@@ -6,6 +6,7 @@ package math
 
 import cats._, cats.implicits._
 import gem.parser.CoordinateParsers
+import gem.util.Format
 import gem.syntax.parser._
 import scala.math.{ sin, cos, atan2, sqrt }
 
@@ -85,15 +86,8 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
   def toRadians: (Double, Double) =
     (ra.toRadians, dec.toRadians)
 
-  /**
-   * Format these [[Coordinates]] as a standard human-readable string. Invertable via
-   * `Coordinates.parse`.
-   */
-  def format: String =
-    s"${ra.format} ${dec.format}"
-
   override def toString =
-    s"Coordinates($format)"
+    Coordinates.Optics.fromHmsDms.productToString(this)
 
 }
 
@@ -102,10 +96,6 @@ object Coordinates {
   /* @group Constructors */ val Zero:      Coordinates = Coordinates(RA.Zero, Dec.Zero)
   /* @group Constructors */ val SouthPole: Coordinates = Coordinates(RA.Zero, Dec.Min)
   /* @group Constructors */ val NorthPole: Coordinates = Coordinates(RA.Zero, Dec.Max)
-
-  /** Attempt to parse `Coordinates` from a `format`-formatted string. */
-  def parse(s: String): Option[Coordinates] =
-    CoordinateParsers.coordinates.parseExact(s)
 
   def fromRadians(ra: Double, dec: Double): Option[Coordinates] =
     Declination.fromRadians(dec).map(Coordinates(RA.fromRadians(ra), _))
@@ -120,5 +110,15 @@ object Coordinates {
   /** @group Typeclass Instances. */
   implicit val ShowCoordinates: Show[Coordinates] =
     Show.fromToString
+
+  object Optics {
+
+    /** Format as a String like "17 57 48.49803 +04 41 36.2072". */
+    val fromHmsDms: Format[String, Coordinates] = Format(
+      CoordinateParsers.coordinates.parseExact,
+      cs => s"${cs.ra.format} ${cs.dec.format}"
+    )
+
+  }
 
 }

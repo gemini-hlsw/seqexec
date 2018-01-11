@@ -6,6 +6,7 @@ package gem.math
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
+import gem.laws.discipline._
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -17,6 +18,7 @@ final class CoordinatesSpec extends CatsSuite {
 
   // Laws
   checkAll("Coordinates", EqTests[Coordinates].eqv)
+  checkAll("Formats.HmsDms", FormatTests(Coordinates.Optics.fromHmsDms).formatWith(ArbCoordinates.strings))
 
   test("Equality must be natural") {
     forAll { (a: Coordinates, b: Coordinates) =>
@@ -144,12 +146,6 @@ final class CoordinatesSpec extends CatsSuite {
       Δs.filter(_ > 20L) shouldBe empty
     }
 
-  }
-
-  test("format and parse must round-trip") {
-    forAll { (a: Coordinates) =>
-      Coordinates.parse(a.format) shouldEqual Some(a)
-    }
   }
 
 }

@@ -177,7 +177,7 @@ object ProperMotionExample {
   /** Proper motion of Barnard's Star, for reference. */
   val Barnard: ProperMotion =
     ProperMotion(
-      Coordinates.parse("17 57 48.49803 +04 41 36.2072").getOrElse(sys.error("oops")),
+      Coordinates.Optics.fromHmsDms.getOption("17 57 48.49803 +04 41 36.2072").getOrElse(sys.error("oops")),
       Epoch.J2000,
       Some(Offset(
         Offset.P(Angle.fromMicroarcseconds( -798580L)),
