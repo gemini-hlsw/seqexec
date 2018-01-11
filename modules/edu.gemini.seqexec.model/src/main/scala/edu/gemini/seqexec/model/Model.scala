@@ -234,8 +234,8 @@ object Model {
 
       def file: Option[String] = None
 
-      def canSetBreakpoint: Boolean = s.status match {
-        case StepState.Pending | StepState.Skipped | StepState.Paused => s.id > 0
+      def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean = s.status match {
+        case StepState.Pending | StepState.Skipped | StepState.Paused => i > firstRunnable
         case _                                                        => false
       }
 
@@ -264,6 +264,8 @@ object Model {
         case StandardStep(_, _, _, _, _, _, c, _) => c.map(_._2).contains(ActionStatus.Running)
         case _                                    => false
       }
+
+      def isFinished: Boolean = s.status === StepState.Completed || s.status === StepState.Skipped
 
     }
   }

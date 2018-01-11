@@ -8,7 +8,7 @@ import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
-import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, FlipBreakpointStep, FlipSkipStep}
+import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, NavigateSilentTo}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -232,7 +232,7 @@ object StepsTableContainer {
     def breakpointAt(id: SequenceId, step: Step): Callback =
       $.props >>= { p => Callback.when(p.status.isLogged)(p.stepsTable.dispatchCB(FlipBreakpointStep(id, step))) }
 
-    private def gutterCol(id: SequenceId, i: Int, step: Step, s: State) =
+    private def gutterCol(id: SequenceId, i: Int, step: Step, s: State, firstRunnable: Int) =
       <.tr(
         SeqexecStyles.trNoBorder,
         SeqexecStyles.trBreakpoint,
@@ -243,7 +243,7 @@ object StepsTableContainer {
           ^.rowSpan := 2,
           <.div(
             SeqexecStyles.breakpointHandleContainer,
-            step.canSetBreakpoint ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
+            step.canSetBreakpoint(i, firstRunnable) ? SeqexecStyles.gutterIconVisible | SeqexecStyles.gutterIconHidden,
             if (step.breakpoint) {
               Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(id, step))
             } else {
@@ -402,6 +402,8 @@ object StepsTableContainer {
         stepDetailsCell(router, p.instrument, p.id, i)
       )
 
+    private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
+
     def stepsTable(props: Props, p: StepsTableFocus, s: State): TagMod =
       <.table(
         ^.cls := "ui selectable compact celled table unstackable",
@@ -413,7 +415,7 @@ object StepsTableContainer {
           p.steps.zipWithIndex.flatMap {
             case (step, i) =>
               List(
-                gutterCol(p.id, i, step, s),
+                gutterCol(p.id, i, step, s, firstRunnableIndex(p.steps)),
                 stepCols(props.router, props.status, p, i, p.state, step, props.offsetsDisplay)
               )
           }.toTagMod
