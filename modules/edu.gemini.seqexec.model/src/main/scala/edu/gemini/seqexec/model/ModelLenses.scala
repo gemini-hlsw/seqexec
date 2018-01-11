@@ -84,6 +84,7 @@ trait ModelLenses {
       case e @ ResourcesBusy(_, _)        => e.copy(view = q)
       case e @ SequenceError(_, _)        => e.copy(view = q)
       case e @ SequencePaused(_, _)       => e.copy(view = q)
+      case e @ ExposurePaused(_, _)       => e.copy(view = q)
       case e @ SequenceUpdated(_)         => e.copy(view = q)
       case e                              => e
     }

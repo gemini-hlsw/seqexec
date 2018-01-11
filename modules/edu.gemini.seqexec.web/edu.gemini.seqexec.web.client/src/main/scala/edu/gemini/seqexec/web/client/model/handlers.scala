@@ -15,7 +15,7 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
 import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ExposurePaused, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
@@ -469,6 +469,7 @@ object handlers {
     private val VoidEffect = Effect(Future(NoAction))
     // Global references to audio files
     private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
+    private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
     private val SequenceErrorAudio = new Audio("/sequenceerror.mp3")
     private val SequenceCompleteAudio = new Audio("/sequencecomplete.mp3")
 
@@ -505,9 +506,16 @@ object handlers {
     }
 
     val sequencePausedMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(SequencePaused(id, sv)) =>
+      case ServerMessage(SequencePaused(_, sv)) =>
         // Play audio when the sequence gets paused
         val audioEffect = Effect(Future(SequencePausedAudio.play()).map(_ => NoAction))
+        updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+    }
+
+    val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(ExposurePaused(_, sv)) =>
+        // Play audio when the sequence gets paused
+        val audioEffect = Effect(Future(ExposurePausedAudio.play()).map(_ => NoAction))
         updated(value.copy(sequences = filterSequences(sv)), audioEffect)
     }
 
@@ -588,6 +596,7 @@ object handlers {
         sequenceCompletedMessage,
         sequenceOnErrorMessage,
         sequencePausedMessage,
+        exposurePausedMessage,
         observerUpdatedMessage,
         actionStoppedRequestMessage,
         sequenceLoadedMessage,

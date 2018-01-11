@@ -61,6 +61,8 @@ object events {
 
     final case class SequencePaused(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
+    final case class ExposurePaused(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
     final case class SequenceError(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
