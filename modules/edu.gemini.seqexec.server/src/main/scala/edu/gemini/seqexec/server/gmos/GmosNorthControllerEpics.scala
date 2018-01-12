@@ -7,6 +7,8 @@ import edu.gemini.seqexec.server.EpicsCodex
 import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
 import edu.gemini.seqexec.server.gmos.GmosController.Config._
 import edu.gemini.seqexec.server.gmos.GmosController.{NorthTypes, northConfigTypes}
+import edu.gemini.seqexec.server.gmos.GmosControllerEpics.ROIValues
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.{DisperserNorth => Disperser, FPUnitNorth => FPU, FilterNorth => Filter, StageModeNorth => StageMode}
 
 import scalaz.Scalaz.none
@@ -75,11 +77,11 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
   }
 
   override val stageMode: EpicsCodex.EncodeEpicsValue[NorthTypes#GmosStageMode, String] =  EncodeEpicsValue {
-      case StageMode.NO_FOLLOW     => "MOVE"
-      case StageMode.FOLLOW_XYZ    => "FOLLOW"
-      case StageMode.FOLLOW_XY     => "FOLLOW-XY"
-      case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
-    }
+    case StageMode.NO_FOLLOW     => "MOVE"
+    case StageMode.FOLLOW_XYZ    => "FOLLOW"
+    case StageMode.FOLLOW_XY     => "FOLLOW-XY"
+    case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
+  }
 
   override val disperser: EpicsCodex.EncodeEpicsValue[NorthTypes#Disperser, String] = EncodeEpicsValue{
     case Disperser.MIRROR      => "mirror"
@@ -91,6 +93,14 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
     case Disperser.R150_G5308  => "R150+_G5308"
     case Disperser.B600_G5303  => "B600+_G5303"
     case Disperser.R150_G5306  => "R150+_G5306"
+  }
+
+  override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]] = EncodeEpicsValue {
+    case BuiltinROI.FULL_FRAME       => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
+    case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
+    case BuiltinROI.CENTRAL_SPECTRUM => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
+    case BuiltinROI.CENTRAL_STAMP    => ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 308)
+    case _                           => None
   }
 }
 

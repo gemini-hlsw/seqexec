@@ -6,6 +6,8 @@ package edu.gemini.seqexec.server.gmos
 import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
 import edu.gemini.seqexec.server.gmos.GmosController.Config.{InBeam, OutOfBeam}
 import edu.gemini.seqexec.server.gmos.GmosController.{SouthTypes, southConfigTypes}
+import edu.gemini.seqexec.server.gmos.GmosControllerEpics.ROIValues
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser, FPUnitSouth => FPU, FilterSouth => Filter, StageModeSouth => StageMode}
 
 import scalaz.Scalaz.none
@@ -93,6 +95,13 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
   }
 
+  override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]] = EncodeEpicsValue {
+    case BuiltinROI.FULL_FRAME       => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
+    case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
+    case BuiltinROI.CENTRAL_SPECTRUM => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
+    case BuiltinROI.CENTRAL_STAMP    => ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
+    case _                           => None
+  }
 }
 
 object GmosSouthControllerEpics extends GmosControllerEpics[SouthTypes](GmosSouthEncoders)(southConfigTypes)
