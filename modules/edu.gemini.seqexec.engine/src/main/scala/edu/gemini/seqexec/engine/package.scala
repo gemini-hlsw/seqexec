@@ -258,8 +258,9 @@ package object engine {
                 putS(id)(qs) *> send(finished(id))
               // Execution completed. Check breakpoint here
               case Some(qs) =>
-                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) switch(id)(SequenceState.Idle)
-                                 else send(executing(id)))
+                putS(id)(qs) *> (if(qs.getCurrentBreakpoint) {
+                                  switch(id)(SequenceState.Idle) *> send(breakpointReached(id))
+                                } else send(executing(id)))
             }
         else  unit
     }.getOrElse(unit)
@@ -398,6 +399,7 @@ package object engine {
       case Paused(id, i, r)        => Logger.debug("Engine: Action paused")  *> actionPause(id, i, r)
       case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
       case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
+      case BreakpointReached(id)   => Logger.debug("Engine: Breakpoint reached")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)
       case Finished(id)            => Logger.debug("Engine: Finished") *> switch(id)(SequenceState.Completed)

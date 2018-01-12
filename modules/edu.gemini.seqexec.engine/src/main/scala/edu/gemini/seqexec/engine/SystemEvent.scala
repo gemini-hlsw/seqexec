@@ -17,8 +17,8 @@ final case class PartialResult[R<:PartialVal](id: Sequence.Id, i: Int, r: Partia
 final case class Paused[C <: PauseContext](id: Sequence.Id, i: Int, r: Result.Paused[C]) extends SystemEvent
 final case class Failed(id: Sequence.Id, i: Int, e: Result.Error) extends SystemEvent
 final case class Busy(id: Sequence.Id) extends SystemEvent
+final case class BreakpointReached(id: Sequence.Id) extends SystemEvent
 final case class Executed(id: Sequence.Id) extends SystemEvent
 final case class Executing(id: Sequence.Id) extends SystemEvent
 final case class Finished(id: Sequence.Id) extends SystemEvent
 final object Null extends SystemEvent
-

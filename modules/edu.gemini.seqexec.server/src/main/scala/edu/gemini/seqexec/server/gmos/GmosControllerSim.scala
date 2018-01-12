@@ -51,11 +51,12 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
-    observeTic(false, false, false, 5000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
+    observeTic(false, false, false, 7000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
   } )
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = EitherT( Task {
     Log.info(s"Simulate applying Gmos $name configuration ${config.shows}")
+    Thread.sleep(1000)
     TrySeq(())
   } )
 
@@ -83,10 +84,10 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
   } )
 
   override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
-      Log.info(s"Simulate resuming Gmos $name observation")
-      pauseFlag.set(false)
-      observeTic(false, false, false, 5000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
-    } )
+    Log.info(s"Simulate resuming Gmos $name observation")
+    pauseFlag.set(false)
+    observeTic(false, false, false, 5000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
+  } )
 
   override def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
     Log.info(s"Simulate stopping Gmos $name paused observation")

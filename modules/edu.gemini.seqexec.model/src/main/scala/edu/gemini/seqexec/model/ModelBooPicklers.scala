@@ -120,6 +120,8 @@ object ModelBooPicklers {
     .addConcreteType[ActionStopRequested]
     .addConcreteType[SequenceUpdated]
     .addConcreteType[SequenceError]
+    .addConcreteType[SequencePaused]
+    .addConcreteType[ExposurePaused]
     .addConcreteType[ResourcesBusy]
     .addConcreteType[NewLogMessage]
     .addConcreteType[ServerLogMessage]

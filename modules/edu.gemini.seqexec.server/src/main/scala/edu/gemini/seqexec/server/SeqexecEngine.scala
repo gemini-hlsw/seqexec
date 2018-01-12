@@ -215,7 +215,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
       case engine.Null                                                      => NullEvent
-      case engine.Paused(_, _, _)                                           => SequenceUpdated(svs)
+      case engine.Paused(id, _, _)                                          => ExposurePaused(id, svs)
+      case engine.BreakpointReached(id)                                     => SequencePaused(id, svs)
     }
   }
 

@@ -15,7 +15,7 @@ import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
 import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ExposurePaused, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
@@ -467,6 +467,11 @@ object handlers {
     */
   class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
     private val VoidEffect = Effect(Future(NoAction))
+    // Global references to audio files
+    private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
+    private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
+    private val SequenceErrorAudio = new Audio("/sequenceerror.mp3")
+    private val SequenceCompleteAudio = new Audio("/sequencecomplete.mp3")
 
     // It is legal do put sequences of the other sites on the queue
     // but we don't know how to display them, so let's filter them out
@@ -488,7 +493,7 @@ object handlers {
     val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceCompleted(sv)) =>
         // Play audio when the sequence completes
-        val audioEffect = Effect(Future(new Audio("/sequencecomplete.mp3").play()).map(_ => NoAction))
+        val audioEffect = Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
         val rememberCompleted = Effect(Future(sv.queue.find(_.status == SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
         updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
     }
@@ -496,7 +501,21 @@ object handlers {
     val sequenceOnErrorMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceError(_, sv)) =>
         // Play audio when the sequence gets into an error state
-        val audioEffect = Effect(Future(new Audio("/sequenceerror.mp3").play()).map(_ => NoAction))
+        val audioEffect = Effect(Future(SequenceErrorAudio.play()).map(_ => NoAction))
+        updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+    }
+
+    val sequencePausedMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(SequencePaused(_, sv)) =>
+        // Play audio when the sequence gets paused
+        val audioEffect = Effect(Future(SequencePausedAudio.play()).map(_ => NoAction))
+        updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+    }
+
+    val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(ExposurePaused(_, sv)) =>
+        // Play audio when the sequence gets paused
+        val audioEffect = Effect(Future(ExposurePausedAudio.play()).map(_ => NoAction))
         updated(value.copy(sequences = filterSequences(sv)), audioEffect)
     }
 
@@ -576,6 +595,8 @@ object handlers {
         connectionOpenMessage,
         sequenceCompletedMessage,
         sequenceOnErrorMessage,
+        sequencePausedMessage,
+        exposurePausedMessage,
         observerUpdatedMessage,
         actionStoppedRequestMessage,
         sequenceLoadedMessage,
