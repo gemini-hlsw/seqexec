@@ -4,13 +4,13 @@
 package gem.math
 
 import gem.arb._
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.Eq
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
+@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 final class EphemerisSpec extends CatsSuite {
   import ArbEphemeris._
   import ArbTime._
@@ -33,12 +33,15 @@ final class EphemerisSpec extends CatsSuite {
   }
 
   test("Ephemeris.get.interpolated") {
-    forAll { (t1: InstantMicros, c1: EphemerisCoordinates, c2: EphemerisCoordinates, n: Int) =>
-      val offset = (n % 100).abs
-      val (t2, t3) = (t1.plusSeconds(offset.toLong), t1.plusSeconds(100))
-      val e = Ephemeris(t1 -> c1, t3 -> c2)
-      val c3 = e.get(t2).getOrElse(sys.error("failed"))
-      val c4 = c1.interpolate(c2, offset.toDouble / 100.00)
+    forAll { (t1: Timestamp, c1: EphemerisCoordinates, c2: EphemerisCoordinates, n: Int) =>
+      val tEnd = t1.plusSeconds(100).getOrElse(Timestamp.Max)
+      val tBeg = tEnd.plusSeconds(-100).get
+      val off  = (n % 100).abs
+      val tMid = tBeg.plusSeconds(off.toLong).get
+
+      val e  = Ephemeris(tBeg -> c1, tEnd -> c2)
+      val c3 = e.get(tMid).getOrElse(sys.error("failed"))
+      val c4 = c1.interpolate(c2, off.toDouble / 100.00)
       (c3.coord angularDistance c4.coord).toMicroarcseconds should be <= 15L
     }
   }

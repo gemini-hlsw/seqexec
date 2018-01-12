@@ -4,7 +4,7 @@
 package gem
 package arb
 
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import org.scalacheck._
 import org.scalacheck.Gen._
@@ -64,8 +64,13 @@ trait ArbTime {
   implicit val arbInstant: Arbitrary[Instant] =
     Arbitrary(arbitrary[ZonedDateTime].map(_.toInstant))
 
-  implicit val arbInstantMicros: Arbitrary[InstantMicros] =
-    Arbitrary(arbitrary[Instant].map(InstantMicros.truncate))
+  implicit val arbTimestamp: Arbitrary[Timestamp] =
+    Arbitrary {
+      for {
+        m <- Gen.choose(0L, Duration.between(Timestamp.Min.toInstant, Timestamp.Max.toInstant).toMillis)
+        u <- Gen.choose(0, 999L)
+      } yield Timestamp.Min.plusMillis(m).flatMap(_.plusMicros(u)).getOrElse(Timestamp.Min)
+    }
 
   implicit val arbDuration: Arbitrary[Duration] =
     Arbitrary {
@@ -78,7 +83,7 @@ trait ArbTime {
   implicit val cogInstant: Cogen[Instant] =
     Cogen[(Long, Int)].contramap(t => (t.getEpochSecond, t.getNano))
 
-  implicit val cogInstantMicros: Cogen[InstantMicros] =
+  implicit val cogTimestamp: Cogen[Timestamp] =
     Cogen[Instant].contramap(_.toInstant)
 
   implicit val cogYear: Cogen[Year] =

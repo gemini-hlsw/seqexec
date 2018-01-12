@@ -4,7 +4,7 @@
 package gem.horizons
 
 import gem.math.{ Angle, Coordinates, EphemerisCoordinates, Offset }
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.effect.IO
 import fs2.Stream
@@ -21,8 +21,8 @@ trait EphemerisTestSupport {
   val TimeFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MMM-dd HH:mm:ss.SSS")
 
-  def time(s: String): InstantMicros =
-    InstantMicros.truncate(LocalDateTime.parse(s, TimeFormat).toInstant(ZoneOffset.UTC))
+  def time(s: String): Timestamp =
+    Timestamp.unsafeFromInstant(LocalDateTime.parse(s, TimeFormat).toInstant(ZoneOffset.UTC))
 
   def coords(s: String): Coordinates =
     Coordinates.Optics.fromHmsDms.getOption(s).getOrElse(Coordinates.Zero)
@@ -39,7 +39,7 @@ trait EphemerisTestSupport {
   def ephCoords(c: String, p: String, q: String): EphemerisCoordinates =
     EphemerisCoordinates(coords(c), Offset(offsetp(p), offsetq(q)))
 
-  def eph(elems: (String, (String, String, String))*): TreeMap[InstantMicros, EphemerisCoordinates] =
+  def eph(elems: (String, (String, String, String))*): TreeMap[Timestamp, EphemerisCoordinates] =
     TreeMap(elems.map { case (i, (c, p, q)) => time(i) -> ephCoords(c, p, q) }: _*)
 
   def inputStream(n: String): InputStream =

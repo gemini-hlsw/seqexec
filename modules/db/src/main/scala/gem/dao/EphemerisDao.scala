@@ -8,7 +8,7 @@ import gem.dao.composite._
 import gem.dao.meta._
 import gem.enum.Site
 import gem.math._
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.implicits._
 import doobie._, doobie.implicits._
@@ -21,7 +21,7 @@ object EphemerisDao {
   import OffsetMeta._
   import TimeMeta._
 
-  private def toRow(k: EphemerisKey, s: Site, i: InstantMicros, c: EphemerisCoordinates): Statements.EphemerisRow =
+  private def toRow(k: EphemerisKey, s: Site, i: Timestamp, c: EphemerisCoordinates): Statements.EphemerisRow =
     (k, s, i, c.coord, c.coord.ra.format, c.coord.dec.format, c.delta)
 
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
@@ -61,7 +61,7 @@ object EphemerisDao {
     *
     * @return Ephemeris object with just the matching elements
     */
-  def selectRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): ConnectionIO[Ephemeris] =
+  def selectRange(k: EphemerisKey, s: Site, start: Timestamp, end: Timestamp): ConnectionIO[Ephemeris] =
     runSelect(Statements.selectRange(k, s, start, end))
 
   private def runSelect(q: Query0[Ephemeris.Element]): ConnectionIO[Ephemeris] =
@@ -70,13 +70,13 @@ object EphemerisDao {
   def streamAll(k: EphemerisKey, s: Site): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.select(k, s).stream
 
-  def streamRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Stream[ConnectionIO, Ephemeris.Element] =
+  def streamRange(k: EphemerisKey, s: Site, start: Timestamp, end: Timestamp): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.selectRange(k, s, start, end).stream
 
   /** Selects the time just before (or at) start and just after (or at) end for
     * which ephemeris elements are defined for the given key and site.
     */
-  def bracketRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): ConnectionIO[(InstantMicros, InstantMicros)] =
+  def bracketRange(k: EphemerisKey, s: Site, start: Timestamp, end: Timestamp): ConnectionIO[(Timestamp, Timestamp)] =
     for {
       startʹ <- Statements.selectTimeLE(k, s, start).unique
       endʹ   <- Statements.selectTimeGE(k, s, end  ).unique
@@ -84,7 +84,7 @@ object EphemerisDao {
 
   /** Selects the min and max times for which an ephemeris is available, if any.
     */
-  def selectTimes(k: EphemerisKey, s: Site): ConnectionIO[Option[(InstantMicros, InstantMicros)]] =
+  def selectTimes(k: EphemerisKey, s: Site): ConnectionIO[Option[(Timestamp, Timestamp)]] =
     Statements.selectTimes(k, s).unique
 
   /** Create the next UserSupplied ephemeris key value. */
@@ -108,7 +108,7 @@ object EphemerisDao {
 
   object Statements {
 
-    type EphemerisRow = (EphemerisKey, Site, InstantMicros, Coordinates, String, String, Offset)
+    type EphemerisRow = (EphemerisKey, Site, Timestamp, Coordinates, String, String, Offset)
 
     val insert: Update[EphemerisRow] =
       Update[EphemerisRow](
@@ -146,31 +146,31 @@ object EphemerisDao {
     def select(k: EphemerisKey, s: Site): Query0[Ephemeris.Element] =
       selectFragment(k, s).query[Ephemeris.Element]
 
-    def selectRange(k: EphemerisKey, s: Site, start: InstantMicros, end: InstantMicros): Query0[Ephemeris.Element] =
+    def selectRange(k: EphemerisKey, s: Site, start: Timestamp, end: Timestamp): Query0[Ephemeris.Element] =
       (selectFragment(k, s) ++ fr"""AND timestamp >= $start AND timestamp <= $end""")
         .query[Ephemeris.Element]
 
-    def selectTimeLE(k: EphemerisKey, s: Site, start: InstantMicros): Query0[Option[InstantMicros]] =
+    def selectTimeLE(k: EphemerisKey, s: Site, start: Timestamp): Query0[Option[Timestamp]] =
       sql"""
         SELECT max(timestamp)
           FROM ephemeris
          WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s AND timestamp <= $start
-      """.query[Option[InstantMicros]]
+      """.query[Option[Timestamp]]
 
-    def selectTimeGE(k: EphemerisKey, s: Site, end: InstantMicros): Query0[Option[InstantMicros]] =
+    def selectTimeGE(k: EphemerisKey, s: Site, end: Timestamp): Query0[Option[Timestamp]] =
       sql"""
         SELECT min(timestamp)
           FROM ephemeris
          WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s AND timestamp >= $end
-      """.query[Option[InstantMicros]]
+      """.query[Option[Timestamp]]
 
-    def selectTimes(k: EphemerisKey, s: Site): Query0[Option[(InstantMicros, InstantMicros)]] =
+    def selectTimes(k: EphemerisKey, s: Site): Query0[Option[(Timestamp, Timestamp)]] =
       sql"""
           SELECT min(timestamp),
                  max(timestamp)
             FROM ephemeris
            WHERE key_type = ${k.keyType} AND key = ${k.des} AND site = $s
-      """.query[Option[(InstantMicros, InstantMicros)]]
+      """.query[Option[(Timestamp, Timestamp)]]
 
     val selectNextUserSuppliedKey: Query0[EphemerisKey.UserSupplied] =
       sql"""

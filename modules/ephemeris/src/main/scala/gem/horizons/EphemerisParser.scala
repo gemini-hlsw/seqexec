@@ -5,7 +5,7 @@ package gem
 package horizons
 
 import gem.math.{ Angle, Ephemeris, EphemerisCoordinates, Offset }
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import atto.ParseResult
 import atto.ParseResult.Done
@@ -50,11 +50,11 @@ object EphemerisParser {
       Angle.fromMicroarcseconds(µas)
     }
 
-    val utc: Parser[InstantMicros] =
+    val utc: Parser[Timestamp] =
       instantUTC(
         genYMD(monthMMM, hyphen) named "yyyy-MMM-dd",
         genLocalTime(colon)
-      ).map(InstantMicros.truncate)
+      ).flatMap(Timestamp.fromInstant(_).fold(err[Timestamp]("date out of range"))(ok))
 
     val element: Parser[Ephemeris.Element] =
       for {

@@ -4,7 +4,7 @@
 package gem.horizons
 
 import gem.math.{ Ephemeris, EphemerisCoordinates }
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.effect.IO
 import cats.tests.CatsSuite
@@ -37,9 +37,11 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     checkParse("borrelly", head, tail)
   }
 
-  private def checkParse(name: String,
-               head: TreeMap[InstantMicros, EphemerisCoordinates],
-               tail: TreeMap[InstantMicros, EphemerisCoordinates]): org.scalatest.Assertion = {
+  private def checkParse(
+    name: String,
+    head: TreeMap[Timestamp, EphemerisCoordinates],
+    tail: TreeMap[Timestamp, EphemerisCoordinates]
+  ): org.scalatest.Assertion = {
 
     val e = EphemerisParser.parse(load(name)).option.getOrElse(Ephemeris.Empty)
 
@@ -66,7 +68,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
   }
 
   test("Must handle errors") {
-    val z = InstantMicros.ofEpochMilli(0L) -> EphemerisCoordinates.Zero
+    val z = Timestamp.Min -> EphemerisCoordinates.Zero
     val s = stream("borrelly-error")
              .through(EphemerisParser.elements[IO])
              .handleErrorWith(_ => Stream(z))

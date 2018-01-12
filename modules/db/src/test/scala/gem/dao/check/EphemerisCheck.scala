@@ -4,7 +4,7 @@
 package gem.dao
 package check
 
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 class EphemerisCheck extends Check {
   import EphemerisDao.Statements._
@@ -12,7 +12,7 @@ class EphemerisCheck extends Check {
             "insert"      in check(insert)
   it should "delete"      in check(delete(Dummy.ephemerisKey, Dummy.site))
   it should "select"      in check(select(Dummy.ephemerisKey, Dummy.site))
-  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, Dummy.site, InstantMicros.Min, InstantMicros.Max))
+  it should "selectRange" in check(selectRange(Dummy.ephemerisKey, Dummy.site, Timestamp.Min, Timestamp.Max))
 
   it should "selectNextUserSuppliedKey" in check(selectNextUserSuppliedKey)
 
@@ -22,8 +22,8 @@ class EphemerisCheck extends Check {
   it should "selectMeta"  in check(selectMeta(Dummy.ephemerisKey, Dummy.site))
 
   it should "selectTimes"  in check(selectTimes(Dummy.ephemerisKey, Dummy.site))
-  it should "selectTimeLE" in check(selectTimeLE(Dummy.ephemerisKey, Dummy.site, InstantMicros.Max))
-  it should "selectTimeGE" in check(selectTimeGE(Dummy.ephemerisKey, Dummy.site, InstantMicros.Min))
+  it should "selectTimeLE" in check(selectTimeLE(Dummy.ephemerisKey, Dummy.site, Timestamp.Max))
+  it should "selectTimeGE" in check(selectTimeGE(Dummy.ephemerisKey, Dummy.site, Timestamp.Min))
 
   it should "selectKeys"  in check(selectKeys(Dummy.site))
 }
