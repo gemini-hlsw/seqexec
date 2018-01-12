@@ -310,6 +310,11 @@ lazy val seqexecCommonSettings = Seq(
     // Support remote debugging
     "-J-Xdebug",
     "-J-Xnoagent",
+    "-J-verbose:gc",
+    "-J-XX:+PrintGCDetails",
+    "-J-XX:+PrintGCTimeStamps",
+    "-J-XX:+HeapDumpOnOutOfMemoryError",
+    "-J-XX:HeapDumpPath=/tmp",
     "-J-Xrunjdwp:transport=dt_socket,address=8457,server=y,suspend=n"
   )
 ) ++ commonSettings
