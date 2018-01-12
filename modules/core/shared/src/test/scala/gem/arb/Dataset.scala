@@ -38,7 +38,7 @@ trait ArbDataset {
 
   // Strings that are often parsable as Labels
   val strings: Gen[String] =
-    arbitrary[Dataset.Label].map(_.format).flatMapOneOf(
+    arbitrary[Dataset.Label].map(Dataset.Label.Optics.fromString.reverseGet).flatMapOneOf(
       Gen.const,                            // Do nothing, or
       s => arbitrary[String],               // Replace with an arbitrary String, or
       s => Gen.const(s.replace("-0", "-")), // remove a leading zero.

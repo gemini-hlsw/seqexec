@@ -109,7 +109,7 @@ object Parsers {
     PioParse(Observation.Id.fromString)
 
   val datasetLabel: PioParse[Dataset.Label] =
-    PioParse(Dataset.Label.fromString)
+    PioParse(Dataset.Label.Optics.fromString.getOption)
 
   val offsetP: PioParse[Offset.P] =
     arcsec.map(Offset.P.apply)

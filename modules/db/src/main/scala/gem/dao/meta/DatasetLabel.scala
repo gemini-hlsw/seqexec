@@ -7,10 +7,11 @@ import doobie._
 import gem.Dataset
 
 trait DatasetLabelMeta {
+  import FormatMeta._
 
   // Dataset.Label as string
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
-    Meta[String].xmap(Dataset.Label.unsafeFromString, _.format)
+    Dataset.Label.Optics.fromString.asMeta
 
 }
 object DatasetLabelMeta extends DatasetLabelMeta

@@ -27,23 +27,10 @@ object Dataset {
    * @group Data Types
    */
   final case class Label(observationId: Observation.Id, index: Int) {
-
-    def format: String =
-      Label.Optics.fromString.reverseGet(this)
-
     override def toString =
       Label.Optics.fromString.productToString(this)
-
   }
-  object Label extends LabelOptics {
-
-    /** @group Constructors */
-    def fromString(s: String): Option[Dataset.Label] =
-      Optics.fromString.getOption(s)
-
-    /** @group Constructors */
-    def unsafeFromString(s: String): Dataset.Label =
-      fromString(s).getOrElse(sys.error("Malformed Dataset.Label: " + s))
+  object Label {
 
     /**
      * Labels are ordered by observation and index.
@@ -56,8 +43,6 @@ object Dataset {
     implicit val LabelShow: Show[Label] =
       Show.fromToString
 
-  }
-  trait LabelOptics {
     object Optics {
 
       /** Format from Strings into Label and back. */
@@ -74,6 +59,7 @@ object Dataset {
         )
 
     }
+
   }
 
   /**
