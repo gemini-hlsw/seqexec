@@ -6,7 +6,7 @@ package gem.horizons.tcs
 import gem.EphemerisKey
 import gem.dao.EphemerisDao
 import gem.enum.Site
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.effect._
 import cats.implicits._
@@ -19,7 +19,6 @@ import fs2.io.file
 
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
-import java.time.Instant
 
 /** Provides support for exporting ephemeris data to files that may be read by
   * the TCS.
@@ -47,13 +46,10 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
     *              exactly this time it will be the last element (otherwise,
     *              the element immediately following this time is included)
     */
-  def exportOne(path: Path, key: EphemerisKey, site: Site, start: Instant, end: Instant): M[Unit] = {
-    val s = InstantMicros.truncate(start)
-    val e = InstantMicros.truncate(end)
-
+  def exportOne(path: Path, key: EphemerisKey, site: Site, start: Timestamp, end: Timestamp): M[Unit] = {
     import EphemerisDao.{ bracketRange, streamRange }
 
-    Stream.eval(bracketRange(key, site, s, e))
+    Stream.eval(bracketRange(key, site, start, end))
       .flatMap { case (s, e) => streamRange(key, site, s, e) }
       .transact(xa)
       .take(RowLimit.toLong)
@@ -75,7 +71,7 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
     * @param start start time for the ephemeris data, inclusive
     * @param end   end time for the ephemeirs day, exclusive
     */
-  def exportAll(dir: Path, site: Site, start: Instant, end: Instant): M[Unit] = {
+  def exportAll(dir: Path, site: Site, start: Timestamp, end: Timestamp): M[Unit] = {
     def name(k: EphemerisKey): String =
       s"${k.format}.eph"
 

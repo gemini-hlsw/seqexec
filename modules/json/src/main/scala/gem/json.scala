@@ -8,7 +8,7 @@ import gem.enum.{ GcalArc, Site }
 import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
 import gem.math._
-import gem.util.{ Enumerated, InstantMicros }
+import gem.util.{ Enumerated, Timestamp }
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
@@ -83,9 +83,9 @@ package object json {
       ns <- c.downField("nanoseconds").as[Long]
     } yield Instant.ofEpochSecond(ss, ns)
 
-  // Instant micros
-  implicit val InstantMicrosEncoder: Encoder[InstantMicros] = Encoder[Instant].contramap(_.toInstant)
-  implicit val InstantMicrosDecoder: Decoder[InstantMicros] = Decoder[Instant].map(InstantMicros.truncate)
+  // Timestamp
+  implicit val TimestampEncoder: Encoder[Timestamp] = Encoder[Instant].contramap(_.toInstant)
+  implicit val TimestampDecoder: Decoder[Timestamp] = Decoder[Instant].map(Timestamp.unsafeFromInstant)
 
   // Enumerated as a tag
   implicit def enumeratedEncoder[A](implicit ev: Enumerated[A]): Encoder[A] = Encoder[String].contramap(ev.tag)

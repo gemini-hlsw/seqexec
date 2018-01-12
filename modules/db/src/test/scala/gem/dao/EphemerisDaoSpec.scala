@@ -11,7 +11,7 @@ import gem.arb.ArbEphemerisMeta._
 import gem.arb.ArbTime._
 import gem.enum.Site
 import gem.math.Ephemeris
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.implicits._
 
@@ -19,9 +19,6 @@ import doobie._
 import doobie.implicits._
 
 import fs2.Stream
-
-import java.time.ZonedDateTime
-import java.time.ZoneOffset.UTC
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
@@ -58,7 +55,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("EphemerisDao should selectRange") {
-    forAll { (ks: KS, e: Ephemeris, m: EphemerisMap, i0: InstantMicros, i1: InstantMicros) =>
+    forAll { (ks: KS, e: Ephemeris, m: EphemerisMap, i0: Timestamp, i1: Timestamp) =>
       val List(start, end) = List(i0, i1).sorted
       val eʹ = execTest(m + (ks -> e), EphemerisDao.selectRange(ks.key, ks.site, start, end))
       e.toMap.range(start, end) shouldEqual eʹ.toMap
@@ -228,26 +225,28 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       val em = e.toMap
 
       val expected =
-        if (em.isEmpty) Option.empty[(InstantMicros, InstantMicros)]
+        if (em.isEmpty) Option.empty[(Timestamp, Timestamp)]
         else Some((em.firstKey, em.lastKey))
 
       expected shouldEqual execTest(m + (ks -> e), p)
     }
   }
 
-  // TODO: this is a temporary fix to cleanup failing test cases in master
-  // InstantMicros must be limited to what is supported by postgres in a
-  // timestamp.
-  private val Min = InstantMicros.truncate(ZonedDateTime.of( -4712,  1,  1,  0,  0,  0, 0, UTC).toInstant)
-  private val Max = InstantMicros.truncate(ZonedDateTime.of(294275, 12, 31, 23, 59, 59, 0, UTC).toInstant)
-
   property("EphemerisDao bracketRange") {
+    import Timestamp.{ Max, Min }
+
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
       val em = e.toMap
 
-      val ((qMin, qMax), (eMin, eMax)) =
-        if (em.isEmpty) ((Min, Max), (Min, Max))
-        else ((em.firstKey.plusMicros(1L), em.lastKey.plusMicros(-1L)), (em.firstKey, em.lastKey))
+      val (eMin, qMin) = (for {
+        e <- em.headOption.map(_._1)
+        q <- e.plusMicros(1L)
+      } yield (e, q)).getOrElse((Min, Min))
+
+      val (eMax, qMax) = (for {
+        e <- em.lastOption.map(_._1)
+        q <- e.plusMicros(-1L)
+      } yield (e, q)).getOrElse((Max, Max))
 
       val p = EphemerisDao.bracketRange(ks.key, ks.site, qMin, qMax)
 
@@ -256,6 +255,8 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("EphemerisDao bracketRange exact") {
+    import Timestamp.{ Max, Min }
+
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
       val em = e.toMap
 

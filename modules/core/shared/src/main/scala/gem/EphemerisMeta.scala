@@ -3,7 +3,7 @@
 
 package gem
 
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import cats.{ Eq, Show }
 
@@ -18,9 +18,10 @@ import monocle.macros.Lenses
   *                asteroid ephemeris data fetched from horizons)
   */
 @Lenses final case class EphemerisMeta(
-  lastUpdate: InstantMicros,
-  lastUpdateCheck: InstantMicros,
-  solnRef: Option[HorizonsSolutionRef])
+  lastUpdate: Timestamp,
+  lastUpdateCheck: Timestamp,
+  solnRef: Option[HorizonsSolutionRef]
+)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object EphemerisMeta {

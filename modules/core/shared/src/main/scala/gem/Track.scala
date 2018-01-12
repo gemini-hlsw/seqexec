@@ -5,7 +5,7 @@ package gem
 
 import gem.enum.Site
 import gem.math._
-import gem.util.InstantMicros
+import gem.util.Timestamp
 import java.time.Instant
 
 /**
@@ -34,14 +34,18 @@ sealed trait Track extends Product with Serializable {
 object Track {
 
   final case class Sidereal(properMotion: ProperMotion) extends Track {
-    override def at(time: Instant, site: Site) =
+    override def at(time: Instant, site: Site): Option[Coordinates] =
       Some(properMotion.at(time).baseCoordinates)
   }
 
   final case class Nonsidereal(ephemerisKey: EphemerisKey, ephemerides: Map[Site, Ephemeris]) extends Track {
 
-    override def at(time: Instant, s: Site) =
-      ephemeris(s).flatMap(_.get(InstantMicros.truncate(time)).map(_.coord))
+    override def at(time: Instant, s: Site): Option[Coordinates] =
+      for {
+        i <- Timestamp.fromInstant(time)
+        e <- ephemeris(s)
+        c <- e.get(i)
+      } yield c.coord
 
     def ephemeris(s: Site): Option[Ephemeris] =
       ephemerides.get(s)

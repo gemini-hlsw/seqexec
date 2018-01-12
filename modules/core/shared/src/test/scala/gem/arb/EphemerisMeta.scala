@@ -4,7 +4,7 @@
 package gem
 package arb
 
-import gem.util.InstantMicros
+import gem.util.Timestamp
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
@@ -21,8 +21,8 @@ trait ArbEphemerisMeta {
   implicit val arbEphemerisMeta: Arbitrary[EphemerisMeta] =
     Arbitrary {
       for {
-        u <- arbitrary[InstantMicros]
-        c <- arbitrary[InstantMicros]
+        u <- arbitrary[Timestamp]
+        c <- arbitrary[Timestamp]
         s <- arbitrary[Option[HorizonsSolutionRef]]
       } yield EphemerisMeta(u, c, s)
     }
