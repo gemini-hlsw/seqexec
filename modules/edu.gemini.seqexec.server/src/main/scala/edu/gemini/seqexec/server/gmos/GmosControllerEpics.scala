@@ -4,8 +4,8 @@
 package edu.gemini.seqexec.server.gmos
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
-import edu.gemini.seqexec.server.EpicsCodex._
-import edu.gemini.seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam}
+import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
+import edu.gemini.seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
 import edu.gemini.seqexec.server.{EpicsCodex, ObserveCommand, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
@@ -78,53 +78,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     case -\/(_)    => 1
   }
 
-  // Parameters to define a ROI
-  sealed abstract case class XStart(value: Int)
-  // Make the values impossible to build with invalid values
-  object XStart {
-    def fromInt(v: Int): Option[XStart] = (v > 0) option new XStart(v) {}
-  }
-
-  sealed abstract case class XSize(value: Int)
-  object XSize {
-    def fromInt(v: Int): Option[XSize] = (v > 0) option new XSize(v) {}
-  }
-
-  sealed abstract case class YStart(value: Int)
-  object YStart {
-    def fromInt(v: Int): Option[YStart] = (v > 0) option new YStart(v) {}
-  }
-
-  sealed abstract case class YSize(value: Int)
-  object YSize {
-    def fromInt(v: Int): Option[YSize] = (v > 0) option new YSize(v) {}
-  }
-
-  sealed abstract case class ROIValues(xStart: XStart, xSize: XSize, yStart: YStart, ySize: YSize)
-
-  object ROIValues {
-    // Build out of fixed values, I wish this could be constrained a bit more
-    // but these are hardcoded values according to LUTS
-    // Being private we ensure it is mostly sane
-    private def fromInt(xStart: Int, xSize: Int, yStart: Int, ySize: Int): Option[ROIValues] =
-      (XStart.fromInt(xStart) |@| XSize.fromInt(xSize) |@| YStart.fromInt(yStart) |@| YSize.fromInt(ySize))(new ROIValues(_, _, _, _) {})
-
-    // Built from OCS ROI values
-    def fromOCS(roi: ROI): Option[ROIValues] =
-      (XStart.fromInt(roi.getXStart) |@| XSize.fromInt(roi.getXSize) |@| YStart.fromInt(roi.getYStart) |@| YSize.fromInt(roi.getYSize))(new ROIValues(_, _, _, _) {})
-
-    def builtInROI(b: BuiltinROI): Option[ROIValues] = b match {
-      // gmosROI.lut
-      case BuiltinROI.FULL_FRAME       => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
-      case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
-      case BuiltinROI.CENTRAL_SPECTRUM => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
-      case BuiltinROI.CENTRAL_STAMP    => ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
-      case _                           => None
-    }
-  }
-
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s.rois match {
-    case -\/(b)    => roiParameters(binning, 1, ROIValues.builtInROI(b))
+    case -\/(b)    => roiParameters(binning, 1, encoders.builtInROI.encode(b))
     case \/-(rois) => rois.zipWithIndex.map { case (roi, i) =>
       roiParameters(binning, i, ROIValues.fromOCS(roi))
     }.sequenceU.flatMap(_ => SeqAction.void)
@@ -279,11 +234,49 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 }
 
 object GmosControllerEpics {
+  // Parameters to define a ROI
+  sealed abstract case class XStart(value: Int)
+  // Make the values impossible to build with invalid values
+  object XStart {
+    def fromInt(v: Int): Option[XStart] = (v > 0) option new XStart(v) {}
+  }
+
+  sealed abstract case class XSize(value: Int)
+  object XSize {
+    def fromInt(v: Int): Option[XSize] = (v > 0) option new XSize(v) {}
+  }
+
+  sealed abstract case class YStart(value: Int)
+  object YStart {
+    def fromInt(v: Int): Option[YStart] = (v > 0) option new YStart(v) {}
+  }
+
+  sealed abstract case class YSize(value: Int)
+  object YSize {
+    def fromInt(v: Int): Option[YSize] = (v > 0) option new YSize(v) {}
+  }
+
+  sealed abstract case class ROIValues(xStart: XStart, xSize: XSize, yStart: YStart, ySize: YSize)
+
+  object ROIValues {
+    // Build out of fixed values, I wish this could be constrained a bit more
+    // but these are hardcoded values according to LUTS
+    // Being private we ensure it is mostly sane
+    def fromInt(xStart: Int, xSize: Int, yStart: Int, ySize: Int): Option[ROIValues] =
+      (XStart.fromInt(xStart) |@| XSize.fromInt(xSize) |@| YStart.fromInt(yStart) |@| YSize.fromInt(ySize))(new ROIValues(_, _, _, _) {})
+
+    // Built from OCS ROI values
+    def fromOCS(roi: ROI): Option[ROIValues] =
+      (XStart.fromInt(roi.getXStart) |@| XSize.fromInt(roi.getXSize) |@| YStart.fromInt(roi.getYStart) |@| YSize.fromInt(roi.getYSize))(new ROIValues(_, _, _, _) {})
+
+  }
+
   trait Encoders[T<:GmosController.SiteDependentTypes] {
     val filter: EncodeEpicsValue[T#Filter, (String, String)]
     val fpu: EncodeEpicsValue[T#FPU, (Option[String], Option[String])]
     val stageMode: EncodeEpicsValue[T#GmosStageMode, String]
     val disperser: EncodeEpicsValue[T#Disperser, String]
+    val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]]
   }
 
   implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
