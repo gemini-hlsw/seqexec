@@ -34,6 +34,7 @@ import gem.util.Enumerated
   assertCodec[User[ProgramRole]]
   assertCodec[StaticConfig]
   assertCodec[DynamicConfig]
+  assertCodec[Target]
 
   // These compile but take a very long time. Disabled for now, we may need to do some steps
   // of the derivation by hand to make this viable.

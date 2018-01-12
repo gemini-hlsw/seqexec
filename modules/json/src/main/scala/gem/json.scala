@@ -4,14 +4,15 @@
 package gem
 
 import cats.data.OneAnd
-import gem.enum.GcalArc
+import gem.enum.{ GcalArc, Site }
 import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
-import gem.math.{ Angle, Offset, Wavelength }
-import gem.util.Enumerated
+import gem.math._
+import gem.util.{ Enumerated, InstantMicros }
 import io.circe._
 import io.circe.syntax._
-import java.time.Duration
+import io.circe.generic.auto._
+import java.time.{ Duration, Instant }
 import scala.collection.immutable.TreeMap
 
 // These json codecs are provided for primitive types that have no natural mapping that would
@@ -22,17 +23,33 @@ import scala.collection.immutable.TreeMap
 package object json {
 
   private implicit class MoreAngleOps(a: Angle) {
+    private def moveRight(n: Int): BigDecimal =
+      new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(n)
+
     def toSignedArcseconds: BigDecimal =
-      new java.math.BigDecimal(a.toMicroarcseconds).movePointRight(6)
+      moveRight(6)
+
+    def toSignedMilliarcseconds: BigDecimal =
+      moveRight(3)
   }
   private implicit class MoreAngleCompanionOps(comp: Angle.type) {
+    private def moveLeft(b: BigDecimal, n: Int): Angle =
+      comp.fromMicroarcseconds(b.underlying.movePointLeft(n).longValue)
+
     def fromSignedArcseconds(b: BigDecimal): Angle =
-      comp.fromMicroarcseconds(b.underlying.movePointLeft(6).longValue)
+      moveLeft(b, 6)
+
+    def fromSignedMilliarcseconds(b: BigDecimal): Angle =
+      moveLeft(b, 3)
   }
 
   // Angle mapping to signed arcseconds. NOT implicit.
   val AngleAsSignedArcsecondsEncoder: Encoder[Angle] = Encoder[BigDecimal].contramap(_.toSignedArcseconds)
   val AngleAsSignedArcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedArcseconds)
+
+  // Angle mapping to signed milliarcseconds. NOT implicit.
+  val AngleAsSignedMilliarcsecondsEncoder: Encoder[Angle] = Encoder[BigDecimal].contramap(_.toSignedMilliarcseconds)
+  val AngleAsSignedMilliarcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedMilliarcseconds)
 
   // Observation.Index to Integer.
   implicit val ObservationIndexEncoder: Encoder[Observation.Index] = Encoder[Int].contramap(_.toInt)
@@ -54,6 +71,22 @@ package object json {
       ns <- c.downField("nanoseconds").as[Long]
     } yield Duration.ofSeconds(ss, ns)
 
+  // Instant as a record with epoch seconds and nanosecond-of-second
+  implicit val InstantEncoder: Encoder[Instant] = i =>
+    Json.obj(
+      "seconds"     -> i.getEpochSecond.asJson,
+      "nanoseconds" -> i.getNano.asJson
+    )
+  implicit val InstantDecoder: Decoder[Instant] = c =>
+    for {
+      ss <- c.downField("seconds")    .as[Long]
+      ns <- c.downField("nanoseconds").as[Long]
+    } yield Instant.ofEpochSecond(ss, ns)
+
+  // Instant micros
+  implicit val InstantMicrosEncoder: Encoder[InstantMicros] = Encoder[Instant].contramap(_.toInstant)
+  implicit val InstantMicrosDecoder: Decoder[InstantMicros] = Decoder[Instant].map(InstantMicros.truncate)
+
   // Enumerated as a tag
   implicit def enumeratedEncoder[A](implicit ev: Enumerated[A]): Encoder[A] = Encoder[String].contramap(ev.tag)
   implicit def enumeratedDecoder[A](implicit ev: Enumerated[A]): Decoder[A] = Decoder[String].map(ev.unsafeFromTag)
@@ -61,6 +94,57 @@ package object json {
   // Program ID in canonical form
   implicit val ProgramIdEncoder: Encoder[Program.Id] = Encoder[String].contramap(_.format)
   implicit val ProgramIdDecoder: Decoder[Program.Id] = Decoder[String].map(Program.Id.unsafeFromString)
+
+  // Right Ascension in canonical form
+  implicit def RightAscensionEncoder: Encoder[RightAscension] = Encoder[String].contramap(_.format)
+  implicit def RightAscensionDecoder: Decoder[RightAscension] = Decoder[String].map(s => RightAscension.parse(s).getOrElse(sys.error(s"Could not parse '$s' as an RA")))
+
+  // Declination in canonical form
+  implicit def DeclinationEncoder: Encoder[Declination] = Encoder[String].contramap(_.format)
+  implicit def DeclinationDecoder: Decoder[Declination] = Decoder[String].map(s => Declination.parse(s).getOrElse(sys.error(s"Could not parse '$s' as a declination")))
+
+  // Epoch in canonical form
+  implicit def EpochEncoder: Encoder[Epoch] = Encoder[String].contramap(_.format)
+  implicit def EpochDecoder: Decoder[Epoch] = Decoder[String].map(Epoch.unsafeFromString)
+
+  // Proper Motion. Made difficult by the parallax, which requires an explicit Angle encoding.
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  implicit val ProperMotionEncoder: Encoder[ProperMotion] = p =>
+    Json.obj(
+      "baseCoordinates" -> p.baseCoordinates.asJson,
+      "epoch"           -> p.epoch.asJson,
+      "properVelocity"  -> p.properVelocity.asJson,
+      "radialVelocity"  -> p.radialVelocity.asJson,
+      "parallax"        -> Encoder.encodeOption(AngleAsSignedMilliarcsecondsEncoder)(p.parallax)
+    )
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  implicit val ProperMotionDecoder: Decoder[ProperMotion] = c =>
+    for {
+      bc <- c.downField("baseCoordinates").as[Coordinates]
+      ep <- c.downField("epoch")          .as[Epoch]
+      pv <- c.downField("properVelocity") .as[Option[Offset]]
+      rv <- c.downField("radialVelocity") .as[Option[RadialVelocity]]
+      px <- c.downField("parallax")       .as[Option[Angle]](Decoder.decodeOption(AngleAsSignedMilliarcsecondsDecoder))
+    } yield ProperMotion(bc, ep, pv, rv, px)
+
+  // Ephemeris as a List[Ephemeris.Element]
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  implicit val EphemerisEncoder: Encoder[Ephemeris] = Encoder[List[Ephemeris.Element]].contramap(_.toMap.toList)
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  implicit val EphemerisDecoder: Decoder[Ephemeris] = Decoder[List[Ephemeris.Element]].map(ls => Ephemeris(ls: _*))
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  implicit val NonsiderealEncoder: Encoder[Track.Nonsidereal] = n =>
+    Json.obj(
+      "key"         -> n.ephemerisKey.asJson,
+      "ephemerides" -> n.ephemerides.toList.asJson
+    )
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  implicit val NonsiderealDecoder: Decoder[Track.Nonsidereal] = c =>
+    for {
+      k <- c.downField("key").as[EphemerisKey]
+      e <- c.downField("ephemerides").as[List[(Site, Ephemeris)]].map(_.toMap)
+    } yield Track.Nonsidereal(k, e)
 
   // Offset.P maps to a signed angle in arcseconds
   implicit val OffsetPEncoder: Encoder[Offset.P] = AngleAsSignedArcsecondsEncoder.contramap(_.toAngle)
