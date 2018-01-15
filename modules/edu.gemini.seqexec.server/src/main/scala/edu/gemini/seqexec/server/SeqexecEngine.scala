@@ -431,6 +431,7 @@ object SeqexecEngine {
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
     val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
+    val smartGcalEnable         = cfg.lookup[Boolean]("seqexec-engine.smartGCalEnable").getOrElse(true)
 
     // TODO: Review initialization of EPICS systems
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -454,17 +455,18 @@ object SeqexecEngine {
         case _       => Task.fail(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
     }
-    val tcsInit  = if (tcsKeywords || !tcsSim) initEpicsSystem(TcsEpics, tops) else taskUnit
+    val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), taskUnit)
     // More instruments to be added to the list here
     val instList = site match {
       case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
       case Site.GN => List((gmosKeywords, GmosEpics))
     }
     val instInit = Nondeterminism[Task].gatherUnordered(instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
-    val gwsInit  = if (gwsKeywords) initEpicsSystem(GwsEpics, tops) else taskUnit
-    val gcalInit = if (gcalKeywords || !gcalSim) initEpicsSystem(GcalEpics, tops) else taskUnit
+    val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), taskUnit)
+    val gcalInit = (gcalKeywords || !gcalSim).fold(initEpicsSystem(GcalEpics, tops), taskUnit)
+    val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), taskUnit)
 
-    initSmartGCal(smartGCalHost, smartGCalDir) *>
+    smartGcal *>
     caInit *>
       tcsInit *>
       gwsInit *>
