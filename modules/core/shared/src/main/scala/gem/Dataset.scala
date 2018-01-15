@@ -7,6 +7,7 @@ import cats.{ Order, Show }
 import cats.implicits._
 import gem.imp.TimeInstances._
 import gem.syntax.string._
+import gem.util.Format
 import java.time.Instant
 
 /**
@@ -26,25 +27,10 @@ object Dataset {
    * @group Data Types
    */
   final case class Label(observationId: Observation.Id, index: Int) {
-    def format: String =
-      f"${observationId.format}-$index%03d"
+    override def toString =
+      Label.Optics.fromString.productToString(this)
   }
   object Label {
-
-    /** @group Constructors */
-    def fromString(s: String): Option[Dataset.Label] =
-      s.lastIndexOf('-') match {
-        case -1 => None
-        case  n =>
-          val (a, b) = s.splitAt(n)
-          b.drop(1).parseIntOption.flatMap { n =>
-            Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
-          }
-      }
-
-    /** @group Constructors */
-    def unsafeFromString(s: String): Dataset.Label =
-      fromString(s).getOrElse(sys.error("Malformed Dataset.Label: " + s))
 
     /**
      * Labels are ordered by observation and index.
@@ -56,6 +42,23 @@ object Dataset {
     /** @group Typeclass Instances */
     implicit val LabelShow: Show[Label] =
       Show.fromToString
+
+    object Optics {
+
+      /** Format from Strings into Label and back. */
+      val fromString: Format[String, Label] =
+        Format(s =>
+          s.lastIndexOf('-') match {
+            case -1 => None
+            case  n =>
+              val (a, b) = s.splitAt(n)
+              b.drop(1).parseIntOption.filter(_ > 0).flatMap { n =>
+                Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
+              }
+          }, l => f"${l.observationId.format}-${l.index}%03d"
+        )
+
+    }
 
   }
 
