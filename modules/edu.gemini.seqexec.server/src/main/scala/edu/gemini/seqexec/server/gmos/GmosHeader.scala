@@ -53,10 +53,13 @@ final case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywords
       )
   }.toList
 
+  private val InBeam: Int = 0
+  private def readMaskName: SeqAction[String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqAction("None")}
+
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = {
     sendKeywords(id, inst, hs, List(
       buildInt32(gmosReader.maskId, "MASKID"),
-      buildString(gmosReader.maskName, "MASKNAME"),
+      buildString(readMaskName, "MASKNAME"),
       buildInt32(gmosReader.maskType, "MASKTYP"),
       buildInt32(gmosReader.maskLoc, "MASKLOC"),
       buildString(gmosReader.filter1, "FILTER1"),
