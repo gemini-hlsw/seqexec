@@ -94,8 +94,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val stepsListPane: StyleA = style (
-    (maxHeight :=! "calc(100vh - 52.5em)"),
-    minHeight(21.3.em)
+    (height :=! "calc(100% - 1.9em)"),
+    marginTop(1.em)
   )
 
   val instrumentTabSegment: StyleA = style (
@@ -485,4 +485,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val logIconRow: StyleA = style(
     margin(0.px, 0.px, 13.px, 2.px).important
   )
+
+  object VirtTableStyles {
+    val overscanRowCount: Int = 10
+    val rowHeight: Int = 30
+    val headerHeight: Int = 37
+  }
 }

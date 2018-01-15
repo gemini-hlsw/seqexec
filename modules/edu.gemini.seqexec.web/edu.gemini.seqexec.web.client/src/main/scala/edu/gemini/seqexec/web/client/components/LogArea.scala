@@ -143,15 +143,15 @@ object LogArea {
             ^.height := 270.px,
             "No log entries"
           ),
-        overscanRowCount = 10,
+        overscanRowCount = SeqexecStyles.VirtTableStyles.overscanRowCount,
         height = 200,
         rowCount = p.rowCount(s),
-        rowHeight = 30,
+        rowHeight = SeqexecStyles.VirtTableStyles.rowHeight,
         rowClassName = rowClassName(s) _,
         width = size.width.toInt,
         rowGetter = p.rowGetter(s) _,
         headerClassName = SeqexecStyles.logTableHeader.htmlClass,
-        headerHeight = 37),
+        headerHeight = SeqexecStyles.VirtTableStyles.headerHeight),
       columns: _*).vdomElement
   }
 
