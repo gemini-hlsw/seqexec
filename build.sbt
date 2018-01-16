@@ -18,6 +18,9 @@ licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.or
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
+// Sonatype snapshots
+resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
+
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
 ocsJreDir in ThisBuild := Path.userHome / ".jres8"
