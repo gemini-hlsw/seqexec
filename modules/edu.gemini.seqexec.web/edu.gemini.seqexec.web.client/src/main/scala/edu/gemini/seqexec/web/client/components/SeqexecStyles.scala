@@ -94,7 +94,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val stepsListPane: StyleA = style (
-    (height :=! "calc(100% - 1.9em)"),
+    (height :=! "calc(100% - 1.98em)"),
     marginTop(1.em)
   )
 
@@ -104,8 +104,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val stepsListPaneWithControls: StyleA = style (
-    (maxHeight :=! "calc(100vh - 55.5em)"),
-    minHeight(18.1.em)
+    (height :=! "calc(100% - 4.9em)"),
+    marginTop(1.em)
   )
 
   val stepsListBody: StyleA = style() // Marker css
@@ -338,6 +338,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     position.fixed,
     bottom(0.px),
     width(100.%%),
+    height(46.px),
     marginBottom(0.px),
     marginTop(0.px),
     backgroundColor(c"#F5F5F5"),

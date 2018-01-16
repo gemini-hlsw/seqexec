@@ -113,7 +113,8 @@ object StepsTable {
   private val component = ScalaComponent.builder[Props]("Steps")
     .render_P { p =>
       <.div(
-        SeqexecStyles.stepsListPane,
+        SeqexecStyles.stepsListPane.unless(p.status.isLogged),
+        SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
             <.div("CONFIG")
