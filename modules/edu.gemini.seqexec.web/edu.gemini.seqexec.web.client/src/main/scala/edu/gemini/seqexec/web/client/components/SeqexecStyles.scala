@@ -377,12 +377,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   // Border color
   private val tableBorderColor = rgba(34, 36, 38, 0.15)
 
-  private val logTablePaddingMixin: StyleS = mixin(
-    paddingLeft(0.7.em),
-    paddingRight(0.7.em),
-    paddingBottom(0.7.em),
-    paddingTop(1.em)
+  val selectorFields: StyleA = style(
+    float.right
   )
+
+  val logIconHeader: StyleA = style(
+    margin(0.px, 0.px, 10.px, 0.px).important
+  )
+
+  val logIconRow: StyleA = style(
+    margin(0.px, 0.px, 13.px, 2.px).important
+  )
+
+  val overscanRowCount: Int = 10
+  val rowHeight: Int = 30
+  val headerHeight: Int = 37
 
   val leftBorderMixin: StyleS = mixin(
     borderLeftWidth(1.px),
@@ -408,7 +417,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderRightColor(tableBorderColor)
   )
 
-  val logTableHeader: StyleA = style(
+  private val logTablePaddingMixin: StyleS = mixin(
+    paddingLeft(0.7.em),
+    paddingRight(0.7.em),
+    paddingBottom(0.7.em),
+    paddingTop(1.em)
+  )
+
+  val tableHeader: StyleA = style(
     leftBorderMixin,
     logTablePaddingMixin,
     fontWeight.bold,
@@ -432,14 +448,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderLeft.none
   )
 
-  val logRowMixin: StyleS = mixin(
+  val rowMixin: StyleS = mixin(
     leftBorderMixin,
     topBorderMixin,
     rightBorderMixin
-  )
-
-  val logRow: StyleA = style(
-    logRowMixin
   )
 
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
@@ -460,39 +472,25 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     whiteSpace.nowrap
   )
 
+  val headerRowStyle: StyleA = style(
+    rowMixin
+  )
+
   val infoLog: StyleA = style(
-    logRowMixin,
+    rowMixin,
     backgroundColor.white,
     color(rgba(0, 0, 0, 0.95))
   )
 
   val errorLog: StyleA = style(
-    logRowMixin,
+    rowMixin,
     backgroundColor(c"#fff6f6").important,
     color(c"#9f3a38").important
   )
 
   val warningLog: StyleA = style(
-    logRowMixin,
+    rowMixin,
     backgroundColor(c"#fffaf3").important,
     color(c"#573a08").important
   )
-
-  val selectorFields: StyleA = style(
-    float.right
-  )
-
-  val logIconHeader: StyleA = style(
-    margin(0.px, 0.px, 10.px, 0.px).important
-  )
-
-  val logIconRow: StyleA = style(
-    margin(0.px, 0.px, 13.px, 2.px).important
-  )
-
-  object VirtTableStyles {
-    val overscanRowCount: Int = 10
-    val rowHeight: Int = 30
-    val headerHeight: Int = 37
-  }
 }

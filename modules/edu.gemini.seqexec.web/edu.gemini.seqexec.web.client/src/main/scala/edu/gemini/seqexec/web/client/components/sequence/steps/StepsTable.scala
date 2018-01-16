@@ -69,13 +69,18 @@ object StepsTable {
     // val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
   }
 
-  private val IdxWidth = 20
+  private val IdxWidth = 30
 
   // Columns for the table
   private val columns = List(
-    Column(Column.props(IdxWidth, "idx", label = "", disableSort = true)))
+    Column(Column.props(IdxWidth, "idx", label = "Step", disableSort = true, flexGrow = 1)))
 
   def stepsTable(p: Props)(size: Size): VdomNode = {
+    def rowClassName(i: Int): String = ((i, p.rowGetter(i)) match {
+      case (-1, _) => SeqexecStyles.headerRowStyle
+      case _       => SeqexecStyles.infoLog
+    }).htmlClass
+
     Table(
       Table.props(
         disableHeader = false,
@@ -85,29 +90,16 @@ object StepsTable {
             ^.height := 270.px,
             "No log entries"
           ),
-        overscanRowCount = SeqexecStyles.VirtTableStyles.overscanRowCount,
+        overscanRowCount = SeqexecStyles.overscanRowCount,
         height = size.height.toInt,
         rowCount = p.rowCount,
-        rowHeight = SeqexecStyles.VirtTableStyles.rowHeight,
-        // rowClassName = rowClassName(s) _,
+        rowHeight = SeqexecStyles.rowHeight,
+        rowClassName = rowClassName _,
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
-        // headerClassName = SeqexecStyles.logTableHeader.htmlClass,
-        headerHeight = SeqexecStyles.VirtTableStyles.headerHeight),
+        headerClassName = SeqexecStyles.tableHeader.htmlClass,
+        headerHeight = SeqexecStyles.headerHeight),
       columns: _*).vdomElement
-      // SeqexecStyles.stepsTable,
-      // ^.onMouseLeave  --> mouseLeave,
-      // StepsTableHeader(props.offsetsDisplay),
-      // <.tbody(
-      //   SeqexecStyles.stepsListBody,
-      //   p.steps.zipWithIndex.flatMap {
-      //     case (step, i) =>
-      //       List(
-      //         gutterCol(p.id, i, step, s, firstRunnableIndex(p.steps)),
-      //         stepCols(props.router, props.status, p, i, p.state, step, props.offsetsDisplay)
-      //       )
-      //   }.toTagMod
-      // )
   }
 
   private val component = ScalaComponent.builder[Props]("Steps")
@@ -119,7 +111,7 @@ object StepsTable {
           tab.stepConfigDisplayed.map { i =>
             <.div("CONFIG")
           }.getOrElse {
-            AutoSizer(AutoSizer.props(stepsTable(p), onResize = size => Callback.log(size)))
+            AutoSizer(AutoSizer.props(stepsTable(p)))
           }
         }
       )

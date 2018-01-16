@@ -131,7 +131,7 @@ object LogArea {
       case LogRow(_, ServerLogLevel.INFO, _, _)  => SeqexecStyles.infoLog
       case LogRow(_, ServerLogLevel.WARN, _, _)  => SeqexecStyles.warningLog
       case LogRow(_, ServerLogLevel.ERROR, _, _) => SeqexecStyles.errorLog
-      case _                                     => SeqexecStyles.logRow
+      case _                                     => SeqexecStyles.headerRowStyle
     }).htmlClass
 
     Table(
@@ -143,15 +143,15 @@ object LogArea {
             ^.height := 270.px,
             "No log entries"
           ),
-        overscanRowCount = SeqexecStyles.VirtTableStyles.overscanRowCount,
+        overscanRowCount = SeqexecStyles.overscanRowCount,
         height = 200,
         rowCount = p.rowCount(s),
-        rowHeight = SeqexecStyles.VirtTableStyles.rowHeight,
+        rowHeight = SeqexecStyles.rowHeight,
         rowClassName = rowClassName(s) _,
         width = size.width.toInt,
         rowGetter = p.rowGetter(s) _,
-        headerClassName = SeqexecStyles.logTableHeader.htmlClass,
-        headerHeight = SeqexecStyles.VirtTableStyles.headerHeight),
+        headerClassName = SeqexecStyles.tableHeader.htmlClass,
+        headerHeight = SeqexecStyles.headerHeight),
       columns: _*).vdomElement
   }
 
