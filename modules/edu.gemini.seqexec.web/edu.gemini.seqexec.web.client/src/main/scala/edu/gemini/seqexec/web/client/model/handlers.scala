@@ -466,7 +466,7 @@ object handlers {
     * Handles messages received over the WS channel
     */
   class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
-    private val VoidEffect = Effect(Future(NoAction))
+    private val VoidEffect = Effect(Future(NoAction: Action))
     // Global references to audio files
     private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
     private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
@@ -540,19 +540,18 @@ object handlers {
       case ServerMessage(SequenceLoaded(id, view)) =>
         val observer = value.user.map(_.displayName)
         val newSequence = view.queue.find(_.id === id)
-        val updateObserverE = (observer |@| newSequence) { (o, s) =>
-            val updateObserver = Effect(Future(UpdateObserver(id, o)))
-            if (view.queue.length == 1) {
-              updateObserver + Effect(Future(SyncPageToAddedSequence(s.metadata.instrument, id)))
-            } else {
-              updateObserver
-            }
-          }.getOrElse(VoidEffect)
-        updated(value.copy(sequences = filterSequences(view), firstLoad = false), updateObserverE)
+        val updateObserverE = observer.fold(VoidEffect)(o => Effect(Future(UpdateObserver(id, o): Action)))
+        val syncPageE = for {
+          s <- newSequence
+          if view.queue.length === 1
+        } yield Effect(Future(SyncPageToAddedSequence(s.metadata.instrument, id): Action))
+        val effects = updateObserverE + syncPageE.fold(VoidEffect)(identity)
+        updated(value.copy(sequences = filterSequences(view), firstLoad = false), effects)
     }
     val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceUnloaded(id, view)) =>
-        updated(value.copy(sequences = filterSequences(view), firstLoad = false), Effect(Future(SyncPageToRemovedSequence(id))))
+        val syncPageE = Effect(Future(SyncPageToRemovedSequence(id)))
+        updated(value.copy(sequences = filterSequences(view), firstLoad = false), syncPageE)
     }
 
     val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
