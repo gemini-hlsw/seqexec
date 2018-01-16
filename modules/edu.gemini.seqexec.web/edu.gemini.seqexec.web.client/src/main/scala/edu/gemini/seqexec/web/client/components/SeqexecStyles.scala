@@ -151,7 +151,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginBottom(-1.em).important
   )
 
-  val emptyInstrumentTab: StyleA = style()
+  val emptyInstrumentTab: StyleA = style(
+    (height :=! "calc(100vh - 46.2em)"),
+    minHeight(25.4.em)
+  )
 
   val instrumentTab: StyleA = style(
     minWidth(20.%%),
