@@ -66,6 +66,8 @@ object handlers {
         value match {
           case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
+          case InstrumentPage(i, None) =>
+            effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
           case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(ShowStep(s.id, step))))
           case _ =>
@@ -548,6 +550,7 @@ object handlers {
         val effects = updateObserverE + syncPageE.fold(VoidEffect)(identity)
         updated(value.copy(sequences = filterSequences(view), firstLoad = false), effects)
     }
+
     val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceUnloaded(id, view)) =>
         val syncPageE = Effect(Future(SyncPageToRemovedSequence(id)))
