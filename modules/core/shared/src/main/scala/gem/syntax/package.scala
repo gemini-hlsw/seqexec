@@ -10,4 +10,8 @@ package gem
  */
 package object syntax {
   object all extends ToParserOps
+                with ToPrismOps
+                with ToStringOps
+                with ToInstantOps
+                with ToDurationOps
 }
