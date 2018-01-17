@@ -4,11 +4,16 @@
 package gem.math
 
 import cats.tests.CatsSuite
+import cats.kernel.laws.discipline._
+
 import gem.arb._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ProperMotionSpec extends CatsSuite {
   import ArbProperMotion._
+
+  // Laws
+  checkAll("ProperMotion", EqTests[ProperMotion].eqv)
 
   test("ProperMotion.identity") {
     forAll { (pm: ProperMotion) =>

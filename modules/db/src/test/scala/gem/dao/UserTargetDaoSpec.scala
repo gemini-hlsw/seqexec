@@ -25,15 +25,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   // TODO: We will need to figure out what to do about ephemeris.  It isn't
   // stored when you write a Target with TargetDao, or loaded when you read one.
   def stripEphemeris(ut: UserTarget): UserTarget =
-    ut match {
-      case UserTarget(Target(n, Track.Nonsidereal(id, _)), utt) =>
-        // TODO: Use lenses once we figure out what we're doing
-        UserTarget(Target(n, Track.Nonsidereal(id, Map.empty)), utt)
-
-      case _                                                    =>
-        ut
-    }
-
+    UserTarget.ephemerides.set(Map.empty)(ut)
 
   property("UserTargetDao should roundtrip-ish") {
     forAll { (obs: Observation[StaticConfig, Step[DynamicConfig]], ut: UserTarget) =>

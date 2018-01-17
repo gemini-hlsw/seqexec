@@ -10,6 +10,7 @@ import gem.math._
 import gem.Track.{ Nonsidereal, Sidereal }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbTrack {
   import ArbProperMotion._
@@ -22,6 +23,9 @@ trait ArbTrack {
       arbitrary[ProperMotion].map(Sidereal(_))
     }
 
+  implicit val cogSidereal: Cogen[Track.Sidereal] =
+    Cogen[ProperMotion].contramap(_.properMotion)
+
   implicit val arbNonsidereal: Arbitrary[Track.Nonsidereal] =
     Arbitrary {
       for {
@@ -31,9 +35,19 @@ trait ArbTrack {
       } yield Nonsidereal(key, Map(site -> eph))
     }
 
+  implicit val cogNonsidereal: Cogen[Track.Nonsidereal] =
+    Cogen[(EphemerisKey, Map[Site, Ephemeris])].contramap { n =>
+      (n.ephemerisKey, n.ephemerides)
+    }
+
   implicit val arbTrack: Arbitrary[Track] =
     Arbitrary {
       Gen.oneOf(arbitrary[Sidereal], arbitrary[Nonsidereal])
+    }
+
+  implicit val cogTrack: Cogen[Track] =
+    Cogen[(Option[Sidereal], Option[Nonsidereal])].contramap { t =>
+      (t.sidereal, t.nonsidereal)
     }
 }
 

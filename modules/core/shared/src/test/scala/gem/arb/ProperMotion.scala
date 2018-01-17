@@ -8,12 +8,14 @@ import gem.math._
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.{ chooseNum, const, oneOf }
+import org.scalacheck.Cogen._
 
 trait ArbProperMotion {
   import ArbEpoch._
   import ArbCoordinates._
   import ArbOffset._
   import ArbRadialVelocity._
+  import ArbAngle._
 
   implicit val arbProperMotion: Arbitrary[ProperMotion] =
     Arbitrary {
@@ -28,6 +30,11 @@ trait ArbProperMotion {
                 chooseNum(-999999000L, 999999000L).map(µas => Some(Angle.fromMicroarcseconds(µas)))
               )
       } yield ProperMotion(cs, ap, pv, rv, px)
+    }
+
+  implicit val cogProperMotion: Cogen[ProperMotion] =
+    Cogen[(Coordinates, Epoch, Option[Offset], Option[RadialVelocity], Option[Angle])].contramap { p =>
+      (p.baseCoordinates, p.epoch, p.properVelocity, p.radialVelocity, p.parallax)
     }
 
 }

@@ -6,6 +6,7 @@ package arb
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbTarget {
 
@@ -17,6 +18,11 @@ trait ArbTarget {
         n <- Gen.alphaStr.map(_.take(64))
         t <- arbitrary[Track]
       } yield Target(n, t)
+    }
+
+  implicit val cogTarget: Cogen[Target] =
+    Cogen[(String, Track)].contramap { t =>
+      (t.name, t.track)
     }
 }
 

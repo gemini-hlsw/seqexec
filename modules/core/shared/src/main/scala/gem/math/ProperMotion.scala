@@ -3,6 +3,7 @@
 
 package gem.math
 
+import cats.Eq
 import cats.implicits._
 import java.time.Instant
 import scala.math.{ sin, cos, hypot, atan2 }
@@ -168,6 +169,9 @@ object ProperMotion {
 
   }
   // scalastyle:on method.length
+
+  implicit val EqProperMotion: Eq[ProperMotion] =
+    Eq.fromUniversalEquals
 
 }
 

@@ -3,10 +3,21 @@
 
 package gem
 
+import cats.Eq
+import monocle.macros.Lenses
+
 /** Collection of targets associated with an observation.
   */
-final case class TargetEnvironment(
+@Lenses final case class TargetEnvironment(
   /* asterism, */
   /* guide stars, */
   userTargets: Set[UserTarget]
 )
+
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+object TargetEnvironment {
+
+  implicit val EqTargetEnvironment: Eq[TargetEnvironment] =
+    Eq.fromUniversalEquals
+
+}

@@ -7,6 +7,7 @@ package arb
 import gem.enum.UserTargetType
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen._
 
 trait ArbUserTarget {
 
@@ -19,6 +20,11 @@ trait ArbUserTarget {
         t <- arbitrary[Target]
         y <- arbitrary[UserTargetType]
       } yield UserTarget(t, y)
+    }
+
+  implicit val cogUserTarget: Cogen[UserTarget] =
+    Cogen[(Target, UserTargetType)].contramap { u =>
+      (u.target, u.targetType)
     }
 }
 

@@ -7,11 +7,15 @@ package arb
 import gem.math._
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen
 
 trait ArbRadialVelocity {
 
   implicit val arbRadialVelocity: Arbitrary[RadialVelocity] =
     Arbitrary(arbitrary[Short].map(n => RadialVelocity(n.toInt)))
+
+  implicit val cogRadialVelocity: Cogen[RadialVelocity] =
+    Cogen[Int].contramap(_.toMetersPerSecond)
 
 }
 object ArbRadialVelocity extends ArbRadialVelocity
