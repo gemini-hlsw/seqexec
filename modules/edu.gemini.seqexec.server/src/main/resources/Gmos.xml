@@ -518,6 +518,11 @@
             <type>INTEGER</type>
             <description>Disperser in beam</description>
         </attribute>
+        <attribute name="disperserMode">
+            <channel>grSelect.VALA</channel>
+            <type>INTEGER</type>
+            <description>Disperser Mode (0 => WLEN, 1 => SEL)</description>
+        </attribute>
         <attribute name="disperserOrder">
             <channel>sad:grOrder</channel>
             <type>INTEGER</type>
