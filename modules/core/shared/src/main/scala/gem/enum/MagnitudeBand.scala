@@ -4,8 +4,8 @@
 package gem
 package enum
 
-import cats.syntax.eq._
 import cats.instances.string._
+import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
@@ -18,31 +18,31 @@ sealed abstract class MagnitudeBand(
   val longName: String,
   val center: Int,
   val width: Int,
-  val magnitudeSystem: gem.enum.MagnitudeSystem
+  val magnitudeSystem: MagnitudeSystem
 ) extends Product with Serializable
 
 object MagnitudeBand {
 
-  /** @group Constructors */ case object SloanU extends MagnitudeBand("SloanU", "u", "UV", 356, 46, gem.enum.MagnitudeSystem.AB)
-  /** @group Constructors */ case object SloanG extends MagnitudeBand("SloanG", "g", "Green", 483, 99, gem.enum.MagnitudeSystem.AB)
-  /** @group Constructors */ case object SloanR extends MagnitudeBand("SloanR", "r", "Red", 626, 96, gem.enum.MagnitudeSystem.AB)
-  /** @group Constructors */ case object SloanI extends MagnitudeBand("SloanI", "i", "Far red", 767, 106, gem.enum.MagnitudeSystem.AB)
-  /** @group Constructors */ case object SloanZ extends MagnitudeBand("SloanZ", "z", "Near infrared", 910, 125, gem.enum.MagnitudeSystem.AB)
-  /** @group Constructors */ case object U extends MagnitudeBand("U", "U", "Ultraviolet", 360, 75, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object B extends MagnitudeBand("B", "B", "Blue", 440, 90, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object V extends MagnitudeBand("V", "V", "Visual", 550, 85, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object Uc extends MagnitudeBand("Uc", "UC", "UCAC", 610, 63, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object R extends MagnitudeBand("R", "R", "Red", 670, 100, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object I extends MagnitudeBand("I", "I", "Infrared", 870, 100, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object Y extends MagnitudeBand("Y", "Y", "Y", 1020, 120, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object J extends MagnitudeBand("J", "J", "J", 1250, 240, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object H extends MagnitudeBand("H", "H", "H", 1650, 300, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object K extends MagnitudeBand("K", "K", "K", 2200, 410, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object L extends MagnitudeBand("L", "L", "L", 3760, 700, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object M extends MagnitudeBand("M", "M", "M", 4770, 240, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object N extends MagnitudeBand("N", "N", "N", 10470, 5230, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object Q extends MagnitudeBand("Q", "Q", "Q", 20130, 1650, gem.enum.MagnitudeSystem.Vega)
-  /** @group Constructors */ case object Ap extends MagnitudeBand("Ap", "AP", "Apparent", 550, 85, gem.enum.MagnitudeSystem.Vega)
+  /** @group Constructors */ case object SloanU extends MagnitudeBand("SloanU", "u", "UV", 356, 46, MagnitudeSystem.AB)
+  /** @group Constructors */ case object SloanG extends MagnitudeBand("SloanG", "g", "Green", 483, 99, MagnitudeSystem.AB)
+  /** @group Constructors */ case object SloanR extends MagnitudeBand("SloanR", "r", "Red", 626, 96, MagnitudeSystem.AB)
+  /** @group Constructors */ case object SloanI extends MagnitudeBand("SloanI", "i", "Far red", 767, 106, MagnitudeSystem.AB)
+  /** @group Constructors */ case object SloanZ extends MagnitudeBand("SloanZ", "z", "Near infrared", 910, 125, MagnitudeSystem.AB)
+  /** @group Constructors */ case object U extends MagnitudeBand("U", "U", "Ultraviolet", 360, 75, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object B extends MagnitudeBand("B", "B", "Blue", 440, 90, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object V extends MagnitudeBand("V", "V", "Visual", 550, 85, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object Uc extends MagnitudeBand("Uc", "UC", "UCAC", 610, 63, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object R extends MagnitudeBand("R", "R", "Red", 670, 100, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object I extends MagnitudeBand("I", "I", "Infrared", 870, 100, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object Y extends MagnitudeBand("Y", "Y", "Y", 1020, 120, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object J extends MagnitudeBand("J", "J", "J", 1250, 240, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object H extends MagnitudeBand("H", "H", "H", 1650, 300, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object K extends MagnitudeBand("K", "K", "K", 2200, 410, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object L extends MagnitudeBand("L", "L", "L", 3760, 700, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object M extends MagnitudeBand("M", "M", "M", 4770, 240, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object N extends MagnitudeBand("N", "N", "N", 10470, 5230, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object Q extends MagnitudeBand("Q", "Q", "Q", 20130, 1650, MagnitudeSystem.Vega)
+  /** @group Constructors */ case object Ap extends MagnitudeBand("Ap", "AP", "Apparent", 550, 85, MagnitudeSystem.Vega)
 
   /** All members of MagnitudeBand, in canonical order. */
   val all: List[MagnitudeBand] =

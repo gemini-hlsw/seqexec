@@ -4,8 +4,8 @@
 package gem
 package enum
 
-import cats.syntax.eq._
 import cats.instances.string._
+import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
