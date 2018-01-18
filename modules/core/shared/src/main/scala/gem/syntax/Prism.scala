@@ -5,7 +5,6 @@ package gem.syntax
 
 import gem.util.Format
 import monocle.Prism
-import scala.reflect.runtime.universe.TypeTag
 
 @SuppressWarnings(Array("org.wartremover.warts.Null"))
 final class PrismOps[A, B](val self: Prism[A, B]) extends AnyVal {
@@ -16,7 +15,7 @@ final class PrismOps[A, B](val self: Prism[A, B]) extends AnyVal {
 
   /** Like getOption, but throws IllegalArgumentException on failure. */
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  def unsafeGet(a: A)(implicit ev: TypeTag[B] = null): B =
+  def unsafeGet(a: A): B =
     asFormat.unsafeGet(a)
 
 }

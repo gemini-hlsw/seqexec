@@ -4,9 +4,7 @@
 package gem.util
 
 import cats.arrow._
-import cats.implicits._
 import monocle.{ Iso, Prism }
-import scala.reflect.runtime.universe.TypeTag
 
 /**
  * A normalizing optic, isomorphic to Prism but with different laws, specifically `getOption`
@@ -19,11 +17,9 @@ final case class Format[A, B](getOption: A => Option[B], reverseGet: B => A) {
 
   /** Like getOption, but throws IllegalArgumentException on failure. */
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.Throw"))
-  def unsafeGet(a: A)(implicit ev: TypeTag[B] = null): B =
+  def unsafeGet(a: A): B =
     getOption(a).getOrElse {
-      // If a TypeTag is available we can construct a more useful message.
-      val prefix = Option(ev).foldMap(tag => s"${tag.tpe}: ")
-      throw new IllegalArgumentException(s"${prefix}unsafeGet failed: $a")
+      throw new IllegalArgumentException(s"unsafeGet failed: $a")
     }
 
   /** Compose with another Format. */

@@ -22,19 +22,9 @@ final class FormatSpec extends CatsSuite {
     }
   }
 
-  test("unsafeGet.error.tagged") {
+  test("unsafeGet.error message") {
     forAll { (n: Int) =>
       Either.catchNonFatal(example.unsafeGet(n)) match {
-        case Left(t)  => t.getMessage shouldEqual s"Boolean: unsafeGet failed: $n"
-        case Right(b) => true
-      }
-    }
-  }
-
-  test("unsafeGet.error.untagged") {
-    forAll { (n: Int) =>
-      def unsafeGet[A, B](f: Format[A, B], a: A): B = f.unsafeGet(a)
-      Either.catchNonFatal(unsafeGet(example, n)) match {
         case Left(t)  => t.getMessage shouldEqual s"unsafeGet failed: $n"
         case Right(b) => true
       }
