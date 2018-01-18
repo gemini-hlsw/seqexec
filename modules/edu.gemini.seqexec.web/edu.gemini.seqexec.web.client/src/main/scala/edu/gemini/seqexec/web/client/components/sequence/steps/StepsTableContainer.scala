@@ -388,9 +388,9 @@ object StepsTableContainer {
     private def stepCols(router: RouterCtl[SeqexecPages], status: ClientStatus, p: StepsTableFocus, i: Int, state: SequenceState, step: Step, offsetsDisplay: OffsetsDisplay) =
       <.tr(
         SeqexecStyles.trNoBorder,
+        SeqexecStyles.stepRunning.when(step.status === StepState.Running),
         ^.onMouseOver --> mouseEnter(i),
         ^.classSet(classSet(step): _*),
-        SeqexecStyles.stepRunning.when(step.status === StepState.Running),
         stepIconCell(p, step, i),
         stepNumberCell(step, i),
         stepStatusCell(status, p, step, state, i),

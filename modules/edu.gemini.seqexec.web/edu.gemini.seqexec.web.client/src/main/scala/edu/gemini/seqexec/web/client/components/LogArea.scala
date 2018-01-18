@@ -60,7 +60,7 @@ object LogArea {
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(local: String, timestamp: Instant, level: ServerLogLevel, msg: String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
-      p.local =local
+      p.local = local
       p.timestamp = timestamp
       p.level = level
       p.msg = msg
