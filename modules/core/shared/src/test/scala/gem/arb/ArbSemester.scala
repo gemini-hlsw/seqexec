@@ -25,4 +25,5 @@ trait ArbSemester {
     Cogen[(Year, Half)].contramap(s => (s.year, s.half))
 
 }
+
 object ArbSemester extends ArbSemester

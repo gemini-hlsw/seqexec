@@ -66,4 +66,5 @@ trait ArbProgramId {
     Cogen[String].contramap(_.format)
 
 }
+
 object ArbProgramId extends ArbProgramId
