@@ -19,4 +19,5 @@ trait ArbRightAscension {
     Cogen[HourAngle].contramap(_.toHourAngle)
 
 }
+
 object ArbRightAscension extends ArbRightAscension

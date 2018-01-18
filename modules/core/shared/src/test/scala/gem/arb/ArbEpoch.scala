@@ -28,4 +28,5 @@ trait ArbEpoch {
     Cogen[String].contramap(_.format)
 
 }
+
 object ArbEpoch extends ArbEpoch

@@ -27,4 +27,5 @@ trait ArbObservation {
     Cogen[(ProgramId, Observation.Index)].contramap(oid => (oid.pid, oid.index))
 
 }
+
 object ArbObservation extends ArbObservation

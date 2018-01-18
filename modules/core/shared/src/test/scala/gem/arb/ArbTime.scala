@@ -90,4 +90,5 @@ trait ArbTime {
     Cogen[Int].contramap(_.getValue)
 
 }
+
 object ArbTime extends ArbTime
