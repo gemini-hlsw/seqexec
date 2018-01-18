@@ -137,6 +137,13 @@ object StepsTable {
       case _       => SeqexecStyles.stepRow
     }).htmlClass
 
+    def rowHeight(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
+      case (_, OffsetsDisplay.DisplayOffsets(_)) =>
+        3 * SeqexecStyles.rowHeight / 2
+      case _ =>
+        SeqexecStyles.rowHeight
+    }
+
     Table(
       Table.props(
         disableHeader = false,
@@ -149,7 +156,7 @@ object StepsTable {
         overscanRowCount = SeqexecStyles.overscanRowCount,
         height = size.height.toInt,
         rowCount = p.rowCount,
-        rowHeight = SeqexecStyles.rowHeight,
+        rowHeight = rowHeight _,
         rowClassName = rowClassName _,
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
