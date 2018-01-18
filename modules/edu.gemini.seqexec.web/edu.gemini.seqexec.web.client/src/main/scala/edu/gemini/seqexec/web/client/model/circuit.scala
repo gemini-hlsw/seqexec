@@ -19,6 +19,8 @@ import edu.gemini.seqexec.web.client.actions.{OpenLoginBox, CloseLoginBox, OpenR
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
+import scalaz.Order
+import scalaz.std.AllInstances._
 import scalaz.syntax.equal._
 
 object circuit {
@@ -35,6 +37,10 @@ object circuit {
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: Option[SeqexecSite], firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[(Int, Int)]) extends UseValueEq
+  object SequenceInQueue {
+    implicit val order: Order[SequenceInQueue] = Order.orderBy(_.id)
+    implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toScalaOrdering
+  }
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
@@ -79,7 +85,7 @@ object circuit {
           val targetName = firstScienceStepTargetNameT.headOption(s)
           SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, targetName, s.runningStep)
         }
-        StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue)
+        StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue.sorted)
       }
 
     // Reader for sequences on display
