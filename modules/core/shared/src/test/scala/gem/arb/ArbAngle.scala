@@ -38,4 +38,5 @@ trait ArbAngle {
     arbitrary[Angle].map(_.formatDMS).flatMapOneOf(Gen.const, perturbations: _*)
 
 }
+
 object ArbAngle extends ArbAngle

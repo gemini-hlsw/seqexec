@@ -17,4 +17,5 @@ trait ArbEnumerated {
     Cogen[String].contramap(en.tag)
 
 }
+
 object ArbEnumerated extends ArbEnumerated

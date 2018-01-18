@@ -18,4 +18,5 @@ trait ArbWavelength {
     Cogen[Int].contramap(_.toAngstroms)
 
 }
+
 object ArbWavelength extends ArbWavelength

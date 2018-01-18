@@ -40,4 +40,5 @@ trait ArbOffset {
     Cogen[(Offset.P, Offset.Q)].contramap(o => (o.p, o.q))
 
 }
+
 object ArbOffset extends ArbOffset
