@@ -224,6 +224,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def fpu: Option[String] = Option(state.getStringAttribute("fpu").value)
 
+  def disperserMode: Option[Int] = Option(state.getIntegerAttribute("disperserMode").value).map(_.toInt)
+
   def disperserInBeam: Option[Int] = Option(state.getIntegerAttribute("disperserInBeam").value).map(_.toInt)
 
   def disperserOrder: Option[Int] = Option(state.getIntegerAttribute("disperserOrder").value).map(_.toInt)

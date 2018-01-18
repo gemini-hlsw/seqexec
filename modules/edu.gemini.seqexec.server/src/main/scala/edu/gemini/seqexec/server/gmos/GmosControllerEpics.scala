@@ -56,6 +56,12 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   implicit val disperserOrderEncoder: EncodeEpicsValue[DisperserOrder, String] = EncodeEpicsValue(_.sequenceValue)
 
+  implicit val disperserOrderEncoderInt: EncodeEpicsValue[DisperserOrder, Int] = EncodeEpicsValue{
+    case Order.ZERO => 0
+    case Order.ONE  => 1
+    case Order.TWO  => 2
+  }
+
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] = EncodeEpicsValue((l: Length) => l.toNanometers)
 
   implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
@@ -109,44 +115,52 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- DC.setCcdYBinning(encode(dc.bi.y))
   } yield ()
 
-
+  private def smartSetParam[A: Equal](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
+    get.flatMap(g => (g =/= v).option(set)).getOrElse(SeqAction.void)
 
   def setFilters(f: T#Filter): SeqAction[Unit] = {
     val (filter1, filter2) = encoders.filter.encode(f)
 
-    CC.setFilter1(filter1) *> CC.setFilter2(filter2)
+    smartSetParam(filter1, GmosEpics.instance.filter1, CC.setFilter1(filter1)) *>
+      smartSetParam(filter2, GmosEpics.instance.filter2, CC.setFilter2(filter2))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def setDisperser(d: GmosController.Config[T]#GmosDisperser): SeqAction[Unit] = {
     // TODO: add support for Enum parameters in acm, and then define Enum type for disperserMode
-    val disperserMode = "WLEN"
-    CC.setDisperser(encoders.disperser.encode(d.disperser)) *>
-      CC.setDisperserMode(disperserMode) *>
-      d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o => CC.setDisperserOrder(encode(o))) *>
-      d.lambda.filter(_ => d.disperser != Disperser.MIRROR && !d.order.contains(Order.ZERO)).fold(SeqAction.void)(o => CC.setDisperserLambda(encode(o)))
+    val disperserMode0 = "WLEN"
+    val disperserMode1 = "SEL"
+    val disperser = encoders.disperser.encode(d.disperser)
+    def disperserModeDecode(v : Int): String = if(v===0) disperserMode0 else disperserMode1
+
+    smartSetParam(disperser, GmosEpics.instance.disperser, CC.setDisperser(disperser)) *>
+      smartSetParam( disperserMode0, GmosEpics.instance.disperserMode.map(disperserModeDecode), CC.setDisperserMode(disperserMode0)) *>
+      d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o =>
+        smartSetParam(disperserOrderEncoderInt.encode(o), GmosEpics.instance.disperserOrder, CC.setDisperserOrder(disperserOrderEncoder.encode(o)))) *>
+      d.lambda.filter(_ => d.disperser != Disperser.MIRROR && !d.order.contains(Order.ZERO)).fold(SeqAction.void)(o =>
+        smartSetParam(encode(o), GmosEpics.instance.disperserWavel, CC.setDisperserLambda(encode(o))) )
+
   }
 
   def setFPU(cc: GmosFPU): SeqAction[Unit] = {
-    def builtInFPU(fpu: T#FPU): SeqAction[Unit] = {
-      val (fpuName, beam) = encoders.fpu.encode(fpu)
+    def inBeamDecode(v: Int): String = if (v===0) InBeamVal else OutOfBeamVal
 
-      fpuName.fold(SeqAction.void)(CC.setFpu) *>
-        beam.fold(SeqAction.void)(CC.setInBeam)
+    def builtInFPU(fpu: T#FPU): (Option[String], Option[String]) = encoders.fpu.encode(fpu)
+
+    def customFPU(name: String): (Option[String], Option[String]) = name match {
+      case "None" => (none, none)
+      case _      => (name.some, beamEncoder.encode(InBeam).some)
     }
 
-    def customFPU(name: String): SeqAction[Unit] = {
-      val (fpuName, beam: Option[Beam]) = name match {
-        case "None" => (none, none)
-        case _      => (name.some, InBeam.some)
-      }
-      fpuName.fold(SeqAction.void)(CC.setFpu) *>
-        beam.fold(SeqAction.void)(b => CC.setInBeam(beamEncoder.encode(b)))
+    def setFPUParams(p: (Option[String], Option[String])): SeqAction[Unit] = p match {
+      case (fpuName, beam) =>
+        fpuName.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.fpu, CC.setFpu(v))) *>
+          beam.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.inBeam.map(inBeamDecode), CC.setInBeam(v)))
     }
 
     cc match {
-      case cfg.BuiltInFPU(fpu) => builtInFPU(fpu)
-      case CustomMaskFPU(name) => customFPU(name)
+      case cfg.BuiltInFPU(fpu) => setFPUParams(builtInFPU(fpu))
+      case CustomMaskFPU(name) => setFPUParams(customFPU(name))
       case UnknownFPU          => SeqAction.void
       case _                   => SeqAction.fail(SeqexecFailure.Unexpected("Failed match on built-in FPU"))
     }
@@ -154,14 +168,20 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   private val PixelsToMicrons = 15.0
 
-  def setCCConfig(cc: GmosController.Config[T]#CCConfig): SeqAction[Unit] = for {
-    _ <- setFilters(cc.filter)
-    _ <- setDisperser(cc.disperser)
-    _ <- setFPU(cc.fpu)
-    _ <- CC.setStageMode(encoders.stageMode.encode(cc.stage))
-    _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble*PixelsToMicrons)
-    _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e => CC.setElectronicOffsetting(encode(e)))
-  } yield ()
+  def setCCConfig(cc: GmosController.Config[T]#CCConfig): SeqAction[Unit] = {
+    val stage = encoders.stageMode.encode(cc.stage)
+    val ElectronicOffsetOff = 0
+
+    for {
+      _ <- setFilters(cc.filter)
+      _ <- setDisperser(cc.disperser)
+      _ <- setFPU(cc.fpu)
+      _ <- smartSetParam(stage, GmosEpics.instance.stageMode, CC.setStageMode(stage))
+      _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble * PixelsToMicrons)
+      _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(ElectronicOffsetOff))(e =>
+        smartSetParam(e.allow, GmosEpics.instance.useElectronicOffsetting, CC.setElectronicOffsetting(encode(e))))
+    } yield ()
+  }
 
   override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = for {
     _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
@@ -279,9 +299,11 @@ object GmosControllerEpics {
     val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]]
   }
 
+  val InBeamVal: String = "IN-BEAM"
+  val OutOfBeamVal: String = "OUT-OF-BEAM"
   implicit val beamEncoder: EncodeEpicsValue[Beam, String] = EncodeEpicsValue {
-    case OutOfBeam => "OUT-OF-BEAM"
-    case InBeam    => "IN-BEAM"
+    case OutOfBeam => OutOfBeamVal
+    case InBeam    => InBeamVal
   }
 
   val DefaultTimeout: Time = Seconds(60)
