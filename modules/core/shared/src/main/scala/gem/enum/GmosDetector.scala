@@ -4,8 +4,9 @@
 package gem
 package enum
 
-import cats.syntax.eq._
 import cats.instances.string._
+import cats.syntax.eq._
+import gem.math.Angle
 import gem.util.Enumerated
 
 /**
@@ -16,8 +17,8 @@ sealed abstract class GmosDetector(
   val tag: String,
   val shortName: String,
   val longName: String,
-  val northPixelSize: gem.math.Angle,
-  val southPixelSize: gem.math.Angle,
+  val northPixelSize: Angle,
+  val southPixelSize: Angle,
   val shuffleOffset: Int,
   val xSize: Int,
   val ySize: Int,
@@ -26,8 +27,8 @@ sealed abstract class GmosDetector(
 
 object GmosDetector {
 
-  /** @group Constructors */ case object E2V extends GmosDetector("E2V", "E2V", "E2V", gem.math.Angle.fromDoubleArcseconds(0.0727), gem.math.Angle.fromDoubleArcseconds(0.0730), 1536, 6144, 4608, 4)
-  /** @group Constructors */ case object HAMAMATSU extends GmosDetector("HAMAMATSU", "Hamamatsu", "Hamamatsu", gem.math.Angle.fromDoubleArcseconds(0.0809), gem.math.Angle.fromDoubleArcseconds(0.0809), 1392, 6144, 4224, 5)
+  /** @group Constructors */ case object E2V extends GmosDetector("E2V", "E2V", "E2V", Angle.fromDoubleArcseconds(0.0727), Angle.fromDoubleArcseconds(0.0730), 1536, 6144, 4608, 4)
+  /** @group Constructors */ case object HAMAMATSU extends GmosDetector("HAMAMATSU", "Hamamatsu", "Hamamatsu", Angle.fromDoubleArcseconds(0.0809), Angle.fromDoubleArcseconds(0.0809), 1392, 6144, 4224, 5)
 
   /** All members of GmosDetector, in canonical order. */
   val all: List[GmosDetector] =
