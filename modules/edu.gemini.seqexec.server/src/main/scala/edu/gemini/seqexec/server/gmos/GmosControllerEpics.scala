@@ -145,25 +145,22 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   def setFPU(cc: GmosFPU): SeqAction[Unit] = {
     def inBeamDecode(v: Int): String = if (v===0) InBeamVal else OutOfBeamVal
 
-    def builtInFPU(fpu: T#FPU): SeqAction[Unit] = {
-      val (fpuName, beam) = encoders.fpu.encode(fpu)
+    def builtInFPU(fpu: T#FPU): (Option[String], Option[String]) = encoders.fpu.encode(fpu)
 
-      fpuName.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.fpu, CC.setFpu(v))) *>
-        beam.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.inBeam.map(inBeamDecode), CC.setInBeam(v)))
+    def customFPU(name: String): (Option[String], Option[String]) = name match {
+      case "None" => (none, none)
+      case _      => (name.some, beamEncoder.encode(InBeam).some)
     }
 
-    def customFPU(name: String): SeqAction[Unit] = {
-      val (fpuName, beam: Option[String]) = name match {
-        case "None" => (none, none)
-        case _      => (name.some, beamEncoder.encode(InBeam).some)
-      }
-      fpuName.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.fpu, CC.setFpu(v))) *>
-        beam.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.inBeam.map(inBeamDecode), CC.setInBeam(v)))
+    def setFPUParams(p: (Option[String], Option[String])): SeqAction[Unit] = p match {
+      case (fpuName, beam) =>
+        fpuName.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.fpu, CC.setFpu(v))) *>
+          beam.fold(SeqAction.void)(v => smartSetParam(v, GmosEpics.instance.inBeam.map(inBeamDecode), CC.setInBeam(v)))
     }
 
     cc match {
-      case cfg.BuiltInFPU(fpu) => builtInFPU(fpu)
-      case CustomMaskFPU(name) => customFPU(name)
+      case cfg.BuiltInFPU(fpu) => setFPUParams(builtInFPU(fpu))
+      case CustomMaskFPU(name) => setFPUParams(customFPU(name))
       case UnknownFPU          => SeqAction.void
       case _                   => SeqAction.fail(SeqexecFailure.Unexpected("Failed match on built-in FPU"))
     }
@@ -173,14 +170,15 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   def setCCConfig(cc: GmosController.Config[T]#CCConfig): SeqAction[Unit] = {
     val stage = encoders.stageMode.encode(cc.stage)
+    val ElectronicOffsetOff = 0
 
     for {
       _ <- setFilters(cc.filter)
       _ <- setDisperser(cc.disperser)
       _ <- setFPU(cc.fpu)
       _ <- smartSetParam(stage, GmosEpics.instance.stageMode, CC.setStageMode(stage))
-      _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble*PixelsToMicrons)
-      _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(0))(e =>
+      _ <- CC.setDtaXOffset(cc.dtaX.intValue.toDouble * PixelsToMicrons)
+      _ <- cc.useElectronicOffset.fold(CC.setElectronicOffsetting(ElectronicOffsetOff))(e =>
         smartSetParam(e.allow, GmosEpics.instance.useElectronicOffsetting, CC.setElectronicOffsetting(encode(e))))
     } yield ()
   }
