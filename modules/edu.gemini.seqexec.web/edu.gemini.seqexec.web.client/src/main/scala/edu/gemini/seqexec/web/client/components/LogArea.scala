@@ -31,14 +31,15 @@ import scalaz.syntax.show._
 object CopyLogToClipboard {
   private val component = ScalaComponent.builder[String]("CopyLogToClipboard")
     .stateless
-    .render_PS { (p, s) =>
+    .render_P { p =>
       // Callback
-      val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $s")
+      val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $p")
       CopyToClipboard(CopyToClipboard.props(p, onCopy = onCopy), <.div(^.cls := "copydiv", IconCopy.copyIcon(link = true, extraStyles = List(SeqexecStyles.logIconRow))))
     }.build
 
   def apply(p: String): Unmounted[String, Unit, Unit] = component(p)
 }
+
 /**
   * Area to display a sequence's log
   */

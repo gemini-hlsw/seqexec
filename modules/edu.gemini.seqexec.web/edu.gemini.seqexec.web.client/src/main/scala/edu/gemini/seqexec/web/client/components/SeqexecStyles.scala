@@ -448,6 +448,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderLeft.none
   )
 
+  val stepsTableMixin: StyleS = mixin(
+    fontSize.smaller.important,
+    textOverflow := "ellipsis",
+    overflow.hidden,
+    wordWrap.breakWord,
+    whiteSpace.nowrap
+  )
+
   val rowMixin: StyleS = mixin(
     leftBorderMixin,
     topBorderMixin,
@@ -474,6 +482,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val headerRowStyle: StyleA = style(
     rowMixin
+  )
+
+  val stepRow: StyleA = style(
+    stepsTableMixin,
+    rowMixin,
+    backgroundColor.white,
+    color(rgba(0, 0, 0, 0.95))
   )
 
   val infoLog: StyleA = style(

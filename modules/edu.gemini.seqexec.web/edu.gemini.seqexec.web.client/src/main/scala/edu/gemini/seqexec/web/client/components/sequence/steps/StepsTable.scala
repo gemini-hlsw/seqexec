@@ -36,6 +36,19 @@ import scalaz.syntax.std.option._
 import react.virtualized._
 
 /**
+  * Component to display the step id
+  */
+object StepIdCell {
+  private val component = ScalaComponent.builder[Int]("StepIdCell")
+    .stateless
+    .render_P { p =>
+      <.div(s"${p + 1}")
+    }.build
+
+  def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
+}
+
+/**
   * Container for a table with the steps
   */
 object StepsTable {
@@ -71,14 +84,17 @@ object StepsTable {
 
   private val IdxWidth = 30
 
+  val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepIdCell(row.idx)
+
   // Columns for the table
   private val columns = List(
-    Column(Column.props(IdxWidth, "idx", label = "Step", disableSort = true, flexGrow = 1)))
+    Column(Column.props(IdxWidth, "idx", label = "Step", disableSort = true, flexGrow = 1, cellRenderer = stepIdRenderer)))
 
   def stepsTable(p: Props)(size: Size): VdomNode = {
     def rowClassName(i: Int): String = ((i, p.rowGetter(i)) match {
       case (-1, _) => SeqexecStyles.headerRowStyle
-      case _       => SeqexecStyles.infoLog
+      case _       => SeqexecStyles.stepRow
     }).htmlClass
 
     Table(
