@@ -96,14 +96,16 @@ object OffsetBlock {
       val offsetQ = telescopeOffsetQO.getOption(p.s).getOrElse(TelescopeOffset.Q.Zero)
 
       <.div(
+        SeqexecStyles.centeredCell,
         <.div(
           SeqexecStyles.inlineBlock,
+          ^.textAlign := "left",
           OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
         ),
         <.div(
           SeqexecStyles.inlineBlock,
+          ^.textAlign := "right",
           <.div(
-            ^.cls := "right aligned",
             <.div(
               ^.width := pLabelWidth.px,
               SeqexecStyles.inlineBlock,
@@ -116,7 +118,6 @@ object OffsetBlock {
             )
           ),
           <.div(
-            ^.cls := "right aligned",
               SeqexecStyles.inlineBlock,
             <.div(
               ^.width := qLabelWidth.px,

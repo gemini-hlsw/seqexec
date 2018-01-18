@@ -38,7 +38,7 @@ import react.virtualized._
 object ColWidths {
   val IdxWidth: Int = 50
   val StatusWidth: Int = 100
-  val OffsetWidth: Int = 130
+  val OffsetWidthBase: Int = 68
   val GuidingWidth: Int = 83
 }
 
@@ -68,7 +68,7 @@ object OffsetsDisplayCell {
       <.div( // Column step offset
         p.offsetsDisplay match {
           case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
-              OffsetBlock(OffsetBlock.Props(p.step, offsetWidth))
+            OffsetBlock(OffsetBlock.Props(p.step, offsetWidth))
           case _ => EmptyVdom
         }
       )
@@ -138,11 +138,10 @@ object StepsTable {
 
   // Columns for the table
   private def columns(p: Props): List[Table.ColumnArg] = {
-    println(p.offsetsDisplay)
     val offsetColumn =
       p.offsetsDisplay match {
-        case OffsetsDisplay.DisplayOffsets(_) =>
-          Column(Column.props(ColWidths.OffsetWidth, "offset", label = "Offset", disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
+        case OffsetsDisplay.DisplayOffsets(x) =>
+          Column(Column.props(ColWidths.OffsetWidthBase + x, "offset", label = "Offset", disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
         case _ => None
       }
       List(
