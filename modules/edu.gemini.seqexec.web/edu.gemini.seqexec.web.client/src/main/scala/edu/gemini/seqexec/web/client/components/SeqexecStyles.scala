@@ -462,6 +462,12 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     rightBorderMixin
   )
 
+  val centeredCell: StyleA = style(
+    display.flex,
+    alignItems.center,
+    justifyContent.center
+  )
+
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
     topBorderMixin,
     bottomBorderMixin

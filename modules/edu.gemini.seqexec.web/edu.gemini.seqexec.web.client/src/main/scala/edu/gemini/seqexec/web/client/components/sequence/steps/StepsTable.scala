@@ -38,7 +38,8 @@ import react.virtualized._
 object ColWidths {
   val IdxWidth: Int = 50
   val StatusWidth: Int = 100
-  val OffsetWidth: Int = 100
+  val OffsetWidth: Int = 130
+  val GuidingWidth: Int = 83
 }
 
 /**
@@ -74,6 +75,22 @@ object OffsetsDisplayCell {
     }.build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
+}
+
+/**
+  * Component to display the guiding satte
+  */
+object GuidingCell {
+  private val component = ScalaComponent.builder[Step]("GuidingCell")
+    .stateless
+    .render_P { p =>
+      <.div( // Column step offset
+        SeqexecStyles.centeredCell,
+        GuidingBlock(GuidingBlock.Props(p))
+      )
+    }.build
+
+  def apply(i: Step): Unmounted[Step, Unit, Unit] = component(i)
 }
 
 /**
@@ -116,6 +133,9 @@ object StepsTable {
   def stepStatusRenderer(offsetsDisplay: OffsetsDisplay): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
 
+  val stepGuidingRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    GuidingCell(row.step)
+
   // Columns for the table
   private def columns(p: Props): List[Table.ColumnArg] = {
     println(p.offsetsDisplay)
@@ -127,7 +147,8 @@ object StepsTable {
       }
       List(
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
-        offsetColumn
+        offsetColumn,
+        Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
       ).collect { case Some(x) => x }
   }
 
