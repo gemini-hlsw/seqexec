@@ -4,9 +4,11 @@
 package gem
 package enum
 
-import cats.syntax.eq._
 import cats.instances.string._
+import cats.syntax.eq._
+import gem.math.Angle
 import gem.util.Enumerated
+import java.time.ZoneId
 
 /**
  * Enumerated type for Gemini observing sites.
@@ -17,16 +19,16 @@ sealed abstract class Site(
   val shortName: String,
   val longName: String,
   val mountain: String,
-  val latitude: gem.math.Angle,
-  val longitude: gem.math.Angle,
+  val latitude: Angle,
+  val longitude: Angle,
   val altitude: Int,
-  val timezone: java.time.ZoneId
+  val timezone: ZoneId
 ) extends Product with Serializable
 
 object Site {
 
-  /** @group Constructors */ case object GN extends Site("GN", "GN", "Gemini North", "Mauna Kea", gem.math.Angle.fromDoubleDegrees(19.8238068), gem.math.Angle.fromDoubleDegrees(-155.4690550), 4213, java.time.ZoneId.of("Pacific/Honolulu"))
-  /** @group Constructors */ case object GS extends Site("GS", "GS", "Gemini South", "Cerro Pachon", gem.math.Angle.fromDoubleDegrees(-30.2407494), gem.math.Angle.fromDoubleDegrees(-70.7366867), 2722, java.time.ZoneId.of("America/Santiago"))
+  /** @group Constructors */ case object GN extends Site("GN", "GN", "Gemini North", "Mauna Kea", Angle.fromDoubleDegrees(19.8238068), Angle.fromDoubleDegrees(-155.4690550), 4213, ZoneId.of("Pacific/Honolulu"))
+  /** @group Constructors */ case object GS extends Site("GS", "GS", "Gemini South", "Cerro Pachon", Angle.fromDoubleDegrees(-30.2407494), Angle.fromDoubleDegrees(-70.7366867), 2722, ZoneId.of("America/Santiago"))
 
   /** All members of Site, in canonical order. */
   val all: List[Site] =

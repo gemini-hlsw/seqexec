@@ -4,8 +4,9 @@
 package gem
 package enum
 
-import cats.syntax.eq._
 import cats.instances.string._
+import cats.syntax.eq._
+import gem.math.Angle
 import gem.util.Enumerated
 
 /**
@@ -16,27 +17,27 @@ sealed abstract class GmosNorthFpu(
   val tag: String,
   val shortName: String,
   val longName: String,
-  val slitWidth: Option[gem.math.Angle]
+  val slitWidth: Option[Angle]
 ) extends Product with Serializable
 
 object GmosNorthFpu {
 
-  /** @group Constructors */ case object Longslit1 extends GmosNorthFpu("Longslit1", "0.25arcsec", "Longslit 0.25 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(0.25)))
-  /** @group Constructors */ case object Longslit2 extends GmosNorthFpu("Longslit2", "0.50arcsec", "Longslit 0.50 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(0.50)))
-  /** @group Constructors */ case object Longslit3 extends GmosNorthFpu("Longslit3", "0.75arcsec", "Longslit 0.75 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(0.75)))
-  /** @group Constructors */ case object Longslit4 extends GmosNorthFpu("Longslit4", "1.0arcsec", "Longslit 1.00 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(1.00)))
-  /** @group Constructors */ case object Longslit5 extends GmosNorthFpu("Longslit5", "1.5arcsec", "Longslit 1.50 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(1.50)))
-  /** @group Constructors */ case object Longslit6 extends GmosNorthFpu("Longslit6", "2.0arcsec", "Longslit 2.00 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(2.00)))
-  /** @group Constructors */ case object Longslit7 extends GmosNorthFpu("Longslit7", "5.0arcsec", "Longslit 5.00 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(5.00)))
-  /** @group Constructors */ case object Ifu1 extends GmosNorthFpu("Ifu1", "IFU-2", "IFU 2 Slits", Option.empty[gem.math.Angle])
-  /** @group Constructors */ case object Ifu2 extends GmosNorthFpu("Ifu2", "IFU-B", "IFU Left Slit (blue)", Option.empty[gem.math.Angle])
-  /** @group Constructors */ case object Ifu3 extends GmosNorthFpu("Ifu3", "IFU-R", "IFU Right Slit (red)", Option.empty[gem.math.Angle])
-  /** @group Constructors */ case object Ns0 extends GmosNorthFpu("Ns0", "NS0.25arcsec", "N and S 0.25 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(0.25)))
-  /** @group Constructors */ case object Ns1 extends GmosNorthFpu("Ns1", "NS0.5arcsec", "N and S 0.50 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(0.50)))
-  /** @group Constructors */ case object Ns2 extends GmosNorthFpu("Ns2", "NS0.75arcsec", "N and S 0.75 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(0.75)))
-  /** @group Constructors */ case object Ns3 extends GmosNorthFpu("Ns3", "NS1.0arcsec", "N and S 1.00 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(1.00)))
-  /** @group Constructors */ case object Ns4 extends GmosNorthFpu("Ns4", "NS1.5arcsec", "N and S 1.50 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(1.50)))
-  /** @group Constructors */ case object Ns5 extends GmosNorthFpu("Ns5", "NS2.0arcsec", "N and S 2.00 arcsec", Some(gem.math.Angle.fromDoubleArcseconds(2.00)))
+  /** @group Constructors */ case object Longslit1 extends GmosNorthFpu("Longslit1", "0.25arcsec", "Longslit 0.25 arcsec", Some(Angle.fromDoubleArcseconds(0.25)))
+  /** @group Constructors */ case object Longslit2 extends GmosNorthFpu("Longslit2", "0.50arcsec", "Longslit 0.50 arcsec", Some(Angle.fromDoubleArcseconds(0.50)))
+  /** @group Constructors */ case object Longslit3 extends GmosNorthFpu("Longslit3", "0.75arcsec", "Longslit 0.75 arcsec", Some(Angle.fromDoubleArcseconds(0.75)))
+  /** @group Constructors */ case object Longslit4 extends GmosNorthFpu("Longslit4", "1.0arcsec", "Longslit 1.00 arcsec", Some(Angle.fromDoubleArcseconds(1.00)))
+  /** @group Constructors */ case object Longslit5 extends GmosNorthFpu("Longslit5", "1.5arcsec", "Longslit 1.50 arcsec", Some(Angle.fromDoubleArcseconds(1.50)))
+  /** @group Constructors */ case object Longslit6 extends GmosNorthFpu("Longslit6", "2.0arcsec", "Longslit 2.00 arcsec", Some(Angle.fromDoubleArcseconds(2.00)))
+  /** @group Constructors */ case object Longslit7 extends GmosNorthFpu("Longslit7", "5.0arcsec", "Longslit 5.00 arcsec", Some(Angle.fromDoubleArcseconds(5.00)))
+  /** @group Constructors */ case object Ifu1 extends GmosNorthFpu("Ifu1", "IFU-2", "IFU 2 Slits", Option.empty[Angle])
+  /** @group Constructors */ case object Ifu2 extends GmosNorthFpu("Ifu2", "IFU-B", "IFU Left Slit (blue)", Option.empty[Angle])
+  /** @group Constructors */ case object Ifu3 extends GmosNorthFpu("Ifu3", "IFU-R", "IFU Right Slit (red)", Option.empty[Angle])
+  /** @group Constructors */ case object Ns0 extends GmosNorthFpu("Ns0", "NS0.25arcsec", "N and S 0.25 arcsec", Some(Angle.fromDoubleArcseconds(0.25)))
+  /** @group Constructors */ case object Ns1 extends GmosNorthFpu("Ns1", "NS0.5arcsec", "N and S 0.50 arcsec", Some(Angle.fromDoubleArcseconds(0.50)))
+  /** @group Constructors */ case object Ns2 extends GmosNorthFpu("Ns2", "NS0.75arcsec", "N and S 0.75 arcsec", Some(Angle.fromDoubleArcseconds(0.75)))
+  /** @group Constructors */ case object Ns3 extends GmosNorthFpu("Ns3", "NS1.0arcsec", "N and S 1.00 arcsec", Some(Angle.fromDoubleArcseconds(1.00)))
+  /** @group Constructors */ case object Ns4 extends GmosNorthFpu("Ns4", "NS1.5arcsec", "N and S 1.50 arcsec", Some(Angle.fromDoubleArcseconds(1.50)))
+  /** @group Constructors */ case object Ns5 extends GmosNorthFpu("Ns5", "NS2.0arcsec", "N and S 2.00 arcsec", Some(Angle.fromDoubleArcseconds(2.00)))
 
   /** All members of GmosNorthFpu, in canonical order. */
   val all: List[GmosNorthFpu] =

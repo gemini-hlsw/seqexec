@@ -4,8 +4,9 @@
 package gem
 package enum
 
-import cats.syntax.eq._
 import cats.instances.string._
+import cats.syntax.eq._
+import gem.math.Wavelength
 import gem.util.Enumerated
 
 /**
@@ -16,14 +17,14 @@ sealed abstract class F2Disperser(
   val tag: String,
   val shortName: String,
   val longName: String,
-  val wavelength: gem.math.Wavelength
+  val wavelength: Wavelength
 ) extends Product with Serializable
 
 object F2Disperser {
 
-  /** @group Constructors */ case object R1200JH extends F2Disperser("R1200JH", "R1200JH", "R=1200 (J + H) grism", gem.math.Wavelength.unsafeFromAngstroms(13900))
-  /** @group Constructors */ case object R1200HK extends F2Disperser("R1200HK", "R1200HK", "R=1200 (H + K) grism", gem.math.Wavelength.unsafeFromAngstroms(18710))
-  /** @group Constructors */ case object R3000 extends F2Disperser("R3000", "R3000", "R=3000 (J or H or K) grism", gem.math.Wavelength.unsafeFromAngstroms(16500))
+  /** @group Constructors */ case object R1200JH extends F2Disperser("R1200JH", "R1200JH", "R=1200 (J + H) grism", Wavelength.unsafeFromAngstroms(13900))
+  /** @group Constructors */ case object R1200HK extends F2Disperser("R1200HK", "R1200HK", "R=1200 (H + K) grism", Wavelength.unsafeFromAngstroms(18710))
+  /** @group Constructors */ case object R3000 extends F2Disperser("R3000", "R3000", "R=3000 (J or H or K) grism", Wavelength.unsafeFromAngstroms(16500))
 
   /** All members of F2Disperser, in canonical order. */
   val all: List[F2Disperser] =
