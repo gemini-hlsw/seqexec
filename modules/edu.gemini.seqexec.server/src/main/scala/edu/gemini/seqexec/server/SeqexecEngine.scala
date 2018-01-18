@@ -406,7 +406,7 @@ object SeqexecEngine {
   private val taskUnit = Task.now(())
 
   // scalastyle:off
-  def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config => {
+  def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config =>
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
       case "GN" => Site.GN
@@ -493,7 +493,7 @@ object SeqexecEngine {
                        odbQueuePollingInterval)
       )
 
-    }
+
   }
   // scalastyle:on
 
