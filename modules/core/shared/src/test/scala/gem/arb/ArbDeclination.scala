@@ -19,4 +19,5 @@ trait ArbDeclination {
     Cogen[Angle].contramap(_.toAngle)
 
 }
+
 object ArbDeclination extends ArbDeclination

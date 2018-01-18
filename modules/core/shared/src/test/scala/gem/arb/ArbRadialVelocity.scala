@@ -18,4 +18,5 @@ trait ArbRadialVelocity {
     Cogen[Int].contramap(_.toMetersPerSecond)
 
 }
+
 object ArbRadialVelocity extends ArbRadialVelocity

@@ -48,4 +48,5 @@ trait ArbEphemeris {
     Cogen[Map[Timestamp, EphemerisCoordinates]].contramap(_.toMap)
 
 }
+
 object ArbEphemeris extends ArbEphemeris

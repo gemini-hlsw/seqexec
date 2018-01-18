@@ -34,4 +34,5 @@ trait ArbCoordinates {
     } yield hms + (" " * n) + dms
 
 }
+
 object ArbCoordinates extends ArbCoordinates

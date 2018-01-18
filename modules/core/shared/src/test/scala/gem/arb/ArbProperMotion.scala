@@ -38,4 +38,5 @@ trait ArbProperMotion {
     }
 
 }
+
 object ArbProperMotion extends ArbProperMotion
