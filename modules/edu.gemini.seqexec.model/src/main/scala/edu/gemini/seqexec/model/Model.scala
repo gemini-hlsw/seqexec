@@ -233,14 +233,8 @@ object Model {
     val fileId: Option[dhs.ImageFileId]
   }
   object Step {
-    val Zero: Step = new Step {
-      val id = -1
-      val config = Map.empty
-      val status = StepState.Pending
-      val breakpoint = false
-      val skip = false
-      val fileId = None
-    }
+    val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
+
     implicit val equal: Equal[Step] = Equal.equalA[Step]
 
     implicit class StepOps(val s: Step) extends AnyVal {
