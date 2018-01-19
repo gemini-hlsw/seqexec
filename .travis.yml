@@ -27,7 +27,7 @@ script:
 
 after_script:
   - ls modules/core/js/target/scala-2.12
-  - cd modules/core/js/target/scala-2.12 && curl -O https://raw.githubusercontent.com/cquiroz/travis-weigh-in/master/weigh_in.py && python weigh_in.py gem-core-fastopt.js
+  - cd modules/core/js/target/scala-2.12 && python $TRAVIS_BUILD_DIR/build/weigh_in.py gem-core-fastopt.js
 
 cache:
   directories:
