@@ -177,7 +177,7 @@ object FPUCell {
 object FilterCell {
   final case class Props(s: Step, i: Instrument)
 
-  private val component = ScalaComponent.builder[Props]("FilterCell ")
+  private val component = ScalaComponent.builder[Props]("FilterCell")
     .stateless
     .render_P { p =>
 
