@@ -30,7 +30,7 @@ object Parsers {
     double.map(Angle.fromDoubleArcseconds)
 
   val angstroms: PioParse[Wavelength] =
-    int.map(Wavelength.unsafeFromAngstroms)
+    int.map(n => Wavelength.fromAngstroms.unsafeGet(n))
 
   val magnitudeSystem: PioParse[MagnitudeSystem] =
     enumFromTag(MagnitudeSystem.all)
@@ -310,7 +310,7 @@ object Parsers {
     )
 
     val disperserLambda: PioParse[Wavelength] =
-      double.map(d => Wavelength.unsafeFromAngstroms((d * 10.0).round.toInt))
+      double.map(d => Wavelength.fromAngstroms.unsafeGet((d * 10.0).round.toInt))
 
     val dtax: PioParse[GmosDtax] = enum(
       "-6" -> GmosDtax.MinusSix,

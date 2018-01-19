@@ -207,7 +207,7 @@ trait Arbitraries {
       for {
         d <- arbitrary[GmosNorthDisperser]
         o <- arbitrary[GmosDisperserOrder]
-        w <- Gen.choose(3000, 12000).map(Wavelength.unsafeFromAngstroms)
+        w <- Gen.choose(3000, 12000).map(Wavelength.fromAngstroms.unsafeGet)
       } yield GmosConfig.GmosGrating(d, o, w)
     }
 
@@ -216,7 +216,7 @@ trait Arbitraries {
       for {
         d <- arbitrary[GmosSouthDisperser]
         o <- arbitrary[GmosDisperserOrder]
-        w <- Gen.choose(3000, 12000).map(Wavelength.unsafeFromAngstroms)
+        w <- Gen.choose(3000, 12000).map(Wavelength.fromAngstroms.unsafeGet)
       } yield GmosConfig.GmosGrating(d, o, w)
     }
 

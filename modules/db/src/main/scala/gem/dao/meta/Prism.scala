@@ -4,6 +4,7 @@
 package gem.dao.meta
 
 import doobie._
+import gem.syntax.prism._
 import monocle.Prism
 import scala.reflect.runtime.universe.TypeTag
 
@@ -16,7 +17,7 @@ class PrismOps[A, B](f: Prism[A, B]) {
     implicit mb: Meta[A],
              ta: TypeTag[B]
   ): Meta[B] =
-    mb.xmap(f.getOption(_).getOrElse(sys.error("Validation failed.")), f.reverseGet)
+    mb.xmap(f.unsafeGet(_), f.reverseGet)
 }
 
 trait PrismMeta {

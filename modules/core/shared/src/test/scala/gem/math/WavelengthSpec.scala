@@ -36,13 +36,13 @@ final class WavelengthSpec extends CatsSuite {
 
   test("Conversion to angstroms must be invertable") {
     forAll { (a: Wavelength) =>
-      Wavelength.fromAngstroms(a.toAngstroms) shouldEqual Some(a)
+      Wavelength.fromAngstroms.getOption(a.toAngstroms) shouldEqual Some(a)
     }
   }
 
   test("Construction from an arbitrary Int must not allow negative values") {
     forAll { (n: Int) =>
-      Wavelength.fromAngstroms(n).isDefined shouldEqual n >= 0
+      Wavelength.fromAngstroms.getOption(n).isDefined shouldEqual n >= 0
     }
   }
 

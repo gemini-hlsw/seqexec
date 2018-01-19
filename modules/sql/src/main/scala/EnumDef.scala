@@ -96,8 +96,8 @@ object EnumDef {
     implicit val caseDegrees      = at[Degrees    ](a => s"Angle.fromDoubleDegrees(${a.toDegrees})")
     implicit val caseZoneId       = at[ZoneId     ](a => s"""ZoneId.of("${a.toString}")""")
 
-    implicit val caseWavelengthNm    = at[Wavelength.Nm  ](a => s"Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
-    implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"Wavelength.unsafeFromAngstroms(${a.toAngstrom})")
+    implicit val caseWavelengthNm    = at[Wavelength.Nm  ](a => s"""Wavelength.fromAngstroms.unsafeGet(${a.toAngstrom})""")
+    implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"""Wavelength.fromAngstroms.unsafeGet(${a.toAngstrom})""")
     implicit val caseMagnitudeSystem = at[MagnitudeSystem](a => s"MagnitudeSystem.${a.id}")
 
     implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[Angle]")(aʹ => s"Some(Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
@@ -110,8 +110,8 @@ object EnumDef {
     implicit val caseMagnitudeValue       = at[MagnitudeValue        ](a => s"MagnitudeValue(${a.toScaledInt})")
     implicit val caseOptionMagnitudeValue = at[Option[MagnitudeValue]](a => a.fold("Option.empty[MagnitudeValue]")(aʹ => s"Some(MagnitudeValue(${aʹ.toScaledInt}))"))
 
-    implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"Some(Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
-    implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"Some(Wavelength.unsafeFromAngstroms(${aʹ.toAngstrom}))"))
+    implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromAngstroms.unsafeGet(${aʹ.toAngstrom}))"""))
+    implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromAngstroms.unsafeGet(${aʹ.toAngstrom}))"""))
 
     // scalastyle:off method.type
     implicit def caseEnumRef[T <: Symbol: ValueOf]       = at[EnumRef[T]        ](a => s"${valueOf[T].name}.${a.tag}")

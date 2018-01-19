@@ -7,10 +7,11 @@ import doobie._
 import gem.math.Wavelength
 
 trait WavelengthMeta {
+  import PrismMeta._
 
   // Wavelength maps to an integer in angstroms
   implicit val WavelengthMeta: Meta[Wavelength] =
-    Meta[Int].xmap(Wavelength.unsafeFromAngstroms, _.toAngstroms)
+    Wavelength.fromAngstroms.asMeta
 
 }
 object WavelengthMeta extends WavelengthMeta
