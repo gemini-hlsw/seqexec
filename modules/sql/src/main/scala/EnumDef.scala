@@ -25,6 +25,7 @@ object EnumDef {
     implicit def caseInt[S] = at[(S, Int)] { _ => Option.empty[String] }
     implicit def caseBoolean[S] = at[(S, Boolean)] { _ => Option.empty[String] }
     implicit def caseDouble[S] = at[(S, Double)] { _ => Option.empty[String] }
+    implicit def caseBigDecimal[S] = at[(S, BigDecimal)] { _ => Option.empty[String] }
     implicit def caseDuration[S] = at[(S, Duration)] { _ =>  Some("java.time.Duration") }
     implicit def caseArcseconds[S] = at[(S, Arcseconds)] { _ =>  Some("gem.math.Angle") }
     implicit def caseDegrees[S] = at[(S, Degrees)] { _ =>  Some("gem.math.Angle") }
@@ -54,6 +55,7 @@ object EnumDef {
     implicit def caseInt     [S <: Symbol] = at[(S, Int)     ] { case (s, _) => "  val " + s.name + ": Int" }
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
+    implicit def caseBigDecimal  [S <: Symbol] = at[(S, BigDecimal)  ] { case (s, _) => "  val " + s.name + ": BigDecimal" }
     implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": Duration" }
     implicit def caseArcseconds [S <: Symbol] = at[(S, Arcseconds) ] { case (s, _) => "  val " + s.name + ": Angle"}
     implicit def caseDegrees [S <: Symbol] = at[(S, Degrees) ] { case (s, _) => "  val " + s.name + ": Angle"}

@@ -24,6 +24,7 @@ object Main {
       GcalEnums  .enums,
       GmosEnums  .enums,
       GpiEnums   .enums,
+      GnirsEnums .enums,
       MiscEnums  .enums,
       TargetEnums.enums
     ).flatten.sequence

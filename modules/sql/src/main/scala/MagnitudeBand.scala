@@ -6,6 +6,7 @@ package gem.sql
 /** Minimal MagnitudeBand classes to support reading from the enum
   * tables.
   */
+
 final case class MagnitudeBand(id: String)
 
 final case class MagnitudeSystem(id: String)

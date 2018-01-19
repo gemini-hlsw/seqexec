@@ -1,6 +1,7 @@
 *.class
 *.log
 *.swp
+.#*
 
 # sbt specific
 dist/
@@ -38,3 +39,4 @@ ensime.sbt
 
 archive
 smartgcal
+.jvmopts

@@ -14,8 +14,8 @@ object GmosEnums {
     List(
 
       EnumDef.fromQuery("GmosAdc", "GMOS ADC") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
-        sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_adc""".query[(String, E)]
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        sql"""SELECT id, id tag, short_name, long_name FROM e_gmos_adc""".query[(String, R)]
       },
 
       EnumDef.fromQuery("GmosAmpCount", "GMOS amp count") {
@@ -55,7 +55,7 @@ object GmosEnums {
 
       EnumDef.fromQuery("GmosEOffsetting", "GMOS Electric Offsetting") {
         type R = Record.`'tag -> String, 'description -> String, 'toBoolean -> Boolean`.T
-        sql"select id, id tag, description, to_boolean from e_gmos_e_offsetting".query[(String, R)]
+        sql"select id, id tag, description, to_boolean FROM e_gmos_e_offsetting".query[(String, R)]
       },
 
       EnumDef.fromQuery("GmosNorthDisperser", "GMOS North dispersers") {

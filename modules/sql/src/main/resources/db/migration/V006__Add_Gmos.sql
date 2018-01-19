@@ -264,5 +264,3 @@ Ns3	NS1.0arcsec	N and S 1.00 arcsec	1.00
 Ns4	NS1.5arcsec	N and S 1.50 arcsec	1.50
 Ns5	NS2.0arcsec	N and S 2.00 arcsec	2.00
 \.
-
-
