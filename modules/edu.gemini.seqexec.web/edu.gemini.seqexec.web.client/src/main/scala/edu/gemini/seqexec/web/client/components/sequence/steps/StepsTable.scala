@@ -41,6 +41,7 @@ object ColWidths {
   val OffsetWidthBase: Int = 68
   val GuidingWidth: Int = 83
   val ExposureWidth: Int = 80
+  val FilterWidth: Int = 100
 }
 
 /**
@@ -76,38 +77,6 @@ object OffsetsDisplayCell {
     }.build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
-}
-
-/**
-  * Component to display the guiding state
-  */
-object GuidingCell {
-  private val component = ScalaComponent.builder[Step]("GuidingCell")
-    .stateless
-    .render_P { p =>
-      <.div( // Column step offset
-        SeqexecStyles.centeredCell,
-        GuidingBlock(GuidingBlock.Props(p))
-      )
-    }.build
-
-  def apply(i: Step): Unmounted[Step, Unit, Unit] = component(i)
-}
-
-/**
-  * Component to display the exposure time
-  */
-object ExposureCell {
-  private val component = ScalaComponent.builder[ExposureTime.Props]("ExposureCell")
-    .stateless
-    .render_P { p =>
-      <.div( // Column step offset
-        SeqexecStyles.centeredCell,
-        ExposureTime(p)
-      )
-    }.build
-
-  def apply(s: Step, i: Instrument): Unmounted[ExposureTime.Props, Unit, Unit] = component(ExposureTime.Props(s, i))
 }
 
 /**
@@ -151,10 +120,13 @@ object StepsTable {
     OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
 
   val stepGuidingRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    GuidingCell(row.step)
+    GuidingCell(GuidingCell.Props(row.step))
 
   def stepExposureRenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    ExposureCell(row.step, i)
+    ExposureTimeCell(ExposureTimeCell.Props(row.step, i))
+
+  def stepFilterRenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    FilterCell(FilterCell.Props(row.step, i))
 
   // Columns for the table
   private def columns(p: Props): List[Table.ColumnArg] = {
@@ -168,7 +140,8 @@ object StepsTable {
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
-        p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, cellRenderer = stepExposureRenderer(i.instrument))))
+        p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, cellRenderer = stepExposureRenderer(i.instrument)))),
+        p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument))))
       ).collect { case Some(x) => x }
   }
 

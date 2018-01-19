@@ -162,8 +162,7 @@ object FPUCell {
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
-        ^.cls := "left aligned",
-        SeqexecStyles.componentLabel,
+        SeqexecStyles.centeredCell,
         fpuValue.getOrElse("Unknown"): String
       )
     }
@@ -195,8 +194,7 @@ object FilterCell {
 
 
       <.div(
-        ^.cls := "left aligned",
-        SeqexecStyles.componentLabel,
+        SeqexecStyles.centeredCell,
         filter.getOrElse("Unknown"): String
       )
     }
@@ -208,10 +206,10 @@ object FilterCell {
 /**
  * Component to display the exposure time and coadds
  */
-object ExposureTime {
+object ExposureTimeCell {
   final case class Props(s: Step, i: Instrument)
 
-  private val component = ScalaComponent.builder[Props]("ExposureTime")
+  private val component = ScalaComponent.builder[Props]("ExposureTimeCell")
     .stateless
     .render_P { p =>
       def formatExposureTime(e: Double): String = p.i match {
@@ -232,6 +230,7 @@ object ExposureTime {
       }
 
       <.div(
+        SeqexecStyles.centeredCell,
         displayedText
       )
     }
@@ -243,17 +242,17 @@ object ExposureTime {
 /**
  * Component to display the Guiding state of the step
  */
-object GuidingBlock {
+object GuidingCell {
   final case class Props(s: Step)
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
-  private val component = ScalaComponent.builder[Props]("OffsetValues")
+  private val component = ScalaComponent.builder[Props]("GuidingCell")
     .stateless
     .render_P { p =>
       val guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(p.s)
 
       <.div(
-        ^.cls := "center aligned",
+        SeqexecStyles.centeredCell,
         guidingIcon.when(guiding),
         noGuidingIcon.unless(guiding)
       )

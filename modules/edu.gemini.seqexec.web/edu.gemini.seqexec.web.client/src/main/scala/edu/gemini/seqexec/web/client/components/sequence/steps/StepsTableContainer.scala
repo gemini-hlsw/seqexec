@@ -337,13 +337,13 @@ object StepsTableContainer {
     private def stepGuidingCell(step: Step, i: Int) =
       <.td( // Column step guiding
         ^.onDoubleClick --> selectRow(step, i),
-        GuidingBlock(GuidingBlock.Props(step))
+        GuidingCell(GuidingCell.Props(step))
       )
 
     private def stepExposureTimeCell(instrument: Instrument, step: Step, i: Int) =
       <.td( // Column exposure time
         ^.onDoubleClick --> selectRow(step, i),
-        ExposureTime(ExposureTime.Props(step, instrument))
+        ExposureTimeCell(ExposureTimeCell.Props(step, instrument))
       )
 
     private def stepFilterCell(instrument: Instrument, step: Step, i: Int) =
