@@ -8,11 +8,13 @@ import gem.enum.{ GcalArc, Site }
 import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
 import gem.math._
+import gem.syntax.prism._
 import gem.util.{ Enumerated, Timestamp }
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
 import java.time.{ Duration, Instant }
+import monocle.Prism
 import scala.collection.immutable.TreeMap
 
 // These json codecs are provided for primitive types that have no natural mapping that would
@@ -43,6 +45,13 @@ package object json {
       moveLeft(b, 3)
   }
 
+  private implicit class PrismOps[A: Encoder: Decoder, B](p: Prism[A, B]) {
+    def toCodec: (Encoder[B], Decoder[B]) = (
+      Encoder[A].contramap(p.reverseGet),
+      Decoder[A].map(p.unsafeGet(_))
+    )
+  }
+
   // Angle mapping to signed arcseconds. NOT implicit.
   val AngleAsSignedArcsecondsEncoder: Encoder[Angle] = Encoder[BigDecimal].contramap(_.toSignedArcseconds)
   val AngleAsSignedArcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedArcseconds)
@@ -56,8 +65,11 @@ package object json {
   implicit val ObservationIndexDecoder: Decoder[Observation.Index] = Decoder[Int].map(Observation.Index.unsafeFromInt)
 
   // Wavelength mapping to integral Angstroms.
-  implicit val WavelengthEncoder: Encoder[Wavelength] = Encoder[Int].contramap(_.toAngstroms)
-  implicit val WavelengthDecoder: Decoder[Wavelength] = Decoder[Int].map(Wavelength.unsafeFromAngstroms)
+  implicit val (
+    wavelengthEncoderAngstroms: Encoder[Wavelength],
+    wavelengthDecoderAngstroms: Decoder[Wavelength]
+  ) =
+    Wavelength.fromAngstroms.toCodec
 
   // Duration as a record with seconds and nanoseconds
   implicit val DurationEncoder: Encoder[Duration] = d =>

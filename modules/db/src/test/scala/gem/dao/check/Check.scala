@@ -77,7 +77,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
       val sk = DynamicConfig.GmosNorth.Default.key
       SmartGcalKey.GmosDefinition(
         sk.gmos,
-        (Wavelength.ZeroAngstroms, Wavelength.ZeroAngstroms)
+        (Wavelength.Min, Wavelength.Min)
       )
     }
 
@@ -85,7 +85,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
       val sk = DynamicConfig.GmosSouth.Default.key
       SmartGcalKey.GmosDefinition(
         sk.gmos,
-        (Wavelength.ZeroAngstroms, Wavelength.ZeroAngstroms)
+        (Wavelength.Min, Wavelength.Min)
       )
     }
 

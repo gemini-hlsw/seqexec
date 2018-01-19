@@ -23,19 +23,19 @@ sealed abstract class GnirsFilter(
 object GnirsFilter {
 
   /** @group Constructors */ case object CrossDispersed extends GnirsFilter("CrossDispersed", "XD", "Cross dispersed", Option.empty[Wavelength])
-  /** @group Constructors */ case object Order6 extends GnirsFilter("Order6", "X", "Order 6 (X)", Some(Wavelength.unsafeFromAngstroms(11000)))
-  /** @group Constructors */ case object Order5 extends GnirsFilter("Order5", "J", "Order 5 (J)", Some(Wavelength.unsafeFromAngstroms(12500)))
-  /** @group Constructors */ case object Order4 extends GnirsFilter("Order4", "H", "Order 4 (H: 1.65µm)", Some(Wavelength.unsafeFromAngstroms(16500)))
-  /** @group Constructors */ case object Order3 extends GnirsFilter("Order3", "K", "Order 3 (K)", Some(Wavelength.unsafeFromAngstroms(22000)))
-  /** @group Constructors */ case object Order2 extends GnirsFilter("Order2", "L", "Order 2 (L)", Some(Wavelength.unsafeFromAngstroms(35000)))
-  /** @group Constructors */ case object Order1 extends GnirsFilter("Order1", "M", "Order 1 (M)", Some(Wavelength.unsafeFromAngstroms(48000)))
-  /** @group Constructors */ case object H2 extends GnirsFilter("H2", "H2", "H2: 2.12µm", Some(Wavelength.unsafeFromAngstroms(21200)))
-  /** @group Constructors */ case object HNd100x extends GnirsFilter("HNd100x", "H+ND100X", "H + ND100X", Some(Wavelength.unsafeFromAngstroms(16500)))
-  /** @group Constructors */ case object H2Nd100x extends GnirsFilter("H2Nd100x", "H2+ND100X", "H2 + ND100X", Some(Wavelength.unsafeFromAngstroms(21200)))
-  /** @group Constructors */ case object PAH extends GnirsFilter("PAH", "PAH", "PAH: 3.3µm", Some(Wavelength.unsafeFromAngstroms(33000)))
-  /** @group Constructors */ case object Y extends GnirsFilter("Y", "Y", "Y: 1.03µm", Some(Wavelength.unsafeFromAngstroms(10300)))
-  /** @group Constructors */ case object J extends GnirsFilter("J", "J", "J: 1.25µm", Some(Wavelength.unsafeFromAngstroms(12500)))
-  /** @group Constructors */ case object K extends GnirsFilter("K", "K", "K: 2.20µm", Some(Wavelength.unsafeFromAngstroms(22000)))
+  /** @group Constructors */ case object Order6 extends GnirsFilter("Order6", "X", "Order 6 (X)", Some(Wavelength.fromAngstroms.unsafeGet(11000)))
+  /** @group Constructors */ case object Order5 extends GnirsFilter("Order5", "J", "Order 5 (J)", Some(Wavelength.fromAngstroms.unsafeGet(12500)))
+  /** @group Constructors */ case object Order4 extends GnirsFilter("Order4", "H", "Order 4 (H: 1.65µm)", Some(Wavelength.fromAngstroms.unsafeGet(16500)))
+  /** @group Constructors */ case object Order3 extends GnirsFilter("Order3", "K", "Order 3 (K)", Some(Wavelength.fromAngstroms.unsafeGet(22000)))
+  /** @group Constructors */ case object Order2 extends GnirsFilter("Order2", "L", "Order 2 (L)", Some(Wavelength.fromAngstroms.unsafeGet(35000)))
+  /** @group Constructors */ case object Order1 extends GnirsFilter("Order1", "M", "Order 1 (M)", Some(Wavelength.fromAngstroms.unsafeGet(48000)))
+  /** @group Constructors */ case object H2 extends GnirsFilter("H2", "H2", "H2: 2.12µm", Some(Wavelength.fromAngstroms.unsafeGet(21200)))
+  /** @group Constructors */ case object HNd100x extends GnirsFilter("HNd100x", "H+ND100X", "H + ND100X", Some(Wavelength.fromAngstroms.unsafeGet(16500)))
+  /** @group Constructors */ case object H2Nd100x extends GnirsFilter("H2Nd100x", "H2+ND100X", "H2 + ND100X", Some(Wavelength.fromAngstroms.unsafeGet(21200)))
+  /** @group Constructors */ case object PAH extends GnirsFilter("PAH", "PAH", "PAH: 3.3µm", Some(Wavelength.fromAngstroms.unsafeGet(33000)))
+  /** @group Constructors */ case object Y extends GnirsFilter("Y", "Y", "Y: 1.03µm", Some(Wavelength.fromAngstroms.unsafeGet(10300)))
+  /** @group Constructors */ case object J extends GnirsFilter("J", "J", "J: 1.25µm", Some(Wavelength.fromAngstroms.unsafeGet(12500)))
+  /** @group Constructors */ case object K extends GnirsFilter("K", "K", "K: 2.20µm", Some(Wavelength.fromAngstroms.unsafeGet(22000)))
 
   /** All members of GnirsFilter, in canonical order. */
   val all: List[GnirsFilter] =

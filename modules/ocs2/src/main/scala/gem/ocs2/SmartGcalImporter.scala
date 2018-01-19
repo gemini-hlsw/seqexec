@@ -142,7 +142,7 @@ object SmartGcalImporter extends DoobieClient {
 
   def parseMaxWavelength(s: String): Wavelength =
     s match {
-      case "MAX" => Wavelength.unsafeFromAngstroms(Int.MaxValue)
+      case "MAX" => Wavelength.Max
       case _     => s.parseAs(Parsers.angstroms)
     }
 
