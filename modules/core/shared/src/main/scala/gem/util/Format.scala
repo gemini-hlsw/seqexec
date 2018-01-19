@@ -12,7 +12,15 @@ import monocle.{ Iso, Prism }
  * with a subsequent `reverseGet` yield a normalized form for A. Composition with stronger optics
  * (`Prism` and `Iso`) yields another `Format`.
  */
+@SuppressWarnings(Array("org.wartremover.warts.Null"))
 final case class Format[A, B](getOption: A => Option[B], reverseGet: B => A) {
+
+  /** Like getOption, but throws IllegalArgumentException on failure. */
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.Throw"))
+  def unsafeGet(a: A): B =
+    getOption(a).getOrElse {
+      throw new IllegalArgumentException(s"unsafeGet failed: $a")
+    }
 
   /** Compose with another Format. */
   def composeFormat[C](f: Format[B, C]): Format[A, C] =
