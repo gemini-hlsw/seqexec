@@ -77,7 +77,7 @@ object Settings {
     val javaTimeJS              = "2.0.0-M13-SNAPSHOT"
     val javaLogJS               = "0.1.3"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.0.8-SNAPSHOT"
+    val scalaJSReactVirtualized = "0.0.8"
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
@@ -111,7 +111,7 @@ object Settings {
     val semanticUI       = "2.2.10"
     val ocsVersion       = "2018001.1.0"
     val uglifyJs         = "1.0.0-beta.3"
-    val reactVirtualized = "9.16.1"
+    val reactVirtualized = "9.17.3"
     val reactClipboard   = "5.0.0"
 
     val apacheXMLRPC      = "3.1.3"

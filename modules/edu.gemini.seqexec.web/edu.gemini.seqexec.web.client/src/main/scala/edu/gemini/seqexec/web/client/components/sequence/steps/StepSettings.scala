@@ -232,8 +232,6 @@ object ExposureTime {
       }
 
       <.div(
-        ^.cls := "center aligned",
-        SeqexecStyles.componentLabel,
         displayedText
       )
     }
