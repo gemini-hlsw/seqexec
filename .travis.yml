@@ -23,7 +23,11 @@ install:
   - npm install jsdom
 
 script:
-  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test coreJS/test
+  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test coreJS/test coreJS/fastOptJS
+
+after_script:
+  - ls modules/core/js/target/scala-2.12
+  - cd modules/core/js/target/scala-2.12 && python $TRAVIS_BUILD_DIR/build/weigh_in.py gem-core-fastopt.js
 
 cache:
   directories:
