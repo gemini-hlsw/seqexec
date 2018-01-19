@@ -41,7 +41,8 @@ object ColWidths {
   val OffsetWidthBase: Int = 68
   val GuidingWidth: Int = 83
   val ExposureWidth: Int = 80
-  val FilterWidth: Int = 100
+  val FilterWidth: Int = 150
+  val FPUWidth: Int = 150
 }
 
 /**
@@ -128,6 +129,9 @@ object StepsTable {
   def stepFilterRenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     FilterCell(FilterCell.Props(row.step, i))
 
+  def stepFPURenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    FPUCell(FPUCell.Props(row.step, i))
+
   // Columns for the table
   private def columns(p: Props): List[Table.ColumnArg] = {
     val offsetColumn =
@@ -141,7 +145,8 @@ object StepsTable {
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
         p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, cellRenderer = stepExposureRenderer(i.instrument)))),
-        p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument))))
+        p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
+        p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument))))
       ).collect { case Some(x) => x }
   }
 
