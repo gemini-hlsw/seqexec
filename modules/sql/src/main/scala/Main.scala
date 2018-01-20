@@ -23,8 +23,8 @@ object Main {
       F2Enums    .enums,
       GcalEnums  .enums,
       GmosEnums  .enums,
-      GpiEnums   .enums,
       GnirsEnums .enums,
+      GpiEnums   .enums,
       MiscEnums  .enums,
       TargetEnums.enums
     ).flatten.sequence

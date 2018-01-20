@@ -13,7 +13,7 @@ object GnirsEnums {
   val enums: List[ConnectionIO[EnumDef]] =
     List(
 
-      EnumDef.fromQuery("Prism", "Prism turret") {
+      EnumDef.fromQuery("GnirsPrism", "Prism") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
         sql"""SELECT id, id tag, short_name, long_name FROM e_gnirs_prism""".query[(String, R)]
       },
