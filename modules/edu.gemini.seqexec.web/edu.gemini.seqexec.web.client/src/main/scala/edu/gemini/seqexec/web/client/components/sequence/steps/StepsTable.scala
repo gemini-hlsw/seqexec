@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import scala.scalajs.js
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Instrument, Step}
+import edu.gemini.seqexec.model.Model.{Instrument, Step, StepType, StepState}
 // import edu.gemini.seqexec.web.client.ModelOps._
 // import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
@@ -13,12 +13,12 @@ import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
 // import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
-  import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-// import edu.gemini.seqexec.web.client.lenses.stepTypeO
-// import edu.gemini.seqexec.web.client.semanticui._
+import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
+import edu.gemini.seqexec.web.client.lenses.stepTypeO
+import edu.gemini.seqexec.web.client.semanticui.{Size => SSize}
 // import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 // import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-// import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 // import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 // import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react._
@@ -30,7 +30,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 import scalaz.std.AllInstances._
 import scalaz.syntax.foldable._
-// import scalaz.syntax.show._
+import scalaz.syntax.equal._
+import scalaz.syntax.show._
 // import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import react.virtualized._
@@ -43,6 +44,7 @@ object ColWidths {
   val ExposureWidth: Int = 80
   val FilterWidth: Int = 150
   val FPUWidth: Int = 150
+  val ObjectTypeWidth: Int = 100
 }
 
 /**
@@ -78,6 +80,33 @@ object OffsetsDisplayCell {
     }.build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
+}
+
+/**
+  * Component to display the object type
+  */
+object ObjectTypeCell {
+  private val component = ScalaComponent.builder[Step]("ObjectTypeCell")
+    .stateless
+    .render_P { p =>
+      <.div( // Column object type
+        SeqexecStyles.rightCell,
+        stepTypeO.getOption(p).map { st =>
+          val stepTypeColor = st match {
+            case _ if p.status === StepState.Completed => "light gray"
+            case StepType.Object                          => "green"
+            case StepType.Arc                             => "violet"
+            case StepType.Flat                            => "grey"
+            case StepType.Bias                            => "teal"
+            case StepType.Dark                            => "black"
+            case StepType.Calibration                     => "blue"
+          }
+          Label(Label.Props(st.shows, color = stepTypeColor.some, size = SSize.Small))
+        }.whenDefined
+      )
+    }.build
+
+  def apply(i: Step): Unmounted[Step, Unit, Unit] = component(i)
 }
 
 /**
@@ -132,6 +161,9 @@ object StepsTable {
   def stepFPURenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     FPUCell(FPUCell.Props(row.step, i))
 
+  val stepObjectTypeRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    ObjectTypeCell(row.step)
+
   // Columns for the table
   private def columns(p: Props): List[Table.ColumnArg] = {
     val offsetColumn =
@@ -146,7 +178,8 @@ object StepsTable {
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
         p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, cellRenderer = stepExposureRenderer(i.instrument)))),
         p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
-        p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument))))
+        p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
+        p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, cellRenderer = stepObjectTypeRenderer)))
       ).collect { case Some(x) => x }
   }
 
