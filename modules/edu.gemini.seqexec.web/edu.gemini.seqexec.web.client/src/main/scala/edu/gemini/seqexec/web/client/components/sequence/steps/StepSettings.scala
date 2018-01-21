@@ -3,11 +3,12 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, StepType, StepState, TelescopeOffset}
 import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses._
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.web.client.utils._
@@ -260,4 +261,66 @@ object GuidingCell {
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+  * Component to display the step id
+  */
+object StepIdCell {
+  private val component = ScalaComponent.builder[Int]("StepIdCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        s"${p + 1}")
+    }.build
+
+  def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
+}
+
+/**
+  * Component to display the offsets
+  */
+object OffsetsDisplayCell {
+  final case class Props(offsetsDisplay: OffsetsDisplay, step: Step)
+
+  private val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
+    .stateless
+    .render_P { p =>
+      <.div( // Column step offset
+        p.offsetsDisplay match {
+          case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
+            OffsetBlock(OffsetBlock.Props(p.step, offsetWidth))
+          case _ => EmptyVdom
+        }
+      )
+    }.build
+
+  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
+}
+
+/**
+  * Component to display the object type
+  */
+object ObjectTypeCell {
+  private val component = ScalaComponent.builder[Step]("ObjectTypeCell")
+    .stateless
+    .render_P { p =>
+      <.div( // Column object type
+        SeqexecStyles.rightCell,
+        stepTypeO.getOption(p).map { st =>
+          val stepTypeColor = st match {
+            case _ if p.status === StepState.Completed => "light gray"
+            case StepType.Object                          => "green"
+            case StepType.Arc                             => "violet"
+            case StepType.Flat                            => "grey"
+            case StepType.Bias                            => "teal"
+            case StepType.Dark                            => "black"
+            case StepType.Calibration                     => "blue"
+          }
+          Label(Label.Props(st.shows, color = stepTypeColor.some, size = Size.Small))
+        }.whenDefined
+      )
+    }.build
+
+  def apply(i: Step): Unmounted[Step, Unit, Unit] = component(i)
 }
