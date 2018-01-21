@@ -16,7 +16,7 @@ import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 // import edu.gemini.seqexec.web.client.lenses.stepTypeO
 // import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
-// import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 // import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 // import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 // import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
@@ -36,6 +36,7 @@ import scalaz.syntax.std.option._
 import react.virtualized._
 
 object ColWidths {
+  val ControlWidth: Int = 80
   val IdxWidth: Int = 50
   val StatusWidth: Int = 100
   val OffsetWidthBase: Int = 68
@@ -81,6 +82,17 @@ object StepsTable {
     val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
   }
 
+  val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
+      <.span(
+        SeqexecStyles.centeredCell,
+        SeqexecStyles.controlCellHeader,
+        ^.title := "Control",
+        IconSettings
+      )
+
+  val stepControlRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepIdCell(row.step.id)
+
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
 
@@ -111,6 +123,7 @@ object StepsTable {
         case _ => None
       }
       List(
+        Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer, headerRenderer = controlHeaderRenderer)).some,
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,

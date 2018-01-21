@@ -474,6 +474,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     justifyContent.flexEnd
   )
 
+  val controlCellHeader: StyleA = style(
+    paddingBottom((headerHeight/4).px)
+  )
+
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
     topBorderMixin,
     bottomBorderMixin
