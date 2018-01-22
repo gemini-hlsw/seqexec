@@ -43,7 +43,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("EphemerisDao should return empty ephmeris if the key is not found") {
     forAll { (ks: KS, m: EphemerisMap) =>
       val e = execTest(m - ks, EphemerisDao.selectAll(ks.key, ks.site))
-      e shouldEqual Ephemeris.Empty
+      e shouldEqual Ephemeris.empty
     }
   }
 
@@ -65,7 +65,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("EphemerisDao should delete by key") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
       val eʹ = execTest(m + (ks -> e), EphemerisDao.delete(ks.key, ks.site) *> EphemerisDao.selectAll(ks.key, ks.site))
-      eʹ shouldEqual Ephemeris.Empty
+      eʹ shouldEqual Ephemeris.empty
     }
   }
 

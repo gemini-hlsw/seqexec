@@ -24,7 +24,7 @@ object UserTargetDao {
   import EnumeratedMeta._
   import ObservationIdMeta._
 
-  def insert(userTarget: UserTarget, oid: Observation.Id): ConnectionIO[Int] =
+  def insert(oid: Observation.Id, userTarget: UserTarget): ConnectionIO[Int] =
     for {
       tid <- TargetDao.insert(userTarget.target)
       uid <- Statements.insert(tid, userTarget.targetType, oid).withUniqueGeneratedKeys[Int]("id")

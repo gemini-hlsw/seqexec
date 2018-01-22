@@ -43,7 +43,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     tail: TreeMap[Timestamp, EphemerisCoordinates]
   ): org.scalatest.Assertion = {
 
-    val e = EphemerisParser.parse(load(name)).option.getOrElse(Ephemeris.Empty)
+    val e = EphemerisParser.parse(load(name)).option.getOrElse(Ephemeris.empty)
 
     // This works but the error message isn't helpful when it fails.  There
     // should be a way to combine shouldEqual assertions ...

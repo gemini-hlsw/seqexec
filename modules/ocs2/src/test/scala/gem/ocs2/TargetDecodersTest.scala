@@ -3,7 +3,7 @@
 
 package gem.ocs2
 
-import gem.{ EphemerisKey, Target, Track }
+import gem.{ EphemerisKey, Target }
 import gem.math._
 import gem.ocs2.Decoders._
 import gem.ocs2.pio._
@@ -119,7 +119,7 @@ object TargetDecodersTest {
   }
 
   val SiderealTarget: Target =
-    Target("Example", Track.Sidereal(SiderealProperMotion))
+    Target("Example", Right(SiderealProperMotion))
 
   val NonsiderealNode: Elem =
     <paramset name="target">
@@ -132,7 +132,7 @@ object TargetDecodersTest {
     </paramset>
 
   val NonsiderealTarget: Target =
-    Target("Oumuamua", Track.Nonsidereal(EphemerisKey.Comet("C/1937 P1"), Map.empty))
+    Target("Oumuamua", Left(EphemerisKey.Comet("C/1937 P1")))
 
   // Deletes all instances of params and paramsets that have the given name.
   private def delete(name: String, e: Elem): Elem = {

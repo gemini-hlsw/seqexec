@@ -5,7 +5,8 @@ package gem.dao
 
 import cats.implicits._
 import doobie.implicits._
-import gem.Observation
+import gem.{ Observation, Step }
+import gem.config.{ DynamicConfig, StaticConfig }
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
@@ -31,7 +32,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select flat observations") {
     val oid = Observation.Id(pid, One)
 
-    forAll(genObservation) { obsIn =>
+    forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -46,7 +47,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select static observations") {
     val oid = Observation.Id(pid, One)
 
-    forAll(genObservation) { obsIn =>
+    forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -61,7 +62,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should roundtrip complete observations") {
     val oid = Observation.Id(pid, One)
 
-    forAll(genObservation) { obsIn =>
+    forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)

@@ -36,7 +36,7 @@ trait ArbEphemeris {
   implicit val arbEphemeris: Arbitrary[Ephemeris] =
     Arbitrary {
       for {
-        len <- choose(0, 100)
+        len <- choose(0, 10)
         es  <- listOfN(len, arbitrary[Element])
       } yield Ephemeris(es: _*)
     }

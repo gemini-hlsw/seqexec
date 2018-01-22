@@ -5,7 +5,7 @@ package gem.ocs2
 
 import cats.effect.IO, cats.implicits._
 import doobie._, doobie.implicits._
-import gem.{ Dataset, Log, Observation, Program, Step, Target, User }
+import gem.{ Dataset, Log, Observation, Program, Step, User }
 import gem.config.{ StaticConfig, DynamicConfig }
 import gem.dao.UserDao
 import gem.ocs2.Decoders._
@@ -46,14 +46,14 @@ object FileImporter extends DoobieClient {
   def read(f: File): IO[Elem] =
     IO(XML.loadFile(f))
 
-  def insert(u: User[_], p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], ts: List[Target], log: Log[ConnectionIO]): ConnectionIO[Unit] =
-    Importer.writeProgram(p, ds, ts)(u, log)
+  def insert(u: User[_], p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], log: Log[ConnectionIO]): ConnectionIO[Unit] =
+    Importer.writeProgram(p, ds)(u, log)
 
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =
     read(f).flatMap { elem =>
-      PioDecoder[(Prog, List[Dataset], List[Target])].decode(elem) match {
-        case Left(err)          => sys.error(s"Problem parsing ${f.getName}: $err")
-        case Right((p, ds, ts)) => log.log(u, s"insert ${p.id}")(insert(u, p, ds, ts, log)).transact(xa)
+      PioDecoder[(Prog, List[Dataset])].decode(elem) match {
+        case Left(err)      => sys.error(s"Problem parsing ${f.getName}: $err")
+        case Right((p, ds)) => log.log(u, s"insert ${p.id}")(insert(u, p, ds, log)).transact(xa)
       }
     }.handleErrorWith(e => IO(e.printStackTrace))
 

@@ -23,17 +23,17 @@ sealed trait Track extends Product with Serializable {
 
   def at(time: Instant, site: Site): Option[Coordinates]
 
-  def fold[A](f: ProperMotion => A, g: (EphemerisKey, Map[Site, Ephemeris]) => A): A =
+  def fold[A](f: ProperMotion => A, g: (Map[Site, Ephemeris]) => A): A =
     this match {
-      case Sidereal(pm)       => f(pm)
-      case Nonsidereal(k, es) => g(k, es)
+      case Sidereal(pm)    => f(pm)
+      case Nonsidereal(es) => g(es)
     }
 
   def sidereal: Option[Sidereal] =
-    fold(pm => Some(Sidereal(pm)), (_, _) => None)
+    fold(pm => Some(Sidereal(pm)), _ => None)
 
   def nonsidereal: Option[Nonsidereal] =
-    fold(_ => None, (k, es) => Some(Nonsidereal(k, es)))
+    fold(_ => None, (es) => Some(Nonsidereal(es)))
 
 }
 
@@ -52,7 +52,7 @@ object Track {
   }
 
 
-  @Lenses final case class Nonsidereal(ephemerisKey: EphemerisKey, ephemerides: Map[Site, Ephemeris]) extends Track {
+  @Lenses final case class Nonsidereal(ephemerides: Map[Site, Ephemeris]) extends Track {
 
     override def at(time: Instant, s: Site): Option[Coordinates] =
       for {
@@ -69,8 +69,8 @@ object Track {
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Nonsidereal {
 
-    def empty(key: EphemerisKey): Nonsidereal =
-      Nonsidereal(key, Map.empty)
+    val empty: Nonsidereal =
+      Nonsidereal(Map.empty)
 
     implicit val EqNonsidereal: Eq[Nonsidereal] =
       Eq.fromUniversalEquals

@@ -16,7 +16,6 @@ trait ArbTrack {
   import ArbProperMotion._
   import ArbEnumerated._
   import ArbEphemeris._
-  import ArbEphemerisKey._
 
   implicit val arbSidereal: Arbitrary[Track.Sidereal] =
     Arbitrary {
@@ -29,16 +28,13 @@ trait ArbTrack {
   implicit val arbNonsidereal: Arbitrary[Track.Nonsidereal] =
     Arbitrary {
       for {
-        key  <- arbitrary[EphemerisKey]
         eph  <- arbitrary[Ephemeris]
         site <- arbitrary[Site]
-      } yield Nonsidereal(key, Map(site -> eph))
+      } yield Nonsidereal(Map(site -> eph))
     }
 
   implicit val cogNonsidereal: Cogen[Track.Nonsidereal] =
-    Cogen[(EphemerisKey, Map[Site, Ephemeris])].contramap { n =>
-      (n.ephemerisKey, n.ephemerides)
-    }
+    Cogen[Map[Site, Ephemeris]].contramap(_.ephemerides)
 
   implicit val arbTrack: Arbitrary[Track] =
     Arbitrary {

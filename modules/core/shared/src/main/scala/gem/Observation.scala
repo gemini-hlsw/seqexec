@@ -19,6 +19,7 @@ import cats.implicits._
  */
 final case class Observation[+S, +D](
   title: String,
+  targets: TargetEnvironment,
   staticConfig: S,
   steps: List[D])
 

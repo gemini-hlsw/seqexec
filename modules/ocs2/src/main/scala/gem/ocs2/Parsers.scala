@@ -117,6 +117,13 @@ object Parsers {
   val offsetQ: PioParse[Offset.Q] =
     arcsec.map(Offset.Q.apply)
 
+  val userTargetType: PioParse[UserTargetType] = enum(
+    "blindOffset" -> UserTargetType.BlindOffset,
+    "offAxis"     -> UserTargetType.OffAxis,
+    "tuningStar"  -> UserTargetType.TuningStar,
+    "other"       -> UserTargetType.Other
+  )
+
   object Calibration {
 
     val lamp: PioParse[GcalLamp] = {

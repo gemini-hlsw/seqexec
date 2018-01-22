@@ -5,10 +5,8 @@ package gem
 
 import cats.Eq
 
-import gem.enum.{ Site, UserTargetType }
-import gem.math.Ephemeris
+import gem.enum.UserTargetType
 
-import monocle.Optional
 import monocle.macros.Lenses
 
 
@@ -18,9 +16,6 @@ import monocle.macros.Lenses
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object UserTarget {
-
-  val ephemerides: Optional[UserTarget, Map[Site, Ephemeris]] =
-    target composeOptional Target.ephemerides
 
   implicit val EqUserTarget: Eq[UserTarget] =
     Eq.fromUniversalEquals

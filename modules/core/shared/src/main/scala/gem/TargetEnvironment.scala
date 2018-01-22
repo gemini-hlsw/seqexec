@@ -17,6 +17,9 @@ import monocle.macros.Lenses
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TargetEnvironment {
 
+  val empty: TargetEnvironment =
+    TargetEnvironment(Set.empty)
+
   implicit val EqTargetEnvironment: Eq[TargetEnvironment] =
     Eq.fromUniversalEquals
 

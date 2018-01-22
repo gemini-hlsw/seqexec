@@ -4,7 +4,7 @@
 package gem.ocs2
 
 import gem.dao._
-import gem.{ Dataset, Log, Observation, Program, Step, Target, User }
+import gem.{ Dataset, Log, Observation, Program, Step, User }
 import gem.config.{ StaticConfig, DynamicConfig }
 
 import cats.effect.IO
@@ -18,35 +18,37 @@ import scala.collection.immutable.TreeMap
   */
 object Importer extends DoobieClient {
 
+  object datasets {
+    def lookupStepIds(oid: Observation.Id): ConnectionIO[List[Int]] =
+      sql"SELECT step_id FROM step WHERE observation_id = $oid ORDER BY location".query[Int].list
+
+    def tuples(sids: List[Int], ds: List[Dataset]): List[(Int, Dataset)] = {
+      val sidMap = sids.zipWithIndex.map(_.swap).toMap
+      ds.flatMap { d => sidMap.get(d.label.index - 1).map(_ -> d).toList }
+    }
+
+    def write(oid: Observation.Id, ds: List[Dataset]): ConnectionIO[Unit] =
+      for {
+        sids <- lookupStepIds(oid)
+        _    <- tuples(sids, ds).traverse_ { case (sid, d) => DatasetDao.insert(sid, d) }
+      } yield ()
+  }
+
   def writeObservation(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
       sql"DELETE FROM observation WHERE observation_id = ${oid}".update.run.void
 
-    val lookupStepIds: ConnectionIO[List[Int]] =
-      sql"SELECT step_id FROM step WHERE observation_id = ${oid} ORDER BY location".query[Int].list
-
-    def datasetTuples(sids: List[Int]): List[(Int, Dataset)] = {
-      val sidMap = sids.zipWithIndex.map(_.swap).toMap
-      ds.flatMap { d => sidMap.get(d.label.index - 1).map(_ -> d).toList }
-    }
-
-    val writeDatasets: ConnectionIO[Unit] =
-      for {
-        sids <- lookupStepIds
-        _    <- datasetTuples(sids).traverse { case (sid, d) => DatasetDao.insert(sid, d) }.void
-      } yield ()
-
     (u: User[_], l: Log[ConnectionIO]) =>
       for {
         _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", TreeMap.empty)).as(1))
-        _ <- l.log(u, s"remove observation ${oid}"   )(rmObservation                )
-        _ <- l.log(u, s"insert new version of ${oid}")(ObservationDao.insert(oid, o))
-        _ <- l.log(u, s"write datasets for ${oid}"   )(writeDatasets                )
+        _ <- l.log(u, s"remove observation $oid"   )(rmObservation                )
+        _ <- l.log(u, s"insert new version of $oid")(ObservationDao.insert(oid, o))
+        _ <- l.log(u, s"write datasets for $oid"   )(datasets.write(oid, ds)      )
       } yield ()
   }
 
-  def writeProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], ts: List[Target]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def writeProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
 
@@ -56,12 +58,9 @@ object Importer extends DoobieClient {
       for {
         _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
         _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
-        _ <- p.observations.toList.traverse { case (i,o) =>
+        _ <- p.observations.toList.traverse_ { case (i,o) =>
                val oid = Observation.Id(p.id, i)
-               writeObservation(oid, o, dsMap(oid))(u, l)
-             }
-        _ <- l.log(u, s"insert targets from ${p.id}") {
-               ts.traverse_(TargetDao.insert)
+               l.log(u, s"write datasets for $oid")(datasets.write(oid, dsMap(oid)))
              }
       } yield ()
   }
@@ -78,6 +77,6 @@ object Importer extends DoobieClient {
   def importObservation(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): IO[Unit] =
     doImport(writeObservation(oid, o, ds))
 
-  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset], ts: List[Target]): IO[Unit] =
-    doImport(writeProgram(p, ds, ts))
+  def importProgram(p: Program[Observation[StaticConfig, Step[DynamicConfig]]], ds: List[Dataset]): IO[Unit] =
+    doImport(writeProgram(p, ds))
 }

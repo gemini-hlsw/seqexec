@@ -115,7 +115,7 @@ object Timestamp {
       unsafeFromInstant(Instant.now())
     }
 
-  /** Creates an InstantMicro representing the current time using milliseconds
+  /** Creates a Timestamp representing the current time using milliseconds
     * from the Java time epoch.
     *
     * @group Constructors

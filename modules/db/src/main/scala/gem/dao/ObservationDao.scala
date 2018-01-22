@@ -26,6 +26,7 @@ object ObservationDao {
     for {
       id <- StaticConfigDao.insert(o.staticConfig)
       _  <- Statements.insert(oid, o, id).run
+      _  <- TargetEnvironmentDao.insert(oid, o.targets)
       _  <- o.steps.zipWithIndex.traverse { case (s, i) =>
               StepDao.insert(oid, Location.unsafeMiddle((i + 1) * 100), s)
             }.void
@@ -33,7 +34,10 @@ object ObservationDao {
 
   /** Construct a program to select the specified observation, with the instrument and no steps. */
   def selectFlat(id: Observation.Id): ConnectionIO[Observation[Instrument, Nothing]] =
-    Statements.selectFlat(id).unique.map(_._1)
+    for {
+      o <- Statements.selectFlat(id).unique.map(_._1)
+      t <- TargetEnvironmentDao.select(id)
+    } yield o.copy(targets = t)
 
   /** Construct a program to select the specified observation, with static connfig and no steps. */
   def selectStatic(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Nothing]] =
@@ -54,12 +58,23 @@ object ObservationDao {
   def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
     Statements.selectIds(pid).list
 
+  private def merge[I: Ordering, S, D](
+    os: TreeMap[I, Observation[S, D]],
+    ts: Map[I, TargetEnvironment]
+  ): TreeMap[I, Observation[S, D]] =
+    os.foldLeft(TreeMap.empty[I, Observation[S, D]]) { case (m, (i, o)) =>
+      ts.get(i).fold(m)(t => m.updated(i, o.copy(targets = t)))
+    }
+
   /**
    * Construct a program to select all observations for the specified science program, with the
    * instrument and no steps.
    */
   def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Instrument, Nothing]]] =
-    Statements.selectAllFlat(pid).list.map(lst => TreeMap(lst.map { case (i,o,_) => (i,o) }: _*))
+    for {
+      m  <- Statements.selectAllFlat(pid).list.map(lst => TreeMap(lst.map { case (i,o,_) => (i,o) }: _*))
+      ts <- m.keys.toList.traverse(i => TargetEnvironmentDao.select(Observation.Id(pid, i)).tupleLeft(i))
+    } yield merge(m, ts.toMap)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
@@ -69,7 +84,8 @@ object ObservationDao {
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
-    } yield TreeMap(ids.map(_.index).zip(oss): _*)
+      ts  <- ids.traverse(i => TargetEnvironmentDao.select(i).tupleLeft(i.index))
+    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts.toMap)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
@@ -79,7 +95,8 @@ object ObservationDao {
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(select)
-    } yield TreeMap(ids.map(_.index).zip(oss): _*)
+      ts  <- ids.traverse(i => TargetEnvironmentDao.select(i).tupleLeft(i.index))
+    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts.toMap)
 
   object Statements {
 
@@ -124,7 +141,9 @@ object ObservationDao {
           FROM observation
          WHERE observation_id = ${id}
       """.query[(String, Instrument, Int)]
-        .map { case (t, i, s) => (Observation(t, i, Nil), s) }
+        .map { case (t, i, s) =>
+          (Observation(t, TargetEnvironment.empty, i, Nil), s)
+        }
 
     def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Instrument, Nothing], Int)] =
       sql"""
@@ -134,7 +153,7 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Instrument, Int)]
         .map { case (n, t, i, s) =>
-          (Observation.Index.unsafeFromInt(n.toInt), Observation(t, i, Nil), s)
+          (Observation.Index.unsafeFromInt(n.toInt), Observation(t, TargetEnvironment.empty, i, Nil), s)
         }
 
   }

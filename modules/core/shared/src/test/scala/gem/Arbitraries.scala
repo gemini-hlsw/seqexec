@@ -17,6 +17,7 @@ import scala.collection.immutable.TreeMap
 
 trait Arbitraries extends gem.config.Arbitraries  {
   import ArbEnumerated._
+  import ArbTargetEnvironment._
 
   implicit val arbLocationMiddle: Arbitrary[Location.Middle] =
     Arbitrary {
@@ -88,24 +89,27 @@ trait Arbitraries extends gem.config.Arbitraries  {
   def genObservationOf(i: Instrument): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
     for {
       t <- genTitle
+      e <- arbitrary[TargetEnvironment]
       s <- genStaticConfigOf(i)
       d <- genSequenceOf(i)
-    } yield Observation(t, s, d)
+    } yield Observation(t, e, s, d)
 
-  val genObservation: Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
-    for {
-      i <- Gen.oneOf(
-             Instrument.Flamingos2,
-             Instrument.GmosN,
-             Instrument.GmosS
-           ) // Add more as they become available
-      o <- genObservationOf(i)
-    } yield o
+  implicit val arbObservation: Arbitrary[Observation[StaticConfig, Step[DynamicConfig]]] =
+    Arbitrary {
+      for {
+        i <- Gen.oneOf(
+               Instrument.Flamingos2,
+               Instrument.GmosN,
+               Instrument.GmosS
+             ) // Add more as they become available
+        o <- genObservationOf(i)
+      } yield o
+    }
 
   def genObservationMap(limit: Int): Gen[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       count   <- Gen.choose(0, limit)
       obsIdxs <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(Observation.Index.unsafeFromInt))
-      obsList <- obsIdxs.traverse(_ => genObservation)
+      obsList <- obsIdxs.traverse(_ => arbitrary[Observation[StaticConfig, Step[DynamicConfig]]])
     } yield TreeMap(obsIdxs.zip(obsList): _*)
 }

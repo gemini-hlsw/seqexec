@@ -9,13 +9,12 @@ import doobie.implicits._
 import gem.dao.meta._
 import gem.dao.composite._
 import gem.enum.TrackType
+import gem.math.ProperMotion
 
 object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the priority - see MetaTrackType below and issue #170 */ {
 
   import EphemerisKeyComposite._
   import ProperMotionComposite._
-  import TaggedCoproduct._
-  import Track._
 
   // MetaTrackType is a workaround until issue #170 is implemented.
   import doobie.postgres.implicits._
@@ -36,59 +35,70 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
 
   object Statements {
 
-    // Track is laid out as a tagged coproduct: (tag, sidereal, nonsidereal).
-    private implicit val TaggedTrackComposite: Composite[Track] = {
+    private final case class TargetKernel(
+      name: String,
+      trackType: TrackType,
+      ephemerisKey: Option[EphemerisKey],
+      properMotion: Option[ProperMotion]
+    ) {
 
-      // We map only the ephemeris key portion of the nonsidereal target here, and we only need to
-      // consider the Option[Nonsidereal] case because this is what the coproduct encoding needs.
-      implicit val compositeOptionNonsidereal: Composite[Option[Nonsidereal]] =
-        Composite[Option[EphemerisKey]].imap(_.map(Nonsidereal.empty))(_.map(_.ephemerisKey))
-
-      // Construct an encoder for track constructors, tagged by TrackType.
-      val enc = Tag[Sidereal](TrackType.Sidereal)       :+:
-                Tag[Nonsidereal](TrackType.Nonsidereal) :+: TNil
-
-      // from enc we get a Composite[Sidereal :+: Nonsidereal :+: CNil], which we imap out by
-      // unifying C to the LUB of its elements when reading, and inspecting/injecting the element
-      // into C when writing.
-      enc.unifiedComposite {
-        case t: Sidereal    => enc.inj(t)
-        case t: Nonsidereal => enc.inj(t)
-      }
+      def toTarget: Target =
+        trackType match {
+          case TrackType.Nonsidereal =>
+            Target(name, ephemerisKey.toLeft(sys.error("missing ephemeris key")))
+          case TrackType.Sidereal    =>
+            Target(name, properMotion.toRight(sys.error("missing proper motion")))
+        }
 
     }
 
+    private def trackType(t: Target): TrackType =
+      t.track.fold(_ => TrackType.Nonsidereal, _ => TrackType.Sidereal)
+
     // base coordinates formatted as readable strings, if target is sidereal
     private def stringyCoordinates(t: Target): Option[(String, String)] =
-      t.track.sidereal.map { st =>
-        val cs = st.properMotion.baseCoordinates
+      t.track.toOption.map { pm =>
+        val cs = pm.baseCoordinates
         (cs.ra.format, cs.dec.format)
       }
 
     def select(id: Int): Query0[Target] =
       sql"""
         SELECT name, track_type,
-               ra, dec, epoch, pv_ra, pv_dec, rv, px, -- proper motion
-               e_key_type, e_key                      -- ephemeris key
+               e_key_type, e_key,                     -- ephemeris key
+               ra, dec, epoch, pv_ra, pv_dec, rv, px  -- proper motion
           FROM target
          WHERE id = $id
-      """.query[Target]
+      """.query[TargetKernel].map(_.toTarget)
 
     def insert(target: Target): Update0 =
       (fr"""INSERT INTO target (
               name, track_type,
-              ra, dec, epoch, pv_ra, pv_dec, rv, px, -- proper motion
               e_key_type, e_key,                     -- ephemeris key
+              ra, dec, epoch, pv_ra, pv_dec, rv, px, -- proper motion
               ra_str, dec_str                        -- stringy coordinates
-           ) VALUES""" ++ values((target, stringyCoordinates(target)))).update
+           ) VALUES""" ++ values(
+             (target.name, trackType(target),
+              target.track.left.toOption,
+              target.track.right.toOption,
+              stringyCoordinates(target)
+             )
+           )
+      ).update
 
     def update(id: Int, target: Target): Update0 =
       (fr"""UPDATE target
             SET (name, track_type,
-                 ra, dec, epoch, pv_ra, pv_dec, rv, px, -- proper motion
                  e_key_type, e_key,                     -- ephemeris key
+                 ra, dec, epoch, pv_ra, pv_dec, rv, px, -- proper motion
                  ra_str, dec_str                        -- stringy coordinates
-            ) =""" ++ values((target, stringyCoordinates(target))) ++
+            ) =""" ++ values(
+            (target.name, trackType(target),
+             target.track.left.toOption,
+             target.track.right.toOption,
+             stringyCoordinates(target)
+            )
+      ) ++
        fr"WHERE id = $id").update
 
     def delete(id: Int): Update0 =

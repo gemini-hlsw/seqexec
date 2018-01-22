@@ -54,7 +54,7 @@ object Ephemeris {
   type Element = (Timestamp, EphemerisCoordinates)
 
   /** The empty ephemeris. */
-  val Empty: Ephemeris = apply()
+  val empty: Ephemeris = apply()
 
   /** Construct an ephemeris from a sequence of literal elements. */
   def apply(es: Element*): Ephemeris =
@@ -67,7 +67,7 @@ object Ephemeris {
   /** Ephemerides form a monoid, using `++` as the combining operation. */
   implicit val MonoidEphemeris: Monoid[Ephemeris] =
     new Monoid[Ephemeris] {
-      val empty: Ephemeris = Empty
+      val empty: Ephemeris = Ephemeris.empty
       def combine(a: Ephemeris, b: Ephemeris) = a ++ b
     }
 
