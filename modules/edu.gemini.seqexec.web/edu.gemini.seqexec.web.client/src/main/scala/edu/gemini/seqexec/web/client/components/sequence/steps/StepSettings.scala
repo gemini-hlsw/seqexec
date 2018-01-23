@@ -5,12 +5,15 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, StepType, StepState, TelescopeOffset}
 import edu.gemini.seqexec.model.enumerations
+import edu.gemini.seqexec.web.client.circuit.StepsTableFocus
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.Size
+import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import edu.gemini.web.client.utils._
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react._
@@ -137,6 +140,80 @@ object OffsetBlock {
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display an icon for the state
+ */
+object StepToolsCell {
+  final case class Props(p: StepsTableFocus, step: Step)
+
+  private val component = ScalaComponent.builder[Props]("StepIconCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        SeqexecStyles.controlCell,
+        StepBreakStopCell(p),
+        StepIconCell(p)
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display an icon for the state
+ */
+object StepBreakStopCell {
+  private def stepIcon(p: StepToolsCell.Props): VdomNode =
+    p.step.status match {
+      case StepState.Completed                            => IconCheckmark
+      case StepState.Running                              => IconCircleNotched.copyIcon(loading = true)
+      case StepState.Failed(_)                            => IconAttention
+      case _ if p.p.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
+      case _ if p.step.skip                               => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+      case _                                              => iconEmpty
+    }
+
+  private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        SeqexecStyles.gutterCell,
+        stepIcon(p)
+      )
+    }
+    .build
+
+  def apply(p: StepToolsCell.Props): Unmounted[StepToolsCell.Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display an icon for the state
+ */
+object StepIconCell {
+  private def stepIcon(p: StepToolsCell.Props): VdomNode =
+    p.step.status match {
+      case StepState.Completed                            => IconCheckmark
+      case StepState.Running                              => IconCircleNotched.copyIcon(loading = true)
+      case StepState.Failed(_)                            => IconAttention
+      case _ if p.p.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
+      case _ if p.step.skip                               => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+      case _                                              => iconEmpty
+    }
+
+  private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        SeqexecStyles.iconCell,
+        stepIcon(p)
+      )
+    }
+    .build
+
+  def apply(p: StepToolsCell.Props): Unmounted[StepToolsCell.Props, Unit, Unit] = component(p)
 }
 
 /**

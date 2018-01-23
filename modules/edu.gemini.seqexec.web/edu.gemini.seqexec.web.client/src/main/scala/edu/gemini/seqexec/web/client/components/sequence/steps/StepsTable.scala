@@ -36,7 +36,7 @@ import scalaz.syntax.std.option._
 import react.virtualized._
 
 object ColWidths {
-  val ControlWidth: Int = 80
+  val ControlWidth: Int = 50
   val IdxWidth: Int = 50
   val StatusWidth: Int = 100
   val OffsetWidthBase: Int = 68
@@ -52,6 +52,8 @@ object ColWidths {
   * Container for a table with the steps
   */
 object StepsTable {
+  val HeightWithOffsets: Int = 40
+
   // ScalaJS defined trait
   // scalastyle:off
   trait StepRow extends js.Object {
@@ -90,8 +92,8 @@ object StepsTable {
         IconSettings
       )
 
-  val stepControlRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    StepIdCell(row.step.id)
+  def stepControlRenderer(f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepToolsCell(StepToolsCell.Props(f, row.step))
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
@@ -123,7 +125,7 @@ object StepsTable {
         case _ => None
       }
       List(
-        Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer, headerRenderer = controlHeaderRenderer)).some,
+        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
@@ -142,7 +144,7 @@ object StepsTable {
 
     def rowHeight(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
       case (_, OffsetsDisplay.DisplayOffsets(_)) =>
-        3 * SeqexecStyles.rowHeight / 2
+        HeightWithOffsets
       case _ =>
         SeqexecStyles.rowHeight
     }

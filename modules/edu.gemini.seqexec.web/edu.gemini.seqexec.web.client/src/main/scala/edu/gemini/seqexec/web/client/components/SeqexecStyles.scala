@@ -417,16 +417,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderRightColor(tableBorderColor)
   )
 
-  private val logTablePaddingMixin: StyleS = mixin(
+  private val cellPaddingMixin: StyleS = mixin(
     paddingLeft(0.7.em),
     paddingRight(0.7.em),
     paddingBottom(0.7.em),
-    paddingTop(1.em)
+    paddingTop(0.7.em)
   )
 
   val tableHeader: StyleA = style(
     leftBorderMixin,
-    logTablePaddingMixin,
+    cellPaddingMixin,
     fontWeight.bold,
     color(black),
     backgroundColor(c"#F9FAFB")
@@ -488,7 +488,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
-    logTablePaddingMixin,
+    cellPaddingMixin,
     leftBorderMixin,
     minWidth(0.px),
     fontSize.small,
@@ -524,4 +524,35 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     backgroundColor(c"#fffaf3").important,
     color(c"#573a08").important
   )
+
+  val controlCell: StyleA = style(
+    display.flex,
+    justifyContent.spaceAround,
+    alignItems.center
+  )
+
+  val controlCellRow: StyleA = style(
+    padding.unset
+  )
+
+  val iconCell: StyleA = style(
+    width(30.px),
+    justifyContent.center,
+    alignContent.center,
+    display.flex,
+    paddingBottom(0.7.em),
+    paddingTop(0.2.em),
+    paddingLeft(0.3.em)
+  )
+
+  val gutterCell: StyleA = style(
+    // CSS Dark magic to get the gutter background, see
+    // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
+    (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
+    backgroundClip.contentBox.paddingBox.important,
+    paddingTop(1.em),
+    paddingBottom(0.7.em),
+    width(20.px)
+  )
+
 }
