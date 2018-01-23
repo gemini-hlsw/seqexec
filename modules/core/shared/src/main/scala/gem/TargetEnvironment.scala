@@ -6,19 +6,21 @@ package gem
 import cats.Eq
 import monocle.macros.Lenses
 
+import scala.collection.immutable.TreeSet
+
 /** Collection of targets associated with an observation.
   */
 @Lenses final case class TargetEnvironment(
   /* asterism, */
   /* guide stars, */
-  userTargets: Set[UserTarget]
+  userTargets: TreeSet[UserTarget]
 )
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TargetEnvironment {
 
   val empty: TargetEnvironment =
-    TargetEnvironment(Set.empty)
+    TargetEnvironment(TreeSet.empty)
 
   implicit val EqTargetEnvironment: Eq[TargetEnvironment] =
     Eq.fromUniversalEquals

@@ -13,7 +13,7 @@ final class ProperMotionSpec extends CatsSuite {
   import ArbProperMotion._
 
   // Laws
-  checkAll("ProperMotion", EqTests[ProperMotion].eqv)
+  checkAll("ProperMotion", OrderTests[ProperMotion].order)
 
   test("ProperMotion.identity") {
     forAll { (pm: ProperMotion) =>

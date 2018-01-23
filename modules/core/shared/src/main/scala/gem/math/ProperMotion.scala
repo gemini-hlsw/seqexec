@@ -3,7 +3,7 @@
 
 package gem.math
 
-import cats.Eq
+import cats._
 import cats.implicits._
 import java.time.Instant
 import scala.math.{ sin, cos, hypot, atan2 }
@@ -170,9 +170,34 @@ object ProperMotion {
   }
   // scalastyle:on method.length
 
-  implicit val EqProperMotion: Eq[ProperMotion] =
-    Eq.fromUniversalEquals
+  implicit val OrderProperMotion: Order[ProperMotion] = {
 
+    implicit val MonoidOrder: Monoid[Order[ProperMotion]] =
+      Order.whenEqualMonoid[ProperMotion]
+
+    implicit val AngleOrder: Order[Angle] =
+      Angle.SignedAngleOrder
+
+    def order[A: Order](f: ProperMotion => A): Order[ProperMotion] =
+      Order.by(f)
+
+    // This could be done with:
+    //
+    //   Order.by(p => (p.baseCoordinates, p.epoch, ...))
+    //
+    // but that would always perform comparisons for all the fields (and all
+    // their contained fields down to the leaves of the tree) all of the time.
+    // The Monoid approach on the other hand will stop at the first difference.
+    // This is premature optimization perhaps but it seems like it might make a
+    // difference when sorting a long list of targets.
+
+    order(_.baseCoordinates)  |+|
+      order(_.epoch)          |+|
+      order(_.properVelocity) |+|
+      order(_.radialVelocity) |+|
+      order(_.parallax)
+
+  }
 }
 
 

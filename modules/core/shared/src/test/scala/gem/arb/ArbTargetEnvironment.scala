@@ -4,10 +4,15 @@
 package gem
 package arb
 
+import gem.syntax.treesetcompanion._
+
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen._
+
+import scala.collection.immutable.TreeSet
+
 
 trait ArbTargetEnvironment {
 
@@ -18,7 +23,7 @@ trait ArbTargetEnvironment {
       for {
         len <- choose(0, 10)
         uts <- listOfN(len, arbitrary[UserTarget])
-      } yield TargetEnvironment(uts.toSet)
+      } yield TargetEnvironment(TreeSet.fromList(uts))
     }
 
   implicit val cogTargetEnvironment: Cogen[TargetEnvironment] =

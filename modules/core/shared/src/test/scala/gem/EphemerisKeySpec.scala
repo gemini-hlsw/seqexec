@@ -13,7 +13,7 @@ import cats.tests.CatsSuite
 final class EphemerisKeySpec extends CatsSuite {
 
   // Laws
-  checkAll("EphemerisKey", EqTests[EphemerisKey].eqv)
+  checkAll("EphemerisKey", OrderTests[EphemerisKey].order)
 
   test("Equality must be natural") {
     forAll { (a: EphemerisKey, b: EphemerisKey) =>

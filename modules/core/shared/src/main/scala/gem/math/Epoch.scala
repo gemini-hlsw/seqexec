@@ -4,7 +4,7 @@
 package gem
 package math
 
-import cats.{ Eq, Show }
+import cats.{ Order, Show }
 import cats.implicits._
 import gem.parser.EpochParsers
 import gem.syntax.parser._
@@ -112,8 +112,8 @@ object Epoch {
     def toJulianDay(dt: LocalDateTime): Double =
       JulianDate.ofLocalDateTime(dt).dayNumber.toDouble
 
-    implicit val SchemeEq: Eq[Scheme] =
-      Eq.fromUniversalEquals
+    implicit val SchemeOrder: Order[Scheme] =
+      Order.by(s => (s.prefix, s.yearBasis, s.julianBasis, s.lengthOfYear))
 
     implicit val SchemeShow: Show[Scheme] =
       Show.fromToString
@@ -146,8 +146,8 @@ object Epoch {
   def unsafeFromString(s: String): Epoch =
     parse(s).getOrElse(sys.error(s"invalid epoch: $s"))
 
-  implicit val EpochEq: Eq[Epoch] =
-    Eq.fromUniversalEquals
+  implicit val EpochOrder: Order[Epoch] =
+    Order.by(e => (e.scheme, e.toMilliyears))
 
   implicit val EpochShow: Show[Epoch] =
     Show.fromToString

@@ -15,6 +15,8 @@ final class AngleSpec extends CatsSuite {
   // Laws
   checkAll("Angle", CommutativeGroupTests[Angle].commutativeGroup)
   checkAll("Angle", EqTests[Angle].eqv)
+  checkAll("Angle", OrderTests[Angle](Angle.AngleOrder).order)
+  checkAll("SignedAngle", OrderTests[Angle](Angle.SignedAngleOrder).order)
 
   test("Equality must be natural") {
     forAll { (a: Angle, b: Angle) =>

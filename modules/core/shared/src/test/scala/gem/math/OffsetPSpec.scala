@@ -14,7 +14,7 @@ final class OffsetPSpec extends CatsSuite {
 
   // Laws
   checkAll("Offset.P", CommutativeGroupTests[Offset.P].commutativeGroup)
-  checkAll("Offset.P", EqTests[Offset.P].eqv)
+  checkAll("Offset.P", OrderTests[Offset.P].order)
 
   test("Equality must be natural") {
     forAll { (a: Offset.P, b: Offset.P) =>

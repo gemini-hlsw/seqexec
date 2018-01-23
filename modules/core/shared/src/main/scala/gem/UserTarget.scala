@@ -3,7 +3,8 @@
 
 package gem
 
-import cats.Eq
+import cats._
+import cats.implicits._
 
 import gem.enum.UserTargetType
 
@@ -17,6 +18,9 @@ import monocle.macros.Lenses
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object UserTarget {
 
-  implicit val EqUserTarget: Eq[UserTarget] =
-    Eq.fromUniversalEquals
+  implicit val OrderUserTarget: Order[UserTarget] =
+    Order.by(u => (u.target, u.targetType))
+
+  implicit val OrderingUserTarget: Ordering[UserTarget] =
+    OrderUserTarget.toOrdering
 }

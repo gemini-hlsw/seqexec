@@ -17,7 +17,7 @@ final class CoordinatesSpec extends CatsSuite {
   import ArbAngle._
 
   // Laws
-  checkAll("Coordinates", EqTests[Coordinates].eqv)
+  checkAll("Coordinates", OrderTests[Coordinates].order)
   checkAll("Formats.HmsDms", FormatTests(Coordinates.Optics.fromHmsDms).formatWith(ArbCoordinates.strings))
 
   test("Equality must be natural") {

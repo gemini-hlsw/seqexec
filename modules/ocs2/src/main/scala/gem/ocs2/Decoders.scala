@@ -14,10 +14,11 @@ import gem.ocs2.pio.{ PioDecoder, PioError, PioPath }
 import gem.ocs2.pio.PioError.ParseError
 import gem.ocs2.pio.PioDecoder.fromParse
 import gem.syntax.string._
+import gem.syntax.treesetcompanion._
 
 import java.time.Instant
 
-import scala.collection.immutable.TreeMap
+import scala.collection.immutable.{ TreeMap, TreeSet }
 
 
 /** `PioDecoder` instances for our model types.
@@ -196,7 +197,7 @@ object Decoders {
         // a <- asterism
         // g <- guideEnvironment
         uts <- validTargets(n \? "&userTargets" \* "&userTarget").decode[UserTarget]
-      } yield TargetEnvironment(uts.toSet)
+      } yield TargetEnvironment(TreeSet.fromList(uts))
     }
   }
 

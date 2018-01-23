@@ -104,8 +104,8 @@ object Coordinates {
     Coordinates(RA.fromRadians(ra), Declination.unsafeFromRadians(dec))
 
   /** @group Typeclass Instances */
-  implicit val CoordinatesEqual: Eq[Coordinates] =
-    Eq.fromUniversalEquals
+  implicit val CoordinatesOrder: Order[Coordinates] =
+    Order.by(c => (c.ra, c.dec))
 
   /** @group Typeclass Instances. */
   implicit val ShowCoordinates: Show[Coordinates] =

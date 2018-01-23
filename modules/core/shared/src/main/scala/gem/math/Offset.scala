@@ -4,7 +4,7 @@
 package gem
 package math
 
-import cats.{ Eq, Show }
+import cats.{ Order, Show }
 import cats.kernel.CommutativeGroup
 import cats.implicits._
 
@@ -42,9 +42,9 @@ object Offset {
   implicit val ShowOffset: Show[Offset] =
     Show.fromToString
 
-  /** Offsets are equal if their components are pairwise equal. */
-  implicit val EqualOffset: Eq[Offset] =
-    Eq.by(o => (o.p, o.q))
+  /** Offsets are ordered by p, then q. */
+  implicit val OrderOffset: Order[Offset] =
+    Order.by(o => (o.p, o.q))
 
   /** P component of an angular offset.. */
   final case class P(toAngle: Angle) {
@@ -79,9 +79,9 @@ object Offset {
     implicit val ShowP: Show[P] =
       Show.fromToString
 
-    /** P components are equal if their angles are equal. */
-    implicit val EqualP: Eq[P] =
-      Eq.by(_.toAngle)
+    /** P components are by signed angle. */
+    implicit val OrderP: Order[P] =
+      Angle.SignedAngleOrder.contramap(_.toAngle)
 
   }
 
@@ -118,9 +118,9 @@ object Offset {
     implicit val ShowQ: Show[Q] =
       Show.fromToString
 
-    /** Q components are equal if their angles are equal. */
-    implicit val EqualQ: Eq[Q] =
-      Eq.by(_.toAngle)
+    /** Q components are ordered by signed angle. */
+    implicit val OrderQ: Order[Q] =
+      Angle.SignedAngleOrder.contramap(_.toAngle)
 
   }
 

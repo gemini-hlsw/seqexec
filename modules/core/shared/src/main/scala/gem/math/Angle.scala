@@ -4,7 +4,7 @@
 package gem
 package math
 
-import cats.{ Eq, Show }
+import cats.{ Eq, Order, Show }
 import cats.kernel.CommutativeGroup
 import cats.instances.long._
 import cats.syntax.eq._
@@ -189,6 +189,14 @@ object Angle {
   /** Angles are equal if their magnitudes are equal. */
   implicit val AngleEqual: Eq[Angle] =
     Eq.fromUniversalEquals
+
+  /** Sorts Angle by magnitude [0, 360) degrees. Not implicit. */
+  val AngleOrder: Order[Angle] =
+    Order.by(_.toMicroarcseconds)
+
+  /** Sorts Angle by signed angle, so [-180, 180).  Not implicit. */
+  val SignedAngleOrder: Order[Angle] =
+    Order.by(_.toSignedMicroarcseconds)
 
   // This works for both DMS and HMS so let's just do it once.
   protected[math] def toMicrosexigesimal(micros: Long): (Int, Int, Int, Int, Int) = {

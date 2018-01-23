@@ -15,7 +15,7 @@ final class EpochSpec extends CatsSuite {
   import ArbTime._
 
   // Laws
-  checkAll("Epoch", EqTests[Epoch].eqv)
+  checkAll("Epoch", OrderTests[Epoch].order)
 
   test("Epoch.eq.natural") {
     forAll { (a: Epoch, b: Epoch) =>

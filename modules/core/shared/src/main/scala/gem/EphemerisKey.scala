@@ -8,7 +8,8 @@ import gem.parser.EphemerisKeyParsers
 import gem.syntax.parser._
 import gem.syntax.string._
 
-import cats.{ Eq, Show }
+import cats.{ Order, Show }
+import cats.implicits._
 import monocle.macros.Lenses
 
 /** Ephemeris data lookup key which uniquely identifies a non-sidreal object in
@@ -132,6 +133,6 @@ object EphemerisKey {
   implicit val ShowEphemerisKey: Show[EphemerisKey] =
     Show.fromToString
 
-  implicit val EqualEphemerisKey: Eq[EphemerisKey] =
-    Eq.fromUniversalEquals
+  implicit val OrderEphemerisKey: Order[EphemerisKey] =
+    Order.by(_.format)
 }
