@@ -18,7 +18,7 @@ install:
   - npm install jsdom
   - pip install --user awscli
 script:
-- sbt headerCheck test:headerCheck scalastyle test
+- sbt headerCheck test:headerCheck scalastyle test edu_gemini_seqexec_web_client/fullOptJS::webpack
 after_script:
 - $TRAVIS_BUILD_DIR/build/weigh.sh
 - $TRAVIS_BUILD_DIR/build/upload.sh
