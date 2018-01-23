@@ -4,8 +4,9 @@
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, StepType, StepState, TelescopeOffset}
+import edu.gemini.seqexec.web.client.actions.FlipBreakpointStep
 import edu.gemini.seqexec.model.enumerations
-import edu.gemini.seqexec.web.client.circuit.StepsTableFocus
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses._
@@ -19,8 +20,7 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import org.scalajs.dom.{ClientRect, CanvasRenderingContext2D}
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.CanvasRenderingContext2D
 import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
@@ -169,14 +169,14 @@ object OffsetBlock {
  * Component to display an icon for the state
  */
 object StepToolsCell {
-  final case class Props(p: StepsTableFocus, step: Step, rowHeight: Int)
+  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int)
 
   private val component = ScalaComponent.builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
       <.div(
         SeqexecStyles.controlCell,
-        StepBreakStopCell(StepBreakStopCell.Props(p.rowHeight)),
+        StepBreakStopCell(StepBreakStopCell.Props(p.clientStatus, p.focus, p.step, p.rowHeight)),
         StepIconCell(p)
       )
     }
@@ -189,23 +189,30 @@ object StepToolsCell {
  * Component to display an icon for the state
  */
 object StepBreakStopCell {
-  final case class Props(rowHeight: Int)
-
-  def toggleBreakpoint(e: ReactMouseEvent): Callback = {
-    val rect: ClientRect = e.target match {
-      case d: Div => d.getBoundingClientRect
-      case _      => new ClientRect()
-    }
-    Callback.log(s"${rect.top} ${rect.top - e.screenY} ${rect.top - e.pageY} ${rect.top - e.clientY}")
+  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int) {
+    val steps: List[Step] = focus.steps
   }
+
+  def breakpointAt(p: Props, step: Step): Callback =
+    Callback.when(p.clientStatus.isLogged)(Callback(SeqexecCircuit.dispatch(FlipBreakpointStep(p.focus.id, step))))
+
+  private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
 
   private val component = ScalaComponent.builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
+      val canSetBreakpoint = p.clientStatus.isLogged && p.step.canSetBreakpoint(p.step.id, firstRunnableIndex(p.steps))
       <.div(
         SeqexecStyles.gutterCell,
         ^.height := p.rowHeight.px,
-        ^.onClick ==> toggleBreakpoint
+        <.div(
+          SeqexecStyles.breakPointHandle,
+          if (p.step.breakpoint) {
+            Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p, p.step))
+          } else {
+            Icon.IconCaretDown.copyIcon(link = true, color = Some("grey"), onClick = breakpointAt(p, p.step))
+          }
+        ).when(canSetBreakpoint)
       )
     }
     .build
@@ -219,12 +226,12 @@ object StepBreakStopCell {
 object StepIconCell {
   private def stepIcon(p: StepToolsCell.Props): VdomNode =
     p.step.status match {
-      case StepState.Completed                            => IconCheckmark
-      case StepState.Running                              => IconCircleNotched.copyIcon(loading = true)
-      case StepState.Failed(_)                            => IconAttention
-      case _ if p.p.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
-      case _ if p.step.skip                               => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-      case _                                              => iconEmpty
+      case StepState.Completed                                => IconCheckmark
+      case StepState.Running                                  => IconCircleNotched.copyIcon(loading = true)
+      case StepState.Failed(_)                                => IconAttention
+      case _ if p.focus.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
+      case _ if p.step.skip                                   => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+      case _                                                  => iconEmpty
     }
 
   private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")

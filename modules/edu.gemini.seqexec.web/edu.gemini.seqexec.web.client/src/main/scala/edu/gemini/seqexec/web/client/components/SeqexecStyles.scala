@@ -536,7 +536,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val iconCell: StyleA = style(
-    width(30.px),
+    width(29.px),
     justifyContent.center,
     alignContent.center,
     display.flex,
@@ -550,12 +550,18 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
     backgroundClip.contentBox.paddingBox.important,
-    width(20.px),
-    borderRightWidth(1.px)
+    width(21.px),
+    rightBorderMixin
   )
 
   val offsetCellWrapper: StyleA = style(
     paddingTop(0.4.em)
+  )
+
+  val breakPointHandle: StyleA = style(
+    position.relative,
+    left(3.px),
+    top(-8.5.px)
   )
 
 }

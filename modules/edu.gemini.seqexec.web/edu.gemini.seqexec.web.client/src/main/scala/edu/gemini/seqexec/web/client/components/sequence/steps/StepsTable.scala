@@ -47,7 +47,6 @@ object ColWidths {
   val ObjectTypeWidth: Int = 100
 }
 
-
 /**
   * Container for a table with the steps
   */
@@ -93,7 +92,7 @@ object StepsTable {
       )
 
   def stepControlRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    StepToolsCell(StepToolsCell.Props(f, row.step, rowHeight(p)(row.step.id)))
+    StepToolsCell(StepToolsCell.Props(p.status, f, row.step, rowHeight(p)(row.step.id)))
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
