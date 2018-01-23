@@ -92,8 +92,8 @@ object StepsTable {
         IconSettings
       )
 
-  def stepControlRenderer(f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    StepToolsCell(StepToolsCell.Props(f, row.step))
+  def stepControlRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepToolsCell(StepToolsCell.Props(f, row.step, rowHeight(p)(row.step.id)))
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
@@ -116,6 +116,18 @@ object StepsTable {
   val stepObjectTypeRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     ObjectTypeCell(row.step)
 
+  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
+    case (-1, _) => SeqexecStyles.headerRowStyle
+    case _       => SeqexecStyles.stepRow
+  }).htmlClass
+
+  def rowHeight(p: Props)(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
+    case (_, OffsetsDisplay.DisplayOffsets(_)) =>
+      HeightWithOffsets
+    case _ =>
+      SeqexecStyles.rowHeight
+  }
+
   // Columns for the table
   private def columns(p: Props): List[Table.ColumnArg] = {
     val offsetColumn =
@@ -125,7 +137,7 @@ object StepsTable {
         case _ => None
       }
       List(
-        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
+        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
@@ -137,18 +149,6 @@ object StepsTable {
   }
 
   def stepsTable(p: Props)(size: Size): VdomNode = {
-    def rowClassName(i: Int): String = ((i, p.rowGetter(i)) match {
-      case (-1, _) => SeqexecStyles.headerRowStyle
-      case _       => SeqexecStyles.stepRow
-    }).htmlClass
-
-    def rowHeight(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
-      case (_, OffsetsDisplay.DisplayOffsets(_)) =>
-        HeightWithOffsets
-      case _ =>
-        SeqexecStyles.rowHeight
-    }
-
     Table(
       Table.props(
         disableHeader = false,
@@ -158,11 +158,12 @@ object StepsTable {
             ^.height := 270.px,
             "No log entries"
           ),
+        // onRowClick = (i: Int) => Callback.log(i),
         overscanRowCount = SeqexecStyles.overscanRowCount,
         height = size.height.toInt,
         rowCount = p.rowCount,
-        rowHeight = rowHeight _,
-        rowClassName = rowClassName _,
+        rowHeight = rowHeight(p) _,
+        rowClassName = rowClassName(p) _,
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
         headerClassName = SeqexecStyles.tableHeader.htmlClass,

@@ -19,7 +19,8 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import org.scalajs.dom.CanvasRenderingContext2D
+import org.scalajs.dom.{ClientRect, CanvasRenderingContext2D}
+import org.scalajs.dom.html.Div
 import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
@@ -168,14 +169,14 @@ object OffsetBlock {
  * Component to display an icon for the state
  */
 object StepToolsCell {
-  final case class Props(p: StepsTableFocus, step: Step)
+  final case class Props(p: StepsTableFocus, step: Step, rowHeight: Int)
 
   private val component = ScalaComponent.builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
       <.div(
         SeqexecStyles.controlCell,
-        StepBreakStopCell(p),
+        StepBreakStopCell(StepBreakStopCell.Props(p.rowHeight)),
         StepIconCell(p)
       )
     }
@@ -188,27 +189,28 @@ object StepToolsCell {
  * Component to display an icon for the state
  */
 object StepBreakStopCell {
-  private def stepIcon(p: StepToolsCell.Props): VdomNode =
-    p.step.status match {
-      case StepState.Completed                            => IconCheckmark
-      case StepState.Running                              => IconCircleNotched.copyIcon(loading = true)
-      case StepState.Failed(_)                            => IconAttention
-      case _ if p.p.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
-      case _ if p.step.skip                               => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-      case _                                              => iconEmpty
-    }
+  final case class Props(rowHeight: Int)
 
-  private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")
+  def toggleBreakpoint(e: ReactMouseEvent): Callback = {
+    val rect: ClientRect = e.target match {
+      case d: Div => d.getBoundingClientRect
+      case _      => new ClientRect()
+    }
+    Callback.log(s"${rect.top} ${rect.top - e.screenY} ${rect.top - e.pageY} ${rect.top - e.clientY}")
+  }
+
+  private val component = ScalaComponent.builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
       <.div(
         SeqexecStyles.gutterCell,
-        stepIcon(p)
+        ^.height := p.rowHeight.px,
+        ^.onClick ==> toggleBreakpoint
       )
     }
     .build
 
-  def apply(p: StepToolsCell.Props): Unmounted[StepToolsCell.Props, Unit, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**
