@@ -555,4 +555,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(20.px)
   )
 
+  val offsetCellWrapper: StyleA = style(
+    paddingTop(0.4.em)
+  )
+
 }

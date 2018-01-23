@@ -89,6 +89,27 @@ object OffsetGrid {
 }
 
 /**
+  * Component to display the offsets
+  */
+object OffsetsDisplayCell {
+  final case class Props(offsetsDisplay: OffsetsDisplay, step: Step)
+
+  private val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
+    .stateless
+    .render_P { p =>
+      <.div( // Column step offset
+        p.offsetsDisplay match {
+          case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
+            OffsetBlock(OffsetBlock.Props(p.step, offsetWidth))
+          case _ => EmptyVdom
+        }
+      )
+    }.build
+
+  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
+}
+
+/**
  * Component to display the offset grid and offset values
  */
 object OffsetBlock {
@@ -103,6 +124,7 @@ object OffsetBlock {
         SeqexecStyles.centeredCell,
         <.div(
           SeqexecStyles.inlineBlock,
+          SeqexecStyles.offsetCellWrapper,
           ^.textAlign := "left",
           OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
         ),
@@ -352,27 +374,6 @@ object StepIdCell {
     }.build
 
   def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
-}
-
-/**
-  * Component to display the offsets
-  */
-object OffsetsDisplayCell {
-  final case class Props(offsetsDisplay: OffsetsDisplay, step: Step)
-
-  private val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
-    .stateless
-    .render_P { p =>
-      <.div( // Column step offset
-        p.offsetsDisplay match {
-          case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
-            OffsetBlock(OffsetBlock.Props(p.step, offsetWidth))
-          case _ => EmptyVdom
-        }
-      )
-    }.build
-
-  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }
 
 /**
