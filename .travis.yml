@@ -2,21 +2,23 @@ language: scala
 scala:
 - 2.12.4
 jdk:
-- oraclejdk8
+  - oraclejdk8
 cache:
   directories:
-  - "$HOME/.ivy2/cache"
-  - "$HOME/.sbt/boot/"
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
 before_cache:
-- find $HOME/.ivy2 -name "ivydata-*.properties" -delete
-- find $HOME/.sbt -name "*.lock" -delete
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt -name "*.lock" -delete
 install:
-- ". $HOME/.nvm/nvm.sh"
-- nvm install stable
-- nvm use stable
-- npm install jsdom
+  - . $HOME/.nvm/nvm.sh
+  - nvm install stable
+  - nvm use stable
+  - npm install jsdom
+  - pip install --user awscli
 script:
-- sbt headerCheck test:headerCheck scalastyle test
+- sbt headerCheck test:headerCheck scalastyle test edu_gemini_seqexec_web_client/fullOptJS::webpack
 after_script:
-- cd modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client/target/scala-2.12/scalajs-bundler/main/ && curl -O https://raw.githubusercontent.com/cquiroz/travis-weigh-in/master/weigh_in.py
-  && python weigh_in.py edu_gemini_seqexec_web_client-fastopt.js && python weigh_in.py edu_gemini_seqexec_web_client-fastopt-library.js
+- $TRAVIS_BUILD_DIR/build/weigh.sh
+- $TRAVIS_BUILD_DIR/build/upload.sh
