@@ -16,12 +16,12 @@ trait ArbObservation {
     Arbitrary {
       for {
         pid <- arbitrary[ProgramId]
-        num <- choose(1, 100)
-      } yield Observation.Id(pid, Observation.Index.unsafeFromInt(num))
+        num <- choose[Short](1, 100)
+      } yield Observation.Id(pid, Observation.Index.unsafeFromShort(num))
     }
 
   implicit val cogObservationIdex: Cogen[Observation.Index] =
-    Cogen[Int].contramap(_.toInt)
+    Cogen[Short].contramap(_.toShort)
 
   implicit val cogObservationId: Cogen[Observation.Id] =
     Cogen[(ProgramId, Observation.Index)].contramap(oid => (oid.pid, oid.index))

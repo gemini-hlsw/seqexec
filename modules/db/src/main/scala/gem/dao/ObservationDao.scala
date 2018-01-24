@@ -16,6 +16,7 @@ import scala.collection.immutable.TreeMap
 object ObservationDao {
   import EnumeratedMeta._
   import ObservationIdMeta._
+  import ObservationIndexMeta._
   import ProgramIdMeta._
 
   /**
@@ -36,7 +37,7 @@ object ObservationDao {
   def selectFlat(id: Observation.Id): ConnectionIO[Observation[Instrument, Nothing]] =
     for {
       o <- Statements.selectFlat(id).unique.map(_._1)
-      t <- TargetEnvironmentDao.select(id)
+      t <- TargetEnvironmentDao.selectObs(id)
     } yield o.copy(targets = t)
 
   /** Construct a program to select the specified observation, with static connfig and no steps. */
@@ -63,7 +64,7 @@ object ObservationDao {
     ts: Map[I, TargetEnvironment]
   ): TreeMap[I, Observation[S, D]] =
     os.foldLeft(TreeMap.empty[I, Observation[S, D]]) { case (m, (i, o)) =>
-      ts.get(i).fold(m)(t => m.updated(i, o.copy(targets = t)))
+      m.updated(i, ts.get(i).fold(o)(t => o.copy(targets = t)))
     }
 
   /**
@@ -73,8 +74,8 @@ object ObservationDao {
   def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Instrument, Nothing]]] =
     for {
       m  <- Statements.selectAllFlat(pid).list.map(lst => TreeMap(lst.map { case (i,o,_) => (i,o) }: _*))
-      ts <- m.keys.toList.traverse(i => TargetEnvironmentDao.select(Observation.Id(pid, i)).tupleLeft(i))
-    } yield merge(m, ts.toMap)
+      ts <- TargetEnvironmentDao.selectProg(pid)
+    } yield merge(m, ts)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
@@ -84,8 +85,8 @@ object ObservationDao {
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
-      ts  <- ids.traverse(i => TargetEnvironmentDao.select(i).tupleLeft(i.index))
-    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts.toMap)
+      ts  <- TargetEnvironmentDao.selectProg(pid)
+    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
@@ -95,15 +96,11 @@ object ObservationDao {
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(select)
-      ts  <- ids.traverse(i => TargetEnvironmentDao.select(i).tupleLeft(i.index))
-    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts.toMap)
+      ts  <- TargetEnvironmentDao.selectProg(pid)
+    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts)
 
   object Statements {
 
-    // Observation.Index has a DISTINCT type due to its check constraint so we
-    // need a fine-grained mapping here to satisfy the query checker.
-    implicit val ObservationIndexMeta: Meta[Observation.Index] =
-    Distinct.integer("id_index").xmap(Observation.Index.unsafeFromInt, _.toInt)
 
     def insert(oid: Observation.Id, o: Observation[StaticConfig, _], staticId: Int): Update0 =
       sql"""
@@ -153,7 +150,7 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Instrument, Int)]
         .map { case (n, t, i, s) =>
-          (Observation.Index.unsafeFromInt(n.toInt), Observation(t, TargetEnvironment.empty, i, Nil), s)
+          (Observation.Index.unsafeFromShort(n), Observation(t, TargetEnvironment.empty, i, Nil), s)
         }
 
   }
