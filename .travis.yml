@@ -21,13 +21,13 @@ install:
   - nvm install stable
   - nvm use stable
   - npm install jsdom
-
+  - pip install --user awscli
 script:
-  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test coreJS/test coreJS/fastOptJS
+  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test ui/fastOptJS ui/fullOptJS
 
 after_script:
-  - ls modules/core/js/target/scala-2.12
-  - cd modules/core/js/target/scala-2.12 && python $TRAVIS_BUILD_DIR/build/weigh_in.py gem-core-fastopt.js
+  - $TRAVIS_BUILD_DIR/build/weigh.sh
+  - $TRAVIS_BUILD_DIR/build/upload.sh
 
 cache:
   directories:

@@ -196,7 +196,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(commonSettings)
-  .aggregate(coreJVM, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql, main)
+  .aggregate(coreJVM, coreJS, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql, main, ui)
 
 lazy val core = crossProject
   .crossType(CrossType.Full)
@@ -218,7 +218,7 @@ lazy val core = crossProject
   )
   .jsSettings(
     libraryDependencies +=
-      "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12"
   )
   .jsSettings(commonJSSettings)
   .jvmSettings(
