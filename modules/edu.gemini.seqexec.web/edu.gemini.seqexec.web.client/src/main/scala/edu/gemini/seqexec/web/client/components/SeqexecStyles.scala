@@ -508,6 +508,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     color(rgba(0, 0, 0, 0.95))
   )
 
+  val stepRowWithBreakpoint: StyleA = style(
+    stepsTableMixin,
+    rowMixin,
+    backgroundColor.white,
+    color(rgba(0, 0, 0, 0.95)),
+    borderTopColor(c"#A5673F"), // Match semantic UI brown
+    borderTopWidth(4.px),
+    borderTopStyle.solid
+  )
+
   val infoLog: StyleA = style(
     rowMixin,
     backgroundColor.white,

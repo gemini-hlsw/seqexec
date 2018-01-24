@@ -119,8 +119,12 @@ object StepsTable {
     ObjectTypeCell(row.step)
 
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
-    case (-1, _) => SeqexecStyles.headerRowStyle
-    case _       => SeqexecStyles.stepRow
+    case (-1, _)                                                  =>
+      SeqexecStyles.headerRowStyle
+    case (_, StepRow(StandardStep(_, _, _, true, _, _, _, _))) =>
+      SeqexecStyles.stepRowWithBreakpoint
+    case _                                                        =>
+      SeqexecStyles.stepRow
   }).htmlClass
 
   def rowHeight(p: Props)(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
