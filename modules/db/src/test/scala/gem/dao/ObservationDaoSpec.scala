@@ -26,11 +26,8 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  val One: Observation.Index =
-    Observation.Index.unsafeFromInt(1)
-
   property("ObservationDao should select flat observations") {
-    val oid = Observation.Id(pid, One)
+    val oid = Observation.Id(pid, Observation.Index.One)
 
     forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
       val obsOut = withProgram {
@@ -45,7 +42,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should select static observations") {
-    val oid = Observation.Id(pid, One)
+    val oid = Observation.Id(pid, Observation.Index.One)
 
     forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
       val obsOut = withProgram {
@@ -60,7 +57,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should roundtrip complete observations") {
-    val oid = Observation.Id(pid, One)
+    val oid = Observation.Id(pid, Observation.Index.One)
 
     forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
       val obsOut = withProgram {
