@@ -68,8 +68,8 @@ package object json {
   val AngleAsSignedMilliarcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedMilliarcseconds)
 
   // Observation.Index to Integer.
-  implicit val ObservationIndexEncoder: Encoder[Observation.Index] = Encoder[Int].contramap(_.toInt)
-  implicit val ObservationIndexDecoder: Decoder[Observation.Index] = Decoder[Int].map(Observation.Index.unsafeFromInt)
+  implicit val ObservationIndexEncoder: Encoder[Observation.Index] = Encoder[Short].contramap(_.toShort)
+  implicit val ObservationIndexDecoder: Decoder[Observation.Index] = Decoder[Short].map(Observation.Index.unsafeFromShort)
 
   // Wavelength mapping to integral Angstroms.
   implicit val (
@@ -172,9 +172,9 @@ package object json {
 
   // Codec for maps keyed by Observation.Index
   implicit def observationIndexMapEncoder[A: Encoder]: Encoder[TreeMap[Observation.Index, A]] =
-    Encoder[TreeMap[Int, A]].contramap(_.map { case (k, v) => (k.toInt, v) })
+    Encoder[TreeMap[Short, A]].contramap(_.map { case (k, v) => (k.toShort, v) })
   implicit def observationIndexMapDecoder[A: Decoder]: Decoder[TreeMap[Observation.Index, A]] =
-    Decoder[TreeMap[Int, A]].map(_.map { case (k, v) => (Observation.Index.unsafeFromInt(k), v) })
+    Decoder[TreeMap[Short, A]].map(_.map { case (k, v) => (Observation.Index.unsafeFromShort(k), v) })
 
   // GmosCustomRoiEntry as a quad of shorts
   implicit val GmosCustomRoiEntryEncoder: Encoder[GmosCustomRoiEntry] =

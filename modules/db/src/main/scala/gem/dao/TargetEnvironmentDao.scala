@@ -4,13 +4,10 @@
 package gem
 package dao
 
-import gem.syntax.treesetcompanion._
 import cats.implicits._
 
 import doobie._
 import doobie.implicits._
-
-import scala.collection.immutable.TreeSet
 
 
 // At the moment, TargetEnvironment just wraps user targets but it will grow to
@@ -21,9 +18,9 @@ object TargetEnvironmentDao {
   def insert(oid: Observation.Id, e: TargetEnvironment): ConnectionIO[Unit] =
     e.userTargets.toList.traverse(UserTargetDao.insert(oid, _)).void
 
-  def select(oid: Observation.Id): ConnectionIO[TargetEnvironment] =
-    UserTargetDao.selectAll(oid: Observation.Id).map { lst =>
-      TargetEnvironment(TreeSet.fromList(lst.unzip._2))
-    }
+  def selectObs(oid: Observation.Id): ConnectionIO[TargetEnvironment] =
+    UserTargetDao.selectObs(oid).map(TargetEnvironment(_))
 
+  def selectProg(pid: Program.Id): ConnectionIO[Map[Observation.Index, TargetEnvironment]] =
+    UserTargetDao.selectProg(pid).map(_.mapValues(TargetEnvironment(_)))
 }

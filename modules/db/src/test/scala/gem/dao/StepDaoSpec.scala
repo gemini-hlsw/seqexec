@@ -19,7 +19,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
 
   "StepDao" should "serialize telescope configurations properly" in {
 
-    val idx  = Observation.Index.unsafeFromInt(1)
+    val idx  = Observation.Index.One
 
     // We specifically want to test round-tripping of telescope offsets.
     val pid  = Program.Id.unsafeFromString("GS-1234A-Q-1")

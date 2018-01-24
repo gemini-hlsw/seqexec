@@ -109,7 +109,7 @@ trait Arbitraries extends gem.config.Arbitraries  {
   def genObservationMap(limit: Int): Gen[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
     for {
       count   <- Gen.choose(0, limit)
-      obsIdxs <- Gen.listOfN(count, Gen.posNum[Int]).map(_.distinct.map(Observation.Index.unsafeFromInt))
+      obsIdxs <- Gen.listOfN(count, Gen.posNum[Short]).map(_.distinct.map(Observation.Index.unsafeFromShort))
       obsList <- obsIdxs.traverse(_ => arbitrary[Observation[StaticConfig, Step[DynamicConfig]]])
     } yield TreeMap(obsIdxs.zip(obsList): _*)
 }

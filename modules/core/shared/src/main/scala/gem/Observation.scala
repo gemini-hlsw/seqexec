@@ -26,26 +26,29 @@ final case class Observation[+S, +D](
 object Observation {
 
   /** A positive, non-zero integer for use in ids. */
-  sealed abstract case class Index(toInt: Int) {
+  sealed abstract case class Index(toShort: Short) {
     def format: String =
-      s"$toInt"
+      s"$toShort"
   }
 
   object Index {
-    def fromInt(i: Int): Option[Index] =
+    val One: Index =
+      unsafeFromShort(1)
+
+    def fromShort(i: Short): Option[Index] =
       (i > 0) option new Index(i) {}
 
-    def unsafeFromInt(i: Int): Index =
-      fromInt(i).getOrElse(sys.error(s"Negative index: $i"))
+    def unsafeFromShort(i: Short): Index =
+      fromShort(i).getOrElse(sys.error(s"Negative index: $i"))
 
     def fromString(s: String): Option[Index] =
-      s.parseIntOption.filter(_ > 0).map(new Index(_) {})
+      s.parseShortOption.filter(_ > 0).map(new Index(_) {})
 
     def unsafeFromString(s: String): Index =
       fromString(s).getOrElse(sys.error(s"Malformed observation index: '$s'"))
 
     implicit val OrderIndex: Order[Index] =
-      Order.by(_.toInt)
+      Order.by(_.toShort)
 
     implicit val OrderingIndex: scala.math.Ordering[Index] =
       OrderIndex.toOrdering
