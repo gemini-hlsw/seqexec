@@ -169,14 +169,14 @@ object OffsetBlock {
  * Component to display an icon for the state
  */
 object StepToolsCell {
-  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int)
+  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int, heightChangeCB: Int => Callback)
 
   private val component = ScalaComponent.builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
       <.div(
         SeqexecStyles.controlCell,
-        StepBreakStopCell(StepBreakStopCell.Props(p.clientStatus, p.focus, p.step, p.rowHeight)),
+        StepBreakStopCell(StepBreakStopCell.Props(p.clientStatus, p.focus, p.step, p.rowHeight, p.heightChangeCB)),
         StepIconCell(p)
       )
     }
@@ -189,12 +189,12 @@ object StepToolsCell {
  * Component to display an icon for the state
  */
 object StepBreakStopCell {
-  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int) {
+  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int, heightChangeCB: Int => Callback) {
     val steps: List[Step] = focus.steps
   }
 
   def breakpointAt(p: Props, step: Step): Callback =
-    Callback.when(p.clientStatus.isLogged)(Callback(SeqexecCircuit.dispatch(FlipBreakpointStep(p.focus.id, step))))
+    Callback.when(p.clientStatus.isLogged)(Callback(SeqexecCircuit.dispatch(FlipBreakpointStep(p.focus.id, step)))) >> p.heightChangeCB(step.id)
 
   private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
 

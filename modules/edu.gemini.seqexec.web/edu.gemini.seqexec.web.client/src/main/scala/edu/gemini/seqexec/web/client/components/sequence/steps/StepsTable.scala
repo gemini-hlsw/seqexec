@@ -5,7 +5,9 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import scala.scalajs.js
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Instrument, Step}
+import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step}
+import japgolly.scalajs.react.vdom.TagOf
+import org.scalajs.dom.html.Div
 // import edu.gemini.seqexec.web.client.ModelOps._
 // import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
@@ -52,6 +54,7 @@ object ColWidths {
   */
 object StepsTable {
   val HeightWithOffsets: Int = 40
+  val BreakpointLineHeight: Int = 5
 
   // ScalaJS defined trait
   // scalastyle:off
@@ -91,8 +94,8 @@ object StepsTable {
         IconSettings
       )
 
-  def stepControlRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    StepToolsCell(StepToolsCell.Props(p.status, f, row.step, rowHeight(p)(row.step.id)))
+  def stepControlRenderer(f: StepsTableFocus, p: Props, recalculateHeightsCB: Int => Callback): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepToolsCell(StepToolsCell.Props(p.status, f, row.step, rowHeight(p)(row.step.id), recalculateHeightsCB))
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
@@ -121,14 +124,18 @@ object StepsTable {
   }).htmlClass
 
   def rowHeight(p: Props)(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
-    case (_, OffsetsDisplay.DisplayOffsets(_)) =>
+    case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), OffsetsDisplay.DisplayOffsets(_)) =>
+      HeightWithOffsets + BreakpointLineHeight
+    case (_, OffsetsDisplay.DisplayOffsets(_))                                                =>
       HeightWithOffsets
+    case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _)                                =>
+      SeqexecStyles.rowHeight + BreakpointLineHeight
     case _ =>
       SeqexecStyles.rowHeight
   }
 
   // Columns for the table
-  private def columns(p: Props): List[Table.ColumnArg] = {
+  private def columns(p: Props, recalculateHeightsCB: Int => Callback): List[Table.ColumnArg] = {
     val offsetColumn =
       p.offsetsDisplay match {
         case OffsetsDisplay.DisplayOffsets(x) =>
@@ -136,7 +143,7 @@ object StepsTable {
         case _ => None
       }
       List(
-        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
+        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recalculateHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
@@ -147,8 +154,8 @@ object StepsTable {
       ).collect { case Some(x) => x }
   }
 
-  def stepsTable(p: Props)(size: Size): VdomNode = {
-    Table(
+  class Backend {
+    def stepsTableProps(p: Props)(size: Size): Table.Props = {
       Table.props(
         disableHeader = false,
         noRowsRenderer = () =>
@@ -157,7 +164,6 @@ object StepsTable {
             ^.height := 270.px,
             "No log entries"
           ),
-        // onRowClick = (i: Int) => Callback.log(i),
         overscanRowCount = SeqexecStyles.overscanRowCount,
         height = size.height.toInt,
         rowCount = p.rowCount,
@@ -166,12 +172,17 @@ object StepsTable {
         width = size.width.toInt,
         rowGetter = p.rowGetter _,
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
-        headerHeight = SeqexecStyles.headerHeight),
-      columns(p): _*).vdomElement
-  }
+        headerHeight = SeqexecStyles.headerHeight)
+    }
 
-  private val component = ScalaComponent.builder[Props]("Steps")
-    .render_P { p =>
+    // Create a ref
+    private val ref = JsComponent.mutableRefTo(Table.component)
+
+    private def recalculateHeightsCB(row: Int): Callback = Callback {
+      ref.value.raw.recomputeRowHeights(row)
+    }
+
+    def render(p: Props): TagOf[Div] =
       <.div(
         SeqexecStyles.stepsListPane.unless(p.status.isLogged),
         SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
@@ -179,11 +190,16 @@ object StepsTable {
           tab.stepConfigDisplayed.map { i =>
             <.div("CONFIG")
           }.getOrElse {
-            AutoSizer(AutoSizer.props(stepsTable(p)))
+            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, recalculateHeightsCB).map(_.vdomElement): _*)))
           }
         }
       )
-    }.build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+  }
+
+  private val component = ScalaComponent.builder[Props]("Steps")
+    .renderBackend[Backend]
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Backend] = component(p)
 }
