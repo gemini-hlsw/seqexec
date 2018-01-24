@@ -9,7 +9,7 @@ import doobie.implicits._
 import gem.dao.meta._
 import gem.dao.composite._
 import gem.enum.TrackType
-import gem.math.ProperMotion
+import gem.math.{ Declination, ProperMotion, RightAscension }
 
 object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the priority - see MetaTrackType below and issue #170 */ {
 
@@ -59,7 +59,8 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
     private def stringyCoordinates(t: Target): Option[(String, String)] =
       t.track.toOption.map { pm =>
         val cs = pm.baseCoordinates
-        (cs.ra.format, cs.dec.format)
+        (RightAscension.fromStringHMS.reverseGet(cs.ra),
+         Declination.fromStringSignedDMS.reverseGet(cs.dec))
       }
 
     def select(id: Int): Query0[Target] =

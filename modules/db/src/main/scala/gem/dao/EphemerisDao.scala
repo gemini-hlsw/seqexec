@@ -22,7 +22,14 @@ object EphemerisDao {
   import TimeMeta._
 
   private def toRow(k: EphemerisKey, s: Site, i: Timestamp, c: EphemerisCoordinates): Statements.EphemerisRow =
-    (k, s, i, c.coord, c.coord.ra.format, c.coord.dec.format, c.delta)
+    (k,
+     s,
+     i,
+     c.coord,
+     RightAscension.fromStringHMS.reverseGet(c.coord.ra),
+     Declination.fromStringSignedDMS.reverseGet(c.coord.dec),
+     c.delta
+    )
 
   def insert(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Int] =
     Statements.insert.updateMany(

@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import gem.laws.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class AngleSpec extends CatsSuite {
@@ -17,6 +18,8 @@ final class AngleSpec extends CatsSuite {
   checkAll("Angle", EqTests[Angle].eqv)
   checkAll("Angle", OrderTests[Angle](Angle.AngleOrder).order)
   checkAll("SignedAngle", OrderTests[Angle](Angle.SignedAngleOrder).order)
+  checkAll("fromStringDMS", FormatTests(Angle.fromStringDMS).formatWith(ArbAngle.stringsDMS))
+  checkAll("fromStringSignedDMS", FormatTests(Angle.fromStringSignedDMS).formatWith(ArbAngle.stringsSignedDMS))
 
   test("Equality must be natural") {
     forAll { (a: Angle, b: Angle) =>
@@ -121,18 +124,6 @@ final class AngleSpec extends CatsSuite {
   test("mirrorBy must be consistent with unary negation") {
     forAll { (a: Angle) =>
       a.mirrorBy(Angle.Angle0) shouldEqual -a
-    }
-  }
-
-  test("formatDMS and parseDMS must round-trip") {
-    forAll { (a: Angle) =>
-      Angle.parseDMS(a.formatDMS) shouldEqual Some(a)
-    }
-  }
-
-  test("formatSignedDMS and parseSignedDMS must round-trip") {
-    forAll { (a: Angle) =>
-      Angle.parseSignedDMS(a.formatSignedDMS) shouldEqual Some(a)
     }
   }
 

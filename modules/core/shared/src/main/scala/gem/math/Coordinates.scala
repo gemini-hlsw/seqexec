@@ -7,7 +7,7 @@ package math
 import cats._, cats.implicits._
 import gem.parser.CoordinateParsers
 import gem.util.Format
-import gem.syntax.parser._
+import gem.syntax.all._
 import scala.math.{ sin, cos, atan2, sqrt }
 
 /** A point in the sky, given right ascension and declination. */
@@ -76,8 +76,8 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
       val φi = atan2(z, sqrt(x * x + y * y))
       val λi = atan2(y, x)
       Coordinates(
-        RA.fromHourAngle(Angle.fromDoubleRadians(λi).toHourAngle),
-        Dec.unsafeFromAngle(Angle.fromDoubleRadians(φi))
+        RA.fromHourAngle.get(Angle.fromDoubleRadians(λi).toHourAngle),
+        Dec.fromAngle.unsafeGet(Angle.fromDoubleRadians(φi))
       )
     }
   }
@@ -87,11 +87,11 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
     (ra.toRadians, dec.toRadians)
 
   override def toString =
-    Coordinates.Optics.fromHmsDms.productToString(this)
+    Coordinates.fromHmsDms.productToString(this)
 
 }
 
-object Coordinates {
+object Coordinates extends CoordinatesOptics {
 
   /* @group Constructors */ val Zero:      Coordinates = Coordinates(RA.Zero, Dec.Zero)
   /* @group Constructors */ val SouthPole: Coordinates = Coordinates(RA.Zero, Dec.Min)
@@ -111,14 +111,14 @@ object Coordinates {
   implicit val ShowCoordinates: Show[Coordinates] =
     Show.fromToString
 
-  object Optics {
+}
 
-    /** Format as a String like "17 57 48.49803 +04 41 36.2072". */
-    val fromHmsDms: Format[String, Coordinates] = Format(
-      CoordinateParsers.coordinates.parseExact,
-      cs => s"${cs.ra.format} ${cs.dec.format}"
-    )
+trait CoordinatesOptics { this: Coordinates.type =>
 
-  }
+  /** Format as a String like "17 57 48.49803 +04 41 36.2072". */
+  val fromHmsDms: Format[String, Coordinates] = Format(
+    CoordinateParsers.coordinates.parseExact,
+    cs => s"${RightAscension.fromStringHMS.reverseGet(cs.ra)} ${Declination.fromStringSignedDMS.reverseGet(cs.dec)}"
+  )
 
 }

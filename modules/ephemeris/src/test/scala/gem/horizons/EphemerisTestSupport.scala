@@ -25,7 +25,7 @@ trait EphemerisTestSupport {
     Timestamp.unsafeFromInstant(LocalDateTime.parse(s, TimeFormat).toInstant(ZoneOffset.UTC))
 
   def coords(s: String): Coordinates =
-    Coordinates.Optics.fromHmsDms.getOption(s).getOrElse(Coordinates.Zero)
+    Coordinates.fromHmsDms.getOption(s).getOrElse(Coordinates.Zero)
 
   def arcsec(s: String): Angle =
     Angle.fromMicroarcseconds(BigDecimal(s).underlying.movePointRight(6).longValueExact)

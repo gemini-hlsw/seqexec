@@ -61,11 +61,11 @@ object Parsers {
   val ra: PioParse[RightAscension] =
     double.map(Angle.fromDoubleDegrees)
           .map(_.toHourAngle)
-          .map(RightAscension.fromHourAngle)
+          .map(RightAscension.fromHourAngle.get)
 
   val dec: PioParse[Declination] =
     double.map(Angle.fromDoubleDegrees)
-          .map(Declination.unsafeFromAngle)
+          .map(Declination.fromAngle.unsafeGet)
 
   // Anything else blows up, which is ok since we don't support anything else
   val epoch: PioParse[Epoch] = enum(

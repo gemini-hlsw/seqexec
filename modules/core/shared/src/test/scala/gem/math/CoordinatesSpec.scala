@@ -18,7 +18,7 @@ final class CoordinatesSpec extends CatsSuite {
 
   // Laws
   checkAll("Coordinates", OrderTests[Coordinates].order)
-  checkAll("Formats.HmsDms", FormatTests(Coordinates.Optics.fromHmsDms).formatWith(ArbCoordinates.strings))
+  checkAll("Formats.HmsDms", FormatTests(Coordinates.fromHmsDms).formatWith(ArbCoordinates.strings))
 
   test("Equality must be natural") {
     forAll { (a: Coordinates, b: Coordinates) =>

@@ -18,7 +18,7 @@ trait CoordinateParsers {
 
   /** Parser for a RightAscension, always a positive angle in HMS. */
   val dec: Parser[Declination] =
-    dms.map(Declination.fromAngle).flatMap {
+    dms.map(Declination.fromAngle.getOption).flatMap {
       case Some(ra) => ok(ra)
       case None     => err[Declination]("Invalid Declination")
     } named "dec"
