@@ -133,8 +133,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     val disperser = encoders.disperser.encode(d.disperser)
     def disperserModeDecode(v : Int): String = if(v===0) disperserMode0 else disperserMode1
 
-    smartSetParam(disperser, GmosEpics.instance.disperser, CC.setDisperser(disperser)) *>
-      smartSetParam( disperserMode0, GmosEpics.instance.disperserMode.map(disperserModeDecode), CC.setDisperserMode(disperserMode0)) *>
+    smartSetParam(disperser.toUpperCase, GmosEpics.instance.disperser.map(_.toUpperCase), CC.setDisperser(disperser)) *>
+      smartSetParam(disperserMode0, GmosEpics.instance.disperserMode.map(disperserModeDecode), CC.setDisperserMode(disperserMode0)) *>
       d.order.filter(_ => d.disperser != Disperser.MIRROR).fold(SeqAction.void)(o =>
         smartSetParam(disperserOrderEncoderInt.encode(o), GmosEpics.instance.disperserOrder, CC.setDisperserOrder(disperserOrderEncoder.encode(o)))) *>
       d.lambda.filter(_ => d.disperser != Disperser.MIRROR && !d.order.contains(Order.ZERO)).fold(SeqAction.void)(o =>
