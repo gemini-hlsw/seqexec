@@ -5,12 +5,13 @@ package gem.dao.meta
 
 import doobie._
 import gem.math._
+import gem.syntax.prism._
 
 trait DeclinationMeta {
   import AngleMeta._
 
   implicit val DeclinationMeta: Meta[Declination] =
-    AngleMetaAsMicroarcseconds.xmap(Declination.unsafeFromAngle(_), _.toAngle)
+    AngleMetaAsMicroarcseconds.xmap(Declination.fromAngle.unsafeGet(_), _.toAngle)
 
 }
 object DeclinationMeta extends DeclinationMeta

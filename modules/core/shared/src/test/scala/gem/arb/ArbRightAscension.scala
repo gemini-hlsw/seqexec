@@ -13,10 +13,10 @@ trait ArbRightAscension {
   import ArbAngle._
 
   implicit val arbRightAscension: Arbitrary[RightAscension] =
-    Arbitrary(arbitrary[HourAngle].map(RightAscension.fromHourAngle))
+    Arbitrary(arbitrary[HourAngle].map(RightAscension.fromHourAngle.get))
 
   implicit val cogRightAscension: Cogen[RightAscension] =
-    Cogen[HourAngle].contramap(_.toHourAngle)
+    Cogen[HourAngle].contramap(RightAscension.fromHourAngle.reverseGet)
 
 }
 

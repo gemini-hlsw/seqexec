@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import gem.laws.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class HourAngleSpec extends CatsSuite {
@@ -15,6 +16,7 @@ final class HourAngleSpec extends CatsSuite {
   // Laws
   checkAll("HourAngle", CommutativeGroupTests[HourAngle].commutativeGroup)
   checkAll("HourAngle", EqTests[HourAngle].eqv)
+  checkAll("fromStringHMS", FormatTests(HourAngle.fromStringHMS).formatWith(ArbAngle.stringsHMS))
 
   test("Equality must be natural") {
     forAll { (a: HourAngle, b: HourAngle) =>
@@ -73,12 +75,6 @@ final class HourAngleSpec extends CatsSuite {
       val offset   = msIn24 * factor
       val b = HourAngle.fromMicroseconds(a.toMicroseconds + offset)
       a shouldEqual b
-    }
-  }
-
-  test("formatHMS and parseHMS must round-trip") {
-    forAll { (a: HourAngle) =>
-      HourAngle.parseHMS(a.formatHMS) shouldEqual Some(a)
     }
   }
 

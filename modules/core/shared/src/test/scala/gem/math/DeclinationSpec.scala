@@ -7,6 +7,8 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import gem.laws.discipline._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class DeclinationSpec extends CatsSuite {
@@ -15,6 +17,8 @@ final class DeclinationSpec extends CatsSuite {
 
   // Laws
   checkAll("Declination", OrderTests[Declination].order)
+  checkAll("fromAngle", PrismTests(Declination.fromAngle))
+  checkAll("fromStringHMS", FormatTests(Declination.fromStringSignedDMS).formatWith(ArbAngle.stringsDMS))
 
   test("Equality must be natural") {
     forAll { (a: Declination, b: Declination) =>
@@ -35,15 +39,9 @@ final class DeclinationSpec extends CatsSuite {
     }
   }
 
-  test("Conversion to Angle must be invertable") {
-    forAll { (a: Declination) =>
-      Declination.unsafeFromAngle(a.toAngle) shouldEqual a
-    }
-  }
-
   test("Construction must be consistent between fromAngle and fromAngleWithCarry") {
     forAll { (a: Angle) =>
-      (Declination.fromAngle(a), Declination.fromAngleWithCarry(a)) match {
+      (Declination.fromAngle.getOption(a), Declination.fromAngleWithCarry(a)) match {
         case (Some(d), (dʹ, false)) => d shouldEqual dʹ
         case (None,    (d,  true))  => d.toAngle shouldEqual a.mirrorBy(Angle.Angle90)
         case _                      => fail("Unpossible")
@@ -63,12 +61,6 @@ final class DeclinationSpec extends CatsSuite {
         case (aʹ, false) => aʹ.offset(-b).shouldEqual((a, false))
         case (aʹ, true)  => aʹ.offset(b).shouldEqual((a, true))
       }
-    }
-  }
-
-  test("format and parse must round-trip") {
-    forAll { (a: Declination) =>
-      Declination.parse(a.format) shouldEqual Some(a)
     }
   }
 

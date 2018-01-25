@@ -102,8 +102,8 @@ object TargetDecodersTest {
     </paramset>
 
   val SiderealProperMotion: ProperMotion = {
-    val ra  = RightAscension.parse("03:41:10.000").get
-    val dec = Declination.parse("11:33:00.00").get
+    val ra  = RightAscension.fromStringHMS.unsafeGet("03:41:10.000")
+    val dec = Declination.fromStringSignedDMS.unsafeGet("11:33:00.00")
     val c   = Coordinates(ra, dec)
 
     val off = Offset(

@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show, Order }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class WavelengthSpec extends CatsSuite {
@@ -14,6 +15,7 @@ final class WavelengthSpec extends CatsSuite {
 
   // Laws
   checkAll("Wavelength", OrderTests[Wavelength].order)
+  checkAll("fromAngstroms", PrismTests(Wavelength.fromAngstroms))
 
   test("Equality must be natural") {
     forAll { (a: Wavelength, b: Wavelength) =>
@@ -31,12 +33,6 @@ final class WavelengthSpec extends CatsSuite {
   test("Show must be natural") {
     forAll { (a: Wavelength) =>
       a.toString shouldEqual Show[Wavelength].show(a)
-    }
-  }
-
-  test("Conversion to angstroms must be invertable") {
-    forAll { (a: Wavelength) =>
-      Wavelength.fromAngstroms.getOption(a.toAngstroms) shouldEqual Some(a)
     }
   }
 

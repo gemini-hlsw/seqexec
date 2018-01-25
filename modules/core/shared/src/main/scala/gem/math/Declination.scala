@@ -7,7 +7,9 @@ package math
 import cats.{ Order, Show }
 import cats.instances.long._
 import gem.parser.CoordinateParsers
-import gem.syntax.parser._
+import gem.syntax.all._
+import gem.util.Format
+import monocle.Prism
 
 /**
  * Celestial latitude, measured in angular distance from the celestial equator. Points north of the
@@ -16,7 +18,7 @@ import gem.syntax.parser._
  * [0 - 90] in terms of the underlying `Angle`. Note that the range is *inclusive* of both poles.
  * @see The helpful [[https://en.wikipedia.org/wiki/Declination Wikipedia]] article.
  */
-sealed abstract case class Declination private (toAngle: Angle) {
+sealed abstract case class Declination protected (toAngle: Angle) {
 
   // Sanity check … should be correct via the companion constructor.
   assert(
@@ -40,33 +42,16 @@ sealed abstract case class Declination private (toAngle: Angle) {
   def toRadians: Double =
     toAngle.toSignedDoubleRadians
 
-  /**
-   * Format this [[Declination]] as a standard human-readable string. Invertable via
-   * `Declination.parse`.
-   */
-  def format: String =
-    toAngle.formatSignedDMS
-
   final override def toString: String =
-    s"Dec($format)"
+    Declination.fromStringSignedDMS.taggedToString("Dec", this)
 
 }
 
-object Declination {
+object Declination extends DeclinationOptics {
 
-  val Min:  Declination = unsafeFromAngle(Angle.Angle270)
-  val Max:  Declination = unsafeFromAngle(Angle.Angle90)
-  val Zero: Declination = unsafeFromAngle(Angle.Angle0)
-
-  /**
-   * Construct a `Declination` from an `Angle` in [270 - 360) + [0 - 90], if possible.
-   * @group Constructors
-   */
-  def fromAngle(a: Angle): Option[Declination] =
-    if (
-      a.toMicroarcseconds >= Angle.Angle270.toMicroarcseconds ||
-      a.toMicroarcseconds <= Angle.Angle90.toMicroarcseconds
-    ) Some(new Declination(a) {}) else None
+  val Min:  Declination = fromAngle.unsafeGet(Angle.Angle270)
+  val Max:  Declination = fromAngle.unsafeGet(Angle.Angle90)
+  val Zero: Declination = fromAngle.unsafeGet(Angle.Angle0)
 
   /**
    * Construct a `Declination` from an `Angle`, mirroring about the 90° axis if out of range and
@@ -76,27 +61,15 @@ object Declination {
    * @group Constructors
    */
   def fromAngleWithCarry(a: Angle): (Declination, Boolean) =
-    Declination.fromAngle(a).map((_, false)) getOrElse {
-      (Declination.unsafeFromAngle(a mirrorBy Angle.Angle90), true)
+    fromAngle.getOption(a).map((_, false)) getOrElse {
+      (fromAngle.unsafeGet(a mirrorBy Angle.Angle90), true)
     }
 
-  /**
-   * Construct a `Declination` from an `Angle` in [270 - 360) + [0 - 90], raising an exception if
-   * out of range.
-   * @group Constructors
-   */
-  def unsafeFromAngle(a: Angle): Declination =
-    fromAngle(a).getOrElse(sys.error(s"Declination out of range: $a"))
-
   def fromRadians(rad: Double): Option[Declination] =
-    fromAngle(Angle.fromDoubleRadians(rad))
+    fromAngle.getOption(Angle.fromDoubleRadians(rad))
 
   def unsafeFromRadians(rad: Double): Declination =
-    unsafeFromAngle(Angle.fromDoubleRadians(rad))
-
-  /** Attempt to parse a `Declination` from a `format`-formatted string. */
-  def parse(s: String): Option[Declination] =
-    CoordinateParsers.dec.parseExact(s)
+    fromAngle.unsafeGet(Angle.fromDoubleRadians(rad))
 
   /**
    * Declinations are ordered from south to north.
@@ -107,5 +80,19 @@ object Declination {
 
   implicit val DeclinationShow: Show[Declination] =
     Show.fromToString
+
+}
+
+trait DeclinationOptics { this: Declination.type =>
+
+  val fromAngle: Prism[Angle, Declination] =
+    Prism((a: Angle) => {
+      if (a.toMicroarcseconds >= Angle.Angle270.toMicroarcseconds ||
+          a.toMicroarcseconds <= Angle.Angle90.toMicroarcseconds) Some(new Declination(a) {})
+      else None
+    })(_.toAngle)
+
+  val fromStringSignedDMS: Format[String, Declination] =
+    Format(CoordinateParsers.dec.parseExact, d => Angle.fromStringSignedDMS.reverseGet(d.toAngle))
 
 }

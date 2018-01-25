@@ -7,13 +7,19 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show, Order }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import gem.laws.discipline._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class RightAscensionSpec extends CatsSuite {
   import ArbRightAscension._
+  import ArbAngle._
 
   // Laws
   checkAll("RightAscension", OrderTests[RightAscension].order)
+  checkAll("fromAngle", PrismTests(RightAscension.fromAngle))
+  checkAll("fromHourAngle", IsoTests(RightAscension.fromHourAngle))
+  checkAll("fromStringHMS", FormatTests(RightAscension.fromStringHMS).formatWith(ArbAngle.stringsHMS))
 
   test("Equality must be natural") {
     forAll { (a: RightAscension, b: RightAscension) =>
@@ -31,18 +37,6 @@ final class RightAscensionSpec extends CatsSuite {
   test("Show must be natural") {
     forAll { (a: RightAscension) =>
       a.toString shouldEqual Show[RightAscension].show(a)
-    }
-  }
-
-  test("Conversion to HourAngle must be invertable") {
-    forAll { (a: RightAscension) =>
-      RightAscension.fromHourAngle(a.toHourAngle) shouldEqual a
-    }
-  }
-
-  test("format and parse must round-trip") {
-    forAll { (a: RightAscension) =>
-      RightAscension.parse(a.format) shouldEqual Some(a)
     }
   }
 

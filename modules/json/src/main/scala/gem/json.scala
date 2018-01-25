@@ -9,7 +9,7 @@ import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
 import gem.math._
 import gem.syntax.prism._
-import gem.util.{ Enumerated, Timestamp }
+import gem.util.{ Enumerated, Format, Timestamp }
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
@@ -46,6 +46,13 @@ package object json {
   }
 
   private implicit class PrismOps[A: Encoder: Decoder, B](p: Prism[A, B]) {
+    def toCodec: (Encoder[B], Decoder[B]) = (
+      Encoder[A].contramap(p.reverseGet),
+      Decoder[A].map(p.unsafeGet(_))
+    )
+  }
+
+  private implicit class FormatOps[A: Encoder: Decoder, B](p: Format[A, B]) {
     def toCodec: (Encoder[B], Decoder[B]) = (
       Encoder[A].contramap(p.reverseGet),
       Decoder[A].map(p.unsafeGet(_))
@@ -108,12 +115,18 @@ package object json {
   implicit val ProgramIdDecoder: Decoder[Program.Id] = Decoder[String].map(Program.Id.unsafeFromString)
 
   // Right Ascension in canonical form
-  implicit def RightAscensionEncoder: Encoder[RightAscension] = Encoder[String].contramap(_.format)
-  implicit def RightAscensionDecoder: Decoder[RightAscension] = Decoder[String].map(s => RightAscension.parse(s).getOrElse(sys.error(s"Could not parse '$s' as an RA")))
+  implicit val (
+    rightAscensionEncoder: Encoder[RightAscension],
+    rightAscensionDecoder: Decoder[RightAscension]
+  ) =
+    RightAscension.fromStringHMS.toCodec
 
   // Declination in canonical form
-  implicit def DeclinationEncoder: Encoder[Declination] = Encoder[String].contramap(_.format)
-  implicit def DeclinationDecoder: Decoder[Declination] = Decoder[String].map(s => Declination.parse(s).getOrElse(sys.error(s"Could not parse '$s' as a declination")))
+  implicit val (
+    declinationEncoder: Encoder[Declination],
+    declinationDecoder: Decoder[Declination]
+  ) =
+    Declination.fromStringSignedDMS.toCodec
 
   // Epoch in canonical form
   implicit def EpochEncoder: Encoder[Epoch] = Encoder[String].contramap(_.format)

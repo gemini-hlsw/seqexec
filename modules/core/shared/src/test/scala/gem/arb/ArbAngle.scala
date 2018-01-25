@@ -31,11 +31,15 @@ trait ArbAngle {
 
   // Strings that are often parsable as HMS.
   val stringsHMS: Gen[String] =
-    arbitrary[HourAngle].map(_.formatHMS).flatMapOneOf(Gen.const, perturbations: _*)
+    arbitrary[HourAngle].map(HourAngle.fromStringHMS.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
 
   // Strings that are often parsable as DMS.
   val stringsDMS: Gen[String] =
-    arbitrary[Angle].map(_.formatDMS).flatMapOneOf(Gen.const, perturbations: _*)
+    arbitrary[Angle].map(Angle.fromStringDMS.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
+
+  // Strings that are often parsable as signed DMS.
+  val stringsSignedDMS: Gen[String] =
+    arbitrary[Angle].map(Angle.fromStringSignedDMS.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
 
 }
 

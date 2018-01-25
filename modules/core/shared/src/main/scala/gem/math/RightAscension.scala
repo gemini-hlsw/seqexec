@@ -6,8 +6,8 @@ package math
 
 import cats.{ Order, Show }
 import cats.instances.long._
-import gem.parser.CoordinateParsers
-import gem.syntax.parser._
+import gem.util.Format
+import monocle._
 
 /**
  * Celestial longitude, measured eastward along the celestial equator from the vernal equinox to the
@@ -36,41 +36,23 @@ final case class RightAscension(toHourAngle: HourAngle) {
   def toAngle: Angle =
     toHourAngle
 
-  /**
-   * Format this [[RightAscension]] as a standard human-readable string. Invertable via
-   * `RightAscension.parse`.
-   */
-  def format: String =
-    toHourAngle.formatHMS
-
   /** This RightAscension in radians [0 .. 2π). Approximate. */
   def toRadians: Double =
     toAngle.toDoubleRadians
 
   override def toString =
-    s"RA($format)"
+    RightAscension.fromStringHMS.taggedToString("RA", this)
 
 }
 
-object RightAscension {
-
-  /**
-   * Construct a `RightAscension` from an [[HourAngle]]. Alias for `apply`.
-   * @group Constructors
-   */
-  def fromHourAngle(ha: HourAngle): RightAscension =
-    apply(ha)
+object RightAscension extends RightAscensionOptics {
 
   /**
    * Construct a `RightAscension` from an angle in radians.
    * @group Constructors
    */
   def fromRadians(rad: Double): RightAscension =
-    fromHourAngle(Angle.fromDoubleRadians(rad).toHourAngle)
-
-  /** Attempt to parse a `RightAscension` from a `format`-formatted string. */
-  def parse(s: String): Option[RightAscension] =
-    CoordinateParsers.ra.parseExact(s)
+    RightAscension(Angle.fromDoubleRadians(rad).toHourAngle)
 
   /**
    * The `RightAscension` at zero degrees.
@@ -89,5 +71,18 @@ object RightAscension {
   /* @group Typeclass Instances */
   implicit val RightAscensionShow: Show[RightAscension] =
     Show.fromToString
+
+}
+
+trait RightAscensionOptics { this: RightAscension.type =>
+
+  val fromHourAngle: Iso[HourAngle, RightAscension] =
+    Iso(RightAscension(_))(_.toHourAngle)
+
+  val fromStringHMS: Format[String, RightAscension] =
+    HourAngle.fromStringHMS composeIso fromHourAngle
+
+  val fromAngle: Prism[Angle, RightAscension] =
+    Angle.hourAngle composeIso fromHourAngle
 
 }
