@@ -129,8 +129,11 @@ package object json {
     Declination.fromStringSignedDMS.toCodec
 
   // Epoch in canonical form
-  implicit def EpochEncoder: Encoder[Epoch] = Encoder[String].contramap(_.format)
-  implicit def EpochDecoder: Decoder[Epoch] = Decoder[String].map(Epoch.unsafeFromString)
+  implicit val (
+    epochEncoder: Encoder[Epoch],
+    epochDecoder: Decoder[Epoch]
+  ) =
+    Epoch.fromString.toCodec
 
   // Proper Motion. Made difficult by the parallax, which requires an explicit Angle encoding.
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

@@ -25,7 +25,17 @@ trait ArbEpoch {
     }
 
   implicit val cogEpoch: Cogen[Epoch] =
-    Cogen[String].contramap(_.format)
+    Cogen[String].contramap(Epoch.fromString.reverseGet)
+
+  private val perturbations: List[String => Gen[String]] =
+    List(
+      s => arbitrary[String],             // swap for a random string
+      s => Gen.const(s.replace("2", "0")) // create a leading zero, maybe (ok)
+    )
+
+  // Strings that are often parsable as DMS.
+  val strings: Gen[String] =
+    arbitrary[Epoch].map(Epoch.fromString.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
 
 }
 

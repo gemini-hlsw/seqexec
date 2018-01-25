@@ -7,10 +7,11 @@ import doobie._
 import gem.math._
 
 trait EpochMeta {
+  import FormatMeta._
 
   /** Epoch as a string, like J2012.123 */
   implicit lazy val EpochMeta: Meta[Epoch] =
-    Meta[String].xmap(Epoch.unsafeFromString, _.format)
+    Epoch.fromString.asMeta
 
 }
 object EpochMeta extends EpochMeta

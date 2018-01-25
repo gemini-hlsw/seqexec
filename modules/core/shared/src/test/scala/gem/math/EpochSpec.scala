@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import gem.laws.discipline._
 import java.time.LocalDateTime
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -16,6 +17,7 @@ final class EpochSpec extends CatsSuite {
 
   // Laws
   checkAll("Epoch", OrderTests[Epoch].order)
+  checkAll("fromString", FormatTests(Epoch.fromString).formatWith(ArbEpoch.strings))
 
   test("Epoch.eq.natural") {
     forAll { (a: Epoch, b: Epoch) =>
@@ -46,18 +48,6 @@ final class EpochSpec extends CatsSuite {
       val Δ1 = s.fromLocalDateTime(d1).untilLocalDateTime(d2)
       val Δ2 = s.fromLocalDateTime(d2).epochYear - s.fromLocalDateTime(d1).epochYear
       Δ1 shouldEqual Δ2
-    }
-  }
-
-  test("Epoch.format.roundtrip") {
-    forAll { (a: Epoch) =>
-      Epoch.unsafeFromString(a.format) shouldEqual a
-    }
-  }
-
-  test("format and parse must round-trip") {
-    forAll { (a: Epoch) =>
-      Epoch.parse(a.format) shouldEqual Some(a)
     }
   }
 
