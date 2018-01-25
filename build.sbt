@@ -173,6 +173,16 @@ lazy val commonSettings = Seq(
   name := "gem-" + name.value
 )
 
+lazy val commonJSSettings = Seq(
+  // These settings allow to use TLS with scala.js
+  // Remove the dependency on the scalajs-compiler
+  libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
+  // And add a custom one
+  addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch),
+  // Make JS tests run fine on travis
+  parallelExecution in Test := false
+)
+
 lazy val flywaySettings = Seq(
   flywayUrl  := "jdbc:postgresql:gem",
   flywayUser := "postgres",
@@ -186,7 +196,7 @@ lazy val flywaySettings = Seq(
 lazy val gem = project
   .in(file("."))
   .settings(commonSettings)
-  .aggregate(coreJVM, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql, main)
+  .aggregate(coreJVM, coreJS, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql, main, ui)
 
 lazy val core = crossProject
   .crossType(CrossType.Full)
@@ -208,15 +218,9 @@ lazy val core = crossProject
   )
   .jsSettings(
     libraryDependencies +=
-      "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12",
-    // These settings allow to use TLS with scala.js
-    // Remove the dependency on the scalajs-compiler
-    libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
-    // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch),
-    // Make JS tests run fine on travis
-    parallelExecution in Test := false
+      "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12"
   )
+  .jsSettings(commonJSSettings)
   .jvmSettings(
     libraryDependencies += "co.fs2" %% "fs2-io" % fs2Version
   )
@@ -337,6 +341,17 @@ lazy val web = project
       "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
       "com.pauldijou" %% "jwt-core"            % jwtVersion
     )
+  )
+
+lazy val ui = project
+  .in(file("modules/ui"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(coreJS)
+  .settings(commonSettings)
+  .settings(commonJSSettings)
+  .settings(
+    scalaJSUseMainModuleInitializer := true
   )
 
 lazy val ctl = project
