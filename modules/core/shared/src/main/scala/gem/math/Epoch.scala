@@ -8,6 +8,7 @@ import cats.{ Order, Show }
 import cats.implicits._
 import gem.parser.EpochParsers
 import gem.syntax.parser._
+import gem.util.Format
 import java.time._
 
 /**
@@ -19,7 +20,7 @@ import java.time._
  * @param scheme This `Epoch`'s temporal scheme.
  * @see The Wikipedia [[https://en.wikipedia.org/wiki/Epoch_(astronomy) article]]
  */
-final class Epoch private (val scheme: Epoch.Scheme, private val toMilliyears: Int) {
+final class Epoch private (val scheme: Epoch.Scheme, private[math] val toMilliyears: Int) {
 
   /** This `Epoch`'s year. Note that this value is not very useful without the `Scheme`. */
   def epochYear: Double =
@@ -44,10 +45,6 @@ final class Epoch private (val scheme: Epoch.Scheme, private val toMilliyears: I
   def plusYears(y: Double): Epoch =
     scheme.fromEpochYears(epochYear + y)
 
-  /** Canonical representation, like `J2017.456`. Exact, invertable via `fromString`. */
-  def format: String =
-    f"${scheme.prefix}%s${toMilliyears / 1000}%d.${toMilliyears % 1000}%03d"
-
   override def equals(a: Any): Boolean =
     a match {
       case e: Epoch => (scheme === e.scheme) && toMilliyears === e.toMilliyears
@@ -58,11 +55,11 @@ final class Epoch private (val scheme: Epoch.Scheme, private val toMilliyears: I
     scheme.hashCode ^ toMilliyears
 
   override def toString =
-    s"Epoch($format)"
+    Epoch.fromString.taggedToString("Epoch", this)
 
 }
 
-object Epoch {
+object Epoch extends EpochOptics {
 
   /**
    * Standard epoch.
@@ -132,24 +129,20 @@ object Epoch {
    */
   case object Julian extends Scheme('J', 2000.0, 2451545.0, 365.25)
 
-  /**
-   * Parse an `Epoch` in canonical format.
-   * @group Constructors
-   */
-  def parse(s: String): Option[Epoch] =
-    EpochParsers.epoch.parseExact(s)
-
-  /**
-   * Parse an `Epoch` in canonical format, raising an exception on failure.
-   * @group Constructors
-   */
-  def unsafeFromString(s: String): Epoch =
-    parse(s).getOrElse(sys.error(s"invalid epoch: $s"))
-
   implicit val EpochOrder: Order[Epoch] =
     Order.by(e => (e.scheme, e.toMilliyears))
 
   implicit val EpochShow: Show[Epoch] =
     Show.fromToString
+
+}
+
+trait EpochOptics { this: Epoch.type =>
+
+  val fromString: Format[String, Epoch] =
+    Format(
+      s => EpochParsers.epoch.parseExact(s),
+      e => f"${e.scheme.prefix}%s${e.toMilliyears / 1000}%d.${e.toMilliyears % 1000}%03d"
+    )
 
 }
