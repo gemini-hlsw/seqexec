@@ -11,7 +11,7 @@ trait DatasetLabelMeta {
 
   // Dataset.Label as string
   implicit val DatasetLabelMeta: Meta[Dataset.Label] =
-    Dataset.Label.Optics.fromString.asMeta
+    Dataset.Label.fromString.asMeta
 
 }
 object DatasetLabelMeta extends DatasetLabelMeta
