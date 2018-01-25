@@ -27,7 +27,6 @@ script:
 
 after_script:
   - $TRAVIS_BUILD_DIR/build/weigh.sh
-  - $TRAVIS_BUILD_DIR/build/upload.sh
 
 cache:
   directories:
