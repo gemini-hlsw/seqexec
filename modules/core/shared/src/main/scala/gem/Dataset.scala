@@ -28,9 +28,10 @@ object Dataset {
    */
   final case class Label(observationId: Observation.Id, index: Int) {
     override def toString =
-      Label.Optics.fromString.productToString(this)
+      Label.fromString.productToString(this)
   }
-  object Label {
+
+  object Label extends LabelOptics {
 
     /**
      * Labels are ordered by observation and index.
@@ -43,22 +44,22 @@ object Dataset {
     implicit val LabelShow: Show[Label] =
       Show.fromToString
 
-    object Optics {
+  }
 
-      /** Format from Strings into Label and back. */
-      val fromString: Format[String, Label] =
-        Format(s =>
-          s.lastIndexOf('-') match {
-            case -1 => None
-            case  n =>
-              val (a, b) = s.splitAt(n)
-              b.drop(1).parseIntOption.filter(_ > 0).flatMap { n =>
-                Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
-              }
-          }, l => f"${l.observationId.format}-${l.index}%03d"
-        )
+  trait LabelOptics { this: Label.type =>
 
-    }
+    /** Format from Strings into Label and back. */
+    val fromString: Format[String, Label] =
+      Format(s =>
+        s.lastIndexOf('-') match {
+          case -1 => None
+          case  n =>
+            val (a, b) = s.splitAt(n)
+            b.drop(1).parseIntOption.filter(_ > 0).flatMap { n =>
+              Observation.Id.fromString(a).map(oid => Dataset.Label(oid, n))
+            }
+        }, l => f"${l.observationId.format}-${l.index}%03d"
+      )
 
   }
 

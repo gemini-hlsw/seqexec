@@ -15,7 +15,7 @@ final class DatasetLabelSpec extends CatsSuite {
 
   // Laws
   checkAll("DatasetLabel", OrderTests[Dataset.Label].order)
-  checkAll("Optics.fromString", FormatTests(Dataset.Label.Optics.fromString).formatWith(strings))
+  checkAll("Optics.fromString", FormatTests(Dataset.Label.fromString).formatWith(strings))
 
   test("Equality must be natural") {
     forAll { (a: Dataset.Label, b: Dataset.Label) =>
