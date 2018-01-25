@@ -18,7 +18,7 @@ object TestProgram {
   val vega: Target =
     Target("Vega",
       Right(ProperMotion(
-        Coordinates.Optics.fromHmsDms.unsafeGet("18:36:56.336 38:47:01.28"),
+        Coordinates.fromHmsDms.unsafeGet("18:36:56.336 38:47:01.28"),
         Epoch.J2000,
         Some(Offset(
           Offset.P(Angle.fromMicroarcseconds(200940L)),
