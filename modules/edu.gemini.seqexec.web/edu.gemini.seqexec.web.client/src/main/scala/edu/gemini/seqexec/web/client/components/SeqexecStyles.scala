@@ -578,4 +578,44 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     top(-8.5.px)
   )
 
+  // Row styles taken from sematic ui tables
+  val rowDisabled: StyleA = style(
+    pointerEvents := "none",
+    color(rgba(40, 40, 40, 0.3))
+  )
+
+  val rowActive: StyleA = style(
+    backgroundColor(c"#E0E0E0"),
+    color(rgba(0, 0, 0, 0.87)),
+    boxShadow := "0px 0px 0px rgba(0, 0, 0, 0.87) inset"
+  )
+
+  val rowNegative: StyleA = style(
+    backgroundColor(c"#FFF6F6"),
+    color(c"#9F3A38"),
+    boxShadow := "0px 0px 0px #E0B4B4 inset"
+  )
+
+  val rowPositive: StyleA = style(
+    backgroundColor(c"#FCFFF5"),
+    color(c"#2C662D"),
+    boxShadow := "0px 0px 0px #9F3A38 inset"
+  )
+
+  val rowError: StyleA = style(
+    backgroundColor(c"#FFF6F6"),
+    color(c"#9F3A38"),
+    boxShadow := "0px 0px 0px #E0B4B4 inset"
+  )
+
+  val rowWarning: StyleA = style(
+    backgroundColor(c"#FFFAF3"),
+    color(c"#573A08"),
+    boxShadow := "0px 0px 0px #C9BA9B inset"
+  )
+
+  val rowNone: StyleA = style(
+  )
+  // End row styles
+
 }

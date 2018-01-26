@@ -29,9 +29,10 @@ import japgolly.scalajs.react.vdom.html_<^._
 // import org.scalajs.dom.html.Div
 //
 import scalacss.ScalaCssReact._
+import scalacss._
 import scalaz.std.AllInstances._
 import scalaz.syntax.foldable._
-// import scalaz.syntax.equal._
+import scalaz.syntax.equal._
 // import scalaz.syntax.show._
 // import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
@@ -53,6 +54,9 @@ object ColWidths {
   * Container for a table with the steps
   */
 object StepsTable {
+  private val CssSettings = scalacss.devOrProdDefaults
+  import CssSettings._
+
   val HeightWithOffsets: Int = 40
   val BreakpointLineHeight: Int = 5
 
@@ -118,12 +122,23 @@ object StepsTable {
   val stepObjectTypeRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     ObjectTypeCell(row.step)
 
+  private def stepRowStyle(step: Step): StyleA = step match {
+    case s if s.hasError                                   => SeqexecStyles.rowError
+    case s if s.status === StepState.Running               => SeqexecStyles.rowWarning
+    case s if s.status === StepState.Paused                => SeqexecStyles.rowNegative
+    case s if s.status === StepState.Skipped               => SeqexecStyles.rowActive
+    case s if (s.skip || s.status === StepState.Completed) => SeqexecStyles.rowDisabled
+    case _                                                 => SeqexecStyles.rowNone
+  }
+
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
-    case (-1, _)                                                  =>
+    case (-1, _)                                                   =>
       SeqexecStyles.headerRowStyle
-    case (_, StepRow(StandardStep(_, _, _, true, _, _, _, _))) =>
-      SeqexecStyles.stepRowWithBreakpoint
-    case _                                                        =>
+    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _))) =>
+      (SeqexecStyles.stepRowWithBreakpoint + stepRowStyle(s))
+    case (_, StepRow(s))                                           =>
+      (SeqexecStyles.stepRow + stepRowStyle(s))
+    case _                                                         =>
       SeqexecStyles.stepRow
   }).htmlClass
 
