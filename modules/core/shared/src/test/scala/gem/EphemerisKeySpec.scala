@@ -3,17 +3,22 @@
 
 package gem
 
-import gem.arb.ArbEphemerisKey._
+import gem.arb._
 
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
+import gem.laws.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisKeySpec extends CatsSuite {
+  import ArbEphemerisKey._
+  import ArbEnumerated._
 
   // Laws
   checkAll("EphemerisKey", OrderTests[EphemerisKey].order)
+  checkAll("fromString", FormatTests(EphemerisKey.fromString).formatWith(ArbEphemerisKey.strings))
+  checkAll("fromTypeAndDes", FormatTests(EphemerisKey.fromTypeAndDes).formatWith(ArbEphemerisKey.keyAndDes))
 
   test("Equality must be natural") {
     forAll { (a: EphemerisKey, b: EphemerisKey) =>
@@ -24,18 +29,6 @@ final class EphemerisKeySpec extends CatsSuite {
   test("Show must be natural") {
     forAll { (a: EphemerisKey) =>
       a.toString shouldEqual Show[EphemerisKey].show(a)
-    }
-  }
-
-  test("Round trip from String") {
-    forAll { (a: EphemerisKey) =>
-      EphemerisKey.unsafeFromString(a.format) shouldEqual a
-    }
-  }
-
-  test("Round trip from type and des") {
-    forAll { (a: EphemerisKey) =>
-      EphemerisKey.unsafeFromTypeAndDes(a.keyType, a.des) shouldEqual a
     }
   }
 

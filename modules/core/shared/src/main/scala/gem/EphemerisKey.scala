@@ -7,6 +7,7 @@ import gem.enum.EphemerisKeyType
 import gem.parser.EphemerisKeyParsers
 import gem.syntax.parser._
 import gem.syntax.string._
+import gem.util.Format
 
 import cats.{ Order, Show }
 import cats.implicits._
@@ -35,15 +36,10 @@ sealed trait EphemerisKey extends Product with Serializable {
       case UserSupplied(_) => EphemerisKeyType.UserSupplied
     }
 
-  /** Exports an ephemeris key to a `String` in a format that can be read by the
-    * `parse` method.
-    */
-  def format: String =
-    s"${keyType.tag}_$des"
 }
 
 
-object EphemerisKey {
+object EphemerisKey extends EphemerisOptics {
 
   /** Unique Horizons designation, which should allow for reproducible ephemeris
     * queries <b>if</b> the values passed to the constructors are extracted
@@ -99,40 +95,36 @@ object EphemerisKey {
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object UserSupplied
 
-  /** Parse an `EphemerisKey`.
-    * @group Constructors
-    */
-  def parse(s: String): Option[EphemerisKey] =
-    EphemerisKeyParsers.ephemerisKey.parseExact(s)
-
-  /** Parse an `EphemerisKey`, raising an exception on failure.
-    * @group Constructors
-    */
-  def unsafeFromString(s: String): EphemerisKey =
-    parse(s).getOrElse(sys.error(s"invalid ephemeris key: $s"))
-
-  /** Parse an `EphemerisKey` from a type and a human readable
-    * designation.
-    *
-    * @param t ephemeris type
-    * @param des human readable designation
-    * @group Constructors
-    */
-  def fromTypeAndDes(t: EphemerisKeyType, des: String): Option[EphemerisKey] =
-    t match {
-      case EphemerisKeyType.Comet        => Some(Comet(des))
-      case EphemerisKeyType.AsteroidNew  => Some(AsteroidNew(des))
-      case EphemerisKeyType.AsteroidOld  => des.parseIntOption.map(AsteroidOld(_))
-      case EphemerisKeyType.MajorBody    => des.parseIntOption.map(MajorBody(_))
-      case EphemerisKeyType.UserSupplied => des.parseIntOption.map(UserSupplied(_))
-    }
-
-  def unsafeFromTypeAndDes(t: EphemerisKeyType, des: String): EphemerisKey =
-    fromTypeAndDes(t, des).getOrElse(sys.error(s"inavlid ephemeris key ${t}_$des"))
-
   implicit val ShowEphemerisKey: Show[EphemerisKey] =
     Show.fromToString
 
   implicit val OrderEphemerisKey: Order[EphemerisKey] =
-    Order.by(_.format)
+    Order.by(fromString.reverseGet)
+}
+
+trait EphemerisOptics { this: EphemerisKey.type =>
+
+  val fromString: Format[String, EphemerisKey] =
+    Format(
+      EphemerisKeyParsers.ephemerisKey.parseExact,
+      k => {
+        val (keyType, des) = fromTypeAndDes.reverseGet(k)
+        s"${keyType.tag}_${des}"
+      }
+    )
+
+  val fromTypeAndDes: Format[(EphemerisKeyType, String), EphemerisKey] =
+    Format(
+      { case (t, des) =>
+        t match {
+          case EphemerisKeyType.Comet        => Some(Comet(des))
+          case EphemerisKeyType.AsteroidNew  => Some(AsteroidNew(des))
+          case EphemerisKeyType.AsteroidOld  => des.parseIntOption.map(AsteroidOld(_))
+          case EphemerisKeyType.MajorBody    => des.parseIntOption.map(MajorBody(_))
+          case EphemerisKeyType.UserSupplied => des.parseIntOption.map(UserSupplied(_))
+        }
+      },
+      k => (k.keyType, k.des)
+    )
+
 }
