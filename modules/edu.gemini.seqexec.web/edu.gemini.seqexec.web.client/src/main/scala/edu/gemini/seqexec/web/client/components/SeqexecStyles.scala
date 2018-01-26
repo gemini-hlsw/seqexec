@@ -391,6 +391,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val overscanRowCount: Int = 10
   val rowHeight: Int = 30
+  val runningRowHeight: Int = 60
   val headerHeight: Int = 37
 
   val leftBorderMixin: StyleS = mixin(

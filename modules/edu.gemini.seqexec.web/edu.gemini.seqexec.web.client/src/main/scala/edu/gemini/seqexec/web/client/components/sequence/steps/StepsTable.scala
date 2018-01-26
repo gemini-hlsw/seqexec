@@ -151,6 +151,8 @@ object StepsTable {
       HeightWithOffsets + BreakpointLineHeight
     case (_, OffsetsDisplay.DisplayOffsets(_))                                                =>
       HeightWithOffsets
+    case (StepRow(s: Step), _) if s.status === StepState.Running                              =>
+      SeqexecStyles.runningRowHeight
     case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _)                                =>
       SeqexecStyles.rowHeight + BreakpointLineHeight
     case _ =>
@@ -178,35 +180,49 @@ object StepsTable {
       ).collect { case Some(x) => x }
   }
 
-  class Backend {
-    def stepsTableProps(p: Props)(size: Size): Table.Props = {
-      Table.props(
-        disableHeader = false,
-        noRowsRenderer = () =>
-          <.div(
-            ^.cls := "ui center aligned segment noRows",
-            ^.height := 270.px,
-            "No log entries"
-          ),
-        overscanRowCount = SeqexecStyles.overscanRowCount,
-        height = size.height.toInt,
-        rowCount = p.rowCount,
-        rowHeight = rowHeight(p) _,
-        rowClassName = rowClassName(p) _,
-        width = size.width.toInt,
-        rowGetter = p.rowGetter _,
-        headerClassName = SeqexecStyles.tableHeader.htmlClass,
-        headerHeight = SeqexecStyles.headerHeight)
-    }
+  def stepsTableProps(p: Props)(size: Size): Table.Props = {
+    Table.props(
+      disableHeader = false,
+      noRowsRenderer = () =>
+        <.div(
+          ^.cls := "ui center aligned segment noRows",
+          ^.height := 270.px,
+          "No log entries"
+        ),
+      overscanRowCount = SeqexecStyles.overscanRowCount,
+      height = size.height.toInt,
+      rowCount = p.rowCount,
+      rowHeight = rowHeight(p) _,
+      rowClassName = rowClassName(p) _,
+      width = size.width.toInt,
+      rowGetter = p.rowGetter _,
+      headerClassName = SeqexecStyles.tableHeader.htmlClass,
+      headerHeight = SeqexecStyles.headerHeight)
+  }
 
-    // Create a ref
-    private val ref = JsComponent.mutableRefTo(Table.component)
+  // Create a ref
+  private lazy val ref = JsComponent.mutableRefTo(Table.component)
+  private lazy val tableRef = ref.value.raw
 
-    private def recalculateHeightsCB(row: Int): Callback = Callback {
-      ref.value.raw.recomputeRowHeights(row)
-    }
+  private def recalculateHeightsCB(row: Int): Callback =
+    tableRef.recomputeRowHeightsCB(row)
 
-    def render(p: Props): TagOf[Div] =
+  def render(p: Props): TagOf[Div] =
+    <.div(
+      SeqexecStyles.stepsListPane.unless(p.status.isLogged),
+      SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
+      p.steps.whenDefined { tab =>
+        tab.stepConfigDisplayed.map { i =>
+          <.div("CONFIG")
+        }.getOrElse {
+          AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, recalculateHeightsCB).map(_.vdomElement): _*)))
+        }
+      }
+    )
+
+  private val component = ScalaComponent.builder[Props]("Steps")
+    .stateless
+    .render_P(p =>
       <.div(
         SeqexecStyles.stepsListPane.unless(p.status.isLogged),
         SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
@@ -218,12 +234,8 @@ object StepsTable {
           }
         }
       )
-
-  }
-
-  private val component = ScalaComponent.builder[Props]("Steps")
-    .renderBackend[Backend]
+    )
     .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Backend] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
