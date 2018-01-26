@@ -54,7 +54,7 @@ object HorizonsUpdaterApp {
 
       def parseKeys(keys: List[String]): Parsed[List[EphemerisKey.Horizons]] =
         keys.traverse { keyStr =>
-          EphemerisKey.parse(keyStr) match {
+          EphemerisKey.fromString.getOption(keyStr) match {
             case Some(key: EphemerisKey.Horizons) => Either.right(key)
             case Some(key)                        => Either.left(s"'$keyStr' is not an horizons key")
             case None                             => Either.left(s"Could not parse '$keyStr' as an horizons key")
