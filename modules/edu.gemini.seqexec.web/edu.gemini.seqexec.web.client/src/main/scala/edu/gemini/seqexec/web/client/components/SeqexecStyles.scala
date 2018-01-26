@@ -474,6 +474,12 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     justifyContent.flexEnd
   )
 
+  val leftCell: StyleA = style(
+    display.flex,
+    alignItems.center,
+    justifyContent.flexStart
+  )
+
   val controlCellHeader: StyleA = style(
     paddingBottom((headerHeight/4).px)
   )

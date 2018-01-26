@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import scala.scalajs.js
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step}
+import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState}
 import japgolly.scalajs.react.vdom.TagOf
 import org.scalajs.dom.html.Div
 // import edu.gemini.seqexec.web.client.ModelOps._
@@ -40,6 +40,7 @@ import react.virtualized._
 
 object ColWidths {
   val ControlWidth: Int = 50
+  val StateWidth: Int = 200
   val IdxWidth: Int = 50
   val StatusWidth: Int = 100
   val OffsetWidthBase: Int = 68
@@ -104,6 +105,9 @@ object StepsTable {
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
 
+  def stepProgressRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepProgressCell(StepProgressCell.Props(p.status, f, row.step))
+
   def stepStatusRenderer(offsetsDisplay: OffsetsDisplay): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
 
@@ -164,6 +168,7 @@ object StepsTable {
       List(
         p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recalculateHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
+        p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
         offsetColumn,
         Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
         p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, cellRenderer = stepExposureRenderer(i.instrument)))),
