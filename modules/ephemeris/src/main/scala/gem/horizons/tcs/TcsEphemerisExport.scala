@@ -73,7 +73,7 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
     */
   def exportAll(dir: Path, site: Site, start: Timestamp, end: Timestamp): M[Unit] = {
     def name(k: EphemerisKey): String =
-      s"${k.format}.eph"
+      s"${EphemerisKey.fromString.reverseGet(k)}.eph"
 
     for {
       ks <- EphemerisDao.selectKeys(site).transact(xa)

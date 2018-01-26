@@ -5,26 +5,19 @@ package gem.dao.composite
 
 import doobie._
 import gem.EphemerisKey
-import gem.enum.EphemerisKeyType
 import gem.dao.meta._
 
 trait EphemerisKeyComposite {
   import EnumeratedMeta._
+  import FormatComposite._
 
   /** Map an EphemerisKey as an (EphemerisKeyType, String) pair. */
   implicit val CompositeEphemerisKey: Composite[EphemerisKey] =
-    Composite[(EphemerisKeyType, String)].imap(
-      t => EphemerisKey.unsafeFromTypeAndDes(t._1, t._2))(
-      k => (k.keyType, k.des)
-    )
+    EphemerisKey.fromTypeAndDes.toComposite
 
   /** Map an Option[EphemerisKey] as a nullable (EphemerisKeyType, String) pair. */
   implicit lazy val CompositeOptionEphemerisKey: Composite[Option[EphemerisKey]] =
-    Composite[Option[(EphemerisKeyType, String)]].imap(
-      _.map(p => EphemerisKey.unsafeFromTypeAndDes(p._1, p._2)))(
-      _.map(k => (k.keyType, k.des))
-    )
-
+    EphemerisKey.fromTypeAndDes.toOptionComposite
 
 }
 object EphemerisKeyComposite extends EphemerisKeyComposite
