@@ -68,7 +68,7 @@ object ModelOps {
 
     def allStepsDone: Boolean = s.steps.forall(_.status === StepState.Completed)
 
-    def flipStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
+    def flipSkipMarkAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
       case st: StandardStep if st == step => st.copy(skip = !st.skip)
       case st               => st
     })

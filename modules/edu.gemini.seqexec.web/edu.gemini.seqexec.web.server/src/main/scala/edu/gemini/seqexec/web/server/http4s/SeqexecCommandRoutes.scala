@@ -73,6 +73,16 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
 
       } yield resp
 
+    case POST -> Root / obsId / stepId / "skip" / bp as user =>
+      for {
+        obs    <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        step   <- \/.fromTryCatchNonFatal(stepId.toInt).fold(e => Task.fail(e), Task.now)
+        newVal <- \/.fromTryCatchNonFatal(bp.toBoolean).fold(e => Task.fail(e), Task.now)
+        _      <- se.setSkipMark(inputQueue, obs, user, step, newVal)
+        resp   <- Ok(s"Set skip mark in step $step of sequence $obsId")
+
+      } yield resp
+
     case POST -> Root / obsId / stepId / "stop" as _ =>
       for {
         obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)

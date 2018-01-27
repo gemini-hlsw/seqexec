@@ -46,6 +46,8 @@ object Sequence {
     done: List[Step]
   ) {
 
+    private val (toSkip, remaining): (List[Step], List[Step]) = pending.span(_.skipMark)
+
     /**
       * Runs the next execution. If the current `Step` is completed it adds the
       * `StepZ` under focus to the list of completed `Step`s and makes the next
@@ -57,19 +59,33 @@ object Sequence {
     val next: Option[Zipper] =
       focus.next match {
         // Step completed
-        case None      =>
-          pending match {
+        case None      => {
+          remaining match {
             case Nil             => None
             case stepp :: stepps =>
               (Step.Zipper.currentify(stepp) |@| focus.uncurrentify) (
-                (curr, stepd) => Zipper(id, metadata, stepps, curr, done :+ stepd)
+                (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = true)))
               )
           }
+        }
         // Current step ongoing
         case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
       }
 
     def rollback: Zipper = this.copy(focus = focus.rollback)
+
+    def skips: Option[Zipper] = {
+      if (focus.skipMark) {
+        remaining match {
+          case Nil => None
+          case stepp :: stepps =>
+            (Step.Zipper.currentify(stepp) |@| focus.skip.some) (
+              (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = true)))
+            )
+        }
+      }
+      else this.some
+    }
 
     /**
       * Obtain the resulting `Sequence` only if all `Step`s have been completed.
@@ -77,7 +93,9 @@ object Sequence {
       *
       */
     val uncurrentify: Option[Sequence] =
-      if (pending.isEmpty) focus.uncurrentify.map(x => Sequence(id, metadata, done :+ x))
+      if (remaining.isEmpty)
+        if(focus.skipMark) Sequence(id, metadata, (done :+ focus.skip) ::: toSkip.map(_.copy(skipped = true))).some
+        else focus.uncurrentify.map(x => Sequence(id, metadata, (done :+ x) ::: toSkip.map(_.copy(skipped = true))))
       else None
 
     /**
@@ -128,7 +146,7 @@ object Sequence {
         (acc, step) =>
         if (Step.status(step) === StepState.Pending)
           Some(acc.leftMap(_ :+ step))
-        else if (Step.status(step) === StepState.Completed)
+        else if (Step.status(step) === StepState.Completed || Step.status(step) === StepState.Skipped)
           Some(acc.rightMap(_ :+ step))
         else None
       )
@@ -164,7 +182,11 @@ object Sequence {
 
     def rollback: State
 
+    def skips: Option[State]
+
     def setBreakpoint(stepId: Step.Id, v: Boolean): State
+
+    def setSkipMark(stepId: Step.Id, v: Boolean): State
 
     def getCurrentBreakpoint: Boolean
 
@@ -258,9 +280,20 @@ object Sequence {
 
       override def rollback: Zipper = self.copy(zipper = zipper.rollback)
 
+      override def skips: Option[State] = zipper.skips match {
+        // Last execution
+        case None    => zipper.uncurrentify.map(Final(_, status))
+        case Some(x) => Zipper(x, status).some
+      }
+
       override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self.copy(zipper =
         zipper.copy(pending =
           zipper.pending.map(s => if(s.id == stepId) s.copy(breakpoint = v) else s)))
+
+      override def setSkipMark(stepId: Step.Id, v: Boolean): State = self.copy(zipper =
+        if(zipper.focus.id == stepId) zipper.copy(focus = zipper.focus.copy(skipMark = v))
+        else zipper.copy(pending =
+          zipper.pending.map(s => if(s.id == stepId) s.copy(skipMark = v) else s)))
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint && zipper.focus.done.isEmpty
 
@@ -321,7 +354,11 @@ object Sequence {
 
       override def rollback: Final = self
 
+      override def skips: Option[State] = self.some
+
       override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self
+
+      override def setSkipMark(stepId: Step.Id, v: Boolean): State = self
 
       override def getCurrentBreakpoint: Boolean = false
 

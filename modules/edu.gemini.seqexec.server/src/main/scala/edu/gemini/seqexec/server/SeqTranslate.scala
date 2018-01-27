@@ -110,8 +110,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield Result.Partial(FileIdAllocated(id), Kleisli(_ => doObserve(id).run.map(_.toResult)))
   }
 
-  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
-    def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
+  // Introduced class StepBuilder to avoid warning for an excessively long function.
+  private final class StepBuilder(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]) {
+    private def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata, List[Header]], resources: Set[Resource]): Step = {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
@@ -129,37 +130,43 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.State(Action.Idle, Nil))))
 
       extractStatus(config) match {
-        case StepState.Pending => Step(
-            id = i,
-            fileId = None,
-            config = config.toStepConfig,
-            resources = resources,
-            breakpoint = false,
-            skip = false,
-            executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
-          )
+        case StepState.Pending => Step.step(
+          id = i,
+          fileId = None,
+          config = config.toStepConfig,
+          resources = resources,
+          executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
+        )
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
-        case _                 => Step(
-            id = i,
-            fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-            config = config.toStepConfig,
-            // No resources when done
-            resources = Set.empty,
-            breakpoint = false,
-            skip = extractSkipped(config),
-            // TODO: Is it possible to reconstruct done executions from the ODB?
-            executions = Nil
-            )
+        case _ => Step(
+          id = i,
+          fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
+          config = config.toStepConfig,
+          // No resources when done
+          resources = Set.empty,
+          breakpoint = false,
+          skipped = extractSkipped(config),
+          skipMark = false,
+          // TODO: Is it possible to reconstruct done executions from the ODB?
+          executions = Nil
+        )
       }
     }
 
-    for {
-      stepType  <- calcStepType(config)
-      inst      <- toInstrumentSys(stepType.instrument)
-      systems   <- calcSystems(stepType)
-      headers   <- calcHeaders(config, stepType)
-    } yield buildStep(inst, systems, headers, calcResources(systems))
+    val step: TrySeq[Step] = {
+      for {
+        stepType <- calcStepType(config)
+        inst <- toInstrumentSys(stepType.instrument)
+        systems <- calcSystems(stepType)
+        headers <- calcHeaders(config, stepType)
+      } yield buildStep(inst, systems, headers, calcResources(systems))
+    }
+  }
+
+  private object StepBuilder {
+    def apply(obsId: SPObservationID, i: Int, config: Config, last: Boolean, datasets: Map[Int, ExecutedDataset]): StepBuilder =
+      new StepBuilder(obsId, i, config, last, datasets)
   }
 
   // Required for untyped objects from java
@@ -193,7 +200,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val configs = sequence.config.getAllSteps.toList
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, i === (configs.length - 1), sequence.datasets)
+      case (c, i) => StepBuilder(obsId, i, c, i === (configs.length - 1), sequence.datasets).step
     }.separate
 
     val instName = configs.headOption.map(extractInstrumentName).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)

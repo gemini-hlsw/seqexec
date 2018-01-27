@@ -70,6 +70,16 @@ object SeqexecWebClient {
   }
 
   /**
+    * Requests the backend to set a breakpoint
+    */
+  def skip(sid: SequenceId, step: Step): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/$sid/${step.id}/skip/${step.skip}",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
+
+  /**
     * Requests the backend to stop immediately this sequence
     */
   def stop(sid: SequenceId, step: Int): Future[RegularCommand] = {

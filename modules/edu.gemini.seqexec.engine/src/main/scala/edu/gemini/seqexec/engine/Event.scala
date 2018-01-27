@@ -25,6 +25,7 @@ object Event {
   def load(id: Sequence.Id, sequence: Sequence): Event = EventUser(Load(id, sequence))
   def unload(id: Sequence.Id): Event = EventUser(Unload(id))
   def breakpoint(id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event = EventUser(Breakpoint(id, user.some, step, v))
+  def skip(id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event = EventUser(SkipMark(id, user.some, step, v))
   def setOperator(name: Operator, user: UserDetails): Event = EventUser(SetOperator(name, user.some))
   def setObserver(id: Sequence.Id, user: UserDetails, name: Observer): Event = EventUser(SetObserver(id, user.some, name))
   def setConditions(conditions: Conditions, user: UserDetails): Event = EventUser(SetConditions(conditions, user.some))
