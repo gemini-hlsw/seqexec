@@ -20,7 +20,7 @@ object Importer extends DoobieClient {
 
   object datasets {
     def lookupStepIds(oid: Observation.Id): ConnectionIO[List[Int]] =
-      sql"SELECT step_id FROM step WHERE observation_id = $oid ORDER BY location".query[Int].list
+      sql"SELECT step_id FROM step WHERE program_id = ${oid.pid} AND observation_index = ${oid.index} ORDER BY location".query[Int].list
 
     def tuples(sids: List[Int], ds: List[Dataset]): List[(Int, Dataset)] = {
       val sidMap = sids.zipWithIndex.map(_.swap).toMap
@@ -37,7 +37,7 @@ object Importer extends DoobieClient {
   def writeObservation(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
-      sql"DELETE FROM observation WHERE observation_id = ${oid}".update.run.void
+      sql"DELETE FROM observation WHERE program_id = ${oid.pid} AND observation_index = ${oid.index}".update.run.void
 
     (u: User[_], l: Log[ConnectionIO]) =>
       for {

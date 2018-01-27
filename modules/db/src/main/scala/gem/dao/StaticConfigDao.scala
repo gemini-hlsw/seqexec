@@ -12,34 +12,30 @@ import gem.config._
 
 object StaticConfigDao {
   import EnumeratedMeta._
+  import ProgramIdMeta._
+  import ObservationIndexMeta._
   import OffsetMeta._
 
-  def insert(s: StaticConfig): ConnectionIO[Int] =
-    for {
-      id <- Statements.insertBaseSlice(s.instrument).withUniqueGeneratedKeys[Int]("static_id")
-      _  <- insertConfigSlice(id, s)
-    } yield id
-
-  private def insertConfigSlice(id: Int, s: StaticConfig): ConnectionIO[Unit] =
+  def insert(oid: Observation.Id, s: StaticConfig): ConnectionIO[Unit] =
     s match {
-      case _:  StaticConfig.AcqCam    => ().pure[ConnectionIO]
-      case _:  StaticConfig.Bhros     => ().pure[ConnectionIO]
-      case f2: StaticConfig.F2        => Statements.F2.insert(id, f2).run.void
-      case g:  StaticConfig.GmosNorth => Gmos.insertNorth(id, g)
-      case g:  StaticConfig.GmosSouth => Gmos.insertSouth(id, g)
-      case _:  StaticConfig.Gnirs     => ().pure[ConnectionIO]
-      case _:  StaticConfig.Gpi       => ().pure[ConnectionIO]
-      case _:  StaticConfig.Gsaoi     => ().pure[ConnectionIO]
-      case _:  StaticConfig.Michelle  => ().pure[ConnectionIO]
-      case _:  StaticConfig.Nici      => ().pure[ConnectionIO]
-      case _:  StaticConfig.Nifs      => ().pure[ConnectionIO]
-      case _:  StaticConfig.Niri      => ().pure[ConnectionIO]
-      case _:  StaticConfig.Phoenix   => ().pure[ConnectionIO]
-      case _:  StaticConfig.Trecs     => ().pure[ConnectionIO]
-      case _:  StaticConfig.Visitor   => ().pure[ConnectionIO]
+      case _: StaticConfig.AcqCam    => ().pure[ConnectionIO]
+      case _: StaticConfig.Bhros     => ().pure[ConnectionIO]
+      case f: StaticConfig.F2        => Statements.F2.insert(oid, f).run.void
+      case g: StaticConfig.GmosNorth => Gmos.insertNorth(oid, g)
+      case g: StaticConfig.GmosSouth => Gmos.insertSouth(oid, g)
+      case _: StaticConfig.Gnirs     => ().pure[ConnectionIO]
+      case _: StaticConfig.Gpi       => ().pure[ConnectionIO]
+      case _: StaticConfig.Gsaoi     => ().pure[ConnectionIO]
+      case _: StaticConfig.Michelle  => ().pure[ConnectionIO]
+      case _: StaticConfig.Nici      => ().pure[ConnectionIO]
+      case _: StaticConfig.Nifs      => ().pure[ConnectionIO]
+      case _: StaticConfig.Niri      => ().pure[ConnectionIO]
+      case _: StaticConfig.Phoenix   => ().pure[ConnectionIO]
+      case _: StaticConfig.Trecs     => ().pure[ConnectionIO]
+      case _: StaticConfig.Visitor   => ().pure[ConnectionIO]
     }
 
-  def select(i: Instrument, sid: Int): ConnectionIO[StaticConfig] = {
+  def select(oid: Observation.Id, i: Instrument): ConnectionIO[StaticConfig] = {
     def pure(sc: StaticConfig): ConnectionIO[StaticConfig] =
       sc.pure[ConnectionIO]
 
@@ -47,9 +43,9 @@ object StaticConfigDao {
       case Instrument.AcqCam     => pure(StaticConfig.AcqCam())
       case Instrument.Bhros      => pure(StaticConfig.Bhros())
 
-      case Instrument.Flamingos2 => Statements.F2.select(sid).unique.widen[StaticConfig]
-      case Instrument.GmosN      => Gmos.selectNorth(sid)           .widen[StaticConfig]
-      case Instrument.GmosS      => Gmos.selectSouth(sid)           .widen[StaticConfig]
+      case Instrument.Flamingos2 => Statements.F2.select(oid).unique.widen[StaticConfig]
+      case Instrument.GmosN      => Gmos.selectNorth(oid)           .widen[StaticConfig]
+      case Instrument.GmosS      => Gmos.selectSouth(oid)           .widen[StaticConfig]
 
       case Instrument.Gnirs      => pure(StaticConfig.Gnirs())
       case Instrument.Gpi        => pure(StaticConfig.Gpi())
@@ -73,63 +69,60 @@ object StaticConfigDao {
     import gem.enum.Instrument.{ GmosN, GmosS }
     import StaticConfig.{ GmosNorth, GmosSouth }
 
-    def insertNorth(sid: Int, gn: GmosNorth): ConnectionIO[Unit] =
-        insertNodAndShuffle(sid, GmosN, gn.common.nodAndShuffle)   *>
-          insertCustomRoiEntries(sid, GmosN, gn.common.customRois) *>
-          Statements.Gmos.insertNorth(sid, gn).run.void
+    def insertNorth(oid: Observation.Id, gn: GmosNorth): ConnectionIO[Unit] =
+        insertNodAndShuffle(oid, GmosN, gn.common.nodAndShuffle)   *>
+          insertCustomRoiEntries(oid, GmosN, gn.common.customRois) *>
+          Statements.Gmos.insertNorth(oid, gn).run.void
 
-    def insertSouth(sid: Int, gs: GmosSouth): ConnectionIO[Unit] =
-        insertNodAndShuffle(sid, GmosS, gs.common.nodAndShuffle)   *>
-          insertCustomRoiEntries(sid, GmosS, gs.common.customRois) *>
-          Statements.Gmos.insertSouth(sid, gs).run.void
+    def insertSouth(oid: Observation.Id, gs: GmosSouth): ConnectionIO[Unit] =
+        insertNodAndShuffle(oid, GmosS, gs.common.nodAndShuffle)   *>
+          insertCustomRoiEntries(oid, GmosS, gs.common.customRois) *>
+          Statements.Gmos.insertSouth(oid, gs).run.void
 
-    def insertCustomRoiEntries(sid: Int, i: Instrument, rois: Set[GmosCustomRoiEntry]): ConnectionIO[Unit] =
-      rois.toList.traverse(Statements.Gmos.insertCustomRoiEntry(sid, i, _).run).void
+    def insertCustomRoiEntries(oid: Observation.Id, i: Instrument, rois: Set[GmosCustomRoiEntry]): ConnectionIO[Unit] =
+      rois.toList.traverse(Statements.Gmos.insertCustomRoiEntry(oid, i, _).run).void
 
-    def insertNodAndShuffle(sid: Int, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
-      ns.fold(().pure[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(sid, i, ns).run.void)
+    def insertNodAndShuffle(oid: Observation.Id, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
+      ns.fold(().pure[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(oid, i, ns).run.void)
 
-    def selectNorth(sid: Int): ConnectionIO[GmosNorth] =
+    def selectNorth(oid: Observation.Id): ConnectionIO[GmosNorth] =
       for {
-        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosN).list.map(_.toSet)
-        ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosN).option
-        gn <- Statements.Gmos.selectNorth(sid).unique
+        ro <- Statements.Gmos.selectCustomRoiEntry(oid, GmosN).list.map(_.toSet)
+        ns <- Statements.Gmos.selectNodAndShuffle(oid, GmosN).option
+        gn <- Statements.Gmos.selectNorth(oid).unique
         gnʹ = GmosNorth.customRois.set(ro)(gn)
       } yield GmosNorth.nodAndShuffle.set(ns)(gnʹ)
 
-    def selectSouth(sid: Int): ConnectionIO[GmosSouth] =
+    def selectSouth(oid: Observation.Id): ConnectionIO[GmosSouth] =
       for {
-        ro <- Statements.Gmos.selectCustomRoiEntry(sid, GmosS).list.map(_.toSet)
-        ns <- Statements.Gmos.selectNodAndShuffle(sid, GmosS).option
-        gs <- Statements.Gmos.selectSouth(sid).unique
+        ro <- Statements.Gmos.selectCustomRoiEntry(oid, GmosS).list.map(_.toSet)
+        ns <- Statements.Gmos.selectNodAndShuffle(oid, GmosS).option
+        gs <- Statements.Gmos.selectSouth(oid).unique
         gsʹ = GmosSouth.customRois.set(ro)(gs)
       } yield GmosSouth.nodAndShuffle.set(ns)(gsʹ)
   }
 
   object Statements {
-    def insertBaseSlice(i: Instrument): Update0 =
-      sql"""
-        INSERT INTO static_config (instrument)
-        VALUES ($i)
-      """.update
 
     /** F2 Statements. */
     object F2 {
 
       import Instrument.Flamingos2
 
-      def select(sid: Int): Query0[StaticConfig.F2] =
+      def select(oid: Observation.Id): Query0[StaticConfig.F2] =
         sql"""
           SELECT mos_preimaging
             FROM static_f2
-           WHERE static_id = $sid AND instrument = ${Flamingos2: Instrument}
+           WHERE program_id        = ${oid.pid}
+             AND observation_index = ${oid.index}
         """.query[StaticConfig.F2]
 
-      def insert(id: Int, f2: StaticConfig.F2): Update0 =
+      def insert(oid: Observation.Id, f2: StaticConfig.F2): Update0 =
         sql"""
-          INSERT INTO static_f2 (static_id, instrument, mos_preimaging)
+          INSERT INTO static_f2 (program_id, observation_index, instrument, mos_preimaging)
           VALUES (
-            $id,
+            ${oid.pid},
+            ${oid.index},
             ${Flamingos2: Instrument},
             ${f2.mosPreImaging})
         """.update
@@ -162,17 +155,19 @@ object StaticConfigDao {
           (r: GmosCustomRoiEntry)           => (r.xMin, r.yMin, r.xRange, r.yRange)
         )
 
-      def selectCustomRoiEntry(sid: Int, i: Instrument): Query0[GmosCustomRoiEntry] =
+      def selectCustomRoiEntry(oid: Observation.Id, i: Instrument): Query0[GmosCustomRoiEntry] =
         sql"""
           SELECT x_min,
                  y_min,
                  x_range,
                  y_range
             FROM gmos_custom_roi
-           WHERE static_id = $sid AND instrument = $i
+           WHERE program_id        = ${oid.pid}   AND
+                 observation_index = ${oid.index} AND
+                 instrument        = $i
          """.query[GmosCustomRoiEntry]
 
-      def selectNodAndShuffle(sid: Int, i: Instrument): Query0[GmosNodAndShuffle] =
+      def selectNodAndShuffle(oid: Observation.Id, i: Instrument): Query0[GmosNodAndShuffle] =
         sql"""
           SELECT a_offset_p,
                  a_offset_q,
@@ -182,38 +177,44 @@ object StaticConfigDao {
                  offset_rows,
                  cycles
             FROM gmos_nod_and_shuffle
-           WHERE static_id = $sid AND instrument = $i
+           WHERE program_id        = ${oid.pid}
+             AND observation_index = ${oid.index}
+             AND instrument        = $i
         """.query[GmosNodAndShuffle]
 
-      def selectNorth(sid: Int): Query0[GmosNorth] =
+      def selectNorth(oid: Observation.Id): Query0[GmosNorth] =
         sql"""
           SELECT detector,
                  mos_preimaging,
                  stage_mode
             FROM static_gmos_north
-           WHERE static_id = $sid AND instrument = ${GmosN: Instrument}
+           WHERE program_id        = ${oid.pid}
+             AND observation_index = ${oid.index}
         """.query[GmosNorth]
 
-      def selectSouth(sid: Int): Query0[GmosSouth] =
+      def selectSouth(oid: Observation.Id): Query0[GmosSouth] =
         sql"""
           SELECT detector,
                  mos_preimaging,
                  stage_mode
             FROM static_gmos_south
-           WHERE static_id = $sid AND instrument = ${GmosS: Instrument}
+           WHERE program_id        = ${oid.pid}
+             AND observation_index = ${oid.index}
         """.query[GmosSouth]
 
-      def insertCustomRoiEntry(id: Int, inst: Instrument, roi: GmosCustomRoiEntry): Update0 =
+      def insertCustomRoiEntry(oid: Observation.Id, inst: Instrument, roi: GmosCustomRoiEntry): Update0 =
         sql"""
           INSERT INTO gmos_custom_roi (
-                        static_id,
+                        program_id,
+                        observation_index,
                         instrument,
                         x_min,
                         y_min,
                         x_range,
                         y_range)
                VALUES (
-                      $id,
+                      ${oid.pid},
+                      ${oid.index},
                       $inst,
                       ${roi.xMin},
                       ${roi.yMin},
@@ -221,10 +222,11 @@ object StaticConfigDao {
                       ${roi.yRange})
         """.update
 
-      def insertNodAndShuffle(id: Int, inst: Instrument, ns: GmosNodAndShuffle): Update0 =
+      def insertNodAndShuffle(oid: Observation.Id, inst: Instrument, ns: GmosNodAndShuffle): Update0 =
         sql"""
           INSERT INTO gmos_nod_and_shuffle (
-                static_id,
+                program_id,
+                observation_index,
                 instrument,
                 a_offset_p,
                 a_offset_q,
@@ -234,7 +236,8 @@ object StaticConfigDao {
                 offset_rows,
                 cycles)
          VALUES (
-              $id,
+              ${oid.pid},
+              ${oid.index},
               $inst,
               ${ns.posA.p},
               ${ns.posA.q},
@@ -245,22 +248,24 @@ object StaticConfigDao {
               ${ns.cycles})
         """.update
 
-      def insertNorth(id: Int, g: GmosNorth): Update0 =
+      def insertNorth(oid: Observation.Id, g: GmosNorth): Update0 =
         sql"""
-          INSERT INTO static_gmos_north (static_id, instrument, detector, mos_preimaging, stage_mode)
+          INSERT INTO static_gmos_north (program_id, observation_index, instrument, detector, mos_preimaging, stage_mode)
           VALUES (
-            $id,
+            ${oid.pid},
+            ${oid.index},
             ${GmosN: Instrument},
             ${g.common.detector},
             ${g.common.mosPreImaging},
             ${g.stageMode})
         """.update
 
-      def insertSouth(id: Int, g: GmosSouth): Update0 =
+      def insertSouth(oid: Observation.Id, g: GmosSouth): Update0 =
         sql"""
-          INSERT INTO static_gmos_south (static_id, instrument, detector, mos_preimaging, stage_mode)
+          INSERT INTO static_gmos_south (program_id, observation_index, instrument, detector, mos_preimaging, stage_mode)
           VALUES (
-            $id,
+            ${oid.pid},
+            ${oid.index},
             ${GmosS: Instrument},
             ${g.common.detector},
             ${g.common.mosPreImaging},
