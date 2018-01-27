@@ -10,7 +10,7 @@ import doobie.postgres.implicits._
 import java.util.logging.{ Level, Logger }
 
 /** Shared support for import applications using Doobie. */
-trait DoobieClient extends ProgramIdMeta with ObservationIdMeta {
+trait DoobieClient extends ProgramIdMeta with ObservationIndexMeta {
 
   val Url  = "jdbc:postgresql:gem"
   val User = "postgres"
