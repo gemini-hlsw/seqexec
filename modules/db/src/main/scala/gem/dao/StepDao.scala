@@ -18,7 +18,8 @@ import scala.collection.immutable.TreeMap
 object StepDao {
   import EnumeratedMeta._
   import LocationMeta._
-  import ObservationIdMeta._
+  import ProgramIdMeta._
+  import ObservationIndexMeta._
   import OffsetMeta._
   import TimeMeta._
   import WavelengthMeta._
@@ -221,14 +222,16 @@ object StepDao {
     def deleteAtLocation(oid: Observation.Id, loc: Loc): Update0 =
       sql"""
         DELETE FROM step
-              WHERE observation_id = $oid
-                AND location       = $loc
+              WHERE program_id        = ${oid.pid}
+                AND observation_index = ${oid.index}
+                AND location          = $loc
       """.update
 
     def delete(oid: Observation.Id): Update0 =
       sql"""
         DELETE FROM step
-              WHERE observation_id = $oid
+              WHERE program_id        = ${oid.pid}
+                AND observation_index = ${oid.index}
       """.update
 
     def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
@@ -256,7 +259,8 @@ object StepDao {
                   ON sc.step_science_id    = s.step_id
                LEFT OUTER JOIN step_smart_gcal ss
                   ON ss.step_smart_gcal_id = s.step_id
-         WHERE s.observation_id = $oid
+         WHERE s.program_id        = ${oid.pid}
+           AND s.observation_index = ${oid.index}
       """.query[(Loc, StepKernel)].map(_.map(_.toStep))
 
     def selectOneEmpty(oid: Observation.Id, loc: Loc): Query0[Step[Instrument]] =
@@ -283,7 +287,9 @@ object StepDao {
                   ON sc.step_science_id    = s.step_id
                LEFT OUTER JOIN step_smart_gcal ss
                   ON ss.step_smart_gcal_id = s.step_id
-         WHERE s.observation_id = $oid AND s.location = $loc
+         WHERE s.program_id        = ${oid.pid}
+           AND s.observation_index = ${oid.index}
+           AND s.location          = $loc
       """.query[StepKernel].map(_.toStep)
 
     def insertScienceSlice(id: Int, t: TelescopeConfig): Update0 =
@@ -312,8 +318,8 @@ object StepDao {
 
     def insertBaseSlice(oid: Observation.Id, loc: Loc, i: DynamicConfig, t: StepType): Update0 =
       sql"""
-        INSERT INTO step (observation_id, location, instrument, step_type)
-        VALUES ($oid, $loc, ${i.instrument: Instrument}, ${t} :: step_type)
+        INSERT INTO step (program_id, observation_index, location, instrument, step_type)
+        VALUES (${oid.pid}, ${oid.index}, $loc, ${i.instrument: Instrument}, ${t} :: step_type)
       """.update
 
     object F2 {
@@ -352,7 +358,8 @@ object StepDao {
             FROM step s
                  LEFT OUTER JOIN step_f2 i
                    ON i.step_f2_id = s.step_id
-           WHERE s.observation_id = $oid
+           WHERE s.program_id        = ${oid.pid}
+             AND s.observation_index = ${oid.index}
         """.query[(Loc, F2Builder)].map(_.map(_.toF2))
 
       def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.F2] =
@@ -368,7 +375,9 @@ object StepDao {
             FROM step s
                  LEFT OUTER JOIN step_f2 i
                    ON i.step_f2_id = s.step_id
-           WHERE s.observation_id = $oid AND s.location = $loc
+           WHERE s.program_id        = ${oid.pid}
+             AND s.observation_index = ${oid.index}
+             AND s.location          = $loc
         """.query[F2Builder].map(_.toF2)
 
       def insert(id: Int, f2: DynamicConfig.F2): Update0 =
@@ -456,7 +465,7 @@ object StepDao {
                      LEFT OUTER JOIN $table i
                        ON i.step_id = s.step_id
             """) ++
-          fr"""WHERE s.observation_id = $oid"""
+          fr"""WHERE s.program_id = ${oid.pid} AND s.observation_index = ${oid.index}"""
 
       def selectAllNorth(oid: Observation.Id): Query0[(Loc, GmosNorth)] =
         selectFragment(withLocation = true, "step_gmos_north", oid)
