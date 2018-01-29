@@ -6,8 +6,6 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState}
-import japgolly.scalajs.react.vdom.TagOf
-import org.scalajs.dom.html.Div
 // import edu.gemini.seqexec.web.client.ModelOps._
 // import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
@@ -204,21 +202,10 @@ object StepsTable {
   private lazy val ref = JsComponent.mutableRefTo(Table.component)
   private lazy val tableRef = ref.value.raw
 
-  private def recalculateHeightsCB(row: Int): Callback =
-    tableRef.recomputeRowHeightsCB(row)
+  private def recomputeHeightsCB(row: Int): Callback =
+    Callback.log(s"Recompute $row") >> tableRef.recomputeRowHeightsCB(row)
 
-  def render(p: Props): TagOf[Div] =
-    <.div(
-      SeqexecStyles.stepsListPane.unless(p.status.isLogged),
-      SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
-      p.steps.whenDefined { tab =>
-        tab.stepConfigDisplayed.map { i =>
-          <.div("CONFIG")
-        }.getOrElse {
-          AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, recalculateHeightsCB).map(_.vdomElement): _*)))
-        }
-      }
-    )
+  def recomputeRowsHeightsCB(indexes: Int*): Callback = Callback.log(s"Recompute ${indexes.mkString(",")}") >> Callback.sequence(indexes.map(tableRef.recomputeRowHeightsCB))
 
   private val component = ScalaComponent.builder[Props]("Steps")
     .stateless
@@ -230,12 +217,19 @@ object StepsTable {
           tab.stepConfigDisplayed.map { i =>
             <.div("CONFIG")
           }.getOrElse {
-            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, recalculateHeightsCB).map(_.vdomElement): _*)))
+            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, recomputeHeightsCB).map(_.vdomElement): _*)))
           }
         }
       )
     )
-    .build
+    .componentWillReceiveProps { f =>
+      val stepsPairs = f.nextProps.stepsList.zip(f.currentProps.stepsList)
+      val differentStepsStates = stepsPairs.collect {
+        case (cur, prev) if cur.status =/= prev.status => Callback.log(cur.id) >> recomputeRowsHeightsCB(cur.id)
+      }
+
+      Callback.sequence(differentStepsStates)
+    }.build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
