@@ -160,7 +160,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       headers   <- calcHeaders(config, stepType)
     } yield buildStep(inst, systems, headers, calcResources(systems))
   }
-  
+
   // Required for untyped objects from java
   implicit val objectShow: Show[AnyRef] = Show.showA
 

@@ -46,7 +46,7 @@ object Sequence {
     done: List[Step]
   ) {
 
-    private val (toSkip, remaining): (List[Step], List[Step]) = pending.span(_.skipMark.self)
+    private val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
 
     /**
       * Runs the next execution. If the current `Step` is completed it adds the
