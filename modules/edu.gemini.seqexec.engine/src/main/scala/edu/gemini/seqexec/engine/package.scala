@@ -156,7 +156,7 @@ package object engine {
           // No resources being used by other running sequences
           if (seq.status.isIdle || seq.status.isError)
             if(seq.toSequence.resources.intersect(other).isEmpty)
-              putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.rollback)) *> send(Event.executing(id))
+              putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *> send(Event.executing(id))
           // Some resources are being used
             else send(busy(id))
           else unit
@@ -210,9 +210,7 @@ package object engine {
         st.sequences.get(id).map( t =>
           if (Sequence.State.isRunning(t)) st.sequences
           else st.sequences.updated(id, Sequence.State.init(seq))
-        ).getOrElse(
-          st.sequences.updated(id, Sequence.State.init(seq))
-        )
+        ).getOrElse(st.sequences.updated(id, Sequence.State.init(seq)))
       )
     )
 
@@ -377,7 +375,8 @@ package object engine {
       case CancelPause(id, _)          => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
       case Load(id, seq)               => Logger.debug("Engine: Sequence loaded") *> load(id, seq)
       case Unload(id)                  => Logger.debug("Engine: Sequence unloaded") *> unload(id)
-      case Breakpoint(id, _, step, v)  => Logger.debug("Engine: breakpoint changed") *> modifyS(id)(_.setBreakpoint(step, v))
+      case Breakpoint(id, _, step, v)  => Logger.debug(s"Engine: breakpoint changed for step $step to $v") *> modifyS(id)(_.setBreakpoint(step, v))
+      case SkipMark(id, _, step, v)    => Logger.debug(s"Engine: skip mark changed for step $step to $v") *> modifyS(id)(_.setSkipMark(step, v))
       case SetOperator(name, user)     => Logger.debug(s"Engine: Setting Operator name to '$name' by ${ue.username}") *> setOperator(name)
       case SetObserver(id, user, name) => Logger.debug(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
       case SetConditions(conds, user)  => Logger.debug("Engine: Setting conditions") *> setConditions(conds)

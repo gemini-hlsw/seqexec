@@ -176,11 +176,12 @@ object handlers {
     }
 
     def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
-      case FlipSkipStep(sequence, step) =>
+      case FlipSkipStep(sequenceId, step) =>
+        val skipRequest = Effect(SeqexecWebClient.skip(sequenceId, step.flipSkip).map(_ => NoAction))
         updated(value.copy(queue = value.queue.collect {
-          case s if s.id === sequence => s.flipStep(step)
+          case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
           case s                      => s
-        }))
+        }), skipRequest)
 
       case FlipBreakpointStep(sequenceId, step) =>
         val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequenceId, step.flipBreakpoint).map(_ => NoAction))

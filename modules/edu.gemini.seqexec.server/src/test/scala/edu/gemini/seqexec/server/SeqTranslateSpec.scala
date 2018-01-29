@@ -35,13 +35,11 @@ class SeqTranslateSpec extends FlatSpec {
     seqId,
     SequenceMetadata(GmosS, None, ""),
     List(
-      Step(
+      Step.init(
         1,
         None,
         config,
         Set(GmosS),
-        breakpoint = false,
-        skip = false,
         List(observeActions(Action.Idle))
       )
     )

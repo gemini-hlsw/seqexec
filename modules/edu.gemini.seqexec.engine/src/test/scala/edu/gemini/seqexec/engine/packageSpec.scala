@@ -6,8 +6,7 @@ package edu.gemini.seqexec.engine
 import java.util.concurrent.Semaphore
 
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
-import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
-import edu.gemini.seqexec.model.Model.{Observer, Operator, Resource}
+import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator, Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.Model.Resource.TCS
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
@@ -15,9 +14,11 @@ import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import scala.concurrent.duration._
 import scalaz._
 import Scalaz._
+//import scalaz.syntax.equal._
 import scalaz.Nondeterminism
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
+import org.scalatest.Inside.inside
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
@@ -54,6 +55,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     _ <- Task(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
+  val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
   val config: StepConfig = Map()
   val seqId: String = "TEST-01"
   val qs1: Engine.State =
@@ -67,29 +69,22 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
              "First",
              SequenceMetadata(F2, None, ""),
              List(
-               Step(
+               Step.init(
                  1,
                  None,
                  config,
                  Set(Resource.TCS, F2),
-                 breakpoint = false,
-                 skip = false,
                  List(
                    List(configureTcs, configureInst), // Execution
                    List(observe) // Execution
                  )
                ),
-               Step(
+               Step.init(
                  2,
                  None,
                  config,
                  Set(Resource.TCS, Resource.OI, F2),
-                 breakpoint = false,
-                 skip = false,
-                 List(
-                   List(configureTcs, configureInst), // Execution
-                   List(observe) // Execution
-                 )
+                 executions
                )
              )
            )
@@ -104,17 +99,12 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step(
+          Step.init(
             1,
             None,
             config,
             Set(GmosS),
-            breakpoint = false,
-            skip = false,
-            List(
-              List(configureTcs, configureInst), // Execution
-              List(observe) // Execution
-            )
+            executions
           )
         )
       )
@@ -163,13 +153,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step(
+          Step.init(
             1,
             None,
             config,
             Set(GmosS),
-            breakpoint = false,
-            skip = false,
             List(
               List(fromTask(ActionType.Undefined,
               Task(Result.Paused(new Result.PauseContext {} ))))
@@ -230,13 +218,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step(
+          Step.init(
             1,
             None,
             config,
             Set(GmosS),
-            breakpoint = false,
-            skip = false,
             List(
               List(fromTask(ActionType.Configure(TCS),
               Task.apply{
@@ -269,13 +255,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step(
+          Step.init(
             1,
             None,
             config,
             Set(GmosS),
-            breakpoint = false,
-            skip = false,
             List(
               List(fromTask(ActionType.Undefined,
               Task.apply{
@@ -303,13 +287,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step(
+          Step.init(
             1,
             None,
             config,
             Set(GmosS),
-            breakpoint = false,
-            skip = false,
             List(
               List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS)))), Action.State(Action.Idle, Nil)))
             )
@@ -330,6 +312,111 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         as <- st.executions.headOption
         ac <- as.headOption
       } yield ac.state.runState
+    }
+  }
+
+  it should "skip steps marked to be skipped at the beginning of the sequence." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(2, None, config, Set(GmosS), executions),
+          Step.init(3, None, config, Set(GmosS), executions)
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Skipped, StepState.Completed, StepState.Completed))
+    }
+  }
+
+  it should "skip steps marked to be skipped in the middle of the sequence." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(3, None, config, Set(GmosS), executions)
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped, StepState.Completed))
+    }
+  }
+
+  it should "skip several steps marked to be skipped." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(3, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(4, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(5, None, config, Set(GmosS), executions)
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped, StepState.Skipped, StepState.Skipped, StepState.Completed))
+    }
+  }
+
+  it should "skip steps marked to be skipped at the end of the sequence." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions),
+          Step.init(3, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true))
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Completed, StepState.Skipped))
+    }
+  }
+
+  it should "skip a step marked to be skipped even if it is the only one." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true))
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Skipped))
     }
   }
 

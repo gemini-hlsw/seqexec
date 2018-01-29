@@ -129,28 +129,27 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.State(Action.Idle, Nil))))
 
       extractStatus(config) match {
-        case StepState.Pending => Step(
-            id = i,
-            fileId = None,
-            config = config.toStepConfig,
-            resources = resources,
-            breakpoint = false,
-            skip = false,
-            executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
-          )
+        case StepState.Pending => Step.init(
+          id = i,
+          fileId = None,
+          config = config.toStepConfig,
+          resources = resources,
+          executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
+        )
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
-        case _                 => Step(
-            id = i,
-            fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-            config = config.toStepConfig,
-            // No resources when done
-            resources = Set.empty,
-            breakpoint = false,
-            skip = extractSkipped(config),
-            // TODO: Is it possible to reconstruct done executions from the ODB?
-            executions = Nil
-            )
+        case _ => Step(
+          id = i,
+          fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
+          config = config.toStepConfig,
+          // No resources when done
+          resources = Set.empty,
+          breakpoint = Step.BreakpointMark(false),
+          skipped = Step.Skipped(extractSkipped(config)),
+          skipMark = Step.SkipMark(false),
+          // TODO: Is it possible to reconstruct done executions from the ODB?
+          executions = Nil
+        )
       }
     }
 

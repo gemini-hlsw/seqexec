@@ -209,8 +209,7 @@ object StepsTableContainer {
         case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
         case (_, StepState.Completed)                      => <.p(step.status.shows)
         case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
-        // TODO Remove the 2 conditions below when supported by the engine
-        case (_, s) if step.skip                           => <.p("Skipped")
+        case (_, StepState.Skipped)                        => <.p("Skipped")
         case (_, _)                                        => <.p(step.status.shows)
       }
 
@@ -277,7 +276,7 @@ object StepsTableContainer {
       }
 
     private def classSet(step: Step): List[(String, Boolean)] = List(
-      "disabled" -> (step.skip || step.status === StepState.Completed),
+      "disabled" -> (step.status === StepState.Completed),
       "warning"  -> (step.status === StepState.Running),
       "negative" -> (step.status === StepState.Paused),
       "negative" -> step.hasError,

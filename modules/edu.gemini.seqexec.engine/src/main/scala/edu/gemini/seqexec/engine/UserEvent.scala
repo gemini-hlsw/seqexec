@@ -32,6 +32,7 @@ final case class Unload(id: Sequence.Id) extends UserEvent {
   val user: Option[UserDetails] = None
 }
 final case class Breakpoint(id: Sequence.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent
+final case class SkipMark(id: Sequence.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent
 final case class SetOperator(name: Operator, user: Option[UserDetails]) extends UserEvent
 final case class SetObserver(id: Sequence.Id, user: Option[UserDetails], name: Observer) extends UserEvent
 final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends UserEvent

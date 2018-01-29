@@ -18,12 +18,13 @@ import monocle.macros.GenLens
   * A list of `Executions` grouped by observation.
   */
 final case class Step(
-  id: Int,
+  id: Step.Id,
   fileId: Option[FileId],
   config: StepConfig,
   resources: Set[Resource],
-  breakpoint: Boolean,
-  skip: Boolean,
+  breakpoint: Step.BreakpointMark,
+  skipped: Step.Skipped,
+  skipMark: Step.SkipMark,
   executions: List[List[Action]]
 )
 
@@ -31,23 +32,35 @@ object Step {
 
   type Id = Int
 
+  final case class BreakpointMark(self: Boolean) extends AnyVal
+  final case class SkipMark(self: Boolean) extends AnyVal
+  final case class Skipped(self: Boolean) extends AnyVal
+
+  def init(id: Id,
+           fileId: Option[FileId],
+           config: StepConfig,
+           resources: Set[Resource],
+           executions: List[List[Action]]): Step = Step(id, fileId, config, resources, BreakpointMark(false), Skipped(false), SkipMark(false), executions)
+
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     */
   def status(step: Step): StepState = {
 
-    // Find an error in the Step
-    step.executions.flatten.find(Action.errored).flatMap { x => x.state.runState match {
-      case Action.Failed(Result.Error(msg)) => msg.some
-      case _                                => None
-      // Return error or continue with the rest of the checks
-    }}.map(StepState.Failed).getOrElse(
-      // All actions in this Step were completed successfully, or the Step is empty.
-      if (step.executions.flatten.all(Action.completed)) StepState.Completed
-      else if (step.executions.flatten.all(_.state.runState === Action.Idle)) StepState.Pending
-      // Not all actions are completed or pending.
-      else StepState.Running
-    )
+    if(step.skipped.self) StepState.Skipped
+    else
+      // Find an error in the Step
+      step.executions.flatten.find(Action.errored).flatMap { x => x.state.runState match {
+        case Action.Failed(Result.Error(msg)) => msg.some
+        case _                                => None
+        // Return error or continue with the rest of the checks
+      }}.map(StepState.Failed).getOrElse(
+        // All actions in this Step were completed successfully, or the Step is empty.
+        if (step.executions.flatten.all(Action.completed)) StepState.Completed
+        else if (step.executions.flatten.all(_.state.runState === Action.Idle)) StepState.Pending
+        // Not all actions are completed or pending.
+        else StepState.Running
+      )
 
   }
 
@@ -60,8 +73,8 @@ object Step {
     fileId: Option[FileId],
     config: StepConfig,
     resources: Set[Resource],
-    breakpoint: Boolean,
-    skip: Boolean,
+    breakpoint: BreakpointMark,
+    skipMark: SkipMark,
     pending: List[Actions],
     focus: Execution,
     done: List[Actions],
@@ -94,7 +107,7 @@ object Step {
       */
     val uncurrentify: Option[Step] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, fileId, config, resources, breakpoint, skip, x :: done)
+        x => Step(id, fileId, config, resources, breakpoint, Skipped(false), skipMark, x :: done)
       )
       else None
 
@@ -109,9 +122,13 @@ object Step {
         config,
         resources,
         breakpoint,
-        skip,
+        Skipped(false),
+        skipMark,
         done ++ List(focus.execution) ++ pending
       )
+
+    val skip: Step = toStep.copy(skipped = Skipped(true))
+
   }
 
   object Zipper {
@@ -132,7 +149,7 @@ object Step {
               step.config,
               step.resources,
               step.breakpoint,
-              step.skip,
+              step.skipMark,
               exes,
               x,
               Nil,

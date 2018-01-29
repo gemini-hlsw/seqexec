@@ -111,7 +111,12 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.setCloudCover(cc, user)).map(_.right)
 
-  def setSkipMark: Task[SeqexecFailure \/ Unit] = ??? // scalastyle:ignore
+  def setSkipMark(q: EventQueue,
+                  seqId: SPObservationID,
+                  user: UserDetails,
+                  stepId: edu.gemini.seqexec.engine.Step.Id,
+                  v: Boolean): Task[SeqexecFailure \/ Unit] =
+  q.enqueueOne(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.right)
 
   def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
@@ -190,6 +195,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Load(id, _)            => SequenceLoaded(id, svs)
       case engine.Unload(id)             => SequenceUnloaded(id, svs)
       case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
+      case engine.SkipMark(_, _, _, _)   => StepSkipMarkChanged(svs)
       case engine.SetOperator(_, _)      => OperatorUpdated(svs)
       case engine.SetObserver(_, _, _)   => ObserverUpdated(svs)
       case engine.SetConditions(_, _)    => ConditionsUpdated(svs)
@@ -383,9 +389,8 @@ object SeqexecEngine {
       id = step.id,
       config = step.config,
       status = engine.Step.status(step),
-      breakpoint = step.breakpoint,
-      // TODO: Implement skipping at Engine level
-      skip = false,
+      breakpoint = step.breakpoint.self,
+      skip = step.skipMark.self,
       configStatus = configStatus,
       observeStatus = observeStatus(step.executions),
       fileId = step.fileId

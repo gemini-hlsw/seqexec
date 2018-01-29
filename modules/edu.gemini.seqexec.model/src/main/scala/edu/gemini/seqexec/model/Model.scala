@@ -232,6 +232,11 @@ object Model {
         case st               => st
       }
 
+      def flipSkip: Step = s match {
+        case st: StandardStep => st.copy(skip = !st.skip)
+        case st               => st
+      }
+
       def file: Option[String] = None
 
       def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean = s.status match {
@@ -240,7 +245,7 @@ object Model {
       }
 
       def canSetSkipmark: Boolean = s.status match {
-        case StepState.Pending | StepState.Skipped | StepState.Paused => true
+        case StepState.Pending | StepState.Paused => true
         case _ if hasError                                            => true
         case _                                                        => false
       }

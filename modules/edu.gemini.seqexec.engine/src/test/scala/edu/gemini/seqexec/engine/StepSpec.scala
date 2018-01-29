@@ -119,13 +119,11 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step(
+                 Step.init(
                    1,
                    None,
                    config,
                    Set.empty,
-                   breakpoint = false,
-                   skip = false,
                    List(
                      List(configureTcs, configureInst, triggerPause(q)), // Execution
                      List(observe) // Execution
@@ -146,7 +144,7 @@ class StepSpec extends FlatSpec {
      inside (qs1.map(_.sequences(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
         }
         status should be (SequenceState.Idle)
@@ -172,8 +170,8 @@ class StepSpec extends FlatSpec {
                  None,
                  config,
                  Set.empty,
-                 breakpoint = false,
-                 skip = false,
+                 breakpoint = Step.BreakpointMark(false),
+                 skipMark = Step.SkipMark(false),
                  Nil,
                  Execution(List(observe)),
                  List(List(actionCompleted, actionCompleted)),
@@ -191,7 +189,7 @@ class StepSpec extends FlatSpec {
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
         assert(status.isRunning)
@@ -216,8 +214,8 @@ class StepSpec extends FlatSpec {
                  None,
                  config,
                  Set.empty,
-                 breakpoint = false,
-                 skip = false,
+                 breakpoint = Step.BreakpointMark(false),
+                 skipMark = Step.SkipMark(false),
                  Nil,
                  Execution(List(observe)),
                  List(List(actionCompleted, actionCompleted)),
@@ -250,13 +248,11 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step(
+                 Step.init(
                    1,
                    None,
                    config,
                    Set.empty,
-                   breakpoint = false,
-                   skip = false,
                    List(
                      List(configureTcs, configureInst), // Execution
                      List(observe) // Execution
@@ -275,7 +271,7 @@ class StepSpec extends FlatSpec {
     inside (qss.headOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
         status should be (SequenceState.Idle)
@@ -296,13 +292,11 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step(
+                 Step.init(
                    1,
                    None,
                    config,
                    Set.empty,
-                   breakpoint = false,
-                   skip = false,
                    List(
                      List(configureTcs, configureInst), // Execution
                      List(triggerStart(q)), // Execution
@@ -349,13 +343,11 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step(
+                 Step.init(
                    1,
                    None,
                    config,
                    Set.empty,
-                   breakpoint = false,
-                   skip = false,
                    List(
                      List(configureTcs, configureInst), // Execution
                      List(error(errMsg)),
@@ -375,7 +367,7 @@ class StepSpec extends FlatSpec {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           // Check that the sequence stopped midway
-          case Step(_, _, _, _, _, _, ex1::ex2::ex3::Nil) =>
+          case Step(_, _, _, _, _, _, _, ex1::ex2::ex3::Nil) =>
             assert( Execution(ex1).results.length == 2 && Execution(ex2).results.length == 1 && Execution(ex3).actions.length == 1)
         }
         // And that it ended in error
@@ -400,13 +392,11 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step(
+                 Step.init(
                    1,
                    None,
                    config,
                    Set.empty,
-                   breakpoint = false,
-                   skip = false,
                    List(
                      List(
                        fromTask(ActionType.Undefined,
@@ -458,7 +448,7 @@ class StepSpec extends FlatSpec {
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, skip = false, pending, focus, done.map(_.map{r =>
+    Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
       val x = fromTask(ActionType.Observe, Task(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
@@ -495,12 +485,12 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step = Step(1, None, config, Set.empty, breakpoint = false, skip = false, List(Nil))
-  val step1: Step = Step(1, None, config, Set.empty, breakpoint = false, skip = false, List(List(action)))
-  val step2: Step = Step(2, None, config, Set.empty, breakpoint = false, skip = false, List(List(action, action), List(action)))
+  val step0: Step = Step.init(1, None, config, Set.empty, List(Nil))
+  val step1: Step = Step.init(1, None, config, Set.empty, List(List(action)))
+  val step2: Step = Step.init(2, None, config, Set.empty, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step(0, None, config, Set.empty, breakpoint = false, skip = false, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step.init(0, None, config, Set.empty, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
@@ -518,8 +508,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skip = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(action, actionFailed, actionCompleted)),
           Nil,
@@ -537,8 +527,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skip = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(actionCompleted, actionCompleted, actionCompleted)),
           Nil,
@@ -556,8 +546,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skip = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(actionCompleted, action, actionCompleted)),
           Nil,
@@ -575,14 +565,33 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skip = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(action, action, action)),
           Nil,
           (Execution(List(action, action, action)), Nil)
         ).toStep
       ) === StepState.Pending
+    )
+  }
+
+  "status" should "be Skipped if the Step was skipped" in {
+    assert(
+      Step.status(
+        Step.Zipper(
+          1,
+          None,
+          Map.empty,
+          Set.empty,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
+          Nil,
+          Execution(List(action, action, action)),
+          Nil,
+          (Execution(List(action, action, action)), Nil)
+        ).toStep.copy(skipped = Step.Skipped(true))
+      ) === StepState.Skipped
     )
   }
 
