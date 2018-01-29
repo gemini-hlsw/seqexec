@@ -259,7 +259,11 @@ object StepsTableContainer {
           )
         ),
         <.td(
-          if (step.breakpoint) SeqexecStyles.breakpointTrOn else SeqexecStyles.breakpointTrOff,
+          (step.breakpoint, step.skip) match {
+            case (true, true) => SeqexecStyles.breakpointTrOnSkipped
+            case (true, _)    => SeqexecStyles.breakpointTrOn
+            case _            => SeqexecStyles.breakpointTrOff
+          },
           SeqexecStyles.tdNoPadding,
           ^.colSpan := 11
         )

@@ -271,6 +271,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderBottom.none
   )
 
+  val breakpointTrOnSkipped: StyleA = style(
+    height(4.px),
+    backgroundColor(c"#767676"), // Match semantic UI grey
+    borderTop.none.important,
+    borderBottom.none
+  )
+
   val breakpointTrOff: StyleA = style(
     height(0.px),
     backgroundColor(lightgray),
@@ -315,6 +322,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderRight(1.px, solid, rgba(34,36,38,0.1)).important
   )
 
+  // used as a reference, don't delete
   val trBreakpoint: StyleA = style()
   // This defines the hover for the gutter
   //SeqexecStyles-trNoBorder:hover > td:first-child {
