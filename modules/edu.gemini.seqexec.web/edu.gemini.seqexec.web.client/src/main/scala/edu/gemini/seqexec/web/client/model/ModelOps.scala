@@ -83,7 +83,7 @@ object ModelOps {
         case x if x.forall(s => s.status === StepState.Pending && !s.skip) => Some(0) // No steps have been executed, start at 0
         case x if x.forall(_.status === StepState.Completed)               => None // All steps have been executed
         case x if x.exists(_.hasError)                                     => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =/= -1)
-        case x if x.exists(_.status === StepState.Paused)                  => Option(x.indexWhere((s: Step) => s.status === StepState.Paused)).filter(_ =/= -1)
+        case x if x.exists(s => s.status === StepState.Paused && !s.skip)  => Option(x.indexWhere((s: Step) => s.status === StepState.Paused)).filter(_ =/= -1)
         case x                                                             => Option(x.indexWhere((s: Step) => s.status =/= StepState.Completed && !s.skip)).filter(_ =/= -1)
       }
 
