@@ -269,7 +269,7 @@ object StepsTableContainer {
       step.status match {
         case StepState.Completed                  => IconCheckmark
         case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
-        case StepState.Failed(_)                   => IconAttention
+        case StepState.Failed(_)                  => IconAttention
         case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
         case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
         case _                                    => iconEmpty
