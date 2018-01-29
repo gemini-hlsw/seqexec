@@ -16,11 +16,11 @@ final case class Section[A, B](get: A => B, reverseGet: B => A) {
 
   /** Compose with another Section. */
   def composeSection[C](f: Section[B, C]): Section[A, C] =
-    Section(a => f.get(get(a)), reverseGet compose f.reverseGet)
+    Section(get andThen f.get, reverseGet compose f.reverseGet)
 
   /** Compose with an Iso. */
   def composeIso[C](f: Iso[B, C]): Section[A, C] =
-    Section(a => f.get(get(a)), reverseGet compose f.reverseGet)
+    Section(get andThen f.get, reverseGet compose f.reverseGet)
 
   /** Alias to composeSection. */
   def ^<-![C](f: Section[B, C]): Section[A, C] =

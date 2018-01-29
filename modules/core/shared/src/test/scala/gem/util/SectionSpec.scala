@@ -14,6 +14,6 @@ final class SectionSpec extends CatsSuite {
     Section(_.toByte, _.toInt)
 
   // Ensure it's lawful
-  checkAll("Sections.HmsDms", SectionTests(example).section)
+  checkAll("IntByte", SectionTests(example).section)
 
 }
