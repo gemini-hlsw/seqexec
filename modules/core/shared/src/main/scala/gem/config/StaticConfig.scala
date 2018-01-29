@@ -4,7 +4,7 @@
 package gem
 package config
 
-import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, Instrument, MosPreImaging}
+import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, GnirsWellDepth, Instrument, MosPreImaging}
 import monocle.Lens
 import monocle.macros.Lenses
 
@@ -26,7 +26,6 @@ object StaticConfig {
 
   final case class Phoenix()    extends StaticConfig.Impl(Instrument.Phoenix)
   final case class Michelle()   extends StaticConfig.Impl(Instrument.Michelle)
-  final case class Gnirs()      extends StaticConfig.Impl(Instrument.Gnirs)
   final case class Niri()       extends StaticConfig.Impl(Instrument.Niri)
   final case class Trecs()      extends StaticConfig.Impl(Instrument.Trecs)
   final case class Nici()       extends StaticConfig.Impl(Instrument.Nici)
@@ -95,6 +94,16 @@ object StaticConfig {
 
     lazy val nodAndShuffle: Lens[GmosSouth, Option[GmosNodAndShuffle]] =
       common ^|-> GmosCommonStaticConfig.nodAndShuffle
+  }
+
+  @Lenses final case class Gnirs(
+    wellDepth: GnirsWellDepth
+  ) extends StaticConfig.Impl(Instrument.Gnirs)
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object Gnirs {
+    val Default: Gnirs =
+      Gnirs(GnirsWellDepth.Shallow)
   }
 
 }

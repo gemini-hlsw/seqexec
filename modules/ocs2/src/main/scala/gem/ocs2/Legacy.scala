@@ -137,6 +137,10 @@ object Legacy {
       val Fpu             = Key("fpu"      )(fpu      )
       val StageMode       = Key("stageMode")(stageMode)
     }
+
+    object Gnirs {
+      val WellDepth = Key("wellDepth")(Parsers.Gnirs.wellDepth)
+    }
   }
 
   object Calibration extends System("calibration") {

@@ -18,21 +18,21 @@ object StaticConfigDao {
 
   def insert(oid: Observation.Id, s: StaticConfig): ConnectionIO[Unit] =
     s match {
-      case _: StaticConfig.AcqCam    => ().pure[ConnectionIO]
-      case _: StaticConfig.Bhros     => ().pure[ConnectionIO]
-      case f: StaticConfig.F2        => Statements.F2.insert(oid, f).run.void
-      case g: StaticConfig.GmosNorth => Gmos.insertNorth(oid, g)
-      case g: StaticConfig.GmosSouth => Gmos.insertSouth(oid, g)
-      case _: StaticConfig.Gnirs     => ().pure[ConnectionIO]
-      case _: StaticConfig.Gpi       => ().pure[ConnectionIO]
-      case _: StaticConfig.Gsaoi     => ().pure[ConnectionIO]
-      case _: StaticConfig.Michelle  => ().pure[ConnectionIO]
-      case _: StaticConfig.Nici      => ().pure[ConnectionIO]
-      case _: StaticConfig.Nifs      => ().pure[ConnectionIO]
-      case _: StaticConfig.Niri      => ().pure[ConnectionIO]
-      case _: StaticConfig.Phoenix   => ().pure[ConnectionIO]
-      case _: StaticConfig.Trecs     => ().pure[ConnectionIO]
-      case _: StaticConfig.Visitor   => ().pure[ConnectionIO]
+      case _:     StaticConfig.AcqCam    => ().pure[ConnectionIO]
+      case _:     StaticConfig.Bhros     => ().pure[ConnectionIO]
+      case f2:    StaticConfig.F2        => Statements.F2.insert(oid, f2).run.void
+      case g:     StaticConfig.GmosNorth => Gmos.insertNorth(oid, g)
+      case g:     StaticConfig.GmosSouth => Gmos.insertSouth(oid, g)
+      case gnirs: StaticConfig.Gnirs     => Statements.Gnirs.insert(oid, gnirs).run.void
+      case _:     StaticConfig.Gpi       => ().pure[ConnectionIO]
+      case _:     StaticConfig.Gsaoi     => ().pure[ConnectionIO]
+      case _:     StaticConfig.Michelle  => ().pure[ConnectionIO]
+      case _:     StaticConfig.Nici      => ().pure[ConnectionIO]
+      case _:     StaticConfig.Nifs      => ().pure[ConnectionIO]
+      case _:     StaticConfig.Niri      => ().pure[ConnectionIO]
+      case _:     StaticConfig.Phoenix   => ().pure[ConnectionIO]
+      case _:     StaticConfig.Trecs     => ().pure[ConnectionIO]
+      case _:     StaticConfig.Visitor   => ().pure[ConnectionIO]
     }
 
   def select(oid: Observation.Id, i: Instrument): ConnectionIO[StaticConfig] = {
@@ -43,11 +43,11 @@ object StaticConfigDao {
       case Instrument.AcqCam     => pure(StaticConfig.AcqCam())
       case Instrument.Bhros      => pure(StaticConfig.Bhros())
 
-      case Instrument.Flamingos2 => Statements.F2.select(oid).unique.widen[StaticConfig]
-      case Instrument.GmosN      => Gmos.selectNorth(oid)           .widen[StaticConfig]
-      case Instrument.GmosS      => Gmos.selectSouth(oid)           .widen[StaticConfig]
+      case Instrument.Flamingos2 => Statements.F2.select(oid)   .unique.widen[StaticConfig]
+      case Instrument.GmosN      => Gmos.selectNorth(oid)              .widen[StaticConfig]
+      case Instrument.GmosS      => Gmos.selectSouth(oid)              .widen[StaticConfig]
+      case Instrument.Gnirs      => Statements.Gnirs.select(oid).unique.widen[StaticConfig]
 
-      case Instrument.Gnirs      => pure(StaticConfig.Gnirs())
       case Instrument.Gpi        => pure(StaticConfig.Gpi())
       case Instrument.Gsaoi      => pure(StaticConfig.Gsaoi())
       case Instrument.Michelle   => pure(StaticConfig.Michelle())
@@ -272,6 +272,28 @@ object StaticConfigDao {
             ${g.stageMode})
         """.update
 
+    }
+
+    /** GNIRS Statements. */
+    object Gnirs {
+
+      def select(oid: Observation.Id): Query0[StaticConfig.Gnirs] =
+        sql"""
+          SELECT well_depth
+            FROM static_gnirs
+           WHERE program_id        = ${oid.pid}
+             AND observation_index = ${oid.index}
+        """.query[StaticConfig.Gnirs]
+
+      def insert(oid: Observation.Id, gnirs: StaticConfig.Gnirs): Update0 =
+        sql"""
+          INSERT INTO static_gnirs (program_id, observation_index, instrument, well_depth)
+          VALUES (
+            ${oid.pid},
+            ${oid.index},
+            ${Instrument.Gnirs: Instrument},
+            ${gnirs.wellDepth})
+        """.update
     }
 
   }

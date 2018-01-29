@@ -70,20 +70,20 @@ ALTER TABLE static_gmos_north
   ADD  COLUMN      observation_index id_index NOT NULL,
   ADD  PRIMARY KEY (program_id, observation_index, instrument),
   ADD  CONSTRAINT  observation_ref FOREIGN KEY (program_id, observation_index, instrument) REFERENCES observation ON DELETE CASCADE;
-  
+
 ALTER TABLE static_gmos_south
   DROP COLUMN      static_id,
   ADD  COLUMN      program_id        text     NOT NULL,
   ADD  COLUMN      observation_index id_index NOT NULL,
   ADD  PRIMARY KEY (program_id, observation_index, instrument),
   ADD  CONSTRAINT  observation_ref FOREIGN KEY (program_id, observation_index, instrument) REFERENCES observation ON DELETE CASCADE;
- 
+
 DROP TABLE static_config;
 
 
 -------------------------------------------------------------------------------
 -- Dynamic Configuration Updates
--- 
+--
 -- Here we just switch from observation_id to (program_id, observation_index).
 -------------------------------------------------------------------------------
 
@@ -93,8 +93,3 @@ ALTER TABLE step
   ADD  CONSTRAINT observation_ref FOREIGN KEY (program_id, observation_index, instrument) REFERENCES observation ON DELETE CASCADE,
   DROP COLUMN     observation_id,
   ADD  CONSTRAINT unique_location UNIQUE (program_id, observation_index, location);
-
-
- 
-
-

@@ -54,7 +54,6 @@ trait Arbitraries {
 
   implicit val arbAcqCamStatic    = const(StaticConfig.AcqCam()         )
   implicit val arbBhrosStatic     = const(StaticConfig.Bhros()          )
-  implicit val arbGnirsStatic     = const(StaticConfig.Gnirs()          )
   implicit val arbGpiStatic       = const(StaticConfig.Gpi()            )
   implicit val arbGsaoiStatic     = const(StaticConfig.Gsaoi()          )
   implicit val arbMichelleStatic  = const(StaticConfig.Michelle()       )
@@ -121,6 +120,9 @@ trait Arbitraries {
         s <- arbitrary[GmosSouthStageMode]
       } yield StaticConfig.GmosSouth(c, s)
     )
+
+  implicit val arbGnirsStatic =
+    Arbitrary(arbitrary[GnirsWellDepth].map(StaticConfig.Gnirs(_)))
 
   def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
     i match {
