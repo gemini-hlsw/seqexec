@@ -209,6 +209,7 @@ object StepsTableContainer {
         case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
         case (_, StepState.Completed)                      => <.p(step.status.shows)
         case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
+        case (_, _) if step.skip                           => <.p("Skipped")
         case (_, StepState.Skipped)                        => <.p("Skipped")
         case (_, _)                                        => <.p(step.status.shows)
       }
@@ -265,15 +266,17 @@ object StepsTableContainer {
         )
       )
 
-    private def stepIcon(p: StepsTableFocus, step: Step, i: Int): VdomNode =
+    private def stepIcon(p: StepsTableFocus, step: Step, i: Int): VdomNode = {
       step.status match {
         case StepState.Completed                  => IconCheckmark
         case StepState.Running                    => IconCircleNotched.copyIcon(loading = true)
-        case StepState.Failed(_)                   => IconAttention
-        case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
+        case StepState.Failed(_)                  => IconAttention
+        case StepState.Skipped                    => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
         case _ if step.skip                       => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+        case _ if p.nextStepToRun.forall(_ === i) => IconChevronRight
         case _                                    => iconEmpty
       }
+    }
 
     private def classSet(step: Step): List[(String, Boolean)] = List(
       "disabled" -> (step.status === StepState.Completed),
