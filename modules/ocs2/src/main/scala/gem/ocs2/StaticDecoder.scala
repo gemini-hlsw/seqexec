@@ -33,8 +33,8 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       case Instrument.Flamingos2 => Flamingos2.parse(cm)
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
+      case Instrument.Gnirs      => Gnirs.parse(cm)
 
-      case Instrument.Gnirs      => StaticConfig.Gnirs()          .asRight
       case Instrument.Gpi        => StaticConfig.Gpi()            .asRight
       case Instrument.Gsaoi      => StaticConfig.Gsaoi()          .asRight
       case Instrument.Michelle   => StaticConfig.Michelle()       .asRight
@@ -102,6 +102,11 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
         c <- parseCommonStatic(cm)
         s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
       } yield GmosSouth(c, s)
+  }
+
+  private object Gnirs {
+    def parse(cm: ConfigMap): Either[PioError, StaticConfig] =
+      Legacy.Instrument.Gnirs.WellDepth.parse(cm).map(StaticConfig.Gnirs(_))
   }
 
 }

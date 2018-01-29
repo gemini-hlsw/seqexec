@@ -537,4 +537,11 @@ object Parsers {
       "Follow in Z Only"     -> FollowZ
     )
   }
+
+  object Gnirs {
+    val wellDepth: PioParse[GnirsWellDepth] = enum(
+      "SHALLOW" -> GnirsWellDepth.Shallow,
+      "DEEP"    -> GnirsWellDepth.Deep
+    )
+  }
 }
