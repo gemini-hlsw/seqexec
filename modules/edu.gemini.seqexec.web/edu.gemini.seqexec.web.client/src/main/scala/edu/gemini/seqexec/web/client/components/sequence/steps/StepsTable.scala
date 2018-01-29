@@ -82,7 +82,7 @@ object StepsTable {
   final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable()._1
     def steps: Option[StepsTableFocus] = stepsTable()._2
-    private val stepsList: List[Step] = ~steps.map(_.steps)
+    val stepsList: List[Step] = ~steps.map(_.steps)
     def rowCount: Int = stepsList.length
     def rowGetter(idx: Int): StepRow = steps.flatMap(_.steps.index(idx)).fold(StepRow.Zero)(StepRow.apply)
     // Find out if offsets should be displayed
@@ -97,8 +97,8 @@ object StepsTable {
         IconSettings
       )
 
-  def stepControlRenderer(f: StepsTableFocus, p: Props, recalculateHeightsCB: Int => Callback): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    StepToolsCell(StepToolsCell.Props(p.status, f, row.step, rowHeight(p)(row.step.id), recalculateHeightsCB))
+  def stepControlRenderer(f: StepsTableFocus, p: Props, recomputeHeightsCB: Int => Callback): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    StepToolsCell(StepToolsCell.Props(p.status, f, row.step, rowHeight(p)(row.step.id), recomputeHeightsCB))
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
@@ -125,21 +125,21 @@ object StepsTable {
     ObjectTypeCell(row.step)
 
   private def stepRowStyle(step: Step): StyleA = step match {
-    case s if s.hasError                                   => SeqexecStyles.rowError
-    case s if s.status === StepState.Running               => SeqexecStyles.rowWarning
-    case s if s.status === StepState.Paused                => SeqexecStyles.rowNegative
-    case s if s.status === StepState.Skipped               => SeqexecStyles.rowActive
-    case s if (s.skip || s.status === StepState.Completed) => SeqexecStyles.rowDisabled
-    case _                                                 => SeqexecStyles.rowNone
+    case s if s.hasError                     => SeqexecStyles.rowError
+    case s if s.status === StepState.Running => SeqexecStyles.rowWarning
+    case s if s.status === StepState.Paused  => SeqexecStyles.rowNegative
+    case s if s.status === StepState.Skipped => SeqexecStyles.rowActive
+    case s if s.isFinished                   => SeqexecStyles.rowDisabled
+    case _                                   => SeqexecStyles.rowNone
   }
 
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
     case (-1, _)                                                   =>
       SeqexecStyles.headerRowStyle
     case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _))) =>
-      (SeqexecStyles.stepRowWithBreakpoint + stepRowStyle(s))
+      SeqexecStyles.stepRowWithBreakpoint + stepRowStyle(s)
     case (_, StepRow(s))                                           =>
-      (SeqexecStyles.stepRow + stepRowStyle(s))
+      SeqexecStyles.stepRow + stepRowStyle(s)
     case _                                                         =>
       SeqexecStyles.stepRow
   }).htmlClass
@@ -158,7 +158,7 @@ object StepsTable {
   }
 
   // Columns for the table
-  private def columns(p: Props, recalculateHeightsCB: Int => Callback): List[Table.ColumnArg] = {
+  private def columns(p: Props, recomputeHeightsCB: Int => Callback): List[Table.ColumnArg] = {
     val offsetColumn =
       p.offsetsDisplay match {
         case OffsetsDisplay.DisplayOffsets(x) =>
@@ -166,7 +166,7 @@ object StepsTable {
         case _ => None
       }
       List(
-        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recalculateHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
+        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
         offsetColumn,

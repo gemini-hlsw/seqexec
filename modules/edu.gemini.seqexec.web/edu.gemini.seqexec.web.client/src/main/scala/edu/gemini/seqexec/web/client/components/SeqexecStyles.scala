@@ -625,4 +625,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
   // End row styles
 
+  // target the runing row cells
+  val configuringRow: StyleA = style(
+    display.flex,
+    flexGrow(1)
+  )
+
+  val subsystems: StyleA = style(
+    marginLeft.auto
+  )
+
 }
