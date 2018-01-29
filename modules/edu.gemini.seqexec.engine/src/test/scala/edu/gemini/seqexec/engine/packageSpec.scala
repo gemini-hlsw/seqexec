@@ -69,7 +69,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
              "First",
              SequenceMetadata(F2, None, ""),
              List(
-               Step.step(
+               Step.init(
                  1,
                  None,
                  config,
@@ -79,7 +79,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                    List(observe) // Execution
                  )
                ),
-               Step.step(
+               Step.init(
                  2,
                  None,
                  config,
@@ -99,7 +99,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(
+          Step.init(
             1,
             None,
             config,
@@ -153,7 +153,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(
+          Step.init(
             1,
             None,
             config,
@@ -218,7 +218,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(
+          Step.init(
             1,
             None,
             config,
@@ -255,7 +255,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(
+          Step.init(
             1,
             None,
             config,
@@ -287,7 +287,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(
+          Step.init(
             1,
             None,
             config,
@@ -322,9 +322,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(1, None, config, Set(GmosS), executions).copy(skipMark = true),
-          Step.step(2, None, config, Set(GmosS), executions),
-          Step.step(3, None, config, Set(GmosS), executions)
+          Step.init(1, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(2, None, config, Set(GmosS), executions),
+          Step.init(3, None, config, Set(GmosS), executions)
         )
       ) ) ) )
     )
@@ -343,9 +343,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(1, None, config, Set(GmosS), executions),
-          Step.step(2, None, config, Set(GmosS), executions).copy(skipMark = true),
-          Step.step(3, None, config, Set(GmosS), executions)
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(3, None, config, Set(GmosS), executions)
         )
       ) ) ) )
     )
@@ -357,6 +357,29 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     }
   }
 
+  it should "skip several steps marked to be skipped." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(3, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(4, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(5, None, config, Set(GmosS), executions)
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped, StepState.Skipped, StepState.Skipped, StepState.Completed))
+    }
+  }
+
   it should "skip steps marked to be skipped at the end of the sequence." in {
     val s0: Engine.State = Engine.State(Conditions.default,
       None,
@@ -364,9 +387,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(1, None, config, Set(GmosS), executions),
-          Step.step(2, None, config, Set(GmosS), executions),
-          Step.step(3, None, config, Set(GmosS), executions).copy(skipMark = true)
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions),
+          Step.init(3, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -385,7 +408,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         "First",
         SequenceMetadata(GmosS, None, ""),
         List(
-          Step.step(1, None, config, Set(GmosS), executions).copy(skipMark = true)
+          Step.init(1, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )

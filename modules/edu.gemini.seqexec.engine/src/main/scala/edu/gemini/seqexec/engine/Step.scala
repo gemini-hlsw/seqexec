@@ -18,13 +18,13 @@ import monocle.macros.GenLens
   * A list of `Executions` grouped by observation.
   */
 final case class Step(
-  id: Int,
+  id: Step.Id,
   fileId: Option[FileId],
   config: StepConfig,
   resources: Set[Resource],
-  breakpoint: Boolean,
-  skipped: Boolean,
-  skipMark: Boolean,
+  breakpoint: Step.BreakpointMark,
+  skipped: Step.Skipped,
+  skipMark: Step.SkipMark,
   executions: List[List[Action]]
 )
 
@@ -32,18 +32,22 @@ object Step {
 
   type Id = Int
 
-  def step(id: Int,
-    fileId: Option[FileId],
-    config: StepConfig,
-    resources: Set[Resource],
-    executions: List[List[Action]]): Step = Step(id, fileId, config, resources, false, false, false, executions)
+  final case class BreakpointMark(self: Boolean) extends AnyVal
+  final case class SkipMark(self: Boolean) extends AnyVal
+  final case class Skipped(self: Boolean) extends AnyVal
+
+  def init(id: Id,
+           fileId: Option[FileId],
+           config: StepConfig,
+           resources: Set[Resource],
+           executions: List[List[Action]]): Step = Step(id, fileId, config, resources, BreakpointMark(false), Skipped(false), SkipMark(false), executions)
 
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     */
   def status(step: Step): StepState = {
 
-    if(step.skipped) StepState.Skipped
+    if(step.skipped.self) StepState.Skipped
     else
       // Find an error in the Step
       step.executions.flatten.find(Action.errored).flatMap { x => x.state.runState match {
@@ -69,8 +73,8 @@ object Step {
     fileId: Option[FileId],
     config: StepConfig,
     resources: Set[Resource],
-    breakpoint: Boolean,
-    skipMark: Boolean,
+    breakpoint: BreakpointMark,
+    skipMark: SkipMark,
     pending: List[Actions],
     focus: Execution,
     done: List[Actions],
@@ -103,7 +107,7 @@ object Step {
       */
     val uncurrentify: Option[Step] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, fileId, config, resources, breakpoint, false, skipMark, x :: done)
+        x => Step(id, fileId, config, resources, breakpoint, Skipped(false), skipMark, x :: done)
       )
       else None
 
@@ -118,12 +122,12 @@ object Step {
         config,
         resources,
         breakpoint,
-        false,
+        Skipped(false),
         skipMark,
         done ++ List(focus.execution) ++ pending
       )
 
-    val skip: Step = toStep.copy(skipped = true)
+    val skip: Step = toStep.copy(skipped = Skipped(true))
 
   }
 

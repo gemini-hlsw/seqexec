@@ -119,7 +119,7 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step.step(
+                 Step.init(
                    1,
                    None,
                    config,
@@ -170,8 +170,8 @@ class StepSpec extends FlatSpec {
                  None,
                  config,
                  Set.empty,
-                 breakpoint = false,
-                 skipMark = false,
+                 breakpoint = Step.BreakpointMark(false),
+                 skipMark = Step.SkipMark(false),
                  Nil,
                  Execution(List(observe)),
                  List(List(actionCompleted, actionCompleted)),
@@ -214,8 +214,8 @@ class StepSpec extends FlatSpec {
                  None,
                  config,
                  Set.empty,
-                 breakpoint = false,
-                 skipMark = false,
+                 breakpoint = Step.BreakpointMark(false),
+                 skipMark = Step.SkipMark(false),
                  Nil,
                  Execution(List(observe)),
                  List(List(actionCompleted, actionCompleted)),
@@ -248,7 +248,7 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step.step(
+                 Step.init(
                    1,
                    None,
                    config,
@@ -292,7 +292,7 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step.step(
+                 Step.init(
                    1,
                    None,
                    config,
@@ -343,7 +343,7 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step.step(
+                 Step.init(
                    1,
                    None,
                    config,
@@ -392,7 +392,7 @@ class StepSpec extends FlatSpec {
                seqId,
                SequenceMetadata(F2, None, ""),
                List(
-                 Step.step(
+                 Step.init(
                    1,
                    None,
                    config,
@@ -448,7 +448,7 @@ class StepSpec extends FlatSpec {
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, skipMark = false, pending, focus, done.map(_.map{ r =>
+    Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
       val x = fromTask(ActionType.Observe, Task(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
@@ -485,12 +485,12 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step = Step.step(1, None, config, Set.empty, List(Nil))
-  val step1: Step = Step.step(1, None, config, Set.empty, List(List(action)))
-  val step2: Step = Step.step(2, None, config, Set.empty, List(List(action, action), List(action)))
+  val step0: Step = Step.init(1, None, config, Set.empty, List(Nil))
+  val step1: Step = Step.init(1, None, config, Set.empty, List(List(action)))
+  val step2: Step = Step.init(2, None, config, Set.empty, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step.step(0, None, config, Set.empty, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step.init(0, None, config, Set.empty, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
@@ -508,8 +508,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skipMark = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(action, actionFailed, actionCompleted)),
           Nil,
@@ -527,8 +527,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skipMark = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(actionCompleted, actionCompleted, actionCompleted)),
           Nil,
@@ -546,8 +546,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skipMark = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(actionCompleted, action, actionCompleted)),
           Nil,
@@ -565,8 +565,8 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skipMark = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(action, action, action)),
           Nil,
@@ -584,13 +584,13 @@ class StepSpec extends FlatSpec {
           None,
           Map.empty,
           Set.empty,
-          breakpoint = false,
-          skipMark = false,
+          breakpoint = Step.BreakpointMark(false),
+          skipMark = Step.SkipMark(false),
           Nil,
           Execution(List(action, action, action)),
           Nil,
           (Execution(List(action, action, action)), Nil)
-        ).toStep.copy(skipped = true)
+        ).toStep.copy(skipped = Step.Skipped(true))
       ) === StepState.Skipped
     )
   }

@@ -57,7 +57,7 @@ class SequenceSpec extends FlatSpec {
   private val user = UserDetails("telops", "Telops")
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
-    Step.step(
+    Step.init(
       id,
       None,
       config,
@@ -66,7 +66,7 @@ class SequenceSpec extends FlatSpec {
         List(action, action), // Execution
         List(action) // Execution
       )
-    ).copy(breakpoint = breakpoint)
+    ).copy(breakpoint = Step.BreakpointMark(breakpoint))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -159,7 +159,7 @@ class SequenceSpec extends FlatSpec {
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = false, false, pending, focus, done.map(_.map{r =>
+    Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
       val x = fromTask(ActionType.Observe, Task(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)

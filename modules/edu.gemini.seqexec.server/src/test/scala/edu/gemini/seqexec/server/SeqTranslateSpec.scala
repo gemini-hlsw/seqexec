@@ -35,7 +35,7 @@ class SeqTranslateSpec extends FlatSpec {
     seqId,
     SequenceMetadata(GmosS, None, ""),
     List(
-      Step.step(
+      Step.init(
         1,
         None,
         config,

@@ -389,8 +389,8 @@ object SeqexecEngine {
       id = step.id,
       config = step.config,
       status = engine.Step.status(step),
-      breakpoint = step.breakpoint,
-      skip = step.skipMark,
+      breakpoint = step.breakpoint.self,
+      skip = step.skipMark.self,
       configStatus = configStatus,
       observeStatus = observeStatus(step.executions),
       fileId = step.fileId
