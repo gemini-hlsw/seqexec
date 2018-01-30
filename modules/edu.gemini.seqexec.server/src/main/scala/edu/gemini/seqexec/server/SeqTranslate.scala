@@ -177,6 +177,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     config.getItemValue(new ItemKey("observe:status")).shows match {
       case "ready"    => StepState.Pending
       case "complete" => StepState.Completed
+      case "skipped"  => StepState.Skipped
       case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
     }
 
