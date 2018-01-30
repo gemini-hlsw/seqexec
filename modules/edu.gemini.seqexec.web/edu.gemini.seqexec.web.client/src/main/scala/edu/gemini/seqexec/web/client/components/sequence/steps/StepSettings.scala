@@ -24,6 +24,7 @@ import org.scalajs.dom.CanvasRenderingContext2D
 import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
+import scalacss.StyleA
 import scalaz.syntax.order._
 import scalaz.syntax.show._
 import scalaz.syntax.std.option._
@@ -234,11 +235,17 @@ object StepIconCell {
       case _                                                  => iconEmpty
     }
 
+  private def stepStyle(p: StepToolsCell.Props): StyleA =
+    p.step.status match {
+      case StepState.Running                                  => SeqexecStyles.runningIconCell
+      case _                                                  => SeqexecStyles.iconCell
+    }
+
   private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")
     .stateless
     .render_P { p =>
       <.div(
-        SeqexecStyles.iconCell,
+        stepStyle(p),
         stepIcon(p)
       )
     }

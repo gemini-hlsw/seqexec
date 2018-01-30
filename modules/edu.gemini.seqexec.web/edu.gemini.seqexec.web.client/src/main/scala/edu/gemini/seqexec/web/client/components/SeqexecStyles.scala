@@ -558,14 +558,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     padding.unset
   )
 
-  val iconCell: StyleA = style(
-    width(29.px),
+  val iconCellMixin: StyleS = mixin(
+    width(34.px),
     justifyContent.center,
     alignContent.center,
-    display.flex,
-    paddingBottom(0.7.em),
-    paddingTop(0.2.em),
-    paddingLeft(0.3.em)
+    display.flex
+  )
+
+  val iconCell: StyleA = style(
+    iconCellMixin,
+    height(20.px)
+  )
+
+  val runningIconCell: StyleA = style(
+    iconCellMixin,
+    height(16.px)
   )
 
   val gutterCell: StyleA = style(

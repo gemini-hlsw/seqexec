@@ -45,6 +45,22 @@ object StepProgressCell {
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
     Label(Label.Props(s"${system.shows}", color = labelColor(status).some, icon = labelIcon(status)))
 
+  def stepProgress(state: SequenceState, step: Step): VdomNode =
+    (state, step.status) match {
+      case (s, StepState.Running) if s.userStopRequested =>
+        <.div(state.shows)
+      case (s, _) if SequenceState.internalStopRequested(s) =>
+        <.div(step.status.shows)
+      case (_, StepState.Pending) =>
+        step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
+      case (_, StepState.Running) =>
+        step.fileId.fold(<.div(stepSystemsStatus(step)): VdomNode)(fileId => ObservationProgressBar(fileId): VdomNode)
+      case (_, StepState.Completed) =>
+        step.fileId.getOrElse(""): String
+      case _ =>
+        step.file.getOrElse(""): String
+    }
+
   def stepSystemsStatus(step: Step): VdomElement =
     step match {
       case StandardStep(_, _, _, _, _, _, configStatus, _) =>
