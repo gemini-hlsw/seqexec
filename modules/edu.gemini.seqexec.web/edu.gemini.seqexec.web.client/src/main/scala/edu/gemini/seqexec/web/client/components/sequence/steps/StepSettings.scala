@@ -271,7 +271,6 @@ object FPUCell {
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
-        SeqexecStyles.centeredCell,
         fpuValue.getOrElse("Unknown"): String
       )
     }
@@ -303,7 +302,6 @@ object FilterCell {
 
 
       <.div(
-        SeqexecStyles.centeredCell,
         filter.getOrElse("Unknown"): String
       )
     }
@@ -339,7 +337,6 @@ object ExposureTimeCell {
       }
 
       <.div(
-        SeqexecStyles.centeredCell,
         displayedText
       )
     }
@@ -361,7 +358,6 @@ object GuidingCell {
       val guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(p.s)
 
       <.div(
-        SeqexecStyles.centeredCell,
         guidingIcon.when(guiding),
         noGuidingIcon.unless(guiding)
       )

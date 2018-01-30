@@ -170,11 +170,11 @@ object StepsTable {
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
         p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
         offsetColumn,
-        Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer)).some,
-        p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, cellRenderer = stepExposureRenderer(i.instrument)))),
+        Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some,
+        p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))),
         p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
         p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
-        p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, cellRenderer = stepObjectTypeRenderer)))
+        p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer)))
       ).collect { case Some(x) => x }
   }
 
@@ -184,7 +184,7 @@ object StepsTable {
       noRowsRenderer = () =>
         <.div(
           ^.cls := "ui center aligned segment noRows",
-          ^.height := 270.px,
+          ^.height := size.height.px,
           "No log entries"
         ),
       overscanRowCount = SeqexecStyles.overscanRowCount,

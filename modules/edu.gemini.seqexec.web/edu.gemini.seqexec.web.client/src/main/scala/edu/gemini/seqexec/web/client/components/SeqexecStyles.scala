@@ -420,13 +420,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   private val cellPaddingMixin: StyleS = mixin(
     paddingLeft(0.7.em),
-    paddingRight(0.7.em),
-    paddingBottom(0.7.em)
+    paddingRight(0.7.em)
   )
 
   val tableHeader: StyleA = style(
     leftBorderMixin,
     cellPaddingMixin,
+    paddingBottom(0.8.em),
     paddingTop(1.em),
     fontWeight.bold,
     color(black),
@@ -497,11 +497,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
     cellPaddingMixin,
     leftBorderMixin,
-    paddingTop(0.7.em),
     minWidth(0.px),
+    display.flex,
+    alignItems.center,
     fontSize.small,
     textOverflow := "ellipsis",
-    whiteSpace.nowrap
+    whiteSpace.nowrap,
+    height(100.%%)
   )
 
   val headerRowStyle: StyleA = style(
