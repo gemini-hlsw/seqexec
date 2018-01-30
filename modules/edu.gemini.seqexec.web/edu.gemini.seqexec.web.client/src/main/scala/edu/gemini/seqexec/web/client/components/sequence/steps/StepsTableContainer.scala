@@ -209,8 +209,8 @@ object StepsTableContainer {
         case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
         case (_, StepState.Completed)                      => <.p(step.status.shows)
         case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
-        case (_, _) if step.skip                           => <.p("Skipped")
         case (_, StepState.Skipped)                        => <.p("Skipped")
+        case (_, _) if step.skip                           => <.p("Skip")
         case (_, _)                                        => <.p(step.status.shows)
       }
 
