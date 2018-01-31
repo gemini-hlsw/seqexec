@@ -94,10 +94,18 @@ object StepProgressCell {
       StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
     )
 
+  def stepPaused(props: Props): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      props.step.status.shows
+    )
+
   def stepDisplay(props: Props): VdomElement =
     (props.focus.state, props.step) match {
       case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
         stepObservationStatus(props)
+      case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.internalStopRequested =>
+        stepPaused(props)
       case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))         =>
         stepSystemsStatus(s)
       case (f, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
