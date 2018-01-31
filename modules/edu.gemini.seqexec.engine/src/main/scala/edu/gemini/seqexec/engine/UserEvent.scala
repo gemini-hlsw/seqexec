@@ -64,6 +64,19 @@ final case class ActionResume(id: Sequence.Id, i: Int, cont: Task[Result]) exten
   val user: Option[UserDetails] = None
 }
 
-final case class Log(msg: String) extends UserEvent {
+final case class LogDebug(msg: String) extends UserEvent {
   val user: Option[UserDetails] = None
 }
+
+final case class LogInfo(msg: String) extends UserEvent {
+  val user: Option[UserDetails] = None
+}
+
+final case class LogWarning(msg: String) extends UserEvent {
+  val user: Option[UserDetails] = None
+}
+
+final case class LogError(msg: String) extends UserEvent {
+  val user: Option[UserDetails] = None
+}
+

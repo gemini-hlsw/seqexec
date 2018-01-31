@@ -179,8 +179,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield translator.sequence(seqId, odbSeq)
 
     t.map {
-      case (err :: _, None)  => List(Event.logMsg(SeqexecFailure.explain(err)))
-      case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logMsg(SeqexecFailure.explain(e)))
+      case (err :: _, None)  => List(Event.logDebugMsg(SeqexecFailure.explain(err)))
+      case (errs, Some(seq)) => Event.load(seqId.stringValue, seq) :: errs.map(e => Event.logDebugMsg(SeqexecFailure.explain(e)))
       case _                 => Nil
     }
   }
@@ -207,7 +207,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.GetState(_)            => NullEvent
       case engine.GetSeqState(_, _)      => NullEvent
       case engine.ActionStop(_, _)       => ActionStopRequested(svs)
-      case engine.Log(msg)               => NewLogMessage(msg)
+      case engine.LogDebug(msg)          => NullEvent
+      case engine.LogInfo(msg)           => NullEvent
+      case engine.LogWarning(msg)        => NullEvent
+      case engine.LogError(msg)          => NullEvent
       case engine.ActionResume(_, _, _)  => SequenceUpdated(svs)
     }
     case engine.EventSystem(se) => se match {
@@ -255,13 +258,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
     def loads(odbList: Seq[SPObservationID]): Task[List[Event]] =
-      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logMsg(SeqexecFailure.explain(r)))))
+      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logDebugMsg(SeqexecFailure.explain(r)))))
 
     def unloads(odbList: Seq[SPObservationID]): Seq[Event] =
       seqexecList.diff(odbList).map(id => unloadEvent(id))
 
     val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
-    val y = x.map(_.valueOr(r => List(Event.logMsg(SeqexecFailure.explain(r)))))
+    val y = x.map(_.valueOr(r => List(Event.logWarningMsg(SeqexecFailure.explain(r)))))
     y.map { ee => ee.nonEmpty option Process.emitAll(ee).evalMap(Task.delay(_)) }
   }
 

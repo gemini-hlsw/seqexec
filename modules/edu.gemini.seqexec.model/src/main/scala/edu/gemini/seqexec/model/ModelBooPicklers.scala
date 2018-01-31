@@ -123,7 +123,6 @@ object ModelBooPicklers {
     .addConcreteType[SequencePaused]
     .addConcreteType[ExposurePaused]
     .addConcreteType[ResourcesBusy]
-    .addConcreteType[NewLogMessage]
     .addConcreteType[ServerLogMessage]
     .addConcreteType[NullEvent.type]
 
