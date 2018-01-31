@@ -667,5 +667,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(obsWidth.px)
   )
 
-
+  val specialStateLabel: StyleA = style(
+    display.flex,
+    flexGrow(1),
+    alignSelf.center
+  )
 }

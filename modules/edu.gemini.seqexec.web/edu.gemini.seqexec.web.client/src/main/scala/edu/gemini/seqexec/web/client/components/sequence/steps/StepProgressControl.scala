@@ -62,49 +62,56 @@ object StepProgressCell {
         step.file.getOrElse(""): String
     }*/
 
-  def stepSystemsStatus(step: Step): VdomElement =
-    step match {
-      case StandardStep(_, _, _, _, _, _, configStatus, _) =>
-        <.div(
-          SeqexecStyles.configuringRow,
-          <.div(
-            "Configuring"
-          ),
-          <.div(
-            SeqexecStyles.subsystems,
-            configStatus.map(Function.tupled(statusLabel)).toTagMod
-          )
-        )
-      case _ =>
-        <.div(step.status.shows)
-    }
+  def stepSystemsStatus(step: StandardStep): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      <.div(
+        "Configuring"
+      ),
+      <.div(
+        SeqexecStyles.subsystems,
+        step.configStatus.map(Function.tupled(statusLabel)).toTagMod
+      )
+    )
 
-  def stepObservationStatus(focus: StepsTableFocus, step: Step, fileId: ImageFileId): VdomElement =
-    step match {
-      case StandardStep(_, _, _, _, _, _, _, _) =>
-        <.div(
-          SeqexecStyles.configuringRow,
-          ObservationProgressBar(fileId),
-          StepsControlButtons(focus.id, focus.instrument, focus.state, step).when(focus.state.isRunning && (step.isObserving || step.isObservePaused))
-        )
-      case _ =>
-        <.div(step.status.shows)
-    }
+  def controlButtonsActive(props: Props): Boolean =
+    props.clientStatus.isLogged && props.focus.state.isRunning && (props.step.isObserving || props.step.isObservePaused)
 
-  def stepDisplay(focus: StepsTableFocus, step: Step): VdomElement =
-    (focus.state, step.status, step.fileId) match {
-      case (_, StepState.Running, None)         => stepSystemsStatus(step)
-      case (_, StepState.Running, Some(fileId)) => stepObservationStatus(focus, step, fileId)
+  def stepObservationStatusAndFile(props: Props, fileId: ImageFileId): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      ObservationProgressBar(fileId),
+      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+    )
+
+  def stepObservationStatus(props: Props): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      <.div(
+        SeqexecStyles.specialStateLabel,
+        props.focus.state.shows
+      ),
+      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+    )
+
+  def stepDisplay(props: Props): VdomElement =
+    (props.focus.state, props.step) match {
+      case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
+        stepObservationStatus(props)
+      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))         =>
+        stepSystemsStatus(s)
+      case (f, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
+        stepObservationStatusAndFile(props, fileId)
       // case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
       // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
-      case (_, _, _) if step.skip    => <.p("Skipped")
-      case (_, _, _)                 => <.p(step.status.shows)
+      case (_, _) if props.step.skip    => <.p("Skipped")
+      case (_, _)                 => <.p(props.step.status.shows)
     }
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")
     .stateless
     .render_P { p =>
-      stepDisplay(p.focus, p.step)
+      stepDisplay(p)
     }.build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)

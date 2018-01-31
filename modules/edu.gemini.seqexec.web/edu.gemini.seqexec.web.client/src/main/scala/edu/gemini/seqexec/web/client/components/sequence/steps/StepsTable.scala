@@ -41,7 +41,7 @@ object ColWidths {
   val StateWidth: Int = 200
   val IdxWidth: Int = 50
   val StatusWidth: Int = 100
-  val OffsetWidthBase: Int = 68
+  val OffsetWidthBase: Int = 75
   val GuidingWidth: Int = 83
   val ExposureWidth: Int = 80
   val FilterWidth: Int = 150
