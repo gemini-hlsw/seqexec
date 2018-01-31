@@ -175,15 +175,15 @@ object StepsTableContainer {
       (state, step.status) match {
         case (s, StepState.Running) if s.userStopRequested =>
           <.div(state.shows)
-        case (s, _) if SequenceState.internalStopRequested(s) =>
+        case (s, _) if s.internalStopRequested             =>
           <.div(step.status.shows)
-        case (_, StepState.Pending) =>
+        case (_, StepState.Pending)                        =>
           step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
-        case (_, StepState.Running) =>
+        case (_, StepState.Running)                        =>
           step.fileId.fold(<.div(stepSystemsStatus(step)): VdomNode)(fileId => ObservationProgressBar(fileId): VdomNode)
-        case (_, StepState.Completed) =>
+        case (_, StepState.Completed)                      =>
           step.fileId.getOrElse(""): String
-        case _ =>
+        case _                                             =>
           step.file.getOrElse(""): String
       }
 
