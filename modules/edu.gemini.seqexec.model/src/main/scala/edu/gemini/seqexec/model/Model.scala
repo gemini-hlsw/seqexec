@@ -301,13 +301,13 @@ object Model {
     }
     final case class Failed(msg: String) extends SequenceState
 
-    def internalStopRequested(state: SequenceState): Boolean = state match {
-      case SequenceState.Running(_, true) => true
-      case _                              => false
-    }
-
     // Operations on the sequence state
     implicit class SequenceStateOps(val state: SequenceState) extends AnyVal {
+      def internalStopRequested: Boolean = state match {
+        case SequenceState.Running(_, true) => true
+        case _                              => false
+      }
+
       def isError: Boolean = state match {
         case Failed(_) => true
         case _         => false
