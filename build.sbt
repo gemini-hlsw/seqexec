@@ -37,6 +37,9 @@ git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
 
 enablePlugins(GitBranchPrompt)
 
+resolvers in ThisBuild +=
+  Resolver.sonatypeRepo("snapshots")
+
 //////////////
 // Projects
 //////////////
@@ -124,12 +127,15 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
 lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
+  .enablePlugins(TzdbPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
   .settings(commonJSSettings: _*)
   .settings(
+    wartremoverExcluded += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
+    zonesFilter := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
     webpackBundlingMode := BundlingMode.LibraryOnly(),
