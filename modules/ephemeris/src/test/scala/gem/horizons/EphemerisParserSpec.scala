@@ -4,6 +4,7 @@
 package gem.horizons
 
 import gem.math.{ Ephemeris, EphemerisCoordinates }
+import gem.syntax.treemapcompanion._
 import gem.util.Timestamp
 
 import cats.effect.IO
@@ -62,7 +63,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly").through(EphemerisParser.elements[IO])
-    val m = TreeMap(s.take(head.size.toLong).compile.toVector.unsafeRunSync: _*)
+    val m = TreeMap.fromFoldable(s.take(head.size.toLong).compile.toVector.unsafeRunSync)
 
     assert(m == head)
   }
@@ -96,7 +97,7 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
     )
 
     val s = stream("borrelly-error").through(EphemerisParser.validElements[IO])
-    val m = TreeMap(s.take(head.size.toLong).compile.toVector.unsafeRunSync: _*)
+    val m = TreeMap.fromFoldable(s.take(head.size.toLong).compile.toVector.unsafeRunSync)
 
     assert(m == head)
   }

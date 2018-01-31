@@ -4,6 +4,7 @@
 package gem.horizons
 
 import gem.math.{ Angle, Coordinates, EphemerisCoordinates, Offset }
+import gem.syntax.treemapcompanion._
 import gem.util.Timestamp
 
 import cats.effect.IO
@@ -40,7 +41,7 @@ trait EphemerisTestSupport {
     EphemerisCoordinates(coords(c), Offset(offsetp(p), offsetq(q)))
 
   def eph(elems: (String, (String, String, String))*): TreeMap[Timestamp, EphemerisCoordinates] =
-    TreeMap(elems.map { case (i, (c, p, q)) => time(i) -> ephCoords(c, p, q) }: _*)
+    TreeMap.fromList(elems.toList.map { case (i, (c, p, q)) => time(i) -> ephCoords(c, p, q) })
 
   def inputStream(n: String): InputStream =
     getClass.getResourceAsStream(s"$n.eph")

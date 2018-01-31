@@ -3,6 +3,7 @@
 
 package gem.math
 
+import gem.syntax.treemapcompanion._
 import gem.util.Timestamp
 
 import cats.{ Eq, Foldable, Monoid }
@@ -58,11 +59,15 @@ object Ephemeris {
 
   /** Construct an ephemeris from a sequence of literal elements. */
   def apply(es: Element*): Ephemeris =
-    new Ephemeris(TreeMap(es: _*)) {}
+    fromList(es.toList)
+
+  /** Construct an ephemeris from a `List` of elements. */
+  def fromList(es: List[Element]): Ephemeris =
+    new Ephemeris(TreeMap.fromList(es)) {}
 
   /** Construct an ephemeris from a foldable of elements. */
   def fromFoldable[F[_]: Foldable](fa: F[Element]): Ephemeris =
-    apply(fa.toList: _*)
+    fromList(fa.toList)
 
   /** Ephemerides form a monoid, using `++` as the combining operation. */
   implicit val MonoidEphemeris: Monoid[Ephemeris] =

@@ -13,8 +13,7 @@ import gem.ocs2.pio.PioPath._
 import gem.ocs2.pio.{ PioDecoder, PioError, PioPath }
 import gem.ocs2.pio.PioError.ParseError
 import gem.ocs2.pio.PioDecoder.fromParse
-import gem.syntax.string._
-import gem.syntax.treesetcompanion._
+import gem.syntax.all._
 
 import java.time.Instant
 
@@ -218,7 +217,7 @@ object Decoders {
         t  <- (n \!  "data" \? "#title").decodeOrZero[String]
         is <- (n \\* "observation"     ).decode[Observation.Index]
         os <- (n \\* "observation"     ).decode[Observation[StaticConfig, Step[DynamicConfig]]]
-      } yield Program(id, t, TreeMap(is.zip(os): _*))
+      } yield Program(id, t, TreeMap.fromList(is.zip(os)))
     }
 
 }

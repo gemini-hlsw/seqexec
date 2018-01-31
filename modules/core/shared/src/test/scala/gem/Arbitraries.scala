@@ -8,6 +8,7 @@ import gem.arb._
 import gem.config.{DynamicConfig, GcalConfig, StaticConfig, TelescopeConfig}
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.Offset
+import gem.syntax.treemapcompanion._
 import gem.util.Location
 import org.scalacheck._
 import org.scalacheck.Gen._
@@ -111,5 +112,5 @@ trait Arbitraries extends gem.config.Arbitraries  {
       count   <- Gen.choose(0, limit)
       obsIdxs <- Gen.listOfN(count, Gen.posNum[Short]).map(_.distinct.map(Observation.Index.unsafeFromShort))
       obsList <- obsIdxs.traverse(_ => arbitrary[Observation[StaticConfig, Step[DynamicConfig]]])
-    } yield TreeMap(obsIdxs.zip(obsList): _*)
+    } yield TreeMap.fromList(obsIdxs.zip(obsList))
 }

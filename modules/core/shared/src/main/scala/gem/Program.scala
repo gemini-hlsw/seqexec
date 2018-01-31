@@ -6,6 +6,8 @@ package gem
 import cats.{ Applicative, Eval, Traverse }
 import cats.implicits._
 
+import gem.syntax.treemapcompanion._
+
 import scala.collection.immutable.TreeMap
 
 /**
@@ -30,7 +32,7 @@ object Program {
         fa.observations.values.toList.foldRight(lb)(f)
       def traverse[G[_]: Applicative, A, B](fa: Program[A])(f: A => G[B]): G[Program[B]] =
         fa.observations.values.toList.traverse(f).map { bs =>
-          fa.copy(observations = TreeMap(fa.observations.keys.toList.zip(bs): _*))
+          fa.copy(observations = TreeMap.fromList(fa.observations.keys.toList.zip(bs)))
         }
     }
 

@@ -9,6 +9,7 @@ import doobie._, doobie.implicits._
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.dao.meta._
 import gem.enum.Instrument
+import gem.syntax.treemapcompanion._
 import gem.util.Location
 
 import scala.collection.immutable.TreeMap
@@ -72,7 +73,7 @@ object ObservationDao {
    */
   def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Instrument, Nothing]]] =
     for {
-      m  <- Statements.selectAllFlat(pid).list.map(lst => TreeMap(lst: _*))
+      m  <- Statements.selectAllFlat(pid).list.map(lst => TreeMap.fromList(lst))
       ts <- TargetEnvironmentDao.selectProg(pid)
     } yield merge(m, ts)
 
@@ -85,7 +86,7 @@ object ObservationDao {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
       ts  <- TargetEnvironmentDao.selectProg(pid)
-    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts)
+    } yield merge(TreeMap.fromList(ids.map(_.index).zip(oss)), ts)
 
   /**
    * Construct a program to select all observations for the specified science program, with the
@@ -96,7 +97,7 @@ object ObservationDao {
       ids <- selectIds(pid)
       oss <- ids.traverse(select)
       ts  <- TargetEnvironmentDao.selectProg(pid)
-    } yield merge(TreeMap(ids.map(_.index).zip(oss): _*), ts)
+    } yield merge(TreeMap.fromList(ids.map(_.index).zip(oss)), ts)
 
   object Statements {
 
