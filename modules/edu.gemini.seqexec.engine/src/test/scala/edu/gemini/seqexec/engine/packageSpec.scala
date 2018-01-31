@@ -5,6 +5,7 @@ package edu.gemini.seqexec.engine
 
 import java.util.concurrent.Semaphore
 
+import edu.gemini.seqexec.engine.Sequence.State.Final
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator, Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
@@ -396,8 +397,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
-      case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Completed, StepState.Skipped))
+    inside (sf.map(_.sequences(seqId))) {
+      case Some(s@Final(_, SequenceState.Completed)) =>
+        assert(s.done.map(Step.status) === List(StepState.Completed, StepState.Completed, StepState.Skipped))
     }
   }
 
@@ -419,5 +421,75 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       case Some(stepSs) => assert(stepSs === List(StepState.Skipped))
     }
   }
+
+  it should "skip steps marked to be skipped at the beginning of the sequence, even if they have breakpoints." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true),
+            breakpoint = Step.BreakpointMark(true)),
+          Step.init(3, None, config, Set(GmosS), executions)
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Skipped, StepState.Skipped, StepState.Completed))
+    }
+  }
+
+  it should "skip the leading steps if marked to be skipped, even if they have breakpoints and are the last ones." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions).copy(skipped = Step.Skipped(true)),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true),
+            breakpoint = Step.BreakpointMark(true)),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true),
+            breakpoint = Step.BreakpointMark(true))
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId))) {
+      case Some(s@Final(_, SequenceState.Completed)) =>
+        assert(s.done.map(Step.status) === List(StepState.Skipped, StepState.Skipped, StepState.Skipped))
+    }
+  }
+
+  it should "skip steps marked to be skipped in the middle of the sequence, but honoring breakpoints." in {
+    val s0: Engine.State = Engine.State(Conditions.default,
+      None,
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(1, None, config, Set(GmosS), executions),
+          Step.init(2, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(3, None, config, Set(GmosS), executions).copy(skipMark = Step.SkipMark(true),
+            breakpoint = Step.BreakpointMark(true)),
+          Step.init(4, None, config, Set(GmosS), executions)
+        )
+      ) ) ) )
+    )
+
+    val sf = runToCompletion(s0)
+
+    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+      case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped))
+    }
+  }
+
 
 }

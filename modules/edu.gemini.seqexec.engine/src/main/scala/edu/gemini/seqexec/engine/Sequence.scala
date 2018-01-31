@@ -46,7 +46,7 @@ object Sequence {
     done: List[Step]
   ) {
 
-    private val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
+    private val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self)
 
     /**
       * Runs the next execution. If the current `Step` is completed it adds the
@@ -55,15 +55,20 @@ object Sequence {
       *
       * If there are still `Execution`s that have not finished in the current
       * `Step` or if there are no more pending `Step`s it returns `None`.
+      *
+      * It skips steps, but honoring breakpoints.
       */
     val next: Option[Zipper] =
       focus.next match {
         // Step completed
-        case None      => remaining match {
-          case Nil             => None
-          case stepp :: stepps => (Step.Zipper.currentify(stepp) |@| focus.uncurrentify) (
-            (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
-          )
+        case None      => {
+          val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
+          remaining match {
+            case Nil => None
+            case stepp :: stepps => (Step.Zipper.currentify(stepp) |@| focus.uncurrentify) (
+              (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
+            )
+          }
         }
         // Current step ongoing
         case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
@@ -71,6 +76,7 @@ object Sequence {
 
     def rollback: Zipper = this.copy(focus = focus.rollback)
 
+    //Skips steps before starting a sequence.
     def skips: Option[Zipper] = {
       if (focus.skipMark.self) {
         remaining match {
