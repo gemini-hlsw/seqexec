@@ -17,7 +17,7 @@ import scalaz.concurrent.Task
 import scalaz.syntax.show._
 import scalaz.syntax.std.boolean._
 
-class InstrumentSim(name: String) {
+class InstrumentControllerSim(name: String) {
   private val Log = getLogger
 
   private val stopFlag = new AtomicBoolean(false)
@@ -37,7 +37,7 @@ class InstrumentSim(name: String) {
       else if(timeout.exists(_<= 0)) TrySeq.fail(SeqexecException(new TimeoutException()))
       else {
         Thread.sleep(tic.toLong)
-        observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain-tic, timeout.map(_ - tic))
+        observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
       }
 
   def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
@@ -45,7 +45,8 @@ class InstrumentSim(name: String) {
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
-    observeTic(false, false, false, 7000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
+    observeTic(false, false, false, expTime.millis.toInt,
+      (expTime.value > 0.0).option(expTime.toMilliseconds.toInt + 2 * tic))
   } )
 
   def applyConfig[C: Show](config: C): SeqAction[Unit] = EitherT( Task {
@@ -80,7 +81,8 @@ class InstrumentSim(name: String) {
   def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
     Log.info(s"Simulate resuming $name observation")
     pauseFlag.set(false)
-    observeTic(false, false, false, 5000, (expTime.value > 0.0).option(expTime.toMilliseconds.toInt))
+    observeTic(false, false, false, expTime.millis.toInt / 2,
+      (expTime.value > 0.0).option(expTime.toMilliseconds.toInt / 2  + 2 * tic))
   } )
 
   def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
@@ -97,6 +99,6 @@ class InstrumentSim(name: String) {
 
 }
 
-object InstrumentSim {
-  def apply(name: String): InstrumentSim = new InstrumentSim(name)
+object InstrumentControllerSim {
+  def apply(name: String): InstrumentControllerSim = new InstrumentControllerSim(name)
 }

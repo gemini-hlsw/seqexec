@@ -5,7 +5,7 @@ package edu.gemini.seqexec.server.gmos
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.gmos.GmosController.{GmosConfig, NorthTypes, SiteDependentTypes, SouthTypes}
-import edu.gemini.seqexec.server.{InstrumentSim, ObserveCommand, SeqAction}
+import edu.gemini.seqexec.server.{InstrumentControllerSim, ObserveCommand, SeqAction}
 import squants.Time
 
 import scalaz.Show
@@ -16,7 +16,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
 
   override def getConfig: SeqAction[GmosConfig[T]] = ??? // scalastyle:ignore
 
-  private val sim: InstrumentSim = InstrumentSim(s"Gmos $name")
+  private val sim: InstrumentControllerSim = InstrumentControllerSim(s"GMOS $name")
 
   override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
     sim.observe(obsid, expTime)
