@@ -55,6 +55,23 @@ inThisBuild(List(
 
 enablePlugins(GitBranchPrompt)
 
+val startAllCommands = List(
+  "edu_gemini_seqexec_web_server/reStart",
+  "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer",
+  "~edu_gemini_seqexec_web_client/fastOptJS"
+)
+val restartWDSCommands = List(
+  "edu_gemini_seqexec_web_client/fastOptJS::stopWebpackDevServer",
+  "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer"
+)
+
+addCommandAlias("startAll", startAllCommands.mkString(";", ";", ""))
+
+addCommandAlias("restartWDS", restartWDSCommands.mkString(";", ";", ""))
+
+resolvers in ThisBuild +=
+  Resolver.sonatypeRepo("snapshots")
+
 //////////////
 // Projects
 //////////////
@@ -123,17 +140,8 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
-    // Settings to optimize the use of sbt-revolver
-    // Allows to read the generated JS on client
-    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
-    // Lets the backend to read the .map file for js
-    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map((x: sbt.Attributed[File]) => new File(x.data.getAbsolutePath + ".map")),
-    // Support stopping the running server
+    // Supports launchin the server in the background
     mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
-    // do a fastOptJS on reStart
-    reStart := (reStart dependsOn (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client))).evaluated,
-    // This settings makes reStart to rebuild if a scala.js file changes on the client
-    watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -159,7 +167,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     zonesFilter := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
-    webpackBundlingMode := BundlingMode.LibraryOnly(),
+    webpackBundlingMode          := BundlingMode.LibraryOnly(),
+    webpackMonitoredDirectories  += (resourceDirectory in Compile).value,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
       "react" -> LibraryVersions.reactJS,
@@ -174,19 +183,41 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "semantic-ui-tab" -> LibraryVersions.semanticUI,
       "semantic-ui-visibility" -> LibraryVersions.semanticUI,
       "semantic-ui-transition" -> LibraryVersions.semanticUI,
-      "semantic-ui-dimmer" -> LibraryVersions.semanticUI
+      "semantic-ui-dimmer" -> LibraryVersions.semanticUI,
+      "semantic-ui-less" -> LibraryVersions.semanticUI
     ),
-    npmDevDependencies in Compile += "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs,
+    npmDevDependencies in Compile ++= Seq(
+      "compression-webpack-plugin" -> "1.0.0",
+      "clean-webpack-plugin" -> "0.1.16",
+      "css-loader" -> "0.28.9",
+      "less" -> "2.3.1",
+      "less-loader" -> "4.0.5",
+      "extract-text-webpack-plugin" -> "3.0.2",
+      "file-loader" -> "0.11.2",
+      "html-webpack-plugin" -> "2.30.1",
+      "copy-webpack-plugin" -> "4.4.1",
+      "url-loader" -> "0.6.2",
+      "style-loader" -> "0.18.2",
+      "webpack-merge" -> "4.1.0",
+      "webpack-dev-server-status-bar" -> "1.0.0",
+      "cssnano" -> "3.10.0",
+      "optimize-css-assets-webpack-plugin" -> "3.2.0",
+      "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs
+    ),
     // Use a different Webpack configuration file for production and create a single bundle without source maps
-    webpackConfigFile in fullOptJS := Some(baseDirectory.value / "prod.webpack.config.js"),
-    webpackEmitSourceMaps := false,
-    emitSourceMaps := false,
+    version in webpack               := "3.5.5",
+    version in startWebpackDevServer := "2.7.1",
+    webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "prod.webpack.config.js"),
+    webpackEmitSourceMaps            := false,
+    webpackExtraArgs                 := Seq("--profile", "--progress", "true"),
+    webpackDevServerExtraArgs        := Seq("--profile"),
+    webpackConfigFile in fastOptJS   := Some(baseDirectory.value / "dev.webpack.config.js"),
+    emitSourceMaps                   := false,
     // Requires the DOM for tests
-    requiresDOM in Test := true,
+    requiresDOM in Test              := true,
     // Use yarn as it is faster than npm
-    useYarn := true,
-    version in webpack := "3.5.5",
-    libraryDependencies ++= Seq(
+    useYarn                          := true,
+    libraryDependencies             ++= Seq(
       JQuery.value,
       CatsEffect.value,
       ScalaCSS.value,

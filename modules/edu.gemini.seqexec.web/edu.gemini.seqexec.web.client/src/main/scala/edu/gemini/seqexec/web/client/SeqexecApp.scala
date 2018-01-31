@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
+import edu.gemini.seqexec.web.client.component.SeqexecUI
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.client.model.Pages
@@ -26,7 +26,7 @@ import cats.effect.IO
 /**
   * Seqexec WebApp entry point
   */
-@JSExportTopLevel("SeqexecApp")
+@JSExportTopLevel("seqexec.SeqexecApp")
 object SeqexecApp {
   private val defaultFmt = "[%4$s] %1s - %5$s"
 
@@ -43,13 +43,6 @@ object SeqexecApp {
 
     SeqexecWebClient.start()
     ()
-  }
-
-  def setupCss: IO[Unit] = IO {
-    val CssSettings = scalacss.devOrProdDefaults
-    import CssSettings._
-    // Register CSS styles
-    SeqexecStyles.addToDocument()
   }
 
   def setupSite(site: String): IO[SeqexecSite] = IO {
@@ -75,7 +68,6 @@ object SeqexecApp {
     val program = for {
       _           <- setupLogFormat
       _           <- setupLogger
-      _           <- setupCss
       seqexecSite <- setupSite(site)
       _           <- initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router(seqexecSite)
