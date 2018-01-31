@@ -644,14 +644,18 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginLeft.auto
   )
 
+  private val obsWidth = 200
+
   val observationProgressRow: StyleA = style(
     display.flex,
     flexGrow(1),
-    flexDirection.column
+    flexDirection.column,
+    width(obsWidth.px)
   )
 
   val observationProgressBar: StyleA = style(
-    margin(0.px).important
+    margin(0.px).important,
+    width(obsWidth.px)
   )
 
   val observationBar: StyleA = style(
@@ -659,7 +663,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val observationLabel: StyleA = style(
-    textAlign.center
+    textAlign.center,
+    width(obsWidth.px)
   )
 
 

@@ -3,6 +3,7 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
+import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.model.Model.{ActionStatus, Resource, StandardStep, Step, StepState}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.ModelOps._
@@ -78,10 +79,22 @@ object StepProgressCell {
         <.div(step.status.shows)
     }
 
+  def stepObservationStatus(focus: StepsTableFocus, step: Step, fileId: ImageFileId): VdomElement =
+    step match {
+      case StandardStep(_, _, _, _, _, _, _, _) =>
+        <.div(
+          SeqexecStyles.configuringRow,
+          ObservationProgressBar(fileId),
+          StepsControlButtons(focus.id, focus.instrument, focus.state, step).when(focus.state.isRunning && (step.isObserving || step.isObservePaused))
+        )
+      case _ =>
+        <.div(step.status.shows)
+    }
+
   def stepDisplay(focus: StepsTableFocus, step: Step): VdomElement =
     (focus.state, step.status, step.fileId) match {
       case (_, StepState.Running, None)         => stepSystemsStatus(step)
-      case (_, StepState.Running, Some(fileId)) => ObservationProgressBar(fileId)
+      case (_, StepState.Running, Some(fileId)) => stepObservationStatus(focus, step, fileId)
       // case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
       // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
       case (_, _, _) if step.skip    => <.p("Skipped")
