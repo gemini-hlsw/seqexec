@@ -77,7 +77,7 @@ object Settings {
     val javaTimeJS              = "2.0.0-M13-SNAPSHOT"
     val javaLogJS               = "0.1.3"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.0.9-SNAPSHOT"
+    val scalaJSReactVirtualized = "0.0.9"
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries

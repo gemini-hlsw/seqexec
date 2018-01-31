@@ -644,4 +644,23 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginLeft.auto
   )
 
+  val observationProgressRow: StyleA = style(
+    display.flex,
+    flexGrow(1),
+    flexDirection.column
+  )
+
+  val observationProgressBar: StyleA = style(
+    margin(0.px).important
+  )
+
+  val observationBar: StyleA = style(
+    height(1.em).important
+  )
+
+  val observationLabel: StyleA = style(
+    textAlign.center
+  )
+
+
 }

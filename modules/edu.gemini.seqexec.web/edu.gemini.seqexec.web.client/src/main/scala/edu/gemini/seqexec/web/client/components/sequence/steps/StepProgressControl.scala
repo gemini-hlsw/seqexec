@@ -45,7 +45,7 @@ object StepProgressCell {
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
     Label(Label.Props(s"${system.shows}", color = labelColor(status).some, icon = labelIcon(status)))
 
-  def stepProgress(state: SequenceState, step: Step): VdomNode =
+  /*def stepProgress(state: SequenceState, step: Step): VdomNode =
     (state, step.status) match {
       case (s, StepState.Running) if s.userStopRequested =>
         <.div(state.shows)
@@ -59,7 +59,7 @@ object StepProgressCell {
         step.fileId.getOrElse(""): String
       case _ =>
         step.file.getOrElse(""): String
-    }
+    }*/
 
   def stepSystemsStatus(step: Step): VdomElement =
     step match {
@@ -79,12 +79,13 @@ object StepProgressCell {
     }
 
   def stepDisplay(focus: StepsTableFocus, step: Step): VdomElement =
-    (focus.state, step.status) match {
-      case (_, StepState.Running) => stepSystemsStatus(step)
+    (focus.state, step.status, step.fileId) match {
+      case (_, StepState.Running, None)         => stepSystemsStatus(step)
+      case (_, StepState.Running, Some(fileId)) => ObservationProgressBar(fileId)
       // case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
       // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
-      case (_, _) if step.skip    => <.p("Skipped")
-      case (_, _)                 => <.p(step.status.shows)
+      case (_, _, _) if step.skip    => <.p("Skipped")
+      case (_, _, _)                 => <.p(step.status.shows)
     }
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")

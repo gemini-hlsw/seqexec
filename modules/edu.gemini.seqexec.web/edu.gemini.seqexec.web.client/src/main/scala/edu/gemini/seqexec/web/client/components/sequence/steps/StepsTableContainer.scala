@@ -5,7 +5,6 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
 import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, NavigateSilentTo}
@@ -32,32 +31,6 @@ import scalaz.syntax.equal._
 import scalaz.syntax.show._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
-
-/**
- * Component to wrap the progress bar
- */
-object ObservationProgressBar {
-  private val component = ScalaComponent.builder[ImageFileId]("ObservationProgressBar")
-    .stateless
-    .render_P(fileId =>
-      <.div(
-        ^.cls := "ui small top aligned progress vcentered",
-        <.div(
-          ^.cls := "bar",
-          <.div(
-            ^.cls := "progress")
-        ),
-        <.div(
-          ^.cls := "label",
-          SeqexecStyles.componentLabel,
-          fileId
-        )
-      )
-    )
-    .build
-
-  def apply(p: ImageFileId): Unmounted[ImageFileId, Unit, Unit] = component(p)
-}
 
 /**
  * Headers of the steps table
