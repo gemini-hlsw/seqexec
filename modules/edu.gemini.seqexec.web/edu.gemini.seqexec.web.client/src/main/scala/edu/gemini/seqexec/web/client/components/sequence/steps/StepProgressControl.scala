@@ -75,7 +75,7 @@ object StepProgressCell {
     )
 
   def controlButtonsActive(props: Props): Boolean =
-    props.clientStatus.isLogged && props.focus.state.isRunning && (props.step.isObserving || props.step.isObservePaused)
+    props.clientStatus.isLogged && props.focus.state.isRunning && (props.step.isObserving || props.step.isObservePaused || props.focus.state.userStopRequested)
 
   def stepObservationStatusAndFile(props: Props, fileId: ImageFileId): VdomElement =
     <.div(
@@ -94,6 +94,16 @@ object StepProgressCell {
       StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
     )
 
+  def stepObservationPausing(props: Props): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      <.div(
+        SeqexecStyles.specialStateLabel,
+        props.focus.state.shows
+      ),
+      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+    )
+
   def stepPaused(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
@@ -104,7 +114,7 @@ object StepProgressCell {
     (props.focus.state, props.step) match {
       case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
         // Case pause at the sequence level
-        stepObservationStatus(props)
+        stepObservationPausing(props)
       case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))         =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
