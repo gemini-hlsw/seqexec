@@ -4,10 +4,13 @@
 package edu.gemini.seqexec.server.gnirs
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
+import edu.gemini.seqexec.server.gnirs.GnirsController.GnirsConfig
 import edu.gemini.seqexec.server.{ObserveCommand, SeqAction}
 import squants.Time
 
 trait GnirsController {
+
+  def applyConfig(config: GnirsConfig): SeqAction[Unit]
 
   def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
 
@@ -71,6 +74,6 @@ object GnirsController {
                             wollanstonPrism: WollanstonPrism
                            )
 
-  final case class GnirsConfig(ccConfig: CCConfig, dcConfig: DCConfig)
+  final case class GnirsConfig(cc: CCConfig, dc: DCConfig)
 
 }
