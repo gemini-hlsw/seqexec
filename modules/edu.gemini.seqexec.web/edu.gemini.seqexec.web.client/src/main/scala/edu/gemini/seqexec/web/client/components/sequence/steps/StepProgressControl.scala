@@ -89,7 +89,7 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.focus.state.shows
+        props.step.shows
       ),
       StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
     )
@@ -97,23 +97,27 @@ object StepProgressCell {
   def stepPaused(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      props.step.status.shows
+      props.step.shows
     )
 
   def stepDisplay(props: Props): VdomElement =
     (props.focus.state, props.step) match {
       case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
+        // Case pause at the sequence level
         stepObservationStatus(props)
-      case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.internalStopRequested =>
-        stepPaused(props)
       case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))         =>
+        // Case configuring, label and status icons
         stepSystemsStatus(s)
+      case (f, s) if s.isObservePaused =>
+        // Case for exposure paused, label and control buttons
+        stepObservationStatus(props)
       case (f, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
+        // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, fileId)
       // case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
       // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
       case (_, _) if props.step.skip    => <.p("Skipped")
-      case (_, _)                 => <.p(props.step.status.shows)
+      case (_, _)                 => <.p(props.step.shows)
     }
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")

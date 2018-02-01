@@ -141,7 +141,7 @@ object StepsTableContainer {
         case StandardStep(_, _, _, _, _, _, configStatus, _) =>
           <.div(configStatus.map(Function.tupled(statusLabel)).toTagMod)
         case _ =>
-          <.div(step.status.shows)
+          <.div(step.shows)
       }
 
     def stepProgress(state: SequenceState, step: Step): VdomNode =
@@ -149,7 +149,7 @@ object StepsTableContainer {
         case (s, StepState.Running) if s.userStopRequested =>
           <.div(state.shows)
         case (s, _) if s.internalStopRequested             =>
-          <.div(step.status.shows)
+          <.div(step.shows)
         case (_, StepState.Pending)                        =>
           step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
         case (_, StepState.Running)                        =>
@@ -180,11 +180,11 @@ object StepsTableContainer {
     def stepDisplay(status: ClientStatus, p: StepsTableFocus, state: SequenceState, step: Step): VdomNode =
       (state, step.status) match {
         case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
-        case (_, StepState.Completed)                      => <.p(step.status.shows)
+        case (_, StepState.Completed)                      => <.p(step.shows)
         case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
         case (_, StepState.Skipped)                        => <.p("Skipped")
         case (_, _) if step.skip                           => <.p("Skip")
-        case (_, _)                                        => <.p(step.status.shows)
+        case (_, _)                                        => <.p(step.shows)
       }
 
     def selectRow(step: Step, index: Int): Callback =
