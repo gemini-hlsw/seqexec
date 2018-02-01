@@ -155,7 +155,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     webpackEmitSourceMaps := false,
     emitSourceMaps := false,
     // Requires the DOM for tests
-    requiresDOM in Test := true,
+    // requiresDOM in Test := true,
     // Disable tests to speed up builds
     test := {},
     // Use yarn as it is faster than npm
