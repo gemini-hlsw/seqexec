@@ -45,10 +45,10 @@
             </parameter>
             <parameter name="centralWavelength">
                 <channel>cc:gratingPosCad.C</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Grating Wavelength</description>
             </parameter>
-            <parameter name="cameraSeq">
+            <parameter name="camera">
                 <channel>cc:cameraPosCad.B</channel>
                 <type>STRING</type>
                 <description>Camera</description>
@@ -60,7 +60,7 @@
             </parameter>
             <parameter name="order">
                 <channel>cc:gratingPosCad.D</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Grating Order</description>
             </parameter>
             <parameter name="grating">
@@ -68,12 +68,12 @@
                 <type>STRING</type>
                 <description>Grating</description>
             </parameter>
-            <parameter name="slitWidthSeq">
+            <parameter name="slitWidth">
                 <channel>cc:slitPosCad.B</channel>
                 <type>STRING</type>
                 <description>Slit</description>
             </parameter>
-            <parameter name="deckerSeq">
+            <parameter name="decker">
                 <channel>cc:deckerPosCad.B</channel>
                 <type>STRING</type>
                 <description>Decker</description>
@@ -87,13 +87,13 @@
         <command name="nirs::dcconfig">
             <description>Setup a DC Configuration</description>
             <parameter name="lowNoise">
-                <channel>dc:LNRNum.VAL</channel>
-                <type>STRING</type>
+                <channel>dc:obsSetup.D</channel>
+                <type>INTEGER</type>
                 <description>Low Noise Rds</description>
             </parameter>
             <parameter name="exposureTime">
-                <channel>dc:integTime.VAL</channel>
-                <type>STRING</type>
+                <channel>dc:obsSetup.G</channel>
+                <type>DOUBLE</type>
                 <description>Exposure Time</description>
             </parameter>
             <parameter name="wcs">
@@ -102,18 +102,18 @@
                 <description>WCS file</description>
             </parameter>
             <parameter name="digitalAvgs">
-                <channel>dc:DAvgNum.VAL</channel>
-                <type>STRING</type>
+                <channel>dc:obsSetup.C</channel>
+                <type>INTEGER</type>
                 <description>Digital Avgs</description>
             </parameter>
             <parameter name="detBias">
                 <channel>dc:arSetup.H</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Detector Bias</description>
             </parameter>
             <parameter name="coadds">
-                <channel>dc:coadds.VAL</channel>
-                <type>STRING</type>
+                <channel>dc:obsSetup.E</channel>
+                <type>INTEGER</type>
                 <description>numcoadds</description>
             </parameter>
         </command>
@@ -177,11 +177,6 @@
             <type>INTEGER</type>
             <description>numCoAdds</description>
         </attribute>
-        <attribute name="detbias">
-            <channel>dc:achvdBias.VAL</channel>
-            <type>DOUBLE</type>
-            <description>Detector Bias</description>
-        </attribute>
         <attribute name="wcs">
             <channel>dc:setWcs.VALA</channel>
             <type>STRING</type>
@@ -231,7 +226,7 @@
             <type>STRING</type>
             <description></description>
         </attribute>
-        <attribute name="slitWidthSeq">
+        <attribute name="slitWidth">
             <channel>sad:cc:slitPosition</channel>
             <type>STRING</type>
             <description></description>
@@ -261,12 +256,12 @@
             <type>STRING</type>
             <description></description>
         </attribute>
-        <attribute name="cameraSeq">
+        <attribute name="camera">
             <channel>sad:cc:cameraPosition</channel>
             <type>STRING</type>
             <description></description>
         </attribute>
-        <attribute name="deckerSeq">
+        <attribute name="decker">
             <channel>sad:cc:deckerPosition</channel>
             <type>STRING</type>
             <description></description>

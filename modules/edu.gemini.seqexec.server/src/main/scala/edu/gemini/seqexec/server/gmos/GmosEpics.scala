@@ -20,7 +20,7 @@ import scalaz.syntax.equal._
 
 class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
-  val GMOS_TOP: String = tops.getOrElse("gm", "")
+  val GMOS_TOP: String = tops.getOrElse("gm", "gm:")
 
   def post: SeqAction[EpicsCommand.Result] = configCmd.post
 

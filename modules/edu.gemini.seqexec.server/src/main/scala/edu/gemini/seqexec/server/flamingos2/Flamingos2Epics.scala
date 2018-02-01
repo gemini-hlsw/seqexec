@@ -11,7 +11,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   import EpicsCommand.setParameter
 
-  val F2_TOP: String = tops.getOrElse("f2", "")
+  val F2_TOP: String = tops.getOrElse("f2", "f2:")
 
   def post: SeqAction[EpicsCommand.Result] = configCmd.post
 
