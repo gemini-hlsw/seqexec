@@ -38,7 +38,10 @@ object Event {
   def getSeqState(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(GetSeqState(id, f))
   def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event]]): Event = EventUser(ActionStop(id, f))
   def actionResume(id: Sequence.Id, i: Int, c: Task[Result]): Event = EventUser(ActionResume(id, i, c))
-  def logMsg(msg: String): Event = EventUser(Log(msg))
+  def logDebugMsg(msg: String): Event = EventUser(LogDebug(msg))
+  def logInfoMsg(msg: String): Event = EventUser(LogInfo(msg))
+  def logWarningMsg(msg: String): Event = EventUser(LogWarning(msg))
+  def logErrorMsg(msg: String): Event = EventUser(LogError(msg))
 
   def failed(id: Sequence.Id, i: Int, e: Result.Error): Event = EventSystem(Failed(id, i, e))
   def completed[R<:Result.RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): Event = EventSystem(Completed(id, i, r))

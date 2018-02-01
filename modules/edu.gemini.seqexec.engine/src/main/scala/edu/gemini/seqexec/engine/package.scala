@@ -333,6 +333,8 @@ package object engine {
     modifyS(id)(_.mark(i)(e)) *>
       switch(id)(SequenceState.Failed(e.msg))
 
+  def logError(e: Result.Error): HandleP[Unit] = Logger.error(e.errMsg.getOrElse(e.msg))
+
   /**
     * Ask for the current Handle `Status`.
     */
@@ -358,6 +360,12 @@ package object engine {
       * Log debug lifted into Handle.
       */
     def debug(msg: => String): HandleP[Unit] = pure((logger.debug(msg), None)).void
+
+    /**
+      *  Log error lifted into Handle
+      */
+    def error(msg: => String): HandleP[Unit] = pure((logger.error(msg), None)).void
+
   }
 
   /**
@@ -389,15 +397,18 @@ package object engine {
       case GetSeqState(id, f)          => getSeqState(id, f)
       case ActionStop(id, f)           => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
       case ActionResume(id, i, cont)   => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
-      case Log(msg)                    => Logger.debug(msg)
+      case LogDebug(msg)               => Logger.debug(msg)
+      case LogInfo(msg)                => Logger.info(msg)
+      case LogWarning(msg)             => Logger.warning(msg)
+      case LogError(msg)               => Logger.error(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
       case Paused(id, i, r)        => Logger.debug("Engine: Action paused")  *> actionPause(id, i, r)
-      case Failed(id, i, e)        => Logger.debug("Engine: Action failed") *> fail(id)(i, e)
-      case Busy(id)                => Logger.debug("Engine: Resources needed for this sequence are in use")
+      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e)
+      case Busy(id)                => Logger.warning("Cannot run sequence %id because required systems are in use.")
       case BreakpointReached(id)   => Logger.debug("Engine: Breakpoint reached")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)

@@ -238,7 +238,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
       case Controllable(StopObserveCmd(stop), _, _, _, _, _) => Some(Process.eval(stop.run.map{
-        case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
+        case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
       case _                                                 => none
@@ -249,7 +249,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
       case Controllable(_, AbortObserveCmd(abort), _, _, _, _) => Some(Process.eval(abort.run.map{
-        case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
+        case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
       case _                                                   => none
@@ -259,7 +259,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   def pauseObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
     toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
       case Controllable(_, _, PauseObserveCmd(pause), _, _, _) => Some(Process.eval(pause.run.map{
-        case -\/(e) => Event.logMsg(SeqexecFailure.explain(e))
+        case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
         case _      => Event.nullEvent
       }))
       case _                                                   => none
