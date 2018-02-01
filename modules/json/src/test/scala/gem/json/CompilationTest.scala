@@ -28,7 +28,7 @@ import gem.util.Enumerated
   def enumerated[E: Enumerated] = assertCodec[E]
   def programA[A: Encoder: Decoder] = assertCodec[Program[A]]
   def stepA[A: Encoder: Decoder] = assertCodec[Step[A]]
-  def observationAB[A: Encoder: Decoder, B: Encoder: Decoder] = assertCodec[Observation[A, B]]
+  def observationABC[A: Encoder: Decoder, B: Encoder: Decoder, C: Encoder: Decoder] = assertCodec[Observation[A, B, C]]
 
   // Sanity checks
   assertCodec[User[ProgramRole]]

@@ -4,7 +4,6 @@
 package gem
 package dao
 
-import gem.config.{DynamicConfig, StaticConfig}
 import gem.dao.meta._
 
 import cats.implicits._
@@ -22,7 +21,7 @@ object ProgramDao {
     Statements.insert(p).run.as(p.id)
 
   /** Insert a complete program. */
-  def insert(p: Program[Observation[StaticConfig, Step[DynamicConfig]]]): ConnectionIO[Program.Id] =
+  def insert(p: Program[Observation.Full]): ConnectionIO[Program.Id] =
     insertFlat(p) <* p.observations.toList.traverse { case (i,o) =>
       ObservationDao.insert(Observation.Id(p.id, i), o)
     }
@@ -53,7 +52,7 @@ object ProgramDao {
     Statements.selectFlat(pid).option
 
   /** Select a program by id, with full Observation information. */
-  def selectFull(pid: Program.Id): ConnectionIO[Option[Program[Observation[StaticConfig, Step[DynamicConfig]]]]] =
+  def selectFull(pid: Program.Id): ConnectionIO[Option[Program[Observation.Full]]] =
     for {
       opn <- selectFlat(pid)
       os  <- ObservationDao.selectAll(pid)

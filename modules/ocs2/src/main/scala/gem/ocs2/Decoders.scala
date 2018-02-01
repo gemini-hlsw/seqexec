@@ -200,7 +200,7 @@ object Decoders {
     }
   }
 
-  implicit val ObservationDecoder: PioDecoder[Observation[StaticConfig, Step[DynamicConfig]]] =
+  implicit val ObservationDecoder: PioDecoder[Observation.Full] =
     PioDecoder { n =>
       for {
         t  <- (n \! "data" \? "#title"                   ).decodeOrZero[String]
@@ -210,13 +210,13 @@ object Decoders {
       } yield Observation(t, e, st, sq)
     }
 
-  implicit val ProgramDecoder: PioDecoder[Program[Observation[StaticConfig, Step[DynamicConfig]]]] =
+  implicit val ProgramDecoder: PioDecoder[Program[Observation.Full]] =
     PioDecoder { n =>
       for {
         id <- (n \!  "@name"           ).decode[Program.Id]
         t  <- (n \!  "data" \? "#title").decodeOrZero[String]
         is <- (n \\* "observation"     ).decode[Observation.Index]
-        os <- (n \\* "observation"     ).decode[Observation[StaticConfig, Step[DynamicConfig]]]
+        os <- (n \\* "observation"     ).decode[Observation.Full]
       } yield Program(id, t, TreeMap.fromList(is.zip(os)))
     }
 

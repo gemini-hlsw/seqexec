@@ -5,8 +5,7 @@ package gem.dao
 
 import cats.implicits._
 import doobie.implicits._
-import gem.{ Observation, Step }
-import gem.config.{ DynamicConfig, StaticConfig }
+import gem.Observation
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
@@ -29,7 +28,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select flat observations") {
     val oid = Observation.Id(pid, Observation.Index.One)
 
-    forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
+    forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -37,14 +36,20 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
         } yield o
       }
 
-      obsOut shouldEqual obsIn.leftMap(_.instrument).copy(steps = Nil)
+      // Take the generated observation, remove the targets and steps, and map
+      // the the static config to the instrument.
+      val expected = Observation.staticConfigFunctor.map(
+                       Observation.targetsFunctor.void(obsIn)
+                     )(_.instrument).copy(steps = Nil)
+
+      obsOut shouldEqual expected // obsIn.leftMap(_.instrument).copy(steps = Nil)
     }
   }
 
-  property("ObservationDao should select static observations") {
+  property("ObservationDao should select static-only observations") {
     val oid = Observation.Id(pid, Observation.Index.One)
 
-    forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
+    forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -52,14 +57,40 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
         } yield o
       }
 
-      obsOut shouldEqual obsIn.copy(steps = Nil)
+      // Take the generated observation and remove the targets and steps
+      val expected = Observation.targetsFunctor
+                       .void(obsIn)
+                       .copy(steps = Nil)
+
+      obsOut shouldEqual expected
+    }
+  }
+
+  property("ObservationDao should select target-only observations") {
+    val oid = Observation.Id(pid, Observation.Index.One)
+
+    forAll { (obsIn: Observation.Full) =>
+      val obsOut = withProgram {
+        for {
+          _ <- ObservationDao.insert(oid, obsIn)
+          o <- ObservationDao.selectTargets(oid)
+        } yield o
+      }
+
+      // Take the generated observation, replace the static config with the
+      // instrument type and remove the steps.
+      val expected = Observation.staticConfigFunctor
+                       .map(obsIn)(_.instrument)
+                       .copy(steps = Nil)
+
+      obsOut shouldEqual expected
     }
   }
 
   property("ObservationDao should roundtrip complete observations") {
     val oid = Observation.Id(pid, Observation.Index.One)
 
-    forAll { (obsIn: Observation[StaticConfig, Step[DynamicConfig]]) =>
+    forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)

@@ -7,8 +7,7 @@ import Decoders._
 
 import cats.effect.IO, cats.implicits._
 
-import gem.{ Dataset, Observation, Program, Step }
-import gem.config.{ StaticConfig, DynamicConfig }
+import gem.{ Dataset, Observation, Program }
 import gem.ocs2.pio.{ PioDecoder, PioError }
 import gem.ocs2.pio.PioError._
 
@@ -71,13 +70,13 @@ final class ImportServer(ocsHost: String) {
 
   def importObservation(obsIdStr: String): IO[Response[IO]] = {
     val checkId = Observation.Id.fromString(obsIdStr) toRight badRequest(obsIdStr, "observation")
-    checkId.map { oid => fetchDecodeAndStore[Obs](obsIdStr, (a, ds) => Importer.importObservation(oid, a, ds)) }.merge
+    checkId.map { oid => fetchDecodeAndStore[Observation.Full](obsIdStr, (a, ds) => Importer.importObservation(oid, a, ds)) }.merge
   }
 
   def importProgram(pidStr: String): IO[Response[IO]] = {
     val checkId = Either.catchOnly[IllegalArgumentException](Program.Id.unsafeFromString(pidStr))
                     .leftMap(_ => badRequest(pidStr, "program"))
-    checkId.as { fetchDecodeAndStore[Prog](pidStr, Importer.importProgram) }.merge
+    checkId.as { fetchDecodeAndStore[Program[Observation.Full]](pidStr, Importer.importProgram) }.merge
   }
 }
 
@@ -92,9 +91,6 @@ object ImportServer extends StreamApp[IO] {
 
   private def fetchServiceUrl(hostName: String): String =
     s"http://$hostName:8442/ocs3/fetch"
-
-  type Obs  = Observation[StaticConfig, Step[DynamicConfig]]
-  type Prog = Program[Obs]
 
   implicit class PioErrorSyntax(e: PioError) {
     def toResponse(id: String): IO[Response[IO]] = {

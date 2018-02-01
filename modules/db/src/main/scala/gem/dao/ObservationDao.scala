@@ -6,7 +6,7 @@ package dao
 
 import cats.implicits._
 import doobie._, doobie.implicits._
-import gem.config.{DynamicConfig, StaticConfig}
+import gem.config.StaticConfig
 import gem.dao.meta._
 import gem.enum.Instrument
 import gem.syntax.treemapcompanion._
@@ -24,7 +24,7 @@ object ObservationDao {
    * Construct a program to insert a fully-populated Observation. This program will raise a
    * key violation if an observation with the same id already exists.
    */
-  def insert(oid: Observation.Id, o: Observation[StaticConfig, Step[DynamicConfig]]): ConnectionIO[Unit] =
+  def insert(oid: Observation.Id, o: Observation.Full): ConnectionIO[Unit] =
     for {
       _ <- Statements.insert(oid, o).run
       _ <- StaticConfigDao.insert(oid, o.staticConfig)
@@ -34,65 +34,88 @@ object ObservationDao {
            }.void
     } yield ()
 
-  /** Construct a program to select the specified observation, with the instrument and no steps. */
-  def selectFlat(id: Observation.Id): ConnectionIO[Observation[Instrument, Nothing]] =
-    for {
-      o <- Statements.selectFlat(id).unique
-      t <- TargetEnvironmentDao.selectObs(id)
-    } yield o.copy(targets = t)
+  /** Construct a program to select the specified observation, with the
+    * instrument but not targets nor steps.
+    */
+  def selectFlat(id: Observation.Id): ConnectionIO[Observation[Unit, Instrument, Nothing]] =
+    Statements.selectFlat(id).unique
 
-  /** Construct a program to select the specified observation, with static connfig and no steps. */
-  def selectStatic(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Nothing]] =
+  /** Construct a program to select the specified observation, with the
+    * targets and instrument type but not steps.
+    */
+  def selectTargets(id: Observation.Id): ConnectionIO[Observation[TargetEnvironment, Instrument, Nothing]] =
+    for {
+      o <- selectFlat(id)
+      t <- TargetEnvironmentDao.selectObs(id)
+    } yield Observation.targetsFunctor.as(o, t)
+
+  /** Construct a program to select the specified observation, with static
+    * config but not targets nor steps.
+    */
+  def selectStatic(id: Observation.Id): ConnectionIO[Observation[Unit, StaticConfig, Nothing]] =
     for {
       obs <- selectFlat(id)
       sc  <- StaticConfigDao.select(id, obs.staticConfig)
-    } yield obs.leftMap(_ => sc)
+    } yield Observation.staticConfigFunctor.as(obs, sc)
 
-  /** Construct a program to select the specified observation, with static connfig and steps. */
-  def select(id: Observation.Id): ConnectionIO[Observation[StaticConfig, Step[DynamicConfig]]] =
+  /** Construct a program to select a fully specified observation, with targets,
+    * static config and steps.
+    */
+  def select(id: Observation.Id): ConnectionIO[Observation.Full] =
     for {
       on <- selectStatic(id)
       ss <- StepDao.selectAll(id)
-    } yield on.copy(steps = ss.values.toList)
+      t  <- TargetEnvironmentDao.selectObs(id)
+    } yield Observation.targetsFunctor.as(on.copy(steps = ss.values.toList), t)
 
-  /** Construct a program to select the all obseravation ids for the specified science program. */
+  /** Construct a program to select the all obseravation ids for the specified
+    * science program.
+    */
   def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
     Statements.selectIds(pid).list
 
-  private def merge[I: Ordering, S, D](
-    os: TreeMap[I, Observation[S, D]],
+  // Merges a map of Index -> TargetEnvironment into a matching map of
+  // Index -> Observation.
+  private def merge[I: Ordering, T, S, D](
+    os: TreeMap[I, Observation[T, S, D]],
     ts: Map[I, TargetEnvironment]
-  ): TreeMap[I, Observation[S, D]] =
-    os.foldLeft(TreeMap.empty[I, Observation[S, D]]) { case (m, (i, o)) =>
-      m.updated(i, ts.get(i).fold(o)(t => o.copy(targets = t)))
+  ): TreeMap[I, Observation[TargetEnvironment, S, D]] =
+
+    os.foldLeft(TreeMap.empty[I, Observation[TargetEnvironment, S, D]]) {
+      case (m, (i, o)) =>
+        m.updated(i, Observation.targetsFunctor.as(
+          o, ts.getOrElse(i, TargetEnvironment.empty)
+        ))
     }
 
-  /**
-   * Construct a program to select all observations for the specified science program, with the
-   * instrument and no steps.
-   */
-  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Instrument, Nothing]]] =
+  /** Construct a program to select all observations for the specified science
+    * program, with the instrument but no targets nor steps.
+    */
+  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Unit, Instrument, Nothing]]] =
+    Statements.selectAllFlat(pid).list.map(lst => TreeMap.fromList(lst))
+
+  /** Construct a program to select all observations for the specified science
+    * program, with the targets and the instrument type, but no steps.
+    */
+  def selectAllTarget(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[TargetEnvironment, Instrument, Nothing]]] =
     for {
-      m  <- Statements.selectAllFlat(pid).list.map(lst => TreeMap.fromList(lst))
+      m  <- selectAllFlat(pid)
       ts <- TargetEnvironmentDao.selectProg(pid)
     } yield merge(m, ts)
 
-  /**
-   * Construct a program to select all observations for the specified science program, with the
-   * static component and no steps.
-   */
-  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[StaticConfig, Nothing]]] =
+  /** Construct a program to select all observations for the specified science
+    * program, with the static component but no targets nor steps.
+    */
+  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Unit, StaticConfig, Nothing]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
-      ts  <- TargetEnvironmentDao.selectProg(pid)
-    } yield merge(TreeMap.fromList(ids.map(_.index).zip(oss)), ts)
+    } yield TreeMap.fromList(ids.map(_.index).zip(oss))
 
-  /**
-   * Construct a program to select all observations for the specified science program, with the
-   * static component and steps.
-   */
-  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
+  /** Construct a program to select all observations for the specified science
+    * program, with its targets, static component and steps.
+    */
+  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation.Full]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(select)
@@ -101,7 +124,7 @@ object ObservationDao {
 
   object Statements {
 
-    def insert(oid: Observation.Id, o: Observation[StaticConfig, _]): Update0 =
+    def insert(oid: Observation.Id, o: Observation[_, StaticConfig, _]): Update0 =
       sql"""
         INSERT INTO observation (observation_id,
                                 program_id,
@@ -122,15 +145,15 @@ object ObservationDao {
          WHERE program_id = $pid
       """.query[Observation.Id]
 
-    def selectFlat(id: Observation.Id): Query0[Observation[Instrument, Nothing]] =
+    def selectFlat(id: Observation.Id): Query0[Observation[Unit, Instrument, Nothing]] =
       sql"""
         SELECT title, instrument
           FROM observation
          WHERE observation_id = ${id}
       """.query[(String, Instrument)]
-        .map { case (t, i) => Observation(t, TargetEnvironment.empty, i, Nil) }
+        .map { case (t, i) => Observation(t, (), i, Nil) }
 
-    def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Instrument, Nothing])] =
+    def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Unit, Instrument, Nothing])] =
       sql"""
         SELECT observation_index, title, instrument
           FROM observation
@@ -138,7 +161,7 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Instrument)]
         .map { case (n, t, i) =>
-          (Observation.Index.unsafeFromShort(n), Observation(t, TargetEnvironment.empty, i, Nil))
+          (Observation.Index.unsafeFromShort(n), Observation(t, (), i, Nil))
         }
 
   }

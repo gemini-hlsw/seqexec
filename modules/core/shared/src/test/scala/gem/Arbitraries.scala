@@ -5,7 +5,7 @@ package gem
 
 import cats.implicits._
 import gem.arb._
-import gem.config.{DynamicConfig, GcalConfig, StaticConfig, TelescopeConfig}
+import gem.config.{ DynamicConfig, GcalConfig, TelescopeConfig }
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.Offset
 import gem.syntax.treemapcompanion._
@@ -87,7 +87,7 @@ trait Arbitraries extends gem.config.Arbitraries  {
 
   // Observation
 
-  def genObservationOf(i: Instrument): Gen[Observation[StaticConfig, Step[DynamicConfig]]] =
+  def genObservationOf(i: Instrument): Gen[Observation.Full] =
     for {
       t <- genTitle
       e <- arbitrary[TargetEnvironment]
@@ -95,7 +95,7 @@ trait Arbitraries extends gem.config.Arbitraries  {
       d <- genSequenceOf(i)
     } yield Observation(t, e, s, d)
 
-  implicit val arbObservation: Arbitrary[Observation[StaticConfig, Step[DynamicConfig]]] =
+  implicit val arbObservation: Arbitrary[Observation.Full] =
     Arbitrary {
       for {
         i <- Gen.oneOf(
@@ -107,10 +107,10 @@ trait Arbitraries extends gem.config.Arbitraries  {
       } yield o
     }
 
-  def genObservationMap(limit: Int): Gen[TreeMap[Observation.Index, Observation[StaticConfig, Step[DynamicConfig]]]] =
+  def genObservationMap(limit: Int): Gen[TreeMap[Observation.Index, Observation.Full]] =
     for {
       count   <- Gen.choose(0, limit)
       obsIdxs <- Gen.listOfN(count, Gen.posNum[Short]).map(_.distinct.map(Observation.Index.unsafeFromShort))
-      obsList <- obsIdxs.traverse(_ => arbitrary[Observation[StaticConfig, Step[DynamicConfig]]])
+      obsList <- obsIdxs.traverse(_ => arbitrary[Observation.Full])
     } yield TreeMap.fromList(obsIdxs.zip(obsList))
 }

@@ -3,27 +3,32 @@
 
 package gem
 
+import gem.config.{ StaticConfig, DynamicConfig }
 import gem.syntax.string._
 
 import mouse.boolean._
 
-import cats.{ Applicative, Eval, Order, Show, Bitraverse }
+import cats.{ Functor, Order, Show }
 import cats.implicits._
 
 /**
- * An observation, parameterized over the types of its static config and steps (typically
- * [[gem.config.StaticConfig StaticConfig]] and [[gem.Step Step[α]]], respectively, for a
- * fully-specified Observation; or `Unit` and `Nothing` for a
- * minimally-specified Observation.
+ * An observation, parameterized over the types of its targets, static config
+ * and steps (typically [[gem.TargetEnvironment]], [[gem.config.StaticConfig StaticConfig]]
+ * and [[gem.Step Step[α]]], respectively, for a fully-specified Observation;
+ * or `Unit`, `Unit` and `Nothing` for a minimally-specified Observation.
+ *
  * @group Program Model
  */
-final case class Observation[+S, +D](
+final case class Observation[+T, +S, +D](
   title: String,
-  targets: TargetEnvironment,
+  targets: T,
   staticConfig: S,
   steps: List[D])
 
 object Observation {
+
+  /** A fully specified observation. */
+  type Full = Observation[TargetEnvironment, StaticConfig, Step[DynamicConfig]]
 
   /** A positive, non-zero integer for use in ids. */
   sealed abstract case class Index(toShort: Short) {
@@ -89,15 +94,30 @@ object Observation {
 
   }
 
-  /** Observation is a bitraversable functor. */
-  implicit val ObservationBitraverse: Bitraverse[Observation] =
-    new Bitraverse[Observation] {
-      def bifoldLeft[A, B, C](fab: Observation[A,B], c: C)(f: (C, A) => C, g: (C, B) => C): C =
-        fab.steps.foldLeft(f(c, fab.staticConfig))(g)
-      def bifoldRight[A, B, C](fab: Observation[A,B], c: Eval[C])(f: (A, Eval[C]) => Eval[C], g: (B, Eval[C]) => Eval[C]): Eval[C] =
-        fab.steps.foldRight(f(fab.staticConfig, c))(g)
-      def bitraverse[G[_]: Applicative, A, B, C, D](fab: Observation[A, B])(f: A => G[C], g: B => G[D]): G[Observation[C,D]] =
-        (f(fab.staticConfig), fab.steps.traverse(g)).mapN((c, d) => fab.copy(staticConfig = c, steps = d))
+  /** A functor over `Observation` on the `T`, or targets, type parameter.
+    * Not implicit.
+    */
+  def targetsFunctor[S, D]: Functor[Observation[?, S, D]] =
+    new Functor[Observation[?, S, D]] {
+      def map[A, B](o: Observation[A, S, D])(f: A => B): Observation[B, S, D] =
+        Observation(o.title, f(o.targets), o.staticConfig, o.steps)
     }
 
+  /** A functor over `Observation` on the `S`, or static configuration, type
+    * parameter. Not implicit.
+    */
+  def staticConfigFunctor[T, D]: Functor[Observation[T, ?, D]] =
+    new Functor[Observation[T, ?, D]] {
+      def map[A, B](o: Observation[T, A, D])(f: A => B): Observation[T, B, D] =
+        Observation(o.title, o.targets, f(o.staticConfig), o.steps)
+    }
+
+  /** A functor over `Observation` on the `D`, or dynamic configuration, type
+    * parameter. Not implicit.
+    */
+  def dynamicConfigFunctor[T, S]: Functor[Observation[T, S, ?]] =
+    new Functor[Observation[T, S, ?]] {
+      def map[A, B](o: Observation[T, S, A])(f: A => B): Observation[T, S, B] =
+        Observation(o.title, o.targets, o.staticConfig, o.steps.map(f))
+    }
 }
