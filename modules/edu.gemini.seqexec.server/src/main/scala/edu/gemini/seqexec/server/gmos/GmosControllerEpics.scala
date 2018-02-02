@@ -87,7 +87,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s.rois match {
     case -\/(b)    => roiParameters(binning, 1, encoders.builtInROI.encode(b))
     case \/-(rois) => rois.zipWithIndex.map { case (roi, i) =>
-      roiParameters(binning, i, ROIValues.fromOCS(roi))
+      roiParameters(binning, i + 1, ROIValues.fromOCS(roi))
     }.sequenceU.flatMap(_ => SeqAction.void)
   }
 
