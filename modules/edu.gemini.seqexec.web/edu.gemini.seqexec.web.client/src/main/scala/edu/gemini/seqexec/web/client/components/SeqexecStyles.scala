@@ -442,7 +442,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
-    borderLeft.none
+    borderLeft.none,
+    overflow.visible.important
   )
 
   val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
@@ -452,7 +453,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepsTableMixin: StyleS = mixin(
     fontSize.smaller.important,
     textOverflow := "ellipsis",
-    overflow.hidden,
     wordWrap.breakWord,
     whiteSpace.nowrap
   )
@@ -518,6 +518,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val stepRow: StyleA = style(
     stepRowMixin,
+    overflow.unset.important,
     rowMixin
   )
 
@@ -555,7 +556,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val controlCellRow: StyleA = style(
-    padding.unset
+    padding.unset,
+    overflow.unset.important
   )
 
   val iconCellMixin: StyleS = mixin(
@@ -596,10 +598,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     paddingTop(0.4.em)
   )
 
+  val breakPointOnIcon: StyleA = style(
+    position.relative,
+    left(3.px),
+    top(-5.px)
+  )
+
   val breakPointHandle: StyleA = style(
     position.relative,
     left(3.px),
-    top(-8.5.px)
+    top(-6.px),
+    height(13.px),
+    width(13.px),
+    cursor.pointer,
+    opacity(0.8),
+    transition := "opacity 0.1.s ease"
   )
 
   // Row styles taken from sematic ui tables

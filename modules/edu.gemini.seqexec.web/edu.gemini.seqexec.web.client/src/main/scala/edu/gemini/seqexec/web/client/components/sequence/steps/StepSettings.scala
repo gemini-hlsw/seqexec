@@ -55,7 +55,7 @@ object StepBreakStopCell {
   }
 
   def breakpointAt(p: Props, step: Step): Callback =
-    Callback.when(p.clientStatus.isLogged)(Callback(SeqexecCircuit.dispatch(FlipBreakpointStep(p.focus.id, step)))) >> p.heightChangeCB(step.id)
+    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.focus.id, step))) >> p.heightChangeCB(step.id)
 
   private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
 
@@ -68,10 +68,13 @@ object StepBreakStopCell {
         ^.height := p.rowHeight.px,
         <.div(
           SeqexecStyles.breakPointHandle,
+          ^.onClick --> breakpointAt(p, p.step),
           if (p.step.breakpoint) {
-            Icon.IconMinus.copyIcon(link = true, color = Some("brown"), onClick = breakpointAt(p, p.step))
+            <.div(
+              Icon.IconMinus.copyIcon(color = Some("brown"), onClick = breakpointAt(p, p.step), fitted = true)
+            )
           } else {
-            Icon.IconCaretDown.copyIcon(link = true, color = Some("grey"), onClick = breakpointAt(p, p.step))
+            Icon.IconCaretDown.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOnIcon))
           }
         ).when(canSetBreakpoint)
       )
