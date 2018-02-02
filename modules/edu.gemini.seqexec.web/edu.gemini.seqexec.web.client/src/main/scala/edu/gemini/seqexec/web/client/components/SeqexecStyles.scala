@@ -586,7 +586,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     // CSS Dark magic to get the gutter background, see
     // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
-    backgroundClip.contentBox.paddingBox.important,
+    backgroundClip.paddingBox,
+    backgroundColor(white),
     width(21.px),
     rightBorderMixin
   )
@@ -610,7 +611,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val rowActive: StyleA = style(
     backgroundColor(c"#E0E0E0"),
     color(rgba(0, 0, 0, 0.87)),
-    boxShadow := "0px 0px 0px rgba(0, 0, 0, 0.87) inset"
+    boxShadow := "0px 0px 0px rgba(0, 0, 0, 0.87) inset",
+    backgroundClip.paddingBox
   )
 
   val rowNegative: StyleA = style(
