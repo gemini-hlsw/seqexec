@@ -283,6 +283,8 @@ object Model {
 
       def isFinished: Boolean = s.status === StepState.Completed || s.status === StepState.Skipped
 
+      def wasSkipped: Boolean = s.status === StepState.Skipped
+
     }
   }
 

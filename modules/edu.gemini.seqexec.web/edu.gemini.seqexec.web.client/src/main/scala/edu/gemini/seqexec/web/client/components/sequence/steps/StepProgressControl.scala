@@ -126,7 +126,8 @@ object StepProgressCell {
         stepObservationStatusAndFile(props, fileId)
       // case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
       // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
-      case (_, _) if props.step.skip    => <.p("Skipped")
+      case (_, s) if s.wasSkipped       => <.p("Skipped")
+      case (_, _) if props.step.skip    => <.p("Skip")
       case (_, _)                 => <.p(props.step.shows)
     }
 
