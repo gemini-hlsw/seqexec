@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="nirs">nirs</Top>
+    <Apply name="nirs::apply">
+        <top>nirs</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>IS Primary Apply Record </description>
+        <command name="nirs::config">
+            <description>Setup a Configuration</description>
+            <parameter name="cover">
+                <channel>cc:coverPosCad.B</channel>
+                <type>STRING</type>
+                <description>Cover</description>
+            </parameter>
+            <parameter name="filter1">
+                <channel>cc:fw1PosCad.B</channel>
+                <type>STRING</type>
+                <description>Filter1</description>
+            </parameter>
+            <parameter name="focus">
+                <channel>cc:focusStepsCad.A</channel>
+                <type>STRING</type>
+                <description>Focus</description>
+            </parameter>
+            <parameter name="tilt">
+                <channel>cc:gratingPosCad.E</channel>
+                <type>STRING</type>
+                <description>Grating Tilt</description>
+            </parameter>
+            <parameter name="prism">
+                <channel>cc:xdispPosCad.B</channel>
+                <type>STRING</type>
+                <description>Prism</description>
+            </parameter>
+            <parameter name="acqMirror">
+                <channel>cc:acqPosCad.B</channel>
+                <type>STRING</type>
+                <description>Acquisition Mirror</description>
+            </parameter>
+            <parameter name="focusbest">
+                <channel>focus:focusbest</channel>
+                <type>STRING</type>
+                <description>Best Focus Button</description>
+            </parameter>
+            <parameter name="centralWavelength">
+                <channel>cc:gratingPosCad.C</channel>
+                <type>DOUBLE</type>
+                <description>Grating Wavelength</description>
+            </parameter>
+            <parameter name="camera">
+                <channel>cc:cameraPosCad.B</channel>
+                <type>STRING</type>
+                <description>Camera</description>
+            </parameter>
+            <parameter name="gratingMode">
+                <channel>cc:gratingPos</channel>
+                <type>STRING</type>
+                <description>Grating Mode</description>
+            </parameter>
+            <parameter name="order">
+                <channel>cc:gratingPosCad.D</channel>
+                <type>INTEGER</type>
+                <description>Grating Order</description>
+            </parameter>
+            <parameter name="grating">
+                <channel>cc:gratingPosCad.B</channel>
+                <type>STRING</type>
+                <description>Grating</description>
+            </parameter>
+            <parameter name="slitWidth">
+                <channel>cc:slitPosCad.B</channel>
+                <type>STRING</type>
+                <description>Slit</description>
+            </parameter>
+            <parameter name="decker">
+                <channel>cc:deckerPosCad.B</channel>
+                <type>STRING</type>
+                <description>Decker</description>
+            </parameter>
+            <parameter name="filter2">
+                <channel>cc:fw2PosCad.B</channel>
+                <type>STRING</type>
+                <description>Filter2</description>
+            </parameter>
+        </command>
+        <command name="nirs::dcconfig">
+            <description>Setup a DC Configuration</description>
+            <parameter name="lowNoise">
+                <channel>dc:obsSetup.D</channel>
+                <type>INTEGER</type>
+                <description>Low Noise Rds</description>
+            </parameter>
+            <parameter name="exposureTime">
+                <channel>dc:obsSetup.G</channel>
+                <type>DOUBLE</type>
+                <description>Exposure Time</description>
+            </parameter>
+            <parameter name="wcs">
+                <channel>dc:setWcs.A</channel>
+                <type>STRING</type>
+                <description>WCS file</description>
+            </parameter>
+            <parameter name="digitalAvgs">
+                <channel>dc:obsSetup.C</channel>
+                <type>INTEGER</type>
+                <description>Digital Avgs</description>
+            </parameter>
+            <parameter name="detBias">
+                <channel>dc:arSetup.H</channel>
+                <type>DOUBLE</type>
+                <description>Detector Bias</description>
+            </parameter>
+            <parameter name="coadds">
+                <channel>dc:obsSetup.E</channel>
+                <type>INTEGER</type>
+                <description>numcoadds</description>
+            </parameter>
+        </command>
+        <command name="nirs::endObserve">
+            <record>endObserve</record>
+            <description>End Observe</description>
+        </command>
+        <command name="nirs::abort">
+            <record>abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="nirs::observe">
+            <record>observe</record>
+            <description>Observe</description>
+            <parameter name="label">
+                <channel>observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+        </command>
+        <command name="nirs::stop">
+            <record>stop</record>
+            <description>Stop observation</description>
+        </command>
+    </Apply>
+    <Status name="nirs::dcstatus">
+        <top>nirs</top>
+        <description>nirs status</description>
+        <attribute name="arrayid">
+            <channel>sad:dc:detID.VAL</channel>
+            <type>STRING</type>
+            <description>Array ID</description>
+        </attribute>
+        <attribute name="arraytyp">
+            <channel>sad:dc:detType.VAL</channel>
+            <type>STRING</type>
+            <description>Array Type</description>
+        </attribute>
+        <attribute name="OBSEPOCH">
+            <channel>sad:dc:obsepoch</channel>
+            <type>DOUBLE</type>
+            <description></description>
+        </attribute>
+        <attribute name="detBias">
+            <channel>dc:achvdBias.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Detector Bias</description>
+        </attribute>
+        <!--<attribute name="arrayActivated">-->
+            <!--<channel>dc:activate</channel>-->
+            <!--<type>ENUM</type>-->
+            <!--<description>Array status  </description>-->
+        <!--</attribute>-->
+        <attribute name="countdown">
+            <channel>sad:dc:timeLeft</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="numCoAdds">
+            <channel>dc:obsSetup.VALE</channel>
+            <type>INTEGER</type>
+            <description>numCoAdds</description>
+        </attribute>
+        <attribute name="wcs">
+            <channel>dc:setWcs.VALA</channel>
+            <type>STRING</type>
+            <description>wcs file in use</description>
+        </attribute>
+        <attribute name="exposureTime">
+            <channel>dc:integTime.VAL</channel>
+            <type>DOUBLE</type>
+            <description>intTime</description>
+        </attribute>
+        <attribute name="digitalAvgs">
+            <channel>dc:obsSetup.VALC</channel>
+            <type>INTEGER</type>
+            <description>Digital Avgs</description>
+        </attribute>
+        <attribute name="lowNoise">
+            <channel>dc:obsSetup.VALD</channel>
+            <type>INTEGER</type>
+            <description>Low Noise Rds</description>
+        </attribute>
+        <attribute name="dhcConnected">
+            <channel>sad:dc:dhsConnected</channel>
+            <type>INTEGER</type>
+            <description>Dhs status</description>
+        </attribute>
+        <attribute name="minInt">
+            <channel>dc:minInt.VAL</channel>
+            <type>DOUBLE</type>
+            <description>minInt</description>
+        </attribute>
+        <attribute name="dettemp">
+            <channel>dc:C1Tmp</channel>
+            <type>DOUBLE</type>
+            <description>Detector temperature</description>
+        </attribute>
+    </Status>
+    <Status name="nirs::status">
+        <top>nirs</top>
+        <description>nirs status</description>
+        <attribute name="prism">
+            <channel>sad:cc:xdispPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="focus">
+            <channel>sad:cc:focusPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="slitWidth">
+            <channel>sad:cc:slitPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="acqMirror">
+            <channel>sad:cc:acqPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="cover">
+            <channel>sad:cc:coverPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="grating">
+            <channel>sad:cc:gratingPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="filter2">
+            <channel>sad:cc:fw2Position</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="filter1">
+            <channel>sad:cc:fw1Position</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="camera">
+            <channel>sad:cc:cameraPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="decker">
+            <channel>sad:cc:deckerPosition</channel>
+            <type>STRING</type>
+            <description></description>
+        </attribute>
+        <attribute name="centralWavelength">
+            <channel>sad:cc:gratingWvlength.VAL</channel>
+            <type>DOUBLE</type>
+            <description></description>
+        </attribute>
+        <attribute name="dkr_eng">
+            <channel>sad:cc:deckerEng</channel>
+            <type>INTEGER</type>
+            <description>decker Eng position (steps)</description>
+        </attribute>
+        <attribute name="fw2_eng">
+            <channel>sad:cc:fw2Eng</channel>
+            <type>INTEGER</type>
+            <description>Filter 2 Eng position (steps)</description>
+        </attribute>
+        <attribute name="gr_eng">
+            <channel>sad:cc:gratingEng</channel>
+            <type>INTEGER</type>
+            <description>Grating Eng Position (steps) </description>
+        </attribute>
+        <attribute name="cam_eng">
+            <channel>sad:cc:cameraEng</channel>
+            <type>INTEGER</type>
+            <description>camera Eng position (steps)</description>
+        </attribute>
+        <attribute name="fw1_eng">
+            <channel>sad:cc:fw1Eng</channel>
+            <type>INTEGER</type>
+            <description>Filter 1 Eng position (steps)</description>
+        </attribute>
+        <attribute name="slit_eng">
+            <channel>sad:cc:slitEng</channel>
+            <type>INTEGER</type>
+            <description>slit Eng position (steps)</description>
+        </attribute>
+        <attribute name="prsm_eng">
+            <channel>sad:cc:xdispEng</channel>
+            <type>INTEGER</type>
+            <description>Prism Eng Position (steps) </description>
+        </attribute>
+        <attribute name="fcs_eng">
+            <channel>sad:cc:focusEng</channel>
+            <type>INTEGER</type>
+            <description>Focus Eng Position (steps) </description>
+        </attribute>
+        <attribute name="grattilt">
+            <channel>sad:cc:gratingTilt</channel>
+            <type>DOUBLE</type>
+            <description>Grating tilt (degrees)</description>
+        </attribute>
+        <attribute name="gratord">
+            <channel>sad:cc:gratingOrder</channel>
+            <type>INTEGER</type>
+            <description>Grating order</description>
+        </attribute>
+        <attribute name="nirscc">
+            <channel>sad:cc:name</channel>
+            <type>STRING</type>
+            <description>nirs components controller s/w</description>
+        </attribute>
+    </Status>
+</Records>

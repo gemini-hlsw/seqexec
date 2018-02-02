@@ -21,6 +21,7 @@ import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import edu.gemini.seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import edu.gemini.seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import edu.gemini.seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
+import edu.gemini.seqexec.server.gnirs.GnirsEpics
 import edu.gemini.seqexec.server.gws.GwsEpics
 import edu.gemini.seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.spModel.core.Peer
@@ -467,7 +468,7 @@ object SeqexecEngine {
     // More instruments to be added to the list here
     val instList = site match {
       case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
-      case Site.GN => List((gmosKeywords, GmosEpics))
+      case Site.GN => List((gmosKeywords, GmosEpics), (false, GnirsEpics))
     }
     val instInit = Nondeterminism[Task].gatherUnordered(instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
     val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), taskUnit)
