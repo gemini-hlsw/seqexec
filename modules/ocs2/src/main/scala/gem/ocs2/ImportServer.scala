@@ -24,6 +24,7 @@ import java.net.URLEncoder
 import java.util.logging.Logger
 
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 import scala.xml.{Elem, Node}
 
@@ -125,7 +126,7 @@ object ImportServer extends StreamApp[IO] {
     BlazeBuilder[IO]
       .bindHttp(8989, "localhost")
       .mountService(service, "/import")
-      .serve
+      .serve(implicitly, ExecutionContext.global)
 
   }
 }

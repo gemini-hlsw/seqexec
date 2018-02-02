@@ -5,18 +5,18 @@ lazy val attoVersion         = "0.6.2-M1"
 lazy val catsEffectVersion   = "0.8"
 lazy val catsVersion         = "1.0.1"
 lazy val declineVersion      = "0.4.1"
-lazy val doobieVersion       = "0.5.0-M13"
-lazy val flywayVersion       = "5.0.6"
-lazy val fs2Version          = "0.10.0-M11"
-lazy val http4sVersion       = "0.18.0-M8"
+lazy val doobieVersion       = "0.5.0-RC1"
+lazy val flywayVersion       = "5.0.7"
+lazy val fs2Version          = "0.10.0"
+lazy val http4sVersion       = "0.18.0"
 lazy val jwtVersion          = "0.14.1"
 lazy val kpVersion           = "0.9.5"
 lazy val monocleVersion      = "1.5.0-cats"
 lazy val mouseVersion        = "0.16"
 lazy val paradiseVersion     = "2.1.1"
 lazy val scalaCheckVersion   = "1.13.5"
-lazy val scalaParsersVersion = "1.0.6"
-lazy val scalaTestVersion    = "3.0.4"
+lazy val scalaParsersVersion = "1.1.0"
+lazy val scalaTestVersion    = "3.0.5"
 lazy val scalaXmlVerson      = "1.0.6"
 lazy val shapelessVersion    = "2.3.3"
 lazy val slf4jVersion        = "1.7.25"
@@ -76,7 +76,7 @@ lazy val gemWarts =
 lazy val commonSettings = Seq(
 
   // These sbt-header settings can't be set in ThisBuild for some reason
-  headerMappings := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.CppStyleLineComment),
+  headerMappings := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.cppStyleLineComment),
   headerLicense  := Some(HeaderLicense.Custom(
     """|Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
        |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
