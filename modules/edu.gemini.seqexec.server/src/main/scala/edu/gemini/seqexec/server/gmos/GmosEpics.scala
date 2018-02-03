@@ -127,8 +127,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val ampReadMode: Option[CaParameter[String]] = cs.map(_.getString("ampReadMode"))
     def setAmpReadMode(v: String): SeqAction[Unit] = setParameter(ampReadMode, v)
 
-    val gainSetting: Option[CaParameter[String]] = cs.map(_.getString("gainSetting"))
-    def setGainSetting(v: String): SeqAction[Unit] = setParameter(gainSetting, v)
+    val gainSetting: Option[CaParameter[Integer]] = cs.map(_.getInteger("gainSetting"))
+    def setGainSetting(v: Int): SeqAction[Unit] = setParameter(gainSetting, Integer.valueOf(v))
 
     val ccdXBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdXBinning", GMOS_TOP + "dc:roiXBin", "CCD X Binning Value", false))
     def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble))
