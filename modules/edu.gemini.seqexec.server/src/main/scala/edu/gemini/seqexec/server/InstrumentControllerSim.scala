@@ -3,13 +3,14 @@
 
 package edu.gemini.seqexec.server
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 import gov.aps.jca.TimeoutException
 import org.log4s.getLogger
 import squants.Time
+import squants.time.Seconds
 
 import scala.annotation.tailrec
 import scalaz.{EitherT, Show}
@@ -17,14 +18,18 @@ import scalaz.concurrent.Task
 import scalaz.syntax.show._
 import scalaz.syntax.std.boolean._
 
-class InstrumentControllerSim(name: String) {
+class InstrumentControllerSim(name: String, useTimeout: Boolean) {
   private val Log = getLogger
 
   private val stopFlag = new AtomicBoolean(false)
   private val abortFlag = new AtomicBoolean(false)
   private val pauseFlag = new AtomicBoolean(false)
+  private val remainingTime = new AtomicInteger(0)
 
   private val tic = 200
+
+  private val ReadoutDelay = Seconds(5)
+  private val ConfigurationDelay = Seconds(5)
 
   @tailrec
   private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): TrySeq[ObserveCommand.Result] =
@@ -33,7 +38,10 @@ class InstrumentControllerSim(name: String) {
       TrySeq(ObserveCommand.Success)
     } else if(stop) TrySeq(ObserveCommand.Stopped)
       else if(abort) TrySeq(ObserveCommand.Aborted)
-      else if(pause) TrySeq(ObserveCommand.Paused)
+      else if(pause) {
+        remainingTime.set(remain)
+        TrySeq(ObserveCommand.Paused)
+      }
       else if(timeout.exists(_<= 0)) TrySeq.fail(SeqexecException(new TimeoutException()))
       else {
         Thread.sleep(tic.toLong)
@@ -45,13 +53,14 @@ class InstrumentControllerSim(name: String) {
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
-    observeTic(false, false, false, expTime.millis.toInt,
-      (expTime.value > 0.0).option(expTime.toMilliseconds.toInt + 2 * tic))
+    val totalTime = (expTime + ReadoutDelay).toMilliseconds.toInt
+    remainingTime.set(totalTime)
+    observeTic(false, false, false, totalTime, useTimeout.option(totalTime + 2 * tic))
   } )
 
   def applyConfig[C: Show](config: C): SeqAction[Unit] = EitherT( Task {
     Log.info(s"Simulate applying $name configuration ${config.shows}")
-    Thread.sleep(1000)
+    Thread.sleep(ConfigurationDelay.toMilliseconds.toLong)
     TrySeq(())
   } )
 
@@ -78,11 +87,10 @@ class InstrumentControllerSim(name: String) {
     TrySeq(())
   } )
 
-  def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
+  def resumePaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
     Log.info(s"Simulate resuming $name observation")
     pauseFlag.set(false)
-    observeTic(false, false, false, expTime.millis.toInt / 2,
-      (expTime.value > 0.0).option(expTime.toMilliseconds.toInt / 2  + 2 * tic))
+    observeTic(false, false, false, remainingTime.get, useTimeout.option(remainingTime.get + 2 * tic))
   } )
 
   def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
@@ -100,5 +108,6 @@ class InstrumentControllerSim(name: String) {
 }
 
 object InstrumentControllerSim {
-  def apply(name: String): InstrumentControllerSim = new InstrumentControllerSim(name)
+  def apply(name: String): InstrumentControllerSim = new InstrumentControllerSim(name, false)
+  def withTimeout(name: String): InstrumentControllerSim = new InstrumentControllerSim(name, true)
 }
