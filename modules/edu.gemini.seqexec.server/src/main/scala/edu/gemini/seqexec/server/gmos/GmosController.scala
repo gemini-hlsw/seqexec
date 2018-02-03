@@ -116,8 +116,6 @@ object GmosController {
 
     final case class CustomMaskFPU(mask: String) extends GmosFPU
 
-    final case class AmpGainSetting(value: Int)
-
     final case class CCDReadout(ampReadMode: AmpReadMode, ampGain: AmpGain, ampCount: AmpCount, gainSetting: Double)
 
     final case class CCDBinning(x: Binning, y: Binning)

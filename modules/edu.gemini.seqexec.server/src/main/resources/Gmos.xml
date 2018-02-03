@@ -219,7 +219,7 @@
             -->
             <parameter name="gainSetting">
                 <channel>dc:dcSetup.C</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Amplifier Gain Setting</description>
             </parameter>
             <!--

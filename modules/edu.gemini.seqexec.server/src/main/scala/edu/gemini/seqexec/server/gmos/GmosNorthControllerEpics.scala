@@ -8,7 +8,8 @@ import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
 import edu.gemini.seqexec.server.gmos.GmosController.Config._
 import edu.gemini.seqexec.server.gmos.GmosController.{NorthTypes, northConfigTypes}
 import edu.gemini.seqexec.server.gmos.GmosControllerEpics.ROIValues
-import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
+import edu.gemini.spModel.gemini.gmos.GmosCommonType
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.{AmpGain, AmpReadMode, BuiltinROI}
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.{DisperserNorth => Disperser, FPUnitNorth => FPU, FilterNorth => Filter, StageModeNorth => StageMode}
 
 import scalaz.Scalaz.none
@@ -102,6 +103,15 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
     case BuiltinROI.CENTRAL_STAMP    => ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 308)
     case _                           => None
   }
+
+  override val autoGain: EncodeEpicsValue[(GmosCommonType.AmpReadMode, GmosCommonType.AmpGain), Int] = {
+    // gmosAutoGain.lut
+    case (AmpReadMode.SLOW, AmpGain.LOW)  => 4
+    case (AmpReadMode.SLOW, AmpGain.HIGH) => 0
+    case (AmpReadMode.FAST, AmpGain.LOW)  => 15
+    case (AmpReadMode.FAST, AmpGain.HIGH) => 3
+  }
+
 }
 
 object GmosNorthControllerEpics extends GmosControllerEpics[NorthTypes](GmosNorthEncoders)(northConfigTypes)

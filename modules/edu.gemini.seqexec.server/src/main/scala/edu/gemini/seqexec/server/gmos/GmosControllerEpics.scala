@@ -43,8 +43,6 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     case _            => ""
   }
 
-  implicit val ampGainSettingEncoder: EncodeEpicsValue[AmpGainSetting, String] = EncodeEpicsValue(_.value.toString)
-
   implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, String] = EncodeEpicsValue {
     // gmosAmpCount.lut
     case AmpCount.THREE  => ""
@@ -65,14 +63,6 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] = EncodeEpicsValue((l: Length) => l.toNanometers)
 
   implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
-
-  private def gainSetting(ampMode: AmpReadMode, ampGain: AmpGain): AmpGainSetting = (ampMode, ampGain) match {
-    // gmosAutoGain.lut
-    case (AmpReadMode.SLOW, AmpGain.LOW)  => AmpGainSetting(0)
-    case (AmpReadMode.SLOW, AmpGain.HIGH) => AmpGainSetting(0)
-    case (AmpReadMode.FAST, AmpGain.LOW)  => AmpGainSetting(10)
-    case (AmpReadMode.FAST, AmpGain.HIGH) => AmpGainSetting(0)
-  }
 
   private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
     case UnsetShutter => SeqAction.void
@@ -107,7 +97,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- DC.setExposureTime(dc.t)
     _ <- setShutterState(dc.s)
     _ <- DC.setAmpReadMode(encode(dc.r.ampReadMode))
-    _ <- DC.setGainSetting(encode(gainSetting(dc.r.ampReadMode, dc.r.ampGain)))
+    _ <- DC.setGainSetting(encoders.autoGain.encode((dc.r.ampReadMode, dc.r.ampGain)))
     _ <- DC.setAmpCount(encode(dc.r.ampCount))
     _ <- DC.setRoiNumUsed(roiNumUsed(dc.roi))
     _ <- setROI(dc.bi, dc.roi)
@@ -297,6 +287,7 @@ object GmosControllerEpics {
     val stageMode: EncodeEpicsValue[T#GmosStageMode, String]
     val disperser: EncodeEpicsValue[T#Disperser, String]
     val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]]
+    val autoGain: EncodeEpicsValue[(AmpReadMode, AmpGain), Int]
   }
 
   val InBeamVal: String = "IN-BEAM"
