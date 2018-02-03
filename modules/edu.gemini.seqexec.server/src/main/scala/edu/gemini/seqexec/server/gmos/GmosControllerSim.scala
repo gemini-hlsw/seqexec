@@ -31,7 +31,7 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
 
   override def pauseObserve: SeqAction[Unit] = sim.pauseObserve
 
-  override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = sim.resumePaused(expTime)
+  override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = sim.resumePaused
 
   override def stopPaused: SeqAction[ObserveCommand.Result] = sim.stopPaused
 
