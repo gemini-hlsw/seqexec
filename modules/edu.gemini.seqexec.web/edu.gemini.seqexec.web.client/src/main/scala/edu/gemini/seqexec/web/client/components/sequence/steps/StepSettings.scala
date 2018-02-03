@@ -70,9 +70,7 @@ object StepBreakStopCell {
           SeqexecStyles.breakPointHandle,
           ^.onClick --> breakpointAt(p, p.step),
           if (p.step.breakpoint) {
-            <.div(
-              Icon.IconMinus.copyIcon(color = Some("brown"), onClick = breakpointAt(p, p.step), fitted = true)
-            )
+            Icon.IconRemove.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOffIcon))
           } else {
             Icon.IconCaretDown.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOnIcon))
           }

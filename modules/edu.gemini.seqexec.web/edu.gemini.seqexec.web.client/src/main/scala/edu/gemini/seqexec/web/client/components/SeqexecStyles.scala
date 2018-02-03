@@ -14,7 +14,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   import dsl._
 
-  private val gutterWidth = 25
+  private val gutterWidth = 21
   private val iconWidth = 16.5
 
   val body: StyleA = style(unsafeRoot("body")(
@@ -526,9 +526,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     stepRowMixin,
     leftBorderMixin,
     rightBorderMixin,
-    borderTopColor(c"#A5673F"), // Match semantic UI brown
-    borderTopWidth(4.px),
-    borderTopStyle.solid
+    backgroundImage := "linear-gradient(to right, rgba(34, 36, 38, 0.15) , rgba(34, 36, 38, 0.15) 20px, #a5673f 20px, #a5673f)",
+    backgroundSize := "auto 4px",
+    backgroundRepeat.noRepeat,
+    borderTopColor(tableBorderColor),
+    borderTopWidth(1.px),
+    borderTopStyle.solid,
+    paddingTop(4.px),
+    overflow.visible.important
   )
 
   val infoLog: StyleA = style(
@@ -590,7 +595,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
     backgroundClip.paddingBox,
     backgroundColor(white),
-    width(21.px),
+    width(gutterWidth.px),
     rightBorderMixin
   )
 
@@ -601,6 +606,12 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val breakPointOnIcon: StyleA = style(
     position.relative,
     left(3.px),
+    top(-5.px)
+  )
+
+  val breakPointOffIcon: StyleA = style(
+    position.relative,
+    left(1.px),
     top(-5.px)
   )
 
