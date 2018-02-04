@@ -8,16 +8,7 @@ import edu.gemini.seqexec.server.gnirs.GnirsController.GnirsConfig
 import edu.gemini.seqexec.server.{InstrumentControllerSim, ObserveCommand, SeqAction}
 import squants.Time
 
-import scalaz.Show
-
 object GnirsControllerSim extends GnirsController {
-
-  implicit val configShow: Show[GnirsConfig] = Show.shows { config =>
-    s"(${config.cc.mode}, ${config.cc.camera}, ${config.cc.centralWavelength}, ${config.cc.decker}, " +
-      s"${config.cc.disperser},${config.cc.filter}, ${config.cc.pixelScale}, ${config.cc.slitWidth}, " +
-      s"${config.cc.wollanstonPrism}, ${config.dc.exposureTime}, ${config.dc.coadds}, ${config.dc.readMode}, " +
-      s"${config.dc.wellDepth})"
-  }
 
   private val sim: InstrumentControllerSim = InstrumentControllerSim(s"GNIRS")
 

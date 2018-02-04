@@ -247,6 +247,11 @@
             <type>STRING</type>
             <description></description>
         </attribute>
+        <attribute name="gratingMode">
+            <channel>cc:gratingPos</channel>
+            <type>STRING</type>
+            <description>Grating Mode</description>
+        </attribute>
         <attribute name="filter2">
             <channel>sad:cc:fw2Position</channel>
             <type>STRING</type>
