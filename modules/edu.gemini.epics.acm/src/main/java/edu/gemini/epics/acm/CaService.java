@@ -31,7 +31,7 @@ import gov.aps.jca.CAException;
  * The method <code>unbind()</code> must be called to stop the service. Failing
  * to do it will keep the application running. References to the CaService must
  * not be used once <code>unbind()</code> has been called.
- * 
+ *
  * @author jluhrs
  *
  */
@@ -65,7 +65,7 @@ public final class CaService {
 
     /**
      * Sets the list of IP addresses used to discover EPICS channels.
-     * 
+     *
      * @param addrList
      *            the list of IP addresses used to discover EPICS channels.
      */
@@ -75,7 +75,7 @@ public final class CaService {
 
     /**
      * Retrieves the CaService single instance.
-     * 
+     *
      * @return the single instance of CaService.
      */
     public static CaService getInstance() {
@@ -119,7 +119,7 @@ public final class CaService {
     /**
      * Creates a status acceptor. If the status acceptor already exists, it
      * returns the existing object.
-     * 
+     *
      * @param name
      *            the name of the new status acceptor.
      * @param description
@@ -142,7 +142,7 @@ public final class CaService {
 
     /**
      * Retrieves an existing status acceptor.
-     * 
+     *
      * @param name
      *            the name of the status acceptor.
      * @return the status acceptor, or <code>null</code> if it does not exist.
@@ -154,7 +154,7 @@ public final class CaService {
     /**
      * Creates an apply sender. If the apply sender already exists, it returns
      * the existing object.
-     * 
+     *
      * @param name
      *            the name of the new apply sender.
      * @param applyRecord
@@ -167,19 +167,25 @@ public final class CaService {
      * @throws CAException
      */
     public CaApplySender createApplySender(String name, String applyRecord,
-            String carRecord, String description) throws CAException {
+            String carRecord, Boolean gem5, String description) throws CAException {
         CaApplySenderImpl apply = applySenders.get(name);
         if (apply == null) {
-            apply = new CaApplySenderImpl(name, applyRecord, carRecord,
-                    description, epicsService);
+            if(gem5) {
+                apply = new CaApplySenderImpl<>(name, applyRecord, carRecord,
+                        description, CarStateGEM5.class, epicsService);
+            }
+            else {
+                apply = new CaApplySenderImpl<>(name, applyRecord, carRecord,
+                        description, CarState.class, epicsService);
+            }
             applySenders.put(name, apply);
         }
         return apply;
     }
 
     public CaApplySender createApplySender(String name, String applyRecord,
-            String carRecord) throws CAException {
-        return createApplySender(name, applyRecord, carRecord, null);
+            String carRecord, Boolean gem5) throws CAException {
+        return createApplySender(name, applyRecord, carRecord, gem5, null);
     }
 
     /**
@@ -198,24 +204,30 @@ public final class CaService {
      * @throws CAException
      */
     public CaApplySender createObserveSender(String name, String applyRecord,
-            String carRecord, String observeCarRecord, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
+            String carRecord, String observeCarRecord, Boolean gem5, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
         CaObserveSenderImpl observe = observeSenders.get(name);
         if (observe == null) {
-            observe = new CaObserveSenderImpl(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
-                    description, epicsService);
+            if(gem5) {
+                observe = new CaObserveSenderImpl(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
+                        description, CarStateGEM5.class, epicsService);
+            }
+            else  {
+                observe = new CaObserveSenderImpl(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
+                        description, CarState.class, epicsService);
+            }
             observeSenders.put(name, observe);
         }
         return observe;
     }
 
     public CaApplySender createObserveSender(String name, String applyRecord,
-            String carRecord, String observeCarRecord) throws CAException {
-        return createObserveSender(name, applyRecord, carRecord, observeCarRecord, null, null, null);
+            String carRecord, String observeCarRecord, Boolean gem5) throws CAException {
+        return createObserveSender(name, applyRecord, carRecord, observeCarRecord, gem5, null, null, null);
     }
 
     /**
      * Retrieves an existing apply sender.
-     * 
+     *
      * @param name
      *            the name of the apply sender.
      * @return the apply sender, or <code>null</code> if it does not exist.
@@ -227,7 +239,7 @@ public final class CaService {
     /**
      * Creates an command sender. If the command sender already exists, it
      * returns the existing object.
-     * 
+     *
      * @param name
      *            the name of the new command sender.
      * @param apply
@@ -257,7 +269,7 @@ public final class CaService {
 
     /**
      * Retrieves an existing command sender.
-     * 
+     *
      * @param name
      *            the name of the command sender.
      * @return the command sender, or <code>null</code> if it does not exist.
@@ -268,7 +280,7 @@ public final class CaService {
 
     /**
      * Retrieves the names of all existing command senders
-     * 
+     *
      * @return a set of all the command sender names.
      */
     public ImmutableSet<String> getCommandSenderNames() {
@@ -277,7 +289,7 @@ public final class CaService {
 
     /**
      * Retrieves the names of all existing apply senders
-     * 
+     *
      * @return a set of all the command sender names.
      */
     public ImmutableSet<String> getApplySenderNames() {
@@ -286,7 +298,7 @@ public final class CaService {
 
     /**
      * Retrieves the names of all existing status acceptors
-     * 
+     *
      * @return a set of all the status acceptors names.
      */
     public ImmutableSet<String> getStatusAcceptorsNames() {
@@ -296,7 +308,7 @@ public final class CaService {
     /**
      * Destroys a command sender with a given name. If the command sender does
      * not exists, it does nothing.
-     * 
+     *
      * @param name the name of the command sender to destroy.
      */
     public void destroyCommandSender(String name) {
@@ -309,7 +321,7 @@ public final class CaService {
     /**
      * Destroys a apply sender with a given name. If the apply sender does
      * not exists, it does nothing.
-     * 
+     *
      * @param name the name of the apply sender to destroy.
      */
     public void destroyApplySender(String name) {
@@ -322,7 +334,7 @@ public final class CaService {
     /**
      * Destroys a status acceptor with a given name. If the status acceptor does
      * not exists, it does nothing.
-     * 
+     *
      * @param name the name of the status acceptor to destroy.
      */
     public void destroyStatusAcceptor(String name) {

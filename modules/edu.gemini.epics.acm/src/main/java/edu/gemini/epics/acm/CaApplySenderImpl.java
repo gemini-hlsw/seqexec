@@ -17,24 +17,24 @@ import edu.gemini.epics.api.ChannelListener;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
-final class CaApplySenderImpl implements CaApplySender {
+final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements CaApplySender {
 
     private static final Logger LOG = Logger.getLogger(CaApplySenderImpl.class
             .getName());
 
     private final String name;
     private final String description;
-    
+
     private final CaApplyRecord apply;
-    private final CaCarRecord car;
-    
+    private final CaCarRecord<C> car;
+
     private long timeout;
     private TimeUnit timeoutUnit;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
     private final ChannelListener<Integer> valListener;
     private ChannelListener<Integer> carClidListener;
-    private ChannelListener<CarState> carValListener;
+    private ChannelListener<C> carValListener;
     private State currentState;
     private static final State IdleState = new State() {
         @Override
@@ -43,7 +43,7 @@ final class CaApplySenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onCarValChange(CarState carState) {
+        public State onCarValChange(CarStateGeneric carState) {
             return this;
         }
 
@@ -59,7 +59,7 @@ final class CaApplySenderImpl implements CaApplySender {
     };
 
     public CaApplySenderImpl(String name, String applyRecord, String carRecord,
-            String description, EpicsService epicsService) throws CAException {
+            String description, Class<C> carClass, EpicsService epicsService) throws CAException {
         super();
         this.name = name;
         this.description = description;
@@ -74,8 +74,8 @@ final class CaApplySenderImpl implements CaApplySender {
                 }
             }
         });
-        
-        car = new CaCarRecord(carRecord, epicsService);
+
+        car = new CaCarRecord<C>(carRecord, carClass, epicsService);
         car.registerClidListener(carClidListener = new ChannelListener<Integer>() {
             @Override
             public void valueChanged(String arg0, List<Integer> newVals) {
@@ -84,9 +84,9 @@ final class CaApplySenderImpl implements CaApplySender {
                 }
             }
         });
-        car.registerValListener(carValListener = new ChannelListener<CarState>() {
+        car.registerValListener(carValListener = new ChannelListener<C>() {
             @Override
-            public void valueChanged(String arg0, List<CarState> newVals) {
+            public void valueChanged(String arg0, List<C> newVals) {
                 if (newVals != null && !newVals.isEmpty()) {
                     CaApplySenderImpl.this.onCarValChange(newVals.get(0));
                 }
@@ -112,7 +112,7 @@ final class CaApplySenderImpl implements CaApplySender {
     }
 
     void unbind() {
-        
+
         executor.shutdown();
 
         try {
@@ -130,7 +130,7 @@ final class CaApplySenderImpl implements CaApplySender {
         } catch (CAException e) {
             LOG.warning(e.getMessage());
         }
-        
+
         apply.unbind();
         car.unbind();
     }
@@ -179,7 +179,7 @@ final class CaApplySenderImpl implements CaApplySender {
     private interface State {
         State onApplyValChange(Integer val);
 
-        State onCarValChange(CarState carState);
+        State onCarValChange(CarStateGeneric carState);
 
         State onCarClidChange(Integer val);
 
@@ -188,7 +188,7 @@ final class CaApplySenderImpl implements CaApplySender {
 
     private final class WaitPreset implements State {
         final CaCommandMonitorImpl cm;
-        final CarState carVal;
+        final CarStateGeneric carVal;
         final Integer carClid;
 
         WaitPreset(CaCommandMonitorImpl cm) {
@@ -197,7 +197,7 @@ final class CaApplySenderImpl implements CaApplySender {
             this.carClid = null;
         }
 
-        private WaitPreset(CaCommandMonitorImpl cm, CarState carVal, Integer carClid) {
+        private WaitPreset(CaCommandMonitorImpl cm, CarStateGeneric carVal, Integer carClid) {
             this.cm = cm;
             this.carVal = carVal;
             this.carClid = carClid;
@@ -207,10 +207,10 @@ final class CaApplySenderImpl implements CaApplySender {
         public State onApplyValChange(Integer val) {
             if (val > 0) {
                 if (carClid != null && carClid.equals(val)) {
-                    if (carVal == CarState.ERROR) {
+                    if (carVal.isError()) {
                         failCommandWithCarError(cm);
                         return IdleState;
-                    } else if (carVal == CarState.BUSY) {
+                    } else if (carVal.isBusy()) {
                         return new WaitCompletion(cm, val);
                     }
                 }
@@ -222,7 +222,7 @@ final class CaApplySenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onCarValChange(CarState val) {
+        public State onCarValChange(CarStateGeneric val) {
             return new WaitPreset(cm, val, carClid);
         }
 
@@ -242,9 +242,9 @@ final class CaApplySenderImpl implements CaApplySender {
         final CaCommandMonitorImpl cm;
         final int clid;
         final Integer carClid;
-        final CarState carState;
+        final CarStateGeneric carState;
 
-        WaitStart(CaCommandMonitorImpl cm, int clid, CarState carState,
+        WaitStart(CaCommandMonitorImpl cm, int clid, CarStateGeneric carState,
                 Integer carClid) {
             this.cm = cm;
             this.clid = clid;
@@ -265,7 +265,7 @@ final class CaApplySenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onCarValChange(CarState val) {
+        public State onCarValChange(CarStateGeneric val) {
             return checkOutConditions(val, carClid);
         }
 
@@ -280,14 +280,14 @@ final class CaApplySenderImpl implements CaApplySender {
             return IdleState;
         }
 
-        private State checkOutConditions(CarState carState,
+        private State checkOutConditions(CarStateGeneric carState,
                 Integer carClid) {
             if (carClid != null && carClid == clid) {
-                if (carState == CarState.ERROR) {
+                if (carState.isError()) {
                     failCommandWithCarError(cm);
                     return IdleState;
                 }
-                if (carState == CarState.BUSY) {
+                if (carState.isBusy()) {
                     return new WaitCompletion(cm, clid);
                 }
             }
@@ -318,21 +318,21 @@ final class CaApplySenderImpl implements CaApplySender {
         }
 
         @Override
-        public State onCarValChange(CarState val) {
-            switch(val) {
-                case IDLE: {
-                    succedCommand(cm);
-                    return IdleState;
-                }
-                case ERROR:{
-                    failCommandWithCarError(cm);
-                    return IdleState;
-                }
-                case PAUSED: {
-                    pauseCommand(cm);
-                    return IdleState;
-                }
-                default: return this;
+        public State onCarValChange(CarStateGeneric val) {
+            if(val.isIdle()) {
+                succedCommand(cm);
+                return IdleState;
+            }
+            else if(val.isError()){
+                failCommandWithCarError(cm);
+                return IdleState;
+            }
+            else if(val.isPaused()) {
+                pauseCommand(cm);
+                return IdleState;
+            }
+            else {
+                return this;
             }
         }
 
@@ -372,7 +372,7 @@ final class CaApplySenderImpl implements CaApplySender {
         }
     }
 
-    private synchronized void onCarValChange(CarState carState) {
+    private synchronized void onCarValChange(C carState) {
         currentState = currentState.onCarValChange(carState);
         if (currentState.equals(IdleState) && timeoutFuture != null) {
             timeoutFuture.cancel(true);

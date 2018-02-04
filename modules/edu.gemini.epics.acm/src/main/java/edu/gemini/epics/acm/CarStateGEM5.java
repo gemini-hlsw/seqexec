@@ -5,8 +5,8 @@
 
 package edu.gemini.epics.acm;
 
-public enum CarState implements CarStateGeneric {
-    IDLE, PAUSED, BUSY, ERROR;
+public enum CarStateGEM5 implements CarStateGeneric {
+    IDLE, PAUSED, BUSY, ERR;
 
     @Override
     public Boolean isIdle() {
@@ -25,6 +25,6 @@ public enum CarState implements CarStateGeneric {
 
     @Override
     public Boolean isError() {
-        return this == ERROR;
+        return this == ERR;
     }
 }
