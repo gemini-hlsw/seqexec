@@ -8,6 +8,8 @@ import edu.gemini.seqexec.server.gnirs.GnirsController.GnirsConfig
 import edu.gemini.seqexec.server.{ObserveCommand, SeqAction}
 import squants.Time
 
+import scalaz.Show
+//scalastyle:off
 trait GnirsController {
 
   def applyConfig(config: GnirsConfig): SeqAction[Unit]
@@ -28,14 +30,18 @@ object GnirsController {
   sealed trait Mode
 
   case object Acquisition extends Mode
+
   sealed abstract class Spectrography(val disperser: Disperser) extends Mode
+
   final case class CrossDisperserS(override val disperser: Disperser) extends Spectrography(disperser)
+
   final case class CrossDisperserL(override val disperser: Disperser) extends Spectrography(disperser)
+
   final case class Wollaston(override val disperser: Disperser) extends Spectrography(disperser)
 
-  type Camera = edu.gemini.spModel.gemini.gnirs.GNIRSParams.Camera
+  final case class Mirror(override val disperser: Disperser) extends Spectrography(disperser)
 
-  type CentralWavelength = edu.gemini.spModel.core.Wavelength
+  type Camera = edu.gemini.spModel.gemini.gnirs.GNIRSParams.Camera
 
   type Coadds = Int
 
@@ -45,13 +51,45 @@ object GnirsController {
 
   type ExposureTime = Time
 
-  type Filter = edu.gemini.spModel.gemini.gnirs.GNIRSParams.Filter
+  sealed trait Filter1
+  object Filter1 {
+    object Open extends Filter1
+    object ND100X extends Filter1
+    object Y_MK extends Filter1
+    object J_MK extends Filter1
+    object K_MK extends Filter1
+    object PupilViewer extends Filter1
+  }
 
-  type PixelScale = edu.gemini.spModel.gemini.gnirs.GNIRSParams.PixelScale
+  sealed trait Filter2
+  object Filter2 {
+    object Open extends Filter2
+    object H extends Filter2
+    object J extends Filter2
+    object K extends Filter2
+    object L extends Filter2
+    object M extends Filter2
+    object X extends Filter2
+    object XD extends Filter2
+    object H2 extends Filter2
+    object PAH extends Filter2
+  }
 
   type ReadMode = edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 
-  type SlitWidth = edu.gemini.spModel.gemini.gnirs.GNIRSParams.SlitWidth
+  sealed trait SlitWidth
+  object SlitWidth {
+    case object Slit0_10 extends SlitWidth
+    case object Slit0_15 extends SlitWidth
+    case object Slit0_20 extends SlitWidth
+    case object Slit0_30 extends SlitWidth
+    case object Slit0_45 extends SlitWidth
+    case object Slit0_68 extends SlitWidth
+    case object Slit1_00 extends SlitWidth
+    case object PupilViewer extends SlitWidth
+    case object SmallPinhole extends SlitWidth
+    case object LargePinhole extends SlitWidth
+  }
 
   type WellDepth = edu.gemini.spModel.gemini.gnirs.GNIRSParams.WellDepth
 
@@ -63,17 +101,22 @@ object GnirsController {
                             wellDepth: WellDepth
                            )
 
-  final case class CCConfig(mode: Mode,
-                            camera: Camera,
-                            centralWavelength: CentralWavelength,
-                            decker: Option[Decker],
-                            disperser: Disperser,
-                            filter: Option[Filter],
-                            pixelScale: PixelScale,
-                            slitWidth: SlitWidth,
-                            wollanstonPrism: WollanstonPrism
-                           )
+  sealed trait CCConfig
+
+  case object Dark extends CCConfig
+
+  final case class Other(mode: Mode,
+                         camera: Camera,
+                         decker: Decker,
+                         disperser: Disperser,
+                         filter1: Filter1,
+                         filter2: Filter2,
+                         slitWidth: Option[SlitWidth],
+                         wollanstonPrism: WollanstonPrism
+                        ) extends CCConfig
 
   final case class GnirsConfig(cc: CCConfig, dc: DCConfig)
+
+  implicit val cfgShow: Show[GnirsConfig] = Show.showA[GnirsConfig]
 
 }

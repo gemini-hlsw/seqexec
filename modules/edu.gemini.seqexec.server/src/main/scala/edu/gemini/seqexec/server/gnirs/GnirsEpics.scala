@@ -70,8 +70,8 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
     def setLowNoise(v: Int): SeqAction[Unit] = setParameter(lowNoise, Integer.valueOf(v))
 
-    val exposureTIme: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTIme"))
-    def setExposureTIme(v: Double): SeqAction[Unit] = setParameter(exposureTIme, JDouble.valueOf(v))
+    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTIme"))
+    def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
     val wcs: Option[CaParameter[String]] = cs.map(_.getString("wcs"))
     def setWcs(v: String): SeqAction[Unit] = setParameter(wcs, v)
@@ -163,6 +163,8 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
   def cover: Option[String] = Option(state.getStringAttribute("cover").value)
 
   def grating: Option[String] = Option(state.getStringAttribute("grating").value)
+
+  def gratingMode: Option[String] = Option(state.getStringAttribute("gratingMode").value)
 
   def filter1: Option[String] = Option(state.getStringAttribute("filter1").value)
 

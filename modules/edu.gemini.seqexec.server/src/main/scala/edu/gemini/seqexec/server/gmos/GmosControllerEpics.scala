@@ -7,6 +7,7 @@ import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
 import edu.gemini.seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
 import edu.gemini.seqexec.server.{EpicsCodex, ObserveCommand, SeqAction, SeqexecFailure}
+import edu.gemini.seqexec.server.EpicsUtil.smartSetParam
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
@@ -104,9 +105,6 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- DC.setCcdXBinning(encode(dc.bi.x))
     _ <- DC.setCcdYBinning(encode(dc.bi.y))
   } yield ()
-
-  private def smartSetParam[A: Equal](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
-    get.flatMap(g => (g =/= v).option(set)).getOrElse(SeqAction.void)
 
   def setFilters(f: T#Filter): SeqAction[Unit] = {
     val (filter1, filter2) = encoders.filter.encode(f)
