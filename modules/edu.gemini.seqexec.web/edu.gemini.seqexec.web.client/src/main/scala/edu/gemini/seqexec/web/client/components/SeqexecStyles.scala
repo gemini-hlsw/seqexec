@@ -624,7 +624,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(13.px),
     cursor.pointer,
     opacity(0.8),
-    transition := "opacity 0.1.s ease"
+    transition := "all .1s ease-in-out",
+    &.hover(
+      transform := "scale(1.4)"
+    )
   )
 
   // Row styles taken from sematic ui tables
@@ -716,10 +719,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     width(skipHandleHeight.px),
     cursor.pointer,
     opacity(0.8),
-    transition := "opacity 0.1.s ease",
+    transition := "all .1s ease-in-out",
     &.hover(
-      visibility.visible,
-      backgroundColor(rgba(100, 100, 100, 0.1)).important
+      transform := "scale(1.2)"
     )
   )
 
