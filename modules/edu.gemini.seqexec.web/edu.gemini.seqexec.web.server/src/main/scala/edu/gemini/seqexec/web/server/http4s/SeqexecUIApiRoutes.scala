@@ -64,7 +64,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
         auth.authenticateUser(u.username, u.password) match {
           case \/-(user) =>
             // Log who logged in
-            Task.delay(clientLog.info(s"User ${user.displayName} logged in")) *>
+            Task.delay(clientLog.info(s"User ${user.displayName} logged in from <${req.remoteHost.getOrElse("Unknown")}>")) *>
             // if successful set a cookie
             httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
