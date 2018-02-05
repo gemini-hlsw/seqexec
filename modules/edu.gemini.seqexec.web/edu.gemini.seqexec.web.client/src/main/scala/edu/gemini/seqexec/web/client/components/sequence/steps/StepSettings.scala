@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, Step, StepType, StepState}
-import edu.gemini.seqexec.web.client.actions.FlipBreakpointStep
+import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -54,8 +54,13 @@ object StepBreakStopCell {
     val steps: List[Step] = focus.steps
   }
 
-  def breakpointAt(p: Props, step: Step): Callback =
-    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.focus.id, step))) >> p.heightChangeCB(step.id)
+  // Request a to flip the breakpoint
+  def flipBreakpoint(p: Props): Callback =
+    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.focus.id, p.step)) >> p.heightChangeCB(p.step.id))
+
+  // Request a to flip the skip
+  def flipSkipped(p: Props): Callback =
+    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipSkipStep(p.focus.id, p.step)))
 
   private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
 
@@ -63,18 +68,22 @@ object StepBreakStopCell {
     .stateless
     .render_P { p =>
       val canSetBreakpoint = p.clientStatus.isLogged && p.step.canSetBreakpoint(p.step.id, firstRunnableIndex(p.steps))
+      val canSetSkipMark = p.clientStatus.isLogged && p.step.canSetSkipmark
       <.div(
         SeqexecStyles.gutterCell,
         ^.height := p.rowHeight.px,
         <.div(
           SeqexecStyles.breakPointHandle,
-          ^.onClick --> breakpointAt(p, p.step),
-          if (p.step.breakpoint) {
-            Icon.IconRemove.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOffIcon))
-          } else {
-            Icon.IconCaretDown.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOnIcon))
-          }
-        ).when(canSetBreakpoint)
+          ^.onClick --> flipBreakpoint(p),
+          Icon.IconRemove.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOffIcon)).when(p.step.breakpoint),
+          Icon.IconCaretDown.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOnIcon)).unless(p.step.breakpoint)
+        ).when(canSetBreakpoint),
+        <.div(
+          SeqexecStyles.skipHandle,
+          ^.top := (p.rowHeight / 2 - SeqexecStyles.skipHandleHeight + 2).px,
+          IconPlusSquareOutline.copyIcon(link = true, onClick = flipSkipped(p)).when(p.step.skip),
+          IconMinusCircle.copyIcon(link = true, color = Some("orange"), onClick = flipSkipped(p)).unless(p.step.skip)
+        ).when(canSetSkipMark)
       )
     }
     .build

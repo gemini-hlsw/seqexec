@@ -596,7 +596,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     backgroundClip.paddingBox,
     backgroundColor(white),
     width(gutterWidth.px),
-    rightBorderMixin
+    rightBorderMixin,
+    position.relative
   )
 
   val offsetCellWrapper: StyleA = style(
@@ -611,7 +612,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val breakPointOffIcon: StyleA = style(
     position.relative,
-    left(1.px),
+    left(2.px),
     top(-5.px)
   )
 
@@ -705,4 +706,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     flexGrow(1),
     alignSelf.center
   )
+
+  val skipHandleHeight: Int = 13
+
+  val skipHandle: StyleA = style(
+    position.absolute,
+    left(2.1.px),
+    height(skipHandleHeight.px),
+    width(skipHandleHeight.px),
+    cursor.pointer,
+    opacity(0.8),
+    transition := "opacity 0.1.s ease",
+    &.hover(
+      visibility.visible,
+      backgroundColor(rgba(100, 100, 100, 0.1)).important
+    )
+  )
+
 }

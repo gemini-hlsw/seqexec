@@ -257,8 +257,8 @@ object Model {
 
       def canSetSkipmark: Boolean = s.status match {
         case StepState.Pending | StepState.Paused => true
-        case _ if hasError                                            => true
-        case _                                                        => false
+        case _ if hasError                        => true
+        case _                                    => false
       }
 
       def hasError: Boolean = s.status match {
