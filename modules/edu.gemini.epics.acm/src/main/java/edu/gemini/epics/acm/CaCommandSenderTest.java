@@ -11,15 +11,15 @@ import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
 public final class CaCommandSenderTest {
-    private static final Logger LOG = Logger.getLogger(CaCommandSenderTest.class.getName()); 
+    private static final Logger LOG = Logger.getLogger(CaCommandSenderTest.class.getName());
 
-    
+
     public static void main(String[] args) throws CAException {
         CaService.setAddressList("172.16.2.20");
         CaService service = CaService.getInstance();
 
         CaApplySender apply;
-        apply = service.createApplySender("apply", "tc1:apply", "tc1:applyC");
+        apply = service.createApplySender("apply", "tc1:apply", "tc1:applyC", false);
 
         CaCommandSender cs = service.createCommandSender("sourceA", apply, null);
         try {
@@ -30,12 +30,12 @@ public final class CaCommandSenderTest {
             parCoord1.set(Double.toString(Math.random() * 360.0));
             parCoord2.set(Double.toString(Math.random() * 50.0 + 30.0));
             CaCommandMonitor cm = cs.postCallback(new CaCommandListener() {
-                
+
                 @Override
                 public void onSuccess() {
                     System.out.println("Command completed successfully.");
                 }
-                
+
                 @Override
                 public void onFailure(Exception cause) {
                     System.out.println("Command completed with error " + cause.getMessage());

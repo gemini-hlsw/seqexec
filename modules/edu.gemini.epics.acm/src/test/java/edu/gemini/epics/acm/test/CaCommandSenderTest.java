@@ -30,7 +30,7 @@ import gov.aps.jca.TimeoutException;
 
 public final class CaCommandSenderTest {
 
-    private static final Logger LOG = Logger.getLogger(CaCommandSenderTest.class.getName()); 
+    private static final Logger LOG = Logger.getLogger(CaCommandSenderTest.class.getName());
 
     private static final String CA_ADDR_LIST = "127.0.0.1";
     private static final String TOP = "test";
@@ -72,12 +72,12 @@ public final class CaCommandSenderTest {
             simulator = null;
         }
     }
-    
+
     @Before
     public void setUp() throws CAException, TimeoutException {
         //Make sure commands are clear
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
 
         apply.clear();
 
@@ -87,7 +87,7 @@ public final class CaCommandSenderTest {
     @Test
     public void testCreateApplySender() throws CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         assertNotNull("Unable to create CaApplySender", apply);
 
         caService.destroyApplySender(APPLY_NAME);
@@ -96,7 +96,7 @@ public final class CaCommandSenderTest {
     @Test
     public void testGetApplySender() throws CAException {
         CaApplySender apply1 = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaApplySender apply2 = caService.getApplySender(APPLY_NAME);
 
         assertEquals("Retrieved the wrong CaStatusAcceptor.", apply1, apply2);
@@ -107,9 +107,9 @@ public final class CaCommandSenderTest {
     @Test
     public void testCreateCommandSender() throws CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
-        
+
         assertNotNull("Unable to create CaCommandSender", cs);
 
         caService.destroyApplySender(APPLY_NAME);
@@ -119,7 +119,7 @@ public final class CaCommandSenderTest {
     @Test
     public void testGetCommandSender() throws CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs1 = caService.createCommandSender(CS_NAME, apply, null);
         CaCommandSender cs2 = caService.getCommandSender(CS_NAME);
 
@@ -132,7 +132,7 @@ public final class CaCommandSenderTest {
     @Test
     public void testCreateParameter() throws CaException, CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
         CaParameter<String> param = cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
 
@@ -146,7 +146,7 @@ public final class CaCommandSenderTest {
     public void testRejectParameterCreationWithDifferentType()
             throws CaException, CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
 
         cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
@@ -160,7 +160,7 @@ public final class CaCommandSenderTest {
     public void testRejectParameterCreationWithDifferentChannel()
             throws CaException, CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
 
         cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
@@ -173,7 +173,7 @@ public final class CaCommandSenderTest {
     @Test
     public void testGetParameter() throws CaException, CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
         CaParameter<String> param1 = cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
         CaParameter<String> param2 = cs.getString(PARAM1_NAME);
@@ -188,7 +188,7 @@ public final class CaCommandSenderTest {
     @Test
     public void testGetInfo() throws CaException, CAException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
         cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
         cs.addString(PARAM2_NAME, PARAM2_CHANNEL);
@@ -211,7 +211,7 @@ public final class CaCommandSenderTest {
     public void testSetParameter() throws CAException, TimeoutException,
             CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
         CaParameter<String> param1 = cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
 
@@ -227,7 +227,7 @@ public final class CaCommandSenderTest {
         String val = attr.value();
 
         assertEquals("Unable to write parameter value.", VALUE, val);
-        
+
         caService.destroyApplySender(APPLY_NAME);
         caService.destroyCommandSender(CS_NAME);
     }
@@ -236,7 +236,7 @@ public final class CaCommandSenderTest {
     public void testTriggerUnmarkedCommand() throws CAException,
             TimeoutException, CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
 
         CaCommandMonitor cm = cs.post();
@@ -256,7 +256,7 @@ public final class CaCommandSenderTest {
     public void testTriggerCommandWithParameter() throws CAException,
             TimeoutException, CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply, null);
         CaParameter<String> param1 = cs.addString(PARAM1_NAME, PARAM1_CHANNEL);
 
@@ -278,7 +278,7 @@ public final class CaCommandSenderTest {
     public void testTriggerCommandWithMark() throws CAException,
             TimeoutException, CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply,
                 NORMAL_CAD);
 
@@ -300,7 +300,7 @@ public final class CaCommandSenderTest {
     public void testCommandError() throws CAException, TimeoutException,
             CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply,
                 ERROR_CAD);
 
@@ -323,7 +323,7 @@ public final class CaCommandSenderTest {
     public void testRetrieveCommandError() throws CAException,
             TimeoutException, CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply,
                 ERROR_CAD);
 
@@ -348,7 +348,7 @@ public final class CaCommandSenderTest {
     public void testCommandTimeout() throws CAException, TimeoutException,
             CaException {
         CaApplySender apply = caService.createApplySender(APPLY_NAME, APPLY,
-                CAR);
+                CAR, false);
         CaCommandSender cs = caService.createCommandSender(CS_NAME, apply,
                 TIMEOUT_CAD);
 

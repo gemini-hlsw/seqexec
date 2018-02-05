@@ -25,22 +25,22 @@ import gov.aps.jca.CAException;
  * Class XMLBuilder builds Command Senders and Status Acceptors, retrieving
  * their parameter definitions from a XML configuration file. It builds the
  * Apply Senders required by the Command Senders automatically.
- * 
+ *
  * The format of the XML configuration file is defined in file CaSchema.xsd.
- * 
+ *
  * The prefix of each EPICS channel name defined in the XML configuration file
  * is defined by one of multiple Top element. All the attributes of a Status
  * Acceptor share the same Top. All the parameters of a Command Sender share the
  * same Top, which is the same used by its associated Apply Sender.
- * 
+ *
  * This class follows the Builder pattern. Configuration methods can be chained.
- * 
+ *
  * @author jluhrs
  *
  */
 public final class XMLBuilder {
-    
-    private static final Logger LOG = Logger.getLogger(XMLBuilder.class.getName()); 
+
+    private static final Logger LOG = Logger.getLogger(XMLBuilder.class.getName());
 
     private static final String CONFIG_SCHEMA_FILE = "/CaSchema.xsd";
     private static final String XMLSCHEMA_URL = "http://www.w3.org/2001/XMLSchema";
@@ -53,7 +53,7 @@ public final class XMLBuilder {
 
     /**
      * Loads the Command Senders and Status Acceptors definitions from a file.
-     * 
+     *
      * @param fileName
      *            the file name.
      * @return this XMLBuilder object.
@@ -65,7 +65,7 @@ public final class XMLBuilder {
 
     /**
      * Loads the Command Senders and Status Acceptors from a data stream.
-     * 
+     *
      * @param iStream
      *            the data stream.
      * @return this XMLBuilder object.
@@ -94,7 +94,7 @@ public final class XMLBuilder {
     /**
      * Sets the CaService to use for building Command Senders and Status
      * Acceptors
-     * 
+     *
      * @param service
      *            the CaService.
      * @return this XMLBuilder object.
@@ -108,7 +108,7 @@ public final class XMLBuilder {
      * Sets the value of a named Top, used as a prefix for the EPICS channels
      * names of Command Senders and Status Acceptors created subsequently. If
      * the named Top already exists, its value is overwritten.
-     * 
+     *
      * @param top
      *            the name of the Top.
      * @param value
@@ -122,7 +122,7 @@ public final class XMLBuilder {
 
     /**
      * Creates a specific Command Sender, using the current configuration.
-     * 
+     *
      * @param commandName
      *            the name of the Command Sender
      * @return the Command Sender, or <code>null</code> if it could not be
@@ -142,7 +142,7 @@ public final class XMLBuilder {
 
     /**
      * Creates a specific Status Acceptor, using the current configuration.
-     * 
+     *
      * @param statusName
      *            the name of the Status Acceptor
      * @return the Status Acceptor, or <code>null</code> if it could not be
@@ -192,6 +192,7 @@ public final class XMLBuilder {
                 apply = service.createApplySender(applyDef.getName(),
                         tops.get(applyDef.getTop()) + applyDef.getApply(),
                         tops.get(applyDef.getTop()) + applyDef.getCar(),
+                        applyDef.isGem5() != null && applyDef.isGem5(),
                         applyDef.getDescription());
             } catch (CAException e) {
                 apply = null;

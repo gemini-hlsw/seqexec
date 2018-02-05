@@ -5,6 +5,7 @@
         <top>nirs</top>
         <apply>apply</apply>
         <car>applyC</car>
+        <gem5>true</gem5>
         <description>IS Primary Apply Record </description>
         <command name="nirs::config">
             <description>Setup a Configuration</description>

@@ -93,7 +93,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender("nirs::observeCmd",
-      GNIRS_TOP + "apply", GNIRS_TOP + "applyC", GNIRS_TOP + "dc:observeC", GNIRS_TOP + "stop", GNIRS_TOP + "abort", ""))
+      GNIRS_TOP + "apply", GNIRS_TOP + "applyC", GNIRS_TOP + "dc:observeC", true, GNIRS_TOP + "stop", GNIRS_TOP + "abort", ""))
 
   object stopCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = stopCS

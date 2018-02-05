@@ -60,6 +60,7 @@
 			<xs:element name="top" type="xs:string" />
 			<xs:element name="apply" type="xs:string" />
 			<xs:element name="car" type="xs:string" />
+			<xs:element name="gem5" type="xs:boolean" minOccurs="0" />
 			<xs:element name="description" type="xs:string" minOccurs="0" />
 			<xs:element name="command" type="tns:CommandType"
 				minOccurs="1" maxOccurs="unbounded" />

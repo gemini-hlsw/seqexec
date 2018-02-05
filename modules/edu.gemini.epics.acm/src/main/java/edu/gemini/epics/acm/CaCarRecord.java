@@ -15,7 +15,7 @@ import gov.aps.jca.TimeoutException;
 
 import java.util.logging.Logger;
 
-final class CaCarRecord {
+final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
     private static final Logger LOG = Logger.getLogger(CaCarRecord.class
             .getName());
 
@@ -25,15 +25,17 @@ final class CaCarRecord {
 
     private final String epicsName;
     private EpicsReader epicsReader;
+    private Class<C> carClass;
     private ReadOnlyClientEpicsChannel<Integer> clid;
-    private ReadOnlyClientEpicsChannel<CarState> val;
+    private ReadOnlyClientEpicsChannel<C> val;
     private ReadOnlyClientEpicsChannel<String> omss;
 
     private ChannelListener<Integer> clidListener;
-    private ChannelListener<CarState> valListener;
+    private ChannelListener<C> valListener;
 
-    CaCarRecord(String epicsName, EpicsService epicsService) {
+    CaCarRecord(String epicsName, Class<C> carClass, EpicsService epicsService) {
         this.epicsName = epicsName;
+        this.carClass = carClass;
         epicsReader = new EpicsReaderImpl(epicsService);
 
         updateChannels();
@@ -49,7 +51,7 @@ final class CaCarRecord {
             LOG.warning(e.getMessage());
         }
         try {
-            val = epicsReader.getEnumChannel(epicsName + CAR_VAL_SUFFIX, CarState.class);
+            val = epicsReader.getEnumChannel(epicsName + CAR_VAL_SUFFIX, carClass);
             if(valListener!=null) {
                 val.registerListener(valListener);
             }
@@ -112,21 +114,21 @@ final class CaCarRecord {
         clidListener = null;
     }
 
-    void registerValListener(ChannelListener<CarState> listener) throws CAException {
+    void registerValListener(ChannelListener<C> listener) throws CAException {
         if(val!=null) {
             val.registerListener(listener);
         }
         valListener = listener;
     }
 
-    void unregisterValListener(ChannelListener<CarState> listener) throws CAException {
+    void unregisterValListener(ChannelListener<C> listener) throws CAException {
         if(val!=null) {
             val.unRegisterListener(listener);
         }
         valListener = null;
     }
 
-    CarState getValValue() throws CAException, TimeoutException {
+    C getValValue() throws CAException, TimeoutException {
         return val.getFirst();
     }
 
