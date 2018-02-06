@@ -41,6 +41,8 @@ import squants.Time
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private val Log = getLogger
 
+  implicit val show: Show[InstrumentSystem] = Show.shows(_.resource.shows)
+
   import SeqTranslate._
 
   private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
@@ -64,8 +66,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))
     }
 
-  private def observe(config: Config, obsId: SPObservationID, inst: InstrumentSystem,
-                      otherSys: List[System], headers: Reader[ActionMetadata,List[Header]])
+  private def observe[A <: InstrumentSystem: Show](config: Config, obsId: SPObservationID, inst: A,
+                      otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(Task(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
@@ -88,9 +90,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
         _   <- headers(ctx).map(_.sendBefore(fileId, inst.dhsInstrumentName)).sequenceU
-        _   <- info(s"Start $inst observation $obsId with label $fileId")
+        _   <- info(s"Start ${inst.shows} observation $obsId with label $fileId")
         r   <- inst.observe(config)(fileId)
-        _   <- info(s"Completed $inst observation $obsId with label $fileId")
+        _   <- info(s"Completed ${inst.shows} observation $obsId with label $fileId")
         ret <- observeTail(fileId, d)(r)
       } yield ret
 
