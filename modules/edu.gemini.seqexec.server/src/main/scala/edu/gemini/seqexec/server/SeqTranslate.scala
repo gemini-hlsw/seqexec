@@ -66,6 +66,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))
     }
 
+  private def info(msg: => String): SeqAction[Unit] = EitherT(Task(Log.info(msg).right))
+
   private def observe[A <: InstrumentSystem: Show](config: Config, obsId: SPObservationID, inst: A,
                       otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
@@ -80,9 +82,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
-
-    def info(msg: => String): SeqAction[Unit] =
-      EitherT(Task(Log.info(msg).right))
 
     def doObserve(fileId: ImageFileId): SeqAction[Result] =
       for {
