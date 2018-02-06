@@ -6,33 +6,21 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState}
-// import edu.gemini.seqexec.web.client.ModelOps._
-// import edu.gemini.seqexec.web.client.model.Pages.{SeqexecPages, SequenceConfigPage}
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
-// import edu.gemini.seqexec.web.client.actions.{FlipBreakpointStep, FlipSkipStep, NavigateSilentTo}
-// import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-// import edu.gemini.seqexec.web.client.lenses.stepTypeO
-// import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-// import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
-// import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
-// import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-// import org.scalajs.dom.html.Div
-//
+
 import scalacss.ScalaCssReact._
 import scalacss._
 import scalaz.std.AllInstances._
 import scalaz.syntax.foldable._
 import scalaz.syntax.equal._
-// import scalaz.syntax.show._
-// import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import react.virtualized._
 
@@ -157,59 +145,68 @@ object StepsTable {
       SeqexecStyles.rowHeight
   }
 
-  // Columns for the table
-  private def columns(p: Props, recomputeHeightsCB: Int => Callback): List[Table.ColumnArg] = {
-    val offsetColumn =
-      p.offsetsDisplay match {
-        case OffsetsDisplay.DisplayOffsets(x) =>
-          Column(Column.props(ColWidths.OffsetWidthBase + x, "offset", label = "Offset", disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
-        case _ => None
+  class Backend {
+    // Columns for the table
+    private def columns(p: Props): List[Table.ColumnArg] = {
+      val offsetColumn =
+        p.offsetsDisplay match {
+          case OffsetsDisplay.DisplayOffsets(x) =>
+            Column(Column.props(ColWidths.OffsetWidthBase + x, "offset", label = "Offset", disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
+          case _ => None
+        }
+        List(
+          p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
+          Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
+          p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
+          offsetColumn,
+          Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some,
+          p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))),
+          p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
+          p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
+          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer)))
+        ).collect { case Some(x) => x }
+    }
+
+    def stepsTableProps(p: Props)(size: Size): Table.Props = {
+      Table.props(
+        disableHeader = false,
+        noRowsRenderer = () =>
+          <.div(
+            ^.cls := "ui center aligned segment noRows",
+            ^.height := size.height.px,
+            "No Steps"
+          ),
+        overscanRowCount = SeqexecStyles.overscanRowCount,
+        height = size.height.toInt,
+        rowCount = p.rowCount,
+        rowHeight = rowHeight(p) _,
+        rowClassName = rowClassName(p) _,
+        width = size.width.toInt,
+        rowGetter = p.rowGetter _,
+        scrollTop = 0,
+        headerClassName = SeqexecStyles.tableHeader.htmlClass,
+        headerHeight = SeqexecStyles.headerHeight)
+    }
+
+    // Create a ref
+    private val ref = JsComponent.mutableRefTo(Table.component)
+    // Keep it lazy or it won't be properly initialized
+    private lazy val tableRef = ref.value.raw
+
+    private def recomputeRowHeightsCB(index: Int): Callback = tableRef.recomputeRowsHeightsCB(index)
+
+    def receive(cur: Props, next: Props): Callback = {
+      // Recalculate the heights if needed
+      val stepsPairs = next.stepsList.zip(cur.stepsList)
+      val differentStepsStates = stepsPairs.collect {
+        case (cur, prev) if cur.status =/= prev.status => Callback.log(cur.id) >> tableRef.recomputeRowsHeightsCB(cur.id)
       }
-      List(
-        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
-        Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
-        p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
-        offsetColumn,
-        Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some,
-        p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))),
-        p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
-        p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
-        p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer)))
-      ).collect { case Some(x) => x }
-  }
 
-  def stepsTableProps(p: Props)(size: Size): Table.Props = {
-    Table.props(
-      disableHeader = false,
-      noRowsRenderer = () =>
-        <.div(
-          ^.cls := "ui center aligned segment noRows",
-          ^.height := size.height.px,
-          "No log entries"
-        ),
-      overscanRowCount = SeqexecStyles.overscanRowCount,
-      height = size.height.toInt,
-      rowCount = p.rowCount,
-      rowHeight = rowHeight(p) _,
-      rowClassName = rowClassName(p) _,
-      width = size.width.toInt,
-      rowGetter = p.rowGetter _,
-      headerClassName = SeqexecStyles.tableHeader.htmlClass,
-      headerHeight = SeqexecStyles.headerHeight)
-  }
+      Callback.sequence(differentStepsStates)
+    }
 
-  // Create a ref
-  private lazy val ref = JsComponent.mutableRefTo(Table.component)
-  private lazy val tableRef = ref.value.raw
-
-  private def recomputeHeightsCB(row: Int): Callback =
-    Callback.log(s"Recompute $row") >> tableRef.recomputeRowHeightsCB(row)
-
-  def recomputeRowsHeightsCB(indexes: Int*): Callback = Callback.log(s"Recompute ${indexes.mkString(",")}") >> Callback.sequence(indexes.map(tableRef.recomputeRowHeightsCB))
-
-  private val component = ScalaComponent.builder[Props]("Steps")
-    .stateless
-    .render_P(p =>
+    // Wire it up from VDOM
+    def render(p: Props): VdomElement =
       <.div(
         SeqexecStyles.stepsListPane.unless(p.status.isLogged),
         SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
@@ -217,19 +214,16 @@ object StepsTable {
           tab.stepConfigDisplayed.map { i =>
             <.div("CONFIG")
           }.getOrElse {
-            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, recomputeHeightsCB).map(_.vdomElement): _*)))
+            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p).map(_.vdomElement): _*)))
           }
         }
       )
-    )
-    .componentWillReceiveProps { f =>
-      val stepsPairs = f.nextProps.stepsList.zip(f.currentProps.stepsList)
-      val differentStepsStates = stepsPairs.collect {
-        case (cur, prev) if cur.status =/= prev.status => Callback.log(cur.id) >> recomputeRowsHeightsCB(cur.id)
-      }
+  }
 
-      Callback.sequence(differentStepsStates)
-    }.build
+  private val component = ScalaComponent.builder[Props]("Steps")
+    .renderBackend[Backend]
+    .componentWillReceiveProps(x => x.backend.receive(x.currentProps, x.nextProps))
+    .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Backend] = component(p)
 }
