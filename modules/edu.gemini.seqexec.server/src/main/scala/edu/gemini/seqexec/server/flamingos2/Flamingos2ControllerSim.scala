@@ -49,6 +49,7 @@ final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Contr
   private val counter: AtomicInteger = new AtomicInteger(0)
 
   override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
+    Log.info(s"Simulating Flamingos-2 observe with fileId: $fileId")
     Thread.sleep(5000)
     TrySeq(fileId)
   } )
