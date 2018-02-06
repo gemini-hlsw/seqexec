@@ -527,7 +527,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     leftBorderMixin,
     rightBorderMixin,
     backgroundImage := "linear-gradient(to right, rgba(34, 36, 38, 0.15) , rgba(34, 36, 38, 0.15) 20px, #a5673f 20px, #a5673f)",
-    backgroundSize := "auto 4px",
+    backgroundSize := "100% 4px",
     backgroundRepeat.noRepeat,
     borderTopColor(tableBorderColor),
     borderTopWidth(1.px),
