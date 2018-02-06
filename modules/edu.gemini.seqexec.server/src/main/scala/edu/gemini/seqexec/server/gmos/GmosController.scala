@@ -28,7 +28,7 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def applyConfig(config: GmosConfig[T]): SeqAction[Unit]
 
-  def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
   def endObserve: SeqAction[Unit]

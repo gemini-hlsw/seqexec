@@ -27,6 +27,7 @@ import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import org.log4s._
 
 import scalaz.Scalaz._
 import scalaz._
@@ -38,6 +39,7 @@ import squants.Time
   * Created by jluhrs on 9/14/16.
   */
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
+  private val Log = getLogger
 
   import SeqTranslate._
 
@@ -61,6 +63,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       if(_) SeqAction.void
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))
     }
+
   private def observe(config: Config, obsId: SPObservationID, inst: InstrumentSystem,
                       otherSys: List[System], headers: Reader[ActionMetadata,List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
@@ -76,14 +79,19 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
       client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
 
-    def doObserve(id: ImageFileId): SeqAction[Result] =
+    def info(msg: => String): SeqAction[Unit] =
+      EitherT(Task(Log.info(msg).right))
+
+    def doObserve(fileId: ImageFileId): SeqAction[Result] =
       for {
         d   <- dataId
-        _   <- sendDataStart(obsId, id, d)
-        _  <- notifyObserveStart
-        _  <- headers(ctx).map(_.sendBefore(id, inst.dhsInstrumentName)).sequenceU
-        r   <- inst.observe(config)(id)
-        ret <- observeTail(id, d)(r)
+        _   <- sendDataStart(obsId, fileId, d)
+        _   <- notifyObserveStart
+        _   <- headers(ctx).map(_.sendBefore(fileId, inst.dhsInstrumentName)).sequenceU
+        _   <- info(s"Start $inst observation $obsId with label $fileId")
+        r   <- inst.observe(config)(fileId)
+        _   <- info(s"Completed $inst observation $obsId with label $fileId")
+        ret <- observeTail(fileId, d)(r)
       } yield ret
 
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {

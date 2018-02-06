@@ -18,8 +18,8 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
 
   private val sim: InstrumentControllerSim = InstrumentControllerSim(s"GMOS $name")
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
-    sim.observe(obsid, expTime)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
+    sim.observe(fileId, expTime)
 
   override def applyConfig(config: GmosConfig[T]): SeqAction[Unit] = sim.applyConfig(config)
 

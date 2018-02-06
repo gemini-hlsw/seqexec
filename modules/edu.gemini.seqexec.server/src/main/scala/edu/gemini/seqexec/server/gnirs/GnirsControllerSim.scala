@@ -12,8 +12,8 @@ object GnirsControllerSim extends GnirsController {
 
   private val sim: InstrumentControllerSim = InstrumentControllerSim(s"GNIRS")
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
-    sim.observe(obsid, expTime)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
+    sim.observe(fileId, expTime)
 
   override def applyConfig(config: GnirsConfig): SeqAction[Unit] = sim.applyConfig(config)
 
