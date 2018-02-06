@@ -28,7 +28,6 @@ class GnirsControllerEpics extends GnirsController {
   private val ccCmd = epicsSys.configCCCmd
   private val dcCmd = epicsSys.configDCCmd
 
-
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
     case ReadMode.VERY_BRIGHT => (1, 1)
     case ReadMode.BRIGHT      => (1, 16)
@@ -199,12 +198,10 @@ class GnirsControllerEpics extends GnirsController {
       SeqAction(Log.info("Completed GNIRS configuration"))
 
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT(Task(Log.info("Start GNIRS observation").right))
-    _ <- GnirsEpics.instance.observeCmd.setLabel(obsid)
-    _ <- GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
+    _   <- GnirsEpics.instance.observeCmd.setLabel(fileId)
+    _   <- GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
     ret <- GnirsEpics.instance.observeCmd.post
-    _ <- EitherT(Task(Log.info("Completed GNIRS observation").right))
   } yield ret
 
   override def endObserve: SeqAction[Unit] = for {

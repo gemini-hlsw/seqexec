@@ -137,13 +137,11 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- EitherT(Task(Log.info("Completed Flamingos2 configuration").right))
   } yield ()
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
-    _ <- EitherT(Task(Log.info("Start Flamingos2 observation").right))
-    _ <- Flamingos2Epics.instance.observeCmd.setLabel(obsid)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
+    _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId)
     _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime+ReadoutTimeout)
     _ <- Flamingos2Epics.instance.observeCmd.post
-    _ <- EitherT(Task(Log.info("Completed Flamingos2 observation").right))
-  } yield obsid
+  } yield fileId
 
   override def endObserve =  for {
       _ <- EitherT(Task(Log.info("Send endObserve to Flamingos2").right))

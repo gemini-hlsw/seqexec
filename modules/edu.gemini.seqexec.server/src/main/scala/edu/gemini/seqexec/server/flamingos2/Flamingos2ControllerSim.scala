@@ -22,11 +22,9 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
-    Log.info("Taking Flamingos-2 observation with label " + obsid)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
     Thread.sleep(5000)
-    Log.info("Flamingos-2 observation completed")
-    TrySeq(obsid)
+    TrySeq(fileId)
   } )
 
   override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( Task {
@@ -50,11 +48,10 @@ final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Contr
 
   private val counter: AtomicInteger = new AtomicInteger(0)
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
-    Log.info("Taking Flamingos-2 observation with label " + obsid)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
+    Log.info(s"Simulating Flamingos-2 observe with fileId: $fileId")
     Thread.sleep(5000)
-    Log.info("Flamingos-2 observation completed")
-    TrySeq(obsid)
+    TrySeq(fileId)
   } )
 
   override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( Task {

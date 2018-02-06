@@ -180,12 +180,10 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _ <- EitherT(Task(Log.info("Completed Gmos configuration").right))
   } yield ()
 
-  override def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT(Task(Log.info("Start Gmos observation").right))
-    _ <- GmosEpics.instance.observeCmd.setLabel(obsid)
-    _ <- GmosEpics.instance.observeCmd.setTimeout(expTime+ReadoutTimeout)
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
+    _   <- GmosEpics.instance.observeCmd.setLabel(fileId)
+    _   <- GmosEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
     ret <- GmosEpics.instance.observeCmd.post
-    _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
   } yield ret
 
   override def stopObserve: SeqAction[Unit] = for {

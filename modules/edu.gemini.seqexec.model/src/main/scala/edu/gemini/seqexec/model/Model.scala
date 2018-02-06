@@ -134,6 +134,15 @@ object Model {
       case Instrument.NIRI   => 17
       case Instrument.NIFS   => 18
     }
+    implicit val show: Show[Resource] = Show.shows {
+      case TCS               => "TCS"
+      case Gcal              => "Gcal"
+      case Gems              => "Gems"
+      case Altair            => "Altair"
+      case OI                => "OI"
+      case P1                => "P1"
+      case i: Instrument     => i.shows
+    }
     implicit val ordering: scala.math.Ordering[Resource] = order.toScalaOrdering
   }
   sealed trait Instrument extends Resource
@@ -148,7 +157,7 @@ object Model {
     case object NIFS extends Instrument
 
     implicit val equal: Equal[Instrument] = Equal.equalA[Instrument]
-    implicit val show: Show[Instrument] = Show.shows({
+    implicit val show: Show[Instrument] = Show.shows {
       case F2    => "Flamingos2"
       case GmosS => "GMOS-S"
       case GmosN => "GMOS-N"
@@ -157,7 +166,7 @@ object Model {
       case GNIRS => "GNIRS"
       case NIRI  => "NIRI"
       case NIFS  => "NIFS"
-    })
+    }
     val gsInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
     val gnInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
   }

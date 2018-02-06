@@ -48,8 +48,8 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
         observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
       }
 
-  def observe(obsid: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
-    Log.info(s"Simulate taking $name observation with label $obsid")
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
+    Log.info(s"Simulate taking $name observation with label $fileId")
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)

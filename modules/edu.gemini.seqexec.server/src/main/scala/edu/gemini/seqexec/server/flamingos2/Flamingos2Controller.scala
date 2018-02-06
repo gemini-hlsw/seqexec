@@ -21,7 +21,7 @@ trait Flamingos2Controller {
 
   def applyConfig(config: Flamingos2Config): SeqAction[Unit]
 
-  def observe(obsid: ImageFileId, expTime: Time): SeqAction[ImageFileId]
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId]
 
   def endObserve: SeqAction[Unit]
 }
