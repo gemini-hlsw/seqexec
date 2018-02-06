@@ -58,6 +58,7 @@ class GnirsControllerEpics extends GnirsController {
     case SlitWidth.PupilViewer  => "PV"
     case SlitWidth.SmallPinhole => "SmPinholes"
     case SlitWidth.LargePinhole => "LgPinholes"
+    case SlitWidth.Acquisition  => "Acq"
   }
 
   implicit val deckerEncoder: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
