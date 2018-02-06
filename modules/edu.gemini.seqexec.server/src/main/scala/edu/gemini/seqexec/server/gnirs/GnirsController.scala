@@ -89,6 +89,7 @@ object GnirsController {
     case object PupilViewer extends SlitWidth
     case object SmallPinhole extends SlitWidth
     case object LargePinhole extends SlitWidth
+    case object Acquisition extends SlitWidth
   }
 
   type WellDepth = edu.gemini.spModel.gemini.gnirs.GNIRSParams.WellDepth
@@ -108,11 +109,9 @@ object GnirsController {
   final case class Other(mode: Mode,
                          camera: Camera,
                          decker: Decker,
-                         disperser: Disperser,
                          filter1: Filter1,
                          filter2: Filter2,
-                         slitWidth: Option[SlitWidth],
-                         wollanstonPrism: WollanstonPrism
+                         slitWidth: Option[SlitWidth]
                         ) extends CCConfig
 
   final case class GnirsConfig(cc: CCConfig, dc: DCConfig)

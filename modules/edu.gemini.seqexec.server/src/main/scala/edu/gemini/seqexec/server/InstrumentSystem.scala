@@ -29,10 +29,13 @@ object InstrumentSystem {
   final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result]) extends AnyVal
   final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
   final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
-  final case class Controllable(stop: StopObserveCmd,
+  final case class OpticControl(stop: StopObserveCmd,
                                 abort: AbortObserveCmd,
                                 pause: PauseObserveCmd,
                                 continue: ContinuePausedCmd,
                                 stopPaused: StopPausedCmd,
                                 abortPaused: AbortPausedCmd) extends ObserveControl
+  // Special class for infrared instrument, because they cannot pause/resume
+  final case class InfraredControl(stop: StopObserveCmd,
+                                   abort: AbortObserveCmd) extends ObserveControl
 }

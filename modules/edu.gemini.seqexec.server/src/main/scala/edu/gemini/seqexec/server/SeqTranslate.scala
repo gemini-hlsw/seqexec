@@ -225,46 +225,51 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       })
   }
 
-  private def deliverObserveCmd(seqState: Sequence.State, cmd: Option[Process[Task, Event]]): Option[Process[Task, Event]] = {
+  private def deliverObserveCmd(seqState: Sequence.State,
+                                f: ObserveControl => Option[SeqAction[Unit]]): Option[Process[Task, Event]] = {
     def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case Action.Started               => true
       case _                            => false
     })
-    if(seqState.current.execution.exists(isObserving)) cmd
-    else none
+
+    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(x => f(x.observeControl)).flatMap {
+      v => seqState.current.execution.exists(isObserving).option(Process.eval(v.run.map(handleError)))
+    }
   }
 
-  def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd(
-    seqState,
-    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
-      case Controllable(StopObserveCmd(stop), _, _, _, _, _) => Some(Process.eval(stop.run.map{
-        case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
-        case _      => Event.nullEvent
-      }))
+  private def handleError(t: TrySeq[Unit]): Event = t match {
+    case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
+    case _      => Event.nullEvent
+  }
+
+  // This code assumes that if an instrument can not stop a running exposure, it cannot stop a paused one either.
+  def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
+      case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
+      case InfraredControl(StopObserveCmd(stop), _)          => Some(stop)
       case _                                                 => none
-    } )
-  ).orElse(stopPaused(seqId)(seqState))
+    }
+    deliverObserveCmd(seqState, f).orElse(stopPaused(seqId)(seqState))
+  }
 
-  def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd(
-    seqState,
-    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
-      case Controllable(_, AbortObserveCmd(abort), _, _, _, _) => Some(Process.eval(abort.run.map{
-        case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
-        case _      => Event.nullEvent
-      }))
+  // This code assumes that if an instrument can not abort a running exposure, it cannot abort a paused one either.
+  def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
+      case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
+      case InfraredControl(_, AbortObserveCmd(abort))          => Some(abort)
       case _                                                   => none
-    } )
-  ).orElse(abortPaused(seqId)(seqState))
+    }
 
-  def pauseObserve(seqState: Sequence.State): Option[Process[Task, Event]] = deliverObserveCmd( seqState,
-    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(_.observeControl match {
-      case Controllable(_, _, PauseObserveCmd(pause), _, _, _) => Some(Process.eval(pause.run.map{
-        case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
-        case _      => Event.nullEvent
-      }))
+    deliverObserveCmd(seqState, f).orElse(abortPaused(seqId)(seqState))
+  }
+
+  def pauseObserve(seqState: Sequence.State): Option[Process[Task, Event]] = {
+    def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
+      case OpticControl(_, _, PauseObserveCmd(pause), _, _, _) => Some(pause)
       case _                                                   => none
-    } )
-  )
+    }
+    deliverObserveCmd( seqState, f)
+  }
 
   private def pausedCommand(seqId: Sequence.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]])
                            (seqState: Sequence.State): Option[Process[Task, Event]] = {
@@ -280,14 +285,15 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       ret <- c.t(r)
     } yield ret ).run.map(_.toResult)
 
-    observeIndex.flatMap{ case (c, i) => toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(
-      x => f(x.observeControl).map(v => Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, v(c.expTime))))))
-    ) }
+    (toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(x => f(x.observeControl)) |@|
+    observeIndex){ (cmd, t) => t match {
+      case (c, i) => Process.eval(Task(Event.actionResume(seqId, i, resumeTask(c, cmd(c.expTime)))))
+    } }
   }
 
   def resumePaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
-      case Controllable(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
+      case OpticControl(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
       case _                                                 => none
     }
 
@@ -296,7 +302,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def stopPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
-      case Controllable(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
+      case OpticControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                             => none
     }
 
@@ -305,7 +311,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def abortPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
-      case Controllable(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
+      case OpticControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                              => none
     }
 
