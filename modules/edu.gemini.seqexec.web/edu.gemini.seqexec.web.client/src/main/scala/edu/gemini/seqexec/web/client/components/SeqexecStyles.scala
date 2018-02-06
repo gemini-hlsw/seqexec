@@ -430,7 +430,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     paddingTop(1.em),
     fontWeight.bold,
     color(black),
-    backgroundColor(c"#F9FAFB")
+    backgroundColor(c"#F9FAFB"),
+    outline.none
   )
 
   // Override styles used by react-virtualized
@@ -487,7 +488,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
     topBorderMixin,
-    bottomBorderMixin
+    bottomBorderMixin,
+    outline.none
   )
 
   val innerScroll: StyleA = style("ReactVirtualized__Grid__innerScrollContainer")(
@@ -519,7 +521,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepRow: StyleA = style(
     stepRowMixin,
     overflow.unset.important,
-    rowMixin
+    rowMixin,
+    outline.none
   )
 
   val stepRowWithBreakpoint: StyleA = style(
@@ -533,7 +536,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     borderTopWidth(1.px),
     borderTopStyle.solid,
     paddingTop(4.px),
-    overflow.visible.important
+    overflow.visible.important,
+    outline.none
   )
 
   val infoLog: StyleA = style(
