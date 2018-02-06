@@ -25,16 +25,16 @@ import scalaz.syntax.std.option._
 import react.virtualized._
 
 object ColWidths {
-  val ControlWidth: Int = 50
+  val ControlWidth: Int = 40
+  val IdxWidth: Int = 40
   val StateWidth: Int = 200
-  val IdxWidth: Int = 50
   val StatusWidth: Int = 100
-  val OffsetWidthBase: Int = 75
-  val GuidingWidth: Int = 83
+  val OffsetWidthBase: Int = 85
+  val GuidingWidth: Int = 63
   val ExposureWidth: Int = 80
   val FilterWidth: Int = 150
   val FPUWidth: Int = 150
-  val ObjectTypeWidth: Int = 100
+  val ObjectTypeWidth: Int = 75
 }
 
 /**
@@ -151,19 +151,19 @@ object StepsTable {
       val offsetColumn =
         p.offsetsDisplay match {
           case OffsetsDisplay.DisplayOffsets(x) =>
-            Column(Column.props(ColWidths.OffsetWidthBase + x, "offset", label = "Offset", disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
+            Column(Column.props(ColWidths.OffsetWidthBase + x, "offset", label = "Offset", flexShrink = 0, disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
           case _ => None
         }
         List(
-          p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
-          Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, cellRenderer = stepIdRenderer)).some,
-          p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
+          p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), flexShrink = 0, className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
+          Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, flexShrink = 0, cellRenderer = stepIdRenderer)).some,
+          p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexShrink = 1, flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
           offsetColumn,
-          Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some,
-          p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))),
-          p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
-          p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
-          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer)))
+          Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", flexShrink = 0, disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some,
+          p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", flexShrink = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))),
+          p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
+          p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 0, disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
+          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 0, disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer)))
         ).collect { case Some(x) => x }
     }
 

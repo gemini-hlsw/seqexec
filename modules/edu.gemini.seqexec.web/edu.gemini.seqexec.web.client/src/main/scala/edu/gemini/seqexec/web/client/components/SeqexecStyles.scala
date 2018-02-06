@@ -392,7 +392,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val overscanRowCount: Int = 10
   val rowHeight: Int = 30
   val runningRowHeight: Int = 60
-  val headerHeight: Int = 37
+  val headerHeight: Int = 33
 
   val leftBorderMixin: StyleS = mixin(
     borderLeftWidth(1.px),
@@ -425,13 +425,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val tableHeader: StyleA = style(
     leftBorderMixin,
-    cellPaddingMixin,
-    paddingBottom(0.8.em),
-    paddingTop(1.em),
     fontWeight.bold,
     color(black),
     backgroundColor(c"#F9FAFB"),
-    outline.none
+    outline.none,
+    minHeight(headerHeight.px),
+    height(headerHeight.px),
+    paddingLeft(6.px),
+    paddingTop(6.px)
   )
 
   // Override styles used by react-virtualized
@@ -509,7 +510,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val headerRowStyle: StyleA = style(
-    rowMixin
+    rowMixin,
+    backgroundColor(c"#F9FAFB"),
+    minHeight(headerHeight.px),
+    height(headerHeight.px)
   )
 
   val stepRowMixin: StyleS = mixin(
@@ -561,7 +565,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val controlCell: StyleA = style(
     display.flex,
     justifyContent.spaceAround,
-    alignItems.center
+    alignItems.center,
+    minWidth(42.3.px)
   )
 
   val controlCellRow: StyleA = style(
@@ -577,8 +582,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val iconCell: StyleA = style(
     iconCellMixin,
-    width(34.px),
-    height(20.px)
+    width(24.px),
+    height(20.px),
+    paddingLeft(3.px)
   )
 
   val runningIconCell: StyleA = style(
@@ -600,6 +606,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     backgroundClip.paddingBox,
     backgroundColor(white),
     width(gutterWidth.px),
+    minWidth(gutterWidth.px),
     rightBorderMixin,
     position.relative
   )
