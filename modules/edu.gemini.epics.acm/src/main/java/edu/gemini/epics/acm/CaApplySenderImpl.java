@@ -206,7 +206,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         @Override
         public State onApplyValChange(Integer val) {
             if (val > 0) {
-                if (carClid != null && carClid.equals(val)) {
+                if (carVal != null && carClid != null && carClid.equals(val)) {
                     if (carVal.isError()) {
                         failCommandWithCarError(cm);
                         return IdleState;
