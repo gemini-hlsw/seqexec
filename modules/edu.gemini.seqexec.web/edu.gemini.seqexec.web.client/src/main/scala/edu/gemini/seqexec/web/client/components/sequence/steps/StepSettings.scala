@@ -151,6 +151,7 @@ object FPUCell {
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
+        SeqexecStyles.componentLabel,
         fpuValue.getOrElse("Unknown"): String
       )
     }
@@ -180,8 +181,8 @@ object FilterCell {
         filter  <- instrumentFilterO.getOption(p.s)
       } yield nameMapper.getOrElse(filter, filter)
 
-
       <.div(
+        SeqexecStyles.componentLabel,
         filter.getOrElse("Unknown"): String
       )
     }

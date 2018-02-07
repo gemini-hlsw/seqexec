@@ -330,7 +330,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val skipHandleContainer: StyleA = style(
     position.relative,
-    left(((gutterWidth - iconWidth)/2).px),
+    left(((gutterWidth - iconWidth) / 2).px),
     top(-11.px),
     height(0.px),
     overflow.visible
@@ -388,7 +388,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val componentLabel: StyleA = style(
-    fontSize.smaller.important,
     textOverflow := "ellipsis",
     overflow.hidden,
     wordWrap.breakWord,
@@ -745,7 +744,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
   // End row styles
 
-  // target the runing row cells
   val configuringRow: StyleA = style(
     display.flex,
     flexGrow(1)
@@ -781,7 +779,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val specialStateLabel: StyleA = style(
     display.flex,
     flexGrow(1),
-    alignSelf.center
+    alignSelf.center,
+    textOverflow := "ellipsis",
+    overflow.hidden,
+    wordWrap.breakWord,
+    whiteSpace.nowrap
   )
 
   val skipHandleHeight: Int = 13
