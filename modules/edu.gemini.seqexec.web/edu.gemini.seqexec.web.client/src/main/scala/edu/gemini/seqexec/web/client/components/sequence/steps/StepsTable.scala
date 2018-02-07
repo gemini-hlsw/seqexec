@@ -146,13 +146,13 @@ object StepsTable {
   def rowHeight(p: Props)(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
     case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), OffsetsDisplay.DisplayOffsets(_)) =>
       HeightWithOffsets + BreakpointLineHeight
-    case (_, OffsetsDisplay.DisplayOffsets(_))                                                =>
-      HeightWithOffsets
     case (StepRow(s: Step), _) if s.status === StepState.Running                              =>
       SeqexecStyles.runningRowHeight
+    case (_, OffsetsDisplay.DisplayOffsets(_))                                                =>
+      HeightWithOffsets
     case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _)                                =>
       SeqexecStyles.rowHeight + BreakpointLineHeight
-    case _ =>
+    case _                                                                                    =>
       SeqexecStyles.rowHeight
   }
 
