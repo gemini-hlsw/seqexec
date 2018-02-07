@@ -3,10 +3,10 @@
     <Top name="nirs">nirs</Top>
     <Apply name="nirs::apply">
         <top>nirs</top>
-        <apply>apply</apply>
-        <car>applyC</car>
+        <apply>cc:apply</apply>
+        <car>cc:applyC</car>
         <gem5>true</gem5>
-        <description>IS Primary Apply Record </description>
+        <description>CC Apply Record </description>
         <command name="nirs::config">
             <description>Setup a Configuration</description>
             <parameter name="cover">
@@ -55,7 +55,7 @@
                 <description>Camera</description>
             </parameter>
             <parameter name="gratingMode">
-                <channel>cc:gratingPos</channel>
+                <channel>cc:gratingPosCad.A</channel>
                 <type>STRING</type>
                 <description>Grating Mode</description>
             </parameter>
@@ -85,6 +85,13 @@
                 <description>Filter2</description>
             </parameter>
         </command>
+    </Apply>
+    <Apply name="nirs::dcapply">
+        <top>nirs</top>
+        <apply>dc:apply</apply>
+        <car>dc:applyC</car>
+        <gem5>true</gem5>
+        <description>DC Apply Record </description>
         <command name="nirs::dcconfig">
             <description>Setup a DC Configuration</description>
             <parameter name="lowNoise">
@@ -119,24 +126,24 @@
             </parameter>
         </command>
         <command name="nirs::endObserve">
-            <record>endObserve</record>
+            <record>dc:endObserve</record>
             <description>End Observe</description>
         </command>
         <command name="nirs::abort">
-            <record>abort</record>
+            <record>dc:abort</record>
             <description>Abort observation</description>
         </command>
         <command name="nirs::observe">
-            <record>observe</record>
+            <record>dc:observe</record>
             <description>Observe</description>
             <parameter name="label">
-                <channel>observe.A</channel>
+                <channel>dc:observe.A</channel>
                 <type>STRING</type>
                 <description>DHS data label</description>
             </parameter>
         </command>
         <command name="nirs::stop">
-            <record>stop</record>
+            <record>dc:stop</record>
             <description>Stop observation</description>
         </command>
     </Apply>
@@ -248,7 +255,7 @@
             <description></description>
         </attribute>
         <attribute name="gratingMode">
-            <channel>cc:gratingPos</channel>
+            <channel>cc:gratingPosCad.B</channel>
             <type>STRING</type>
             <description>Grating Mode</description>
         </attribute>

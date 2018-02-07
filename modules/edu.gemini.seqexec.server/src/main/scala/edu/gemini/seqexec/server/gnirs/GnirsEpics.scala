@@ -70,7 +70,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
     def setLowNoise(v: Int): SeqAction[Unit] = setParameter(lowNoise, Integer.valueOf(v))
 
-    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTIme"))
+    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
     val wcs: Option[CaParameter[String]] = cs.map(_.getString("wcs"))
@@ -93,7 +93,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender("nirs::observeCmd",
-      GNIRS_TOP + "apply", GNIRS_TOP + "applyC", GNIRS_TOP + "dc:observeC", true, GNIRS_TOP + "stop", GNIRS_TOP + "abort", ""))
+      GNIRS_TOP + "dc:apply", GNIRS_TOP + "dc:applyC", GNIRS_TOP + "dc:observeC", true, GNIRS_TOP + "dc:stop", GNIRS_TOP + "dc:abort", ""))
 
   object stopCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
@@ -188,7 +188,8 @@ object GnirsEpics extends EpicsSystem[GnirsEpics] {
 
   override val className: String = getClass.getName
   override val Log: Logger = getLogger
-  override val CA_CONFIG_FILE: String = "/Gmos.xml"
+  override val CA_CONFIG_FILE: String = "/Gnirs.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GnirsEpics(service, tops)
+
 }

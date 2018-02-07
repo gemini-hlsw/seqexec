@@ -17,11 +17,10 @@ import scalaz.concurrent.Task
 import scalaz._
 import Scalaz._
 
-class GnirsControllerEpics extends GnirsController {
+object GnirsControllerEpics extends GnirsController {
   private val Log = getLogger
 
   import GnirsController._
-  import GnirsControllerEpics._
   import EpicsCodex._
 
   private val epicsSys = GnirsEpics.instance
@@ -127,7 +126,7 @@ class GnirsControllerEpics extends GnirsController {
     val defaultMode = "WAVELENGTH"
 
     smartSetParam(v, epicsSys.grating, ccCmd.setGrating(v)) *>
-    smartSetParam(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode))
+      smartSetParam(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode))
   }
 
   private def setPrism(s: Spectrography, c: Camera): SeqAction[Unit] = {
@@ -192,6 +191,8 @@ class GnirsControllerEpics extends GnirsController {
   override def applyConfig(config: GnirsConfig): SeqAction[Unit] =
     SeqAction(Log.info("Starting GNIRS configuration")) *>
       setDCParams(config.dc) *>
+      dcCmd.setTimeout(DefaultTimeout) *>
+      dcCmd.post *>
       setCCParams(config.cc) *>
       ccCmd.setTimeout(ConfigTimeout) *>
       ccCmd.post *>
@@ -224,10 +225,8 @@ class GnirsControllerEpics extends GnirsController {
     _ <- GnirsEpics.instance.abortCmd.mark
     _ <- GnirsEpics.instance.abortCmd.post
   } yield ()
-}
 
-object GnirsControllerEpics {
-  val DefaultTimeout: Time = Seconds(60)
-  val ReadoutTimeout: Time = Seconds(300)
-  val ConfigTimeout: Time = Seconds(240)
+  private val DefaultTimeout: Time = Seconds(60)
+  private val ReadoutTimeout: Time = Seconds(300)
+  private val ConfigTimeout: Time = Seconds(240)
 }

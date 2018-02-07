@@ -21,7 +21,7 @@ import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import edu.gemini.seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import edu.gemini.seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import edu.gemini.seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
-import edu.gemini.seqexec.server.gnirs.GnirsEpics
+import edu.gemini.seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import edu.gemini.seqexec.server.gws.GwsEpics
 import edu.gemini.seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.spModel.core.Peer
@@ -58,7 +58,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       else Flamingos2ControllerSim
     } else Flamingos2ControllerEpics,
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
-    if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics
+    if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
+    if (settings.instSim) GnirsControllerSim else GnirsControllerEpics
   )
 
   private val translatorSettings = SeqTranslate.Settings(

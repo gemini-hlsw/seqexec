@@ -10,19 +10,19 @@ import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
 import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
 import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.gemini.gnirs.GNIRSConstants._
+import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
+import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_KEY, DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
+import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
-import edu.gemini.spModel.gemini.gnirs.InstGNIRS.{ACQUISITION_MIRROR_PROP, CROSS_DISPERSED_PROP, WELL_DEPTH_PROP}
-import squants.{Time, Length}
+import squants.{Length, Time}
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
 import scalaz._
 import Scalaz._
 
-class Gnirs(controller: GnirsController) extends InstrumentSystem {
+final case class Gnirs(controller: GnirsController) extends InstrumentSystem {
   override val sfName: String = "gnirs"
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
@@ -49,6 +49,9 @@ class Gnirs(controller: GnirsController) extends InstrumentSystem {
 }
 
 object Gnirs {
+
+  val name: String = INSTRUMENT_NAME_PROP
+
   def extractExposureTime(config: Config): ExtractFailure\/Time =
     config.extract(EXPOSURE_TIME_KEY).as[java.lang.Double].map(_.toDouble.seconds)
 
@@ -66,7 +69,7 @@ object Gnirs {
   } yield DCConfig(expTime, coadds, readMode, wellDepth))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCConfig(config: Config): TrySeq[CCConfig] = config.extract(INSTRUMENT_KEY / OBSERVE_TYPE_PROP).as[String]
+  private def getCCConfig(config: Config): TrySeq[CCConfig] = config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))).flatMap{
     case DARK_OBSERVE_TYPE => GnirsController.Dark.right
     case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").left
@@ -132,14 +135,14 @@ object Gnirs {
 
 
   private def autoFilter(w: Length): GnirsController.Filter2 = {
-    val table = Map(
+    val table = List(
       GnirsController.Filter2.X -> 1.17,
       GnirsController.Filter2.J -> 1.42,
       GnirsController.Filter2.H -> 1.86,
-      GnirsController.Filter2.J -> 2.70,
+      GnirsController.Filter2.K -> 2.70,
       GnirsController.Filter2.L -> 4.30,
       GnirsController.Filter2.M -> 6.0
-    ).mapValues(_.nanometers)
+    ).map{ case (f, w) => (f, w.nanometers) }
 
     table.foldRight[GnirsController.Filter2](GnirsController.Filter2.XD){ case (t, v) => if(w < t._2) t._1 else v}
   }
@@ -160,24 +163,23 @@ object Gnirs {
       case _                     => GnirsController.Filter2.Open
     }.map(_.right).getOrElse {
       if (xdisp === CrossDispersed.NO)
-        config.extract(INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).as[java.lang.Double].map(_.toDouble.nanometers).map(autoFilter)
+        config.extract(INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).as[Wavelength].map(_.doubleValue().nanometers).map(autoFilter)
       else GnirsController.Filter2.XD.right
     }
 
   private def getSlit(slit: SlitWidth): Option[GnirsController.SlitWidth] = slit match {
-    case SlitWidth.ACQUISITION => GnirsController.SlitWidth.Acquisition.some
-    case SlitWidth.PINHOLE_1   => GnirsController.SlitWidth.SmallPinhole.some
-    case SlitWidth.PINHOLE_3   => GnirsController.SlitWidth.LargePinhole.some
-    case SlitWidth.SW_1        => GnirsController.SlitWidth.Slit0_10.some
-    case SlitWidth.SW_2        => GnirsController.SlitWidth.Slit0_15.some
-    case SlitWidth.SW_3        => GnirsController.SlitWidth.Slit0_20.some
-    case SlitWidth.SW_4        => GnirsController.SlitWidth.Slit0_30.some
-    case SlitWidth.SW_5        => GnirsController.SlitWidth.Slit0_45.some
-    case SlitWidth.SW_6        => GnirsController.SlitWidth.Slit0_68.some
-    case SlitWidth.SW_7        => GnirsController.SlitWidth.Slit1_00.some
-    case _                     => None
+    case SlitWidth.ACQUISITION  => GnirsController.SlitWidth.Acquisition.some
+    case SlitWidth.PINHOLE_1    => GnirsController.SlitWidth.SmallPinhole.some
+    case SlitWidth.PINHOLE_3    => GnirsController.SlitWidth.LargePinhole.some
+    case SlitWidth.SW_1         => GnirsController.SlitWidth.Slit0_10.some
+    case SlitWidth.SW_2         => GnirsController.SlitWidth.Slit0_15.some
+    case SlitWidth.SW_3         => GnirsController.SlitWidth.Slit0_20.some
+    case SlitWidth.SW_4         => GnirsController.SlitWidth.Slit0_30.some
+    case SlitWidth.SW_5         => GnirsController.SlitWidth.Slit0_45.some
+    case SlitWidth.SW_6         => GnirsController.SlitWidth.Slit0_68.some
+    case SlitWidth.SW_7         => GnirsController.SlitWidth.Slit1_00.some
+    case SlitWidth.PUPIL_VIEWER => GnirsController.SlitWidth.PupilViewer.some
+    case _                      => None
   }
-
-
 
 }

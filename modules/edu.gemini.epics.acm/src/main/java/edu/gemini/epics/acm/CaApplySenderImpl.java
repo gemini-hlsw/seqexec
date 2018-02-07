@@ -282,7 +282,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
         private State checkOutConditions(CarStateGeneric carState,
                 Integer carClid) {
-            if (carClid != null && carClid == clid) {
+            if (carState != null && carClid != null && carClid == clid) {
                 if (carState.isError()) {
                     failCommandWithCarError(cm);
                     return IdleState;
@@ -357,26 +357,32 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
     }
 
     private synchronized void onApplyValChange(Integer val) {
-        currentState = currentState.onApplyValChange(val);
-        if (currentState.equals(IdleState) && timeoutFuture != null) {
-            timeoutFuture.cancel(true);
-            timeoutFuture = null;
+        if (val != null) {
+            currentState = currentState.onApplyValChange(val);
+            if (currentState.equals(IdleState) && timeoutFuture != null) {
+                timeoutFuture.cancel(true);
+                timeoutFuture = null;
+            }
         }
     }
 
     private synchronized void onCarClidChange(Integer val) {
-        currentState = currentState.onCarClidChange(val);
-        if (currentState.equals(IdleState) && timeoutFuture != null) {
-            timeoutFuture.cancel(true);
-            timeoutFuture = null;
+        if (val != null) {
+            currentState = currentState.onCarClidChange(val);
+            if (currentState.equals(IdleState) && timeoutFuture != null) {
+                timeoutFuture.cancel(true);
+                timeoutFuture = null;
+            }
         }
     }
 
     private synchronized void onCarValChange(C carState) {
-        currentState = currentState.onCarValChange(carState);
-        if (currentState.equals(IdleState) && timeoutFuture != null) {
-            timeoutFuture.cancel(true);
-            timeoutFuture = null;
+        if (carState != null) {
+            currentState = currentState.onCarValChange(carState);
+            if (currentState.equals(IdleState) && timeoutFuture != null) {
+                timeoutFuture.cancel(true);
+                timeoutFuture = null;
+            }
         }
     }
 

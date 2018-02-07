@@ -22,6 +22,7 @@ import edu.gemini.seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeyw
 import edu.gemini.seqexec.server.tcs._
 import edu.gemini.seqexec.server.tcs.TcsController.ScienceFoldPosition
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
+import edu.gemini.seqexec.server.gnirs.{Gnirs, GnirsController, GnirsHeader}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants
@@ -180,15 +181,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   // Required for untyped objects from java
   implicit val objectShow: Show[AnyRef] = Show.showA
 
-  private def extractInstrumentName(config: Config): SeqexecFailure \/ edu.gemini.seqexec.model.Model.Instrument =
-    // This is too weak. We may want to use the extractors used in ITC
-    config.getItemValue(new ItemKey(INSTRUMENT_KEY, INSTRUMENT_NAME_PROP)) match {
-      case "Flamingos2" => edu.gemini.seqexec.model.Model.Instrument.F2.right
-      case "GMOS-S"     => edu.gemini.seqexec.model.Model.Instrument.GmosS.right
-      case "GMOS-N"     => edu.gemini.seqexec.model.Model.Instrument.GmosN.right
-      case n            => SeqexecFailure.UnrecognizedInstrument(s"$n").left
-    }
-
   private def extractStatus(config: Config): StepState =
     config.getItemValue(new ItemKey("observe:status")).shows match {
       case "ready"    => StepState.Pending
@@ -214,7 +206,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case (c, i) => step(obsId, i, c, i === (configs.length - 1), nextToRun, sequence.datasets)
     }.separate
 
-    val instName = configs.headOption.map(extractInstrumentName).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)
+    val instName = configs.headOption.map(extractInstrument).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)
 
     instName.fold(e => (List(e), none), i =>
       steps match {
@@ -331,6 +323,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))
     case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth))
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth))
+    case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs))
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -366,17 +359,21 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case GmosNorth(_)  => Instrument.GmosN
     case GmosSouth(_)  => Instrument.GmosS
     case Flamingos2(_) => Instrument.F2
+    case Gnirs(_)      => Instrument.GNIRS
   }
 
-  private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = inst match {
-    case Model.Instrument.F2     =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
-      if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader))
-    case Model.Instrument.GmosS |
-         Model.Instrument.GmosN  =>
-      val tcsReader: TcsKeywordsReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
-      val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-      TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsReader))
-    case _                       =>  TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+  private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
+    val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
+    inst match {
+      case Model.Instrument.F2     =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+        tcsKReader))
+      case Model.Instrument.GmosS |
+           Model.Instrument.GmosN  =>
+        val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
+        TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
+      case Model.Instrument.GNIRS  =>  TrySeq(GnirsHeader.apply)
+      case _                       =>  TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+    }
   }
 
   private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem])(ctx: ActionMetadata): Header = new StandardHeader(
@@ -417,7 +414,8 @@ object SeqTranslate {
                       gcal: GcalController,
                       flamingos2: Flamingos2Controller,
                       gmosSouth: GmosController.GmosSouthController,
-                      gmosNorth: GmosController.GmosNorthController
+                      gmosNorth: GmosController.GmosNorthController,
+                      gnirs: GnirsController
                     )
 
   final case class Settings(
@@ -438,6 +436,7 @@ object SeqTranslate {
       case Flamingos2.name => TrySeq(Model.Instrument.F2)
       case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
+      case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
       case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
     }
   }
