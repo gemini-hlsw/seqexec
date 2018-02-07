@@ -265,25 +265,26 @@ object StepIdCell {
   * Component to display the object type
   */
 object ObjectTypeCell {
-  private val component = ScalaComponent.builder[Step]("ObjectTypeCell")
+  final case class Props(step: Step, size: Size)
+  private val component = ScalaComponent.builder[Props]("ObjectTypeCell")
     .stateless
     .render_P { p =>
       <.div( // Column object type
         SeqexecStyles.rightCell,
-        stepTypeO.getOption(p).map { st =>
+        stepTypeO.getOption(p.step).map { st =>
           val stepTypeColor = st match {
-            case _ if p.status === StepState.Completed => "light gray"
-            case StepType.Object                          => "green"
-            case StepType.Arc                             => "violet"
-            case StepType.Flat                            => "grey"
-            case StepType.Bias                            => "teal"
-            case StepType.Dark                            => "black"
-            case StepType.Calibration                     => "blue"
+            case _ if p.step.status === StepState.Completed => "light gray"
+            case StepType.Object                            => "green"
+            case StepType.Arc                               => "violet"
+            case StepType.Flat                              => "grey"
+            case StepType.Bias                              => "teal"
+            case StepType.Dark                              => "black"
+            case StepType.Calibration                       => "blue"
           }
-          Label(Label.Props(st.shows, color = stepTypeColor.some, size = Size.Small))
+          Label(Label.Props(st.shows, color = stepTypeColor.some, size = p.size))
         }.whenDefined
       )
     }.build
 
-  def apply(i: Step): Unmounted[Step, Unit, Unit] = component(i)
+  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }

@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
+import edu.gemini.seqexec.web.client.semanticui.{Size => SSize}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -26,14 +27,14 @@ import react.virtualized._
 
 object ColWidths {
   val ControlWidth: Int = 40
-  val IdxWidth: Int = 40
+  val IdxWidth: Int = 50
   val StateWidth: Int = 200
   val StatusWidth: Int = 100
-  val OffsetWidthBase: Int = 85
+  val OffsetWidthBase: Int = 80
   val GuidingWidth: Int = 63
-  val ExposureWidth: Int = 80
-  val FilterWidth: Int = 150
-  val FPUWidth: Int = 150
+  val ExposureWidth: Int = 75
+  val FilterWidth: Int = 100
+  val FPUWidth: Int = 100
   val ObjectTypeWidth: Int = 75
 }
 
@@ -109,8 +110,8 @@ object StepsTable {
   def stepFPURenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     FPUCell(FPUCell.Props(row.step, i))
 
-  val stepObjectTypeRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    ObjectTypeCell(row.step)
+  def stepObjectTypeRenderer(size: SSize): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
 
   private def stepRowStyle(step: Step): StyleA = step match {
     case s if s.hasError                     => SeqexecStyles.rowError
@@ -146,8 +147,16 @@ object StepsTable {
   }
 
   class Backend {
+    private val PhoneCut = 412
+    private val LargePhoneCut = 767
+
     // Columns for the table
-    private def columns(p: Props): List[Table.ColumnArg] = {
+    private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
+      val (offsetVisible, guidingVisible, exposureVisible, fpuVisible, filterVisible, objectSize) = s.width match {
+        case w if w < PhoneCut      => (false, false, false, false, false, SSize.Tiny)
+        case w if w < LargePhoneCut => (false, false, false, false, false, SSize.Small)
+        case _                      => (true, true, true, true, true, SSize.Small)
+      }
       val offsetColumn =
         p.offsetsDisplay match {
           case OffsetsDisplay.DisplayOffsets(x) =>
@@ -158,12 +167,12 @@ object StepsTable {
           p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), flexShrink = 0, className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer))),
           Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, flexShrink = 0, cellRenderer = stepIdRenderer)).some,
           p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexShrink = 1, flexGrow = 1, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
-          offsetColumn,
-          Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", flexShrink = 0, disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some,
-          p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", flexShrink = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))),
-          p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))),
-          p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 0, disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))),
-          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 0, disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer)))
+          offsetColumn.filter(_ => offsetVisible),
+          Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", flexShrink = 0, disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some.filter(_ => guidingVisible),
+          p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", flexShrink = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))).filter(_ => exposureVisible),
+          p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
+          p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 2, disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))).filter(_ => fpuVisible),
+          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 2, disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize))))
         ).collect { case Some(x) => x }
     }
 
@@ -201,7 +210,6 @@ object StepsTable {
       val differentStepsStates = stepsPairs.collect {
         case (cur, prev) if cur.status =/= prev.status => Callback.log(cur.id) >> tableRef.recomputeRowsHeightsCB(cur.id)
       }
-
       Callback.sequence(differentStepsStates)
     }
 
@@ -214,7 +222,7 @@ object StepsTable {
           tab.stepConfigDisplayed.map { i =>
             <.div("CONFIG")
           }.getOrElse {
-            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p).map(_.vdomElement): _*)))
+            AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, s).map(_.vdomElement): _*)))
           }
         }
       )

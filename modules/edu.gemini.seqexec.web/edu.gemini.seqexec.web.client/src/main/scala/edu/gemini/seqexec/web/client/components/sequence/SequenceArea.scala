@@ -122,6 +122,7 @@ object SequenceArea {
     .render_P( p =>
       <.div(
         ^.cls := "ui sixteen wide column",
+        SeqexecStyles.sequencesArea,
         SequenceTabsBody(p.router, p.site)
       )
     ).build

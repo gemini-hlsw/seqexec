@@ -16,6 +16,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   private val gutterWidth = 21
   private val iconWidth = 16.5
+  val mobileCut: Int = 767
 
   val body: StyleA = style(unsafeRoot("body")(
     backgroundColor(white),
@@ -70,7 +71,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   // Media query to adjust the width of containers on mobile to the max allowed width
   val deviceContainer: StyleA = style("ui.container")(
-    media.only.screen.maxWidth(767.px)(
+    media.only.screen.maxWidth(mobileCut.px)(
       width(100.%%).important,
       marginLeft(0.px).important,
       marginRight(0.px).important
@@ -83,11 +84,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val queueListPane: StyleA = style (
     marginTop(0.px).important,
-    media.only.screen.maxWidth(767.px)(
+    media.only.screen.maxWidth(mobileCut.px)(
       maxHeight(10.1.em),
       minHeight(10.1.em)
     ),
-    media.only.screen.minWidth(767.px)(
+    media.only.screen.minWidth(mobileCut.px)(
       maxHeight(15.45.em),
       minHeight(15.45.em)
     )
@@ -100,7 +101,26 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val instrumentTabSegment: StyleA = style (
     (height :=! "calc(100vh - 48.2em)"),
-    minHeight(25.4.em)
+    minHeight(25.4.em),
+    media.only.screen.maxWidth(mobileCut.px)(
+      paddingRight(0.px).important,
+      paddingLeft(0.px).important
+    )
+  )
+
+  private val mobileSegment: StyleS = mixin (
+    media.only.screen.maxWidth(mobileCut.px)(
+      paddingRight(0.px).important,
+      paddingLeft(0.px).important
+    )
+  )
+
+  val sequencesArea: StyleA = style (
+    mobileSegment
+  )
+
+  val queueArea: StyleA = style (
+    mobileSegment
   )
 
   val stepsListPaneWithControls: StyleA = style (
@@ -235,13 +255,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   // Media queries to hide/display items for mobile
   val notInMobile: StyleA = style(
-    media.only.screen.maxWidth(767.px)(
+    media.only.screen.maxWidth(mobileCut.px)(
       display.none.important
     )
   )
 
   val onlyMobile: StyleA = style(
-    media.only.screen.minWidth(767.px)(
+    media.only.screen.minWidth(mobileCut.px)(
       display.none.important
     )
   )
@@ -391,6 +411,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val overscanRowCount: Int = 10
   val rowHeight: Int = 30
+  val mobileRowHeight: Int = 15
   val runningRowHeight: Int = 60
   val headerHeight: Int = 33
 
@@ -497,6 +518,20 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     bottomBorderMixin
   )
 
+  private val mobileRow: StyleS = mixin (
+    media.only.screen.maxWidth(mobileCut.px)(
+      paddingRight(2.px),
+      paddingLeft(2.px)
+    )
+  )
+
+  // This must be defined befor rowColumn
+  val controlCellRow: StyleA = style(
+    paddingRight(0.px).important,
+    paddingLeft(0.px).important,
+    overflow.unset.important
+  )
+
   val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
     cellPaddingMixin,
     leftBorderMixin,
@@ -506,7 +541,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     fontSize.small,
     textOverflow := "ellipsis",
     whiteSpace.nowrap,
-    height(100.%%)
+    height(100.%%),
+    mobileRow
   )
 
   val headerRowStyle: StyleA = style(
@@ -567,11 +603,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     justifyContent.spaceAround,
     alignItems.center,
     minWidth(42.3.px)
-  )
-
-  val controlCellRow: StyleA = style(
-    padding.unset,
-    overflow.unset.important
   )
 
   val iconCellMixin: StyleS = mixin(
