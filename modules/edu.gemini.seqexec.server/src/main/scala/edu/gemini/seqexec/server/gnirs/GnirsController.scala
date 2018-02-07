@@ -53,26 +53,26 @@ object GnirsController {
 
   sealed trait Filter1
   object Filter1 {
-    object Open extends Filter1
-    object ND100X extends Filter1
-    object Y_MK extends Filter1
-    object J_MK extends Filter1
-    object K_MK extends Filter1
-    object PupilViewer extends Filter1
+    case object Open extends Filter1
+    case object ND100X extends Filter1
+    case object Y_MK extends Filter1
+    case object J_MK extends Filter1
+    case object K_MK extends Filter1
+    case object PupilViewer extends Filter1
   }
 
   sealed trait Filter2
   object Filter2 {
-    object Open extends Filter2
-    object H extends Filter2
-    object J extends Filter2
-    object K extends Filter2
-    object L extends Filter2
-    object M extends Filter2
-    object X extends Filter2
-    object XD extends Filter2
-    object H2 extends Filter2
-    object PAH extends Filter2
+    case object Open extends Filter2
+    case object H extends Filter2
+    case object J extends Filter2
+    case object K extends Filter2
+    case object L extends Filter2
+    case object M extends Filter2
+    case object X extends Filter2
+    case object XD extends Filter2
+    case object H2 extends Filter2
+    case object PAH extends Filter2
   }
 
   type ReadMode = edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
