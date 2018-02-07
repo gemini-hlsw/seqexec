@@ -36,6 +36,7 @@ object ColWidths {
   val FilterWidth: Int = 100
   val FPUWidth: Int = 100
   val ObjectTypeWidth: Int = 75
+  val SettingsWidth: Int = 27
 }
 
 /**
@@ -81,9 +82,15 @@ object StepsTable {
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
       <.span(
         SeqexecStyles.centeredCell,
-        SeqexecStyles.controlCellHeader,
         ^.title := "Control",
         IconSettings
+      )
+
+  val settingsHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
+      <.span(
+        SeqexecStyles.settingsCellHeader,
+        ^.title := "Settings",
+        IconBrowser
       )
 
   def stepControlRenderer(f: StepsTableFocus, p: Props, recomputeHeightsCB: Int => Callback): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
@@ -91,6 +98,9 @@ object StepsTable {
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
+
+  val settingsControlRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    SettingsCell(row.step.id)
 
   def stepProgressRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepProgressCell(StepProgressCell.Props(p.status, f, row.step))
@@ -172,7 +182,8 @@ object StepsTable {
           p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", flexShrink = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))).filter(_ => exposureVisible),
           p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, disableSort = true, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
           p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 2, disableSort = true, cellRenderer = stepFPURenderer(i.instrument)))).filter(_ => fpuVisible),
-          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 2, disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize))))
+          p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 2, disableSort = true, className = SeqexecStyles.rightCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize)))),
+          p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer, flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer)))
         ).collect { case Some(x) => x }
     }
 

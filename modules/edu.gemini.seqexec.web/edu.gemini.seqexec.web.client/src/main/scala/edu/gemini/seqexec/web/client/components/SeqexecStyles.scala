@@ -525,8 +525,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
-  // This must be defined befor rowColumn
+  // This must be defined before rowColumn
   val controlCellRow: StyleA = style(
+    paddingRight(0.px).important,
+    paddingLeft(0.px).important,
+    overflow.unset.important
+  )
+
+  // This must be defined before rowColumn
+  val settingsCellRow: StyleA = style(
     paddingRight(0.px).important,
     paddingLeft(0.px).important,
     overflow.unset.important
@@ -603,6 +610,23 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     justifyContent.spaceAround,
     alignItems.center,
     minWidth(42.3.px)
+  )
+
+  val settingsCellHeader: StyleA = style(
+    display.flex,
+    alignItems.center,
+    justifyContent.center,
+    paddingLeft(-2.px)
+  )
+
+  val settingsCell: StyleA = style(
+    display.flex,
+    justifyContent.center,
+    alignItems.center,
+    minWidth(15.px),
+    width(100.%%),
+    height(100.%%),
+    paddingBottom(9.px)
   )
 
   val iconCellMixin: StyleS = mixin(

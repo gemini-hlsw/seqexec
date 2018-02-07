@@ -262,6 +262,22 @@ object StepIdCell {
 }
 
 /**
+  * Component to link to the settings
+  */
+object SettingsCell {
+  private val component = ScalaComponent.builder[Int]("SettingsCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        SeqexecStyles.settingsCell,
+        IconCaretRight.copyIcon(fitted = true)
+      )
+    }.build
+
+  def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
+}
+
+/**
   * Component to display the object type
   */
 object ObjectTypeCell {
