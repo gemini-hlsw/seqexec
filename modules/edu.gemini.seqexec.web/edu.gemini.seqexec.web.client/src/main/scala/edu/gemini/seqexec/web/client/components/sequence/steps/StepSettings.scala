@@ -100,8 +100,8 @@ object StepIconCell {
       case StepState.Completed                                => IconCheckmark
       case StepState.Running                                  => IconCircleNotched.copyIcon(loading = true)
       case StepState.Failed(_)                                => IconAttention
-      case StepState.Skipped                                  => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
-      case _ if p.step.skip                                   => IconReply.copyIcon(rotated = Icon.Rotated.CounterClockwise)
+      case StepState.Skipped                                  => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
+      case _ if p.step.skip                                   => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
       case _ if p.focus.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
       case _                                                  => iconEmpty
     }

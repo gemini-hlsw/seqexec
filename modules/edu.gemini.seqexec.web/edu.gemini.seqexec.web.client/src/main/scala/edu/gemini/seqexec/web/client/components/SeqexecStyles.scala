@@ -636,29 +636,31 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     paddingBottom(9.px)
   )
 
+  val statusCellMixin: StyleS = mixin(
+    alignContent.center,
+    display.flex,
+    height(100.%%),
+    width(100.%%),
+    minWidth(24.px)
+  )
+
   val iconCellMixin: StyleS = mixin(
     justifyContent.center,
-    alignContent.center,
-    display.flex
+    statusCellMixin
   )
 
   val iconCell: StyleA = style(
-    iconCellMixin,
-    width(24.px),
-    height(20.px),
-    paddingLeft(3.px)
+    iconCellMixin
   )
 
   val runningIconCell: StyleA = style(
     iconCellMixin,
-    width(34.px),
-    height(16.px)
+    //paddingLeft(3.px)
   )
 
   val skippedIconCell: StyleA = style(
-    iconCellMixin,
-    width(25.px),
-    height(16.px)
+    justifyContent.flexStart,
+    statusCellMixin
   )
 
   val gutterCell: StyleA = style(
