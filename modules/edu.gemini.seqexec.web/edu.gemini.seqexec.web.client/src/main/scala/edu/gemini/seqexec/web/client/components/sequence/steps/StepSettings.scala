@@ -37,7 +37,7 @@ object StepToolsCell {
     .render_P { p =>
       <.div(
         SeqexecStyles.controlCell,
-        StepBreakStopCell(StepBreakStopCell.Props(p.clientStatus, p.focus, p.step, p.rowHeight, p.heightChangeCB)),
+        StepBreakStopCell(StepBreakStopCell.Props(p.clientStatus, p.focus, p.step, p.rowHeight, p.heightChangeCB)).when(p.clientStatus.isLogged),
         StepIconCell(p)
       )
     }
