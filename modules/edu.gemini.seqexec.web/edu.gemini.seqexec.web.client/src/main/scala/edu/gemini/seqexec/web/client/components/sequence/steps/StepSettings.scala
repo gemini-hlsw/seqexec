@@ -288,7 +288,6 @@ object ObjectTypeCell {
     .stateless
     .render_P { p =>
       <.div( // Column object type
-        SeqexecStyles.rightCell,
         stepTypeO.getOption(p.step).map { st =>
           val stepTypeColor = st match {
             case _ if p.step.status === StepState.Completed => "light gray"
