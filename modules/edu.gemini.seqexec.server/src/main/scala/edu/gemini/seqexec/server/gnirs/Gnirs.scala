@@ -168,18 +168,18 @@ object Gnirs {
     }
 
   private def getSlit(slit: SlitWidth): Option[GnirsController.SlitWidth] = slit match {
-    case SlitWidth.ACQUISITION => GnirsController.SlitWidth.Acquisition.some
-    case SlitWidth.PINHOLE_1   => GnirsController.SlitWidth.SmallPinhole.some
-    case SlitWidth.PINHOLE_3   => GnirsController.SlitWidth.LargePinhole.some
-    case SlitWidth.SW_1        => GnirsController.SlitWidth.Slit0_10.some
-    case SlitWidth.SW_2        => GnirsController.SlitWidth.Slit0_15.some
-    case SlitWidth.SW_3        => GnirsController.SlitWidth.Slit0_20.some
-    case SlitWidth.SW_4        => GnirsController.SlitWidth.Slit0_30.some
-    case SlitWidth.SW_5        => GnirsController.SlitWidth.Slit0_45.some
-    case SlitWidth.SW_6        => GnirsController.SlitWidth.Slit0_68.some
-    case SlitWidth.SW_7        => GnirsController.SlitWidth.Slit1_00.some
+    case SlitWidth.ACQUISITION  => GnirsController.SlitWidth.Acquisition.some
+    case SlitWidth.PINHOLE_1    => GnirsController.SlitWidth.SmallPinhole.some
+    case SlitWidth.PINHOLE_3    => GnirsController.SlitWidth.LargePinhole.some
+    case SlitWidth.SW_1         => GnirsController.SlitWidth.Slit0_10.some
+    case SlitWidth.SW_2         => GnirsController.SlitWidth.Slit0_15.some
+    case SlitWidth.SW_3         => GnirsController.SlitWidth.Slit0_20.some
+    case SlitWidth.SW_4         => GnirsController.SlitWidth.Slit0_30.some
+    case SlitWidth.SW_5         => GnirsController.SlitWidth.Slit0_45.some
+    case SlitWidth.SW_6         => GnirsController.SlitWidth.Slit0_68.some
+    case SlitWidth.SW_7         => GnirsController.SlitWidth.Slit1_00.some
     case SlitWidth.PUPIL_VIEWER => GnirsController.SlitWidth.PupilViewer.some
-    case _                     => None
+    case _                      => None
   }
 
 }
