@@ -164,7 +164,7 @@ object StepsTable {
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
       val (offsetVisible, guidingVisible, exposureVisible, fpuVisible, filterVisible, objectSize) = s.width match {
         case w if w < PhoneCut      => (false, false, false, false, false, SSize.Tiny)
-        case w if w < LargePhoneCut => (false, false, false, false, false, SSize.Small)
+        case w if w < LargePhoneCut => (false, true, true, false, false, SSize.Small)
         case _                      => (true, true, true, true, true, SSize.Small)
       }
       val offsetColumn =

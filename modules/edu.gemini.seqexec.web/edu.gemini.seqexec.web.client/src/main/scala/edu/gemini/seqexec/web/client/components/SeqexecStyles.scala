@@ -99,19 +99,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginTop(1.em)
   )
 
-  val instrumentTabSegment: StyleA = style (
-    (height :=! "calc(100vh - 48.2em)"),
-    minHeight(25.4.em),
+  private val mobileSegment: StyleS = mixin (
     media.only.screen.maxWidth(mobileCut.px)(
       paddingRight(0.px).important,
       paddingLeft(0.px).important
     )
   )
 
-  private val mobileSegment: StyleS = mixin (
+  val instrumentTabSegment: StyleA = style (
+    (height :=! "calc(100vh - 48.2em)"),
+    mobileSegment,
     media.only.screen.maxWidth(mobileCut.px)(
-      paddingRight(0.px).important,
-      paddingLeft(0.px).important
+      minHeight(36.3.em)
+    ),
+    media.only.screen.minWidth(mobileCut.px)(
+      minHeight(25.4.em)
     )
   )
 
@@ -122,6 +124,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val queueArea: StyleA = style (
     mobileSegment
   )
+
+  val logSegment: StyleA = style (
+    mobileSegment
+  )
+
 
   val stepsListPaneWithControls: StyleA = style (
     (height :=! "calc(100% - 4.9em)"),
@@ -788,6 +795,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     transition := "all .1s ease-in-out",
     &.hover(
       transform := "scale(1.2)"
+    )
+  )
+
+  val queueAreaRow: StyleA = style(
+    media.only.screen.maxWidth(mobileCut.px)(
+      paddingTop(0.px).important,
+      paddingBottom(0.px).important
     )
   )
 

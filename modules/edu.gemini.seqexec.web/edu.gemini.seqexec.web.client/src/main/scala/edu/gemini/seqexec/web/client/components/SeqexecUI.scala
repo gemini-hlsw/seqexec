@@ -75,6 +75,7 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
+            SeqexecStyles.queueAreaRow,
             <.div(
               ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
               SeqexecStyles.queueArea,

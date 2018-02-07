@@ -164,6 +164,7 @@ object LogArea {
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui sixteen wide column",
+        SeqexecStyles.logSegment,
         <.div(
           ^.cls := "ui secondary segment",
           <.div(
