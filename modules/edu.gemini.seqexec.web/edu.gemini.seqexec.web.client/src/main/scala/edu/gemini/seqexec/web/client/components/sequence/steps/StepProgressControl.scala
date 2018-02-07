@@ -66,6 +66,7 @@ object StepProgressCell {
     <.div(
       SeqexecStyles.configuringRow,
       <.div(
+        SeqexecStyles.specialStateLabel,
         "Configuring"
       ),
       <.div(
@@ -128,7 +129,7 @@ object StepProgressCell {
       // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
       case (_, s) if s.wasSkipped       => <.p("Skipped")
       case (_, _) if props.step.skip    => <.p("Skip")
-      case (_, _)                 => <.p(props.step.shows)
+      case (_, _)                       => <.p(SeqexecStyles.componentLabel, props.step.shows)
     }
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")

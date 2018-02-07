@@ -108,10 +108,11 @@ object StepIconCell {
 
   private def stepStyle(p: StepToolsCell.Props): StyleA =
     p.step.status match {
-      case StepState.Running => SeqexecStyles.runningIconCell
-      case StepState.Skipped => SeqexecStyles.skippedIconCell
-      case _ if p.step.skip  => SeqexecStyles.skippedIconCell
-      case _                 => SeqexecStyles.iconCell
+      case StepState.Running   => SeqexecStyles.runningIconCell
+      case StepState.Skipped   => SeqexecStyles.skippedIconCell
+      case StepState.Failed(_) => SeqexecStyles.errorCell
+      case _ if p.step.skip    => SeqexecStyles.skippedIconCell
+      case _                   => SeqexecStyles.iconCell
     }
 
   private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")
