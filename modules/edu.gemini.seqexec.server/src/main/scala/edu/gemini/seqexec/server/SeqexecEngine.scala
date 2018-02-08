@@ -67,7 +67,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     f2Keywords = settings.f2Keywords,
     gwsKeywords = settings.gwsKeywords,
     gcalKeywords = settings.gcalKeywords,
-    gmosKeywords = settings.gmosKeywords)
+    gmosKeywords = settings.gmosKeywords,
+    gnirsKeywords = settings.gnirsKeywords
+  )
 
   private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
@@ -288,6 +290,7 @@ object SeqexecEngine {
                       gmosKeywords: Boolean,
                       gwsKeywords: Boolean,
                       gcalKeywords: Boolean,
+                      gnirsKeywords: Boolean,
                       instForceError: Boolean,
                       failAt: Int,
                       odbQueuePollingInterval: Duration)
@@ -307,6 +310,7 @@ object SeqexecEngine {
     gmosKeywords = false,
     gwsKeywords = false,
     gcalKeywords = false,
+    gnirsKeywords = false,
     instForceError = false,
     failAt = 0,
     10.seconds)
@@ -434,6 +438,7 @@ object SeqexecEngine {
     val gmosKeywords            = cfg.require[Boolean]("seqexec-engine.gmosKeywords")
     val gwsKeywords             = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
     val gcalKeywords            = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
+    val gnirsKeywords            = cfg.require[Boolean]("seqexec-engine.gnirsKeywords")
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
@@ -469,7 +474,7 @@ object SeqexecEngine {
     // More instruments to be added to the list here
     val instList = site match {
       case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
-      case Site.GN => List((gmosKeywords, GmosEpics), (false, GnirsEpics))
+      case Site.GN => List((gmosKeywords, GmosEpics), (gnirsKeywords, GnirsEpics))
     }
     val instInit = Nondeterminism[Task].gatherUnordered(instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
     val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), taskUnit)
@@ -498,6 +503,7 @@ object SeqexecEngine {
                        gmosKeywords,
                        gwsKeywords,
                        gcalKeywords,
+                       gnirsKeywords,
                        instForceError,
                        failAt,
                        odbQueuePollingInterval)

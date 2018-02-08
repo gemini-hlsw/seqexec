@@ -75,6 +75,12 @@ trait TcsKeywordsReader {
   def getPwfs2Freq: SeqAction[Option[Double]]
   def getOiwfsFreq: SeqAction[Option[Double]]
   def getGmosInstPort: SeqAction[Option[Int]]
+  def getGnirsInstPort: SeqAction[Option[Int]]
+  def getGpiInstPort: SeqAction[Option[Int]]
+  def getNiriInstPort: SeqAction[Option[Int]]
+  def getNifsInstPort: SeqAction[Option[Int]]
+  def getGsaoiInstPort: SeqAction[Option[Int]]
+  def getF2InstPort: SeqAction[Option[Int]]
 }
 
 object DummyTargetKeywordsReader extends TargetKeywordsReader {
@@ -155,6 +161,13 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
   override def getCarouselMode: SeqAction[Option[String]] = "Basic"
 
   override def getGmosInstPort: SeqAction[Option[Int]] = 0
+
+  override def getGnirsInstPort: SeqAction[Option[Int]] = 0
+  override def getGpiInstPort: SeqAction[Option[Int]] = 0
+  override def getNiriInstPort: SeqAction[Option[Int]] = 0
+  override def getNifsInstPort: SeqAction[Option[Int]] = 0
+  override def getGsaoiInstPort: SeqAction[Option[Int]] = 0
+  override def getF2InstPort: SeqAction[Option[Int]] = 0
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader {
@@ -258,4 +271,16 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getOiwfsFreq: SeqAction[Option[Double]] = TcsEpics.instance.oiwfsIntegrationTime.map(calcFrequency)
 
   override def getCarouselMode: SeqAction[Option[String]] = TcsEpics.instance.carouselMode
+
+  override def getGnirsInstPort: SeqAction[Option[Int]] = TcsEpics.instance.gnirsPort
+
+  override def getGpiInstPort: SeqAction[Option[Int]] = TcsEpics.instance.gpiPort
+
+  override def getNiriInstPort: SeqAction[Option[Int]] = TcsEpics.instance.niriPort
+
+  override def getNifsInstPort: SeqAction[Option[Int]] = TcsEpics.instance.nifsPort
+
+  override def getGsaoiInstPort: SeqAction[Option[Int]] = TcsEpics.instance.gsaoiPort
+
+  override def getF2InstPort: SeqAction[Option[Int]] = TcsEpics.instance.f2Port
 }

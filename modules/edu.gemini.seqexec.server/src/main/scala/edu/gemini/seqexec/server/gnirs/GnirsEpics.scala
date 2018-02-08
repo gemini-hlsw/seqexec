@@ -130,9 +130,9 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def arrayType: Option[String] = Option(dcState.getStringAttribute("arraytyp").value)
 
-  def obsEpoch: Option[Double] = Option(dcState.getStringAttribute("OBSEPOCH").value).map(_.toDouble)
+  def obsEpoch: Option[Double] = Option(dcState.getDoubleAttribute("OBSEPOCH").value).map(_.toDouble)
 
-  def detBias: Option[Double] = Option(dcState.getStringAttribute("detBias").value).map(_.toDouble)
+  def detBias: Option[Double] = Option(dcState.getDoubleAttribute("detBias").value).map(_.toDouble)
 
   def countDown: Option[String] = Option(dcState.getStringAttribute("countdown").value)
 
@@ -140,7 +140,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def wcs: Option[String] = Option(dcState.getStringAttribute("wcs").value)
 
-  def exposureTime: Option[Double] = Option(dcState.getStringAttribute("exposureTime").value).map(_.toDouble)
+  def exposureTime: Option[Double] = Option(dcState.getDoubleAttribute("exposureTime").value).map(_.toDouble)
 
   def digitalAvgs: Option[Int] = Option(dcState.getIntegerAttribute("digitalAvgs").value).map(_.toInt)
 
@@ -148,9 +148,9 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def dhcConnected: Option[Int] = Option(dcState.getIntegerAttribute("dhcConnected").value).map(_.toInt)
 
-  def minInt: Option[Double] = Option(dcState.getStringAttribute("minInt").value).map(_.toDouble)
+  def minInt: Option[Double] = Option(dcState.getDoubleAttribute("minInt").value).map(_.toDouble)
 
-  def dettemp: Option[Double] = Option(dcState.getStringAttribute("dettemp").value).map(_.toDouble)
+  def dettemp: Option[Double] = Option(dcState.getDoubleAttribute("dettemp").value).map(_.toDouble)
 
   def prism: Option[String] = Option(state.getStringAttribute("prism").value)
 
@@ -174,13 +174,29 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def decker: Option[String] = Option(state.getStringAttribute("decker").value)
 
-  def centralWavelength: Option[Double] = Option(state.getStringAttribute("centralWavelength").value).map(_.toDouble)
+  def centralWavelength: Option[Double] = Option(state.getDoubleAttribute("centralWavelength").value).map(_.toDouble)
 
-  def gratingTilt: Option[Double] = Option(state.getStringAttribute("grattilt").value).map(_.toDouble)
+  def gratingTilt: Option[Double] = Option(state.getDoubleAttribute("grattilt").value).map(_.toDouble)
 
   def nirscc: Option[String] = Option(state.getStringAttribute("nirscc").value)
 
   def gratingOrder: Option[Int] = Option(state.getIntegerAttribute("gratord").value).map(_.toInt)
+
+  def filter1Eng: Option[Int] = Option(state.getIntegerAttribute("fw1_eng").value).map(_.toInt)
+
+  def filter2Eng: Option[Int] = Option(state.getIntegerAttribute("fw2_eng").value).map(_.toInt)
+
+  def deckerEng: Option[Int] = Option(state.getIntegerAttribute("dkr_eng").value).map(_.toInt)
+
+  def gratingEng: Option[Int] = Option(state.getIntegerAttribute("gr_eng").value).map(_.toInt)
+
+  def prismEng: Option[Int] = Option(state.getIntegerAttribute("prsm_eng").value).map(_.toInt)
+
+  def cameraEng: Option[Int] = Option(state.getIntegerAttribute("cam_eng").value).map(_.toInt)
+
+  def slitEng: Option[Int] = Option(state.getIntegerAttribute("slit_eng").value).map(_.toInt)
+
+  def focusEng: Option[Int] = Option(state.getIntegerAttribute("fcs_eng").value).map(_.toInt)
 
 }
 
