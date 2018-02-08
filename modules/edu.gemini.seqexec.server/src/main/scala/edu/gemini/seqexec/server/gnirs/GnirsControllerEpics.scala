@@ -167,7 +167,7 @@ object GnirsControllerEpics extends GnirsController {
       setSpectrographyComponents(config.mode, config.camera) ++
       smartSetParam(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
     // Force focus configuration if any of the above is set
-    val focusSet = if (epicsSys.focus =/= focus.some || !refocusParams.isEmpty) List(ccCmd.setFocus(focus)) else Nil
+    val focusSet = if (!refocusParams.isEmpty) List(ccCmd.setFocusBest(focus)) else Nil
 
     smartSetParam(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open)) ++
       refocusParams ++
