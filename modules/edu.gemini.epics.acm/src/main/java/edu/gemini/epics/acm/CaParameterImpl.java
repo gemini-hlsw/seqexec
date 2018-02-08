@@ -13,8 +13,8 @@ import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
 abstract class CaParameterImpl<T> implements CaParameter<T> {
-    
-    private static final Logger LOG = Logger.getLogger(CaParameterImpl.class.getName()); 
+
+    private static final Logger LOG = Logger.getLogger(CaParameterImpl.class.getName());
 
     private final String name;
     private final String channel;
@@ -189,6 +189,25 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             CaTypedParameter<Float> param = new CaTypedParameter<>(name, channel, description, epicsWriter);
             try {
                 param.bind(epicsWriter.getFloatChannel(channel));
+            } catch(Throwable e) {
+                LOG.warning(e.getMessage());
+            }
+            return param;
+        }
+    }
+
+    static public <E extends Enum<E> > CaParameterImpl<E> createEnumParameter(
+            String name, String channel, String description, Class<E> enumType, EpicsWriter epicsWriter) {
+        return createEnumParameter(name, channel, description, enumType, epicsWriter, true);
+    }
+    static public <E extends Enum<E> > CaParameterImpl<E> createEnumParameter(
+            String name, String channel, String description, Class<E> enumType, EpicsWriter epicsWriter, boolean isCADParameter) {
+        if(isCADParameter) {
+            return new CaCADParameter<E>(name, channel, description, epicsWriter);
+        } else {
+            CaTypedParameter<E> param = new CaTypedParameter<>(name, channel, description, epicsWriter);
+            try {
+                param.bind(epicsWriter.getEnumChannel(channel, enumType));
             } catch(Throwable e) {
                 LOG.warning(e.getMessage());
             }

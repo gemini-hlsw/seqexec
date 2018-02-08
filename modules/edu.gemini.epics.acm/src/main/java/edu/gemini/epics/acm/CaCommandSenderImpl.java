@@ -19,8 +19,8 @@ import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
 final class CaCommandSenderImpl implements CaCommandSender {
-    
-    private static final Logger LOG = Logger.getLogger(CaCommandSenderImpl.class.getName()); 
+
+    private static final Logger LOG = Logger.getLogger(CaCommandSenderImpl.class.getName());
 
     private static final String DIR_SUFFIX = ".DIR";
     private final String name;
@@ -29,6 +29,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
     private final Map<String, CaParameterImpl<Double>> doubleParameters;
     private final Map<String, CaParameterImpl<Float>> floatParameters;
     private final Map<String, CaParameterImpl<Integer>> integerParameters;
+    private final Map<String, Object> enumParameters;
     private final CaApplySender apply;
     private EpicsWriter epicsWriter;
     private ReadWriteClientEpicsChannel<CadDirective> dirChannel;
@@ -57,6 +58,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
         doubleParameters = new HashMap<>();
         floatParameters = new HashMap<>();
         integerParameters = new HashMap<>();
+        enumParameters = new HashMap<>();
     }
 
     @Override
@@ -70,6 +72,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
         set.addAll(floatParameters.keySet());
         set.addAll(integerParameters.keySet());
         set.addAll(stringParameters.keySet());
+        set.addAll(enumParameters.keySet());
         return set;
     }
 
@@ -91,11 +94,12 @@ final class CaCommandSenderImpl implements CaCommandSender {
         for (CaParameterImpl<?> param : integerParameters.values()) {
             param.unbind();
         }
-        
+
         stringParameters.clear();
         doubleParameters.clear();
         floatParameters.clear();
         integerParameters.clear();
+        enumParameters.clear();
 
         try {
             if (dirChannel != null) {
@@ -201,6 +205,51 @@ final class CaCommandSenderImpl implements CaCommandSender {
     }
 
     @Override
+    public <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType, String description) throws CaException {
+        return addEnum(name, channel, enumType, CaParameterImpl.class, description, true);
+    }
+
+    @Override
+    public <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType) throws CaException {
+        return addEnum(name, channel, enumType, CaParameterImpl.class, null, true);
+    }
+
+    @Override
+    public <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType, String description, boolean isCADParameter) throws CaException {
+        return addEnum(name, channel, enumType, CaParameterImpl.class, description, isCADParameter);
+    }
+
+    private <T extends Enum<T>, A extends CaParameterImpl<T> > CaParameter<T> addEnum(String name, String channel, Class<T> enumType, Class<A> paramType, String description, boolean isCADParameter) throws CaException {
+        CaParameterImpl<T> param;
+        try {
+            param = paramType.cast(enumParameters.get(name));
+        } catch(ClassCastException e) {
+            param = null;
+        }
+        if (param == null) {
+            if (alreadyExist(name)) {
+                throw new CaException(
+                        "Parameter already exists with a different type.");
+            } else {
+                param = CaParameterImpl.createEnumParameter(name, channel, description, enumType,
+                        epicsWriter, isCADParameter);
+                enumParameters.put(name, param);
+            }
+        } else {
+            if (!channel.equals(param.channel())) {
+                throw new CaException(
+                        "Parameter already exists for a different channel.");
+            }
+        }
+        return param;
+    }
+
+    @Override
+    public <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType, boolean isCADParameter) throws CaException {
+        return addEnum(name, channel, enumType, CaParameterImpl.class, null, isCADParameter);
+    }
+
+    @Override
     public CaParameter<Float> addFloat(String name, String channel)
             throws CaException {
         return addFloat(name, channel, null, true);
@@ -302,13 +351,15 @@ final class CaCommandSenderImpl implements CaCommandSender {
         floatParameters.remove(name);
         integerParameters.remove(name);
         stringParameters.remove(name);
+        enumParameters.remove(name);
     }
 
     private boolean alreadyExist(String name) {
         return doubleParameters.containsKey(name)
                 || floatParameters.containsKey(name)
                 || integerParameters.containsKey(name)
-                || stringParameters.containsKey(name);
+                || stringParameters.containsKey(name)
+                || enumParameters.containsKey(name);
     }
 
     @Override

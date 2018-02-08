@@ -16,21 +16,21 @@ import java.util.Set;
 public interface CaCommandSender {
     /**
      * Retrieves the name of this command sender.
-     * 
+     *
      * @return name of this command sender.
      */
     String getName();
 
     /**
      * Retrieves the description for this Command Sender
-     * 
+     *
      * @return the description of this Command Sender
      */
     String getDescription();
 
     /**
      * Retrieves the names of the parameters of this command sender.
-     * 
+     *
      * @return set of parameter names.
      */
     Set<String> getInfo();
@@ -55,7 +55,7 @@ public interface CaCommandSender {
 
     /**
      * Trigger the EPICS apply record. The command return immediately.
-     * 
+     *
      * @return an object that implements <code>CaCommandMonitor</code>, which
      *         can be used to monitor the command execution and retrieve its
      *         result.
@@ -65,7 +65,7 @@ public interface CaCommandSender {
     /**
      * Trigger the EPICS apply record and waits until the command processing
      * completes.
-     * 
+     *
      * @return an object that implements <code>CaCommandMonitor</code>, which
      *         can be used to monitor the command execution and retrieve its
      *         result.
@@ -74,13 +74,13 @@ public interface CaCommandSender {
 
     /**
      * Trigger the EPICS apply record. The command return immediately.
-     * 
+     *
      * @param callback
      *            an object that implements <code>CaCommandListener</code>,
      *            which will be notified when the command execution state
      *            changes. The object will be used only for this execution of
      *            the command
-     * 
+     *
      * @return an object that implements <code>CaCommandMonitor</code>, which
      *         can be used to monitor the command execution and retrieve its
      *         result.
@@ -92,7 +92,7 @@ public interface CaCommandSender {
      * the parameter already exist, the existing object is used. CaException is
      * thrown if the existing parameter is of a different type or uses a
      * different EPICS channel.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @param channel
@@ -119,7 +119,7 @@ public interface CaCommandSender {
      * the parameter already exist, the existing object is used. CaException is
      * thrown if the existing parameter is of a different type or uses a
      * different EPICS channel.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @param channel
@@ -146,7 +146,7 @@ public interface CaCommandSender {
      * the parameter already exist, the existing object is used. CaException is
      * thrown if the existing parameter is of a different type or uses a
      * different EPICS channel.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @param channel
@@ -169,11 +169,38 @@ public interface CaCommandSender {
             throws CaException;
 
     /**
+     * Adds a parameter of type <code>Enum</code> to this command sender. If
+     * the parameter already exist, the existing object is used. CaException is
+     * thrown if the existing parameter is of a different type or uses a
+     * different EPICS channel.
+     *
+     * @param name
+     *            the name of the parameter.
+     * @param channel
+     *            the full EPICS channel name for the parameter
+     * @param description
+     *            optional description for the parameter
+     * @return the parameter
+     * @throws CaException
+     */
+    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType,
+                                String description) throws CaException;
+
+    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType)
+            throws CaException;
+
+    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType,
+                                String description, boolean isCADParameter) throws CaException;
+
+    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType, boolean isCADParameter)
+            throws CaException;
+
+    /**
      * Adds a parameter of type <code>String</code> to this command sender. If
      * the parameter already exist, the existing object is used. CaException is
      * thrown if the existing parameter is of a different type or uses a
      * different EPICS channel.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @param channel
@@ -197,7 +224,7 @@ public interface CaCommandSender {
 
     /**
      * Removes a parameter from this command sender (optional operation).
-     * 
+     *
      * @param name
      *            the name of the parameter to remove.
      */
@@ -205,7 +232,7 @@ public interface CaCommandSender {
 
     /**
      * Retrieves an existing parameter of type <code>Integer</code>.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @return the parameter, or <code>null</code> if it does not exist or is of
@@ -215,7 +242,7 @@ public interface CaCommandSender {
 
     /**
      * Retrieves an existing parameter of type <code>Double</code>.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @return the parameter, or <code>null</code> if it does not exist or is of
@@ -225,7 +252,7 @@ public interface CaCommandSender {
 
     /**
      * Retrieves an existing parameter of type <code>Float</code>.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @return the parameter, or <code>null</code> if it does not exist or is of
@@ -235,7 +262,7 @@ public interface CaCommandSender {
 
     /**
      * Retrieves an existing parameter of type <code>String</code>.
-     * 
+     *
      * @param name
      *            the name of the parameter.
      * @return the parameter, or <code>null</code> if it does not exist or is of
