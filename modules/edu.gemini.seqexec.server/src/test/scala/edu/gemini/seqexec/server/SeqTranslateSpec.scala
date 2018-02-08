@@ -70,7 +70,8 @@ class SeqTranslateSpec extends FlatSpec {
     GnirsControllerSim
   )
 
-  private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false, gcalKeywords = false, gmosKeywords = false)
+  private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
+    gcalKeywords = false, gmosKeywords = false, gnirsKeywords = false)
 
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 

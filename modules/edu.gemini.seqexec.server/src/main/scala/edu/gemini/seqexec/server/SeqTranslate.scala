@@ -22,7 +22,7 @@ import edu.gemini.seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeyw
 import edu.gemini.seqexec.server.tcs._
 import edu.gemini.seqexec.server.tcs.TcsController.ScienceFoldPosition
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.seqexec.server.gnirs.{Gnirs, GnirsController, GnirsHeader}
+import edu.gemini.seqexec.server.gnirs._
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants
@@ -370,7 +370,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
            Model.Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
         TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
-      case Model.Instrument.GNIRS  =>  TrySeq(GnirsHeader.apply)
+      case Model.Instrument.GNIRS  =>
+        val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
+        TrySeq(GnirsHeader(systems.dhs, gnirsReader, tcsKReader))
       case _                       =>  TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
@@ -422,7 +424,8 @@ object SeqTranslate {
                       f2Keywords: Boolean,
                       gwsKeywords: Boolean,
                       gcalKeywords: Boolean,
-                      gmosKeywords: Boolean
+                      gmosKeywords: Boolean,
+                      gnirsKeywords: Boolean
                      )
 
 
