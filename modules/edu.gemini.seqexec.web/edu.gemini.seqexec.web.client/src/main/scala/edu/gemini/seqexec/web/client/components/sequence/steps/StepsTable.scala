@@ -5,7 +5,8 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import scala.scalajs.js
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState}
+import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState, StepType}
+import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
 import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -156,12 +157,18 @@ object StepsTable {
     private val PhoneCut = 412
     private val LargePhoneCut = 767
 
+    def displayOffsets(p: Props): Boolean =
+      p.stepsList.headOption.flatMap(stepTypeO.getOption) match {
+        case Some(StepType.Object) => true
+        case _                     => false
+      }
+
     // Columns for the table
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
       val (offsetVisible, exposureVisible, fpuVisible, filterVisible, objectSize) = s.width match {
         case w if w < PhoneCut      => (false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut => (false, true, false, false, SSize.Small)
-        case _                      => (true, true, true, true, SSize.Small)
+        case _                      => (displayOffsets(p), true, true, true, SSize.Small)
       }
       val offsetColumn =
         p.offsetsDisplay match {

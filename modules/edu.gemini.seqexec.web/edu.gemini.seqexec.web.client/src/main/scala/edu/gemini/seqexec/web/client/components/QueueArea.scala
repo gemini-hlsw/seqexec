@@ -86,13 +86,16 @@ object QueueTableBody {
                 <.span(
                   SeqexecStyles.daytimeCal,
                   DaytimeCalibrationTargetName)
+
               val targetName = s.targetName.fold(daytimeCalibrationTargetName)(x => x: TagMod)
+
               val selectableRowCls = List(
-                  ^.classSet(
-                    "selectable" -> !inProcess
-                  ),
-                  SeqexecStyles.linkeableRows.when(inProcess)
-                )
+                ^.classSet(
+                  "selectable" -> !inProcess
+                ),
+                SeqexecStyles.linkeableRows.when(inProcess)
+              )
+
               <.tr(
                 ^.classSet(
                   "positive" -> (s.status === SequenceState.Completed),
