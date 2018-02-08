@@ -30,8 +30,7 @@ object ColWidths {
   val IdxWidth: Int = 50
   val StateWidth: Int = 200
   val StatusWidth: Int = 100
-  val OffsetWidthBase: Int = 80
-  val GuidingWidth: Int = 63
+  val OffsetWidthBase: Int = 75
   val ExposureWidth: Int = 75
   val FilterWidth: Int = 100
   val FPUWidth: Int = 100
@@ -108,9 +107,6 @@ object StepsTable {
   def stepStatusRenderer(offsetsDisplay: OffsetsDisplay): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
 
-  val stepGuidingRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    GuidingCell(GuidingCell.Props(row.step))
-
   def stepExposureRenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     ExposureTimeCell(ExposureTimeCell.Props(row.step, i))
 
@@ -162,10 +158,10 @@ object StepsTable {
 
     // Columns for the table
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
-      val (offsetVisible, guidingVisible, exposureVisible, fpuVisible, filterVisible, objectSize) = s.width match {
-        case w if w < PhoneCut      => (false, false, false, false, false, SSize.Tiny)
-        case w if w < LargePhoneCut => (false, true, true, false, false, SSize.Small)
-        case _                      => (true, true, true, true, true, SSize.Small)
+      val (offsetVisible, exposureVisible, fpuVisible, filterVisible, objectSize) = s.width match {
+        case w if w < PhoneCut      => (false, false, false, false, SSize.Tiny)
+        case w if w < LargePhoneCut => (false, true, false, false, SSize.Small)
+        case _                      => (true, true, true, true, SSize.Small)
       }
       val offsetColumn =
         p.offsetsDisplay match {
@@ -178,7 +174,6 @@ object StepsTable {
           Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, flexShrink = 0, cellRenderer = stepIdRenderer)).some,
           p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexShrink = 1, flexGrow = 4, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
           offsetColumn.filter(_ => offsetVisible),
-          Column(Column.props(ColWidths.GuidingWidth, "guiding", label = "Guiding", flexShrink = 0, disableSort = true, cellRenderer = stepGuidingRenderer, className = SeqexecStyles.centeredCell.htmlClass)).some.filter(_ => guidingVisible),
           p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", label = "Exposure", flexShrink = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))).filter(_ => exposureVisible),
           p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
           p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 4, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFPURenderer(i.instrument)))).filter(_ => fpuVisible),

@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, Step, StepType, StepState}
+import edu.gemini.seqexec.model.Model.{FPUMode, Instrument, Step, StepType, StepState}
 import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
@@ -220,28 +220,6 @@ object ExposureTimeCell {
 
       <.div(
         displayedText
-      )
-    }
-    .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
-}
-
-/**
- * Component to display the Guiding state of the step
- */
-object GuidingCell {
-  final case class Props(s: Step)
-  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
-  private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
-  private val component = ScalaComponent.builder[Props]("GuidingCell")
-    .stateless
-    .render_P { p =>
-      val guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(p.s)
-
-      <.div(
-        guidingIcon.when(guiding),
-        noGuidingIcon.unless(guiding)
       )
     }
     .build

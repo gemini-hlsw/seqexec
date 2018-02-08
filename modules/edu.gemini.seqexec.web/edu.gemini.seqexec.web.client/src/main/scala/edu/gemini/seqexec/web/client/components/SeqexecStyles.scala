@@ -439,6 +439,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     overflow.unset.important
   )
 
+  val guidingCell: StyleA = style(
+    display.flex,
+    width(100.%%),
+    alignItems.center
+  )
+
+  val offsetsBlock: StyleA = style(
+    marginLeft(auto)
+  )
+
   // This must be defined before rowColumn
   val settingsCellRow: StyleA = style(
     paddingRight(0.px).important,
