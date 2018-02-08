@@ -77,7 +77,7 @@ object AsterismDao {
       }
 
     for {
-      l <- Statements.SingleTarget.selectAll(pid).list
+      l <- Statements.SingleTarget.selectAll(pid).to[List]
       m <- toAsterismMap(l) { case (idx, tid, inst) => toEntry(idx, tid, inst) }
     } yield m
   }
@@ -90,7 +90,7 @@ object AsterismDao {
       } yield t0.product(t1).map { case (t0, t1) => idx -> Asterism.GhostDualTarget(t0, t1) }
 
     for {
-      l <- Statements.GhostDualTarget.selectAll(pid).list
+      l <- Statements.GhostDualTarget.selectAll(pid).to[List]
       m <- toAsterismMap(l) { case (idx, t0, t1) => toEntry(idx, t0, t1) }
     } yield m
   }

@@ -53,7 +53,7 @@ object EventLogDao {
     Statements.insertEvent(Stop, oid, None).run
 
   def selectAll(start: Instant, end: Instant): ConnectionIO[List[Event]] =
-    Statements.selectAll(start, end).list
+    Statements.selectAll(start, end).to[List]
 
   object Statements {
 

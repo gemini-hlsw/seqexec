@@ -45,7 +45,7 @@ object ProgramDao {
     Statements.insertNonstandardProgramIdSlice(pid).run
 
   def selectBySubstring(pat: String, max: Int): ConnectionIO[List[Program[Nothing]]] =
-    Statements.selectBySubstring(pat, max).list
+    Statements.selectBySubstring(pat, max).to[List]
 
   /** Select a program by Id, without any Observation information. */
   def selectFlat(pid: Program.Id): ConnectionIO[Option[Program[Nothing]]] =

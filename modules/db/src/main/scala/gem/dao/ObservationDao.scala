@@ -80,7 +80,7 @@ object ObservationDao {
     * science program.
     */
   def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
-    Statements.selectIds(pid).list
+    Statements.selectIds(pid).to[List]
 
   // Merges a map of Index -> TargetEnvironment into a matching map of
   // Index -> Observation.
@@ -97,7 +97,7 @@ object ObservationDao {
     * program, with the instrument but no targets nor steps.
     */
   def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Option[AsterismType], Instrument, Nothing]]] =
-    Statements.selectAllFlat(pid).list.map(lst => TreeMap.fromList(lst))
+    Statements.selectAllFlat(pid).to[List].map(lst => TreeMap.fromList(lst))
 
   /** Construct a program to select all observations for the specified science
     * program, with the targets and the instrument type, but no steps.

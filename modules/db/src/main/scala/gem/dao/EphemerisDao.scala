@@ -72,7 +72,7 @@ object EphemerisDao {
     runSelect(Statements.selectRange(k, s, start, end))
 
   private def runSelect(q: Query0[Ephemeris.Element]): ConnectionIO[Ephemeris] =
-    q.list.map(Ephemeris.fromFoldable[List])
+    q.to[List].map(Ephemeris.fromFoldable[List])
 
   def streamAll(k: EphemerisKey, s: Site): Stream[ConnectionIO, Ephemeris.Element] =
     Statements.select(k, s).stream
