@@ -46,22 +46,6 @@ object StepProgressCell {
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
     Label(Label.Props(s"${system.shows}", color = labelColor(status).some, icon = labelIcon(status)))
 
-  /*def stepProgress(state: SequenceState, step: Step): VdomNode =
-    (state, step.status) match {
-      case (s, StepState.Running) if s.userStopRequested =>
-        <.div(state.shows)
-      case (s, _) if SequenceState.internalStopRequested(s) =>
-        <.div(step.status.shows)
-      case (_, StepState.Pending) =>
-        step.fileId.fold(<.div("Pending"))(_ => <.div("Configuring"))
-      case (_, StepState.Running) =>
-        step.fileId.fold(<.div(stepSystemsStatus(step)): VdomNode)(fileId => ObservationProgressBar(fileId): VdomNode)
-      case (_, StepState.Completed) =>
-        step.fileId.getOrElse(""): String
-      case _ =>
-        step.file.getOrElse(""): String
-    }*/
-
   def stepSystemsStatus(step: StandardStep): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
@@ -116,20 +100,21 @@ object StepProgressCell {
       case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))         =>
+      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))                     =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (f, s) if s.isObservePaused =>
+      case (f, s) if s.isObservePaused                                                          =>
         // Case for exposure paused, label and control buttons
         stepObservationStatus(props)
-      case (f, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
+      case (f, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _))                 =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, fileId)
-      // case (s, StepState.Running | StepState.Paused)     => controlButtons(status.isLogged, p, step)
-      // case (_, StepState.Failed(msg))                    => stepInError(status.isLogged, isPartiallyExecuted(p), msg)
-      case (_, s) if s.wasSkipped       => <.p("Skipped")
-      case (_, _) if props.step.skip    => <.p("Skip")
-      case (_, _)                       => <.p(SeqexecStyles.componentLabel, props.step.shows)
+      case (_, s) if s.wasSkipped                                                               =>
+        <.p("Skipped")
+      case (_, _) if props.step.skip                                                            =>
+        <.p("Skip")
+      case (_, _)                                                                               =>
+        <.p(SeqexecStyles.componentLabel, props.step.shows)
     }
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")

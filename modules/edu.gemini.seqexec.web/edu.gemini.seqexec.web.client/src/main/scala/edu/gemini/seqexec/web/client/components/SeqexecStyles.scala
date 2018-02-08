@@ -15,7 +15,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   import dsl._
 
   private val gutterWidth = 21
-  private val iconWidth = 16.5
   val mobileCut: Int = 767
 
   val body: StyleA = style(unsafeRoot("body")(
@@ -45,19 +44,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
-  val logo: StyleA = style(
-    height(45.px),
-    width(45.px)
-  )
-
   val activeInstrumentLabel: StyleA = style(
     paddingBottom(0.2.em),
     textAlign.center
-  )
-
-  val tdNoUpDownPadding: StyleA = style(
-    paddingBottom(0.em).important,
-    paddingTop(0.em).important
   )
 
   val activeInstrumentContent: StyleA = style(
@@ -246,20 +235,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     (boxShadow := "none").important
   )
 
-  // CSS for a segment where a step is running
-  val segmentRunning: StyleA = style("ui.segment.running")(
-    segmentRunningMixin,
-    borderLeft.none.important,
-    alignSelf.center
-  )
-
-  // CSS for a segments where a step is running
-  val segmentsRunning: StyleA = style("ui.segments.running")(
-    segmentRunningMixin,
-    border.none,
-    borderRadius(0.px)
-  )
-
   // Media queries to hide/display items for mobile
   val notInMobile: StyleA = style(
     media.only.screen.maxWidth(mobileCut.px)(
@@ -284,80 +259,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val smallTextArea: StyleA = style(
     fontSize.smaller
-  )
-
-  val gutterIconVisible: StyleA = style(
-    visibility.visible
-  )
-
-  val gutterIconHidden: StyleA = style(
-    visibility.hidden
-  )
-
-  val breakpointTrOn: StyleA = style(
-    height(4.px),
-    backgroundColor(c"#A5673F"), // Match semantic UI brown
-    borderTop.none.important,
-    borderBottom.none
-  )
-
-  val breakpointTrOff: StyleA = style(
-    height(0.px),
-    backgroundColor(lightgray),
-    borderTop.none.important,
-    borderBottom.none
-  )
-
-  val breakpointHandleContainer: StyleA = style(
-    position.relative,
-    left(((gutterWidth - iconWidth)/2).px),
-    top(-27.px),
-    height(0.px),
-    overflow.visible
-  )
-
-  val trNoBorder: StyleA = style(
-    borderTop.none.important,
-    borderBottom.none.important
-  )
-
-  val handleContainerOff: StyleA = style(
-    display.none
-  )
-
-  val handleContainerOn: StyleA = style(
-  )
-
-  val skipHandleContainer: StyleA = style(
-    position.relative,
-    left(((gutterWidth - iconWidth) / 2).px),
-    top(-11.px),
-    height(0.px),
-    overflow.visible
-  )
-
-  val gutterTd: StyleA = style(
-    width(gutterWidth.px),
-    maxWidth(gutterWidth.px),
-    minWidth(gutterWidth.px),
-    borderTop.none.important,
-    borderBottom.none.important,
-    borderRight(1.px, solid, rgba(34,36,38,0.1)).important
-  )
-
-  val trBreakpoint: StyleA = style()
-  // This defines the hover for the gutter
-  //SeqexecStyles-trNoBorder:hover > td:first-child {
-  val gutterHover: StyleA = style(
-    unsafeRoot("tr." + trBreakpoint.htmlClass) (
-      &.hover(
-        unsafeChild("> td")(
-          &.firstChild(
-            backgroundColor(rgba(100, 100, 100, 0.1)).important
-          )
-        )
-      )
-    )
   )
 
   val logArea: StyleA = style(
