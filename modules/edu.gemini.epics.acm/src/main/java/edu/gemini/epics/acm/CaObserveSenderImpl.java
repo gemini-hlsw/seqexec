@@ -297,7 +297,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         @Override
         public CaObserveSenderImpl.State onApplyValChange(Integer val) {
             if (val > 0) {
-                if (carClid != null && carClid.equals(val) && carState != null) {
+                if (val.equals(carClid) && carState != null) {
                     if (carState.isError()) {
                         failCommandWithCarError(cm);
                         return IdleState;

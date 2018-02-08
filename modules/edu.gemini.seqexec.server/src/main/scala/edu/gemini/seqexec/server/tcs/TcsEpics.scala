@@ -304,7 +304,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
   private val AGSettleTime = 1100.milliseconds
-  def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toInt)) *>
+  def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
     waitForValue[java.lang.Double](agInPositionAttr, 1.0, timeout, "AG inposition flag")
 
   def hourAngle: Option[String] = Option(tcsState.getStringAttribute("ha").value)
