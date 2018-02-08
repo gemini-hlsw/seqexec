@@ -249,6 +249,6 @@ object EpicsUtil {
   }
 
   def smartSetParam[A: Equal](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
-    get.flatMap(g => (g =/= v).option(set)).getOrElse(SeqAction.void)
+    if(get =/= v.some) set else SeqAction.void
 
 }
