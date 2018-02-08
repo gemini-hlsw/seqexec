@@ -3,7 +3,7 @@
 
 package gem.math
 
-import gem.syntax.treemapcompanion._
+import gem.syntax.treemap._
 import gem.util.Timestamp
 
 import cats.{ Eq, Foldable, Monoid }

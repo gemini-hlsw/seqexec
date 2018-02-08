@@ -90,6 +90,7 @@ object DynamicConfig {
 
   /** @group Constructors */ final case class AcqCam()   extends DynamicConfig.Impl(Instrument.AcqCam)
   /** @group Constructors */ final case class Bhros()    extends DynamicConfig.Impl(Instrument.Bhros)
+  /** @group Constructors */ final case class Ghost()    extends DynamicConfig.Impl(Instrument.Ghost)
   /** @group Constructors */ final case class Gnirs()    extends DynamicConfig.Impl(Instrument.Gnirs)
   /** @group Constructors */ final case class Gpi()      extends DynamicConfig.Impl(Instrument.Gpi)
   /** @group Constructors */ final case class Gsaoi()    extends DynamicConfig.Impl(Instrument.Gsaoi)

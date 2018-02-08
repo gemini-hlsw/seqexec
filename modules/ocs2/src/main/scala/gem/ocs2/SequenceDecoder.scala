@@ -63,23 +63,24 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
 
   private def parseInstConfig(i: Instrument, cm: ConfigMap): Either[PioError, DynamicConfig] =
     i match {
-      case Instrument.AcqCam     => DynamicConfig.AcqCam()         .asRight
-      case Instrument.Bhros      => DynamicConfig.Bhros()          .asRight
+      case Instrument.AcqCam     => DynamicConfig.AcqCam()  .asRight
+      case Instrument.Bhros      => DynamicConfig.Bhros()   .asRight
 
       case Instrument.Flamingos2 => Flamingos2.parse(cm)
+      case Instrument.Ghost      => DynamicConfig.Ghost()   .asRight
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
 
-      case Instrument.Gnirs      => DynamicConfig.Gnirs()          .asRight
-      case Instrument.Gpi        => DynamicConfig.Gpi()            .asRight
-      case Instrument.Gsaoi      => DynamicConfig.Gsaoi()          .asRight
-      case Instrument.Michelle   => DynamicConfig.Michelle()       .asRight
-      case Instrument.Nici       => DynamicConfig.Nici()           .asRight
-      case Instrument.Nifs       => DynamicConfig.Nifs()           .asRight
-      case Instrument.Niri       => DynamicConfig.Niri()           .asRight
-      case Instrument.Phoenix    => DynamicConfig.Phoenix()        .asRight
-      case Instrument.Trecs      => DynamicConfig.Trecs()          .asRight
-      case Instrument.Visitor    => DynamicConfig.Visitor()        .asRight
+      case Instrument.Gnirs      => DynamicConfig.Gnirs()   .asRight
+      case Instrument.Gpi        => DynamicConfig.Gpi()     .asRight
+      case Instrument.Gsaoi      => DynamicConfig.Gsaoi()   .asRight
+      case Instrument.Michelle   => DynamicConfig.Michelle().asRight
+      case Instrument.Nici       => DynamicConfig.Nici()    .asRight
+      case Instrument.Nifs       => DynamicConfig.Nifs()    .asRight
+      case Instrument.Niri       => DynamicConfig.Niri()    .asRight
+      case Instrument.Phoenix    => DynamicConfig.Phoenix() .asRight
+      case Instrument.Trecs      => DynamicConfig.Trecs()   .asRight
+      case Instrument.Visitor    => DynamicConfig.Visitor() .asRight
     }
 
   private object Flamingos2 {

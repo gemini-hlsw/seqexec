@@ -11,7 +11,7 @@ import scala.collection.immutable.TreeSet
 /** Collection of targets associated with an observation.
   */
 @Lenses final case class TargetEnvironment(
-  /* asterism, */
+  asterism: Option[Asterism],
   /* guide stars, */
   userTargets: TreeSet[UserTarget]
 )
@@ -20,7 +20,7 @@ import scala.collection.immutable.TreeSet
 object TargetEnvironment {
 
   val empty: TargetEnvironment =
-    TargetEnvironment(TreeSet.empty)
+    TargetEnvironment(None, TreeSet.empty)
 
   implicit val EqTargetEnvironment: Eq[TargetEnvironment] =
     Eq.fromUniversalEquals

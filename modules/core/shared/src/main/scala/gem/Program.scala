@@ -6,7 +6,7 @@ package gem
 import cats.{ Applicative, Eval, Traverse }
 import cats.implicits._
 
-import gem.syntax.treemapcompanion._
+import gem.syntax.treemap._
 
 import scala.collection.immutable.TreeMap
 

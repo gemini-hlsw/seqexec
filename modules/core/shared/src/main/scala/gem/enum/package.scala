@@ -87,4 +87,15 @@ package object enum extends ToPrismOps {
 
   }
 
+  /**
+   * Enrichment methods for [[AsterismType]].
+   * @group Enrichment
+   */
+  implicit class AsterismTypeOps(val value: AsterismType.type) extends AnyVal {
+    def of(a: Asterism): AsterismType =
+      a match {
+        case _: Asterism.SingleTarget[_] => AsterismType.SingleTarget
+        case _: Asterism.GhostDualTarget => AsterismType.GhostDualTarget
+      }
+  }
 }

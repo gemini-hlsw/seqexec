@@ -36,10 +36,11 @@ object Instrument {
   /** @group Constructors */ case object Bhros extends Instrument("Bhros", "bHROS", "bHROS", true)
   /** @group Constructors */ case object Visitor extends Instrument("Visitor", "Visitor Instrument", "Visitor Instrument", false)
   /** @group Constructors */ case object Flamingos2 extends Instrument("Flamingos2", "Flamingos2", "Flamingos 2", false)
+  /** @group Constructors */ case object Ghost extends Instrument("Ghost", "GHOST", "GHOST", false)
 
   /** All members of Instrument, in canonical order. */
   val all: List[Instrument] =
-    List(Phoenix, Michelle, Gnirs, Niri, Trecs, Nici, Nifs, Gpi, Gsaoi, GmosS, AcqCam, GmosN, Bhros, Visitor, Flamingos2)
+    List(Phoenix, Michelle, Gnirs, Niri, Trecs, Nici, Nifs, Gpi, Gsaoi, GmosS, AcqCam, GmosN, Bhros, Visitor, Flamingos2, Ghost)
 
   /** Select the member of Instrument with the given tag, if any. */
   def fromTag(s: String): Option[Instrument] =

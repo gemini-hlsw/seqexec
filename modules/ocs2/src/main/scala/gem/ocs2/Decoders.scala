@@ -18,6 +18,7 @@ import gem.syntax.all._
 import java.time.Instant
 
 import scala.collection.immutable.{ TreeMap, TreeSet }
+import scala.xml.Node
 
 
 /** `PioDecoder` instances for our model types.
@@ -163,7 +164,7 @@ object Decoders {
       (n \! "@name").decode[Observation.Id].map(_.index)
     }
 
-  implicit val TargetEnvironmentDecoder: PioDecoder[TargetEnvironment] = {
+  def targetEnvironmentDecoder(i: Instrument): PioDecoder[TargetEnvironment] = {
     import gem.enum.TrackType
 
     def trackType(targetNode: scala.xml.Node): Option[TrackType] =
@@ -173,15 +174,15 @@ object Decoders {
       }
 
     // filter out "too" and empty non-sidereal (that is, w/o horizons id) for now
-    def validTargets(lst: PioPath.Listing): PioPath.Listing =
+    def validTargets(lst: PioPath.Listing)(f: Node => PioPath.Required): PioPath.Listing =
       lst.copy(node = lst.node.map { ns =>
         ns.filter { n =>
 
           // We have to drill down to the target node for this filter and
           // extract the track type
           val ty = for {
-            t <- (n \! "&spTarget" \! "&target").node.toOption // "target" node
-            y <- trackType(t)                                  // track type
+            t <- f(n).node.toOption // "target" node
+            y <- trackType(t)       // track type
           } yield (t, y)
 
           // Sidereal targets or non-sidereal with an horizons id are ok
@@ -193,21 +194,21 @@ object Decoders {
 
     PioDecoder { n =>
       for {
-        // a <- asterism
+        a <- validTargets(n \* "&asterism" \! "&target")(_.toRequired).decode[Target]
         // g <- guideEnvironment
-        uts <- validTargets(n \? "&userTargets" \* "&userTarget").decode[UserTarget]
-      } yield TargetEnvironment(TreeSet.fromList(uts))
+        u <- validTargets(n \? "&userTargets" \* "&userTarget")(_ \! "&spTarget" \! "&target").decode[UserTarget]
+      } yield TargetEnvironment(a.headOption.map(Asterism.SingleTarget(_, i)), TreeSet.fromList(u))
     }
   }
 
   implicit val ObservationDecoder: PioDecoder[Observation.Full] =
     PioDecoder { n =>
       for {
-        t  <- (n \! "data" \? "#title"                   ).decodeOrZero[String]
-        e  <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.empty)
-        st <- (n \! "sequence"                           ).decode[StaticConfig](StaticDecoder)
-        sq <- (n \! "sequence"                           ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
-      } yield Observation(t, e, st, sq)
+        t <- (n \! "data" \? "#title"                   ).decodeOrZero[String]
+        s <- (n \! "sequence"                           ).decode[StaticConfig](StaticDecoder)
+        d <- (n \! "sequence"                           ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
+        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.empty)(targetEnvironmentDecoder(s.instrument))
+      } yield Observation(t, e, s, d)
     }
 
   implicit val ProgramDecoder: PioDecoder[Program[Observation.Full]] =

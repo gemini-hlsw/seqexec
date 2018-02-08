@@ -12,7 +12,7 @@ import gem.config.GcalConfig.GcalLamp
 import gem.dao.meta._
 import gem.enum._
 import gem.math.Offset
-import gem.syntax.treemapcompanion._
+import gem.syntax.treemap._
 import java.time.Duration
 import scala.collection.immutable.TreeMap
 
@@ -80,6 +80,7 @@ object StepDao {
         case Instrument.AcqCam     => pure(DynamicConfig.AcqCam())
         case Instrument.Bhros      => pure(DynamicConfig.Bhros())
         case Instrument.Flamingos2 => F2.selectOne(oid, loc)       .maybe.widen[DynamicConfig]
+        case Instrument.Ghost      => pure(DynamicConfig.Ghost())
         case Instrument.GmosN      => Gmos.selectOneNorth(oid, loc).maybe.widen[DynamicConfig]
         case Instrument.GmosS      => Gmos.selectOneSouth(oid, loc).maybe.widen[DynamicConfig]
         case Instrument.Gnirs      => pure(DynamicConfig.Gnirs())
@@ -113,6 +114,7 @@ object StepDao {
         case Instrument.AcqCam     => pure(DynamicConfig.AcqCam())
         case Instrument.Bhros      => pure(DynamicConfig.Bhros())
         case Instrument.Flamingos2 => F2.selectAll(oid)       .toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
+        case Instrument.Ghost      => pure(DynamicConfig.Ghost())
         case Instrument.GmosN      => Gmos.selectAllNorth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
         case Instrument.GmosS      => Gmos.selectAllSouth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
         case Instrument.Gnirs      => pure(DynamicConfig.Gnirs())
@@ -156,15 +158,16 @@ object StepDao {
 
   // HELPERS
 
-  private def insertConfigSlice(id: Int, i: DynamicConfig): ConnectionIO[Unit] =
-    i match {
+  private def insertConfigSlice(id: Int, d: DynamicConfig): ConnectionIO[Unit] =
+    d match {
       case _: DynamicConfig.AcqCam    => ().pure[ConnectionIO]
       case _: DynamicConfig.Bhros     => ().pure[ConnectionIO]
-      case f2: DynamicConfig.F2       => F2.insert(id, f2).run.void
-      case g: DynamicConfig.GmosNorth => Gmos.insertCommon(id, g.common).run *>
-                                           Gmos.insertNorth(id, g).run.void
-      case g: DynamicConfig.GmosSouth => Gmos.insertCommon(id, g.common).run *>
-                                           Gmos.insertSouth(id, g).run.void
+      case i: DynamicConfig.F2        => F2.insert(id, i).run.void
+      case _: DynamicConfig.Ghost     => ().pure[ConnectionIO]
+      case i: DynamicConfig.GmosNorth => Gmos.insertCommon(id, i.common).run *>
+                                           Gmos.insertNorth(id, i).run.void
+      case i: DynamicConfig.GmosSouth => Gmos.insertCommon(id, i.common).run *>
+                                           Gmos.insertSouth(id, i).run.void
       case _: DynamicConfig.Gnirs     => ().pure[ConnectionIO]
       case _: DynamicConfig.Gpi       => ().pure[ConnectionIO]
       case _: DynamicConfig.Gsaoi     => ().pure[ConnectionIO]

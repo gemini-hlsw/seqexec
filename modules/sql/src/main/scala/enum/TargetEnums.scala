@@ -12,6 +12,15 @@ object TargetEnums {
   val enums: List[ConnectionIO[EnumDef]] =
     List(
 
+      EnumDef.fromQuery("AsterismType", "asterism types") {
+        type R = Record.`'tag -> String`.T
+        sql"""
+          SELECT enumlabel x, enumlabel y
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'asterism_type'
+         """.query[(String, R)]
+      },
+
       EnumDef.fromQuery("TrackType", "track types") {
         type R = Record.`'tag -> String`.T
         sql"""

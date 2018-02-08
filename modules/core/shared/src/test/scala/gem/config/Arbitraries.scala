@@ -52,17 +52,18 @@ trait Arbitraries {
                 MosPreImaging.IsNotMosPreImaging)
     )
 
-  implicit val arbAcqCamStatic    = const(StaticConfig.AcqCam()         )
-  implicit val arbBhrosStatic     = const(StaticConfig.Bhros()          )
-  implicit val arbGpiStatic       = const(StaticConfig.Gpi()            )
-  implicit val arbGsaoiStatic     = const(StaticConfig.Gsaoi()          )
-  implicit val arbMichelleStatic  = const(StaticConfig.Michelle()       )
-  implicit val arbNiciStatic      = const(StaticConfig.Nici()           )
-  implicit val arbNifsStatic      = const(StaticConfig.Nifs()           )
-  implicit val arbNiriStatic      = const(StaticConfig.Niri()           )
-  implicit val arbPhoenixStatic   = const(StaticConfig.Phoenix()        )
-  implicit val arbTrecsStatic     = const(StaticConfig.Trecs()          )
-  implicit val arbVisitorStatic   = const(StaticConfig.Visitor()        )
+  implicit val arbAcqCamStatic    = const(StaticConfig.AcqCam()  )
+  implicit val arbBhrosStatic     = const(StaticConfig.Bhros()   )
+  implicit val arbGhostStatic     = const(StaticConfig.Ghost()   )
+  implicit val arbGpiStatic       = const(StaticConfig.Gpi()     )
+  implicit val arbGsaoiStatic     = const(StaticConfig.Gsaoi()   )
+  implicit val arbMichelleStatic  = const(StaticConfig.Michelle())
+  implicit val arbNiciStatic      = const(StaticConfig.Nici()    )
+  implicit val arbNifsStatic      = const(StaticConfig.Nifs()    )
+  implicit val arbNiriStatic      = const(StaticConfig.Niri()    )
+  implicit val arbPhoenixStatic   = const(StaticConfig.Phoenix() )
+  implicit val arbTrecsStatic     = const(StaticConfig.Trecs()   )
+  implicit val arbVisitorStatic   = const(StaticConfig.Visitor() )
 
   implicit val arbF2Static        =
     Arbitrary(arbitrary[MosPreImaging].map(StaticConfig.F2(_)))
@@ -129,6 +130,7 @@ trait Arbitraries {
       case AcqCam     => arbitrary[StaticConfig.AcqCam   ]
       case Bhros      => arbitrary[StaticConfig.Bhros    ]
       case Flamingos2 => arbitrary[StaticConfig.F2       ]
+      case Ghost      => arbitrary[StaticConfig.Ghost    ]
       case GmosN      => arbitrary[StaticConfig.GmosNorth]
       case GmosS      => arbitrary[StaticConfig.GmosSouth]
       case Gnirs      => arbitrary[StaticConfig.Gnirs    ]
@@ -143,18 +145,19 @@ trait Arbitraries {
       case Visitor    => arbitrary[StaticConfig.Visitor  ]
     }
 
-  implicit val arbAcqCamDynamic    = const(DynamicConfig.AcqCam()         )
-  implicit val arbBhrosDynamic     = const(DynamicConfig.Bhros()          )
-  implicit val arbGnirsDynamic     = const(DynamicConfig.Gnirs()          )
-  implicit val arbGpiDynamic       = const(DynamicConfig.Gpi()            )
-  implicit val arbGsaoiDynamic     = const(DynamicConfig.Gsaoi()          )
-  implicit val arbMichelleDynamic  = const(DynamicConfig.Michelle()       )
-  implicit val arbNiciDynamic      = const(DynamicConfig.Nici()           )
-  implicit val arbNifsDynamic      = const(DynamicConfig.Nifs()           )
-  implicit val arbNiriDynamic      = const(DynamicConfig.Niri()           )
-  implicit val arbPhoenixDynamic   = const(DynamicConfig.Phoenix()        )
-  implicit val arbTrecsDynamic     = const(DynamicConfig.Trecs()          )
-  implicit val arbVisitorDynamic   = const(DynamicConfig.Visitor()        )
+  implicit val arbAcqCamDynamic    = const(DynamicConfig.AcqCam()  )
+  implicit val arbBhrosDynamic     = const(DynamicConfig.Bhros()   )
+  implicit val arbGhost            = const(DynamicConfig.Ghost()   )
+  implicit val arbGnirsDynamic     = const(DynamicConfig.Gnirs()   )
+  implicit val arbGpiDynamic       = const(DynamicConfig.Gpi()     )
+  implicit val arbGsaoiDynamic     = const(DynamicConfig.Gsaoi()   )
+  implicit val arbMichelleDynamic  = const(DynamicConfig.Michelle())
+  implicit val arbNiciDynamic      = const(DynamicConfig.Nici()    )
+  implicit val arbNifsDynamic      = const(DynamicConfig.Nifs()    )
+  implicit val arbNiriDynamic      = const(DynamicConfig.Niri()    )
+  implicit val arbPhoenixDynamic   = const(DynamicConfig.Phoenix() )
+  implicit val arbTrecsDynamic     = const(DynamicConfig.Trecs()   )
+  implicit val arbVisitorDynamic   = const(DynamicConfig.Visitor() )
 
   implicit val arbF2FpuChoice      =
     Arbitrary {
@@ -247,6 +250,7 @@ trait Arbitraries {
       case AcqCam     => arbitrary[DynamicConfig.AcqCam   ]
       case Bhros      => arbitrary[DynamicConfig.Bhros    ]
       case Flamingos2 => arbitrary[DynamicConfig.F2       ]
+      case Ghost      => arbitrary[DynamicConfig.Ghost    ]
       case GmosN      => arbitrary[DynamicConfig.GmosNorth]
       case GmosS      => arbitrary[DynamicConfig.GmosSouth]
       case Gnirs      => arbitrary[DynamicConfig.Gnirs    ]

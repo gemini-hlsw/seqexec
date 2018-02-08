@@ -80,7 +80,10 @@ object PioPath {
     def deepParamsets(name: String): List[Node] =
       filterByName(n \\ "paramset", name)
 
-    private val root: Required = Required(EmptySearchPath, n.asRight)
+    def toRequired: Required =
+      Required(EmptySearchPath, n.asRight)
+
+    private val root: Required = toRequired
 
     def \!  (matchString: String): Required  = root \!  matchString
     def \?  (matchString: String): Optional  = root \?  matchString

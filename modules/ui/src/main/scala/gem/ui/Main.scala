@@ -42,7 +42,7 @@ object TestProgram {
   val f2: Observation.Full =
     Observation(
       "F2 Observation",
-      TargetEnvironment(TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.F2.Default,
       List(Step.Gcal(DynamicConfig.F2.Default, gcal))
     )
@@ -50,7 +50,7 @@ object TestProgram {
   val gmosS: Observation.Full =
     Observation(
       "GMOS-S Observation",
-      TargetEnvironment(TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.GmosSouth.Default,
       List(Step.SmartGcal(DynamicConfig.GmosSouth.Default, SmartGcalType.Arc))
     )
@@ -58,7 +58,7 @@ object TestProgram {
   val gmosN: Observation.Full =
     Observation(
       "GMOS-N Observation",
-      TargetEnvironment(TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.GmosNorth.Default,
       List(Step.Bias(DynamicConfig.GmosNorth.Default))
     )

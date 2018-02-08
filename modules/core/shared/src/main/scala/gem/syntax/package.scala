@@ -15,5 +15,6 @@ package object syntax {
                 with ToInstantOps
                 with ToDurationOps
                 with ToTreeMapCompanionOps
+                with ToTreeMapOps
                 with ToTreeSetCompanionOps
 }

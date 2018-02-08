@@ -27,23 +27,24 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
 
   private def parseStaticConfig(i: Instrument, cm: ConfigMap): Either[PioError, StaticConfig] =
     i match {
-      case Instrument.AcqCam     => StaticConfig.AcqCam().asRight
-      case Instrument.Bhros      => StaticConfig.Bhros().asRight
+      case Instrument.AcqCam     => StaticConfig.AcqCam()  .asRight
+      case Instrument.Bhros      => StaticConfig.Bhros()   .asRight
 
       case Instrument.Flamingos2 => Flamingos2.parse(cm)
+      case Instrument.Ghost      => StaticConfig.Ghost()   .asRight
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
       case Instrument.Gnirs      => Gnirs.parse(cm)
 
-      case Instrument.Gpi        => StaticConfig.Gpi()            .asRight
-      case Instrument.Gsaoi      => StaticConfig.Gsaoi()          .asRight
-      case Instrument.Michelle   => StaticConfig.Michelle()       .asRight
-      case Instrument.Nici       => StaticConfig.Nici()           .asRight
-      case Instrument.Nifs       => StaticConfig.Nifs()           .asRight
-      case Instrument.Niri       => StaticConfig.Niri()           .asRight
-      case Instrument.Phoenix    => StaticConfig.Phoenix()        .asRight
-      case Instrument.Trecs      => StaticConfig.Trecs()          .asRight
-      case Instrument.Visitor    => StaticConfig.Visitor()        .asRight
+      case Instrument.Gpi        => StaticConfig.Gpi()     .asRight
+      case Instrument.Gsaoi      => StaticConfig.Gsaoi()   .asRight
+      case Instrument.Michelle   => StaticConfig.Michelle().asRight
+      case Instrument.Nici       => StaticConfig.Nici()    .asRight
+      case Instrument.Nifs       => StaticConfig.Nifs()    .asRight
+      case Instrument.Niri       => StaticConfig.Niri()    .asRight
+      case Instrument.Phoenix    => StaticConfig.Phoenix() .asRight
+      case Instrument.Trecs      => StaticConfig.Trecs()   .asRight
+      case Instrument.Visitor    => StaticConfig.Visitor() .asRight
     }
 
   private object Flamingos2 {

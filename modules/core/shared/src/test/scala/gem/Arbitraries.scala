@@ -8,7 +8,7 @@ import gem.arb._
 import gem.config.{ DynamicConfig, GcalConfig, TelescopeConfig }
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.Offset
-import gem.syntax.treemapcompanion._
+import gem.syntax.treemap._
 import gem.util.Location
 import org.scalacheck._
 import org.scalacheck.Gen._
@@ -87,10 +87,10 @@ trait Arbitraries extends gem.config.Arbitraries  {
 
   // Observation
 
-  def genObservationOf(i: Instrument): Gen[Observation.Full] =
+  def genObservationOf[I <: Instrument with Singleton](i: I): Gen[Observation.Full] =
     for {
       t <- genTitle
-      e <- arbitrary[TargetEnvironment]
+      e <- genTargetEnvironment(i)
       s <- genStaticConfigOf(i)
       d <- genSequenceOf(i)
     } yield Observation(t, e, s, d)

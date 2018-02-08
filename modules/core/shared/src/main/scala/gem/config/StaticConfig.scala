@@ -24,16 +24,17 @@ object StaticConfig {
     type I = I0
   }
 
-  final case class Phoenix()    extends StaticConfig.Impl(Instrument.Phoenix)
-  final case class Michelle()   extends StaticConfig.Impl(Instrument.Michelle)
-  final case class Niri()       extends StaticConfig.Impl(Instrument.Niri)
-  final case class Trecs()      extends StaticConfig.Impl(Instrument.Trecs)
-  final case class Nici()       extends StaticConfig.Impl(Instrument.Nici)
-  final case class Nifs()       extends StaticConfig.Impl(Instrument.Nifs)
-  final case class Gpi()        extends StaticConfig.Impl(Instrument.Gpi)
-  final case class Gsaoi()      extends StaticConfig.Impl(Instrument.Gsaoi)
   final case class AcqCam()     extends StaticConfig.Impl(Instrument.AcqCam)
   final case class Bhros()      extends StaticConfig.Impl(Instrument.Bhros)
+  final case class Ghost()      extends StaticConfig.Impl(Instrument.Ghost)
+  final case class Gpi()        extends StaticConfig.Impl(Instrument.Gpi)
+  final case class Gsaoi()      extends StaticConfig.Impl(Instrument.Gsaoi)
+  final case class Michelle()   extends StaticConfig.Impl(Instrument.Michelle)
+  final case class Nici()       extends StaticConfig.Impl(Instrument.Nici)
+  final case class Nifs()       extends StaticConfig.Impl(Instrument.Nifs)
+  final case class Niri()       extends StaticConfig.Impl(Instrument.Niri)
+  final case class Phoenix()    extends StaticConfig.Impl(Instrument.Phoenix)
+  final case class Trecs()      extends StaticConfig.Impl(Instrument.Trecs)
   final case class Visitor()    extends StaticConfig.Impl(Instrument.Visitor)
 
   final case class F2(
