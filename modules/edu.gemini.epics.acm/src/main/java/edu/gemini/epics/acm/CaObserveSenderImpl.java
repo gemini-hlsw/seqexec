@@ -276,36 +276,36 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     private final class WaitPreset implements CaObserveSenderImpl.State {
         final CaCommandMonitorImpl cm;
-        final CarStateGeneric carVal;
-        final CarStateGeneric observeCarVal;
+        final CarStateGeneric carState;
+        final CarStateGeneric observeCarState;
         final Integer carClid;
 
         WaitPreset(CaCommandMonitorImpl cm) {
             this.cm = cm;
-            this.carVal = null;
+            this.carState = null;
             this.carClid = null;
-            this.observeCarVal = null;
+            this.observeCarState = null;
         }
 
-        private WaitPreset(CaCommandMonitorImpl cm, CarStateGeneric carVal, Integer carClid, CarStateGeneric observeCarVal) {
+        private WaitPreset(CaCommandMonitorImpl cm, CarStateGeneric carState, Integer carClid, CarStateGeneric observeCarState) {
             this.cm = cm;
-            this.carVal = carVal;
+            this.carState = carState;
             this.carClid = carClid;
-            this.observeCarVal = observeCarVal;
+            this.observeCarState = observeCarState;
         }
 
         @Override
         public CaObserveSenderImpl.State onApplyValChange(Integer val) {
             if (val > 0) {
-                if (carClid != null && carClid.equals(val) && carVal != null) {
-                    if (carVal.isError()) {
+                if (val.equals(carClid) && carState != null) {
+                    if (carState.isError()) {
                         failCommandWithCarError(cm);
                         return IdleState;
-                    } else if (carVal.isBusy()) {
-                        return new CaObserveSenderImpl.WaitCompletion(cm, val, observeCarVal);
+                    } else if (carState.isBusy()) {
+                        return new CaObserveSenderImpl.WaitCompletion(cm, val, observeCarState);
                     }
                 }
-                return new CaObserveSenderImpl.WaitStart(cm, val, carVal, carClid, observeCarVal);
+                return new CaObserveSenderImpl.WaitStart(cm, val, carState, carClid, observeCarState);
             } else {
                 failCommandWithApplyError(cm);
                 return IdleState;
@@ -314,17 +314,17 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public CaObserveSenderImpl.State onCarValChange(CarStateGeneric val) {
-            return new CaObserveSenderImpl.WaitPreset(cm, val, carClid, observeCarVal);
+            return new CaObserveSenderImpl.WaitPreset(cm, val, carClid, observeCarState);
         }
 
         @Override
         public CaObserveSenderImpl.State onCarClidChange(Integer val) {
-            return new CaObserveSenderImpl.WaitPreset(cm, carVal, val, observeCarVal);
+            return new CaObserveSenderImpl.WaitPreset(cm, carState, val, observeCarState);
         }
 
         @Override
-        public State onObserveCarValChange(CarStateGeneric carState)  {
-            return new CaObserveSenderImpl.WaitPreset(cm, carVal, carClid, carState);
+        public State onObserveCarValChange(CarStateGeneric val)  {
+            return new CaObserveSenderImpl.WaitPreset(cm, carState, carClid, val);
         }
 
         @Override

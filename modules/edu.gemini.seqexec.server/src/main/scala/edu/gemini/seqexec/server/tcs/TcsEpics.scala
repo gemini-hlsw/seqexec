@@ -9,8 +9,10 @@ import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
 import edu.gemini.seqexec.server.EpicsUtil._
 import org.log4s.{Logger, getLogger}
 import squants.Time
+import squants.time.TimeConversions._
 
 import scala.collection.JavaConverters._
+import scalaz.syntax.apply._
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used
@@ -298,8 +300,12 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
-  def waitAGInPosition(timeout: Time): SeqAction[Unit] = waitForValue[java.lang.Double](
-    agInPositionAttr, 1.0, timeout, "AG inposition flag")
+  /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
+   * an error. A better solution is to detect the edge, from not in position to in-position.
+   */
+  private val AGSettleTime = 1100.milliseconds
+  def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
+    waitForValue[java.lang.Double](agInPositionAttr, 1.0, timeout, "AG inposition flag")
 
   def hourAngle: Option[String] = Option(tcsState.getStringAttribute("ha").value)
 

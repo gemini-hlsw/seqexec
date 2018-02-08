@@ -98,7 +98,7 @@ object GnirsControllerEpics extends GnirsController {
       case _           => "Out"
     }
 
-    smartSetParam(v, epicsSys.cover, ccCmd.setAcqMirror(v))
+    smartSetParam(v, epicsSys.acqMirror.map(removePartName), ccCmd.setAcqMirror(v))
   }
 
   private def setGrating(s: Spectrography, c: Camera): SeqAction[Unit] = {
@@ -125,7 +125,7 @@ object GnirsControllerEpics extends GnirsController {
 
     val defaultMode = "WAVELENGTH"
 
-    smartSetParam(v, epicsSys.grating, ccCmd.setGrating(v)) *>
+    smartSetParam(v, epicsSys.grating.map(removePartName), ccCmd.setGrating(v)) *>
       smartSetParam(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode))
   }
 
@@ -144,14 +144,14 @@ object GnirsControllerEpics extends GnirsController {
       case CrossDisperserS(_) => s"$cameraStr+SXD"
     }
 
-    smartSetParam(v, epicsSys.prism, ccCmd.setPrism(v))
+    smartSetParam(v, epicsSys.prism.map(removePartName), ccCmd.setPrism(v))
   }
 
   private def setDarkCCParams: SeqAction[Unit] = {
     val closed = "Closed"
     val darkFilter = "Dark"
-    smartSetParam(closed, epicsSys.cover, ccCmd.setCover(closed)) *>
-      smartSetParam(darkFilter, epicsSys.filter1, ccCmd.setFilter1("Dark"))
+    smartSetParam(closed, epicsSys.cover.map(removePartName), ccCmd.setCover(closed)) *>
+      smartSetParam(darkFilter, epicsSys.filter1.map(removePartName), ccCmd.setFilter1(darkFilter))
   }
 
   private def setSpectrographyComponents(mode: Mode, c: Camera): SeqAction[Unit] = mode match {
@@ -162,14 +162,14 @@ object GnirsControllerEpics extends GnirsController {
   private def setOtherCCParams(config: Other): SeqAction[Unit] = {
     val open = "Open"
     val focus = "best focus"
-    smartSetParam(open, epicsSys.cover, ccCmd.setCover(open)) *>
+    smartSetParam(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open)) *>
       smartSetParam(focus, epicsSys.focus, ccCmd.setFocus(focus)) *>
       setAcquisitionMirror(config.mode) *>
-      smartSetParam(encode(config.camera), epicsSys.camera, ccCmd.setCamera(encode(config.camera))) *>
-      config.slitWidth.map(sl => smartSetParam(encode(sl), epicsSys.slitWidth, ccCmd.setSlitWidth(encode(sl)))).getOrElse(SeqAction.void) *>
-      smartSetParam(encode(config.decker), epicsSys.decker, ccCmd.setDecker(encode(config.decker))) *>
-      smartSetParam(encode(config.filter1), epicsSys.filter1, ccCmd.setFilter1(encode(config.filter1))) *>
-      smartSetParam(encode(config.filter2), epicsSys.filter2, ccCmd.setFilter2(encode(config.filter2))) *>
+      smartSetParam(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera))) *>
+      config.slitWidth.map(sl => smartSetParam(encode(sl), epicsSys.slitWidth.map(removePartName), ccCmd.setSlitWidth(encode(sl)))).getOrElse(SeqAction.void) *>
+      smartSetParam(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker))) *>
+      smartSetParam(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1))) *>
+      smartSetParam(encode(config.filter2), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(config.filter2))) *>
       setSpectrographyComponents(config.mode, config.camera)
   }
 
@@ -225,6 +225,12 @@ object GnirsControllerEpics extends GnirsController {
     _ <- GnirsEpics.instance.abortCmd.mark
     _ <- GnirsEpics.instance.abortCmd.post
   } yield ()
+
+  private def removePartName(s: String) = {
+    val pattern = "_G[0-9]{4}$"
+
+    s.replaceAll(pattern, "")
+  }
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

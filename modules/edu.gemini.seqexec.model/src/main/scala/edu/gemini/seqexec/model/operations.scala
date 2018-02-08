@@ -57,6 +57,13 @@ object operations {
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
+  private val GnirsSupportedOperations = new SupportedOperations {
+    def observationOperations(s: Step): List[ObservationOperations] =
+      s.isObservePaused.fold(List(ObservationOperations.StopObservation, ObservationOperations.AbortObservation), List(ObservationOperations.StopObservation, ObservationOperations.AbortObservation))
+
+    def sequenceOperations: List[SequenceOperations] = Nil
+  }
+
   private val NilSupportedOperations = new SupportedOperations {
     def observationOperations(s: Step): List[ObservationOperations] = Nil
     def sequenceOperations: List[SequenceOperations] = Nil
@@ -65,7 +72,8 @@ object operations {
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
     (F2    -> F2SupportedOperations),
     (GmosS -> GmosSupportedOperations),
-    (GmosN -> GmosSupportedOperations)
+    (GmosN -> GmosSupportedOperations),
+    (GNIRS -> GnirsSupportedOperations)
   )
 
   final implicit class SupportedOperationsOps(val i: Instrument) extends AnyVal {

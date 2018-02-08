@@ -82,8 +82,8 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     val detBias: Option[CaParameter[JDouble]] = cs.map(_.getDouble("detBias"))
     def setDetBias(v: Double): SeqAction[Unit] = setParameter(detBias, JDouble.valueOf(v))
 
-    val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
-    def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, Integer.valueOf(v))
+    val coadds: Option[CaParameter[JDouble]] = cs.map(_.getDouble("coadds"))
+    def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, JDouble.valueOf(v.toDouble))
 
   }
 

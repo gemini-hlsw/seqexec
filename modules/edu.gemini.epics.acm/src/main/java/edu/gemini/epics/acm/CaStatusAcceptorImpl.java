@@ -18,7 +18,7 @@ import gov.aps.jca.CAException;
 
 final class CaStatusAcceptorImpl implements CaStatusAcceptor {
 
-    private static final Logger LOG = Logger.getLogger(CaStatusAcceptorImpl.class.getName()); 
+    private static final Logger LOG = Logger.getLogger(CaStatusAcceptorImpl.class.getName());
 
     private final String name;
     private final String description;
@@ -239,6 +239,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
         integerAttributes.remove(name);
         shortAttributes.remove(name);
         stringAttributes.remove(name);
+        enumAttributes.remove(name);
     }
 
     @Override
@@ -253,6 +254,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
         set.addAll(integerAttributes.keySet());
         set.addAll(shortAttributes.keySet());
         set.addAll(stringAttributes.keySet());
+        set.addAll(enumAttributes.keySet());
         return set;
     }
 
@@ -325,6 +327,7 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
         floatAttributes.clear();
         integerAttributes.clear();
         shortAttributes.clear();
+        enumAttributes.clear();
 
         epicsReader = null;
     }
