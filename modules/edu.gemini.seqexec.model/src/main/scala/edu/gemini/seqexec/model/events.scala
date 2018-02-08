@@ -27,7 +27,7 @@ object events {
       implicit val equal: Equal[SequenceStart] = Equal.equalA
     }
 
-    final case class StepExecuted(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class StepExecuted(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     final case class FileIdStepExecuted(fileId: ImageFileId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 

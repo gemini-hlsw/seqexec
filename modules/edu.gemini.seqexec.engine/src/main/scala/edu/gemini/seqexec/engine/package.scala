@@ -310,9 +310,9 @@ package object engine {
     * When the index doesn't exist it does nothing.
     */
   def complete[R<:RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(r)) *>
-    getS(id).flatMap(_.flatMap{
+    getS(id).flatMap(_.flatMap(
       _.current.execution.all(Action.completed).option(HandleP.fromProcess(Process(executed(id))))
-    }.getOrElse(unit))
+    ).getOrElse(unit))
 
   def partialResult[R<:PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 

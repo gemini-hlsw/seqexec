@@ -14,9 +14,10 @@ import boopickle.DefaultBasic._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{StepExecuted, ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
 import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ExposurePaused, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.lenses.{sequenceViewT, sequenceStepT}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
@@ -475,6 +476,7 @@ object handlers {
     private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
     private val SequenceErrorAudio = new Audio("/sequenceerror.mp3")
     private val SequenceCompleteAudio = new Audio("/sequencecomplete.mp3")
+    private val StepBeepAudio = new Audio("/beep-22.mp3")
 
     // It is legal do put sequences of the other sites on the queue
     // but we don't know how to display them, so let's filter them out
@@ -491,6 +493,21 @@ object handlers {
     val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(ConnectionOpenEvent(u)) =>
         updated(value.copy(user = u))
+    }
+
+    val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(e @ StepExecuted(obsId, sv)) =>
+      val curStep =
+        for {
+            obs      <- sequenceViewT.find(_.id === obsId)(e)
+            curSIdx  <- obs.runningStep.map(_._1)
+            curStep  <- sequenceStepT.find(_.id === curSIdx)(obs)
+            if curStep.observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
+            if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
+          } yield curStep
+
+        val audioEffect = curStep.fold(VoidEffect)(_ => Effect(Future(StepBeepAudio.play()).map(_ => NoAction)))
+        updated(value.copy(sequences = filterSequences(sv)), audioEffect)
     }
 
     val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -595,6 +612,7 @@ object handlers {
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
       List(logMessage,
+        stepCompletedMessage,
         connectionOpenMessage,
         sequenceCompletedMessage,
         sequenceOnErrorMessage,
