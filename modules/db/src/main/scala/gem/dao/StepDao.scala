@@ -29,7 +29,7 @@ object StepDao {
 
   private implicit class ToMap[A](q: Query0[(Loc, A)]) {
     def toMap[B >: A]: ConnectionIO[TreeMap[Loc, B]] =
-      q.list.map(ps => TreeMap.fromList(ps.widen[(Loc, B)]))
+      q.to[List].map(ps => TreeMap.fromList(ps.widen[(Loc, B)]))
   }
 
   import Statements._
@@ -63,7 +63,7 @@ object StepDao {
     * @param oid observation whose steps should be selected
     */
   def selectAllEmpty(oid: Observation.Id): ConnectionIO[TreeMap[Loc, Step[Instrument]]] =
-    Statements.selectAllEmpty(oid).list.map(ps => TreeMap.fromList(ps))
+    Statements.selectAllEmpty(oid).to[List].map(ps => TreeMap.fromList(ps))
 
   /** Selects the step at the indicated location in the sequence associated with
     * the indicated observation.

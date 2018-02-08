@@ -31,13 +31,13 @@ object SmartGcalDao {
     } yield gcs
 
   def selectF2(k: SmartGcalKey.F2, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectF2ByLamp(k), Statements.selectF2ByBaseline(k)).list
+    t.fold(Statements.selectF2ByLamp(k), Statements.selectF2ByBaseline(k)).to[List]
 
   def selectGmosNorth(k: SmartGcalKey.GmosNorthSearch, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectGmosNorthByLamp(k), Statements.selectGmosNorthByBaseline(k)).list
+    t.fold(Statements.selectGmosNorthByLamp(k), Statements.selectGmosNorthByBaseline(k)).to[List]
 
   def selectGmosSouth(k: SmartGcalKey.GmosSouthSearch, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectGmosSouthByLamp(k), Statements.selectGmosSouthByBaseline(k)).list
+    t.fold(Statements.selectGmosSouthByLamp(k), Statements.selectGmosSouthByBaseline(k)).to[List]
 
   val createIndexF2: ConnectionIO[Int] =
     Statements.createIndexF2.run

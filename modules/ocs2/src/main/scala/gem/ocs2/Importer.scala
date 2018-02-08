@@ -19,7 +19,7 @@ object Importer extends DoobieClient {
 
   object datasets {
     def lookupStepIds(oid: Observation.Id): ConnectionIO[List[Int]] =
-      sql"SELECT step_id FROM step WHERE program_id = ${oid.pid} AND observation_index = ${oid.index} ORDER BY location".query[Int].list
+      sql"SELECT step_id FROM step WHERE program_id = ${oid.pid} AND observation_index = ${oid.index} ORDER BY location".query[Int].to[List]
 
     def tuples(sids: List[Int], ds: List[Dataset]): List[(Int, Dataset)] = {
       val sidMap = sids.zipWithIndex.map(_.swap).toMap

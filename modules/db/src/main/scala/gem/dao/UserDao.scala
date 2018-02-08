@@ -49,7 +49,7 @@ object UserDao {
    * @group Queries
    */
   def selectRoles(id: User.Id): ConnectionIO[Map[Program.Id, Set[ProgramRole]]] =
-    Statements.selectRoles(id).list.map(_.foldMap { case (k, v) => Map((k -> Set(v))) })
+    Statements.selectRoles(id).to[List].map(_.foldMap { case (k, v) => Map((k -> Set(v))) })
 
   /**
    * Insert or update a program role.

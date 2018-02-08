@@ -53,7 +53,7 @@ final case class EnumMetadata[A](attrs: Metadata.Attrs, values: NonEmptyList[A])
   }
 
   override val read: String => String \/ A = (s: String) =>
-    values.list.find(v => show(v) === s) \/> s"${attrs.label} `$s` not recognized"
+    values.to[List].find(v => show(v) === s) \/> s"${attrs.label} `$s` not recognized"
 }
 
 object EnumMetadata {

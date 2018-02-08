@@ -43,7 +43,7 @@ object UserTargetDao {
     targetsQuery: Query0[(Int, ProtoUserTarget)]
   ): ConnectionIO[List[(Observation.Index, (Int, UserTarget))]] =
     for {
-      puts <- targetsQuery.list                                  // List[(Int, ProtoUserTarget)]
+      puts <- targetsQuery.to[List]                                  // List[(Int, ProtoUserTarget)]
       ots  <- puts.map(_._2.targetId).traverse(TargetDao.select) // List[Option[Target]]
     } yield puts.zip(ots).flatMap { case ((id, put), ot) =>
       ot.map(t => (put.oi, (id, UserTarget(t, put.targetType)))).toList

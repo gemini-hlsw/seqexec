@@ -22,7 +22,7 @@ object DatasetDao {
 
   /** Select all datasets (if any) for the specified observation, ordered by index. */
   def selectAll(oid: Observation.Id): ConnectionIO[List[Dataset]] =
-    Statements.selectAll(oid).list
+    Statements.selectAll(oid).to[List]
 
   object Statements {
 
