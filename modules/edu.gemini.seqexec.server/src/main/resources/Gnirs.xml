@@ -21,7 +21,7 @@
             </parameter>
             <parameter name="focus">
                 <channel>cc:focusStepsCad.A</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Focus</description>
             </parameter>
             <parameter name="tilt">

@@ -26,8 +26,8 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     val filter2: Option[CaParameter[String]] = cs.map(_.getString("filter2"))
     def setFilter2(v: String): SeqAction[Unit] = setParameter(filter2, v)
 
-    val focus: Option[CaParameter[String]] = cs.map(_.getString("focus"))
-    def setFocus(v: String): SeqAction[Unit] = setParameter(focus, v)
+    val focus: Option[CaParameter[Integer]] = cs.map(_.getInteger("focus"))
+    def setFocus(v: Int): SeqAction[Unit] = setParameter(focus, Integer.valueOf(v))
 
     val tilt: Option[CaParameter[String]] = cs.map(_.getString("tilt"))
     def setTilt(v: String): SeqAction[Unit] = setParameter(tilt, v)
