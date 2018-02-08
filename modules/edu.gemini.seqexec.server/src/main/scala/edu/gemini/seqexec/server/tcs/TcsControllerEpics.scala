@@ -201,6 +201,7 @@ object TcsControllerEpics extends TcsController {
       Model.Instrument.GmosS -> SFInstName("gmos"),
       Model.Instrument.GmosN -> SFInstName("gmos"),
       Model.Instrument.GSAOI -> SFInstName("gsaoi"),
+      Model.Instrument.GNIRS -> SFInstName("gnirs"),
       Model.Instrument.F2    -> SFInstName("f2"),
       Model.Instrument.GPI   -> SFInstName("gpi")
     )
@@ -369,8 +370,8 @@ object TcsControllerEpics extends TcsController {
 
   private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.instance.m2GuideCmd.setState(encode(c))
 
-  private val tcsTimeout = Seconds(30)
-  private val agTimeout = Seconds(30)
+  private val tcsTimeout = Seconds(60)
+  private val agTimeout = Seconds(60)
 
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tcs: TcsConfig): SeqAction[Unit] = {
     def configSubsystem(subsystem: Subsystem): SeqAction[Unit] = subsystem match {

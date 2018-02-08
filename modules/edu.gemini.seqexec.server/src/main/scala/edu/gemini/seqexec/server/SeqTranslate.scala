@@ -243,7 +243,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _      => Event.nullEvent
   }
 
-  // This code assumes that if an instrument can not stop a running exposure, it cannot stop a paused one either.
   def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
@@ -253,7 +252,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     deliverObserveCmd(seqState, f).orElse(stopPaused(seqId)(seqState))
   }
 
-  // This code assumes that if an instrument can not abort a running exposure, it cannot abort a paused one either.
   def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
@@ -349,6 +347,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
+
   }
 
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),

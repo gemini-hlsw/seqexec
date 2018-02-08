@@ -100,9 +100,10 @@
                 <description>Low Noise Rds</description>
             </parameter>
             <parameter name="exposureTime">
-                <channel>dc:obsSetup.G</channel>
+                <channel>dc:integTime.VAL</channel>
                 <type>DOUBLE</type>
                 <description>Exposure Time</description>
+                <isCAD>false</isCAD>
             </parameter>
             <parameter name="wcs">
                 <channel>dc:setWcs.A</channel>
@@ -120,9 +121,10 @@
                 <description>Detector Bias</description>
             </parameter>
             <parameter name="coadds">
-                <channel>dc:obsSetup.E</channel>
-                <type>INTEGER</type>
+                <channel>dc:coadds.VAL</channel>
+                <type>DOUBLE</type>
                 <description>numcoadds</description>
+                <isCAD>false</isCAD>
             </parameter>
         </command>
         <command name="nirs::endObserve">

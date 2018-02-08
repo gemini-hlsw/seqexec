@@ -11,7 +11,7 @@ import edu.gemini.seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Othe
 import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
-import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_KEY, DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
@@ -53,10 +53,10 @@ object Gnirs {
   val name: String = INSTRUMENT_NAME_PROP
 
   def extractExposureTime(config: Config): ExtractFailure\/Time =
-    config.extract(EXPOSURE_TIME_KEY).as[java.lang.Double].map(_.toDouble.seconds)
+    config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
 
   def extractCoadds(config: Config): ExtractFailure\/Int =
-    config.extract(INSTRUMENT_KEY / COADDS_PROP).as[java.lang.Integer].map(_.toInt)
+    config.extract(OBSERVE_KEY / COADDS_PROP).as[java.lang.Integer].map(_.toInt)
 
   def fromSequenceConfig(config: Config): TrySeq[GnirsController.GnirsConfig] =
     (getCCConfig(config) |@| getDCConfig(config))(GnirsController.GnirsConfig(_, _))
