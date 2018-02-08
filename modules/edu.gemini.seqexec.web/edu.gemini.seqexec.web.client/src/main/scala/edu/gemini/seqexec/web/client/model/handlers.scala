@@ -23,7 +23,7 @@ import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio, Beep}
+import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 
 import org.scalajs.dom._
@@ -476,6 +476,7 @@ object handlers {
     private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
     private val SequenceErrorAudio = new Audio("/sequenceerror.mp3")
     private val SequenceCompleteAudio = new Audio("/sequencecomplete.mp3")
+    private val StepBeepAudio = new Audio("/beep-22.mp3")
 
     // It is legal do put sequences of the other sites on the queue
     // but we don't know how to display them, so let's filter them out
@@ -504,7 +505,8 @@ object handlers {
             if curStep.observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
             if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
           } yield curStep
-        val audioEffect = curStep.fold(VoidEffect)(_ => Effect(Future(Beep.beep()).map(_ => NoAction)))
+
+        val audioEffect = curStep.fold(VoidEffect)(_ => Effect(Future(StepBeepAudio.play()).map(_ => NoAction)))
         updated(value.copy(sequences = filterSequences(sv)), audioEffect)
     }
 
