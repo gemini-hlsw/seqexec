@@ -18,7 +18,6 @@ import scalacss.ScalaCssReact._
 import scalaz.Equal
 import scalaz.syntax.order._
 import scalaz.syntax.show._
-import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 import scalaz.std.anyVal._
 
@@ -70,10 +69,10 @@ object OffsetFns {
     def sequenceOffsetWidths: (Int, Int) = sequenceOffsetWidthsF(steps)
     def areNonZeroOffsets: Boolean = areNonZeroOffsetsF(steps)
     // Find out if offsets should be displayed
-    def offsetsDisplay: OffsetsDisplay = steps.areNonZeroOffsets.fold( {
+    def offsetsDisplay: OffsetsDisplay = {
       val (p, q) = steps.sequenceOffsetWidths
       OffsetsDisplay.DisplayOffsets(scala.math.max(p, q))
-    }, OffsetsDisplay.NoDisplay)
+    }
   }
 }
 
