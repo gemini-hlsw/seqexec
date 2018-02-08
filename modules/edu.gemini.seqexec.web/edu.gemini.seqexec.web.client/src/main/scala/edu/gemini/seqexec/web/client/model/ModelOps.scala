@@ -23,15 +23,6 @@ object ModelOps {
     case SequenceState.Failed(_)        => s"Error at step "
   }
 
-  implicit val stepStateShow: Show[StepState] = Show.shows[StepState] {
-    case StepState.Pending     => "Pending"
-    case StepState.Completed   => "Done"
-    case StepState.Skipped     => "Skipped"
-    case StepState.Failed(msg) => s"Error $msg"
-    case StepState.Running     => "Running"
-    case StepState.Paused      => "Paused"
-  }
-
   implicit val stepShow: Show[Step] = Show.shows[Step] { s =>
     s.status match {
       case StepState.Pending                      => "Pending"

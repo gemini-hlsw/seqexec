@@ -31,14 +31,15 @@ import scalaz.syntax.show._
 object CopyLogToClipboard {
   private val component = ScalaComponent.builder[String]("CopyLogToClipboard")
     .stateless
-    .render_PS { (p, s) =>
+    .render_P { p =>
       // Callback
-      val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $s")
+      val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $p")
       CopyToClipboard(CopyToClipboard.props(p, onCopy = onCopy), <.div(^.cls := "copydiv", IconCopy.copyIcon(link = true, extraStyles = List(SeqexecStyles.logIconRow))))
     }.build
 
   def apply(p: String): Unmounted[String, Unit, Unit] = component(p)
 }
+
 /**
   * Area to display a sequence's log
   */
@@ -59,7 +60,7 @@ object LogArea {
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(local: String, timestamp: Instant, level: ServerLogLevel, msg: String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
-      p.local =local
+      p.local = local
       p.timestamp = timestamp
       p.level = level
       p.msg = msg
@@ -131,7 +132,7 @@ object LogArea {
       case LogRow(_, ServerLogLevel.INFO, _, _)  => SeqexecStyles.infoLog
       case LogRow(_, ServerLogLevel.WARN, _, _)  => SeqexecStyles.warningLog
       case LogRow(_, ServerLogLevel.ERROR, _, _) => SeqexecStyles.errorLog
-      case _                                     => SeqexecStyles.logRow
+      case _                                     => SeqexecStyles.headerRowStyle
     }).htmlClass
 
     Table(
@@ -143,15 +144,15 @@ object LogArea {
             ^.height := 270.px,
             "No log entries"
           ),
-        overscanRowCount = 10,
+        overscanRowCount = SeqexecStyles.overscanRowCount,
         height = 200,
         rowCount = p.rowCount(s),
-        rowHeight = 30,
+        rowHeight = SeqexecStyles.rowHeight,
         rowClassName = rowClassName(s) _,
         width = size.width.toInt,
         rowGetter = p.rowGetter(s) _,
-        headerClassName = SeqexecStyles.logTableHeader.htmlClass,
-        headerHeight = 37),
+        headerClassName = SeqexecStyles.tableHeader.htmlClass,
+        headerHeight = SeqexecStyles.headerHeight),
       columns: _*).vdomElement
   }
 
@@ -163,6 +164,7 @@ object LogArea {
     .renderPS { ($, p, s) =>
       <.div(
         ^.cls := "ui sixteen wide column",
+        SeqexecStyles.logSegment,
         <.div(
           ^.cls := "ui secondary segment",
           <.div(

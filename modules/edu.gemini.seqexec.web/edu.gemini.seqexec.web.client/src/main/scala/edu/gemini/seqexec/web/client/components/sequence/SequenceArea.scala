@@ -11,7 +11,7 @@ import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
-import edu.gemini.seqexec.web.client.components.sequence.steps.StepsTableContainer
+import edu.gemini.seqexec.web.client.components.sequence.steps.StepsTable
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
@@ -35,29 +35,22 @@ object SequenceStepsTableContainer {
   def updateStepToRun(step: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.set(State(step)).liftCB
 
+  def toolbar(p: Props): VdomElement =
+    p.p().stepConfigDisplayed.fold{
+      <.div(
+        SequenceDefaultToolbar(p).when(p.p().isLogged),
+        SequenceAnonymousToolbar(p.site, p.p().instrument).unless(p.p().isLogged)
+      ): VdomElement
+    }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, p.p().id, s)))
+
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
     .initialState(State(0))
     .renderP { ($, p) =>
       <.div(
-        p.p().stepConfigDisplayed.fold{
-          if (p.p().isLogged) {
-            SequenceDefaultToolbar(p): VdomElement
-          } else {
-            SequenceAnonymousToolbar(p.site, p.p().instrument): VdomElement
-          }
-        }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, p.p().id, s))),
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "ui row",
-              SeqexecStyles.lowerRow,
-              <.div(
-                ^.cls := "ui sixteen wide column",
-                p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
-                    StepsTableContainer(StepsTableContainer.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
-              )
-            )
-          )
+        ^.height := "100%",
+        toolbar(p),
+        p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
+            StepsTable(StepsTable.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
       )
     }.build
 
@@ -85,7 +78,7 @@ object SequenceTabContent {
         ),
         dataTab := instrument.shows,
         SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
-        SeqexecStyles.instrumentTabSegment,
+        SeqexecStyles.instrumentTabSegment.when(sequenceSelected),
         IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
         p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
       )
@@ -128,6 +121,7 @@ object SequenceArea {
     .render_P( p =>
       <.div(
         ^.cls := "ui sixteen wide column",
+        SeqexecStyles.sequencesArea,
         SequenceTabsBody(p.router, p.site)
       )
     ).build

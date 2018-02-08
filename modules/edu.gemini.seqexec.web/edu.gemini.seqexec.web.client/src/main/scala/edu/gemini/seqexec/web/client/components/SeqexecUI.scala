@@ -34,6 +34,7 @@ object AppTitle {
       <.div(
         ^.cls := "ui row",
         SeqexecStyles.shorterRow,
+        SeqexecStyles.notInMobile,
         <.h4(
           ^.cls := "ui horizontal divider header",
           s"Seqexec ${p.site.shows}",
@@ -74,8 +75,10 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
+            SeqexecStyles.queueAreaRow,
             <.div(
               ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
+              SeqexecStyles.queueArea,
               QueueTableSection(p.ctl)
             ),
             <.div(

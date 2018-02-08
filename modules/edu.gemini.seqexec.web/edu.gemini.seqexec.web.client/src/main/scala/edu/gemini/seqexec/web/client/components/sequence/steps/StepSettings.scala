@@ -3,22 +3,23 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{FPUMode, Guiding, Instrument, OffsetAxis, Step, TelescopeOffset}
+import edu.gemini.seqexec.model.Model.{FPUMode, Instrument, Step, StepType, StepState}
+import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import edu.gemini.seqexec.model.enumerations
+import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
-import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.lenses._
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
+import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.Size
-import edu.gemini.web.client.utils._
-import japgolly.scalajs.react.ScalazReact._
+import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import org.scalajs.dom.CanvasRenderingContext2D
-import org.scalajs.dom.html.Canvas
 
 import scalacss.ScalaCssReact._
+import scalacss.StyleA
 import scalaz.syntax.order._
 import scalaz.syntax.show._
 import scalaz.syntax.std.option._
@@ -26,115 +27,105 @@ import scalaz.std.anyVal._
 import scalaz.std.string._
 
 /**
-  * Component to draw a grid for the offsets using canvas
-  */
-object OffsetGrid {
-  private val Size = 33.0
-  final case class Props(p: TelescopeOffset.P, q: TelescopeOffset.Q)
-  final case class State(canvas: Option[Canvas])
-
-  private val ST = ReactS.Fix[State]
-
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  def render(props: Props, state: State): Callback = state.canvas.fold(Callback.empty) { c => Callback {
-    // The canvas API is very imperative and stateful but we are inside a Callback!
-    val ctx = c.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
-    c.width = Size.toInt
-    c.height = Size.toInt
-    // First quadrant
-    ctx.fillStyle = if (props.p > TelescopeOffset.P.Zero && props.q > TelescopeOffset.Q.Zero) "darkgray" else "white"
-    ctx.fillRect(0, 0, Size / 2, Size / 2)
-    // Second quadrant
-    ctx.fillStyle = if (props.p < TelescopeOffset.P.Zero && props.q > TelescopeOffset.Q.Zero) "darkgray" else "white"
-    ctx.fillRect(Size / 2, 0, Size / 2, Size / 2)
-    // Third quadrant
-    ctx.fillStyle = if (props.p < TelescopeOffset.P.Zero && props.q < TelescopeOffset.Q.Zero) "darkgray" else "white"
-    ctx.fillRect(Size / 2, Size / 2, Size / 2, Size / 2)
-    // Fourth quadrant
-    ctx.fillStyle = if (props.p > TelescopeOffset.P.Zero && props.q < TelescopeOffset.Q.Zero) "darkgray" else "white"
-    ctx.fillRect(0, Size / 2, Size / 2, Size / 2)
-    // Grid
-    ctx.fillStyle = "black"
-    // Outer border
-    ctx.strokeRect(0, 0, Size, Size)
-    // Inner borders
-    ctx.strokeRect(0, 0, Size / 2, Size / 2)
-    ctx.strokeRect(Size / 2, 0, Size / 2, Size / 2)
-    ctx.strokeRect(0, Size / 2, Size / 2, Size / 2)
-    ctx.strokeRect(Size/2, Size / 2, Size / 2, Size / 2)
-  }}
-
-  private val component = ScalaComponent.builder[Props]("OffsetGrid")
-    .initialState(State(None))
-    .render_P ( p =>
-      <.canvas(
-        SeqexecStyles.offsetGrid,
-        ^.width := Size.toInt.px,
-        ^.height := Size.toInt.px
-      )
-    ).componentWillReceiveProps { ctx =>
-    render(ctx.nextProps, ctx.state)
-  }.componentDidMount { ctx =>
-    // Grab a copy of the canvas
-    val state = State(Some(ctx.getDOMNode.domCast[Canvas]))
-    ctx.runState(ST.set(state)) >> render(ctx.props, state)
-  }.build
-
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
-
-}
-
-/**
- * Component to display the offset grid and offset values
+ * Component to display an icon for the state
  */
-object OffsetBlock {
-  final case class Props(s: Step, offsetWidth: Int)
-  private val component = ScalaComponent.builder[Props]("OffsetValues")
+object StepToolsCell {
+  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int, heightChangeCB: Int => Callback)
+
+  private val component = ScalaComponent.builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
-      val offsetP = telescopeOffsetPO.getOption(p.s).getOrElse(TelescopeOffset.P.Zero)
-      val offsetQ = telescopeOffsetQO.getOption(p.s).getOrElse(TelescopeOffset.Q.Zero)
-
       <.div(
-        <.div(
-          SeqexecStyles.inlineBlock,
-          OffsetGrid(OffsetGrid.Props(offsetP, offsetQ))
-        ),
-        <.div(
-          SeqexecStyles.inlineBlock,
-          <.div(
-            ^.cls := "right aligned",
-            <.div(
-              ^.width := pLabelWidth.px,
-              SeqexecStyles.inlineBlock,
-              offsetAxis(OffsetAxis.AxisP)
-            ),
-            <.div(
-              ^.width := p.offsetWidth.px,
-              SeqexecStyles.inlineBlock,
-              offsetValueFormat(offsetP)
-            )
-          ),
-          <.div(
-            ^.cls := "right aligned",
-              SeqexecStyles.inlineBlock,
-            <.div(
-              ^.width := qLabelWidth.px,
-              SeqexecStyles.inlineBlock,
-              offsetAxis(OffsetAxis.AxisQ)
-            ),
-            <.div(
-              ^.width := p.offsetWidth.px,
-              SeqexecStyles.inlineBlock,
-              offsetValueFormat(offsetQ)
-            )
-          )
-        )
+        SeqexecStyles.controlCell,
+        StepBreakStopCell(StepBreakStopCell.Props(p.clientStatus, p.focus, p.step, p.rowHeight, p.heightChangeCB)).when(p.clientStatus.isLogged),
+        StepIconCell(p)
       )
     }
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display an icon for the state
+ */
+object StepBreakStopCell {
+  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step, rowHeight: Int, heightChangeCB: Int => Callback) {
+    val steps: List[Step] = focus.steps
+  }
+
+  // Request a to flip the breakpoint
+  def flipBreakpoint(p: Props): Callback =
+    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.focus.id, p.step)) >> p.heightChangeCB(p.step.id))
+
+  // Request a to flip the skip
+  def flipSkipped(p: Props): Callback =
+    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipSkipStep(p.focus.id, p.step)))
+
+  private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
+
+  private val component = ScalaComponent.builder[Props]("StepIconCell")
+    .stateless
+    .render_P { p =>
+      val canSetBreakpoint = p.clientStatus.isLogged && p.step.canSetBreakpoint(p.step.id, firstRunnableIndex(p.steps))
+      val canSetSkipMark = p.clientStatus.isLogged && p.step.canSetSkipmark
+      <.div(
+        SeqexecStyles.gutterCell,
+        ^.height := p.rowHeight.px,
+        <.div(
+          SeqexecStyles.breakPointHandle,
+          ^.onClick --> flipBreakpoint(p),
+          Icon.IconRemove.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOffIcon)).when(p.step.breakpoint),
+          Icon.IconCaretDown.copyIcon(color = Some("grey"), fitted = true, extraStyles = List(SeqexecStyles.breakPointOnIcon)).unless(p.step.breakpoint)
+        ).when(canSetBreakpoint),
+        <.div(
+          SeqexecStyles.skipHandle,
+          ^.top := (p.rowHeight / 2 - SeqexecStyles.skipHandleHeight + 2).px,
+          IconPlusSquareOutline.copyIcon(link = true, onClick = flipSkipped(p)).when(p.step.skip),
+          IconMinusCircle.copyIcon(link = true, color = Some("orange"), onClick = flipSkipped(p)).unless(p.step.skip)
+        ).when(canSetSkipMark)
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display an icon for the state
+ */
+object StepIconCell {
+  private def stepIcon(p: StepToolsCell.Props): VdomNode =
+    p.step.status match {
+      case StepState.Completed                                => IconCheckmark
+      case StepState.Running                                  => IconCircleNotched.copyIcon(loading = true)
+      case StepState.Failed(_)                                => IconAttention
+      case StepState.Skipped                                  => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
+      case _ if p.step.skip                                   => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
+      case _ if p.focus.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
+      case _                                                  => iconEmpty
+    }
+
+  private def stepStyle(p: StepToolsCell.Props): StyleA =
+    p.step.status match {
+      case StepState.Running   => SeqexecStyles.runningIconCell
+      case StepState.Skipped   => SeqexecStyles.skippedIconCell
+      case StepState.Failed(_) => SeqexecStyles.errorCell
+      case _ if p.step.skip    => SeqexecStyles.skippedIconCell
+      case _                   => SeqexecStyles.iconCell
+    }
+
+  private val component = ScalaComponent.builder[StepToolsCell.Props]("StepIconCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        stepStyle(p),
+        stepIcon(p)
+      )
+    }
+    .build
+
+  def apply(p: StepToolsCell.Props): Unmounted[StepToolsCell.Props, Unit, Unit] = component(p)
 }
 
 /**
@@ -161,7 +152,6 @@ object FPUCell {
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
-        ^.cls := "left aligned",
         SeqexecStyles.componentLabel,
         fpuValue.getOrElse("Unknown"): String
       )
@@ -192,9 +182,7 @@ object FilterCell {
         filter  <- instrumentFilterO.getOption(p.s)
       } yield nameMapper.getOrElse(filter, filter)
 
-
       <.div(
-        ^.cls := "left aligned",
         SeqexecStyles.componentLabel,
         filter.getOrElse("Unknown"): String
       )
@@ -207,10 +195,10 @@ object FilterCell {
 /**
  * Component to display the exposure time and coadds
  */
-object ExposureTime {
+object ExposureTimeCell {
   final case class Props(s: Step, i: Instrument)
 
-  private val component = ScalaComponent.builder[Props]("ExposureTime")
+  private val component = ScalaComponent.builder[Props]("ExposureTimeCell")
     .stateless
     .render_P { p =>
       def formatExposureTime(e: Double): String = p.i match {
@@ -231,8 +219,6 @@ object ExposureTime {
       }
 
       <.div(
-        ^.cls := "center aligned",
-        SeqexecStyles.componentLabel,
         displayedText
       )
     }
@@ -242,24 +228,58 @@ object ExposureTime {
 }
 
 /**
- * Component to display the Guiding state of the step
- */
-object GuidingBlock {
-  final case class Props(s: Step)
-  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
-  private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
-  private val component = ScalaComponent.builder[Props]("OffsetValues")
+  * Component to display the step id
+  */
+object StepIdCell {
+  private val component = ScalaComponent.builder[Int]("StepIdCell")
     .stateless
     .render_P { p =>
-      val guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(p.s)
-
       <.div(
-        ^.cls := "center aligned",
-        guidingIcon.when(guiding),
-        noGuidingIcon.unless(guiding)
-      )
-    }
-    .build
+        s"${p + 1}")
+    }.build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+  def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
+}
+
+/**
+  * Component to link to the settings
+  */
+object SettingsCell {
+  private val component = ScalaComponent.builder[Int]("SettingsCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        SeqexecStyles.settingsCell,
+        IconCaretRight.copyIcon(fitted = true)
+      )
+    }.build
+
+  def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
+}
+
+/**
+  * Component to display the object type
+  */
+object ObjectTypeCell {
+  final case class Props(step: Step, size: Size)
+  private val component = ScalaComponent.builder[Props]("ObjectTypeCell")
+    .stateless
+    .render_P { p =>
+      <.div( // Column object type
+        stepTypeO.getOption(p.step).map { st =>
+          val stepTypeColor = st match {
+            case _ if p.step.status === StepState.Completed => "light gray"
+            case StepType.Object                            => "green"
+            case StepType.Arc                               => "violet"
+            case StepType.Flat                              => "grey"
+            case StepType.Bias                              => "teal"
+            case StepType.Dark                              => "black"
+            case StepType.Calibration                       => "blue"
+          }
+          Label(Label.Props(st.shows, color = stepTypeColor.some, size = p.size))
+        }.whenDefined
+      )
+    }.build
+
+  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }

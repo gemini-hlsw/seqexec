@@ -8,6 +8,7 @@ import java.util.logging.Logger
 import diode.data._
 import diode.react.ReactConnector
 import diode._
+import japgolly.scalajs.react.Callback
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
@@ -57,6 +58,8 @@ object circuit {
   object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
     type SearchResults = SequencesQueue[SequenceId]
     private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
+
+    def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
     // Model read-writers
     private val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =

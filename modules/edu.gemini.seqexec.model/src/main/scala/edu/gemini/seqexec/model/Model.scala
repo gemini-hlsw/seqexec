@@ -99,6 +99,7 @@ object Model {
   type ObservationName = String
   type TargetName = String
   val DaytimeCalibrationTargetName = "Daytime calibration"
+
   /**
     * A Seqexec resource represents any system that can be only used by one single agent.
     *
@@ -233,6 +234,8 @@ object Model {
     val fileId: Option[dhs.ImageFileId]
   }
   object Step {
+    val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
+
     implicit val equal: Equal[Step] = Equal.equalA[Step]
 
     implicit class StepOps(val s: Step) extends AnyVal {
@@ -255,8 +258,8 @@ object Model {
 
       def canSetSkipmark: Boolean = s.status match {
         case StepState.Pending | StepState.Paused => true
-        case _ if hasError                                            => true
-        case _                                                        => false
+        case _ if hasError                        => true
+        case _                                    => false
       }
 
       def hasError: Boolean = s.status match {
@@ -280,6 +283,8 @@ object Model {
       }
 
       def isFinished: Boolean = s.status === StepState.Completed || s.status === StepState.Skipped
+
+      def wasSkipped: Boolean = s.status === StepState.Skipped
 
     }
   }
