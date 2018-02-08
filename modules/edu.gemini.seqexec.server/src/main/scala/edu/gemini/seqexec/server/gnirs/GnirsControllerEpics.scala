@@ -22,9 +22,9 @@ object GnirsControllerEpics extends GnirsController {
   import GnirsController._
   import EpicsCodex._
 
-  private val epicsSys = GnirsEpics.instance
-  private val ccCmd = epicsSys.configCCCmd
-  private val dcCmd = epicsSys.configDCCmd
+  private def epicsSys = GnirsEpics.instance
+  private def ccCmd = epicsSys.configCCCmd
+  private def dcCmd = epicsSys.configDCCmd
 
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
     case ReadMode.VERY_BRIGHT => (1, 1)
