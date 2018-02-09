@@ -9,12 +9,14 @@ import edu.gemini.seqexec.server.{EpicsCodex, EpicsCommand, ObserveCommand, SeqA
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
 import org.log4s.getLogger
-import squants.{Seconds, Time}
+import squants.{Length, Seconds, Time}
+import squants.space.LengthConversions._
 import squants.electro.Millivolts
 
 import scalaz.concurrent.Task
 import scalaz._
 import Scalaz._
+import scala.math.abs
 
 object GnirsControllerEpics extends GnirsController {
   private val Log = getLogger
@@ -78,18 +80,20 @@ object GnirsControllerEpics extends GnirsController {
     case Filter1.PupilViewer => "PupilViewer"
   }
 
-  implicit val filter2Encoder: EncodeEpicsValue[Filter2, String] = EncodeEpicsValue {
-    case Filter2.H    => "H"
-    case Filter2.H2   => "H2"
-    case Filter2.J    => "J"
-    case Filter2.K    => "K"
-    case Filter2.L    => "L"
-    case Filter2.M    => "M"
-    case Filter2.Open => "Open"
-    case Filter2.PAH  => "PAH"
-    case Filter2.X    => "X"
-    case Filter2.XD   => "XD"
+  implicit val filter2Encoder: EncodeEpicsValue[Filter2Pos, String] = EncodeEpicsValue {
+    case Filter2Pos.H    => "H"
+    case Filter2Pos.H2   => "H2"
+    case Filter2Pos.J    => "J"
+    case Filter2Pos.K    => "K"
+    case Filter2Pos.L    => "L"
+    case Filter2Pos.M    => "M"
+    case Filter2Pos.Open => "Open"
+    case Filter2Pos.PAH  => "PAH"
+    case Filter2Pos.X    => "X"
+    case Filter2Pos.XD   => "XD"
   }
+
+  implicit val wavelEncoder: EncodeEpicsValue[Wavelength, Double] = EncodeEpicsValue(_.toNanometers)
 
   private def setAcquisitionMirror(mode: Mode): List[SeqAction[Unit]] = {
     val v = mode match {
@@ -158,12 +162,35 @@ object GnirsControllerEpics extends GnirsController {
     case s:Spectrography => setGrating(s, c) ++ setPrism(s, c)
   }
 
+  private def autoFilter(w: Length): GnirsController.Filter2Pos = {
+    val table = List(
+      GnirsController.Filter2Pos.X -> 1.17,
+      GnirsController.Filter2Pos.J -> 1.42,
+      GnirsController.Filter2Pos.H -> 1.86,
+      GnirsController.Filter2Pos.K -> 2.70,
+      GnirsController.Filter2Pos.L -> 4.30,
+      GnirsController.Filter2Pos.M -> 6.0
+    ).map{ case (f, w) => (f, w.nanometers) }
+
+    table.foldRight[GnirsController.Filter2Pos](GnirsController.Filter2Pos.XD){ case (t, v) => if(w < t._2) t._1 else v}
+  }
+
+  private def setFilter2(f: Filter2, w: Wavelength): List[SeqAction[Unit]] = {
+    val pos = f match {
+      case Manual(p) => p
+      case Auto      => autoFilter(w)
+    }
+    smartSetParam(encode(pos), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(pos)))
+
+  }
+
   private def setOtherCCParams(config: Other): List[SeqAction[Unit]] = {
     val open = "Open"
     val focus = "best focus"
+    val wavelengthTolerance = 0.0005
     val refocusParams = setAcquisitionMirror(config.mode) ++
       smartSetParam(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1))) ++
-      smartSetParam(encode(config.filter2), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(config.filter2))) ++
+      setFilter2(config.filter2, config.wavel) ++
       setSpectrographyComponents(config.mode, config.camera) ++
       smartSetParam(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
     // Force focus configuration if any of the above is set
@@ -173,7 +200,8 @@ object GnirsControllerEpics extends GnirsController {
       refocusParams ++
       focusSet ++
       config.slitWidth.map(sl => smartSetParam(encode(sl), epicsSys.slitWidth.map(removePartName), ccCmd.setSlitWidth(encode(sl)))).getOrElse(Nil) ++
-      smartSetParam(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker)))
+      smartSetParam(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker))) ++
+      smartSetDoubleParam(wavelengthTolerance)(encode(config.wavel), epicsSys.centralWavelength, ccCmd.setCentralWavelength(encode(config.wavel)))
 
   }
 
@@ -242,6 +270,8 @@ object GnirsControllerEpics extends GnirsController {
 
   private def smartSetParam[A: Equal](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =/= v.some) List(set) else Nil
+  private def smartSetDoubleParam(tolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get.map(x => abs(x - v) < tolerance).getOrElse(true)) List(set) else Nil
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)
