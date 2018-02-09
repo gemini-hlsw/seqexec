@@ -44,7 +44,7 @@ class GnirsHeader(hs: DhsClient, gnirsReader: GnirsKeywordReader, tcsReader: Tcs
 
   override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] =
     sendKeywords(id, inst, hs, List(
-      buildString(tcsReader.getUT.orDefault, "UTSTART"),
+      buildString(tcsReader.getUT.orDefault, "UTEND"),
       buildDouble(gnirsReader.getObsEpoch, "OBSEPOCH")
     ) )
 }
