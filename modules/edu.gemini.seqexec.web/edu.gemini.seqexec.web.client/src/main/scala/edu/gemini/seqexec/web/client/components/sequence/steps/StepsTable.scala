@@ -140,28 +140,28 @@ object StepsTable {
       SeqexecStyles.stepRow
   }).htmlClass
 
-  def rowHeight(p: Props)(i: Int): Int = (p.rowGetter(i), p.offsetsDisplay) match {
-    case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), OffsetsDisplay.DisplayOffsets(_)) =>
+  def displayOffsets(p: Props): Boolean =
+    p.stepsList.headOption.flatMap(stepTypeO.getOption) match {
+      case Some(StepType.Object) => true
+      case _                     => false
+    }
+
+  def rowHeight(p: Props)(i: Int): Int = p.rowGetter(i) match {
+    case StepRow(StandardStep(_, _, _, true, _, _, _, _)) if displayOffsets(p) =>
       HeightWithOffsets + BreakpointLineHeight
-    case (StepRow(s: Step), _) if s.status === StepState.Running                              =>
+    case StepRow(s: Step) if s.status === StepState.Running                    =>
       SeqexecStyles.runningRowHeight
-    case (_, OffsetsDisplay.DisplayOffsets(_))                                                =>
+    case _ if displayOffsets(p)                                                =>
       HeightWithOffsets
-    case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _)                                =>
+    case StepRow(StandardStep(_, _, _, true, _, _, _, _))                      =>
       SeqexecStyles.rowHeight + BreakpointLineHeight
-    case _                                                                                    =>
+    case _                                                                     =>
       SeqexecStyles.rowHeight
   }
 
   class Backend {
     private val PhoneCut = 412
     private val LargePhoneCut = 767
-
-    def displayOffsets(p: Props): Boolean =
-      p.stepsList.headOption.flatMap(stepTypeO.getOption) match {
-        case Some(StepType.Object) => true
-        case _                     => false
-      }
 
     // Columns for the table
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
