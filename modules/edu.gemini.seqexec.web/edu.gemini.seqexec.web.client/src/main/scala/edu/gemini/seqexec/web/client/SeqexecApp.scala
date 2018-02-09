@@ -5,6 +5,7 @@ package edu.gemini.seqexec.web.client
 
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
 import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
+import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.client.model.Pages
 import edu.gemini.seqexec.web.client.actions.Initialize
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
@@ -34,14 +35,15 @@ object SeqexecApp {
     System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def setupLogger: IO[Unit] = IO {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
     rootLogger.addHandler(new AjaxHandler(Level.INFO))
 
-    val log = Logger.getLogger("edu.gemini.seqexec.web.client.SeqexecApp")
-    log.info(s"Starting Seqexec Web Client version: ${OcsBuildInfo.version}")
+    SeqexecWebClient.start()
+    ()
   }
 
   def setupCss: IO[Unit] = IO {

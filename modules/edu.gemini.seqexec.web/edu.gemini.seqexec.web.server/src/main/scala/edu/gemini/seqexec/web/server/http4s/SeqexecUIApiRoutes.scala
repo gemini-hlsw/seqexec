@@ -65,7 +65,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
           case \/-(user) =>
             // Log who logged in
             // Note that the call to read a remoteAddr may do a DNS lookup
-            Task.delay(clientLog.info(s"User ${user.displayName} logged in from <${req.remoteHost.getOrElse("Unknown")}>")) *>
+            Task.delay(clientLog.info(s"${user.displayName} logged in from <${req.remoteHost.getOrElse("Unknown")}>")) *>
             // if successful set a cookie
             httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
@@ -81,16 +81,21 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
 
     }}
 
-  // Don't gzip log responses
-  val logService: HttpService = HttpService {
-    case req @ POST -> Root / "seqexec" / "log" =>
-      req.decode[LogMessage] { msg =>
-        // Always return ok
-        Task.delay(clientLog.info(s"Client ${req.remoteAddr}: ${msg.msg}")) *> Ok()
-      }
-  }
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
+      case auth @ POST -> Root / "seqexec" / "log" as user =>
+        auth.req.decode[LogMessage] { msg =>
+          val userName = user.fold(_ => "Anonymous", _.displayName)
+          // Always return ok
+          // Use remoteAddr to avoid an expensive DNS lookup
+          Task.delay(clientLog.info(s"$userName on <${auth.req.remoteAddr.getOrElse("Unknown")}>: ${msg.msg}")) *> Ok()
+        }
+
+      case auth @ POST -> Root / "seqexec" / "start" as user =>
+        val userName = user.fold(_ => "Anonymous", _.displayName)
+        // Always return ok
+        Task.delay(clientLog.info(s"$userName connected from <${auth.req.remoteHost.getOrElse("Unknown")}>")) *> Ok()
+
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping
         def anonymize(e: SeqexecEvent) = {
@@ -126,5 +131,5 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
         }
     }
 
-  def service: Service[Request, MaybeResponse] = publicService |+| TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices))) |+| logService
+  def service: Service[Request, MaybeResponse] = publicService |+| TokenRefresher(httpAuthentication, GZip(httpAuthentication.optAuth(protectedServices)))
 }
