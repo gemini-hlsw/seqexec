@@ -4,12 +4,6 @@
 .ReactVirtualized__Table__Grid {
 }
 
-.ReactVirtualized__Table__row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
 .ReactVirtualized__Table__headerTruncatedText {
   display: inline-block;
   max-width: 100%;

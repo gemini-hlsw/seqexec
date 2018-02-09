@@ -469,6 +469,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     mobileRow
   )
 
+  val row: StyleA = style("ReactVirtualized__Table__row")(
+    display.flex,
+    flexDirection.row,
+    alignItems.center,
+    &.hover(
+      backgroundColor(rgba(0, 0, 0, 0.05)),
+      color(rgba(0, 0, 0, 0.95))
+    )
+  )
+
   val headerRowStyle: StyleA = style(
     rowMixin,
     backgroundColor(c"#F9FAFB"),
