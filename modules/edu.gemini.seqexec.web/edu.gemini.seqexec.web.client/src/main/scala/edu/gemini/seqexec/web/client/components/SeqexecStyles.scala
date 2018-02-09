@@ -570,7 +570,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val iconCell: StyleA = style(
-    iconCellMixin
+    iconCellMixin,
+    paddingBottom(8.px)
   )
 
   val runningIconCell: StyleA = style(
