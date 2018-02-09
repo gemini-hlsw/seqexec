@@ -6,7 +6,7 @@ package edu.gemini.seqexec.server.gnirs
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.gnirs.GnirsController.GnirsConfig
 import edu.gemini.seqexec.server.{ObserveCommand, SeqAction}
-import squants.Time
+import squants.{Length, Time}
 
 import scalaz.Show
 //scalastyle:off
@@ -51,6 +51,8 @@ object GnirsController {
 
   type ExposureTime = Time
 
+  type Wavelength = Length
+
   sealed trait Filter1
   object Filter1 {
     case object Open extends Filter1
@@ -61,19 +63,23 @@ object GnirsController {
     case object PupilViewer extends Filter1
   }
 
-  sealed trait Filter2
-  object Filter2 {
-    case object Open extends Filter2
-    case object H extends Filter2
-    case object J extends Filter2
-    case object K extends Filter2
-    case object L extends Filter2
-    case object M extends Filter2
-    case object X extends Filter2
-    case object XD extends Filter2
-    case object H2 extends Filter2
-    case object PAH extends Filter2
+  sealed trait Filter2Pos
+  object Filter2Pos {
+    case object Open extends Filter2Pos
+    case object H extends Filter2Pos
+    case object J extends Filter2Pos
+    case object K extends Filter2Pos
+    case object L extends Filter2Pos
+    case object M extends Filter2Pos
+    case object X extends Filter2Pos
+    case object XD extends Filter2Pos
+    case object H2 extends Filter2Pos
+    case object PAH extends Filter2Pos
   }
+
+  sealed trait Filter2
+  case object Auto extends Filter2
+  final case class Manual(f: Filter2Pos) extends Filter2
 
   type ReadMode = edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 
@@ -111,6 +117,7 @@ object GnirsController {
                          decker: Decker,
                          filter1: Filter1,
                          filter2: Filter2,
+                         wavel: Wavelength,
                          slitWidth: Option[SlitWidth]
                         ) extends CCConfig
 

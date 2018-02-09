@@ -15,7 +15,7 @@ import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, BIAS_OBSERVE
 import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
-import squants.{Length, Time}
+import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
@@ -84,10 +84,11 @@ object Gnirs {
     slitOp = getSlit(slit)
     camera <- config.extract(INSTRUMENT_KEY / CAMERA_PROP).as[Camera]
     decker <- getDecker(config, slit, woll, xdisp)
+    wavel  <- config.extract(INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).as[Wavelength].map(_.doubleValue().nanometers)
     filter <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter].toOption.right
     filter1 = getFilter1(filter, slit, decker)
-    filter2 <- getFilter2(config, filter, xdisp)
-  } yield Other(mode, camera, decker, filter1, filter2, slitOp) )
+    filter2 = getFilter2(filter, xdisp)
+  } yield Other(mode, camera, decker, filter1, filter2, wavel, slitOp) )
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def getCCMode(config: Config, xdispersed: CrossDispersed, woll: WollastonPrism): ConfigUtilOps.ExtractFailure\/GnirsController.Mode = for {
@@ -133,38 +134,24 @@ object Gnirs {
       case _                                            => GnirsController.Filter1.Open
     }.getOrElse(GnirsController.Filter1.Open)
 
-
-  private def autoFilter(w: Length): GnirsController.Filter2 = {
-    val table = List(
-      GnirsController.Filter2.X -> 1.17,
-      GnirsController.Filter2.J -> 1.42,
-      GnirsController.Filter2.H -> 1.86,
-      GnirsController.Filter2.K -> 2.70,
-      GnirsController.Filter2.L -> 4.30,
-      GnirsController.Filter2.M -> 6.0
-    ).map{ case (f, w) => (f, w.nanometers) }
-
-    table.foldRight[GnirsController.Filter2](GnirsController.Filter2.XD){ case (t, v) => if(w < t._2) t._1 else v}
-  }
-
-  private def getFilter2(config: Config, filter: Option[Filter], xdisp: CrossDispersed): ConfigUtilOps.ExtractFailure\/GnirsController.Filter2 =
+  private def getFilter2(filter: Option[Filter], xdisp: CrossDispersed): GnirsController.Filter2 =
     filter.map{
-      case Filter.ORDER_1        => GnirsController.Filter2.M
-      case Filter.ORDER_2        => GnirsController.Filter2.L
-      case Filter.ORDER_3        => GnirsController.Filter2.K
-      case Filter.ORDER_4        => GnirsController.Filter2.H
-      case Filter.ORDER_5        => GnirsController.Filter2.J
-      case Filter.ORDER_6        => GnirsController.Filter2.X
-      case Filter.X_DISPERSED    => GnirsController.Filter2.XD
-      case Filter.H2             => GnirsController.Filter2.H2
-      case Filter.H_plus_ND100X  => GnirsController.Filter2.H
-      case Filter.H2_plus_ND100X => GnirsController.Filter2.H2
-      case Filter.PAH            => GnirsController.Filter2.PAH
-      case _                     => GnirsController.Filter2.Open
-    }.map(_.right).getOrElse {
+      case Filter.ORDER_1        => GnirsController.Filter2Pos.M
+      case Filter.ORDER_2        => GnirsController.Filter2Pos.L
+      case Filter.ORDER_3        => GnirsController.Filter2Pos.K
+      case Filter.ORDER_4        => GnirsController.Filter2Pos.H
+      case Filter.ORDER_5        => GnirsController.Filter2Pos.J
+      case Filter.ORDER_6        => GnirsController.Filter2Pos.X
+      case Filter.X_DISPERSED    => GnirsController.Filter2Pos.XD
+      case Filter.H2             => GnirsController.Filter2Pos.H2
+      case Filter.H_plus_ND100X  => GnirsController.Filter2Pos.H
+      case Filter.H2_plus_ND100X => GnirsController.Filter2Pos.H2
+      case Filter.PAH            => GnirsController.Filter2Pos.PAH
+      case _                     => GnirsController.Filter2Pos.Open
+    }.map(GnirsController.Manual).getOrElse {
       if (xdisp === CrossDispersed.NO)
-        config.extract(INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).as[Wavelength].map(_.doubleValue().nanometers).map(autoFilter)
-      else GnirsController.Filter2.XD.right
+        GnirsController.Auto
+      else GnirsController.Manual(GnirsController.Filter2Pos.XD)
     }
 
   private def getSlit(slit: SlitWidth): Option[GnirsController.SlitWidth] = slit match {
