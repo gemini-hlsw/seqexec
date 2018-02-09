@@ -3,15 +3,17 @@
 
 package gem
 
-import cats.tests.CatsSuite
-
 import cats.kernel.laws.discipline._
+import cats.tests.CatsSuite
 import gem.arb._
+import gem.enum.Instrument
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class TargetEnvironmentSpec extends CatsSuite {
   import ArbTargetEnvironment._
 
   // laws
-  checkAll("TargetEnvironment", EqTests[TargetEnvironment].eqv)
+  Instrument.all.foreach { i =>
+    checkAll(s"TargetEnvironment[$i.type]", EqTests[TargetEnvironment.Aux[i.type]].eqv)
+  }
 }

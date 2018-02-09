@@ -52,7 +52,7 @@ object Asterism {
       Eq.fromUniversalEquals
   }
 
-  implicit val EqAsterism: Eq[Asterism] =
+  implicit def EqAsterism[I]: Eq[Asterism.Aux[I]] =
     Eq.fromUniversalEquals
 
 }

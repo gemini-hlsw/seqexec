@@ -24,9 +24,9 @@ trait ArbAsterism {
       t2 <- arbitrary[Target]
     } yield Asterism.GhostDualTarget(t1, t2)
 
-  def genAsterism[I <: Instrument with Singleton](i: I): Gen[Asterism] =
+  def genAsterism[I <: Instrument with Singleton](i: I): Gen[Asterism.Aux[I]] =
     i match {
-      case Instrument.Ghost => genGhostDualTarget
+      case Instrument.Ghost => genGhostDualTarget.asInstanceOf[Gen[Asterism.Aux[I]]] // GADT fail
       case _                => genSingleTarget(i)
     }
 
@@ -34,11 +34,11 @@ trait ArbAsterism {
     Arbitrary {
       for {
         i <- arbitrary[Instrument]
-        a <- genAsterism(i)
+        a <- genAsterism(i): Gen[Asterism] // widening ascription necessary
       } yield a
     }
 
-  implicit def cogAsterism: Cogen[Asterism] =
+  implicit def cogAsterism[I <: Instrument with Singleton]: Cogen[Asterism.Aux[I]] =
     Cogen[(List[Target], Instrument)].contramap(a => (a.targets.toList, a.instrument))
 
 }

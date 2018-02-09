@@ -10,31 +10,28 @@ import gem.syntax.treesetcompanion._
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
-
 import scala.collection.immutable.TreeSet
+import shapeless.Witness
 
 trait ArbTargetEnvironment {
   import ArbAsterism._
   import ArbEnumerated._
   import ArbUserTarget._
 
-  implicit def arbTargetEnvironment: Arbitrary[TargetEnvironment] =
-    Arbitrary {
-      for {
-        i <- arbitrary[Instrument]
-        e <- genTargetEnvironment(i)
-      } yield e
-    }
+  implicit def arbTargetEnvironment[I <: Instrument with Singleton](
+    implicit w: Witness.Aux[I]
+  ): Arbitrary[TargetEnvironment.Aux[I]] =
+    Arbitrary { genTargetEnvironment(w.value) }
 
-  def genTargetEnvironment[I <: Instrument with Singleton](i: I): Gen[TargetEnvironment] =
+  def genTargetEnvironment[I <: Instrument with Singleton](i: I): Gen[TargetEnvironment.Aux[I]] =
     for {
-      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism])))
+      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism.Aux[I]])))
       n <- choose(0, 10)
       u <- listOfN(n, arbitrary[UserTarget]).map(us => TreeSet.fromList(us))
-    } yield TargetEnvironment(a, u)
+    } yield TargetEnvironment.Aux(a, u)
 
-  implicit val cogTargetEnvironment: Cogen[TargetEnvironment] =
-    Cogen[(Option[Asterism], List[UserTarget])].contramap(e => (e.asterism, e.userTargets.toList))
+  implicit def cogTargetEnvironment[I <: Instrument with Singleton]: Cogen[TargetEnvironment.Aux[I]] =
+    Cogen[(Option[Asterism.Aux[I]], List[UserTarget])].contramap(e => (e.asterism, e.userTargets.toList))
 
 }
 
