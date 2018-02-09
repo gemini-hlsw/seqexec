@@ -70,11 +70,12 @@ object ObservationDao {
   /** Construct a program to select a fully specified observation, with targets,
     * static config and steps.
     */
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   def select(id: Observation.Id): ConnectionIO[Observation.Full] =
     for {
       o <- selectConfig(id)
       t <- TargetEnvironmentDao.selectObs(id, o.targets)
-    } yield Observation.targetsFunctor.as(o, t)
+    } yield Observation.targetsFunctor.as(o, t).asInstanceOf[Observation.Full] // TODO: push this assertion lower
 
   /** Construct a program to select the all obseravation ids for the specified
     * science program.
@@ -130,12 +131,13 @@ object ObservationDao {
   /** Construct a program to select all observations for the specified science
     * program, with its targets, static component and steps.
     */
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation.Full]] =
     for {
       os <- selectAllConfig(pid)
       as  = os.values.toList.flatMap(_.targets.toList).toSet // All asterism types in the program
       ts <- TargetEnvironmentDao.selectProg(pid, as)
-    } yield merge(os, ts)
+    } yield merge(os, ts).asInstanceOf[TreeMap[Observation.Index, Observation.Full]] // todo: push down
 
   object Statements {
 

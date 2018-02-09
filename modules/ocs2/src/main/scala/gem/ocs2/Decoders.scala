@@ -208,7 +208,7 @@ object Decoders {
         s <- (n \! "sequence"                           ).decode[StaticConfig](StaticDecoder)
         d <- (n \! "sequence"                           ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
         e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.empty)(targetEnvironmentDecoder(s.instrument))
-      } yield Observation(t, e, s, d)
+      } yield Observation(t, e, s, d).asInstanceOf[Observation.Full]
     }
 
   implicit val ProgramDecoder: PioDecoder[Program[Observation.Full]] =

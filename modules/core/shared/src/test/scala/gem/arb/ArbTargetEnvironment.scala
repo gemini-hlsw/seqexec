@@ -18,14 +18,17 @@ trait ArbTargetEnvironment {
   import ArbEnumerated._
   import ArbUserTarget._
 
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def arbTargetEnvironment[I <: Instrument with Singleton](
     implicit w: Witness.Aux[I]
-  ): Arbitrary[TargetEnvironment.Aux[I]] =
-    Arbitrary { genTargetEnvironment(w.value) }
+  ): Arbitrary[TargetEnvironment.Aux[I]] = {
+    // we can't prive that I =:= w.T
+    Arbitrary { genTargetEnvironment(w.value).asInstanceOf[Gen[TargetEnvironment.Aux[I]]] }
+  }
 
-  def genTargetEnvironment[I <: Instrument with Singleton](i: I): Gen[TargetEnvironment.Aux[I]] =
+  def genTargetEnvironment(i: Instrument): Gen[TargetEnvironment.Aux[i.type]] =
     for {
-      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism.Aux[I]])))
+      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism.Aux[i.type]])))
       n <- choose(0, 10)
       u <- listOfN(n, arbitrary[UserTarget]).map(us => TreeSet.fromList(us))
     } yield TargetEnvironment.Aux(a, u)

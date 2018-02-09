@@ -3,13 +3,12 @@
 
 package gem
 
-import gem.config.{ StaticConfig, DynamicConfig }
-import gem.syntax.string._
-
-import mouse.boolean._
-
 import cats.{ Functor, Order, Show }
 import cats.implicits._
+import gem.config.{ StaticConfig, DynamicConfig }
+import gem.enum.Instrument
+import gem.syntax.string._
+import mouse.boolean._
 
 /**
  * An observation, parameterized over the types of its targets, static config
@@ -27,8 +26,19 @@ final case class Observation[+T, +S, +D](
 
 object Observation {
 
-  /** A fully specified observation. */
-  type Full = Observation[TargetEnvironment, StaticConfig, Step[DynamicConfig]]
+  /** A fully specified observation, with unknown instrument. */
+  type Full = Full.Aux[i.type] forSome { val i: Instrument }
+  object Full {
+
+    /** A fully specified observation, with the specified instrument. */
+    type Aux[I <: Instrument with Singleton] =
+      Observation[
+        TargetEnvironment.Aux[I],
+        StaticConfig.Aux[I],
+        Step[DynamicConfig.Aux[I]]
+      ]
+
+  }
 
   /** A positive, non-zero integer for use in ids. */
   sealed abstract case class Index(toShort: Short) {

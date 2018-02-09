@@ -48,28 +48,28 @@ trait Arbitraries extends gem.config.Arbitraries  {
 
   // Step and Sequence
 
-  def genBiasStepOf(i: Instrument): Gen[Step.Bias[DynamicConfig]] =
+  def genBiasStepOf(i: Instrument): Gen[Step.Bias[DynamicConfig.Aux[i.type]]] =
     genDynamicConfigOf(i).map(Step.Bias(_))
 
-  def genDarkStepOf(i: Instrument): Gen[Step.Dark[DynamicConfig]] =
+  def genDarkStepOf(i: Instrument): Gen[Step.Dark[DynamicConfig.Aux[i.type]]] =
     genDynamicConfigOf(i).map(Step.Dark(_))
 
-  def genGcalStepOf(i: Instrument): Gen[Step.Gcal[DynamicConfig]] =
+  def genGcalStepOf(i: Instrument): Gen[Step.Gcal[DynamicConfig.Aux[i.type]]] =
     for {
       d <- genDynamicConfigOf(i)
       g <- arbitrary[GcalConfig]
     } yield Step.Gcal(d, g)
 
-  def genScienceStepOf(i: Instrument): Gen[Step.Science[DynamicConfig]] =
+  def genScienceStepOf(i: Instrument): Gen[Step.Science[DynamicConfig.Aux[i.type]]] =
     genDynamicConfigOf(i).map(Step.Science(_, TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)))
 
-  def genSmartGcalStepOf(i: Instrument): Gen[Step.SmartGcal[DynamicConfig]] =
+  def genSmartGcalStepOf(i: Instrument): Gen[Step.SmartGcal[DynamicConfig.Aux[i.type]]] =
     for {
       d <- genDynamicConfigOf(i)
       s <- arbitrary[SmartGcalType]
     } yield Step.SmartGcal(d, s)
 
-  def genStepOf(i: Instrument): Gen[Step[DynamicConfig]] =
+  def genStepOf(i: Instrument): Gen[Step[DynamicConfig.Aux[i.type]]] =
     Gen.oneOf(
       genBiasStepOf(i),
       genDarkStepOf(i),
@@ -78,7 +78,7 @@ trait Arbitraries extends gem.config.Arbitraries  {
       genSmartGcalStepOf(i)
     )
 
-  def genSequenceOf(i: Instrument): Gen[List[Step[DynamicConfig]]] =
+  def genSequenceOf(i: Instrument): Gen[List[Step[DynamicConfig.Aux[i.type]]]] =
     for {
       n <- Gen.choose(0, 50)
       s <- Gen.listOfN(n, genStepOf(i))

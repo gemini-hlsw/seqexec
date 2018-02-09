@@ -125,7 +125,8 @@ trait Arbitraries {
   implicit val arbGnirsStatic =
     Arbitrary(arbitrary[GnirsWellDepth].map(StaticConfig.Gnirs(_)))
 
-  def genStaticConfigOf(i: Instrument): Gen[StaticConfig] =
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
+  def genStaticConfigOf(i: Instrument): Gen[StaticConfig.Aux[i.type]] = {
     i match {
       case AcqCam     => arbitrary[StaticConfig.AcqCam   ]
       case Bhros      => arbitrary[StaticConfig.Bhros    ]
@@ -144,6 +145,7 @@ trait Arbitraries {
       case Trecs      => arbitrary[StaticConfig.Trecs    ]
       case Visitor    => arbitrary[StaticConfig.Visitor  ]
     }
+  } .asInstanceOf[Gen[StaticConfig.Aux[i.type]]] // GADT fail
 
   implicit val arbAcqCamDynamic    = const(DynamicConfig.AcqCam()  )
   implicit val arbBhrosDynamic     = const(DynamicConfig.Bhros()   )
@@ -245,7 +247,8 @@ trait Arbitraries {
       } yield DynamicConfig.GmosSouth(c, g, f, u)
     }
 
-  def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] =
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
+  def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig.Aux[i.type]] = {
     i match {
       case AcqCam     => arbitrary[DynamicConfig.AcqCam   ]
       case Bhros      => arbitrary[DynamicConfig.Bhros    ]
@@ -264,6 +267,7 @@ trait Arbitraries {
       case Trecs      => arbitrary[DynamicConfig.Trecs    ]
       case Visitor    => arbitrary[DynamicConfig.Visitor  ]
     }
+  } .asInstanceOf[Gen[DynamicConfig.Aux[i.type]]]
 
 
   // GcalConfig
