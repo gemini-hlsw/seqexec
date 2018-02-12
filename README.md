@@ -45,6 +45,7 @@ To tests the javascript side you need to install node and jsdom. In OSX using `b
 ```
 brew install node
 npm install jsdom
+npm -g install yarn
 ```
 
 `node` should be at least on version `0.6.x`, check it with `node --version` once installed
