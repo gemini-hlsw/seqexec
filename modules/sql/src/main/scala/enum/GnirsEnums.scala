@@ -61,11 +61,6 @@ object GnirsEnums {
       EnumDef.fromQuery("GnirsWellDepth", "GNRIS Well Depth") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'bias_level -> Int`.T
         sql"""SELECT id, id tag, short_name, long_name, bias_level FROM e_gnirs_well_depth""".query[(String, R)]
-      },
-
-      EnumDef.fromQuery("GnirsWaveLengthSuggestion", "GNRIS Wavelength suggestion") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Wavelength.Um`.T
-        sql"""SELECT id, id tag, short_name, long_name, wavelength FROM e_gnirs_wavelength_suggestion""".query[(String, R)]
       }
 
     )
