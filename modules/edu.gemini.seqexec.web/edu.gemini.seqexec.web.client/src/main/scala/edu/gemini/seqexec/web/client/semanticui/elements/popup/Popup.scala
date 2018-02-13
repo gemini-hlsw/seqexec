@@ -20,7 +20,7 @@ object Popup {
   private val component = ScalaComponent.builder[Props]("Popup")
     .stateless
     .renderPC{($, p, c) =>
-      // This is slightly unsafe though in most case we'll be passing a ReactElement here
+      // This is in principle unsafe but we are only allowing Elements on the constructor
       VdomElement($.propsChildren.only().asInstanceOf[ReactElement])
     }
     .componentDidMount(ctx =>
@@ -35,5 +35,5 @@ object Popup {
       }
     ).build
 
-  def apply(p: Props, children: VdomNode): Unmounted[Props, Unit, Unit] = component(p)(children)
+  def apply(p: Props, children: VdomElement): Unmounted[Props, Unit, Unit] = component(p)(children)
 }
