@@ -389,8 +389,8 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public State onObserveCarValChange(CarStateGeneric carState) {
-            return new CaObserveSenderImpl.WaitStart(cm, clid, carState, carClid, observeCarState);
+        public State onObserveCarValChange(CarStateGeneric val) {
+            return new CaObserveSenderImpl.WaitStart(cm, clid, carState, carClid, val);
         }
 
         @Override
