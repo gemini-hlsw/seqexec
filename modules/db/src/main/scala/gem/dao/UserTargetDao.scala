@@ -26,30 +26,32 @@ object UserTargetDao {
   import EnumeratedMeta._
   import ObservationIdMeta._
 
-  def insert(oid: Observation.Id, userTarget: UserTarget): ConnectionIO[Int] =
+  def insert(oid: Observation.Id, userTarget: UserTarget): ConnectionIO[UserTarget.Id] =
     for {
       tid <- TargetDao.insert(userTarget.target)
-      uid <- Statements.insert(tid, userTarget.targetType, oid).withUniqueGeneratedKeys[Int]("id")
+      uid <- Statements.insert(tid, userTarget.targetType, oid)
+                       .withUniqueGeneratedKeys[Int]("id")
+                       .map(UserTarget.Id(_))
     } yield uid
 
   /** Selects the single `UserTarget` associated with the given id, if any. */
-  def select(id: Int): ConnectionIO[Option[UserTarget]] =
+  def select(id: UserTarget.Id): ConnectionIO[Option[UserTarget]] =
     for {
       oput <- Statements.select(id).option
       out  <- oput.fold(Option.empty[UserTarget].pure[ConnectionIO]) { _.toUserTarget }
     } yield out
 
   private def selectAll(
-    targetsQuery: Query0[(Int, ProtoUserTarget)]
-  ): ConnectionIO[List[(Observation.Index, (Int, UserTarget))]] =
+    targetsQuery: Query0[(UserTarget.Id, ProtoUserTarget)]
+  ): ConnectionIO[List[(Observation.Index, (UserTarget.Id, UserTarget))]] =
     for {
-      puts <- targetsQuery.to[List]                                  // List[(Int, ProtoUserTarget)]
+      puts <- targetsQuery.to[List]                              // List[(UserTarget.Id, ProtoUserTarget)]
       ots  <- puts.map(_._2.targetId).traverse(TargetDao.select) // List[Option[Target]]
     } yield puts.zip(ots).flatMap { case ((id, put), ot) =>
       ot.map(t => (put.oi, (id, UserTarget(t, put.targetType)))).toList
     }
 
-  private def toUserTargetSet(lst: List[(Int, UserTarget)]): TreeSet[UserTarget] =
+  private def toUserTargetSet(lst: List[(UserTarget.Id, UserTarget)]): TreeSet[UserTarget] =
     TreeSet.fromList(lst.unzip._2)
 
   /** Selects all `UserTarget`s for an observation.
@@ -60,7 +62,7 @@ object UserTargetDao {
   /** Selects all `UserTarget`s for an observation paired with the `UserTarget`
     * id itself.
     */
-  def selectObsWithId(oid: Observation.Id): ConnectionIO[List[(Int, UserTarget)]] =
+  def selectObsWithId(oid: Observation.Id): ConnectionIO[List[(UserTarget.Id, UserTarget)]] =
     selectAll(Statements.selectObs(oid)).map(_.unzip._2)
 
   /** Selects all `UserTarget`s for a program.
@@ -71,7 +73,7 @@ object UserTargetDao {
   /** Selects all `UserTarget`s for a program paired with the `UserTarget` id
     * itself.
     */
-  def selectProgWithId(pid: Program.Id): ConnectionIO[Map[Observation.Index, List[(Int, UserTarget)]]] =
+  def selectProgWithId(pid: Program.Id): ConnectionIO[Map[Observation.Index, List[(UserTarget.Id, UserTarget)]]] =
     selectAll(Statements.selectProg(pid)).map {
       _.groupBy(_._1).mapValues(_.unzip._2)
     }
@@ -99,7 +101,7 @@ object UserTargetDao {
         )
       """.update
 
-    def select(id: Int): Query0[ProtoUserTarget] =
+    def select(id: UserTarget.Id): Query0[ProtoUserTarget] =
       sql"""
         SELECT target_id,
                user_target_type,
@@ -108,7 +110,7 @@ object UserTargetDao {
          WHERE id = $id
       """.query[ProtoUserTarget]
 
-    def selectObs(oid: Observation.Id): Query0[(Int, ProtoUserTarget)] =
+    def selectObs(oid: Observation.Id): Query0[(UserTarget.Id, ProtoUserTarget)] =
       sql"""
         SELECT id,
                target_id,
@@ -116,9 +118,9 @@ object UserTargetDao {
                observation_index
           FROM user_target
          WHERE program_id = ${oid.pid} AND observation_index = ${oid.index}
-      """.query[(Int, ProtoUserTarget)]
+      """.query[(UserTarget.Id, ProtoUserTarget)]
 
-    def selectProg(pid: Program.Id): Query0[(Int, ProtoUserTarget)] =
+    def selectProg(pid: Program.Id): Query0[(UserTarget.Id, ProtoUserTarget)] =
       sql"""
         SELECT id,
                target_id,
@@ -126,7 +128,7 @@ object UserTargetDao {
                observation_index
           FROM user_target
          WHERE program_id = $pid
-      """.query[(Int, ProtoUserTarget)]
+      """.query[(UserTarget.Id, ProtoUserTarget)]
 
   }
 }

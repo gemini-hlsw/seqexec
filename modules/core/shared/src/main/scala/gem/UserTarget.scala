@@ -18,6 +18,15 @@ import monocle.macros.Lenses
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object UserTarget {
 
+  /** UserTarget identifier. */
+  final case class Id(toInt: Int) extends AnyVal
+
+  object Id {
+    /** Ids ordered by wrapped integer value. */
+    implicit val IdOrder: Order[Id] =
+      Order.by(_.toInt)
+  }
+
   implicit val OrderUserTarget: Order[UserTarget] =
     Order.by(u => (u.target, u.targetType))
 
