@@ -17,7 +17,7 @@ object UserTargetDao {
 
   // A target ID and the corresponding user target type.  We use the id to
   // get the actual target.
-  final case class ProtoUserTarget(targetId: Int, targetType: UserTargetType, oi: Observation.Index) {
+  final case class ProtoUserTarget(targetId: Target.Id, targetType: UserTargetType, oi: Observation.Index) {
 
     val toUserTarget: ConnectionIO[Option[UserTarget]] =
       TargetDao.select(targetId).map { _.map(UserTarget(_, targetType)) }
@@ -82,7 +82,7 @@ object UserTargetDao {
     import gem.dao.meta.ProgramIdMeta._
     import gem.dao.meta.ObservationIndexMeta._
 
-    def insert(targetId: Int, targetType: UserTargetType, oid: Observation.Id): Update0 =
+    def insert(targetId: Target.Id, targetType: UserTargetType, oid: Observation.Id): Update0 =
       sql"""
         INSERT INTO user_target (
           target_id,

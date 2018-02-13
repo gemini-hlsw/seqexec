@@ -4,6 +4,7 @@
 package gem.dao
 package check
 
+import gem.Target
 import gem.enum.Instrument
 
 class AsterismCheck extends Check {
@@ -11,11 +12,11 @@ class AsterismCheck extends Check {
   import AsterismDao.Statements._
 
   "AsterismDao.Statements" should
-            "SingleTarget.insert"    in check(SingleTarget.insert(Dummy.observationId, 0, Instrument.GmosS))
+            "SingleTarget.insert"    in check(SingleTarget.insert(Dummy.observationId, Target.Id(0), Instrument.GmosS))
   it should "SingleTarget.select"    in check(SingleTarget.select(Dummy.observationId))
   it should "SingleTarget.selectAll" in check(SingleTarget.selectAll(Dummy.programId))
 
-  it should "GhostDualTarget.insert"    in check(GhostDualTarget.insert(Dummy.observationId, 0, 0))
+  it should "GhostDualTarget.insert"    in check(GhostDualTarget.insert(Dummy.observationId, Target.Id(0), Target.Id(0)))
   it should "GhostDualTarget.select"    in check(GhostDualTarget.select(Dummy.observationId))
   it should "GhostDualTarget.selectAll" in check(GhostDualTarget.selectAll(Dummy.programId))
 }

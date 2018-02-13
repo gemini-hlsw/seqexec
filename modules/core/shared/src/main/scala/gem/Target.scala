@@ -16,6 +16,15 @@ import monocle.macros.Lenses
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Target {
 
+  /** Target identifier. */
+  final case class Id(toInt: Int) extends AnyVal
+
+  object Id {
+    /** Ids ordered by wrapped integer value. */
+    implicit val IdOrder: Order[Id] =
+      Order.by(_.toInt)
+  }
+
   /** A target order based on tracking information.  For sidereal targets this
     * roughly means by base coordinate without applying proper motion.  For
     * non-sidereal this means by `EphemerisKey`.

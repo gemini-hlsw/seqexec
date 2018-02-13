@@ -71,7 +71,7 @@ object AsterismDao {
     as.traverse(f).map { lst => TreeMap(lst.flatMap(_.toList): _*) }
 
   def selectAllSingleTarget(pid: Program.Id): AsterismMap = {
-    def toEntry(idx: Observation.Index, tid: Int, inst: Instrument): OptMapEntry =
+    def toEntry(idx: Observation.Index, tid: Target.Id, inst: Instrument): OptMapEntry =
       TargetDao.select(tid).map {
         _.map(idx -> Asterism.SingleTarget(_, inst))
       }
@@ -83,7 +83,7 @@ object AsterismDao {
   }
 
   def selectAllGhostDualTarget(pid: Program.Id): AsterismMap = {
-    def toEntry(idx: Observation.Index, tid0: Int, tid1: Int): OptMapEntry =
+    def toEntry(idx: Observation.Index, tid0: Target.Id, tid1: Target.Id): OptMapEntry =
       for {
         t0 <- TargetDao.select(tid0)
         t1 <- TargetDao.select(tid1)
@@ -104,7 +104,7 @@ object AsterismDao {
 
     object SingleTarget {
 
-      def insert(oid: Observation.Id, t: Int, i: Instrument): Update0 =
+      def insert(oid: Observation.Id, t: Target.Id, i: Instrument): Update0 =
         sql"""
           INSERT INTO single_target_asterism (
                         program_id,
@@ -121,28 +121,28 @@ object AsterismDao {
                       )
         """.update
 
-      def select(oid: Observation.Id): Query0[(Int, Instrument)] =
+      def select(oid: Observation.Id): Query0[(Target.Id, Instrument)] =
         sql"""
           SELECT target_id,
                  instrument
             FROM single_target_asterism
            WHERE program_id        = ${oid.pid}
              AND observation_index = ${oid.index}
-        """.query[(Int, Instrument)]
+        """.query[(Target.Id, Instrument)]
 
-      def selectAll(pid: Program.Id): Query0[(Observation.Index, Int, Instrument)] =
+      def selectAll(pid: Program.Id): Query0[(Observation.Index, Target.Id, Instrument)] =
         sql"""
           SELECT observation_index,
                  target_id,
                  instrument
             FROM single_target_asterism
            WHERE program_id = $pid
-        """.query[(Observation.Index, Int, Instrument)]
+        """.query[(Observation.Index, Target.Id, Instrument)]
     }
 
     object GhostDualTarget {
 
-      def insert(oid: Observation.Id, t0: Int, t1: Int): Update0 =
+      def insert(oid: Observation.Id, t0: Target.Id, t1: Target.Id): Update0 =
         sql"""
           INSERT INTO ghost_dual_target_asterism (
                         program_id,
@@ -161,23 +161,23 @@ object AsterismDao {
                       )
         """.update
 
-      def select(oid: Observation.Id): Query0[(Int, Int)] =
+      def select(oid: Observation.Id): Query0[(Target.Id, Target.Id)] =
         sql"""
           SELECT target1_id,
                  target2_id
             FROM ghost_dual_target_asterism
            WHERE program_id        = ${oid.pid}
              AND observation_index = ${oid.index}
-        """.query[(Int, Int)]
+        """.query[(Target.Id, Target.Id)]
 
-      def selectAll(pid: Program.Id): Query0[(Observation.Index, Int, Int)] =
+      def selectAll(pid: Program.Id): Query0[(Observation.Index, Target.Id, Target.Id)] =
         sql"""
           SELECT observation_index,
                  target1_id,
                  target2_id
             FROM ghost_dual_target_asterism
            WHERE program_id = $pid
-        """.query[(Observation.Index, Int, Int)]
+        """.query[(Observation.Index, Target.Id, Target.Id)]
 
     }
 

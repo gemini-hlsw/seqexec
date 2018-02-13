@@ -21,16 +21,18 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
   implicit val MetaTrackType: Meta[TrackType] =
     pgEnumString("e_track_type", TrackType.unsafeFromTag, _.tag)
 
-  def select(id: Int): ConnectionIO[Option[Target]] =
+  def select(id: Target.Id): ConnectionIO[Option[Target]] =
     Statements.select(id).option
 
-  def insert(target: Target): ConnectionIO[Int] =
-    Statements.insert(target).withUniqueGeneratedKeys[Int]("id")
+  def insert(target: Target): ConnectionIO[Target.Id] =
+    Statements.insert(target)
+              .withUniqueGeneratedKeys[Int]("id")
+              .map(Target.Id(_))
 
-  def update(id: Int, target: Target): ConnectionIO[Int] =
+  def update(id: Target.Id, target: Target): ConnectionIO[Int] =
     Statements.update(id, target).run
 
-  def delete(id: Int): ConnectionIO[Int] =
+  def delete(id: Target.Id): ConnectionIO[Int] =
     Statements.delete(id).run
 
   object Statements {
@@ -63,7 +65,7 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
          Declination.fromStringSignedDMS.reverseGet(cs.dec))
       }
 
-    def select(id: Int): Query0[Target] =
+    def select(id: Target.Id): Query0[Target] =
       sql"""
         SELECT name, track_type,
                e_key_type, e_key,                     -- ephemeris key
@@ -87,7 +89,7 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
            )
       ).update
 
-    def update(id: Int, target: Target): Update0 =
+    def update(id: Target.Id, target: Target): Update0 =
       (fr"""UPDATE target
             SET (name, track_type,
                  e_key_type, e_key,                     -- ephemeris key
@@ -102,7 +104,7 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
       ) ++
        fr"WHERE id = $id").update
 
-    def delete(id: Int): Update0 =
+    def delete(id: Target.Id): Update0 =
       sql"DELETE FROM target WHERE id=$id".update
 
   }

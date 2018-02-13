@@ -4,13 +4,14 @@
 package gem.dao
 package check
 
+import gem.Target
 import gem.enum.UserTargetType.Other
 
 class UserTargetCheck extends Check {
   import UserTargetDao.Statements._
 
   "UserTargetDao.Statements" should
-            "insert"           in check(insert(0, Other, Dummy.observationId))
+            "insert"           in check(insert(Target.Id(0), Other, Dummy.observationId))
   it should "select"           in check(select(0))
   it should "selectAllForObs"  in check(selectObs(Dummy.observationId))
   it should "selectAllForProg" in check(selectProg(Dummy.programId))

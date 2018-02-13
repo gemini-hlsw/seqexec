@@ -4,11 +4,13 @@
 package gem.dao
 package check
 
+import gem.Target
+
 class TargetCheck extends Check {
   import TargetDao.Statements._
   "TargetDao.Statements" should
-            "select" in check(select(0))
+            "select" in check(select(Target.Id(0)))
   it should "insert" in check(insert(Dummy.target))
-  it should "update" in check(update(0, Dummy.target))
-  it should "delete" in check(delete(0))
+  it should "update" in check(update(Target.Id(0), Dummy.target))
+  it should "delete" in check(delete(Target.Id(0)))
 }
