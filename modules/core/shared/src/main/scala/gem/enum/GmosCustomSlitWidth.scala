@@ -18,9 +18,13 @@ sealed abstract class GmosCustomSlitWidth(
   val shortName: String,
   val longName: String,
   val width: Angle
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosCustomSlitWidth {
+
+  type Aux[A] = GmosCustomSlitWidth { type Self = A }
 
   /** @group Constructors */ case object CustomWidth_0_25 extends GmosCustomSlitWidth("CustomWidth_0_25", "0.25", "0.25 arcsec", Angle.fromDoubleArcseconds(0.25))
   /** @group Constructors */ case object CustomWidth_0_50 extends GmosCustomSlitWidth("CustomWidth_0_50", "0.50", "0.50 arcsec", Angle.fromDoubleArcseconds(0.50))

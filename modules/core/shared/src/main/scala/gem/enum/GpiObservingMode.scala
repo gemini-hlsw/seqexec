@@ -27,9 +27,13 @@ sealed abstract class GpiObservingMode(
   val brightLimitWollaston: Option[MagnitudeValue],
   val correspondingHMode: Eval[GpiObservingMode],
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiObservingMode {
+
+  type Aux[A] = GpiObservingMode { type Self = A }
 
   /** @group Constructors */ case object CORON_Y_BAND extends GpiObservingMode("CORON_Y_BAND", "Coronograph Y-band", "Coronograph Y-band", Some(GpiFilter.Y), false, Some(GpiApodizer.APOD_Y), Some(GpiFPM.FPM_Y), Some(GpiLyot.LYOT_080m12_03), Some(MagnitudeValue(50)), Some(MagnitudeValue(300)), cats.Eval.later(GpiObservingMode.unsafeFromTag("CORON_H_BAND")), false)
   /** @group Constructors */ case object CORON_J_BAND extends GpiObservingMode("CORON_J_BAND", "Coronograph J-band", "Coronograph J-band", Some(GpiFilter.J), false, Some(GpiApodizer.APOD_J), Some(GpiFPM.FPM_J), Some(GpiLyot.LYOT_080m12_04), Some(MagnitudeValue(50)), Some(MagnitudeValue(300)), cats.Eval.later(GpiObservingMode.unsafeFromTag("CORON_H_BAND")), false)

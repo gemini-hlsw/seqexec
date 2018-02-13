@@ -27,7 +27,7 @@ final case class Observation[+T, +S, +D](
 object Observation {
 
   /** A fully specified observation, with unknown instrument. */
-  type Full = Full.Aux[i.type] forSome { val i: Instrument }
+  type Full = Full.Aux[I] forSome { type I <: Instrument with Singleton }
   object Full {
 
     /** A fully specified observation, with the specified instrument. */

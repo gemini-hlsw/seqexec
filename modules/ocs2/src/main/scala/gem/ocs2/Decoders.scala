@@ -164,7 +164,7 @@ object Decoders {
       (n \! "@name").decode[Observation.Id].map(_.index)
     }
 
-  def targetEnvironmentDecoder(i: Instrument): PioDecoder[TargetEnvironment] = {
+  def targetEnvironmentDecoder[I <: Instrument with Singleton](i: Instrument.Aux[I]): PioDecoder[TargetEnvironment] = {
     import gem.enum.TrackType
 
     def trackType(targetNode: scala.xml.Node): Option[TrackType] =
@@ -207,7 +207,8 @@ object Decoders {
         t <- (n \! "data" \? "#title"                   ).decodeOrZero[String]
         s <- (n \! "sequence"                           ).decode[StaticConfig](StaticDecoder)
         d <- (n \! "sequence"                           ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
-        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.empty)(targetEnvironmentDecoder(s.instrument))
+        i  = s.instrument // stable identifier needed below
+        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.empty)(targetEnvironmentDecoder(i))
       } yield Observation(t, e, s, d).asInstanceOf[Observation.Full]
     }
 

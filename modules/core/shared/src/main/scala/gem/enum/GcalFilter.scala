@@ -17,9 +17,13 @@ sealed abstract class GcalFilter(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GcalFilter {
+
+  type Aux[A] = GcalFilter { type Self = A }
 
   /** @group Constructors */ case object None extends GcalFilter("None", "none", "none", false)
   /** @group Constructors */ case object Gmos extends GcalFilter("Gmos", "GMOS balance", "GMOS balance", false)

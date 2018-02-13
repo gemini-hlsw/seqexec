@@ -16,9 +16,13 @@ sealed abstract class ProgramRole(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object ProgramRole {
+
+  type Aux[A] = ProgramRole { type Self = A }
 
   /** @group Constructors */ case object PI extends ProgramRole("PI", "PI", "Principal Investigator")
   /** @group Constructors */ case object GEM extends ProgramRole("GEM", "GEM", "Gemini Contact")

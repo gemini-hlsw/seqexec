@@ -23,11 +23,11 @@ object Asterism {
 
   type Aux[I0] = Asterism { type I = I0 }
 
-  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: I0) extends Asterism {
+  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: Instrument.Aux[I0]) extends Asterism {
     type I = I0
   }
 
-  @Lenses final case class SingleTarget[I0 <: Instrument with Singleton](target: Target, override val instrument: I0) extends Asterism.Impl(instrument) {
+  @Lenses final case class SingleTarget[I0 <: Instrument with Singleton](target: Target, override val instrument: Instrument.Aux[I0]) extends Asterism.Impl(instrument) {
 
     override def targets: NonEmptyList[Target] =
       NonEmptyList.one(target)

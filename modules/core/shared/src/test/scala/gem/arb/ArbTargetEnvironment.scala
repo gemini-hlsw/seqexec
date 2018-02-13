@@ -11,24 +11,15 @@ import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 import scala.collection.immutable.TreeSet
-import shapeless.Witness
 
 trait ArbTargetEnvironment {
   import ArbAsterism._
   import ArbEnumerated._
   import ArbUserTarget._
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  implicit def arbTargetEnvironment[I <: Instrument with Singleton](
-    implicit w: Witness.Aux[I]
-  ): Arbitrary[TargetEnvironment.Aux[I]] = {
-    // we can't prive that I =:= w.T
-    Arbitrary { genTargetEnvironment(w.value).asInstanceOf[Gen[TargetEnvironment.Aux[I]]] }
-  }
-
-  def genTargetEnvironment(i: Instrument): Gen[TargetEnvironment.Aux[i.type]] =
+  def genTargetEnvironment[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[TargetEnvironment.Aux[I]] =
     for {
-      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism.Aux[i.type]])))
+      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism.Aux[I]])))
       n <- choose(0, 10)
       u <- listOfN(n, arbitrary[UserTarget]).map(us => TreeSet.fromList(us))
     } yield TargetEnvironment.Aux(a, u)

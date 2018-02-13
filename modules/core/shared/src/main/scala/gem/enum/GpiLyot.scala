@@ -17,9 +17,13 @@ sealed abstract class GpiLyot(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiLyot {
+
+  type Aux[A] = GpiLyot { type Self = A }
 
   /** @group Constructors */ case object BLANK extends GpiLyot("BLANK", "Blank", "Blank", false)
   /** @group Constructors */ case object LYOT_080m12_03 extends GpiLyot("LYOT_080m12_03", "080m12_03", "080m12_03", false)

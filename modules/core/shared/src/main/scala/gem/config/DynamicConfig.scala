@@ -15,7 +15,7 @@ import java.time.Duration
 sealed abstract class DynamicConfig extends Product with Serializable {
 
   type I <: Instrument with Singleton
-  def instrument: I
+  def instrument: Instrument.Aux[I]
 
   /** Obtains the smart gcal search key that corresponds to the instrument
     * configuration, if any. This key can be used to find the matching gcal
@@ -84,7 +84,7 @@ object DynamicConfig {
     type GmosSouthDefinition = GmosDefinition[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
   }
 
-  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: I0) extends DynamicConfig {
+  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: Instrument.Aux[I0]) extends DynamicConfig {
     type I = I0
   }
 

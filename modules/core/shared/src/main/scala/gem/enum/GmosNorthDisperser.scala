@@ -18,9 +18,13 @@ sealed abstract class GmosNorthDisperser(
   val longName: String,
   val rulingDensity: Int,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosNorthDisperser {
+
+  type Aux[A] = GmosNorthDisperser { type Self = A }
 
   /** @group Constructors */ case object B1200_G5301 extends GmosNorthDisperser("B1200_G5301", "B1200", "B1200_G5301", 1200, false)
   /** @group Constructors */ case object R831_G5302 extends GmosNorthDisperser("R831_G5302", "R831", "R831_G5302", 831, false)

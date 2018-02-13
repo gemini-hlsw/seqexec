@@ -17,9 +17,13 @@ sealed abstract class GmosDtax(
   val shortName: String,
   val longName: String,
   val dtax: Int
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosDtax {
+
+  type Aux[A] = GmosDtax { type Self = A }
 
   /** @group Constructors */ case object MinusSix extends GmosDtax("MinusSix", "-6", "-6", -6)
   /** @group Constructors */ case object MinusFive extends GmosDtax("MinusFive", "-5", "-5", -5)

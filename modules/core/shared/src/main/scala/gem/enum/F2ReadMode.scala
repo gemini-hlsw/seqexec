@@ -23,9 +23,13 @@ sealed abstract class F2ReadMode(
   val readoutTime: Duration,
   val readCount: Int,
   val readNoise: Double
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object F2ReadMode {
+
+  type Aux[A] = F2ReadMode { type Self = A }
 
   /** @group Constructors */ case object Bright extends F2ReadMode("Bright", "bright", "Bright Object", "Strong Source", Duration.ofMillis(1500), Duration.ofMillis(5000), Duration.ofMillis(8000), 1, 11.7)
   /** @group Constructors */ case object Medium extends F2ReadMode("Medium", "medium", "Medium Object", "Medium Source", Duration.ofMillis(6000), Duration.ofMillis(21000), Duration.ofMillis(14000), 4, 6.0)

@@ -16,9 +16,13 @@ sealed abstract class GmosAmpGain(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosAmpGain {
+
+  type Aux[A] = GmosAmpGain { type Self = A }
 
   /** @group Constructors */ case object Low extends GmosAmpGain("Low", "Low", "Low")
   /** @group Constructors */ case object High extends GmosAmpGain("High", "High", "High")

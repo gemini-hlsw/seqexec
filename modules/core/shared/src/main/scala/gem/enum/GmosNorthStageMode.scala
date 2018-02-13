@@ -17,9 +17,13 @@ sealed abstract class GmosNorthStageMode(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosNorthStageMode {
+
+  type Aux[A] = GmosNorthStageMode { type Self = A }
 
   /** @group Constructors */ case object NoFollow extends GmosNorthStageMode("NoFollow", "No Follow", "Do Not Follow", false)
   /** @group Constructors */ case object FollowXyz extends GmosNorthStageMode("FollowXyz", "Follow XYZ", "Follow in XYZ(focus)", true)

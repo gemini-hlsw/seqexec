@@ -16,9 +16,13 @@ sealed abstract class GmosEOffsetting(
   val tag: String,
   val description: String,
   val toBoolean: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosEOffsetting {
+
+  type Aux[A] = GmosEOffsetting { type Self = A }
 
   /** @group Constructors */ case object On extends GmosEOffsetting("On", "Electronic Offsetting On", true)
   /** @group Constructors */ case object Off extends GmosEOffsetting("Off", "Electronic Offsetting Off", false)

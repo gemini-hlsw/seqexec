@@ -17,9 +17,13 @@ sealed abstract class GmosRoi(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosRoi {
+
+  type Aux[A] = GmosRoi { type Self = A }
 
   /** @group Constructors */ case object FullFrame extends GmosRoi("FullFrame", "full", "Full Frame Readout", false)
   /** @group Constructors */ case object Ccd2 extends GmosRoi("Ccd2", "ccd2", "CCD 2", false)

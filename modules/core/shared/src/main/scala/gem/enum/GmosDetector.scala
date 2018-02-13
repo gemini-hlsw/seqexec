@@ -23,9 +23,13 @@ sealed abstract class GmosDetector(
   val xSize: Int,
   val ySize: Int,
   val maxRois: Int
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosDetector {
+
+  type Aux[A] = GmosDetector { type Self = A }
 
   /** @group Constructors */ case object E2V extends GmosDetector("E2V", "E2V", "E2V", Angle.fromDoubleArcseconds(0.0727), Angle.fromDoubleArcseconds(0.0730), 1536, 6144, 4608, 4)
   /** @group Constructors */ case object HAMAMATSU extends GmosDetector("HAMAMATSU", "Hamamatsu", "Hamamatsu", Angle.fromDoubleArcseconds(0.0809), Angle.fromDoubleArcseconds(0.0809), 1392, 6144, 4224, 5)

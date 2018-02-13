@@ -24,9 +24,13 @@ sealed abstract class GnirsDisperserOrder(
   val deltaWavelength: Wavelength,
   val band: Option[MagnitudeBand],
   val cross_dispersed: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsDisperserOrder {
+
+  type Aux[A] = GnirsDisperserOrder { type Self = A }
 
   /** @group Constructors */ case object One extends GnirsDisperserOrder("One", "1", "One", 1, Wavelength.fromAngstroms.unsafeGet(48500), Wavelength.fromAngstroms.unsafeGet(43000), Wavelength.fromAngstroms.unsafeGet(60000), Wavelength.fromAngstroms.unsafeGet(0), Some(MagnitudeBand.M), false)
   /** @group Constructors */ case object Two extends GnirsDisperserOrder("Two", "2", "Two", 2, Wavelength.fromAngstroms.unsafeGet(34000), Wavelength.fromAngstroms.unsafeGet(27000), Wavelength.fromAngstroms.unsafeGet(43000), Wavelength.fromAngstroms.unsafeGet(0), Some(MagnitudeBand.L), false)

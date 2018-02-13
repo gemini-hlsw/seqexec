@@ -17,9 +17,13 @@ sealed abstract class GpiPupilCamera(
   val shortName: String,
   val longName: String,
   val value: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiPupilCamera {
+
+  type Aux[A] = GpiPupilCamera { type Self = A }
 
   /** @group Constructors */ case object In extends GpiPupilCamera("In", "In", "In", true)
   /** @group Constructors */ case object Out extends GpiPupilCamera("Out", "Out", "Out", false)

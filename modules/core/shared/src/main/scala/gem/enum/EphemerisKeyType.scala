@@ -16,9 +16,13 @@ sealed abstract class EphemerisKeyType(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object EphemerisKeyType {
+
+  type Aux[A] = EphemerisKeyType { type Self = A }
 
   /** @group Constructors */ case object Comet extends EphemerisKeyType("Comet", "Comet", "Horizons Comet")
   /** @group Constructors */ case object AsteroidNew extends EphemerisKeyType("AsteroidNew", "Asteroid New", "Horizons Asteroid (New Format)")

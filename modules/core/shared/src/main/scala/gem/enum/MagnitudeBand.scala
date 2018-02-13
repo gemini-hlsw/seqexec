@@ -20,9 +20,13 @@ sealed abstract class MagnitudeBand(
   val center: Wavelength,
   val width: Int,
   val magnitudeSystem: MagnitudeSystem
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object MagnitudeBand {
+
+  type Aux[A] = MagnitudeBand { type Self = A }
 
   /** @group Constructors */ case object SloanU extends MagnitudeBand("SloanU", "u", "UV", Wavelength.fromAngstroms.unsafeGet(3560), 46, MagnitudeSystem.AB)
   /** @group Constructors */ case object SloanG extends MagnitudeBand("SloanG", "g", "Green", Wavelength.fromAngstroms.unsafeGet(4830), 99, MagnitudeSystem.AB)

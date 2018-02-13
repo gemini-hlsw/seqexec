@@ -17,9 +17,13 @@ sealed abstract class GnirsDisperser(
   val shortName: String,
   val longName: String,
   val rulingDensity: Int
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsDisperser {
+
+  type Aux[A] = GnirsDisperser { type Self = A }
 
   /** @group Constructors */ case object D10 extends GnirsDisperser("D10", "10", "10 l/mm grating", 10)
   /** @group Constructors */ case object D32 extends GnirsDisperser("D32", "32", "32 l/mm grating", 32)

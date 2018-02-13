@@ -17,9 +17,13 @@ sealed abstract class GcalShutter(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GcalShutter {
+
+  type Aux[A] = GcalShutter { type Self = A }
 
   /** @group Constructors */ case object Open extends GcalShutter("Open", "Open", "Open", false)
   /** @group Constructors */ case object Closed extends GcalShutter("Closed", "Closed", "Closed", false)

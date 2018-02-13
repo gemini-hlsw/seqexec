@@ -17,9 +17,13 @@ sealed abstract class GcalContinuum(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GcalContinuum {
+
+  type Aux[A] = GcalContinuum { type Self = A }
 
   /** @group Constructors */ case object IrGreyBodyLow extends GcalContinuum("IrGreyBodyLow", "IR grey body - low", "IR grey body - low", false)
   /** @group Constructors */ case object IrGreyBodyHigh extends GcalContinuum("IrGreyBodyHigh", "IR grey body - high", "IR grey body - high", false)

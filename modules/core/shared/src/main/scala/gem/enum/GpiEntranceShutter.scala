@@ -17,9 +17,13 @@ sealed abstract class GpiEntranceShutter(
   val shortName: String,
   val longName: String,
   val value: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiEntranceShutter {
+
+  type Aux[A] = GpiEntranceShutter { type Self = A }
 
   /** @group Constructors */ case object Open extends GpiEntranceShutter("Open", "Open", "Open", true)
   /** @group Constructors */ case object Close extends GpiEntranceShutter("Close", "Close", "Close", false)

@@ -19,9 +19,13 @@ sealed abstract class F2Filter(
   val longName: String,
   val wavelength: Option[Wavelength],
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object F2Filter {
+
+  type Aux[A] = F2Filter { type Self = A }
 
   /** @group Constructors */ case object Y extends F2Filter("Y", "Y", "Y (1.02 um)", Some(Wavelength.fromAngstroms.unsafeGet(10200)), false)
   /** @group Constructors */ case object F1056 extends F2Filter("F1056", "F1056", "F1056 (1.056 um)", Some(Wavelength.fromAngstroms.unsafeGet(10560)), false)
