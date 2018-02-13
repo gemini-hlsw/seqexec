@@ -29,15 +29,9 @@ object Observation {
   /** A fully specified observation, with unknown instrument. */
   type Full = Full.Aux[I] forSome { type I <: Instrument with Singleton }
   object Full {
-
     /** A fully specified observation, with the specified instrument. */
     type Aux[I <: Instrument with Singleton] =
-      Observation[
-        TargetEnvironment.Aux[I],
-        StaticConfig.Aux[I],
-        Step[DynamicConfig.Aux[I]]
-      ]
-
+      Observation[TargetEnvironment.Aux[I], StaticConfig.Aux[I], Step[DynamicConfig.Aux[I]]]
   }
 
   /** A positive, non-zero integer for use in ids. */

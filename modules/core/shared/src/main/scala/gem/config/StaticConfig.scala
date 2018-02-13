@@ -15,7 +15,7 @@ import monocle.macros.Lenses
  */
 sealed abstract class StaticConfig {
   type I <: Instrument with Singleton
-  val instrument: Instrument.Aux[I]
+  def instrument: Instrument.Aux[I]
 }
 
 object StaticConfig {
