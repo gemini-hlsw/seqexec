@@ -26,7 +26,7 @@ final class FormatSpec extends CatsSuite {
     forAll { (n: Int) =>
       Either.catchNonFatal(example.unsafeGet(n)) match {
         case Left(t)  => t.getMessage shouldEqual s"unsafeGet failed: $n"
-        case Right(b) => true
+        case Right(_) => true
       }
     }
   }

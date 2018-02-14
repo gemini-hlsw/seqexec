@@ -57,7 +57,7 @@ object Importer extends DoobieClient {
       for {
         _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
         _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
-        _ <- p.observations.toList.traverse_ { case (i,o) =>
+        _ <- p.observations.toList.traverse_ { case (i, _) =>
                val oid = Observation.Id(p.id, i)
                l.log(u, s"write datasets for $oid")(datasets.write(oid, dsMap(oid)))
              }
