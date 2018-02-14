@@ -18,7 +18,9 @@ final class ObservationSpec extends CatsSuite {
     val te = o.targets
     val sc = o.staticConfig
     val dc = o.steps(0).dynamicConfig
+    val i  = sc.instrument
     (
+      implicitly[i.type <:< Instrument.Aux[I]], // we can't quite get to =:=
       implicitly[te.I =:= sc.I],
       implicitly[te.I =:= dc.I],
       implicitly[sc.I =:= te.I],
