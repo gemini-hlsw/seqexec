@@ -15,7 +15,6 @@ sealed trait TargetEnvironment {
 
   val asterism: Option[Asterism.Aux[I]]
 
-  /** Guide stars. */
   val userTargets: TreeSet[UserTarget]
 
   override final def toString =
