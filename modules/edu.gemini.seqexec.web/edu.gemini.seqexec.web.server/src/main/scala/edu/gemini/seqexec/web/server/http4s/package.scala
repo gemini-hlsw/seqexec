@@ -60,6 +60,7 @@ package object http4s {
               $.fn.dimmer = require('semantic-ui-dimmer');
               $.fn.transition = require('semantic-ui-transition');
               $.fn.modal = require('semantic-ui-modal');
+              $.fn.popup = require('semantic-ui-popup');
               """} </script>
           <script src={s"/$seqexecScript"}></script>
           <script>

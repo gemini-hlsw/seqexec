@@ -11,6 +11,7 @@ import edu.gemini.seqexec.web.client.actions.{RequestAbort, RequestObsPause, Req
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.elements.popup.Popup
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconPause, IconPlay, IconStop, IconTrash}
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -106,22 +107,38 @@ object StepsControlButtons {
         SeqexecStyles.notInMobile,
         p.instrument.observationOperations(p.step).map {
           case PauseObservation            =>
-            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure"), onClick = $.runState(handleObsPause(p.id, p.step.id)), disabled = !s.canPause || p.step.isObservePaused))
+            Popup(Popup.Props("button", "Pause the current exposure"),
+              Button(Button.Props(icon = Some(IconPause), color = Some("teal"),  onClick = $.runState(handleObsPause(p.id, p.step.id)), disabled = !s.canPause || p.step.isObservePaused))
+            )
           case StopObservation             =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure early"), onClick = $.runState(handleStop(p.id, p.step.id)), disabled = !s.canStop))
+            Popup(Popup.Props("button", "Stop the current exposure early"),
+              Button(Button.Props(icon = Some(IconStop), color = Some("orange"), onClick = $.runState(handleStop(p.id, p.step.id)), disabled = !s.canStop))
+            )
           case AbortObservation            =>
-            Button(Button.Props(icon = Some(IconTrash), color = Some("red"), dataTooltip = Some("Abort the current exposure"), onClick = $.runState(handleAbort(p.id, p.step.id)), disabled = !s.canAbort))
+            Popup(Popup.Props("button", "Abort the current exposure"),
+              Button(Button.Props(icon = Some(IconTrash), color = Some("red"), onClick = $.runState(handleAbort(p.id, p.step.id)), disabled = !s.canAbort))
+            )
           case ResumeObservation           =>
-            Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), dataTooltip = Some("Resume the current exposure"), onClick = $.runState(handleObsResume(p.id, p.step.id)), disabled = !s.canResume || !p.step.isObservePaused))
+            Popup(Popup.Props("button", "Resume the current exposure"),
+              Button(Button.Props(icon = Some(IconPlay), color = Some("blue"), onClick = $.runState(handleObsResume(p.id, p.step.id)), disabled = !s.canResume || !p.step.isObservePaused))
+            )
           // Hamamatsu operations
           case PauseImmediatelyObservation =>
-            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), dataTooltip = Some("Pause the current exposure immediately")))
+            Popup(Popup.Props("button", "Pause the current exposure immediately"),
+              Button(Button.Props(icon = Some(IconPause), color = Some("teal")))
+            )
           case PauseGracefullyObservation  =>
-            Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true, dataTooltip = Some("Pause the current exposure gracefully")))
+            Popup(Popup.Props("button", "Pause the current exposure gracefully"),
+              Button(Button.Props(icon = Some(IconPause), color = Some("teal"), basic = true))
+            )
           case StopImmediatelyObservation  =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), dataTooltip = Some("Stop the current exposure immediately")))
+            Popup(Popup.Props("button", "Stop the current exposure immediately"),
+              Button(Button.Props(icon = Some(IconStop), color = Some("orange")))
+            )
           case StopGracefullyObservation   =>
-            Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true, dataTooltip = Some("Stop the current exposure gracefully")))
+            Popup(Popup.Props("button", "Stop the current exposure gracefully"),
+              Button(Button.Props(icon = Some(IconStop), color = Some("orange"), basic = true))
+            )
         }.toTagMod
       )
     }.componentWillReceiveProps { f =>

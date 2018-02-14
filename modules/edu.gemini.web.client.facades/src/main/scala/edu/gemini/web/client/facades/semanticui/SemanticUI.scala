@@ -156,6 +156,7 @@ object SemanticUIPopup {
 
   class JsPopupOptionBuilder(val dict: OptMap) extends JSOptionBuilder[JsPopupOptions, JsPopupOptionBuilder](new JsPopupOptionBuilder(_)) {
     def on(v: String): JsPopupOptionBuilder = jsOpt("on", v)
+    def title(v: String): JsPopupOptionBuilder = jsOpt("title", v)
     def content(v: String): JsPopupOptionBuilder = jsOpt("content", v)
   }
 

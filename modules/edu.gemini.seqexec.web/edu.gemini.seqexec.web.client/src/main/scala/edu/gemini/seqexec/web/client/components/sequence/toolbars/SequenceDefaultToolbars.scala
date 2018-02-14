@@ -9,6 +9,7 @@ import edu.gemini.seqexec.web.client.actions.{RequestCancelPause, RequestPause, 
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.SequenceStepsTableContainer
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.elements.popup.Popup
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -58,15 +59,16 @@ object SequenceControl {
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestCancelPause(s)))) >> ST.mod(_.requestCancelPause).liftCB
 
   private def controlButton(icon: Icon, color: String, onClick: Callback, disabled: Boolean, tooltip: String, text: String) =
-    Button(
-      Button.Props(
-        icon = Some(icon),
-        labeled = true,
-        onClick = onClick,
-        color = Some(color),
-        dataTooltip = Some(tooltip),
-        disabled = disabled),
-      text
+    Popup(Popup.Props("button", tooltip),
+      Button(
+        Button.Props(
+          icon = Some(icon),
+          labeled = true,
+          onClick = onClick,
+          color = Some(color),
+          disabled = disabled),
+        text
+      )
     )
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
