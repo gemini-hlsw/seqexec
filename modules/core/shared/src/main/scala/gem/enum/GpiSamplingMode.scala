@@ -17,9 +17,13 @@ sealed abstract class GpiSamplingMode(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiSamplingMode {
+
+  type Aux[A] = GpiSamplingMode { type Self = A }
 
   /** @group Constructors */ case object FAST extends GpiSamplingMode("FAST", "Fast", "Fast", false)
   /** @group Constructors */ case object SINGLE_CDS extends GpiSamplingMode("SINGLE_CDS", "Single CDS", "Single CDS", false)

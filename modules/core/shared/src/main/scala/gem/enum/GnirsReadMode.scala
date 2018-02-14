@@ -20,9 +20,13 @@ sealed abstract class GnirsReadMode(
   val minimumExposureTime: Int,
   val readNoise: Int,
   val readNoiseLow: Int
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsReadMode {
+
+  type Aux[A] = GnirsReadMode { type Self = A }
 
   /** @group Constructors */ case object VeryBright extends GnirsReadMode("VeryBright", "Very bright", "Very Bright Acquisition or High Background", 200, 1, 155, 1)
   /** @group Constructors */ case object Bright extends GnirsReadMode("Bright", "Bright", "Bright objects", 600, 2, 30, 1)

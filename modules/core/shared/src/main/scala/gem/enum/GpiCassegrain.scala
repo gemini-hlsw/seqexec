@@ -17,9 +17,13 @@ sealed abstract class GpiCassegrain(
   val shortName: String,
   val longName: String,
   val value: Int
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiCassegrain {
+
+  type Aux[A] = GpiCassegrain { type Self = A }
 
   /** @group Constructors */ case object A0 extends GpiCassegrain("A0", "0", "0", 0)
   /** @group Constructors */ case object A180 extends GpiCassegrain("A180", "180", "180", 180)

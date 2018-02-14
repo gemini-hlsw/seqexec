@@ -16,9 +16,13 @@ sealed abstract class GmosAmpReadMode(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosAmpReadMode {
+
+  type Aux[A] = GmosAmpReadMode { type Self = A }
 
   /** @group Constructors */ case object Slow extends GmosAmpReadMode("Slow", "slow", "Slow")
   /** @group Constructors */ case object Fast extends GmosAmpReadMode("Fast", "fast", "Fast")

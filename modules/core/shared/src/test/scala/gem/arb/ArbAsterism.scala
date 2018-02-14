@@ -15,30 +15,33 @@ trait ArbAsterism {
   import ArbEnumerated._
   import ArbTarget._
 
-  def genSingleTarget[I <: Instrument with Singleton](i: I): Gen[Asterism.SingleTarget[I]] =
+  def genSingleTarget[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Asterism.SingleTarget[I]] =
     arbitrary[Target].map(Asterism.SingleTarget(_, i))
 
-  val genGhostDualTarget: Gen[Asterism.GhostDualTarget] =
+  val genGhostDualTarget: Gen[Asterism.Aux[Instrument.Ghost.type]] =
     for {
       t1 <- arbitrary[Target]
       t2 <- arbitrary[Target]
     } yield Asterism.GhostDualTarget(t1, t2)
 
-  def genAsterism[I <: Instrument with Singleton](i: I): Gen[Asterism] =
+  def genAsterism[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Asterism.Aux[I]] =
     i match {
       case Instrument.Ghost => genGhostDualTarget
       case _                => genSingleTarget(i)
     }
 
+  def genAsterismʹ(i: Instrument): Gen[Asterism] =
+    genAsterism(i: Instrument.Aux[i.type])
+
   implicit val arbAsterism: Arbitrary[Asterism] =
     Arbitrary {
       for {
         i <- arbitrary[Instrument]
-        a <- genAsterism(i)
+        a <- genAsterismʹ(i)
       } yield a
     }
 
-  implicit def cogAsterism: Cogen[Asterism] =
+  implicit def cogAsterism[I <: Instrument with Singleton]: Cogen[Asterism.Aux[I]] =
     Cogen[(List[Target], Instrument)].contramap(a => (a.targets.toList, a.instrument))
 
 }

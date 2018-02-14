@@ -23,8 +23,8 @@ object SmartGcalSample extends TimedSample with gem.config.Arbitraries {
 
   private def nextDynamicConfig(): Option[DynamicConfig] =
     Gen.oneOf(
-      arbitrary[DynamicConfig.F2       ],
-      arbitrary[DynamicConfig.GmosNorth]
+      genF2Dynamic,
+      genGmosNorthDynamic
     ).sample
 
   private def nextKey(): Option[SmartGcalSearchKey] =

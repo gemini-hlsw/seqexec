@@ -17,9 +17,13 @@ sealed abstract class GnirsDecker(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsDecker {
+
+  type Aux[A] = GnirsDecker { type Self = A }
 
   /** @group Constructors */ case object Acquisition extends GnirsDecker("Acquisition", "Acquisition", "Acquisition", false)
   /** @group Constructors */ case object PupilViewer extends GnirsDecker("PupilViewer", "Pupil", "Pupil viewer", false)

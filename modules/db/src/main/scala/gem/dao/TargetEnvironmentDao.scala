@@ -4,19 +4,12 @@
 package gem
 package dao
 
-import gem.enum.AsterismType
-import gem.syntax.treemap._
-
 import cats.implicits._
-
 import doobie._
 import doobie.implicits._
-
+import gem.enum.AsterismType
+import gem.syntax.treemap._
 import scala.collection.immutable.{ TreeMap, TreeSet }
-
-
-// At the moment, TargetEnvironment just wraps user targets but it will grow to
-// encompass the science asterism and guide targets as well.
 
 object TargetEnvironmentDao {
 
@@ -41,4 +34,5 @@ object TargetEnvironmentDao {
              u      => TargetEnvironment(None, u),
              (a, u) => TargetEnvironment(Some(a), u))
     }
+
 }

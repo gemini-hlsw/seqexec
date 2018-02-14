@@ -16,9 +16,13 @@ sealed abstract class GnirsPrism(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsPrism {
+
+  type Aux[A] = GnirsPrism { type Self = A }
 
   /** @group Constructors */ case object Mirror extends GnirsPrism("Mirror", "Mirror", "Mirror")
   /** @group Constructors */ case object Sxd extends GnirsPrism("Sxd", "Short XD", "Short cross dispersion")

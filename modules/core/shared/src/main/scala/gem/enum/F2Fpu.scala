@@ -19,9 +19,13 @@ sealed abstract class F2Fpu(
   val slitWidth: Int,
   val decker: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object F2Fpu {
+
+  type Aux[A] = F2Fpu { type Self = A }
 
   /** @group Constructors */ case object Pinhole extends F2Fpu("Pinhole", "Pinhole", "2-Pixel Pinhole Grid", 0, "Imaging", false)
   /** @group Constructors */ case object SubPixPinhole extends F2Fpu("SubPixPinhole", "Sub-Pix Pinhole", "Sub-Pixel Pinhole Gr", 0, "Imaging", false)

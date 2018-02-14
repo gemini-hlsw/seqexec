@@ -55,7 +55,7 @@ object AsterismDao {
     for {
       s <- Statements.SingleTarget.select(oid).option
       t <- s.fold(NoTarget) { case (id, _) => TargetDao.select(id) }
-    } yield t.product(s).map { case (target, (_, inst)) => Asterism.SingleTarget(target, inst) }
+    } yield t.product(s).map { case (target, (_, inst)) => Asterism.SingleTarget(target, inst: Instrument.Aux[inst.type]) }
 
   def selectGhostDualTarget(oid: Observation.Id): ConnectionIO[Option[Asterism]] =
     for {
@@ -71,14 +71,14 @@ object AsterismDao {
     as.traverse(f).map { lst => TreeMap(lst.flatMap(_.toList): _*) }
 
   def selectAllSingleTarget(pid: Program.Id): AsterismMap = {
-    def toEntry(idx: Observation.Index, tid: Target.Id, inst: Instrument): OptMapEntry =
+    def toEntry[I <: Instrument with Singleton](idx: Observation.Index, tid: Target.Id, inst: Instrument.Aux[I]): OptMapEntry =
       TargetDao.select(tid).map {
         _.map(idx -> Asterism.SingleTarget(_, inst))
       }
 
     for {
       l <- Statements.SingleTarget.selectAll(pid).to[List]
-      m <- toAsterismMap(l) { case (idx, tid, inst) => toEntry(idx, tid, inst) }
+      m <- toAsterismMap(l) { case (idx, tid, inst) => toEntry(idx, tid, inst: Instrument.Aux[inst.type]) }
     } yield m
   }
 

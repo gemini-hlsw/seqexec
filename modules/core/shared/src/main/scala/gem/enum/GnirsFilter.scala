@@ -18,9 +18,13 @@ sealed abstract class GnirsFilter(
   val shortName: String,
   val longName: String,
   val waveLength: Option[Wavelength]
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsFilter {
+
+  type Aux[A] = GnirsFilter { type Self = A }
 
   /** @group Constructors */ case object CrossDispersed extends GnirsFilter("CrossDispersed", "XD", "Cross dispersed", Option.empty[Wavelength])
   /** @group Constructors */ case object Order6 extends GnirsFilter("Order6", "X", "Order 6 (X)", Some(Wavelength.fromAngstroms.unsafeGet(11000)))

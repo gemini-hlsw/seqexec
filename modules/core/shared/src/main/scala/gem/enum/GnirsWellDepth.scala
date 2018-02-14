@@ -17,9 +17,13 @@ sealed abstract class GnirsWellDepth(
   val shortName: String,
   val longName: String,
   val bias_level: Int
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GnirsWellDepth {
+
+  type Aux[A] = GnirsWellDepth { type Self = A }
 
   /** @group Constructors */ case object Shallow extends GnirsWellDepth("Shallow", "Shallow", "Shallow", 300)
   /** @group Constructors */ case object Deep extends GnirsWellDepth("Deep", "Deep", "Deep", 600)

@@ -29,7 +29,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
       TreeMap(idx ->
         Observation(
           "Untitled Obs",
-          TargetEnvironment.empty,
+          TargetEnvironment.Aux.empty[Instrument.Flamingos2.type],
           StaticConfig.F2(MosPreImaging.IsNotMosPreImaging),
           List(
             Step.Science(

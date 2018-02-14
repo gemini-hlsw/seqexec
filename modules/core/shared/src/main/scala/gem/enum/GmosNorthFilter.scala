@@ -19,9 +19,13 @@ sealed abstract class GmosNorthFilter(
   val longName: String,
   val wavelength: Wavelength,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GmosNorthFilter {
+
+  type Aux[A] = GmosNorthFilter { type Self = A }
 
   /** @group Constructors */ case object GPrime extends GmosNorthFilter("GPrime", "g", "g_G0301", Wavelength.fromAngstroms.unsafeGet(4750), false)
   /** @group Constructors */ case object RPrime extends GmosNorthFilter("RPrime", "r", "r_G0303", Wavelength.fromAngstroms.unsafeGet(6300), false)

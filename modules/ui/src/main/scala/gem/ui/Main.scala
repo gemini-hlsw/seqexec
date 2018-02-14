@@ -39,26 +39,26 @@ object TestProgram {
       1
     )
 
-  val f2: Observation.Full =
+  val f2: Observation.Full.Aux[Instrument.Flamingos2.type] =
     Observation(
       "F2 Observation",
-      TargetEnvironment(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment.Aux(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.F2.Default,
       List(Step.Gcal(DynamicConfig.F2.Default, gcal))
     )
 
-  val gmosS: Observation.Full =
+  val gmosS: Observation.Full.Aux[Instrument.GmosS.type] =
     Observation(
       "GMOS-S Observation",
-      TargetEnvironment(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment.Aux(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.GmosSouth.Default,
       List(Step.SmartGcal(DynamicConfig.GmosSouth.Default, SmartGcalType.Arc))
     )
 
-  val gmosN: Observation.Full =
+  val gmosN: Observation.Full.Aux[Instrument.GmosN.type] =
     Observation(
       "GMOS-N Observation",
-      TargetEnvironment(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment.Aux(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.GmosNorth.Default,
       List(Step.Bias(DynamicConfig.GmosNorth.Default))
     )
@@ -67,7 +67,7 @@ object TestProgram {
     Program(
       pid,
       "Test Program",
-      TreeMap(
+      TreeMap[Observation.Index, Observation.Full](
         Observation.Index.unsafeFromShort(1) -> f2,
         Observation.Index.unsafeFromShort(2) -> gmosS,
         Observation.Index.unsafeFromShort(3) -> gmosN

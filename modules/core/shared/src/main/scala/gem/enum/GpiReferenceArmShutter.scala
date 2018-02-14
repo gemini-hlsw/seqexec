@@ -17,9 +17,13 @@ sealed abstract class GpiReferenceArmShutter(
   val shortName: String,
   val longName: String,
   val value: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object GpiReferenceArmShutter {
+
+  type Aux[A] = GpiReferenceArmShutter { type Self = A }
 
   /** @group Constructors */ case object Open extends GpiReferenceArmShutter("Open", "Open", "Open", true)
   /** @group Constructors */ case object Close extends GpiReferenceArmShutter("Close", "Close", "Close", false)

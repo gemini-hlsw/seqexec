@@ -4,13 +4,16 @@
 package gem
 package arb
 
+import gem.enum.Instrument
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen._
 
-trait ArbObservation {
+trait ArbObservation extends gem.config.Arbitraries {
+  import ArbEnumerated._
   import ArbProgramId._
+  import ArbTargetEnvironment._
 
   implicit val arbObservationId: Arbitrary[Observation.Id] =
     Arbitrary {
@@ -18,6 +21,22 @@ trait ArbObservation {
         pid <- arbitrary[ProgramId]
         num <- choose[Short](1, 100)
       } yield Observation.Id(pid, Observation.Index.unsafeFromShort(num))
+    }
+
+  def genObservation[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Observation.Full] =
+    for {
+      t   <- arbitrary[String]
+      te  <- genTargetEnvironment(i)
+      sc  <- genStaticConfigOf(i)
+      dc  <- genDynamicConfigOf(i)
+    } yield Observation(t, te, sc, List(Step.Bias(dc)))
+
+  implicit val arbObservation: Arbitrary[Observation.Full] =
+    Arbitrary {
+      for {
+        i <- arbitrary[Instrument]
+        o <- genObservation[i.type](i)
+      } yield o
     }
 
   implicit val cogObservationIdex: Cogen[Observation.Index] =

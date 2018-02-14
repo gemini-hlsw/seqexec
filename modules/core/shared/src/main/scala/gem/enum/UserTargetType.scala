@@ -17,9 +17,13 @@ sealed abstract class UserTargetType(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable
+) extends Product with Serializable {
+  type Self = this.type
+}
 
 object UserTargetType {
+
+  type Aux[A] = UserTargetType { type Self = A }
 
   /** @group Constructors */ case object BlindOffset extends UserTargetType("BlindOffset", "Blind Offset", "Blind Offset", false)
   /** @group Constructors */ case object OffAxis extends UserTargetType("OffAxis", "Off Axis", "Off Axis", false)
