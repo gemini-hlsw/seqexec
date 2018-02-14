@@ -31,7 +31,7 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
         fa match {
           case LdapOp.AuthenticateOp(u, p)       => db.authenticate(u, p)
           case LdapOp.UserDisplayNameOp(uid)     => db.displayName(uid)
-          case LdapOp.DisplayNameGrpThumbOp(uid) => ("", Nil, None)
+          case LdapOp.DisplayNameGrpThumbOp(_)   => ("", Nil, None)
       }
     }
 

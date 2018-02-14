@@ -67,7 +67,7 @@ object handlers {
         value match {
           case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
-          case InstrumentPage(i, None) =>
+          case InstrumentPage(_, None) =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
           case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(ShowStep(s.id, step))))
@@ -445,7 +445,7 @@ object handlers {
     }
 
     def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
-      case ConnectionError(e) =>
+      case ConnectionError(_) =>
         effectOnly(Effect.action(AppendToLog(ServerLogMessage(ServerLogLevel.ERROR, Instant.now, "Error connecting to the seqexec server"))))
     }
 
@@ -550,7 +550,7 @@ object handlers {
     }
 
     val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(ResourcesBusy(id, sv)) =>
+      case ServerMessage(ResourcesBusy(id, _)) =>
         val setConflictE = Effect(Future(SequenceInConflict(id)))
         val openBoxE = Effect(Future(OpenResourcesBox))
         effectOnly(setConflictE >> openBoxE)

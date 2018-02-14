@@ -59,7 +59,7 @@ object LoginBox {
         SeqexecWebClient.login(s.username, s.password)
           .map(loggedInEvent)
           .recover {
-            case t: Exception => updateErrorMsg("Login failed, check username/password")
+            case _: Exception => updateErrorMsg("Login failed, check username/password")
           }
       )
     }
