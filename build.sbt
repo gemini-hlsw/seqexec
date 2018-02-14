@@ -36,7 +36,7 @@ onLoad in Global := { s =>
 cancelable in Global := true
 
 // some extra commands for us
-addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum; headerCreate")
+addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
 addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
@@ -201,7 +201,6 @@ lazy val gem = project
 lazy val core = crossProject
   .crossType(CrossType.Full)
   .in(file("modules/core"))
-  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -226,7 +225,7 @@ lazy val core = crossProject
   )
 
 
-lazy val coreJVM = core.jvm
+lazy val coreJVM = core.jvm.enablePlugins(AutomateHeaderPlugin)
 lazy val coreJS = core.js
 
 lazy val db = project
