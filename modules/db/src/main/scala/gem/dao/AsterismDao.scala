@@ -71,7 +71,7 @@ object AsterismDao {
     as.traverse(f).map { lst => TreeMap(lst.flatMap(_.toList): _*) }
 
   def selectAllSingleTarget(pid: Program.Id): AsterismMap = {
-    def toEntry[I <: Instrument with Singleton](idx: Observation.Index, tid: Targe.Id, inst: Instrument.Aux[I]): OptMapEntry =
+    def toEntry[I <: Instrument with Singleton](idx: Observation.Index, tid: Target.Id, inst: Instrument.Aux[I]): OptMapEntry =
       TargetDao.select(tid).map {
         _.map(idx -> Asterism.SingleTarget(_, inst))
       }
