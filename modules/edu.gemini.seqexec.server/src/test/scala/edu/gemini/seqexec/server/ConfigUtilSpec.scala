@@ -57,7 +57,7 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
       forAll { (c: Config, k: ItemKey) =>
         c.putItem(k, "value")
         c.extract(k).as[Int].toEither.left.value should matchPattern {
-          case ConversionError(k,_) =>
+          case ConversionError(_, _) =>
         }
       }
     }
@@ -66,7 +66,7 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
         // Make sure the key is removed
         c.remove(k)
         c.extract(k).as[String].toEither.left.value should matchPattern {
-          case KeyNotFound(k) =>
+          case KeyNotFound(_) =>
         }
       }
     }

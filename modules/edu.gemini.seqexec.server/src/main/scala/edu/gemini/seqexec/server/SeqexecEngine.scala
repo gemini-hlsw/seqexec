@@ -214,10 +214,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.GetState(_)            => NullEvent
       case engine.GetSeqState(_, _)      => NullEvent
       case engine.ActionStop(_, _)       => ActionStopRequested(svs)
-      case engine.LogDebug(msg)          => NullEvent
-      case engine.LogInfo(msg)           => NullEvent
-      case engine.LogWarning(msg)        => NullEvent
-      case engine.LogError(msg)          => NullEvent
+      case engine.LogDebug(_)            => NullEvent
+      case engine.LogInfo(_)             => NullEvent
+      case engine.LogWarning(_)          => NullEvent
+      case engine.LogError(_)            => NullEvent
       case engine.ActionResume(_, _, _)  => SequenceUpdated(svs)
     }
     case engine.EventSystem(se) => se match {

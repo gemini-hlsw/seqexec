@@ -97,23 +97,23 @@ object StepProgressCell {
 
   def stepDisplay(props: Props): VdomElement =
     (props.focus.state, props.step) match {
-      case (f, StandardStep(_, _, s @ StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
+      case (f, StandardStep(_, _, StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))                     =>
+      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))                 =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (f, s) if s.isObservePaused                                                          =>
+      case (_, s) if s.isObservePaused                                                      =>
         // Case for exposure paused, label and control buttons
         stepObservationStatus(props)
-      case (f, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _))                 =>
+      case (_, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _))             =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, fileId)
-      case (_, s) if s.wasSkipped                                                               =>
+      case (_, s) if s.wasSkipped                                                           =>
         <.p("Skipped")
-      case (_, _) if props.step.skip                                                            =>
+      case (_, _) if props.step.skip                                                        =>
         <.p("Skip")
-      case (_, _)                                                                               =>
+      case (_, _)                                                                           =>
         <.p(SeqexecStyles.componentLabel, props.step.shows)
     }
 
