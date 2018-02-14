@@ -66,7 +66,7 @@ object docker {
 
   def allContainerNames: CtlIO[List[String]] =
     docker("ps", "-a", "--format", "{{.Names}}").require {
-      case Output(o, ss) => ss
+      case Output(_, ss) => ss
     }
 
   def getLabelValue(label: String, k: Container): CtlIO[String] =

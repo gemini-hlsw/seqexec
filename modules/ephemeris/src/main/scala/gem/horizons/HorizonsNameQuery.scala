@@ -97,7 +97,7 @@ object HorizonsNameQuery {
               f(offsets).map(g => rows.takeWhile(_.trim.nonEmpty).map(g)).toRight("Not enough columns.")
             } catch {
               case    nfe: NumberFormatException           =>  ("Number format exception: " + nfe.getMessage).asLeft
-              case sioobe: StringIndexOutOfBoundsException =>   "Column value(s) not found.".asLeft
+              case      _: StringIndexOutOfBoundsException =>   "Column value(s) not found.".asLeft
             }
         })
 
