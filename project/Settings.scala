@@ -77,7 +77,9 @@ object Settings {
     // Java libraries
     val scalaZ       = "7.2.20"
     val scalaZStream = "0.8.6a"
-
+    val catsEffectVersion   = "0.8"
+    val catsVersion         = "1.0.1"
+    val mouseVersion         = "0.16"
     // Scala libraries
     val http4s       = "0.16.6a"
     val squants      = "1.3.0"
@@ -91,7 +93,7 @@ object Settings {
     val janino       = "3.0.8"
     val logstash     = "4.11"
     val knobs        = "4.0.31-scalaz-7.2"
-    val monocle      = "1.5.0"
+    val monocle      = "1.5.0-cats"
 
     // test libraries
     val scalaTest             = "3.0.5"
@@ -152,9 +154,12 @@ object Settings {
     val JavaLogJS   = Def.setting("org.scala-js"      %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"         % LibraryVersions.scalaZ)
-    val ScalaZConcurrent = "org.scalaz"             %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
-    val ScalaZStream     = "org.scalaz.stream"      %%  "scalaz-stream"       % LibraryVersions.scalaZStream
+    val ScalaZCore       = Def.setting("org.scalaz"    %%% "scalaz-core"         % LibraryVersions.scalaZ)
+    val ScalaZConcurrent = "org.scalaz"                %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
+    val ScalaZStream     = "org.scalaz.stream"         %%  "scalaz-stream"       % LibraryVersions.scalaZStream
+    val Cats             = Def.setting("org.typelevel" %%% "cats-core"           % LibraryVersions.catsVersion)
+    val Mouse            = Def.setting("org.typelevel" %%% "mouse"               % LibraryVersions.mouseVersion)
+    val Shims            = Def.setting("com.codecommit" %%% "shims" % "1.1")
 
     // Server side libraries
     val Http4s  = Seq(
