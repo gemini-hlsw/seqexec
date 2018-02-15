@@ -8,11 +8,12 @@ package edu.gemini.epics.acm;
 import gov.aps.jca.CAException;
 
 import java.util.List;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class CaStatusAcceptorTest {
     
-    private static final Logger LOG = Logger.getLogger(CaStatusAcceptorTest.class.getName()); 
+    private static final Logger LOG = LoggerFactory.getLogger(CaStatusAcceptorTest.class.getName());
 
     public static void main(String[] args) {
         CaService service = CaService.getInstance();
@@ -21,7 +22,7 @@ final class CaStatusAcceptorTest {
         try {
             sa.addString("LST", "tcs:LST.VAL");
         } catch (CaException | CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         CaAttribute<String> lst = sa.getStringAttribute("LST");
 
@@ -29,7 +30,7 @@ final class CaStatusAcceptorTest {
             try {
                 Thread.sleep(750);
             } catch (InterruptedException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             System.out.println(i + ": " + lst.value());
         }
@@ -54,7 +55,7 @@ final class CaStatusAcceptorTest {
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         service.unbind();

@@ -13,7 +13,8 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.*;
 import java.util.*;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +34,7 @@ import java.util.regex.Pattern;
  */
 public final class CaConfigFileConverter {
 
-    private static final Logger LOG = Logger.getLogger(CaConfigFileConverter.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaConfigFileConverter.class.getName());
 
     private static final String USAGE = "Usage: java edu.gemini.epics.acm.CaConfigFileConverter [-f outFile] [inFiles]";
 
@@ -98,7 +99,7 @@ public final class CaConfigFileConverter {
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             marshaller.marshal(records, out);
         } catch (Exception e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
     }
@@ -404,7 +405,7 @@ public final class CaConfigFileConverter {
                     try {
                         output = new BufferedWriter(new FileWriter(args[i]));
                     } catch (IOException e) {
-                        LOG.warning(e.getMessage());
+                        LOG.warn(e.getMessage());
                         System.exit(-1);
                     }
                     break;
@@ -412,7 +413,7 @@ public final class CaConfigFileConverter {
                     try {
                         input.add(new BufferedReader(new FileReader(args[i])));
                     } catch (FileNotFoundException e) {
-                        LOG.warning(e.getMessage());
+                        LOG.warn(e.getMessage());
                         System.exit(-1);
                     }
                     break;
@@ -429,7 +430,7 @@ public final class CaConfigFileConverter {
         try {
             convert(input, output);
         } catch (IOException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
             System.exit(-1);
         }
 

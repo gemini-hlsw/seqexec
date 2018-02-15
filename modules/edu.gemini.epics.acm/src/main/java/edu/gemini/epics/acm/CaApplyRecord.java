@@ -5,8 +5,6 @@
 
 package edu.gemini.epics.acm;
 
-import java.util.logging.Logger;
-
 import edu.gemini.epics.EpicsReader;
 import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.EpicsWriter;
@@ -17,10 +15,13 @@ import edu.gemini.epics.impl.EpicsReaderImpl;
 import edu.gemini.epics.impl.EpicsWriterImpl;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 final class CaApplyRecord {
 
-    private static final Logger LOG = Logger.getLogger(CaApplyRecord.class
+    private static final Logger LOG = LoggerFactory.getLogger(CaApplyRecord.class
             .getName());
 
     private static final String DIR_SUFFIX = ".DIR";
@@ -51,7 +52,7 @@ final class CaApplyRecord {
             try {
                 dir = epicsWriter.getEnumChannel(epicsName + DIR_SUFFIX, CadDirective.class);
             } catch (Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         if (val == null) {
@@ -61,14 +62,14 @@ final class CaApplyRecord {
                     val.registerListener(valListener);
                 }
             } catch (Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         if (mess == null) {
             try {
                 mess = epicsReader.getStringChannel(epicsName + MSG_SUFFIX);
             } catch (Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
     }
@@ -81,7 +82,7 @@ final class CaApplyRecord {
             try {
                 epicsWriter.destroyChannel(dir);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             dir = null;
         }
@@ -90,7 +91,7 @@ final class CaApplyRecord {
             try {
                 epicsReader.destroyChannel(val);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             val = null;
         }
@@ -99,7 +100,7 @@ final class CaApplyRecord {
             try {
                 epicsReader.destroyChannel(mess);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             mess = null;
         }

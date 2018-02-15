@@ -48,7 +48,7 @@
             <appender-ref ref="FILE" />
         </appender>
 
-        <root level="INFO">
+        <root level="DEBUG">
             <appender-ref ref="ASYNC500" />
         </root>
         <logger name="com.cosylab.epics" level="DEBUG">

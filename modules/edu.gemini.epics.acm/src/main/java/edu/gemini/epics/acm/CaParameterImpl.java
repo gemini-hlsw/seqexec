@@ -5,7 +5,8 @@
 
 package edu.gemini.epics.acm;
 
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.ReadWriteClientEpicsChannel;
@@ -14,7 +15,7 @@ import gov.aps.jca.TimeoutException;
 
 abstract class CaParameterImpl<T> implements CaParameter<T> {
 
-    private static final Logger LOG = Logger.getLogger(CaParameterImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaParameterImpl.class.getName());
 
     private final String name;
     private final String channel;
@@ -91,7 +92,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
                     epicsWriter().destroyChannel(rwChannel);
                 }
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             rwChannel = null;
         }
@@ -100,7 +101,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             if(rwChannel!=null) {
                 rwChannel.setValue(value);
             } else {
-                LOG.warning("Tried to set value to unbound channel " + channel());
+                LOG.warn("Tried to set value to unbound channel " + channel());
             }
         }
     }
@@ -115,7 +116,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             try {
                 rwChannel = epicsWriter.getStringChannel(channel);
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
 
@@ -125,7 +126,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
                     epicsWriter().destroyChannel(rwChannel);
                 }
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             rwChannel = null;
         }
@@ -134,7 +135,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             if(rwChannel!=null) {
                 rwChannel.setValue(value.toString());
             } else {
-                LOG.warning("Tried to set value to unbound channel " + channel());
+                LOG.warn("Tried to set value to unbound channel " + channel());
             }
         }
     }
@@ -152,7 +153,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             try {
                 param.bind(epicsWriter.getDoubleChannel(channel));
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             return param;
         }
@@ -171,7 +172,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             try {
                 param.bind(epicsWriter.getIntegerChannel(channel));
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             return param;
         }
@@ -190,7 +191,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             try {
                 param.bind(epicsWriter.getFloatChannel(channel));
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             return param;
         }
@@ -209,7 +210,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             try {
                 param.bind(epicsWriter.getEnumChannel(channel, enumType));
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             return param;
         }
@@ -231,7 +232,7 @@ abstract class CaParameterImpl<T> implements CaParameter<T> {
             try {
                 param.bind(epicsWriter.getStringChannel(channel));
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             return param;
         }

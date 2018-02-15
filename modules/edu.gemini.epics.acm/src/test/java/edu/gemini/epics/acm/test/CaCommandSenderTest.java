@@ -10,7 +10,8 @@ import static org.junit.Assert.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -30,7 +31,7 @@ import gov.aps.jca.TimeoutException;
 
 public final class CaCommandSenderTest {
 
-    private static final Logger LOG = Logger.getLogger(CaCommandSenderTest.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaCommandSenderTest.class.getName());
 
     private static final String CA_ADDR_LIST = "127.0.0.1";
     private static final String TOP = "test";
@@ -222,7 +223,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         String val = attr.value();
 
@@ -244,7 +245,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         assertTrue("Unmarked command did not completed.", cm.isDone());
 
@@ -266,7 +267,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         assertTrue("Unable to trigger command execution.", cm.isDone());
 
@@ -288,7 +289,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         assertTrue("Unable to trigger command execution.", cm.isDone());
 
@@ -310,7 +311,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         assertTrue("Command did not report execution error.", cm.isDone()
                 && cm.state().equals(CaCommandMonitor.State.ERROR));
@@ -333,7 +334,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         //noinspection ThrowableResultOfMethodCallIgnored
         assertTrue("Command did not report execution error.", cm.isDone()
@@ -360,7 +361,7 @@ public final class CaCommandSenderTest {
         try {
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         //noinspection ThrowableResultOfMethodCallIgnored
         assertTrue("Command did not report execution timeout (" + cm.isDone() + ", " + cm.state() + ", " + cm.error() + ")",

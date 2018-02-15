@@ -13,10 +13,11 @@ import edu.gemini.epics.impl.EpicsReaderImpl;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
-    private static final Logger LOG = Logger.getLogger(CaCarRecord.class
+    private static final Logger LOG = LoggerFactory.getLogger(CaCarRecord.class
             .getName());
 
     private static final String CAR_VAL_SUFFIX = ".VAL";
@@ -48,7 +49,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
                 clid.registerListener(clidListener);
             }
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             val = epicsReader.getEnumChannel(epicsName + CAR_VAL_SUFFIX, carClass);
@@ -56,12 +57,12 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
                 val.registerListener(valListener);
             }
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             omss = epicsReader.getStringChannel(epicsName + CAR_OMSS_SUFFIX);
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
     }
 
@@ -71,7 +72,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
                 epicsReader.destroyChannel(clid);
             }
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         clid = null;
 
@@ -80,7 +81,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
                 epicsReader.destroyChannel(val);
             }
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         val = null;
 
@@ -89,7 +90,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
                 epicsReader.destroyChannel(omss);
             }
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         omss = null;
 

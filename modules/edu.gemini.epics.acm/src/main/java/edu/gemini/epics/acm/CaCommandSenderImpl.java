@@ -9,7 +9,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.EpicsWriter;
@@ -20,7 +21,7 @@ import gov.aps.jca.TimeoutException;
 
 final class CaCommandSenderImpl implements CaCommandSender {
 
-    private static final Logger LOG = Logger.getLogger(CaCommandSenderImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaCommandSenderImpl.class.getName());
 
     private static final String DIR_SUFFIX = ".DIR";
     private final String name;
@@ -50,7 +51,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
             try {
                 dirChannel = epicsWriter.getEnumChannel(cadName + DIR_SUFFIX, CadDirective.class);
             } catch(Throwable e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
 
@@ -107,7 +108,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
                 dirChannel = null;
             }
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         epicsWriter = null;
@@ -368,7 +369,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
             try {
                 dirChannel.setValue(CadDirective.MARK);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
     }
@@ -379,7 +380,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
             try {
                 dirChannel.setValue(CadDirective.CLEAR);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
     }
