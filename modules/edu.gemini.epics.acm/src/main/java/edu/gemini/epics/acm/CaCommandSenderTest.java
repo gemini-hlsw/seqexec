@@ -5,13 +5,14 @@
 
 package edu.gemini.epics.acm;
 
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
 public final class CaCommandSenderTest {
-    private static final Logger LOG = Logger.getLogger(CaCommandSenderTest.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaCommandSenderTest.class.getName());
 
 
     public static void main(String[] args) throws CAException {
@@ -49,7 +50,7 @@ public final class CaCommandSenderTest {
             cm.waitDone();
         } catch (CaException | CAException | TimeoutException | InterruptedException e) {
             // TODO Auto-generated catch block
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         service.unbind();

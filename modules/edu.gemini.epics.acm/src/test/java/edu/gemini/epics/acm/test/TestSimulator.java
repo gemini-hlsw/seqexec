@@ -8,7 +8,8 @@ package edu.gemini.epics.acm.test;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.gemini.aspen.giapi.commands.Command;
 import edu.gemini.aspen.giapi.commands.CommandSender;
@@ -23,7 +24,7 @@ import gov.aps.jca.TimeoutException;
 
 final class TestSimulator {
 
-    private static final Logger LOG = Logger.getLogger(TestSimulator.class.getName()); 
+    private static final Logger LOG = LoggerFactory.getLogger(TestSimulator.class.getName());
 
     static final String INTEGER_STATUS = "intVal";
     static final String STRING_STATUS = "strVal";
@@ -105,7 +106,7 @@ final class TestSimulator {
         try {
             server.start();
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             intChannel = server.createChannel(epicsTop + ":" + INTEGER_STATUS,
@@ -117,7 +118,7 @@ final class TestSimulator {
             fltChannel = server.createChannel(epicsTop + ":" + FLOAT_STATUS,
                     0.0f);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         ticker = executor.scheduleAtFixedRate(new Runnable() {
@@ -132,7 +133,7 @@ final class TestSimulator {
                     dblChannel.setValue((double) count);
                     fltChannel.setValue((float) count);
                 } catch (CAException | TimeoutException e) {
-                    LOG.warning(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
             }
         }, 1, 1, TimeUnit.SECONDS);
@@ -147,7 +148,7 @@ final class TestSimulator {
         try {
             executor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         executor.shutdown();
         executor = null;
@@ -160,7 +161,7 @@ final class TestSimulator {
         try {
             server.stop();
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         server = null;
     }

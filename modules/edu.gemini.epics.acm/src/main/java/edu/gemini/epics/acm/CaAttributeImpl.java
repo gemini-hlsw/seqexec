@@ -8,7 +8,8 @@ package edu.gemini.epics.acm;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 
@@ -18,7 +19,7 @@ import edu.gemini.epics.api.ChannelListener;
 import gov.aps.jca.CAException;
 
 final class CaAttributeImpl<T> implements CaAttribute<T> {
-    private static final Logger LOG = Logger.getLogger(CaAttributeImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaAttributeImpl.class.getName());
 
     private EpicsReader epicsReader;
     private ChannelListener<T> channelListener;
@@ -74,7 +75,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
             };
             this.epicsChannel.registerListener(channelListener);
         } else {
-            LOG.warning("Unable to bind to channel " + channel);
+            LOG.warn("Unable to bind to channel " + channel);
         }
     }
 
@@ -174,7 +175,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         try {
             attr.bind(epicsReader.getDoubleChannel(channel));
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         return attr;
@@ -188,7 +189,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         try {
             attr.bind(epicsReader.getFloatChannel(channel));
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         return attr;
@@ -202,7 +203,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         try {
             attr.bind(epicsReader.getIntegerChannel(channel));
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         return attr;
@@ -216,7 +217,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         try {
             attr.bind(epicsReader.getShortChannel(channel));
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         return attr;
@@ -230,7 +231,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         try {
             attr.bind(epicsReader.getStringChannel(channel));
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         return attr;
@@ -244,7 +245,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         try {
             attr.bind(epicsReader.getEnumChannel(channel, enumType));
         } catch(Throwable e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         return attr;

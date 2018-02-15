@@ -11,7 +11,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
@@ -40,7 +41,7 @@ import gov.aps.jca.CAException;
  */
 public final class XMLBuilder {
 
-    private static final Logger LOG = Logger.getLogger(XMLBuilder.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(XMLBuilder.class.getName());
 
     private static final String CONFIG_SCHEMA_FILE = "/CaSchema.xsd";
     private static final String XMLSCHEMA_URL = "http://www.w3.org/2001/XMLSchema";
@@ -80,7 +81,7 @@ public final class XMLBuilder {
             um.setSchema(schema); // to enable validation
             records = (Records) um.unmarshal(iStream);
         } catch (Exception ex) {
-            LOG.warning("XMLBuilder.fromStream: Problem parsing XML");
+            LOG.warn("XMLBuilder.fromStream: Problem parsing XML");
             throw new IllegalArgumentException("Problem parsing XML", ex);
         }
 
@@ -168,7 +169,7 @@ public final class XMLBuilder {
                 try {
                     buildCommand(commandDef, apply, tops.get(applyDef.getTop()));
                 } catch (Exception e) {
-                    LOG.warning(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
             }
         }
@@ -176,7 +177,7 @@ public final class XMLBuilder {
             try {
                 buildStatus(statusDef);
             } catch (Exception e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
     }
@@ -245,7 +246,7 @@ public final class XMLBuilder {
 
                     }
                 } catch (CaException e) {
-                    LOG.warning(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
             }
             return cs;
@@ -286,7 +287,7 @@ public final class XMLBuilder {
 
                 }
             } catch (Exception e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         return sa;

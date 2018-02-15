@@ -10,7 +10,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.api.ChannelListener;
@@ -19,7 +20,7 @@ import gov.aps.jca.TimeoutException;
 
 final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements CaApplySender {
 
-    private static final Logger LOG = Logger.getLogger(CaApplySenderImpl.class
+    private static final Logger LOG = LoggerFactory.getLogger(CaApplySenderImpl.class
             .getName());
 
     private final String name;
@@ -118,17 +119,17 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         try {
             apply.unregisterValListener(valListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             car.unregisterClidListener(carClidListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             car.unregisterValListener(carValListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
 
         apply.unbind();
@@ -440,7 +441,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
                 try {
                     msg = apply.getMessValue();
                 } catch (CAException | TimeoutException e) {
-                    LOG.warning(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
                 cm.completeFailure(new CaCommandError(msg));
             }
@@ -458,7 +459,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
                 try {
                     msg = car.getOmssValue();
                 } catch (CAException | TimeoutException e) {
-                    LOG.warning(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
                 cm.completeFailure(new CaCommandError(msg));
             }
@@ -475,7 +476,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         try {
             apply.setDir(CadDirective.CLEAR);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
     }
 

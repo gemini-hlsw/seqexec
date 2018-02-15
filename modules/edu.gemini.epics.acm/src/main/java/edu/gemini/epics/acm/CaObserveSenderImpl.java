@@ -18,14 +18,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by jluhrs on 10/17/17.
  */
 public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements CaApplySender {
 
-    private static final Logger LOG = Logger.getLogger(CaObserveSenderImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaObserveSenderImpl.class.getName());
     private static final String CAD_MARK_SUFFIX = ".MARK";
 
     private final String name;
@@ -83,6 +84,8 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         public CaObserveSenderImpl.State onTimeout() {
             return this;
         }
+
+
     };
 
     private short getMark(ReadOnlyClientEpicsChannel<Short> ch, short def) {
@@ -186,35 +189,35 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         try {
             apply.unregisterValListener(valListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             car.unregisterClidListener(carClidListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             car.unregisterValListener(carValListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         try {
             observeCar.unregisterValListener(observeCarValListener);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         if(stopMark!=null) {
             try {
                 stopMark.unRegisterListener(stopMarkListener);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         if(abortMark!=null) {
             try {
                 abortMark.unRegisterListener(abortMarkListener);
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
 
@@ -272,6 +275,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         CaObserveSenderImpl.State onAbortMarkChange(Short val);
 
         CaObserveSenderImpl.State onTimeout();
+        
     }
 
     private final class WaitPreset implements CaObserveSenderImpl.State {
@@ -828,7 +832,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             try {
                 msg = apply.getMessValue();
             } catch (CAException | TimeoutException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             cm.completeFailure(new CaCommandError(msg));
         } );
@@ -843,7 +847,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             try {
                 msg = car.getOmssValue();
             } catch (CAException | TimeoutException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             cm.completeFailure(new CaCommandError(msg));
         } );
@@ -858,7 +862,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             try {
                 msg = observeCar.getOmssValue();
             } catch (CAException | TimeoutException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
             cm.completeFailure(new CaCommandError(msg));
         } );
@@ -874,7 +878,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         try {
             apply.setDir(CadDirective.CLEAR);
         } catch (CAException e) {
-            LOG.warning(e.getMessage());
+            LOG.warn(e.getMessage());
         }
     }
 

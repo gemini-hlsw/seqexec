@@ -252,6 +252,7 @@ lazy val edu_gemini_epics_acm = project
       EpicsService,
       GmpCommandsRecords,
       Guava,
+      Slf4j,
       "com.novocode" % "junit-interface" % "0.11" % "test"),
     sourceGenerators in Compile += Def.task {
       import scala.sys.process._

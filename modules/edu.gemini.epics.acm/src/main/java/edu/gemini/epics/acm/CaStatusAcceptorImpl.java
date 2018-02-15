@@ -9,7 +9,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.EpicsReader;
@@ -18,7 +19,7 @@ import gov.aps.jca.CAException;
 
 final class CaStatusAcceptorImpl implements CaStatusAcceptor {
 
-    private static final Logger LOG = Logger.getLogger(CaStatusAcceptorImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaStatusAcceptorImpl.class.getName());
 
     private final String name;
     private final String description;
@@ -290,35 +291,35 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
             try {
                 attr.unbind();
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         for (CaAttributeImpl<?> attr : doubleAttributes.values()) {
             try {
                 attr.unbind();
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         for (CaAttributeImpl<?> attr : floatAttributes.values()) {
             try {
                 attr.unbind();
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         for (CaAttributeImpl<?> attr : integerAttributes.values()) {
             try {
                 attr.unbind();
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
         for (CaAttributeImpl<?> attr : shortAttributes.values()) {
             try {
                 attr.unbind();
             } catch (CAException e) {
-                LOG.warning(e.getMessage());
+                LOG.warn(e.getMessage());
             }
         }
 
