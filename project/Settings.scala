@@ -167,9 +167,10 @@ object Settings {
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
 
     val Monocle  = Def.setting(Seq(
-      "com.github.julien-truffaut" %%% "monocle-core"  % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-macro" % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-law"   % LibraryVersions.monocle % "test"))
+      "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-law"    % LibraryVersions.monocle % "test"))
 
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(

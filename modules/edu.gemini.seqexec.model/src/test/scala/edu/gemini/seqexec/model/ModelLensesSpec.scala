@@ -11,7 +11,8 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import SharedModelArbitraries._
 
-import scalaz.std.AllInstances._
+import cats.implicits._
+import shims._
 
 class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
 
