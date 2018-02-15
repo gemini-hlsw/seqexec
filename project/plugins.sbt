@@ -30,7 +30,7 @@ addSbtPlugin("ch.epfl.scala"     % "sbt-scalajs-bundler"    % "0.10.0")
 resolvers +=
   Resolver.sonatypeRepo("snapshots")
 
-addSbtPlugin("io.github.cquiroz" % "sbt-tzdb" % "0.1.0-SNAPSHOT")
+addSbtPlugin("io.github.cquiroz" % "sbt-tzdb" % "0.1.2-SNAPSHOT")
 
 // Avoids a warning message when starting sbt-git
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
