@@ -65,7 +65,7 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
           case \/-(user) =>
             // Log who logged in
             // Note that the call to read a remoteAddr may do a DNS lookup
-            Task.delay(clientLog.info(s"${user.displayName} logged in from <${req.remoteHost.getOrElse("Unknown")}>")) *>
+            Task.delay(clientLog.info(s"${user.displayName} logged in from ${req.remoteHost.getOrElse("Unknown")}")) *>
             // if successful set a cookie
             httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).addCookie(cookie) }
           case -\/(_) =>
@@ -88,13 +88,13 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
           val userName = user.fold(_ => "Anonymous", _.displayName)
           // Always return ok
           // Use remoteAddr to avoid an expensive DNS lookup
-          Task.delay(clientLog.info(s"$userName on <${auth.req.remoteAddr.getOrElse("Unknown")}>: ${msg.msg}")) *> Ok()
+          Task.delay(clientLog.info(s"$userName on ${auth.req.remoteAddr.getOrElse("Unknown")}: ${msg.msg}")) *> Ok()
         }
 
       case auth @ POST -> Root / "seqexec" / "start" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Always return ok
-        Task.delay(clientLog.info(s"$userName connected from <${auth.req.remoteHost.getOrElse("Unknown")}>")) *> Ok()
+        Task.delay(clientLog.info(s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}")) *> Ok()
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping
