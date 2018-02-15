@@ -125,10 +125,8 @@ object Settings {
 
     // Test Libraries
     val TestLibs = Def.setting(Seq(
-      "org.scalatest"              %%% "scalatest"                 % LibraryVersions.scalaTest           % "test",
-      "org.scalacheck"             %%% "scalacheck"                % LibraryVersions.scalaCheck          % "test",
-      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test",
-      "org.typelevel"              %%% "discipline"                % LibraryVersions.discipline          % "test"
+      "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test",
+      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test"
     ))
 
     val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut

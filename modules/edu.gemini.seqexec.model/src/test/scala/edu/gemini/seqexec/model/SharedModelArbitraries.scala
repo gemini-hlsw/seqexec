@@ -6,9 +6,10 @@ package edu.gemini.seqexec.model
 import Model._
 import events.{SeqexecEvent, SeqexecModelUpdate}
 import events.SeqexecEvent._
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalacheck.Arbitrary._
 import java.time.Instant
+import cats.implicits._
 
 // Keep the arbitraries in a separate trait to improve caching
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -74,4 +75,7 @@ object SharedModelArbitraries {
   implicit val ofqArb = implicitly[Arbitrary[TelescopeOffset.Q]]
   implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
   implicit val fpmArb = Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
+
+  implicit val snCogen: Cogen[SystemName] =
+    Cogen[String].contramap(_.show)
 }
