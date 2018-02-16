@@ -16,7 +16,6 @@ install:
 - nvm use 8.7.0
 - npm install jsdom
 script:
-- sbt headerCheck test:headerCheck scalastyle test
+- sbt headerCheck test:headerCheck scalastyle test edu_gemini_seqexec_web_client/fullOptJS::webpack
 after_script:
-- cd modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client/target/scala-2.12/scalajs-bundler/main/ && curl -O https://raw.githubusercontent.com/cquiroz/travis-weigh-in/master/weigh_in.py
-  && python weigh_in.py edu_gemini_seqexec_web_client-fastopt.js && python weigh_in.py edu_gemini_seqexec_web_client-fastopt-library.js
+- $TRAVIS_BUILD_DIR/build/weigh.sh  
