@@ -12,8 +12,8 @@ before_cache:
 - find $HOME/.sbt -name "*.lock" -delete
 install:
 - ". $HOME/.nvm/nvm.sh"
-- nvm install stable
-- nvm use stable
+- nvm install 8.7.0
+- nvm use 8.7.0
 - npm install jsdom
 script:
 - sbt headerCheck test:headerCheck scalastyle test
