@@ -34,6 +34,25 @@ object Observation {
       Observation[TargetEnvironment.Aux[I], StaticConfig.Aux[I], Step[DynamicConfig.Aux[I]]]
   }
 
+  // Some syntax for Observation.Full
+  implicit class ObservationFullOps(o: Observation.Full) {
+
+      private def narrowImpl[I <: Instrument with Singleton](
+        o: Observation.Full.Aux[I]
+      ): (Instrument.Aux[I], Observation.Full.Aux[I]) =
+        (o.staticConfig.instrument, o)
+
+      /**
+       * This lets is inspect an Observation.Full and get back a dependent pair that we can
+       * pattern-match to dispatch based on the instrument; i.e., if the first element is
+       * `Gnirs` then the second must be an `Observation.Full.Aux[GNirs.type]`, and
+       * most importantly Scala understands this.
+       */
+      def narrow: (Instrument.Aux[I], Observation.Full.Aux[I]) forSome { type I <: Instrument with Singleton } =
+        narrowImpl(o)
+
+  }
+
   /** A positive, non-zero integer for use in ids. */
   sealed abstract case class Index(toShort: Short) {
     def format: String =
