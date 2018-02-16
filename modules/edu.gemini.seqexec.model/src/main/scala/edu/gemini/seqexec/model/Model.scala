@@ -189,7 +189,7 @@ object Model {
 
   implicit val equalSequenceId: Eq[SequenceId] = Eq.fromUniversalEquals
 
-  sealed trait StepState {
+  sealed trait StepState extends Product with Serializable {
     def canRunFrom: Boolean = false
   }
   object StepState {
@@ -209,7 +209,7 @@ object Model {
     implicit val equal: Eq[StepState] = Eq.fromUniversalEquals
   }
 
-  sealed trait ActionStatus
+  sealed trait ActionStatus extends Product with Serializable
   object ActionStatus {
     // Action is not yet run
     case object Pending extends ActionStatus
@@ -304,7 +304,7 @@ object Model {
   }
   // Other kinds of Steps to be defined.
 
-  sealed trait SequenceState
+  sealed trait SequenceState extends Product with Serializable
   object SequenceState {
     case object Completed         extends SequenceState
     case object Idle              extends SequenceState

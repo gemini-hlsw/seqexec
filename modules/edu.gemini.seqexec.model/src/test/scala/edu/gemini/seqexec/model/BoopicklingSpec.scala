@@ -18,6 +18,7 @@ import org.scalatest.prop.PropertyChecks
 class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks {
   import ModelBooPicklers._
   import SharedModelArbitraries._
+  import SequenceEventsArbitraries._
 
   def testPickleUnpickle[A](implicit pickler: Pickler[A], arb: Arbitrary[A]): Assertion = {
     forAll { (a: A) =>

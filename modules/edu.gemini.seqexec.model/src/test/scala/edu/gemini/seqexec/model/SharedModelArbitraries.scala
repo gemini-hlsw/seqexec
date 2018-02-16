@@ -4,8 +4,6 @@
 package edu.gemini.seqexec.model
 
 import Model._
-import events.{SeqexecEvent, SeqexecModelUpdate}
-import events.SeqexecEvent._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalacheck.Arbitrary._
 import java.time.Instant
@@ -36,37 +34,19 @@ object SharedModelArbitraries {
   }
 
   implicit val levArb = Arbitrary(Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
+  implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
+  implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
 
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]
   implicit val svArb  = implicitly[Arbitrary[SequenceView]]
+  implicit val opArb  = implicitly[Arbitrary[Operator]]
+  implicit val obArb  = implicitly[Arbitrary[Observer]]
+  implicit val spsArb = implicitly[Arbitrary[StepState]]
+  implicit val acsArb = implicitly[Arbitrary[ActionStatus]]
+  implicit val sqsArb = implicitly[Arbitrary[SequenceState]]
   // Must define these early on to be used on the events
   implicit val sqiArb = sequencesQueueArb[SequenceId]
   implicit val sqvArb = sequencesQueueArb[SequenceView]
-  implicit val coeArb = implicitly[Arbitrary[ConnectionOpenEvent]]
-  implicit val sseArb = implicitly[Arbitrary[SequenceStart]]
-  implicit val seeArb = implicitly[Arbitrary[StepExecuted]]
-  implicit val sceArb = implicitly[Arbitrary[SequenceCompleted]]
-  implicit val sleArb = implicitly[Arbitrary[SequenceLoaded]]
-  implicit val sueArb = implicitly[Arbitrary[SequenceUnloaded]]
-  implicit val sbeArb = implicitly[Arbitrary[StepBreakpointChanged]]
-  implicit val smeArb = implicitly[Arbitrary[StepSkipMarkChanged]]
-  implicit val speArb = implicitly[Arbitrary[SequencePauseRequested]]
-  implicit val spcArb = implicitly[Arbitrary[SequencePauseCanceled]]
-  implicit val asrArb = implicitly[Arbitrary[ActionStopRequested]]
-  implicit val slmArb = implicitly[Arbitrary[ServerLogMessage]]
-  implicit val neArb  = implicitly[Arbitrary[NullEvent.type]]
-  implicit val opArb  = implicitly[Arbitrary[OperatorUpdated]]
-  implicit val obArb  = implicitly[Arbitrary[ObserverUpdated]]
-  implicit val iqArb  = implicitly[Arbitrary[ImageQuality]]
-  implicit val wvArb  = implicitly[Arbitrary[WaterVapor]]
-  implicit val sbArb  = implicitly[Arbitrary[SkyBackground]]
-  implicit val ccArb  = implicitly[Arbitrary[CloudCover]]
-  implicit val conArb = implicitly[Arbitrary[Conditions]]
-  implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
-  implicit val smuArb = implicitly[Arbitrary[SeqexecModelUpdate]]
-  implicit val serArb = implicitly[Arbitrary[SequenceError]]
-  implicit val sspArb = implicitly[Arbitrary[SequencePaused]]
-  implicit val sepArb = implicitly[Arbitrary[ExposurePaused]]
   implicit val snArb  = Arbitrary(Gen.oneOf(SystemName.all))
   implicit val steArb = implicitly[Arbitrary[Step]]
   implicit val stsArb = implicitly[Arbitrary[StandardStep]]
@@ -78,4 +58,34 @@ object SharedModelArbitraries {
 
   implicit val snCogen: Cogen[SystemName] =
     Cogen[String].contramap(_.show)
+
+  implicit val resCogen: Cogen[Resource] =
+    Cogen[String].contramap(_.show)
+
+  implicit val instCogen: Cogen[Instrument] =
+    Cogen[String].contramap(_.show)
+
+  implicit val opCogen: Cogen[Operator] =
+    Cogen[String].contramap(_.value)
+
+  implicit val obCogen: Cogen[Observer] =
+    Cogen[String].contramap(_.value)
+
+  implicit val stsCogen: Cogen[StepState] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val stParams: Cogen[StepConfig] =
+    Cogen[String].contramap(_.mkString(","))
+
+  implicit val acsCogen: Cogen[ActionStatus] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val stepCogen: Cogen[Step] =
+    Cogen[(StepId, Map[SystemName, Map[String, String]], StepState, Boolean, Boolean, Option[dhs.ImageFileId])].contramap(s => (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId))
+
+  implicit val standardStepCogen: Cogen[StandardStep] =
+    Cogen[(StepId, Map[SystemName, Map[String, String]], StepState, Boolean, Boolean, Option[dhs.ImageFileId], List[(Resource, ActionStatus)], ActionStatus)].contramap(s => (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId, s.configStatus, s.observeStatus))
+
+  implicit val sqsCogen: Cogen[SequenceState] =
+    Cogen[String].contramap(_.productPrefix)
 }

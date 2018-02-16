@@ -10,6 +10,7 @@ import edu.gemini.seqexec.model.Model.{OffsetAxis, SystemName}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import SharedModelArbitraries._
+import SequenceEventsArbitraries._
 
 import cats.implicits._
 import shims._
