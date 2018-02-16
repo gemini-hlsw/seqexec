@@ -26,13 +26,6 @@ object GmosSouthFpu {
 
   type Aux[A] = GmosSouthFpu { type Self = A }
 
-  /** @group Constructors */ case object Longslit1 extends GmosSouthFpu("Longslit1", "0.25arcsec", "Longslit 0.25 arcsec", Some(Angle.fromDoubleArcseconds(0.25)))
-  /** @group Constructors */ case object Longslit2 extends GmosSouthFpu("Longslit2", "0.50arcsec", "Longslit 0.50 arcsec", Some(Angle.fromDoubleArcseconds(0.50)))
-  /** @group Constructors */ case object Longslit3 extends GmosSouthFpu("Longslit3", "0.75arcsec", "Longslit 0.75 arcsec", Some(Angle.fromDoubleArcseconds(0.75)))
-  /** @group Constructors */ case object Longslit4 extends GmosSouthFpu("Longslit4", "1.0arcsec", "Longslit 1.00 arcsec", Some(Angle.fromDoubleArcseconds(1.00)))
-  /** @group Constructors */ case object Longslit5 extends GmosSouthFpu("Longslit5", "1.5arcsec", "Longslit 1.50 arcsec", Some(Angle.fromDoubleArcseconds(1.50)))
-  /** @group Constructors */ case object Longslit6 extends GmosSouthFpu("Longslit6", "2.0arcsec", "Longslit 2.00 arcsec", Some(Angle.fromDoubleArcseconds(2.00)))
-  /** @group Constructors */ case object Longslit7 extends GmosSouthFpu("Longslit7", "5.0arcsec", "Longslit 5.00 arcsec", Some(Angle.fromDoubleArcseconds(5.00)))
   /** @group Constructors */ case object Ifu1 extends GmosSouthFpu("Ifu1", "IFU-2", "IFU 2 Slits", Option.empty[Angle])
   /** @group Constructors */ case object Ifu2 extends GmosSouthFpu("Ifu2", "IFU-B", "IFU Left Slit (blue)", Option.empty[Angle])
   /** @group Constructors */ case object Ifu3 extends GmosSouthFpu("Ifu3", "IFU-R", "IFU Right Slit (red)", Option.empty[Angle])
@@ -45,10 +38,17 @@ object GmosSouthFpu {
   /** @group Constructors */ case object Ns3 extends GmosSouthFpu("Ns3", "NS1.0arcsec", "N and S 1.00 arcsec", Some(Angle.fromDoubleArcseconds(1.00)))
   /** @group Constructors */ case object Ns4 extends GmosSouthFpu("Ns4", "NS1.5arcsec", "N and S 1.50 arcsec", Some(Angle.fromDoubleArcseconds(1.50)))
   /** @group Constructors */ case object Ns5 extends GmosSouthFpu("Ns5", "NS2.0arcsec", "N and S 2.00 arcsec", Some(Angle.fromDoubleArcseconds(2.00)))
+  /** @group Constructors */ case object LongSlit_0_25 extends GmosSouthFpu("LongSlit_0_25", "0.25arcsec", "Longslit 0.25 arcsec", Some(Angle.fromDoubleArcseconds(0.25)))
+  /** @group Constructors */ case object LongSlit_0_50 extends GmosSouthFpu("LongSlit_0_50", "0.50arcsec", "Longslit 0.50 arcsec", Some(Angle.fromDoubleArcseconds(0.50)))
+  /** @group Constructors */ case object LongSlit_0_75 extends GmosSouthFpu("LongSlit_0_75", "0.75arcsec", "Longslit 0.75 arcsec", Some(Angle.fromDoubleArcseconds(0.75)))
+  /** @group Constructors */ case object LongSlit_1_00 extends GmosSouthFpu("LongSlit_1_00", "1.0arcsec", "Longslit 1.00 arcsec", Some(Angle.fromDoubleArcseconds(1.00)))
+  /** @group Constructors */ case object LongSlit_1_50 extends GmosSouthFpu("LongSlit_1_50", "1.5arcsec", "Longslit 1.50 arcsec", Some(Angle.fromDoubleArcseconds(1.50)))
+  /** @group Constructors */ case object LongSlit_2_00 extends GmosSouthFpu("LongSlit_2_00", "2.0arcsec", "Longslit 2.00 arcsec", Some(Angle.fromDoubleArcseconds(2.00)))
+  /** @group Constructors */ case object LongSlit_5_00 extends GmosSouthFpu("LongSlit_5_00", "5.0arcsec", "Longslit 5.00 arcsec", Some(Angle.fromDoubleArcseconds(5.00)))
 
   /** All members of GmosSouthFpu, in canonical order. */
   val all: List[GmosSouthFpu] =
-    List(Longslit1, Longslit2, Longslit3, Longslit4, Longslit5, Longslit6, Longslit7, Ifu1, Ifu2, Ifu3, Bhros, IfuN, IfuNB, IfuNR, Ns1, Ns2, Ns3, Ns4, Ns5)
+    List(Ifu1, Ifu2, Ifu3, Bhros, IfuN, IfuNB, IfuNR, Ns1, Ns2, Ns3, Ns4, Ns5, LongSlit_0_25, LongSlit_0_50, LongSlit_0_75, LongSlit_1_00, LongSlit_1_50, LongSlit_2_00, LongSlit_5_00)
 
   /** Select the member of GmosSouthFpu with the given tag, if any. */
   def fromTag(s: String): Option[GmosSouthFpu] =
